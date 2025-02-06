@@ -11,7 +11,8 @@ object SqlDelightJdbcConnection {
     fun jdbcDriver(userName: String) = HikariCp.dataSource(userName).asJdbcDriver()
 
     fun inMemory() = JdbcSqliteDriver(
-        JdbcSqliteDriver.IN_MEMORY, Properties(),
+        JdbcSqliteDriver.IN_MEMORY,
+        Properties(),
         WriteopiaDb.Schema.synchronous()
     )
 }
