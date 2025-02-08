@@ -367,11 +367,11 @@ internal class ChooseNoteKmpViewModel(
 
                 when (_showLocalSyncConfig.value.getSyncRequest()) {
                     SyncRequest.WRITE -> {
-                        writeWorkspace(path)
+                        writeWorkspaceLocally(path)
                     }
 
                     SyncRequest.READ_WRITE -> {
-                        syncWorkplace(path)
+                        syncWorkplaceLocally(path)
                     }
 
                     SyncRequest.CONFIGURE, null -> {}
@@ -387,11 +387,11 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun onSyncLocallySelected() {
-        handleStorage(::syncWorkplace, SyncRequest.READ_WRITE)
+        handleStorage(::syncWorkplaceLocally, SyncRequest.READ_WRITE)
     }
 
     override fun onWriteLocallySelected() {
-        handleStorage(::writeWorkspace, SyncRequest.WRITE)
+        handleStorage(::writeWorkspaceLocally, SyncRequest.WRITE)
     }
 
     override fun requestPermissionToDeleteSelection() {
@@ -528,14 +528,14 @@ internal class ChooseNoteKmpViewModel(
         }
     }
 
-    private suspend fun syncWorkplace(path: String) {
+    private suspend fun syncWorkplaceLocally(path: String) {
         _syncInProgress.value = SyncState.LoadingSync
 
         val userId = getUserId()
 
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
-            notesUseCase.loadDocumentsForUserAfterTime(userId, lastUpdated)
-        } ?: notesUseCase.loadDocumentsForUser(userId)
+            notesUseCase.loadDocumentsForUserAfterTimeFromDb(userId, lastUpdated)
+        } ?: notesUseCase.loadDocumentsForUserFromDb(userId)
 
         val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
             notesUseCase.loadFolderForUserAfterTime(userId, lastUpdated)
@@ -558,15 +558,15 @@ internal class ChooseNoteKmpViewModel(
             .collect(notesUseCase::saveDocument)
     }
 
-    private suspend fun writeWorkspace(path: String) {
+    private suspend fun writeWorkspaceLocally(path: String) {
         _syncInProgress.value = SyncState.LoadingWrite
 
         val userId = getUserId()
 
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
-            notesUseCase.loadDocumentsForUserAfterTime(userId, lastUpdated)
+            notesUseCase.loadDocumentsForUserAfterTimeFromDb(userId, lastUpdated)
         } ?: run {
-            notesUseCase.loadDocumentsForUser(userId)
+            notesUseCase.loadDocumentsForUserFromDb(userId)
         }
 
         val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
@@ -586,7 +586,7 @@ internal class ChooseNoteKmpViewModel(
 
     private fun directoryFilesAs(path: String, documentWriter: DocumentWriter) {
         viewModelScope.launch(Dispatchers.Default) {
-            val data = notesUseCase.loadDocumentsForUser(getUserId())
+            val data = notesUseCase.loadDocumentsForUserFromDb(getUserId())
             documentWriter.writeDocuments(data, path, usePath = true)
         }
     }
