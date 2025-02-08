@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("java-library")
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
@@ -8,6 +10,14 @@ java {
 }
 kotlin {
     compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+        jvmTarget = JvmTarget.JVM_11
     }
+}
+
+dependencies {
+    implementation(project(":writeopia"))
+    implementation(project(":writeopia_models"))
+
+    implementation(project(":plugins:writeopia_persistence_core"))
+    implementation(project(":plugins:writeopia_persistence_sqldelight"))
 }

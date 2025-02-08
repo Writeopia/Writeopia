@@ -5,6 +5,7 @@ composeBom = "2025.03.01"
 composeShimmer = "1.0.5"
 espressoCore = "3.6.1"
 firebaseAdmin = "9.2.0"
+firebaseAuthProvider = "1.5.0"
 junit = "1.2.1"
 kotlinxCoroutines = "1.10.1"
 kotlinxCoroutinesSwing = "1.10.1"
@@ -53,10 +54,12 @@ coil-video = { module = "io.coil-kt.coil3:coil-video", version.ref = "coilVersio
 compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.ref = "composeShimmer" }
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebaseAdmin" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-auth-provider = { module = "com.kborowy:firebase-auth-provider", version.ref = "firebaseAuthProvider" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
+ktor-server-swagger = { module = "io.ktor:ktor-server-swagger" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinxCoroutinesSwing" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
