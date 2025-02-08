@@ -4,6 +4,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.link.DocumentLink
+import io.writeopia.sdk.models.link.DocumentLink
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.Decoration
 import io.writeopia.sdk.models.story.StoryStep
@@ -504,16 +505,18 @@ class DocumentSqlDao(
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color?.toInt(),
                             ),
-                            tags = innerContent.tags!!
-                                .split(",")
-                                .filter { it.isNotEmpty() }
-                                .mapNotNull(TagInfo.Companion::fromString)
-                                .toSet(),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
                             spans = innerContent.spans
-                                !!.split(",")
-                                .filter { it.isNotEmpty() }
-                                .map(SpanInfo::fromString)
-                                .toSet(),
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
                             documentLink = innerContent.link_to_document?.let { documentId ->
                                 val title = documentQueries.selectTitleByDocumentId(documentId)
                                     .executeAsOneOrNull()
@@ -545,6 +548,11 @@ class DocumentSqlDao(
                 }
             } ?: emptyList()
     }
+
+    suspend fun loadDocumentIdsByParentId(parentId: String): List<String> =
+        documentQueries?.selectIdsByParentId(parentId)
+            ?.awaitAsList()
+            ?: emptyList()
 
     suspend fun deleteDocumentsByUserId(userId: String) {
         documentQueries?.deleteByUserId(userId)
