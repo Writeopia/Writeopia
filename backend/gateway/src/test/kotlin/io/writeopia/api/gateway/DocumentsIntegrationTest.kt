@@ -103,7 +103,8 @@ class ApplicationTest {
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("${EndPoints.documents()}/parent/id/${documentApi.parentId}")
+        val response1 =
+            client.get("${EndPoints.documents()}/parent/id/${documentApi.parentId}")
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(listOf(documentApi.id), response1.body())
