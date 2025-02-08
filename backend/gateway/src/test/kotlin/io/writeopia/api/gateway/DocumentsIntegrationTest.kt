@@ -48,7 +48,7 @@ class ApplicationTest {
     }
 
     @Test
-    fun `it should be possible to save and query document by parent id`() = testApplication {
+    fun `it should be possible to save and query documents by parent id`() = testApplication {
         application {
             module()
         }
@@ -76,5 +76,36 @@ class ApplicationTest {
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(listOf(documentApi), response1.body())
+    }
+
+    @Test
+    fun `it should be possible to save and query ids by parent id`() = testApplication {
+        application {
+            module()
+        }
+
+        val client = defaultClient()
+
+        val documentApi = DocumentApi(
+            id = "testias",
+            title = "Test Note",
+            userId = "some user",
+            parentId = "parentId",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L
+        )
+
+        val response = client.post("/${EndPoints.documents()}") {
+            contentType(ContentType.Application.Json)
+            setBody(documentApi)
+        }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val response1 = client.get("${EndPoints.documents()}/parent/id/${documentApi.parentId}")
+
+        assertEquals(HttpStatusCode.OK, response1.status)
+        assertEquals(listOf(documentApi.id), response1.body())
     }
 }
