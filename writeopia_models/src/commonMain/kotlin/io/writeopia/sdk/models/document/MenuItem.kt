@@ -11,6 +11,7 @@ interface MenuItem : Traversable {
     val userId: String
     val favorite: Boolean
     val icon: Icon?
+    val cloudSynced: Boolean
     override val parentId: String
 
     data class Icon(val label: String, val tint: Int?)

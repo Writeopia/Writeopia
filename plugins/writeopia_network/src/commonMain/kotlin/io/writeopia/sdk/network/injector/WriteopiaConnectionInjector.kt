@@ -19,7 +19,7 @@ import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import kotlinx.serialization.json.Json
 
-class ConnectionInjector(
+class WriteopiaConnectionInjector(
     private val baseUrl: String,
     private val bearerTokenHandler: BearerTokenHandler,
     private val apiLogger: Logger = Logger.Companion.DEFAULT,
@@ -40,7 +40,7 @@ class ConnectionInjector(
     }
 }
 
-object ApiInjectorDefaults {
+private object ApiInjectorDefaults {
     fun httpClient(
         json: Json = writeopiaJson,
         bearerTokenHandler: BearerTokenHandler,

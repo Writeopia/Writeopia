@@ -15,4 +15,5 @@ data class Document(
     override val favorite: Boolean = false,
     override val icon: MenuItem.Icon? = null,
     val isLocked: Boolean = false,
+    override val cloudSynced: Boolean = false,
 ) : MenuItem

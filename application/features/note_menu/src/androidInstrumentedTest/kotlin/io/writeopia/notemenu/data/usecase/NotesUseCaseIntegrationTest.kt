@@ -53,7 +53,7 @@ class NotesUseCaseIntegrationTest {
     fun itShouldBePossibleToSaveAndLoadDocument() = runTest {
         val now = Clock.System.now()
 
-        notesUseCase.saveDocument(
+        notesUseCase.saveDocumentDb(
             Document(
                 id = "documentId",
                 title = "Document1",
@@ -73,7 +73,7 @@ class NotesUseCaseIntegrationTest {
     fun itShouldBePossibleToSaveAndLoadDocumentByParentId() = runTest {
         val now = Clock.System.now()
 
-        notesUseCase.saveDocument(
+        notesUseCase.saveDocumentDb(
             Document(
                 id = "documentId",
                 title = "Document1",
@@ -111,7 +111,7 @@ class NotesUseCaseIntegrationTest {
         val now = Clock.System.now()
         val documentId = "documentId"
 
-        notesUseCase.saveDocument(
+        notesUseCase.saveDocumentDb(
             Document(
                 id = documentId,
                 title = "Document1",
