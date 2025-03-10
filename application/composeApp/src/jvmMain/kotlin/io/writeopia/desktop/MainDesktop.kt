@@ -6,6 +6,7 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,8 +19,11 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
+import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.ui.GlobalToastBox
+import io.writeopia.model.isDarkTheme
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.resources.CommonImages
@@ -152,7 +156,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
             windowState.placement = WindowPlacement.Floating
         }
     }
-
     Window(
         onCloseRequest = onCloseRequest,
         title = "",
@@ -162,6 +165,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
         },
         icon = CommonImages.logo()
     ) {
+        //Synchronize the topbar on Windows OS with the System Theme
+        window.setWindowsAdaptiveTitleBar(
+            dark = isSystemInDarkMode() //TODO Syncrhonize with the selected Theme by the user
+        )
+
         Box(Modifier.fillMaxSize()) {
             LaunchedEffect(window.rootPane) {
                 with(window.rootPane) {

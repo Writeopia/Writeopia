@@ -16,6 +16,7 @@ ktlint = "12.1.2"
 ktx = "1.15.0"
 appCompat = "1.7.0"
 material = "1.12.0"
+platformtoolsDarkmodedetector = "0.2.7"
 postgresSocketFactory = "1.15.1"
 room = "2.7.0-beta01"
 compose = "2.8.7"
@@ -85,6 +86,7 @@ ktor-server-websocket = { module = "io.ktor:ktor-server-websockets-jvm" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm" }
 ktor-server-tests = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 #material3-desktop = { module = "org.jetbrains.compose.material3:material3-desktop", version.ref = "material3" }
+platformtools-darkmodedetector = { module = "io.github.kdroidfilter:platformtools.darkmodedetector", version.ref = "platformtoolsDarkmodedetector" }
 sql-postgres-socket-factory = { module = "com.google.cloud.sql:postgres-socket-factory", version.ref = "postgresSocketFactory" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
