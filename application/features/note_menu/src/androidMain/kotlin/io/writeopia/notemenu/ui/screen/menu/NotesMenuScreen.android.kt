@@ -15,6 +15,7 @@ import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 actual fun NotesMenuScreen(
+    folderId: String,
     chooseNoteViewModel: ChooseNoteViewModel,
     ollamaConfigController: OllamaConfigController?,
     navigationController: NavController,
