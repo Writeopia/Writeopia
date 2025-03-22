@@ -37,6 +37,7 @@ kotlin {
 
                 implementation(compose.material3)
                 implementation(libs.lifecycle.viewmodel.compose)
+                implementation(libs.platformtools.darkmodedetector)
             }
         }
 
