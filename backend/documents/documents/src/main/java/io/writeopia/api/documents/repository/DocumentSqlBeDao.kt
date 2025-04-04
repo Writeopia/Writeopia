@@ -3,6 +3,7 @@ package io.writeopia.api.documents.repository
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.extensions.sortWithOrderBy
 import io.writeopia.sdk.models.link.DocumentLink
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.span.SpanInfo
@@ -10,8 +11,6 @@ import io.writeopia.sdk.models.story.Decoration
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.TagInfo
-import io.writeopia.sdk.persistence.core.extensions.sortWithOrderBy
-import io.writeopia.sdk.persistence.sqldelight.toLong
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sql.DocumentEntityQueries
 import io.writeopia.sql.StoryStepEntityQueries
@@ -29,13 +28,13 @@ class DocumentSqlBeDao(
             Document(
                 id = entity.id,
                 title = entity.title,
-                createdAt = Instant.fromEpochMilliseconds(entity.created_at),
-                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                createdAt = Instant.fromEpochMilliseconds(entity.created_at.toLong()),
+                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at.toLong()),
                 userId = entity.user_id,
-                favorite = entity.favorite == 1L,
+                favorite = entity.favorite,
                 parentId = entity.parent_document_id,
-                icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
-                isLocked = entity.is_locked == 1L
+                icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
+                isLocked = entity.is_locked
             )
         }
         ?: emptyList()
@@ -46,13 +45,13 @@ class DocumentSqlBeDao(
             Document(
                 id = entity.id,
                 title = entity.title,
-                createdAt = Instant.fromEpochMilliseconds(entity.created_at),
-                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                createdAt = Instant.fromEpochMilliseconds(entity.created_at.toLong()),
+                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at.toLong()),
                 userId = entity.user_id,
-                favorite = entity.favorite == 1L,
+                favorite = entity.favorite,
                 parentId = entity.parent_document_id,
-                icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
-                isLocked = entity.is_locked == 1L
+                icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
+                isLocked = entity.is_locked
             )
         }
         ?: emptyList()
@@ -70,14 +69,14 @@ class DocumentSqlBeDao(
         documentQueries?.insert(
             id = document.id,
             title = document.title,
-            created_at = document.createdAt.toEpochMilliseconds(),
-            last_updated_at = document.lastUpdatedAt.toEpochMilliseconds(),
+            created_at = document.createdAt.toEpochMilliseconds().toInt(),
+            last_updated_at = document.lastUpdatedAt.toEpochMilliseconds().toInt(),
             user_id = document.userId,
-            favorite = document.favorite.toLong(),
+            favorite = document.favorite,
             parent_document_id = document.parentId,
             icon = document.icon?.label,
-            icon_tint = document.icon?.tint?.toLong(),
-            is_locked = document.isLocked.toLong()
+            icon_tint = document.icon?.tint,
+            is_locked = document.isLocked
         )
     }
 
@@ -86,17 +85,17 @@ class DocumentSqlBeDao(
             storyStepQueries?.insert(
                 id = id,
                 local_id = localId,
-                type = type.number.toLong(),
+                type = type.number,
                 parent_id = parentId,
                 url = url,
                 path = path,
                 text = text,
-                checked = checked.toLong(),
-                position = position,
+                checked = checked ?: false,
+                position = position.toInt(),
                 document_id = documentId,
-                is_group = isGroup.toLong(),
-                has_inner_steps = steps.isNotEmpty().toLong(),
-                background_color = decoration.backgroundColor?.toLong(),
+                is_group = isGroup,
+                has_inner_steps = steps.isNotEmpty(),
+                background_color = decoration.backgroundColor,
                 tags = tags.joinToString(separator = ",") { it.tag.label },
                 spans = spans.joinToString(separator = ",") { it.toText() },
                 link_to_document = documentLink?.id
@@ -118,10 +117,10 @@ class DocumentSqlBeDao(
                     id = entity.id,
                     title = entity.title,
                     content = emptyMap(),
-                    createdAt = Instant.fromEpochMilliseconds(entity.created_at),
-                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                    createdAt = Instant.fromEpochMilliseconds(entity.created_at.toLong()),
+                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at.toLong()),
                     userId = entity.user_id,
-                    favorite = entity.favorite == 1L,
+                    favorite = entity.favorite,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let {
                         MenuItem.Icon(
@@ -129,7 +128,7 @@ class DocumentSqlBeDao(
                             entity.icon_tint?.toInt()
                         )
                     },
-                    isLocked = entity.is_locked == 1L
+                    isLocked = entity.is_locked
                 )
             }
 
@@ -150,7 +149,7 @@ class DocumentSqlBeDao(
                             url = innerContent.url,
                             path = innerContent.path,
                             text = innerContent.text,
-                            checked = innerContent.checked == 1L,
+                            checked = innerContent.checked ?: false,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color?.toInt(),
@@ -182,10 +181,10 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
-                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
                         userId = document.user_id,
-                        favorite = document.favorite == 1L,
+                        favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
@@ -193,7 +192,7 @@ class DocumentSqlBeDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked
                     )
                 }
             } ?: emptyList()
@@ -215,7 +214,7 @@ class DocumentSqlBeDao(
                             url = innerContent.url,
                             path = innerContent.path,
                             text = innerContent.text,
-                            checked = innerContent.checked == 1L,
+                            checked = innerContent.checked,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color?.toInt(),
@@ -247,10 +246,10 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
-                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
                         userId = document.user_id,
-                        favorite = document.favorite == 1L,
+                        favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
@@ -258,7 +257,7 @@ class DocumentSqlBeDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked
                     )
                 }
             }
@@ -286,7 +285,7 @@ class DocumentSqlBeDao(
                             url = innerContent.url,
                             path = innerContent.path,
                             text = innerContent.text,
-                            checked = innerContent.checked == 1L,
+                            checked = innerContent.checked,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color?.toInt(),
@@ -318,10 +317,10 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
-                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
                         userId = document.user_id,
-                        favorite = document.favorite == 1L,
+                        favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
@@ -329,7 +328,7 @@ class DocumentSqlBeDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked
                     )
                 }
             }
@@ -339,7 +338,7 @@ class DocumentSqlBeDao(
 
     suspend fun loadDocumentsWithContentByUserIdAfterTime(
         userId: String,
-        time: Long
+        time: Int
     ): List<Document> {
         return documentQueries?.selectWithContentByUserIdAfterTime(userId, time)
             ?.awaitAsList()
@@ -357,7 +356,7 @@ class DocumentSqlBeDao(
                             url = innerContent.url,
                             path = innerContent.path,
                             text = innerContent.text,
-                            checked = innerContent.checked == 1L,
+                            checked = innerContent.checked,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color?.toInt(),
@@ -389,10 +388,10 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
-                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
                         userId = document.user_id,
-                        favorite = document.favorite == 1L,
+                        favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
@@ -400,7 +399,7 @@ class DocumentSqlBeDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked
                     )
                 }
             } ?: emptyList()
@@ -433,7 +432,7 @@ class DocumentSqlBeDao(
                             url = innerContent.url,
                             path = innerContent.path,
                             text = innerContent.text,
-                            checked = innerContent.checked == 1L,
+                            checked = innerContent.checked,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color?.toInt(),
@@ -465,10 +464,10 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
-                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
                         userId = document.user_id,
-                        favorite = document.favorite == 1L,
+                        favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
@@ -476,7 +475,7 @@ class DocumentSqlBeDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked
                     )
                 }
             }
@@ -499,7 +498,7 @@ class DocumentSqlBeDao(
                             url = innerContent.url,
                             path = innerContent.path,
                             text = innerContent.text,
-                            checked = innerContent.checked == 1L,
+                            checked = innerContent.checked,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color?.toInt(),
@@ -531,10 +530,10 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
-                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
                         userId = document.user_id,
-                        favorite = document.favorite == 1L,
+                        favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
@@ -542,7 +541,7 @@ class DocumentSqlBeDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked
                     )
                 }
             } ?: emptyList()
@@ -572,7 +571,7 @@ class DocumentSqlBeDao(
     suspend fun moveToFolder(documentId: String, parentId: String) {
         documentQueries?.moveToFolder(
             parentId,
-            Clock.System.now().toEpochMilliseconds(),
+            Clock.System.now().toEpochMilliseconds().toInt(),
             documentId
         )
     }

@@ -14,9 +14,9 @@ import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
-import io.writeopia.sdk.sql.WriteopiaDb
+import io.writeopia.sql.WriteopiaDbBackend
 
-fun Routing.documentsRoute(writeopiaDb: WriteopiaDb) {
+fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
     route("/${EndPoints.documents()}") {
         get("{id}") {
             val id = call.pathParameters["id"]!!
