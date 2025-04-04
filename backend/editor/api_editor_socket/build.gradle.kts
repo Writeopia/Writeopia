@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
     alias(libs.plugins.ktor.framework)
+    alias(libs.plugins.sqldelight)
 }
 
 group = "io.writeopia"
@@ -20,7 +21,6 @@ repositories {
 dependencies {
     implementation(project(":writeopia_models"))
     implementation(project(":common:endpoints"))
-    implementation(project(":backend:editor:api_editor"))
     implementation(project(":plugins:writeopia_serialization"))
     implementation(project(":plugins:writeopia_network"))
 

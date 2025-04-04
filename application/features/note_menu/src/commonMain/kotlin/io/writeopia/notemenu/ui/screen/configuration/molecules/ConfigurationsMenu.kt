@@ -36,7 +36,7 @@ import io.writeopia.commonui.SlideInBox
 import io.writeopia.commonui.options.slide.HorizontalOptions
 import io.writeopia.notemenu.ui.screen.configuration.modifier.orderConfigModifierHorizontal
 import io.writeopia.resources.WrStrings
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
+import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

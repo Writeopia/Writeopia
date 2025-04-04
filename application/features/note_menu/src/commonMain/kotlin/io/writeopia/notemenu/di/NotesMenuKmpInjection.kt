@@ -25,7 +25,7 @@ class NotesMenuKmpInjection private constructor(
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
     private val repositoryInjection: RepositoryInjector,
     private val selectionState: StateFlow<Boolean>,
-    private val keyboardEventFlow: Flow<KeyboardEvent>
+    private val keyboardEventFlow: Flow<KeyboardEvent>,
 ) : NotesMenuInjection {
 
     private fun provideDocumentRepository(): DocumentRepository =

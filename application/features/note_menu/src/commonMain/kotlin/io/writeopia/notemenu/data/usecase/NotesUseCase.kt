@@ -12,7 +12,7 @@ import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.network.notes.NotesApi
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
+import io.writeopia.sdk.models.sorting.OrderBy
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.Clock
@@ -26,7 +26,7 @@ class NotesUseCase private constructor(
     private val documentRepository: DocumentRepository,
     private val notesConfig: ConfigurationRepository,
     private val folderRepository: FolderRepository,
-    private val notesApi: NotesApi
+    private val notesApi: NotesApi? = null
 ) {
 
     suspend fun createFolder(name: String, userId: String) {
@@ -136,7 +136,7 @@ class NotesUseCase private constructor(
     }
 
     suspend fun saveDocumentCloud(document: Document): Boolean {
-        val isSuccess = notesApi.createDocument(document)
+        val isSuccess = notesApi?.createDocument(document) ?: false
 
         if (isSuccess) {
             documentRepository.saveDocument(document.copy(cloudSynced = true))
@@ -257,7 +257,7 @@ class NotesUseCase private constructor(
             documentRepository: DocumentRepository,
             notesConfig: ConfigurationRepository,
             folderRepository: FolderRepository,
-            notesApi: NotesApi
+            notesApi: NotesApi? = null
         ): NotesUseCase =
             instance ?: NotesUseCase(
                 documentRepository,

@@ -1,13 +1,13 @@
 package io.writeopia.di
 
 import io.writeopia.auth.core.token.AppBearerTokenHandler
-import io.writeopia.sdk.network.injector.ConnectionInjector
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 
 object ConnectionInjectorFactory {
-    private var instance: ConnectionInjector? = null
+    private var instance: WriteopiaConnectionInjector? = null
 
-    fun singleton(): ConnectionInjector =
-        instance ?: ConnectionInjector(
+    fun singleton(): WriteopiaConnectionInjector =
+        instance ?: WriteopiaConnectionInjector(
             baseUrl = "https://writeopia.io/api",
             bearerTokenHandler = AppBearerTokenHandler,
             apiLogger = ApiLogger,

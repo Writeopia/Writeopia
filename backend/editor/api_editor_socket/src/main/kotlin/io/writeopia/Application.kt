@@ -1,13 +1,10 @@
 package io.writeopia
 
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.writeopia.api.editor.WriteopiaEditorApi
+import io.ktor.server.application.Application
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
 import io.writeopia.plugins.configureFirebase
-import io.writeopia.plugins.configureRouting
 import io.writeopia.plugins.configureSerialization
-import io.writeopia.plugins.configureSockets
 
 fun main() {
     embeddedServer(
@@ -25,10 +22,6 @@ fun Application.module(byPassAuth: Boolean = false, forceDbInMemory: Boolean? = 
     if (!byPassAuth) {
         configureFirebase()
     }
-    configureSockets()
-    configureRouting(
-        writeopiaEditorApi = WriteopiaEditorApi.create(log, dbInMemory),
-        byPassAuth = byPassAuth
-    )
+//    configureEditorSockets()
     configureSerialization()
 }

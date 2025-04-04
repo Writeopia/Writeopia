@@ -15,7 +15,7 @@ import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.presentation.viewmodel.PresentationKmpViewModel
 import io.writeopia.editor.features.presentation.viewmodel.PresentationViewModel
 import io.writeopia.sdk.manager.WriteopiaManager
-import io.writeopia.sdk.network.injector.ConnectionInjector
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.StateFlow
 class EditorKmpInjector private constructor(
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
     private val repositoryInjection: RepositoryInjector,
-    private val connectionInjection: ConnectionInjector,
+    private val connectionInjection: WriteopiaConnectionInjector,
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val appConfigurationInjector: AppConfigurationInjector =
@@ -93,7 +93,7 @@ class EditorKmpInjector private constructor(
     companion object {
         fun mobile(
             daosInjection: RepositoryInjector,
-            connectionInjector: ConnectionInjector,
+            connectionInjector: WriteopiaConnectionInjector,
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
         ) = EditorKmpInjector(
             authCoreInjection,
@@ -106,7 +106,7 @@ class EditorKmpInjector private constructor(
         fun desktop(
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
             repositoryInjection: RepositoryInjector = SqlDelightDaoInjector.singleton(),
-            connectionInjection: ConnectionInjector = ConnectionInjectorFactory.singleton(),
+            connectionInjection: WriteopiaConnectionInjector = ConnectionInjectorFactory.singleton(),
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
             ollamaInjection: OllamaInjection = OllamaInjection.singleton(),

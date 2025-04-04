@@ -1,7 +1,7 @@
 package io.writeopia.notemenu.extensions
 
 import io.writeopia.sdk.models.document.MenuItem
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
+import io.writeopia.sdk.models.sorting.OrderBy
 
 fun List<MenuItem>.sortedWithOrderBy(orderBy: OrderBy): List<MenuItem> =
     when (orderBy) {

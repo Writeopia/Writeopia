@@ -5,7 +5,7 @@ import io.writeopia.app.sql.WorkspaceConfiguration
 import io.writeopia.common.utils.extensions.toBoolean
 import io.writeopia.common.utils.extensions.toLong
 import io.writeopia.core.configuration.models.NotesArrangement
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
+import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sqldelight.dao.ConfigurationSqlDelightDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

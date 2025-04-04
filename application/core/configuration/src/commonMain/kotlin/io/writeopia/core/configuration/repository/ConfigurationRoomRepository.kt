@@ -3,8 +3,8 @@ package io.writeopia.core.configuration.repository
 import io.writeopia.common.utils.persistence.configuration.NotesConfigurationCommonEntity
 import io.writeopia.common.utils.persistence.daos.NotesConfigurationCommonDao
 import io.writeopia.core.configuration.models.NotesArrangement
-import io.writeopia.sdk.persistence.core.extensions.toEntityField
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
+import io.writeopia.sdk.models.extensions.toEntityField
+import io.writeopia.sdk.models.sorting.OrderBy
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

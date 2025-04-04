@@ -22,7 +22,7 @@ class SideMenuKmpInjector(
     private val appConfigurationInjector: AppConfigurationInjector = AppConfigurationInjector.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
     private val repositoryInjection: RepositoryInjector = SqlDelightDaoInjector.singleton(),
-    private val ollamaInjection: OllamaInjection = OllamaInjection.singleton()
+    private val ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
 ) : SideMenuInjector, OllamaConfigInjector {
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
@@ -31,7 +31,7 @@ class SideMenuKmpInjector(
         documentRepository: DocumentRepository = provideDocumentRepository(),
         configurationRepository: ConfigurationRepository =
             appConfigurationInjector.provideNotesConfigurationRepository(),
-        folderRepository: FolderRepository = FoldersInjector.singleton().provideFoldersRepository()
+        folderRepository: FolderRepository = FoldersInjector.singleton().provideFoldersRepository(),
     ): NotesUseCase {
         return NotesUseCase.singleton(documentRepository, configurationRepository, folderRepository)
     }

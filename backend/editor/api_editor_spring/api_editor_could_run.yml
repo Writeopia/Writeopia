@@ -1,9 +1,0 @@
-apiVersion: serving.knative.dev/v1
-kind: Service
-metadata:
-  name: api-editor-spring
-spec:
-  template:
-    spec:
-      containers:
-      - image: europe-west1-docker.pkg.dev/writeopia/api-editor-spring/api_editor_spring:0.0.1
