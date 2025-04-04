@@ -17,8 +17,6 @@ dependencies {
     implementation(project(":writeopia"))
     implementation(project(":writeopia_models"))
     implementation(project(":plugins:writeopia_serialization"))
-    implementation(project(":plugins:writeopia_persistence_core"))
-    implementation(project(":plugins:writeopia_persistence_sqldelight"))
 
     implementation(libs.r2dbc.driver)
 

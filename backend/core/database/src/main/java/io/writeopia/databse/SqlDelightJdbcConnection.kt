@@ -3,7 +3,7 @@ package io.writeopia.databse
 import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.driver.jdbc.asJdbcDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import io.writeopia.sdk.sql.WriteopiaDb
+import io.writeopia.sql.WriteopiaDbBackend
 import java.util.Properties
 
 object SqlDelightJdbcConnection {
@@ -13,6 +13,6 @@ object SqlDelightJdbcConnection {
     fun inMemory() = JdbcSqliteDriver(
         JdbcSqliteDriver.IN_MEMORY,
         Properties(),
-        WriteopiaDb.Schema.synchronous()
+        WriteopiaDbBackend.Schema.synchronous()
     )
 }

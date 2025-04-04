@@ -4,11 +4,11 @@ CREATE TABLE documentEntity (
   created_at INTEGER NOT NULL,
   last_updated_at INTEGER NOT NULL,
   user_id TEXT NOT NULL,
-  favorite INTEGER NOT NULL,
+  favorite BOOLEAN NOT NULL,
   parent_document_id TEXT NOT NULL,
   icon TEXT,
   icon_tint INTEGER,
-  is_locked INTEGER NOT NULL
+  is_locked BOOLEAN NOT NULL
 );
 
 selectAll:
