@@ -1,0 +1,122 @@
+CREATE TABLE documentEntity (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  last_updated_at INTEGER NOT NULL,
+  user_id TEXT NOT NULL,
+  favorite INTEGER NOT NULL,
+  parent_document_id TEXT NOT NULL,
+  icon TEXT,
+  icon_tint INTEGER,
+  is_locked INTEGER NOT NULL
+);
+
+selectAll:
+SELECT *
+FROM documentEntity;
+
+selectLastUpdatedAt:
+SELECT *
+FROM documentEntity
+ORDER BY last_updated_at
+LIMIT 10;
+
+selectTitleByDocumentId:
+SELECT title
+FROM documentEntity
+WHERE id = ?;
+
+query:
+SELECT *
+FROM documentEntity
+WHERE title LIKE '%' || ? || '%'
+ORDER BY last_updated_at;
+
+selectById:
+SELECT *
+FROM documentEntity
+WHERE documentEntity.id=?
+LIMIT 1;
+
+selectWithContent:
+SELECT *
+FROM documentEntity
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+ORDER BY position;
+
+selectWithContentByIds:
+SELECT *
+FROM documentEntity
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+WHERE documentEntity.id IN ?
+ORDER BY position;
+
+selectWithContentByUserId:
+SELECT *
+FROM documentEntity
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+WHERE documentEntity.user_id = ?
+ORDER BY position;
+
+selectFavoritesWithContentByUserId:
+SELECT *
+FROM documentEntity
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+WHERE documentEntity.user_id = ? AND documentEntity.favorite = 1
+ORDER BY position;
+
+selectWithContentByUserIdAfterTime:
+SELECT *
+FROM documentEntity
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+WHERE documentEntity.user_id = ? AND last_updated_at > ?
+ORDER BY position;
+
+selectWithContentById:
+SELECT *
+FROM documentEntity
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+WHERE documentEntity.id = ?
+ORDER BY position;
+
+selectWithContentByParentId:
+SELECT *
+FROM documentEntity
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+WHERE documentEntity.parent_document_id = ?
+ORDER BY position;
+
+selectIdsByParentId:
+SELECT id
+FROM documentEntity
+WHERE documentEntity.parent_document_id = ?;
+
+insert:
+INSERT INTO documentEntity(id, title, created_at, last_updated_at, user_id, favorite, parent_document_id, icon, icon_tint, is_locked)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at,
+last_updated_at=excluded.last_updated_at, user_id=excluded.user_id, favorite=excluded.favorite,
+parent_document_id=excluded.parent_document_id, icon=excluded.icon, icon_tint=excluded.icon_tint,
+is_locked=excluded.is_locked;
+
+delete:
+DELETE FROM documentEntity WHERE id = ?;
+
+deleteByIds:
+DELETE FROM documentEntity WHERE id IN ?;
+
+deleteByUserId:
+DELETE FROM documentEntity WHERE user_id = ?;
+
+deleteByFolderId:
+DELETE FROM documentEntity WHERE parent_document_id = ?;
+
+favoriteById:
+UPDATE documentEntity SET favorite = 1 WHERE id = ?;
+
+unFavoriteById:
+UPDATE documentEntity SET favorite = 0 WHERE id = ?;
+
+moveToFolder:
+UPDATE documentEntity SET parent_document_id = ?, last_updated_at = ? WHERE id = ?;

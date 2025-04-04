@@ -3,7 +3,15 @@ package io.writeopia.sdk.persistence.entity.document
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import io.writeopia.sdk.persistence.core.*
+import io.writeopia.sdk.models.CREATED_AT
+import io.writeopia.sdk.models.DOCUMENT_ENTITY
+import io.writeopia.sdk.models.FAVORITE
+import io.writeopia.sdk.models.ICON
+import io.writeopia.sdk.models.IS_LOCKED
+import io.writeopia.sdk.models.LAST_UPDATED_AT
+import io.writeopia.sdk.models.PARENT_ID
+import io.writeopia.sdk.models.TITLE
+import io.writeopia.sdk.models.USER_ID
 import kotlinx.datetime.Clock
 
 @Entity(tableName = DOCUMENT_ENTITY)

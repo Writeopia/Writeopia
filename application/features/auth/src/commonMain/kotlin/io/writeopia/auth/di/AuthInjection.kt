@@ -9,13 +9,13 @@ import io.writeopia.auth.intronotes.IntroNotesUseCase
 import io.writeopia.auth.login.LoginViewModel
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterViewModel
-import io.writeopia.sdk.network.injector.ConnectionInjector
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.network.notes.NotesApi
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 
 class AuthInjection(
-    private val apiClientInjector: ConnectionInjector,
+    private val apiClientInjector: WriteopiaConnectionInjector,
     private val daosInjection: RepositoryInjector,
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton()
 ) {

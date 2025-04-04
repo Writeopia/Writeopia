@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.writeopia.notemenu.ui.screen.configuration.atoms.ArrangementOptionsMenu
 import io.writeopia.notemenu.ui.screen.configuration.atoms.SortOptions
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
+import io.writeopia.sdk.models.sorting.OrderBy
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 

@@ -1,7 +1,7 @@
 plugins {
     id("java-library")
-    alias(libs.plugins.ktor.framework)
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
+    alias(libs.plugins.ktor.framework)
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_11

@@ -16,9 +16,8 @@ dependencies {
 
     implementation(project(":backend:core:auth"))
     implementation(project(":backend:documents:documents"))
+    implementation(project(":backend:editor:api_editor_socket"))
 
-    implementation(project(":plugins:writeopia_persistence_core"))
-    implementation(project(":plugins:writeopia_persistence_sqldelight"))
     implementation(project(":plugins:writeopia_serialization"))
 
     implementation(project(":common:endpoints"))
@@ -48,3 +47,4 @@ dependencies {
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.kotlin.test)
 }
+

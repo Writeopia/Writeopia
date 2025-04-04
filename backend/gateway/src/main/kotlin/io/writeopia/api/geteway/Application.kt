@@ -3,6 +3,7 @@ package io.writeopia.api.geteway
 import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.writeopia.plugins.configureEditorSockets
 
 fun main() {
     embeddedServer(
@@ -17,5 +18,6 @@ fun Application.module() {
     val writeopiaDb = configurePersistence()
     configureRouting(writeopiaDb)
     configureSerialization()
+    configureEditorSockets()
     configureHTTP()
 }

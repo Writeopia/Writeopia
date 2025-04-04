@@ -31,7 +31,7 @@ import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
+import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.preview.PreviewParser
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
@@ -452,7 +452,7 @@ internal class ChooseNoteKmpViewModel(
                     favorite = false
                 )
             }
-            .collect(notesUseCase::saveDocument)
+            .collect(notesUseCase::saveDocumentDb)
     }
 
     private suspend fun importMarkdownNotes(externalFiles: List<ExternalFile>, now: Instant) {
@@ -511,7 +511,7 @@ internal class ChooseNoteKmpViewModel(
                 )
             }
             .forEach { document ->
-                notesUseCase.saveDocument(document)
+                notesUseCase.saveDocumentDb(document)
             }
     }
 
@@ -555,7 +555,7 @@ internal class ChooseNoteKmpViewModel(
                 delay(150)
                 _syncInProgress.value = SyncState.Idle
             }
-            .collect(notesUseCase::saveDocument)
+            .collect(notesUseCase::saveDocumentDb)
     }
 
     private suspend fun writeWorkspaceLocally(path: String) {

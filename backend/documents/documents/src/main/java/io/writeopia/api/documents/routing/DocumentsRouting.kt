@@ -6,10 +6,10 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import io.writeopia.api.documents.getDocumentById
-import io.writeopia.api.documents.getDocumentsByParentId
-import io.writeopia.api.documents.getIdsByParentId
-import io.writeopia.api.documents.saveDocument
+import io.writeopia.api.documents.repository.getDocumentById
+import io.writeopia.api.documents.repository.getDocumentsByParentId
+import io.writeopia.api.documents.repository.getIdsByParentId
+import io.writeopia.api.documents.repository.saveDocument
 import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
