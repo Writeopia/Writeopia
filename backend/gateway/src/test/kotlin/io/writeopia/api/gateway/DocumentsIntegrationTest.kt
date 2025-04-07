@@ -8,8 +8,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
+import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
-import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.serialization.data.DocumentApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,8 +18,10 @@ class ApplicationTest {
 
     @Test
     fun `it should be possible to save and query document by id`() = testApplication {
+        val db = configurePersistence()
+
         application {
-            module()
+            module(db)
         }
 
         val client = defaultClient()
@@ -34,14 +36,14 @@ class ApplicationTest {
             lastUpdatedAt = 2000L
         )
 
-        val response = client.post("/${EndPoints.documents()}") {
+        val response = client.post("/api/document") {
             contentType(ContentType.Application.Json)
             setBody(documentApi)
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("${EndPoints.documents()}/${documentApi.id}")
+        val response1 = client.get("/api/document/${documentApi.id}")
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(documentApi, response1.body())
@@ -65,14 +67,14 @@ class ApplicationTest {
             lastUpdatedAt = 2000L
         )
 
-        val response = client.post("/${EndPoints.documents()}") {
+        val response = client.post("/api/document") {
             contentType(ContentType.Application.Json)
             setBody(documentApi)
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("${EndPoints.documents()}/parent/${documentApi.parentId}")
+        val response1 = client.get("/api/document/parent/${documentApi.parentId}")
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(listOf(documentApi), response1.body())
@@ -96,7 +98,7 @@ class ApplicationTest {
             lastUpdatedAt = 2000L
         )
 
-        val response = client.post("/${EndPoints.documents()}") {
+        val response = client.post("/api/document") {
             contentType(ContentType.Application.Json)
             setBody(documentApi)
         }
@@ -104,7 +106,7 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, response.status)
 
         val response1 =
-            client.get("${EndPoints.documents()}/parent/id/${documentApi.parentId}")
+            client.get("/api/document/parent/id/${documentApi.parentId}")
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(listOf(documentApi.id), response1.body())

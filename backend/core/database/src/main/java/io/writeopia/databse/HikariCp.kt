@@ -1,25 +1,24 @@
 package io.writeopia.databse
 
+import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.driver.jdbc.asJdbcDriver
+import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import javax.sql.DataSource
+import io.writeopia.sql.WriteopiaDbBackend
+
+private val config = HikariConfig().apply {
+    jdbcUrl = "jdbc:postgresql://localhost:5432/writeopia"
+    username = "postgres"
+    password = "postgres"
+    maximumPoolSize = 10
+    isAutoCommit = true
+    transactionIsolation = "TRANSACTION_REPEATABLE_READ"
+}
+
+private val dataSource = HikariDataSource(config)
+
+private val driver = dataSource.asJdbcDriver()
 
 object HikariCp {
-
-    fun dataSource(userName: String): DataSource {
-//        val conn: Connection? = DriverManager.getConnection(
-//            "jdbc:postgresql://localhost:5432/writeopia-sql-database",
-//        )
-//        if (conn != null) {
-//            println("Connection successful!")
-//            conn.close()
-//        } else {
-//            println("Connection failed!")
-//            // Check exception message for details
-//        }
-
-        return HikariDataSource().apply {
-            jdbcUrl = "jdbc:postgresql://localhost:5432/writeopia-sql-database"
-//            username = userName
-        }
-    }
+    fun driver(): SqlDriver = driver
 }

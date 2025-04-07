@@ -4,6 +4,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.writeopia.plugins.configureEditorSockets
+import io.writeopia.sql.WriteopiaDbBackend
 
 fun main() {
     embeddedServer(
@@ -14,8 +15,7 @@ fun main() {
     ).start(wait = true)
 }
 
-fun Application.module() {
-    val writeopiaDb = configurePersistence()
+fun Application.module(writeopiaDb: WriteopiaDbBackend= configurePersistence()) {
     configureRouting(writeopiaDb)
     configureSerialization()
     configureEditorSockets()
