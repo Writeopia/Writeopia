@@ -2,6 +2,7 @@ package io.writeopia.api.documents.routing
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -10,15 +11,14 @@ import io.writeopia.api.documents.repository.getDocumentById
 import io.writeopia.api.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.repository.getIdsByParentId
 import io.writeopia.api.documents.repository.saveDocument
-import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sql.WriteopiaDbBackend
 
 fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
-    route("/${EndPoints.documents()}") {
-        get("{id}") {
+    route("api/document") {
+        get("/{id}") {
             val id = call.pathParameters["id"]!!
 
             val document = writeopiaDb.getDocumentById(id)
@@ -31,15 +31,15 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
             } else {
                 call.respond(
                     status = HttpStatusCode.NotFound,
-                    message = "Not Found"
+                    message = "No lead with id: $id"
                 )
             }
         }
 
-        get("parent/{id}") {
-            val id = call.pathParameters["id"]!!
+        get("/parent/{parentId}") {
+            val parentId = call.pathParameters["parentId"]!!
 
-            val documentList = writeopiaDb.getDocumentsByParentId(id)
+            val documentList = writeopiaDb.getDocumentsByParentId(parentId)
 
             if (documentList.isNotEmpty()) {
                 call.respond(
@@ -49,12 +49,12 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
             } else {
                 call.respond(
                     status = HttpStatusCode.NotFound,
-                    message = "Not Found"
+                    message = "No lead with id parent parentId: $parentId"
                 )
             }
         }
 
-        get("parent/id/{id}") {
+        get("/parent/id/{id}") {
             val id = call.pathParameters["id"]!!
 
             val ids = writeopiaDb.getIdsByParentId(id)
@@ -67,12 +67,12 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
             } else {
                 call.respond(
                     status = HttpStatusCode.NotFound,
-                    message = "Not Found"
+                    message = "document id by parent with id: $id"
                 )
             }
         }
 
-        post<DocumentApi>("") { documentApi ->
+        post<DocumentApi> { documentApi ->
             try {
                 writeopiaDb.saveDocument(documentApi.toModel())
 

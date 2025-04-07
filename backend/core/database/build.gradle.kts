@@ -18,8 +18,6 @@ dependencies {
     implementation(project(":writeopia_models"))
     implementation(project(":plugins:writeopia_serialization"))
 
-    implementation(libs.r2dbc.driver)
-
     implementation(libs.ktor.client.logging)
 
     implementation(libs.sqldelight.jvm)
@@ -38,7 +36,6 @@ sqldelight {
         create("WriteopiaDbBackend") {
             packageName.set("io.writeopia.sql")
             dialect("app.cash.sqldelight:postgresql-dialect:2.0.2")
-            generateAsync.set(true)
         }
     }
 }

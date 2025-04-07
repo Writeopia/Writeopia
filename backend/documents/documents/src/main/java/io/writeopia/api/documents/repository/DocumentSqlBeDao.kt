@@ -1,6 +1,5 @@
 package io.writeopia.api.documents.repository
 
-import app.cash.sqldelight.async.coroutines.awaitAsList
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.extensions.sortWithOrderBy
@@ -134,7 +133,7 @@ class DocumentSqlBeDao(
 
     suspend fun loadDocumentWithContentByIds(id: List<String>): List<Document> =
         documentQueries?.selectWithContentByIds(id)
-            ?.awaitAsList()
+            ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
@@ -199,7 +198,7 @@ class DocumentSqlBeDao(
 
     suspend fun loadDocumentsWithContentByUserId(orderBy: String, userId: String): List<Document> {
         return documentQueries?.selectWithContentByUserId(userId)
-            ?.awaitAsList()
+            ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
@@ -270,7 +269,7 @@ class DocumentSqlBeDao(
         userId: String
     ): List<Document> {
         return documentQueries?.selectFavoritesWithContentByUserId(userId)
-            ?.awaitAsList()
+            ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
@@ -341,7 +340,7 @@ class DocumentSqlBeDao(
         time: Int
     ): List<Document> {
         return documentQueries?.selectWithContentByUserIdAfterTime(userId, time)
-            ?.awaitAsList()
+            ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
@@ -417,7 +416,7 @@ class DocumentSqlBeDao(
 
     suspend fun loadDocumentWithContentById(documentId: String): Document? =
         documentQueries?.selectWithContentById(documentId)
-            ?.awaitAsList()
+            ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
@@ -483,7 +482,7 @@ class DocumentSqlBeDao(
 
     suspend fun loadDocumentByParentId(parentId: String): List<Document> {
         return documentQueries?.selectWithContentByParentId(parentId)
-            ?.awaitAsList()
+            ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
@@ -549,7 +548,7 @@ class DocumentSqlBeDao(
 
     suspend fun loadDocumentIdsByParentId(parentId: String): List<String> =
         documentQueries?.selectIdsByParentId(parentId)
-            ?.awaitAsList()
+            ?.executeAsList()
             ?: emptyList()
 
     suspend fun deleteDocumentsByUserId(userId: String) {
