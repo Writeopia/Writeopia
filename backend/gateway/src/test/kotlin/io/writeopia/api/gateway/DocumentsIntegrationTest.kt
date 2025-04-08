@@ -8,6 +8,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
+import io.writeopia.api.documents.repository.deleteDocumentById
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
@@ -17,10 +18,10 @@ import kotlin.test.assertEquals
 
 class ApplicationTest {
 
+    val db = configurePersistence()
+
     @Test
     fun `it should be possible to save and query document by id`() = testApplication {
-        val db = configurePersistence()
-
         application {
             module(db)
         }
@@ -48,12 +49,14 @@ class ApplicationTest {
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(documentApi, response1.body())
+
+        db.deleteDocumentById(documentApi.id)
     }
 
     @Test
     fun `it should be possible to save and query documents by parent id`() = testApplication {
         application {
-            module()
+            module(db)
         }
 
         val client = defaultClient()
@@ -79,12 +82,14 @@ class ApplicationTest {
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(listOf(documentApi), response1.body())
+
+        db.deleteDocumentById(documentApi.id)
     }
 
     @Test
     fun `it should be possible to save and query ids by parent id`() = testApplication {
         application {
-            module()
+            module(db)
         }
 
         val client = defaultClient()
@@ -111,12 +116,14 @@ class ApplicationTest {
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(listOf(documentApi.id), response1.body())
+
+        db.deleteDocumentById(documentApi.id)
     }
 
     @Test
     fun `it should be possible to get diff of folders`() = testApplication {
         application {
-            module()
+            module(db)
         }
 
         val client = defaultClient()
@@ -160,5 +167,8 @@ class ApplicationTest {
 
         assertEquals(HttpStatusCode.OK, response2.status)
         assertEquals(listOf(documentApi2), response2.body())
+
+        db.deleteDocumentById(documentApi.id)
+        db.deleteDocumentById(documentApi2.id)
     }
 }
