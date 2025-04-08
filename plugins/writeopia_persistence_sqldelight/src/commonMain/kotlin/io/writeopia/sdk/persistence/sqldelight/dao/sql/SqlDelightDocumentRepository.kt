@@ -71,6 +71,10 @@ class SqlDelightDocumentRepository(
         )
     }
 
+    override suspend fun loadOutdatedDocuments(folderId: String): List<Document> {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun loadDocumentById(id: String): Document? =
         documentSqlDao.loadDocumentWithContentById(id)
 

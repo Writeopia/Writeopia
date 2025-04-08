@@ -40,4 +40,3 @@ suspend fun WriteopiaDbBackend.deleteDocumentById(vararg documentIds: String) {
         getDocumentDaoFn().deleteDocumentById(id)
     }
 }
-
