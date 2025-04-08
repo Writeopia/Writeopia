@@ -1,8 +1,8 @@
 CREATE TABLE document_entity (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
-  created_at INTEGER NOT NULL,
-  last_updated_at INTEGER NOT NULL,
+  created_at BIGINT NOT NULL,
+  last_synced BIGINT NOT NULL,
   user_id TEXT NOT NULL,
   favorite BOOLEAN NOT NULL,
   parent_document_id TEXT NOT NULL,
@@ -18,7 +18,7 @@ FROM document_entity;
 selectLastUpdatedAt:
 SELECT *
 FROM document_entity
-ORDER BY last_updated_at
+ORDER BY last_synced
 LIMIT 10;
 
 selectTitleByDocumentId:
@@ -30,7 +30,7 @@ query:
 SELECT *
 FROM document_entity
 WHERE title LIKE '%' || ? || '%'
-ORDER BY last_updated_at;
+ORDER BY last_synced;
 
 selectById:
 SELECT *
@@ -69,7 +69,14 @@ selectWithContentByUserIdAfterTime:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.user_id = ? AND last_updated_at > ?
+WHERE document_entity.user_id = ? AND last_synced > ?
+ORDER BY position;
+
+selectWithContentByFolderIdAfterTime:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE document_entity.parent_document_id = ? AND last_synced > ?
 ORDER BY position;
 
 selectWithContentById:
@@ -92,11 +99,11 @@ FROM document_entity
 WHERE document_entity.parent_document_id = ?;
 
 insert:
-INSERT INTO document_entity(id, title, created_at, last_updated_at, user_id, favorite, parent_document_id, icon, icon_tint, is_locked)
+INSERT INTO document_entity(id, title, created_at, last_synced, user_id, favorite, parent_document_id, icon, icon_tint, is_locked)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at,
-last_updated_at=excluded.last_updated_at, user_id=excluded.user_id, favorite=excluded.favorite,
+last_synced=excluded.last_synced, user_id=excluded.user_id, favorite=excluded.favorite,
 parent_document_id=excluded.parent_document_id, icon=excluded.icon, icon_tint=excluded.icon_tint,
 is_locked=excluded.is_locked;
 
@@ -119,4 +126,4 @@ unFavoriteById:
 UPDATE document_entity SET favorite = 0 WHERE id = ?;
 
 moveToFolder:
-UPDATE document_entity SET parent_document_id = ?, last_updated_at = ? WHERE id = ?;
+UPDATE document_entity SET parent_document_id = ?, last_synced = ? WHERE id = ?;

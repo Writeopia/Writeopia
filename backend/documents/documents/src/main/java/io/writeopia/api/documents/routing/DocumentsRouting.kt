@@ -7,10 +7,12 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.writeopia.api.documents.repository.folderDiff
 import io.writeopia.api.documents.repository.getDocumentById
 import io.writeopia.api.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.repository.getIdsByParentId
 import io.writeopia.api.documents.repository.saveDocument
+import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
@@ -79,6 +81,23 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
                 call.respond(
                     status = HttpStatusCode.OK,
                     message = "Accepted"
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+
+        post<FolderDiffRequest>("/folder/diff") { folderDiff ->
+            try {
+                val documents =
+                    writeopiaDb.folderDiff(folderDiff.folderId, folderDiff.lastFolderSync)
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = documents.map { document -> document.toApi() }
                 )
             } catch (e: Exception) {
                 call.respond(

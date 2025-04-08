@@ -5,7 +5,7 @@ import io.writeopia.sql.WriteopiaDbBackend
 
 private var documentSqlDao: DocumentSqlBeDao? = null
 
-private fun WriteopiaDbBackend.getDocumentDao(): DocumentSqlBeDao =
+private fun WriteopiaDbBackend.getDocumentDaoFn(): DocumentSqlBeDao =
     documentSqlDao ?: kotlin.run {
         DocumentSqlBeDao(
             documentEntityQueries,
@@ -17,22 +17,27 @@ private fun WriteopiaDbBackend.getDocumentDao(): DocumentSqlBeDao =
 
 suspend fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
     documents.forEach { document ->
-        getDocumentDao().insertDocumentWithContent(document)
+        getDocumentDaoFn().insertDocumentWithContent(document)
     }
 }
 
+suspend fun WriteopiaDbBackend.folderDiff(
+    folderId: String,
+    lastSync: Long
+): List<Document> = getDocumentDaoFn().loadDocumentsWithContentFolderIdAfterTime(folderId, lastSync)
+
 suspend fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
-    getDocumentDao().loadDocumentByParentId(parentId)
+    getDocumentDaoFn().loadDocumentByParentId(parentId)
 
 suspend fun WriteopiaDbBackend.getDocumentById(id: String = "test"): Document? =
-    getDocumentDao().loadDocumentById(id)
+    getDocumentDaoFn().loadDocumentById(id)
 
 suspend fun WriteopiaDbBackend.getIdsByParentId(parentId: String = "root"): List<String> =
-    getDocumentDao().loadDocumentIdsByParentId(parentId)
+    getDocumentDaoFn().loadDocumentIdsByParentId(parentId)
 
 suspend fun WriteopiaDbBackend.deleteDocumentById(vararg documentIds: String) {
     documentIds.forEach { id ->
-        getDocumentDao().deleteDocumentById(id)
+        getDocumentDaoFn().deleteDocumentById(id)
     }
 }
 
