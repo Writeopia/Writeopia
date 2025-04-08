@@ -28,7 +28,7 @@ class DocumentSqlBeDao(
                 id = entity.id,
                 title = entity.title,
                 createdAt = Instant.fromEpochMilliseconds(entity.created_at.toLong()),
-                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at.toLong()),
+                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_synced.toLong()),
                 userId = entity.user_id,
                 favorite = entity.favorite,
                 parentId = entity.parent_document_id,
@@ -45,7 +45,7 @@ class DocumentSqlBeDao(
                 id = entity.id,
                 title = entity.title,
                 createdAt = Instant.fromEpochMilliseconds(entity.created_at.toLong()),
-                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at.toLong()),
+                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_synced),
                 userId = entity.user_id,
                 favorite = entity.favorite,
                 parentId = entity.parent_document_id,
@@ -55,7 +55,7 @@ class DocumentSqlBeDao(
         }
         ?: emptyList()
 
-    suspend fun insertDocumentWithContent(document: Document) {
+    fun insertDocumentWithContent(document: Document) {
         storyStepQueries?.deleteByDocumentId(document.id)
         document.content.values.forEachIndexed { i, storyStep ->
             insertStoryStep(storyStep, i.toLong(), document.id)
@@ -64,12 +64,12 @@ class DocumentSqlBeDao(
         insertDocument(document)
     }
 
-    suspend fun insertDocument(document: Document) {
+    fun insertDocument(document: Document) {
         documentQueries?.insert(
             id = document.id,
             title = document.title,
-            created_at = document.createdAt.toEpochMilliseconds().toInt(),
-            last_updated_at = document.lastUpdatedAt.toEpochMilliseconds().toInt(),
+            created_at = document.createdAt.toEpochMilliseconds(),
+            last_synced =  document.lastUpdatedAt.toEpochMilliseconds(),
             user_id = document.userId,
             favorite = document.favorite,
             parent_document_id = document.parentId,
@@ -79,7 +79,7 @@ class DocumentSqlBeDao(
         )
     }
 
-    suspend fun insertStoryStep(storyStep: StoryStep, position: Long, documentId: String) {
+    fun insertStoryStep(storyStep: StoryStep, position: Long, documentId: String) {
         storyStep.run {
             storyStepQueries?.insert(
                 id = id,
@@ -102,13 +102,13 @@ class DocumentSqlBeDao(
         }
     }
 
-    suspend fun insertDocuments(vararg documents: Document) {
+    fun insertDocuments(vararg documents: Document) {
         documents.forEach { document ->
             insertDocumentWithContent(document)
         }
     }
 
-    suspend fun loadDocumentById(id: String): Document? =
+    fun loadDocumentById(id: String): Document? =
         documentQueries?.selectById(id)
             ?.executeAsOneOrNull()
             ?.let { entity ->
@@ -117,21 +117,21 @@ class DocumentSqlBeDao(
                     title = entity.title,
                     content = emptyMap(),
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at.toLong()),
-                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at.toLong()),
+                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_synced),
                     userId = entity.user_id,
                     favorite = entity.favorite,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let {
                         MenuItem.Icon(
                             it,
-                            entity.icon_tint?.toInt()
+                            entity.icon_tint
                         )
                     },
                     isLocked = entity.is_locked
                 )
             }
 
-    suspend fun loadDocumentWithContentByIds(id: List<String>): List<Document> =
+    fun loadDocumentWithContentByIds(id: List<String>): List<Document> =
         documentQueries?.selectWithContentByIds(id)
             ?.executeAsList()
             ?.groupBy { it.id }
@@ -151,7 +151,7 @@ class DocumentSqlBeDao(
                             checked = innerContent.checked ?: false,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
-                                backgroundColor = innerContent.background_color?.toInt(),
+                                backgroundColor = innerContent.background_color,
                             ),
                             tags = innerContent.tags
                                 ?.split(",")
@@ -181,14 +181,14 @@ class DocumentSqlBeDao(
                         title = document.title,
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_synced),
                         userId = document.user_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
                                 it,
-                                document.icon_tint?.toInt()
+                                document.icon_tint
                             )
                         },
                         isLocked = document.is_locked
@@ -196,7 +196,7 @@ class DocumentSqlBeDao(
                 }
             } ?: emptyList()
 
-    suspend fun loadDocumentsWithContentByUserId(orderBy: String, userId: String): List<Document> {
+    fun loadDocumentsWithContentByUserId(orderBy: String, userId: String): List<Document> {
         return documentQueries?.selectWithContentByUserId(userId)
             ?.executeAsList()
             ?.groupBy { it.id }
@@ -216,7 +216,7 @@ class DocumentSqlBeDao(
                             checked = innerContent.checked,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
-                                backgroundColor = innerContent.background_color?.toInt(),
+                                backgroundColor = innerContent.background_color,
                             ),
                             tags = innerContent.tags
                                 ?.split(",")
@@ -246,14 +246,14 @@ class DocumentSqlBeDao(
                         title = document.title,
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_synced),
                         userId = document.user_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
                                 it,
-                                document.icon_tint?.toInt()
+                                document.icon_tint
                             )
                         },
                         isLocked = document.is_locked
@@ -264,7 +264,7 @@ class DocumentSqlBeDao(
             ?: emptyList()
     }
 
-    suspend fun loadFavDocumentsWithContentByUserId(
+    fun loadFavDocumentsWithContentByUserId(
         orderBy: String,
         userId: String
     ): List<Document> {
@@ -287,7 +287,7 @@ class DocumentSqlBeDao(
                             checked = innerContent.checked,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
-                                backgroundColor = innerContent.background_color?.toInt(),
+                                backgroundColor = innerContent.background_color,
                             ),
                             tags = innerContent.tags
                                 ?.split(",")
@@ -317,14 +317,14 @@ class DocumentSqlBeDao(
                         title = document.title,
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_synced),
                         userId = document.user_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
                                 it,
-                                document.icon_tint?.toInt()
+                                document.icon_tint
                             )
                         },
                         isLocked = document.is_locked
@@ -335,9 +335,9 @@ class DocumentSqlBeDao(
             ?: emptyList()
     }
 
-    suspend fun loadDocumentsWithContentByUserIdAfterTime(
+    fun loadDocumentsWithContentByUserIdAfterTime(
         userId: String,
-        time: Int
+        time: Long
     ): List<Document> {
         return documentQueries?.selectWithContentByUserIdAfterTime(userId, time)
             ?.executeAsList()
@@ -358,7 +358,7 @@ class DocumentSqlBeDao(
                             checked = innerContent.checked,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
-                                backgroundColor = innerContent.background_color?.toInt(),
+                                backgroundColor = innerContent.background_color,
                             ),
                             tags = innerContent.tags
                                 ?.split(",")
@@ -388,14 +388,14 @@ class DocumentSqlBeDao(
                         title = document.title,
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_synced),
                         userId = document.user_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
                                 it,
-                                document.icon_tint?.toInt()
+                                document.icon_tint
                             )
                         },
                         isLocked = document.is_locked
@@ -404,17 +404,86 @@ class DocumentSqlBeDao(
             } ?: emptyList()
     }
 
-    suspend fun deleteDocumentById(documentId: String) {
+    fun loadDocumentsWithContentFolderIdAfterTime(
+        folderId: String,
+        time: Long
+    ): List<Document> {
+        return documentQueries?.selectWithContentByFolderIdAfterTime(folderId, time)
+            ?.executeAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (documentId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        !innerContent.id_.isNullOrEmpty()
+                    }.associate { innerContent ->
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!.toInt()).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked,
+//                                steps = emptyList(), // Todo: Fix!
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color,
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { documentId ->
+                                val title = documentQueries.selectTitleByDocumentId(documentId)
+                                    .executeAsOneOrNull()
+
+                                DocumentLink(documentId, title)
+                            }
+                        )
+
+                        innerContent.position!!.toInt() to storyStep
+                    }
+
+                    Document(
+                        id = documentId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_synced),
+                        userId = document.user_id,
+                        favorite = document.favorite,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(
+                                it,
+                                document.icon_tint
+                            )
+                        },
+                        isLocked = document.is_locked
+                    )
+                }
+            } ?: emptyList()
+    }
+
+    fun deleteDocumentById(documentId: String) {
         documentQueries?.delete(documentId)
         storyStepQueries?.deleteByDocumentId(documentId)
     }
 
-    suspend fun deleteDocumentByIds(ids: Set<String>) {
+    fun deleteDocumentByIds(ids: Set<String>) {
         documentQueries?.deleteByIds(ids)
         storyStepQueries?.deleteByDocumentIds(ids)
     }
 
-    suspend fun loadDocumentWithContentById(documentId: String): Document? =
+    fun loadDocumentWithContentById(documentId: String): Document? =
         documentQueries?.selectWithContentById(documentId)
             ?.executeAsList()
             ?.groupBy { it.id }
@@ -464,14 +533,14 @@ class DocumentSqlBeDao(
                         title = document.title,
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_synced),
                         userId = document.user_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
                                 it,
-                                document.icon_tint?.toInt()
+                                document.icon_tint
                             )
                         },
                         isLocked = document.is_locked
@@ -480,7 +549,7 @@ class DocumentSqlBeDao(
             }
             ?.firstOrNull()
 
-    suspend fun loadDocumentByParentId(parentId: String): List<Document> {
+    fun loadDocumentByParentId(parentId: String): List<Document> {
         return documentQueries?.selectWithContentByParentId(parentId)
             ?.executeAsList()
             ?.groupBy { it.id }
@@ -530,14 +599,14 @@ class DocumentSqlBeDao(
                         title = document.title,
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at.toLong()),
-                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at.toLong()),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_synced),
                         userId = document.user_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
                             MenuItem.Icon(
                                 it,
-                                document.icon_tint?.toInt()
+                                document.icon_tint
                             )
                         },
                         isLocked = document.is_locked
@@ -546,32 +615,33 @@ class DocumentSqlBeDao(
             } ?: emptyList()
     }
 
-    suspend fun loadDocumentIdsByParentId(parentId: String): List<String> =
+    fun loadDocumentIdsByParentId(parentId: String): List<String> =
         documentQueries?.selectIdsByParentId(parentId)
             ?.executeAsList()
             ?: emptyList()
 
-    suspend fun deleteDocumentsByUserId(userId: String) {
+    fun deleteDocumentsByUserId(userId: String) {
         documentQueries?.deleteByUserId(userId)
     }
 
-    suspend fun deleteDocumentsByFolderId(folderId: String) {
+    fun deleteDocumentsByFolderId(folderId: String) {
         documentQueries?.deleteByFolderId(folderId)
     }
 
-    suspend fun favoriteById(documentId: String) {
+    fun favoriteById(documentId: String) {
         documentQueries?.favoriteById(documentId)
     }
 
-    suspend fun unFavoriteById(documentId: String) {
+    fun unFavoriteById(documentId: String) {
         documentQueries?.unFavoriteById(documentId)
     }
 
-    suspend fun moveToFolder(documentId: String, parentId: String) {
+    fun moveToFolder(documentId: String, parentId: String) {
         documentQueries?.moveToFolder(
             parentId,
-            Clock.System.now().toEpochMilliseconds().toInt(),
+            Clock.System.now().toEpochMilliseconds(),
             documentId
         )
     }
+
 }
