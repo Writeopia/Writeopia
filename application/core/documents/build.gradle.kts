@@ -2,6 +2,7 @@ plugins {
     kotlin("multiplatform")
     alias(libs.plugins.ktlint)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -34,9 +35,12 @@ kotlin {
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:persistence_bridge"))
+                implementation(project(":application:core:connection"))
 
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.datetime)
+                implementation(libs.ktor.client.core)
+                implementation(libs.kotlinx.serialization.json)
             }
         }
     }
