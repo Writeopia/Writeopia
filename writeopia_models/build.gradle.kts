@@ -89,8 +89,6 @@ kotlin {
             }
         }
 
-        jvmMain.dependencies {
-
-        }
+        jvmMain.dependencies { }
     }
 }
