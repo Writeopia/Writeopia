@@ -633,7 +633,7 @@ private fun DocumentItem(
                     }
 
                     Row(modifier = Modifier.align(Alignment.TopEnd).height(40.dp).padding(12.dp)) {
-                        if (!documentUi.isFavorite) {
+                        if (documentUi.isFavorite) {
                             Icon(
                                 imageVector = WrIcons.favorites,
                                 contentDescription = "Favorite",
