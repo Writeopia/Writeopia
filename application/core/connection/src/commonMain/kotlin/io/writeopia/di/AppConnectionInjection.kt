@@ -18,7 +18,7 @@ class AppConnectionInjection private constructor(
             ignoreUnknownKeys = true
         }
     },
-    private val apiLogger: Logger = Logger.Companion.DEFAULT
+    private val apiLogger: Logger = Logger.DEFAULT
 ) {
     fun provideJson() = json
 

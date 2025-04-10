@@ -74,9 +74,13 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
             }
         }
 
-        post<DocumentApi> { documentApi ->
+        post<List<DocumentApi>> { documentApiList ->
+            println("Received documents!")
+
             try {
-                writeopiaDb.saveDocument(documentApi.toModel())
+                documentApiList.forEach { documentApi ->
+                    writeopiaDb.saveDocument(documentApi.toModel())
+                }
 
                 call.respond(
                     status = HttpStatusCode.OK,

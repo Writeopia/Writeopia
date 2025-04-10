@@ -50,6 +50,7 @@ import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.ui.screen.menu.EditFileScreen
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sql.WriteopiaDb
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
@@ -75,6 +76,10 @@ fun DesktopApp(
     toggleMaxScreen: () -> Unit,
     startDestination: String = startDestination(),
 ) {
+    //Todo: Review this!
+    WriteopiaConnectionInjector.setBaseUrl("http://localhost:8080")
+
+
     if (writeopiaDb != null) {
         WriteopiaDbInjector.initialize(writeopiaDb)
     }

@@ -66,6 +66,7 @@ fun DesktopNotesMenu(
         key1 = "refresh",
         block = {
             chooseNoteViewModel.requestUser()
+            chooseNoteViewModel.syncFolderWithCloud()
         }
     )
 

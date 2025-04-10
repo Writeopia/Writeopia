@@ -18,6 +18,7 @@ import io.writeopia.core.folders.repository.NotesUseCase
 import io.writeopia.notemenu.viewmodel.ChooseNoteKmpViewModel
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.FolderStateController
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
@@ -33,6 +34,8 @@ class NotesMenuKmpInjection private constructor(
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
+    private val connectionInjector: WriteopiaConnectionInjector =
+        WriteopiaConnectionInjector.singleton()
 ) : NotesMenuInjection {
 
     private fun provideDocumentRepository(): DocumentRepository =
@@ -53,7 +56,8 @@ class NotesMenuKmpInjection private constructor(
             authCoreInjection.provideAccountManager()
         )
 
-    private fun provideDocumentsApi() = DocumentsApi(appConnectionInjection.provideHttpClient())
+    private fun provideDocumentsApi() =
+        DocumentsApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
 
     private fun provideDocumentSync(): DocumentsSync {
         val documentRepository = repositoryInjection.provideDocumentRepository()

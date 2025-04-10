@@ -14,6 +14,7 @@ data class DocumentInfo(
     val title: String = "",
     val createdAt: Instant,
     val lastUpdatedAt: Instant,
+    val lastSyncedAt: Instant?,
     val isLocked: Boolean,
     val parentId: String = "root",
     val icon: MenuItem.Icon? = null,
@@ -25,6 +26,7 @@ data class DocumentInfo(
             return DocumentInfo(
                 createdAt = now,
                 lastUpdatedAt = now,
+                lastSyncedAt = null,
                 isLocked = false,
                 isFavorite = false
             )
@@ -37,6 +39,7 @@ fun Document.info(): DocumentInfo = DocumentInfo(
     title = this.title,
     createdAt = this.createdAt,
     lastUpdatedAt = this.lastUpdatedAt,
+    lastSyncedAt = this.lastSyncedAt,
     parentId = this.parentId,
     icon = this.icon,
     isLocked = this.isLocked,
@@ -48,6 +51,7 @@ fun DocumentInfo.document(userId: String): Document = Document(
     title = this.title,
     createdAt = this.createdAt,
     lastUpdatedAt = this.lastUpdatedAt,
+    lastSyncedAt = this.lastSyncedAt,
     parentId = this.parentId,
     icon = this.icon,
     isLocked = this.isLocked,
