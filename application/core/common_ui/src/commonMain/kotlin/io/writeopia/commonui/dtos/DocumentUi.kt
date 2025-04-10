@@ -24,7 +24,8 @@ sealed interface MenuItemUi : Node, Traversable {
         val preview: List<StoryStep>,
         override var depth: Int = 0,
         override val highlighted: Boolean,
-        override val icon: MenuItem.Icon? = null
+        override val icon: MenuItem.Icon? = null,
+        val isSynced: Boolean
     ) : MenuItemUi {
 
         override val id: String = documentId
