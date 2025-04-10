@@ -1,3 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/persistence/dao/DocumentEntityDao.kt">
+        <error line="48" column="1" source="standard:max-line-length" />
+        <error line="48" column="12" source="standard:argument-list-wrapping" />
+        <error line="48" column="161" source="standard:argument-list-wrapping" />
+    </file>
 </baseline>

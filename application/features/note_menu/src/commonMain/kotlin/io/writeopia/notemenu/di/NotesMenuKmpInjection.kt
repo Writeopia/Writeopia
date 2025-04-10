@@ -31,7 +31,7 @@ class NotesMenuKmpInjection private constructor(
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
-    ) : NotesMenuInjection {
+) : NotesMenuInjection {
 
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()

@@ -33,4 +33,3 @@ class DocumentsApi(private val client: HttpClient) {
         return if (response.status.isSuccess()) ResultData.Complete(Unit) else ResultData.Error()
     }
 }
-

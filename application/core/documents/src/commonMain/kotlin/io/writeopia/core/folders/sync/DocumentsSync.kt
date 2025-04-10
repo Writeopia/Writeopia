@@ -20,7 +20,7 @@ class DocumentsSync(
     suspend fun syncFolder(folderId: String) {
         val lastSync = documentRepository.loadDocumentById(folderId)?.lastSyncedAt ?: return
 
-        //First, receive the documents for the backend.
+        // First, receive the documents for the backend.
         val response = documentsApi.getNewDocuments(folderId, lastSync)
         val newDocuments = if (response is ResultData.Complete) response.data else return
 
