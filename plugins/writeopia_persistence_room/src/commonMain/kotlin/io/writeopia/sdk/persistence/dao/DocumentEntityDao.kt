@@ -45,6 +45,9 @@ interface DocumentEntityDao {
     @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.parent_id = :id")
     suspend fun loadDocumentsByParentId(id: String): List<DocumentEntity>
 
+    @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.parent_id = :folderId AND $DOCUMENT_ENTITY.last_synced_at > :lastSyncedAt")
+    suspend fun loadOutdatedDocumentsByFolderId(folderId: String, lastSyncedAt: Long): List<DocumentEntity>
+
     @Query("SELECT * FROM $DOCUMENT_ENTITY")
     suspend fun loadAllDocuments(): List<DocumentEntity>
 

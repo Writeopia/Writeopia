@@ -89,7 +89,7 @@ fun DesktopApp(
     val notesMenuInjection = remember {
         NotesMenuKmpInjection.desktop(
             selectionState = selectionState,
-            keyboardEventFlow = keyboardEventFlow
+            keyboardEventFlow = keyboardEventFlow,
         )
     }
 

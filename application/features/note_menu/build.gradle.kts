@@ -66,6 +66,7 @@ kotlin {
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.compose.navigation)
                 implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.ktor.client.core)
             }
         }
 

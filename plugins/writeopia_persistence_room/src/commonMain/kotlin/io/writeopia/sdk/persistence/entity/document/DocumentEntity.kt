@@ -8,6 +8,7 @@ import io.writeopia.sdk.models.DOCUMENT_ENTITY
 import io.writeopia.sdk.models.FAVORITE
 import io.writeopia.sdk.models.ICON
 import io.writeopia.sdk.models.IS_LOCKED
+import io.writeopia.sdk.models.LAST_SYNCED_AT
 import io.writeopia.sdk.models.LAST_UPDATED_AT
 import io.writeopia.sdk.models.PARENT_ID
 import io.writeopia.sdk.models.TITLE
@@ -20,6 +21,7 @@ data class DocumentEntity(
     @ColumnInfo(TITLE) val title: String,
     @ColumnInfo(CREATED_AT) val createdAt: Long,
     @ColumnInfo(LAST_UPDATED_AT) val lastUpdatedAt: Long,
+    @ColumnInfo(LAST_SYNCED_AT) val lastSyncedAt: Long? = null,
     @ColumnInfo(USER_ID) val userId: String,
     @ColumnInfo(FAVORITE) val favorite: Boolean,
     @ColumnInfo(PARENT_ID) val parentId: String,
@@ -34,6 +36,7 @@ data class DocumentEntity(
                 "",
                 now,
                 now,
+                null,
                 userId,
                 favorite = false,
                 parentId = parentId,

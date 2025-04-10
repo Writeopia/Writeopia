@@ -11,11 +11,16 @@ class DocumentConflictHandler(private val documentRepository: DocumentRepository
      * @param localDocuments The documents that should be sent to the backend, because they were updated locally
      * @param externalDocuments The documents that should be updated locally, because they were updated in the backend.
      */
-    fun handleConflict(
+    suspend fun handleConflict(
         localDocuments: List<Document>,
         externalDocuments: List<Document>
     ): List<Document> {
-        // Todo: Implement!!
-        return emptyList()
+        // Todo: Implement!! Save external documents and remove localDocuments. A more complex
+        // handling of conflicts can be implemented in the future.
+        externalDocuments.forEach { document ->
+            documentRepository.saveDocument(document)
+        }
+
+        return externalDocuments
     }
 }

@@ -3,7 +3,7 @@ CREATE TABLE documentEntity (
   title TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   last_updated_at INTEGER NOT NULL,
-  last_synced_at INTEGER NOT NULL,
+  last_synced_at INTEGER,
   user_id TEXT NOT NULL,
   favorite INTEGER NOT NULL,
   parent_document_id TEXT NOT NULL,
@@ -75,9 +75,9 @@ ORDER BY position;
 
 selectWithContentByFolderIdAfterTime:
 SELECT *
-FROM document_entity
-LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.parent_document_id = ? AND last_synced > ?
+FROM documentEntity
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+WHERE documentEntity.parent_document_id = ? AND last_synced_at > ?
 ORDER BY position;
 
 selectWithContentById:
@@ -89,9 +89,9 @@ ORDER BY position;
 
 selectWithContentByFolderIdOutdatedDocuments:
 SELECT *
-FROM document_entity
-LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.parent_document_id = ? AND last_updated_at > last_synced
+FROM documentEntity
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+WHERE documentEntity.parent_document_id = ? AND last_updated_at > last_synced_at
 ORDER BY position;
 
 selectWithContentByParentId:
@@ -108,10 +108,10 @@ WHERE documentEntity.parent_document_id = ?;
 
 insert:
 INSERT INTO documentEntity(id, title, created_at, last_updated_at, last_synced_at, user_id, favorite, parent_document_id, icon, icon_tint, is_locked)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at,
-last_updated_at=excluded.last_updated_at, last_synced_at=excluded.last_synced_at,, user_id=excluded.user_id,
+last_updated_at=excluded.last_updated_at, last_synced_at=excluded.last_synced_at, user_id=excluded.user_id,
 favorite=excluded.favorite,parent_document_id=excluded.parent_document_id, icon=excluded.icon,
  icon_tint=excluded.icon_tint, is_locked=excluded.is_locked;
 

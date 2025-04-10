@@ -93,6 +93,8 @@ interface ChooseNoteViewModel : FolderController {
     fun closeOnboardingPermanently()
 
     fun completeOnboarding()
+
+    fun syncFolderWithCloud()
 }
 
 sealed interface UserState<T> {

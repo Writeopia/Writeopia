@@ -16,6 +16,12 @@ import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.NotesUseCase
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
+import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.core.folders.sync.DocumentsSync
+import io.writeopia.models.configuration.WorkspaceConfigRepository
+import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.notemenu.data.usecase.NotesUseCase
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.export.DocumentToJson
@@ -58,6 +64,7 @@ internal class ChooseNoteKmpViewModel(
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
+    private val documentsSync: DocumentsSync,
     private val folderController: FolderStateController = FolderStateController(
         notesUseCase,
         authManager
@@ -257,25 +264,25 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun listArrangementSelected() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.saveDocumentArrangementPref(NotesArrangement.LIST, getUserId())
         }
     }
 
     override fun gridArrangementSelected() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.saveDocumentArrangementPref(NotesArrangement.GRID, getUserId())
         }
     }
 
     override fun staggeredGridArrangementSelected() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.saveDocumentArrangementPref(NotesArrangement.STAGGERED_GRID, getUserId())
         }
     }
 
     override fun sortingSelected(orderBy: OrderBy) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.saveDocumentSortingPref(orderBy, getUserId())
         }
     }
@@ -301,9 +308,7 @@ internal class ChooseNoteKmpViewModel(
 
         val allFavorites = (menuItemsState.value as? ResultData.Complete<List<MenuItem>>)
             ?.data
-            ?.filter { document ->
-                selectedIds.contains(document.id)
-            }
+            ?.filter { document -> selectedIds.contains(document.id) }
             ?.all { document -> document.favorite }
             ?: false
 
@@ -417,7 +422,7 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun completeOnboarding() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.setOnboarded()
             _showOnboardingState.value = OnboardingState.CONGRATULATION
             delay(3000)
@@ -426,9 +431,16 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun closeOnboardingPermanently() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.setOnboarded()
             _showOnboardingState.value = OnboardingState.COMPLETE
+        }
+    }
+
+    override fun syncFolderWithCloud() {
+        viewModelScope.launch(Dispatchers.Default) {
+            // Refresh happens inside syncFolder
+            documentsSync.syncFolder(notesNavigation.id)
         }
     }
 

@@ -22,9 +22,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlin.math.sqrt
 
-class DocumentsGraphViewModel(
-    private val graphRepository: GraphRepository
-) : ViewModel() {
+class DocumentsGraphViewModel(private val graphRepository: GraphRepository) : ViewModel() {
 
     private val _selectedOrigin = MutableStateFlow("root")
     private val _selectedNodes = MutableStateFlow(setOf<String>())

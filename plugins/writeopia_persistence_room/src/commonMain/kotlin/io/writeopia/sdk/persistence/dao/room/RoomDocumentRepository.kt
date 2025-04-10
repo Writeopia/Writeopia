@@ -190,4 +190,8 @@ class RoomDocumentRepository(
 
     override suspend fun stopListeningForFoldersByParentId(parentId: String) {
     }
+
+    override suspend fun loadOutdatedDocuments(folderId: String): List<Document> {
+        TODO("Not yet implemented")
+    }
 }

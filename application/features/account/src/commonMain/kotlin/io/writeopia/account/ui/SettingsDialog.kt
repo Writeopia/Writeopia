@@ -503,7 +503,7 @@ fun DownloadModels(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                "${WrStrings.errorModelDownload()} ${downloadState.exception.message}",
+                "${WrStrings.errorModelDownload()} ${downloadState.exception?.message}",
                 style = MaterialTheme.typography.bodySmall
             )
         }

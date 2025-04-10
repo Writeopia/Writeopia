@@ -128,6 +128,8 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun stopListeningForFoldersByParentId(parentId: String) {
     }
 
+    override suspend fun loadOutdatedDocuments(folderId: String): List<Document> = emptyList()
+
     override suspend fun loadDocumentsByParentId(parentId: String): List<Document> =
         documentsMap.values.toList()
 }
