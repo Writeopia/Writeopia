@@ -15,7 +15,6 @@ data class Folder(
     override val icon: MenuItem.Icon? = null,
     val itemCount: Long,
     val documentList: List<Document> = emptyList(),
-    override val cloudSynced: Boolean = false
 ) : MenuItem {
     companion object {
         const val ROOT_PATH = "root"

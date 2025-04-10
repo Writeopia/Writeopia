@@ -19,17 +19,19 @@ import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import kotlinx.serialization.json.Json
 
-class WriteopiaConnectionInjector(
+class WriteopiaConnectionInjector private constructor(
     private val baseUrl: String,
-    private val bearerTokenHandler: BearerTokenHandler,
+//    private val bearerTokenHandler: BearerTokenHandler,
     private val apiLogger: Logger = Logger.Companion.DEFAULT,
     private val client: HttpClient =
         ApiInjectorDefaults.httpClient(
-            bearerTokenHandler = bearerTokenHandler,
+//            bearerTokenHandler = bearerTokenHandler,
             apiLogger = apiLogger
         ),
     private val disableWebsocket: Boolean = false
 ) {
+
+    fun baseUrl(): String = baseUrl
 
     fun notesApi(): NotesApi = NotesApi(client, baseUrl)
 
@@ -38,12 +40,28 @@ class WriteopiaConnectionInjector(
     } else {
         WebsocketEditionManager(host = "0.0.0.0", client = client, json = writeopiaJson)
     }
+
+    companion object {
+        var instance: WriteopiaConnectionInjector? = null
+
+        private var baseUrl: String? = null
+
+        fun setBaseUrl(baseUrl: String) {
+            this.baseUrl = baseUrl
+        }
+
+        fun singleton(): WriteopiaConnectionInjector {
+            val thisBaseUrl = baseUrl ?: throw IllegalStateException("Base url was not set!")
+
+            return WriteopiaConnectionInjector(thisBaseUrl)
+        }
+    }
 }
 
 private object ApiInjectorDefaults {
     fun httpClient(
         json: Json = writeopiaJson,
-        bearerTokenHandler: BearerTokenHandler,
+//        bearerTokenHandler: BearerTokenHandler,
         apiLogger: Logger,
     ) = HttpClient {
         install(ContentNegotiation) {
@@ -58,15 +76,15 @@ private object ApiInjectorDefaults {
 //                sanitizeHeader { header -> header == HttpHeaders.Authorization }
         }
 
-        install(Auth) {
-            bearer {
-                loadTokens {
-                    BearerTokens(
-                        bearerTokenHandler.getIdToken() ?: "",
-                        "",
-                    )
-                }
-            }
-        }
+//        install(Auth) {
+//            bearer {
+//                loadTokens {
+//                    BearerTokens(
+//                        bearerTokenHandler.getIdToken() ?: "",
+//                        "",
+//                    )
+//                }
+//            }
+//        }
     }
 }

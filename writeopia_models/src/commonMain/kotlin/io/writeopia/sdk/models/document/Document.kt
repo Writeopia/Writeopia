@@ -10,11 +10,10 @@ data class Document(
     val content: Map<Int, StoryStep> = emptyMap(),
     override val createdAt: Instant,
     override val lastUpdatedAt: Instant,
-    val lastSyncedAt: Instant? = null,
+    val lastSyncedAt: Instant?,
     override val userId: String,
     override val parentId: String,
     override val favorite: Boolean = false,
     override val icon: MenuItem.Icon? = null,
     val isLocked: Boolean = false,
-    override val cloudSynced: Boolean = false,
 ) : MenuItem
