@@ -618,8 +618,6 @@ private fun DocumentItem(
                                 }
                             }
 
-                            documentUi.icon
-
                             drawers[storyStep.type.number]?.Step(
                                 step = storyStep,
                                 drawInfo = DrawInfo(
@@ -645,7 +643,7 @@ private fun DocumentItem(
 
                         Spacer(modifier = Modifier.width(4.dp))
 
-                        if (documentUi.isSynced) {
+                        if (!documentUi.isSynced) {
                             Icon(
                                 imageVector = WrIcons.cloudSync,
                                 contentDescription = "Cloud upload",
