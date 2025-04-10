@@ -665,6 +665,15 @@ private fun DocumentItem(
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
+
+                    if (!documentUi.isSynced) {
+                        Icon(
+                            modifier = Modifier.align(Alignment.TopEnd).size(40.dp).padding(12.dp),
+                            imageVector = WrIcons.cloudSync,
+                            contentDescription = "Cloud upload",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
                 }
             }
         }
