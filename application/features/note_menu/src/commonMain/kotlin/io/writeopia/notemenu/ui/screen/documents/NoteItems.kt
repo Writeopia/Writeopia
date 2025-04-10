@@ -171,7 +171,7 @@ fun NotesCards(
 
         is ResultData.Error -> {
             LaunchedEffect(key1 = true) {
-                documents.exception.printStackTrace()
+                documents.exception?.printStackTrace()
             }
 
             Box(modifier = modifier.fillMaxSize()) {

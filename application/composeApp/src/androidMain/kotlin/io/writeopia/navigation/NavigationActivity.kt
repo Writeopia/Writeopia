@@ -31,7 +31,7 @@ import io.writeopia.persistence.room.WriteopiaApplicationDatabase
 import io.writeopia.persistence.room.injection.AppRoomDaosInjection
 import io.writeopia.persistence.room.injection.RoomRepositoryInjection
 import io.writeopia.persistence.room.injection.WriteopiaRoomInjector
-import io.writeopia.sdk.network.injector.ConnectionInjector
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.ui.image.ImageLoadConfig
 
 class NavigationActivity : ComponentActivity() {
@@ -75,7 +75,7 @@ fun NavigationGraph(
     val uiConfigInjection = UiConfigurationInjector.singleton()
 
     val appDaosInjection = AppRoomDaosInjection.singleton()
-    val connectionInjector = ConnectionInjector(
+    val connectionInjector = WriteopiaConnectionInjector(
         bearerTokenHandler = AppBearerTokenHandler,
         baseUrl = BuildConfig.BASE_URL
     )

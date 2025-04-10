@@ -9,7 +9,7 @@ sealed interface ResultData<T> {
 
     data class InProgress<T>(val data: T) : ResultData<T>
 
-    data class Error<T>(val exception: Exception) : ResultData<T>
+    data class Error<T>(val exception: Exception? = null) : ResultData<T>
 }
 
 fun <T, R> ResultData<T>.map(fn: (T) -> R): ResultData<R> =

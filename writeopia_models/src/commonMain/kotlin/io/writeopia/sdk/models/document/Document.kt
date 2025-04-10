@@ -10,6 +10,7 @@ data class Document(
     val content: Map<Int, StoryStep> = emptyMap(),
     override val createdAt: Instant,
     override val lastUpdatedAt: Instant,
+    val lastSyncedAt: Instant? = null,
     override val userId: String,
     override val parentId: String,
     override val favorite: Boolean = false,
