@@ -1152,6 +1152,7 @@ class WriteopiaStateManager(
             content = state.stories,
             createdAt = info.createdAt,
             lastUpdatedAt = info.lastUpdatedAt,
+            lastSyncedAt = info.lastSyncedAt,
             userId = localUserId ?: "disconnected_user",
             parentId = info.parentId,
             isLocked = info.isLocked,

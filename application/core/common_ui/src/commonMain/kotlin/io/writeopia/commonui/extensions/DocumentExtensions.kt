@@ -43,7 +43,7 @@ fun MenuItem.toUiCard(
             isFavorite = favorite,
             highlighted = highlighted,
             icon = icon,
-            isSynced = lastSyncedAt?.let { synced -> lastUpdatedAt <= synced} ?: false
+            isSynced = lastSyncedAt?.let { synced -> lastUpdatedAt <= synced } ?: false
         )
 
         else -> throw IllegalArgumentException("MenuItemUi could not me created")

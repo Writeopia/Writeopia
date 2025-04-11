@@ -2,6 +2,7 @@ CREATE TABLE document_entity (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   created_at BIGINT NOT NULL,
+  last_updated_at BIGINT NOT NULL,
   last_synced BIGINT NOT NULL,
   user_id TEXT NOT NULL,
   favorite BOOLEAN NOT NULL,

@@ -514,6 +514,7 @@ internal class ChooseNoteKmpViewModel(
                     lastUpdatedAt = now,
                     createdAt = now,
                     userId = getUserId(),
+                    lastSyncedAt = null,
                     favorite = false,
                     title = "",
                     content = mapOf(

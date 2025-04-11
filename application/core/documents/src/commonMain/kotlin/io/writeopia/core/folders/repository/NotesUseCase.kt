@@ -150,18 +150,6 @@ class NotesUseCase private constructor(
         documentRepository.refreshDocuments()
     }
 
-    suspend fun saveDocumentCloud(document: Document): Boolean {
-        val isSuccess = notesApi?.createDocument(document) ?: false
-
-        if (isSuccess) {
-            documentRepository.saveDocument(document.copy(cloudSynced = true))
-        }
-
-        documentRepository.refreshDocuments()
-
-        return isSuccess
-    }
-
     suspend fun deleteNotes(ids: Set<String>) {
         documentRepository.deleteDocumentByIds(ids)
         ids.forEach { id ->
