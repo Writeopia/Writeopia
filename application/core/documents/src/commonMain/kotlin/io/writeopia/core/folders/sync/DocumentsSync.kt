@@ -28,27 +28,32 @@ class DocumentsSync(
         val response = documentsApi.getNewDocuments(folderId, lastSync ?: Instant.DISTANT_PAST)
         println("documentsApi.getNewDocuments - results received")
         val newDocuments = if (response is ResultData.Complete) response.data else return
+        println("Received ${response.data.size} documents from API")
 
         // Then, load the outdated documents.
         // These documents were updated locally, but were not sent to the backend yet
         println("documentRepository.loadOutdatedDocuments")
         val localOutdatedDocs = documentRepository.loadOutdatedDocuments(folderId)
+        println("localOutdatedDocs.size: ${localOutdatedDocs.size}")
 
         // Resolve conflicts of documents that were updated both locally and in the backend.
         // Documents will be saved locally by documentConflictHandler.handleConflict
-        val documentsResolved =
+        val documentsNotSent =
             documentConflictHandler.handleConflict(localOutdatedDocs, newDocuments)
+        documentRepository.refreshDocuments()
 
         // Send documents to backend
         println("sending documents")
-        val resultSend = documentsApi.sendDocuments(documentsResolved)
+        val resultSend = documentsApi.sendDocuments(documentsNotSent)
 
         if (resultSend is ResultData.Complete) {
-            println("Updating documents")
+            println("Updating documents. Size: ${documentsNotSent.size}")
             val now = Clock.System.now()
             // If everything ran accordingly, update the sync time of the folder.
-            documentsResolved.forEach { document ->
-                documentRepository.saveDocumentMetadata(document.copy(lastSyncedAt = now))
+            documentsNotSent.forEach { document ->
+                val newDocument = document.copy(lastSyncedAt = now)
+                println("saving document. :lastSyncedAt ${newDocument.lastSyncedAt}")
+                documentRepository.saveDocumentMetadata(newDocument)
             }
 
             println("refreshing folders")

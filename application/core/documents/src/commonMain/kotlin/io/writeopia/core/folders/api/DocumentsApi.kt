@@ -26,6 +26,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         return if (response.status.isSuccess()) {
             ResultData.Complete(response.body<List<DocumentApi>>().map { it.toModel() })
         } else {
+            println("getNewDocuments status: ${response.status.value}")
             ResultData.Error()
         }
     }
