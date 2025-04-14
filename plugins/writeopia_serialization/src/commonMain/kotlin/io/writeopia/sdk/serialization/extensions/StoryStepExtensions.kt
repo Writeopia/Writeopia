@@ -78,7 +78,8 @@ fun Document.toApi(): DocumentApi =
         userId = userId,
         parentId = parentId,
         isLocked = isLocked,
-        icon = icon?.toApi()
+        icon = icon?.toApi(),
+        isFavorite = this.favorite
     )
 
 fun DocumentApi.toModel(): Document =
