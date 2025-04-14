@@ -2,7 +2,7 @@ package io.writeopia.notemenu.viewmodel
 
 import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.commonui.dtos.MenuItemUi
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 
 interface FolderController {
     fun addFolder()

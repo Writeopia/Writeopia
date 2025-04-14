@@ -26,6 +26,16 @@ selectAllFolders:
 SELECT *
 FROM folderEntity;
 
+selectByUserId:
+SELECT *
+FROM folderEntity
+WHERE folderEntity.user_id = ?;
+
+selectByUserIdAfterTime:
+SELECT *
+FROM folderEntity
+WHERE folderEntity.user_id = ? AND last_updated_at > ?;
+
 selectChildrenFolder:
 SELECT *
 FROM folderEntity

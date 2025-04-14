@@ -2,7 +2,7 @@ package io.writeopia.sqldelight.extensions
 
 import io.writeopia.app.sql.FolderEntity
 import io.writeopia.common.utils.extensions.toBoolean
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import kotlinx.datetime.Instant
 

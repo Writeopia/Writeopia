@@ -1,7 +1,5 @@
-package io.writeopia.models
+package io.writeopia.sdk.models.document
 
-import io.writeopia.sdk.models.document.Document
-import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant

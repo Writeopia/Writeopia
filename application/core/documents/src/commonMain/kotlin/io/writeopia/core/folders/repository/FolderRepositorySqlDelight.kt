@@ -1,11 +1,12 @@
 package io.writeopia.core.folders.repository
 
 import io.writeopia.core.folders.extensions.toEntity
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sqldelight.dao.FolderSqlDelightDao
 import io.writeopia.sqldelight.extensions.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Instant
 
 class FolderRepositorySqlDelight(
     private val folderDao: FolderSqlDelightDao
@@ -13,6 +14,19 @@ class FolderRepositorySqlDelight(
 
     override suspend fun getFolderById(id: String): Folder? =
         folderDao.getFolderById(id)?.toModel(0)
+
+    override suspend fun getFoldersForUserAfterTime(
+        userId: String,
+        instant: Instant
+    ): List<Folder> {
+        return folderDao.selectByUserIdAfterTime(
+            userId,
+            instant.toEpochMilliseconds()
+        )
+    }
+
+    override suspend fun getFoldersForUser(userId: String): List<Folder> =
+        folderDao.selectByUserId(userId)
 
     override suspend fun createFolder(folder: Folder) {
         folderDao.createFolder(folder.toEntity())

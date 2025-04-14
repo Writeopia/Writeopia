@@ -1,9 +1,18 @@
 package io.writeopia.core.folders.repository
 
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 
 interface FolderRepository {
+
+    suspend fun getFolderById(id: String): Folder?
+
+    suspend fun getFolderByParentId(parentId: String): List<Folder>
+
+    suspend fun getFoldersForUserAfterTime(userId: String, instant: Instant): List<Folder>
+
+    suspend fun getFoldersForUser(userId: String): List<Folder>
 
     suspend fun createFolder(folder: Folder)
 
@@ -22,10 +31,6 @@ interface FolderRepository {
     suspend fun moveToFolder(documentId: String, parentId: String)
 
     suspend fun refreshFolders()
-
-    suspend fun getFolderById(id: String): Folder?
-
-    suspend fun getFolderByParentId(parentId: String): List<Folder>
 
     suspend fun listenForFoldersByParentId(parentId: String): Flow<Map<String, List<Folder>>>
 

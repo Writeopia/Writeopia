@@ -1,7 +1,7 @@
 package io.writeopia.commonui.extensions
 
 import io.writeopia.commonui.dtos.MenuItemUi
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.preview.PreviewParser

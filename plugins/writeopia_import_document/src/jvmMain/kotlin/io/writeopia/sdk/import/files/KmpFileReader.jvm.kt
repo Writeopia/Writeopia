@@ -22,9 +22,10 @@ actual object KmpFileReader {
 
     actual inline fun <reified T> readDirectory(
         directoryPath: String,
-        json: Json
+        json: Json,
+        crossinline predicate: (String) -> Boolean
     ): Flow<T> = File(directoryPath).walk()
-        .filter { file -> file.name != "writeopia_config_file.json" }
+        .filter { file -> file.name != "writeopia_config_file.json" && predicate(file.name) }
         .asFlow()
         .readAllFiles(json)
 

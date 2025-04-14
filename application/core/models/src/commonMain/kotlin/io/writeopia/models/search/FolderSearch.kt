@@ -1,6 +1,6 @@
 package io.writeopia.models.search
 
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 
 interface FolderSearch {
 

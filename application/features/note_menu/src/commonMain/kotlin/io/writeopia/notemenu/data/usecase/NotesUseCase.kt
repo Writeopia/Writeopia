@@ -4,7 +4,7 @@ import io.writeopia.common.utils.collections.merge
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.FolderRepository
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.notemenu.data.model.NotesNavigation
 import io.writeopia.notemenu.extensions.sortedWithOrderBy
 import io.writeopia.sdk.models.document.Document
@@ -76,6 +76,12 @@ class NotesUseCase private constructor(
                     time
                 )
             }
+
+    suspend fun loadFolderForUserAfterTime(userId: String, time: Instant): List<Folder> =
+        folderRepository.getFoldersForUserAfterTime(userId, time)
+
+    suspend fun loadFoldersForUser(userId: String): List<Folder> =
+        folderRepository.getFoldersForUser(userId)
 
     /**
      * Listen and gets [MenuItem] groups by  parent folder.
