@@ -20,5 +20,5 @@ actual object KmpFileReader {
         directoryPath: String,
         json: Json,
         crossinline predicate: (String) -> Boolean
-    ): Flow<T> = flow {  }
+    ): Flow<T> = flow { }
 }
