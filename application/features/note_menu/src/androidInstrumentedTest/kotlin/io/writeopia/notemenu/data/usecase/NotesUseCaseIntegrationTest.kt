@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.core.configuration.repository.ConfigurationRoomRepository
 import io.writeopia.persistence.room.WriteopiaApplicationDatabase
 import io.writeopia.sdk.models.document.Document

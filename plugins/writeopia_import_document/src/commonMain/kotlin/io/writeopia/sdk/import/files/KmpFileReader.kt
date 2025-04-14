@@ -11,5 +11,9 @@ expect object KmpFileReader {
 
     inline fun <reified T> readObjects(filePaths: List<String>, json: Json): Flow<T>
 
-    inline fun <reified T> readDirectory(directoryPath: String, json: Json): Flow<T>
+    inline fun <reified T> readDirectory(
+        directoryPath: String,
+        json: Json,
+        crossinline predicate: (String) -> Boolean
+    ): Flow<T>
 }

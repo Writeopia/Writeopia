@@ -1,6 +1,6 @@
 package io.writeopia.common.utils.persistence.daos
 
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import kotlinx.coroutines.flow.Flow
 
 interface FolderCommonDao {

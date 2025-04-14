@@ -1,12 +1,14 @@
 package io.writeopia.sdk.serialization.extensions
 
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.Decoration
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.serialization.data.DecorationApi
 import io.writeopia.sdk.serialization.data.DocumentApi
+import io.writeopia.sdk.serialization.data.FolderApi
 import io.writeopia.sdk.serialization.data.StoryStepApi
 import io.writeopia.sdk.serialization.data.StoryTypeApi
 import kotlinx.datetime.Instant
@@ -90,3 +92,27 @@ fun DocumentApi.toModel(): Document =
         isLocked = isLocked,
         icon = icon?.toModel()
     )
+
+fun FolderApi.toModel(): Folder = Folder(
+    id = id,
+    parentId = parentId,
+    title = title,
+    createdAt = createdAt,
+    lastUpdatedAt = lastUpdatedAt,
+    userId = userId,
+    favorite = favorite,
+    icon = icon?.toModel(),
+    itemCount = itemCount,
+)
+
+fun Folder.toApi(): FolderApi = FolderApi(
+    id = id,
+    parentId = parentId,
+    title = title,
+    createdAt = createdAt,
+    lastUpdatedAt = lastUpdatedAt,
+    userId = userId,
+    favorite = favorite,
+    icon = icon?.toApi(),
+    itemCount = itemCount,
+)

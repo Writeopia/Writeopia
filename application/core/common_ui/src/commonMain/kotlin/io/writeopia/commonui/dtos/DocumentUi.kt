@@ -1,7 +1,7 @@
 package io.writeopia.commonui.dtos
 
 import io.writeopia.common.utils.Node
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.utils.Traversable

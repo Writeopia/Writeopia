@@ -12,7 +12,7 @@ import io.writeopia.common.utils.map
 import io.writeopia.common.utils.toBoolean
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.models.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.data.model.NotesNavigation
@@ -534,17 +534,25 @@ internal class ChooseNoteKmpViewModel(
         _syncInProgress.value = SyncState.LoadingSync
 
         val userId = getUserId()
+
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
             notesUseCase.loadDocumentsForUserAfterTime(userId, lastUpdated)
         } ?: notesUseCase.loadDocumentsForUser(userId)
 
+        val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
+            notesUseCase.loadFolderForUserAfterTime(userId, lastUpdated)
+        } ?: notesUseCase.loadFoldersForUser(userId)
+
         documentToJson.writeDocuments(
-            documents = currentNotes,
+            documents = currentFolders + currentNotes,
             path = path,
             usePath = true
         )
 
-        writeopiaJsonParser.readAllWorkSpace(path)
+        writeopiaJsonParser.readAllFolders(path)
+            .collect(notesUseCase::updateFolder)
+
+        writeopiaJsonParser.readAllDocuments(path)
             .onCompletion {
                 delay(150)
                 _syncInProgress.value = SyncState.Idle
@@ -556,15 +564,21 @@ internal class ChooseNoteKmpViewModel(
         _syncInProgress.value = SyncState.LoadingWrite
 
         val userId = getUserId()
+
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
             notesUseCase.loadDocumentsForUserAfterTime(userId, lastUpdated)
         } ?: run {
             notesUseCase.loadDocumentsForUser(userId)
         }
 
+        val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
+            notesUseCase.loadFolderForUserAfterTime(userId, lastUpdated)
+        } ?: notesUseCase.loadFoldersForUser(userId)
+
         documentToJson.writeDocuments(
-            documents = currentNotes,
+            documents = currentFolders + currentNotes,
             path = path,
+            writeConfigFile = true,
             usePath = true
         )
 

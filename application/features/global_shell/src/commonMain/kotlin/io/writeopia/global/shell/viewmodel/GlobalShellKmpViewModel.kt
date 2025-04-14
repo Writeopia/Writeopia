@@ -19,7 +19,7 @@ import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.notemenu.data.model.NotesNavigation
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.data.usecase.NotesUseCase

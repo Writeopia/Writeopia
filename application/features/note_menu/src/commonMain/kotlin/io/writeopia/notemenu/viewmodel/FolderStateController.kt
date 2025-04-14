@@ -4,7 +4,7 @@ import io.writeopia.auth.core.manager.AuthManager
 import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.common.utils.anyNode
 import io.writeopia.commonui.dtos.MenuItemUi
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.notemenu.data.usecase.NotesUseCase
 import io.writeopia.sdk.models.document.MenuItem
 import kotlinx.coroutines.CoroutineScope

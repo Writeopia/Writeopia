@@ -1,6 +1,8 @@
 package io.writeopia.sdk.export.files
 
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.utils.files.KmpClosable
 import kotlinx.serialization.json.Json
 
@@ -21,13 +23,21 @@ expect class KmpFileWriter(fileName: String) : KmpClosable {
  * @param path String The path of the file
  * @param extension String The extensions, containing dot.
  */
-fun name(document: Document, path: String, extension: String): String {
+fun name(item: MenuItem, path: String, extension: String): String {
     val documentPath =
-        "$path/${document.title.trim().replace(" ", "_")}_${document.id}"
+        "$path/${item.title.trim().replace(" ", "_")}_${item.id}"
+
+    val typeExtension = when (item) {
+        is Folder -> ".wrfolder"
+
+        is Document -> ".wrdoc"
+
+        else -> ""
+    }
 
     return if (documentPath.endsWith(extension)) {
         documentPath
     } else {
-        "$documentPath$extension"
+        "$documentPath$typeExtension$extension"
     }
 }

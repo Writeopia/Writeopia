@@ -3,6 +3,7 @@ package io.writeopia.sdk.export
 import io.writeopia.sdk.export.files.KmpFileWriter
 import io.writeopia.sdk.export.files.name
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
@@ -16,25 +17,28 @@ import io.writeopia.sdk.utils.files.useKmp
 object DocumentToMarkdown : DocumentWriter {
 
     override fun writeDocuments(
-        documents: List<Document>,
+        documents: List<MenuItem>,
         path: String,
         addHashTable: Boolean,
         usePath: Boolean,
     ) {
-        documents.forEach { document ->
-            KmpFileWriter(
-                if (usePath) {
-                    name(document, path, ".md")
-                } else {
-                    path.takeIf { it.contains(".md") } ?: "$path.md"
-                }
-            ).useKmp { writer ->
-                writeToWriter(
-                    content = document.content,
-                    kmpFileWriter = writer
+        documents
+            .filterIsInstance<Document>()
+            .forEach { document ->
+                KmpFileWriter(
+                    if (usePath) {
+                        name(document, path, ".md")
+                    } else {
+                        path.takeIf { it.contains(".md") } ?: "$path.md"
+                    }
                 )
+                    .useKmp { writer ->
+                        writeToWriter(
+                            content = document.content,
+                            kmpFileWriter = writer
+                        )
+                    }
             }
-        }
     }
 
     override fun writeDocument(document: Document, path: String, writeConfigFile: Boolean) {
