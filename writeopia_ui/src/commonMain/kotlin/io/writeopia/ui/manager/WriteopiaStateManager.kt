@@ -75,7 +75,8 @@ class WriteopiaStateManager(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val documentRepository: DocumentRepository? = null,
     val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
-    private val drawStateModify: (List<DrawStory>, Int) -> (List<DrawStory>) = StepsModifier::modify
+    private val drawStateModify: (List<DrawStory>, Int) -> (List<DrawStory>) = StepsModifier::modify,
+    private val permanentTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number)
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     init {
@@ -1012,9 +1013,10 @@ class WriteopiaStateManager(
     private fun toggleStateForStories(onEdit: Set<Int>, storyTypes: StoryTypes) {
         val currentStories = currentStory.value.stories
 
-        onEdit.forEach { position ->
-            val story = currentStories[position]
-            if (story != null) {
+        onEdit.map { position -> position to currentStories[position] }
+            .filter { (_, story) -> story != null && !permanentTypes.contains(story.type.number) }
+            .forEach { (position, story) ->
+                story!!
                 val newType = if (story.type == storyTypes.type) {
                     StoryTypes.TEXT
                 } else {
@@ -1028,7 +1030,6 @@ class WriteopiaStateManager(
                     )
                 )
             }
-        }
     }
 
     private fun toggleTagForStories(
@@ -1064,7 +1065,11 @@ class WriteopiaStateManager(
                 storyTypes.type
             }
 
-            storyStep.copy(type = newType)
+            if (!permanentTypes.contains(storyStep.type.number)) {
+                storyStep.copy(type = newType)
+            } else {
+                storyStep
+            }
         }
     }
 
