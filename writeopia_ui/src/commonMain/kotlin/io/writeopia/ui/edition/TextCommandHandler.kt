@@ -13,9 +13,14 @@ import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.ui.manager.WriteopiaStateManager
 
-class TextCommandHandler(private val commandsMap: Map<Command, (StoryStep, Int) -> Unit>) {
+class TextCommandHandler(
+    private val commandsMap: Map<Command, (StoryStep, Int) -> Unit>,
+    private val excludeTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number)
+) {
 
     fun handleCommand(text: String, step: StoryStep, position: Int): Boolean {
+        if (excludeTypes.contains(step.type.number)) return false
+
         // Todo(Leandro): Using a reverse index would improve the speed a lot.
         val command: Command = commandsMap.keys
             .firstOrNull { command ->
