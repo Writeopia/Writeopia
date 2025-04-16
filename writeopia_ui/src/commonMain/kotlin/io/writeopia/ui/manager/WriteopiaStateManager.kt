@@ -1021,6 +1021,9 @@ class WriteopiaStateManager(
     private fun toggleStateForStories(onEdit: Set<Int>, storyTypes: StoryTypes) {
         val currentStories = currentStory.value.stories
 
+        trackState()
+
+        // Todo: Change all states as a whole, don't use forEach
         onEdit.map { position -> position to currentStories[position] }
             .filter { (_, story) -> story != null && !permanentTypes.contains(story.type.number) }
             .forEach { (position, story) ->
@@ -1035,7 +1038,8 @@ class WriteopiaStateManager(
                     Action.StoryStateChange(
                         storyStep = story.copy(type = newType.type),
                         position = position,
-                    )
+                    ),
+                    trackIt = false
                 )
             }
     }
