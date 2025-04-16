@@ -79,8 +79,14 @@ class WriteopiaStateManager(
     private val permanentTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number)
 ) : BackstackHandler, BackstackInform by backStackManager {
 
+    private val selectionBuffer: EventBuffer<Pair<Boolean, Int>> = EventBuffer(coroutineScope)
+
     init {
-        coroutineScope.launch(dispatcher) {
+        coroutineScope.launch {
+            selectionBuffer.events.collect { (selected, position) ->
+                selected(selected, position)
+            }
+
             keyboardEventFlow
                 .onEach { delay(60) }
                 .collect { event ->
@@ -509,20 +515,22 @@ class WriteopiaStateManager(
         _currentStory.value = story.copy(focus = position)
     }
 
+    private fun selected(isSelected: Boolean, position: Int) {
+        if (_currentStory.value.stories[position] != null) {
+            if (isSelected) {
+                _positionsOnEdit.value += position
+            } else {
+                _positionsOnEdit.value -= position
+            }
+        }
+    }
+
     /**
      * Add a [StoryStep] of a position into the selection list. Selected content can be used to
      * perform bulk actions, like bulk edition and bulk deletion.
      */
     fun onSelected(isSelected: Boolean, position: Int) {
-        coroutineScope.launch(dispatcher) {
-            if (_currentStory.value.stories[position] != null) {
-                if (isSelected) {
-                    _positionsOnEdit.value += position
-                } else {
-                    _positionsOnEdit.value -= position
-                }
-            }
-        }
+        selectionBuffer.send(isSelected to position)
     }
 
     fun onSectionSelected(position: Int) {
