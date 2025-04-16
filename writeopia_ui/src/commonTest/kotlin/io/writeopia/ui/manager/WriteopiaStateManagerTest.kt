@@ -900,7 +900,7 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    @Ignore //Async nature of selection should be considered in the test
+    @Ignore // Async nature of selection should be considered in the test
     fun itShouldBePossibleToSelectMessages() = runTest {
         val now = Clock.System.now()
 
@@ -928,7 +928,7 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    @Ignore //Async nature of selection should be considered in the test
+    @Ignore // Async nature of selection should be considered in the test
     fun itShouldBePossibleToDeleteSelectedMessages() = runTest {
         val now = Clock.System.now()
 
@@ -985,7 +985,7 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    @Ignore //Async nature of selection should be considered in the test
+    @Ignore // Async nature of selection should be considered in the test
     fun itShouldBePossibleToUndoBulkDeletion() = runTest {
         val now = Clock.System.now()
 
@@ -1076,7 +1076,7 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    @Ignore //Async nature of selection should be considered in the test
+    @Ignore // Async nature of selection should be considered in the test
     fun itShouldBePossibleToAddBoldToStoriesBySelectingThem() = runTest {
         val now = Clock.System.now()
 
