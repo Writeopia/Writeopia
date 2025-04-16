@@ -76,8 +76,7 @@ class WriteopiaStateManager(
     private val documentRepository: DocumentRepository? = null,
     val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
     private val drawStateModify: (List<DrawStory>, Int) -> (List<DrawStory>) = StepsModifier::modify,
-    private val permanentTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number),
-
+    private val permanentTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number)
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     private val selectionBuffer: EventBuffer<Pair<Boolean, Int>> = EventBuffer(coroutineScope)
