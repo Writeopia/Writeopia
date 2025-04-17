@@ -69,6 +69,7 @@ fun NavGraphBuilder.notesMenuNavigation(
         val ollamaConfigController = ollamaConfigInjector?.provideOllamaConfigController()
 
         NotesMenuScreen(
+            folderId = notesNavigation.id,
             chooseNoteViewModel = chooseNoteViewModel,
             ollamaConfigController = ollamaConfigController,
             navigationController = navigationController,
