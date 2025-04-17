@@ -136,12 +136,25 @@ class WriteopiaManager(
     fun changeStoryState(
         stateChange: Action.StoryStateChange,
         storyState: StoryState
-    ): StoryState? =
+    ): StoryState =
         contentHandler.changeStoryStepState(
             storyState.stories,
             stateChange.storyStep,
             stateChange.position
-        )
+        ) ?: storyState
+
+    fun bulkChangeStoryState(
+        storyState: StoryState,
+        stateChange: Iterable<Action.StoryStateChange>,
+    ): StoryState {
+        val mutable = storyState.stories.toMutableMap()
+
+        stateChange.forEach { change ->
+            mutable[change.position] = change.storyStep
+        }
+
+        return StoryState(mutable, lastEdit = LastEdit.Whole)
+    }
 
     /**
      * Changes the story type. The type of a messages changes without changing the content of it.
@@ -166,13 +179,9 @@ class WriteopiaManager(
         )
 
     fun bulkChangeStoryType(
-        positions: Iterable<Int>,
-        typeInfo: TypeInfo,
-        commandInfo: CommandInfo?,
-        storyState: StoryState
-    ): StoryState {
-        // Todo: implement!
-    }
+        storyState: StoryState,
+        change: Iterable<Pair<Int, TypeInfo>>
+    ): StoryState = contentHandler.bulkChangeStoryType(storyState.stories, change)
 
     /**
      * Removes all tags from a story step
