@@ -71,12 +71,11 @@ fun DesktopNotesMenu(
     val borderPadding = 8.dp
 
     sharedTransitionScope.run {
-
         Box(modifier = modifier.fillMaxSize().padding(end = 12.dp)) {
             Column(
                 modifier = Modifier.padding(top = borderPadding)
                     .sharedBounds(
-                        rememberSharedContentState(key = "folderTransition${folderId}"),
+                        rememberSharedContentState(key = "folderTransition$folderId"),
                         animatedVisibilityScope = animatedVisibilityScope,
                         resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
                     )
