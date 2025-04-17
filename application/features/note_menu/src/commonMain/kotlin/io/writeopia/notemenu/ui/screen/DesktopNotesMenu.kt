@@ -137,6 +137,9 @@ fun DesktopNotesMenu(
                 exportAsMarkdownClick = {
                     directoryChooserSave("")?.let(chooseNoteViewModel::directoryFilesAsMarkdown)
                 },
+                exportAsTxtClick = {
+                    directoryChooserSave("")?.let(chooseNoteViewModel::directoryFilesAsTxt)
+                },
                 importClick = {
                     chooseNoteViewModel.loadFiles(fileChooserLoad(""))
                 },
