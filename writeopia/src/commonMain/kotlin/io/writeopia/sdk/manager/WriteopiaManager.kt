@@ -165,6 +165,15 @@ class WriteopiaManager(
             commandInfo
         )
 
+    fun bulkChangeStoryType(
+        positions: Iterable<Int>,
+        typeInfo: TypeInfo,
+        commandInfo: CommandInfo?,
+        storyState: StoryState
+    ): StoryState {
+        // Todo: implement!
+    }
+
     /**
      * Removes all tags from a story step
      */
