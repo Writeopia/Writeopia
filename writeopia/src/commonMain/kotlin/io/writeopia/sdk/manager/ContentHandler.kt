@@ -80,12 +80,38 @@ class ContentHandler(
         position: Int,
         commandInfo: CommandInfo?
     ): StoryState {
+        val newMap = changeType(currentStory, typeInfo, position, commandInfo)
+        return StoryState(newMap, LastEdit.Whole, position)
+    }
+
+    fun bulkChangeStoryType(
+        currentStory: Map<Int, StoryStep>,
+        change: Iterable<Pair<Int, TypeInfo>>
+    ): StoryState {
+        val newMap = change.fold(currentStory) { acc, (position, typeInfo) ->
+            changeType(
+                currentStory = acc,
+                typeInfo = typeInfo,
+                position = position,
+                commandInfo = null
+            )
+        }
+
+        return StoryState(newMap, LastEdit.Whole)
+    }
+
+    private fun changeType(
+        currentStory: Map<Int, StoryStep>,
+        typeInfo: TypeInfo,
+        position: Int,
+        commandInfo: CommandInfo?
+    ): Map<Int, StoryStep> {
         val newMap = currentStory.toMutableMap()
         val storyStep = newMap[position]
         val commandTrigger = commandInfo?.commandTrigger
         val commandText = commandInfo?.command?.commandText?.trim() ?: ""
 
-        if (storyStep != null) {
+        return if (storyStep != null) {
             val storyText = storyStep.text
             val newText = if (
                 commandTrigger == CommandTrigger.WRITTEN &&
@@ -116,9 +142,10 @@ class ContentHandler(
             }
 
             newMap[position] = newCheck
+            newMap
+        } else {
+            currentStory
         }
-
-        return StoryState(newMap, LastEdit.Whole, position)
     }
 
     private fun Set<TagInfo>.merge(tagInfo: Set<TagInfo>): Set<TagInfo> =

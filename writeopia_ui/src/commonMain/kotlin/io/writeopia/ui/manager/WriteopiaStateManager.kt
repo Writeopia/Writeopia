@@ -1021,23 +1021,22 @@ class WriteopiaStateManager(
     private fun toggleStateForStories(onEdit: Set<Int>, storyTypes: StoryTypes) {
         val currentStories = currentStory.value.stories
 
-        onEdit.map { position -> position to currentStories[position] }
+        trackState()
+
+        val change = onEdit.map { position -> position to currentStories[position] }
             .filter { (_, story) -> story != null && !permanentTypes.contains(story.type.number) }
-            .forEach { (position, story) ->
-                story!!
-                val newType = if (story.type == storyTypes.type) {
+            .map { (position, story) ->
+                val newType = if (story?.type == storyTypes.type) {
                     StoryTypes.TEXT
                 } else {
                     storyTypes
                 }
 
-                changeStoryState(
-                    Action.StoryStateChange(
-                        storyStep = story.copy(type = newType.type),
-                        position = position,
-                    )
-                )
+                position to TypeInfo(newType.type)
             }
+
+        _currentStory.value =
+            writeopiaManager.bulkChangeStoryType(_currentStory.value, change = change)
     }
 
     private fun toggleTagForStories(
@@ -1045,24 +1044,22 @@ class WriteopiaStateManager(
         tag: TagInfo,
         currentStories: Map<Int, StoryStep> = currentStory.value.stories
     ) {
-        onEdit.forEach { position ->
-            val story = currentStories[position]
-            if (story != null) {
-                val currentTags = story.tags
+        trackState()
+
+        val change = onEdit.map { position -> position to currentStories[position] }
+            .filter { (_, story) -> story != null && !permanentTypes.contains(story.type.number) }
+            .map { (position, story) ->
+                val currentTags = story!!.tags
                 val newTags = if (currentTags.contains(tag)) {
                     currentTags.filterNot { it.tag == tag.tag }.toSet()
                 } else {
                     currentTags + tag
                 }
 
-                changeStoryState(
-                    Action.StoryStateChange(
-                        storyStep = story.copy(tags = newTags),
-                        position = position,
-                    )
-                )
+                Action.StoryStateChange(story.copy(tags = newTags), position)
             }
-        }
+
+        _currentStory.value = writeopiaManager.bulkChangeStoryState(_currentStory.value, change)
     }
 
     private fun changeCurrentStoryType(storyTypes: StoryTypes) {

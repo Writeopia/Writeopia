@@ -523,7 +523,7 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    @Ignore("This should be fixed later")
+    @Ignore // This should be fixed later
     fun itShouldBePossibleToRevertMove() = runTest {
         val now = Clock.System.now()
 
