@@ -32,6 +32,7 @@ actual fun NotesMenuScreen(
     modifier: Modifier
 ) {
     DesktopNotesMenu(
+        folderId = folderId,
         chooseNoteViewModel = chooseNoteViewModel,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
