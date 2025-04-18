@@ -86,7 +86,9 @@ class WriteopiaStateManager(
             selectionBuffer.events.collect { (selected, position) ->
                 selected(selected, position)
             }
+        }
 
+        coroutineScope.launch {
             keyboardEventFlow
                 .onEach { delay(60) }
                 .collect { event ->
