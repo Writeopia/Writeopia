@@ -434,13 +434,14 @@ private fun FolderItem(
     onDragIconClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    sharedTransitionScope.run {
+//    sharedTransitionScope.run {
         Box(
-            shadowModifier().sharedBounds(
-                rememberSharedContentState(key = "folderTransition${folderUi.documentId}"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
-            )
+            shadowModifier()
+//                .sharedBounds(
+//                rememberSharedContentState(key = "folderTransition${folderUi.documentId}"),
+//                animatedVisibilityScope = animatedVisibilityScope,
+//                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
+//            )
         ) {
             DropTarget { inBound, data ->
                 val menuItemUI = data?.info as? MenuItemUi
@@ -554,7 +555,7 @@ private fun FolderItem(
                 }
             }
         }
-    }
+//    }
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
