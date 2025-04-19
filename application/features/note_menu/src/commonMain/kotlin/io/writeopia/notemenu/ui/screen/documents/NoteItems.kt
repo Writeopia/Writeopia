@@ -435,126 +435,126 @@ private fun FolderItem(
     modifier: Modifier = Modifier,
 ) {
 //    sharedTransitionScope.run {
-        Box(
-            shadowModifier()
+    Box(
+        shadowModifier()
 //                .sharedBounds(
 //                rememberSharedContentState(key = "folderTransition${folderUi.documentId}"),
 //                animatedVisibilityScope = animatedVisibilityScope,
 //                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
 //            )
-        ) {
-            DropTarget { inBound, data ->
-                val menuItemUI = data?.info as? MenuItemUi
-                if (inBound && menuItemUI != null) {
-                    LaunchedEffect(menuItemUI) {
-                        moveRequest(menuItemUI, folderUi.documentId)
-                    }
+    ) {
+        DropTarget { inBound, data ->
+            val menuItemUI = data?.info as? MenuItemUi
+            if (inBound && menuItemUI != null) {
+                LaunchedEffect(menuItemUI) {
+                    moveRequest(menuItemUI, folderUi.documentId)
+                }
+            }
+
+            val bgColor =
+                when {
+                    inBound && menuItemUI?.id != folderUi.id -> WriteopiaTheme.colorScheme.highlight
+                    folderUi.selected -> WriteopiaTheme.colorScheme.selectedBg
+                    else -> WriteopiaTheme.colorScheme.cardBg
                 }
 
-                val bgColor =
-                    when {
-                        inBound && menuItemUI?.id != folderUi.id -> WriteopiaTheme.colorScheme.highlight
-                        folderUi.selected -> WriteopiaTheme.colorScheme.selectedBg
-                        else -> WriteopiaTheme.colorScheme.cardBg
-                    }
+            val textColor = WriteopiaTheme.colorScheme.textLight
 
-                val textColor = WriteopiaTheme.colorScheme.textLight
-
-                SwipeBox(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .background(WriteopiaTheme.colorScheme.cardPlaceHolderBackground)
-                        .clip(MaterialTheme.shapes.large)
-                        .clickable {
-                            folderClick(folderUi.documentId)
-                        },
-                    isOnEditState = folderUi.selected,
-                    swipeListener = { state ->
-                        selectionListener(folderUi.documentId, state)
+            SwipeBox(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .background(WriteopiaTheme.colorScheme.cardPlaceHolderBackground)
+                    .clip(MaterialTheme.shapes.large)
+                    .clickable {
+                        folderClick(folderUi.documentId)
                     },
-                    cornersShape = MaterialTheme.shapes.large,
-                    defaultColor = WriteopiaTheme.colorScheme.cardBg,
-                    activeColor = bgColor,
-                    activeBorderColor = MaterialTheme.colorScheme.primary
+                isOnEditState = folderUi.selected,
+                swipeListener = { state ->
+                    selectionListener(folderUi.documentId, state)
+                },
+                cornersShape = MaterialTheme.shapes.large,
+                defaultColor = WriteopiaTheme.colorScheme.cardBg,
+                activeColor = bgColor,
+                activeBorderColor = MaterialTheme.colorScheme.primary
+            ) {
+                DragCardTarget(
+                    modifier = modifier.clip(MaterialTheme.shapes.large),
+                    position = position,
+                    dataToDrop = DropInfo(folderUi, position),
+                    iconTintOnHover = MaterialTheme.colorScheme.onBackground,
+                    onIconClick = onDragIconClick,
                 ) {
-                    DragCardTarget(
-                        modifier = modifier.clip(MaterialTheme.shapes.large),
-                        position = position,
-                        dataToDrop = DropInfo(folderUi, position),
-                        iconTintOnHover = MaterialTheme.colorScheme.onBackground,
-                        onIconClick = onDragIconClick,
+                    Column(
+                        modifier = Modifier
+                            .background(color = bgColor, shape = MaterialTheme.shapes.large)
+                            .fillMaxWidth()
+                            .padding(bottom = 26.dp, top = 10.dp)
+                            .align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
+                        var showIconsOptions by remember { mutableStateOf(false) }
+                        val tint = folderUi.icon?.tint?.let(::Color)
+                            ?: MaterialTheme.colorScheme.primary
+
+                        Icon(
                             modifier = Modifier
-                                .background(color = bgColor, shape = MaterialTheme.shapes.large)
-                                .fillMaxWidth()
-                                .padding(bottom = 26.dp, top = 10.dp)
-                                .align(Alignment.Center),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .padding(6.dp)
+                                .clip(MaterialTheme.shapes.large)
+                                .clickable { showIconsOptions = !showIconsOptions }
+                                .size(56.dp)
+                                .padding(6.dp),
+                            imageVector = folderUi.icon?.label?.let(WrIcons::fromName)
+                                ?: folder,
+                            contentDescription = "Folder",
+                            tint = tint
+                        )
+
+                        DropdownMenu(
+                            expanded = showIconsOptions,
+                            onDismissRequest = { showIconsOptions = false },
+                            modifier = Modifier.background(WriteopiaTheme.colorScheme.cardBg),
                         ) {
-                            var showIconsOptions by remember { mutableStateOf(false) }
-                            val tint = folderUi.icon?.tint?.let(::Color)
-                                ?: MaterialTheme.colorScheme.primary
-
-                            Icon(
-                                modifier = Modifier
-                                    .padding(6.dp)
-                                    .clip(MaterialTheme.shapes.large)
-                                    .clickable { showIconsOptions = !showIconsOptions }
-                                    .size(56.dp)
-                                    .padding(6.dp),
-                                imageVector = folderUi.icon?.label?.let(WrIcons::fromName)
-                                    ?: folder,
-                                contentDescription = "Folder",
-                                tint = tint
-                            )
-
-                            DropdownMenu(
-                                expanded = showIconsOptions,
-                                onDismissRequest = { showIconsOptions = false },
-                                modifier = Modifier.background(WriteopiaTheme.colorScheme.cardBg),
-                            ) {
-                                IconsPicker(
-                                    iconSelect = { icon, tint ->
-                                        changeIcon(
-                                            folderUi.id,
-                                            icon,
-                                            tint
-                                        )
-                                    }
-                                )
-                            }
-
-                            Text(
-                                modifier = Modifier.padding(horizontal = 12.dp),
-                                text = folderUi.title,
-                                color = textColor,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Text(
-                                text = "${folderUi.itemsCount} items",
-                                color = textColor,
-                                style = MaterialTheme.typography.bodySmall
+                            IconsPicker(
+                                iconSelect = { icon, tint ->
+                                    changeIcon(
+                                        folderUi.id,
+                                        icon,
+                                        tint
+                                    )
+                                }
                             )
                         }
-                    }
 
-                    if (folderUi.isFavorite) {
-                        Icon(
-                            modifier = Modifier.align(Alignment.TopEnd).size(40.dp).padding(12.dp),
-                            imageVector = WrIcons.favorites,
-                            contentDescription = "Favorite",
-                            tint = MaterialTheme.colorScheme.onBackground
+                        Text(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            text = folderUi.title,
+                            color = textColor,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = "${folderUi.itemsCount} items",
+                            color = textColor,
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 }
+
+                if (folderUi.isFavorite) {
+                    Icon(
+                        modifier = Modifier.align(Alignment.TopEnd).size(40.dp).padding(12.dp),
+                        imageVector = WrIcons.favorites,
+                        contentDescription = "Favorite",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
         }
+    }
 //    }
 }
 
