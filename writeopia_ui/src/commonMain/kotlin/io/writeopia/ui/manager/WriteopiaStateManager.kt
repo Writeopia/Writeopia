@@ -1127,7 +1127,7 @@ class WriteopiaStateManager(
         }
     }
 
-    private fun getStory(position: Int): StoryStep? = _currentStory.value.stories[position]
+    fun getStory(position: Int): StoryStep? = _currentStory.value.stories[position]
 
     private fun getStories() = _currentStory.value.stories
 

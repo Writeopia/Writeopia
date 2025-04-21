@@ -1,8 +1,11 @@
 package io.writeopia.ui.drawer.factory
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -39,6 +42,7 @@ object DefaultDrawersDesktop : DrawersFactory {
         onHeaderClick: () -> Unit,
         drawConfig: DrawConfig,
         fontFamily: FontFamily?,
+        generateSection: (Int) -> Unit,
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
     ): Map<Int, StoryStepDrawer> =
@@ -62,13 +66,36 @@ object DefaultDrawersDesktop : DrawersFactory {
                 val isTitle = storyStep.tags.any { it.tag.isTitle() }
                 val isCollapsed by lazy { storyStep.tags.any { it.tag == Tag.COLLAPSED } }
                 if (isTitle && isHovered || isCollapsed) {
-                    var active by remember { mutableStateOf(false) }
+                    var activeShow by remember { mutableStateOf(false) }
+                    var activeAi by remember { mutableStateOf(false) }
                     val iconTintOnHover = MaterialTheme.colorScheme.onBackground
                     val iconTint = Color(0xFFAAAAAA)
 
-                    val tintColor by derivedStateOf {
-                        if (active) iconTintOnHover else iconTint
+                    val tintColorShow by derivedStateOf {
+                        if (activeShow) iconTintOnHover else iconTint
                     }
+
+                    val tintColorAi by derivedStateOf {
+                        if (activeAi) iconTintOnHover else iconTint
+                    }
+
+                    if (isHovered) {
+                        Icon(
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.medium)
+                                .size(16.dp)
+                                .clickable {
+                                    generateSection(drawInfo.position)
+                                }
+                                .onPointerEvent(PointerEventType.Enter) { activeAi = true }
+                                .onPointerEvent(PointerEventType.Exit) { activeAi = false },
+                            imageVector = WrSdkIcons.ai,
+                            contentDescription = "AI Wand",
+                            tint = tintColorAi
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     Icon(
                         modifier = Modifier
@@ -77,8 +104,8 @@ object DefaultDrawersDesktop : DrawersFactory {
                                 onClick = { manager.toggleCollapseItem(drawInfo.position) },
                                 onLongClick = { manager.onSectionSelected(drawInfo.position) }
                             )
-                            .onPointerEvent(PointerEventType.Enter) { active = true }
-                            .onPointerEvent(PointerEventType.Exit) { active = false }
+                            .onPointerEvent(PointerEventType.Enter) { activeShow = true }
+                            .onPointerEvent(PointerEventType.Exit) { activeShow = false }
                             .size(24.dp)
                             .padding(4.dp),
                         imageVector = if (isCollapsed) {
@@ -87,7 +114,7 @@ object DefaultDrawersDesktop : DrawersFactory {
                             WrSdkIcons.smallArrowDown
                         },
                         contentDescription = "Small arrow right",
-                        tint = tintColor
+                        tint = tintColorShow
                     )
                 }
             }
