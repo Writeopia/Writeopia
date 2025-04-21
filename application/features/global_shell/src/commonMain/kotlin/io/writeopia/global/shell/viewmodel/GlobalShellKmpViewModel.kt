@@ -332,11 +332,17 @@ class GlobalShellKmpViewModel(
         viewModelScope.launch {
             when (iconChange) {
                 IconChange.FOLDER -> notesUseCase.updateFolderById(menuItemId) { folder ->
-                    folder.copy(icon = MenuItem.Icon(icon, tint))
+                    folder.copy(
+                        icon = MenuItem.Icon(icon, tint),
+                        lastUpdatedAt = Clock.System.now()
+                    )
                 }
 
                 IconChange.DOCUMENT -> notesUseCase.updateDocumentById(menuItemId) { document ->
-                    document.copy(icon = MenuItem.Icon(icon, tint))
+                    document.copy(
+                        icon = MenuItem.Icon(icon, tint),
+                        lastUpdatedAt = Clock.System.now()
+                    )
                 }
             }
         }
