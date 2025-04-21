@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 
 class FolderStateController(
     private val notesUseCase: NotesUseCase,
@@ -41,7 +42,7 @@ class FolderStateController(
 
     override fun updateFolder(folderEdit: Folder) {
         coroutineScope.launch(Dispatchers.Default) {
-            notesUseCase.updateFolder(folderEdit)
+            notesUseCase.updateFolder(folderEdit.copy(lastUpdatedAt = Clock.System.now()))
         }
     }
 
@@ -80,11 +81,17 @@ class FolderStateController(
         coroutineScope.launch {
             when (iconChange) {
                 IconChange.FOLDER -> notesUseCase.updateFolderById(menuItemId) { folder ->
-                    folder.copy(icon = MenuItem.Icon(icon, tint))
+                    folder.copy(
+                        icon = MenuItem.Icon(icon, tint),
+                        lastUpdatedAt = Clock.System.now()
+                    )
                 }
 
                 IconChange.DOCUMENT -> notesUseCase.updateDocumentById(menuItemId) { document ->
-                    document.copy(icon = MenuItem.Icon(icon, tint))
+                    document.copy(
+                        icon = MenuItem.Icon(icon, tint),
+                        lastUpdatedAt = Clock.System.now()
+                    )
                 }
             }
         }
