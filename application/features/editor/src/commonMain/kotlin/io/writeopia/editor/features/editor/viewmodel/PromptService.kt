@@ -59,7 +59,7 @@ object PromptService {
         ollamaRepository: OllamaRepository,
         promptPosition: Int? = null
     ) {
-        val position = promptPosition?: writeopiaManager.getNextPosition()
+        val position = promptPosition ?: writeopiaManager.getNextPosition()
 
         if (prompt != null && position != null) {
             val url = ollamaRepository.getConfiguredOllamaUrl()?.trim()

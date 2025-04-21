@@ -34,6 +34,7 @@ object DefaultDrawersAndroid : DrawersFactory {
         onHeaderClick: () -> Unit,
         drawConfig: DrawConfig,
         fontFamily: FontFamily?,
+        generateSection: (Int) -> Unit,
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
     ): Map<Int, StoryStepDrawer> {

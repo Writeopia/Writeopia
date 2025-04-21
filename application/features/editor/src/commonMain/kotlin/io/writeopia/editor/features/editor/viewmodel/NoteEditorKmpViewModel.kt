@@ -26,7 +26,6 @@ import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
-import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
 import io.writeopia.sdk.repository.DocumentRepository
@@ -53,9 +52,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -475,18 +472,15 @@ class NoteEditorKmpViewModel(
 
         viewModelScope.launch(Dispatchers.Default) {
             val prompt =
-"""
-Create a document section for a document.
-The document is:
-```
-${writeopiaManager.getDocumentText()}
-```
+                """
+                Create a document section for a document.
+                The document is:
+                ```
+                ${writeopiaManager.getDocumentText()}
+                ```
 
-Use the language of the text. Do not add titles. Create contect for this section: $sectionText
-"""
-
-            println("prompt: $prompt")
-
+                Use the language of the text. Do not add titles. Create contect for this section: $sectionText
+                """
             PromptService.prompt(prompt = prompt, writeopiaManager, ollamaRepository, position + 1)
         }
     }

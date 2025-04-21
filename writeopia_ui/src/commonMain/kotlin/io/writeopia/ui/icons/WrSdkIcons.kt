@@ -30,5 +30,4 @@ object WrSdkIcons {
     val check: ImageVector = Check
 
     val ai = WandSparkles
-
 }
