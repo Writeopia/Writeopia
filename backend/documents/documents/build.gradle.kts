@@ -22,8 +22,11 @@ dependencies {
 
     implementation(project(":common:endpoints"))
     implementation(project(":backend:core:database"))
+    implementation(project(":backend:core:connection"))
 
     implementation(libs.kotlinx.datetime)
 
     implementation(libs.ktor.server.core)
+
+    implementation(libs.ktor.client.core)
 }

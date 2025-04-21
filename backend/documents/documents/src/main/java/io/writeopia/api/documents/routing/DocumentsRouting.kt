@@ -7,6 +7,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.writeopia.api.documents.DocumentsService
 import io.writeopia.api.documents.repository.folderDiff
 import io.writeopia.api.documents.repository.getDocumentById
 import io.writeopia.api.documents.repository.getDocumentsByParentId
@@ -78,9 +79,7 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
             println("Received documents!")
 
             try {
-                documentApiList.forEach { documentApi ->
-                    writeopiaDb.saveDocument(documentApi.toModel())
-                }
+                DocumentsService.receiveDocuments(documentApiList.map { it.toModel() }, writeopiaDb)
 
                 call.respond(
                     status = HttpStatusCode.OK,
