@@ -9,6 +9,7 @@ import io.writeopia.ui.icons.all.ChevronRight
 import io.writeopia.ui.icons.all.ChevronUp
 import io.writeopia.ui.icons.all.Files
 import io.writeopia.ui.icons.all.SquareCheck
+import io.writeopia.ui.icons.all.WandSparkles
 
 object WrSdkIcons {
 
@@ -27,5 +28,7 @@ object WrSdkIcons {
     val copy: ImageVector = Files
 
     val check: ImageVector = Check
+
+    val ai = WandSparkles
 
 }

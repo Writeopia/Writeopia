@@ -101,6 +101,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun aiTags()
 
+    fun aiSection(position: Int)
+
     fun addPage()
 
     fun copySelection()

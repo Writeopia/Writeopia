@@ -440,61 +440,7 @@ class NoteEditorKmpViewModel(
         if (ollamaRepository == null) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val text = writeopiaManager.getCurrentText()
-            val position = writeopiaManager.getNextPosition()
-
-            if (text != null && position != null) {
-                val url = ollamaRepository.getConfiguredOllamaUrl()?.trim()
-
-                if (url == null) {
-                    writeopiaManager.changeStoryState(
-                        Action.StoryStateChange(
-                            storyStep = StoryStep(
-                                type = StoryTypes.AI_ANSWER.type,
-                                text = "Ollama is not configured or not running."
-                            ),
-                            position = position,
-                        )
-                    )
-                } else {
-                    val model = ollamaRepository.getOllamaSelectedModel("disconnected_user")
-                        ?: return@launch
-
-                    ollamaRepository.streamReply(model, text, url)
-                        .onStart {
-                            writeopiaManager.addAtPosition(
-                                storyStep = StoryStep(
-                                    type = StoryTypes.LOADING.type,
-                                    ephemeral = true
-                                ),
-                                position = position
-                            )
-                        }
-                        .onCompletion {
-                            writeopiaManager.trackState()
-                        }
-                        .collect { result ->
-                            val text = when (result) {
-                                is ResultData.Complete -> result.data
-                                is ResultData.Error -> "Error. Message: ${result.exception.message}"
-                                is ResultData.Loading,
-                                is ResultData.Idle,
-                                is ResultData.InProgress -> ""
-                            }
-
-                            writeopiaManager.changeStoryState(
-                                Action.StoryStateChange(
-                                    storyStep = StoryStep(
-                                        type = StoryTypes.AI_ANSWER.type,
-                                        text = text
-                                    ),
-                                    position = position,
-                                ),
-                                trackIt = false
-                            )
-                        }
-                }
-            }
+            PromptService.promptBySelection(writeopiaManager, ollamaRepository)
         }
     }
 
@@ -520,6 +466,29 @@ class NoteEditorKmpViewModel(
         if (ollamaRepository == null) return
 
         documentPrompt(ollamaRepository::streamTags)
+    }
+
+    override fun aiSection(position: Int) {
+        if (ollamaRepository == null) return
+
+        val sectionText = writeopiaManager.getStory(position)?.text ?: return
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val prompt =
+"""
+Create a document section for a document.
+The document is:
+```
+${writeopiaManager.getDocumentText()}
+```
+
+Use the language of the text. Do not add titles. Create contect for this section: $sectionText
+"""
+
+            println("prompt: $prompt")
+
+            PromptService.prompt(prompt = prompt, writeopiaManager, ollamaRepository, position + 1)
+        }
     }
 
     override fun addPage() {
@@ -576,62 +545,7 @@ class NoteEditorKmpViewModel(
         if (ollamaRepository == null) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val text = writeopiaManager.getCurrentSelectionText()
-                ?: writeopiaManager.getDocumentText()
-
-            val position =
-                writeopiaManager.positionAfterSelection() ?: writeopiaManager.lastPosition()
-
-            val url = ollamaRepository.getConfiguredOllamaUrl()?.trim()
-
-            if (url == null) {
-                writeopiaManager.changeStoryState(
-                    Action.StoryStateChange(
-                        storyStep = StoryStep(
-                            type = StoryTypes.AI_ANSWER.type,
-                            text = "Ollama is not configured or not running."
-                        ),
-                        position = position,
-                    )
-                )
-            } else {
-                val model = ollamaRepository.getOllamaSelectedModel("disconnected_user")
-                    ?: return@launch
-
-                promptFn(model, text, url)
-                    .onStart {
-                        writeopiaManager.addAtPosition(
-                            storyStep = StoryStep(
-                                type = StoryTypes.LOADING.type,
-                                ephemeral = true
-                            ),
-                            position = position
-                        )
-                    }
-                    .onCompletion {
-                        writeopiaManager.trackState()
-                    }
-                    .collect { result ->
-                        val text = when (result) {
-                            is ResultData.Complete -> result.data
-                            is ResultData.Error -> "Error. Message: ${result.exception.message}"
-                            is ResultData.Loading,
-                            is ResultData.Idle,
-                            is ResultData.InProgress -> ""
-                        }
-
-                        writeopiaManager.changeStoryState(
-                            Action.StoryStateChange(
-                                storyStep = StoryStep(
-                                    type = StoryTypes.AI_ANSWER.type,
-                                    text = text
-                                ),
-                                position = position,
-                            ),
-                            trackIt = false
-                        )
-                    }
-            }
+            PromptService.documentPrompt(promptFn, writeopiaManager, ollamaRepository)
         }
     }
 

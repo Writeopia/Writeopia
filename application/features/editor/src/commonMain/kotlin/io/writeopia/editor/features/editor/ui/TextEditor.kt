@@ -72,8 +72,9 @@ internal fun TextEditor(
             groupsBackgroundColor = Color.Transparent,
             drawConfig = DrawConfigFactory.getDrawConfig(),
             fontFamily = fontFamily,
+            generateSection = noteEditorViewModel::aiSection,
             receiveExternalFile = noteEditorViewModel::receiveExternalFile,
-            onDocumentLinkClick = onDocumentLinkClick
+            onDocumentLinkClick = onDocumentLinkClick,
         ),
         storyState = storyState,
     )
