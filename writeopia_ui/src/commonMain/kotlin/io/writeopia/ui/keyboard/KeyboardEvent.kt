@@ -10,9 +10,10 @@ enum class KeyboardEvent {
     LINK,
     LOCAL_SAVE,
     COPY,
+    CUT,
     AI_QUESTION,
     CANCEL,
     IDLE,
     UNDO,
-    REDO
+    REDO,
 }

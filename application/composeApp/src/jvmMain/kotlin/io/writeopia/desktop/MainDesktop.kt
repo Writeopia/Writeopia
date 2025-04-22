@@ -125,6 +125,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 false
             }
 
+            KeyboardCommands.isCutEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.CUT)
+                false
+            }
+
             KeyboardCommands.isQuestionEvent(keyEvent) -> {
                 sendEvent(KeyboardEvent.AI_QUESTION)
                 false

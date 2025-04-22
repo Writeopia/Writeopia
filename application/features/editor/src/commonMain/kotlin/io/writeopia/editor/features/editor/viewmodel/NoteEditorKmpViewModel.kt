@@ -90,6 +90,11 @@ class NoteEditorKmpViewModel(
                             copySelection()
                         }
 
+                        KeyboardEvent.CUT -> {
+                            copySelection()
+                            deleteSelection()
+                        }
+
                         KeyboardEvent.AI_QUESTION -> {
                             askAiBySelection()
                         }

@@ -66,6 +66,12 @@ object KeyboardCommands {
             keyEvent.key.keyCode == Key.C.keyCode &&
             keyEvent.type == KeyEventType.KeyUp
 
+    fun isCutEvent(keyEvent: KeyEvent) =
+        keyEvent.isCommandTrigger() &&
+            keyEvent.key.keyCode == Key.X.keyCode &&
+            keyEvent.type == KeyEventType.KeyUp
+
+
     fun isQuestionEvent(keyEvent: KeyEvent) =
         keyEvent.isCommandTrigger() &&
             keyEvent.key.keyCode == Key.K.keyCode &&
