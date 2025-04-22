@@ -4,7 +4,6 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.isShiftPressed
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.hostOs
 

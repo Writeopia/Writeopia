@@ -5,5 +5,6 @@ import io.writeopia.common.utils.persistence.daos.NotesConfigurationCommonDao
 
 interface AppDaosInjection {
     fun provideConfigurationDao(): NotesConfigurationCommonDao
+
     fun provideFolderDao(): FolderCommonDao
 }
