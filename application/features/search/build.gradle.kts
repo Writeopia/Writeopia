@@ -45,6 +45,7 @@ kotlin {
                 implementation(project(":application:features:note_menu"))
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_persistence_sqldelight"))
+                implementation(project(":plugins:writeopia_serialization"))
 
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.kotlinx.datetime)
@@ -54,6 +55,8 @@ kotlin {
                 implementation(compose.material3)
                 implementation(libs.compose.navigation)
                 implementation(libs.lifecycle.viewmodel.compose)
+
+                implementation(libs.ktor.client.core)
             }
         }
 

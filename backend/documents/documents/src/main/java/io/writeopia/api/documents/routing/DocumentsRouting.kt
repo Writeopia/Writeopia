@@ -80,9 +80,7 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
                 call.respond(HttpStatusCode.BadRequest)
             } else {
                 val result = DocumentsService.search(query, writeopiaDb).map { resultData ->
-                    resultData.map { document ->
-                        document.toApi()
-                    }
+                    resultData.map { document -> document.toApi() }
                 }
 
                 if (result is ResultData.Complete) {
