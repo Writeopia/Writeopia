@@ -2,17 +2,16 @@ package io.writeopia.api.documents.routing
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
-import io.ktor.server.response.respondText
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import io.writeopia.api.documents.DocumentsService
-import io.writeopia.api.documents.repository.folderDiff
-import io.writeopia.api.documents.repository.getDocumentById
-import io.writeopia.api.documents.repository.getDocumentsByParentId
-import io.writeopia.api.documents.repository.getIdsByParentId
-import io.writeopia.api.documents.repository.saveDocument
+import io.writeopia.api.documents.documents.DocumentsService
+import io.writeopia.api.documents.documents.repository.folderDiff
+import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
+import io.writeopia.api.documents.documents.repository.getIdsByParentId
+import io.writeopia.connection.ResultData
+import io.writeopia.connection.map
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -77,7 +76,21 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
         get("/search") {
             val query = call.queryParameters["q"]
 
+            if (query == null) {
+                call.respond(HttpStatusCode.BadRequest)
+            } else {
+                val result = DocumentsService.search(query, writeopiaDb).map { resultData ->
+                    resultData.map { document ->
+                        document.toApi()
+                    }
+                }
 
+                if (result is ResultData.Complete) {
+                    call.respond(status = HttpStatusCode.OK, message = result.data)
+                } else {
+                    call.respond(HttpStatusCode.InternalServerError)
+                }
+            }
         }
 
         post<List<DocumentApi>> { documentApiList ->

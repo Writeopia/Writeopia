@@ -1,4 +1,4 @@
-package io.writeopia.api.documents.repository
+package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sql.WriteopiaDbBackend
