@@ -4,6 +4,7 @@ plugins {
     id("java-library")
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
     alias(libs.plugins.ktor.framework)
+    alias(libs.plugins.kotlinSerialization)
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_21

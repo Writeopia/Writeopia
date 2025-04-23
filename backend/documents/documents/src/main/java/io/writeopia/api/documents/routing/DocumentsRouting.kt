@@ -79,12 +79,23 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
             println("Received documents!")
 
             try {
-                DocumentsService.receiveDocuments(documentApiList.map { it.toModel() }, writeopiaDb)
-
-                call.respond(
-                    status = HttpStatusCode.OK,
-                    message = "Accepted"
+                val addedToHub = DocumentsService.receiveDocuments(
+                    documentApiList.map { it.toModel() },
+                    writeopiaDb
                 )
+
+                if (addedToHub) {
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = "Accepted"
+                    )
+                } else {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "It was not possible to add documents to AI HUB"
+                    )
+                }
+
             } catch (e: Exception) {
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
