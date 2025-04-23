@@ -1,5 +1,5 @@
 package io.writeopia.connection
 
 object Urls {
-    val aiHub = "https://localhost:8081"
+    const val AI_HUB = "http://localhost:8000"
 }

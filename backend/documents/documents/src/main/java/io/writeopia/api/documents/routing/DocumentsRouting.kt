@@ -24,7 +24,7 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
         get("/{id}") {
             val id = call.pathParameters["id"]!!
 
-            val document = writeopiaDb.getDocumentById(id)
+            val document = DocumentsService.getDocumentById(id, writeopiaDb)
 
             if (document != null) {
                 call.respond(
@@ -59,7 +59,6 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
 
         get("/parent/id/{id}") {
             val id = call.pathParameters["id"]!!
-
             val ids = writeopiaDb.getIdsByParentId(id)
 
             if (ids.isNotEmpty()) {
@@ -73,6 +72,12 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
                     message = "document id by parent with id: $id"
                 )
             }
+        }
+
+        get("/search") {
+            val query = call.queryParameters["q"]
+
+
         }
 
         post<List<DocumentApi>> { documentApiList ->
