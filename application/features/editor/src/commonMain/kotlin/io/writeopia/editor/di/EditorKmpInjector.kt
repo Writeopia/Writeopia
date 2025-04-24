@@ -7,7 +7,6 @@ import io.writeopia.auth.core.manager.AuthManager
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.folders.di.FoldersInjector
-import io.writeopia.di.ConnectionInjectorFactory
 import io.writeopia.di.OllamaInjection
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorKmpViewModel
@@ -93,7 +92,8 @@ class EditorKmpInjector private constructor(
     companion object {
         fun mobile(
             daosInjection: RepositoryInjector,
-            connectionInjector: WriteopiaConnectionInjector,
+            connectionInjector: WriteopiaConnectionInjector =
+                WriteopiaConnectionInjector.singleton(),
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
         ) = EditorKmpInjector(
             authCoreInjection,
@@ -106,7 +106,8 @@ class EditorKmpInjector private constructor(
         fun desktop(
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
             repositoryInjection: RepositoryInjector = SqlDelightDaoInjector.singleton(),
-            connectionInjection: WriteopiaConnectionInjector = ConnectionInjectorFactory.singleton(),
+            connectionInjection: WriteopiaConnectionInjector =
+                WriteopiaConnectionInjector.singleton(),
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
             ollamaInjection: OllamaInjection = OllamaInjection.singleton(),

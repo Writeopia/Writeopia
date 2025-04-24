@@ -76,9 +76,7 @@ fun DesktopApp(
     toggleMaxScreen: () -> Unit,
     startDestination: String = startDestination(),
 ) {
-    //Todo: Review this!
     WriteopiaConnectionInjector.setBaseUrl("http://localhost:8080")
-
 
     if (writeopiaDb != null) {
         WriteopiaDbInjector.initialize(writeopiaDb)

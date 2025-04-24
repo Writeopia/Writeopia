@@ -17,13 +17,6 @@ class SearchRepository(
     private val documentSearch: DocumentSearch,
     private val searchApi: SearchApi,
 ) {
-    suspend fun getNotesAndFolders(): List<SearchItem> {
-        val folders = folderSearch.getLastUpdated()
-        val documents = documentSearch.getLastUpdatedAt()
-
-        return (folders + documents).toSearchItems()
-    }
-
     fun searchNotesAndFolders(query: String): Flow<List<SearchItem>> {
         if (query.isEmpty()) return flow { emit(getNotesAndFolders()) }
 
@@ -47,6 +40,13 @@ class SearchRepository(
         }.map { menuItems ->
             menuItems.toSearchItems()
         }
+    }
+
+    private suspend fun getNotesAndFolders(): List<SearchItem> {
+        val folders = folderSearch.getLastUpdated()
+        val documents = documentSearch.getLastUpdatedAt()
+
+        return (folders + documents).toSearchItems()
     }
 }
 

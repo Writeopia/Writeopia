@@ -42,10 +42,12 @@ kotlin {
                 implementation(project(":application:core:documents"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:resources"))
+                implementation(project(":application:core:connection"))
                 implementation(project(":application:features:note_menu"))
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_persistence_sqldelight"))
                 implementation(project(":plugins:writeopia_serialization"))
+                implementation(project(":plugins:writeopia_network"))
 
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.kotlinx.datetime)

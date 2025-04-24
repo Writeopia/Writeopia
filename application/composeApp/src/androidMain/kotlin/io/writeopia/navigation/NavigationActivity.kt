@@ -13,7 +13,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.BuildConfig
-import io.writeopia.auth.core.token.AppBearerTokenHandler
 import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.common.utils.Destinations
@@ -75,14 +74,11 @@ fun NavigationGraph(
     val uiConfigInjection = UiConfigurationInjector.singleton()
 
     val appDaosInjection = AppRoomDaosInjection.singleton()
-    val connectionInjector = WriteopiaConnectionInjector(
-        bearerTokenHandler = AppBearerTokenHandler,
-        baseUrl = BuildConfig.BASE_URL
-    )
+    WriteopiaConnectionInjector.setBaseUrl(BuildConfig.BASE_URL)
     val uiConfigViewModel = uiConfigInjection.provideUiConfigurationViewModel()
     val repositoryInjection = RoomRepositoryInjection.singleton()
-    val authInjection = AuthInjection(connectionInjector, repositoryInjection)
-    val editorInjector = EditorKmpInjector.mobile(repositoryInjection, connectionInjector)
+    val authInjection = AuthInjection(repositoryInjection)
+    val editorInjector = EditorKmpInjector.mobile(repositoryInjection)
     val notesMenuInjection = NotesMenuKmpInjection.mobile(repositoryInjection)
 
     val searchInjector = remember {

@@ -450,6 +450,61 @@
         <error line="73" column="1" source="standard:indent" />
         <error line="74" column="1" source="standard:indent" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/common/utils/icons/all/CloudUpload.kt">
+        <error line="16" column="1" source="standard:indent" />
+        <error line="17" column="1" source="standard:indent" />
+        <error line="18" column="1" source="standard:indent" />
+        <error line="19" column="1" source="standard:indent" />
+        <error line="20" column="1" source="standard:indent" />
+        <error line="27" column="1" source="standard:indent" />
+        <error line="28" column="1" source="standard:indent" />
+        <error line="29" column="1" source="standard:indent" />
+        <error line="30" column="1" source="standard:indent" />
+        <error line="31" column="1" source="standard:indent" />
+        <error line="32" column="1" source="standard:indent" />
+        <error line="33" column="1" source="standard:indent" />
+        <error line="34" column="1" source="standard:indent" />
+        <error line="35" column="1" source="standard:indent" />
+        <error line="36" column="1" source="standard:indent" />
+        <error line="37" column="1" source="standard:indent" />
+        <error line="38" column="1" source="standard:indent" />
+        <error line="39" column="1" source="standard:indent" />
+        <error line="40" column="1" source="standard:indent" />
+        <error line="41" column="1" source="standard:indent" />
+        <error line="42" column="1" source="standard:indent" />
+        <error line="43" column="1" source="standard:indent" />
+        <error line="44" column="1" source="standard:indent" />
+        <error line="45" column="1" source="standard:indent" />
+        <error line="46" column="1" source="standard:indent" />
+        <error line="47" column="1" source="standard:indent" />
+        <error line="48" column="1" source="standard:indent" />
+        <error line="49" column="1" source="standard:indent" />
+        <error line="50" column="1" source="standard:indent" />
+        <error line="51" column="1" source="standard:indent" />
+        <error line="52" column="1" source="standard:indent" />
+        <error line="53" column="1" source="standard:indent" />
+        <error line="54" column="1" source="standard:indent" />
+        <error line="55" column="1" source="standard:indent" />
+        <error line="56" column="1" source="standard:indent" />
+        <error line="57" column="1" source="standard:indent" />
+        <error line="58" column="1" source="standard:indent" />
+        <error line="59" column="1" source="standard:indent" />
+        <error line="60" column="1" source="standard:indent" />
+        <error line="61" column="1" source="standard:indent" />
+        <error line="62" column="1" source="standard:indent" />
+        <error line="63" column="1" source="standard:indent" />
+        <error line="64" column="1" source="standard:indent" />
+        <error line="65" column="1" source="standard:indent" />
+        <error line="66" column="1" source="standard:indent" />
+        <error line="67" column="1" source="standard:indent" />
+        <error line="68" column="1" source="standard:indent" />
+        <error line="69" column="1" source="standard:indent" />
+        <error line="70" column="1" source="standard:indent" />
+        <error line="71" column="1" source="standard:indent" />
+        <error line="72" column="1" source="standard:indent" />
+        <error line="73" column="1" source="standard:indent" />
+        <error line="74" column="1" source="standard:indent" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/common/utils/icons/all/Command.kt">
         <error line="13" column="1" source="standard:indent" />
         <error line="14" column="1" source="standard:indent" />

@@ -15,8 +15,9 @@ import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 
 class AuthInjection(
-    private val apiClientInjector: WriteopiaConnectionInjector,
     private val daosInjection: RepositoryInjector,
+    private val apiClientInjector: WriteopiaConnectionInjector =
+        WriteopiaConnectionInjector.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton()
 ) {
 
