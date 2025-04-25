@@ -73,5 +73,31 @@ To start the android app use Android Studio.
 
 # SDK
 The SDK allows you to create a text editor an use it instead of a simple `TextField`. You can use this library to create a better story editing experience within apps, such as social media (posts), travel logs, blog apps (like Medium), and chats (like Slack). By using this library, you can provide a great experience for editing text with media.
+Writeopia is available via Maven Central. To get started, include the necessary modules in your build.gradle file:
+```
+implementation("io.writeopia:writeopia-models:[version]")
+implementation("io.writeopia:writeopia-core:[version]")
+```
 
+📦 Additional Plugins
+✅ Persistence (Room Support)
+
+To persist documents locally:
+```
+implementation("io.writeopia:writeopia-persistence:[version]")
+```
+
+🔄 JSON Serialization
+
+For converting documents to JSON:
+```
+implementation("io.writeopia:writeopia-serialization:[version]")
+```
+
+📤 Markdown Export (coming soon)
+
+To export content as Markdown:
+```
+implementation("io.writeopia:writeopia-export:[version]") // next version
+```
 You can more in the [SDK documentation](https://docs.writeopia.io/docs/sdk/overview)
