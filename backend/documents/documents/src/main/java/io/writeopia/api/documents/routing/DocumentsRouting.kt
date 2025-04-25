@@ -74,6 +74,7 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
         }
 
         get("/search") {
+            println("received search request!")
             val query = call.queryParameters["q"]
 
             if (query == null) {
@@ -95,23 +96,29 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
             println("Received documents!")
 
             try {
-                val addedToHub = DocumentsService.receiveDocuments(
-                    documentApiList.map { it.toModel() },
-                    writeopiaDb
-                )
-
-                if (addedToHub) {
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = "Accepted"
+                if (documentApiList.isNotEmpty()) {
+                    val addedToHub = DocumentsService.receiveDocuments(
+                        documentApiList.map { it.toModel() },
+                        writeopiaDb
                     )
+
+                    if (addedToHub) {
+                        call.respond(
+                            status = HttpStatusCode.OK,
+                            message = "Accepted"
+                        )
+                    } else {
+                        call.respond(
+                            status = HttpStatusCode.InternalServerError,
+                            message = "It was not possible to add documents to AI HUB"
+                        )
+                    }
                 } else {
                     call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "It was not possible to add documents to AI HUB"
+                        status = HttpStatusCode.OK,
+                        message = "Empty documents"
                     )
                 }
-
             } catch (e: Exception) {
                 call.respond(
                     status = HttpStatusCode.InternalServerError,

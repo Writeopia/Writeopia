@@ -13,7 +13,9 @@ import io.writeopia.sdk.serialization.extensions.toModel
 class SearchApi(private val client: HttpClient, private val baseUrl: String) {
 
     suspend fun searchApi(query: String): List<Document> {
-        val request = client.get("$baseUrl/documents/search?q=$query") {
+        val url = "$baseUrl/api/document/search?q=\"$query\""
+        println("endpoint: $url")
+        val request = client.get(url) {
             contentType(ContentType.Application.Json)
         }
 
