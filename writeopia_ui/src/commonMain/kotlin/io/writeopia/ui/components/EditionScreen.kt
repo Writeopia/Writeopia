@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CopyAll
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
@@ -36,6 +37,7 @@ fun EditionScreen(
     checkboxClick: () -> Unit = {},
     listItemClick: () -> Unit = {},
     onDelete: () -> Unit = {},
+    onCopy: () -> Unit = {},
     onClose: () -> Unit = {},
 ) {
     val iconPadding = PaddingValues(vertical = 4.dp)
@@ -127,6 +129,19 @@ fun EditionScreen(
             imageVector = Icons.Default.DeleteOutline,
             contentDescription = "Delete",
 //            contentDescription = stringResource(R.string.delete),
+            tint = MaterialTheme.colorScheme.onPrimary
+        )
+
+        Spacer(modifier = Modifier.width(spaceWidth))
+
+        Icon(
+            modifier = Modifier
+                .clip(clipShape)
+                .clickable(onClick = onCopy)
+                .size(iconSize)
+                .padding(iconPadding),
+            imageVector = Icons.Default.CopyAll,
+            contentDescription = "Copy",
             tint = MaterialTheme.colorScheme.onPrimary
         )
 
