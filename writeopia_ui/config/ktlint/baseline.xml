@@ -242,15 +242,6 @@
         <error line="47" column="1" source="standard:indent" />
         <error line="50" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/components/EditionScreen.kt">
-        <error line="4" column="1" source="standard:no-unused-imports" />
-        <error line="11" column="1" source="standard:no-unused-imports" />
-        <error line="12" column="1" source="standard:no-unused-imports" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/components/multiselection/DragSelectionBox.kt">
-        <error line="28" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="91" column="1" source="standard:no-blank-line-before-rbrace" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/DragCardTargetMobile.kt">
         <error line="62" column="13" source="standard:chain-wrapping" />
     </file>
@@ -270,29 +261,6 @@
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/HeaderDrawer.kt">
         <error line="261" column="1" source="standard:no-consecutive-blank-lines" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/ImageDrawer.kt">
-        <error line="125" column="1" source="standard:no-empty-first-line-in-method-block" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/LoadingDrawer.kt">
-        <error line="4" column="1" source="standard:no-unused-imports" />
-        <error line="7" column="1" source="standard:no-unused-imports" />
-        <error line="8" column="1" source="standard:no-unused-imports" />
-        <error line="9" column="1" source="standard:no-unused-imports" />
-        <error line="10" column="1" source="standard:no-unused-imports" />
-        <error line="11" column="1" source="standard:no-unused-imports" />
-        <error line="13" column="1" source="standard:no-unused-imports" />
-        <error line="16" column="1" source="standard:no-unused-imports" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/SpaceDrawer.kt">
-        <error line="68" column="1" source="standard:no-consecutive-blank-lines" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/UnOrderedListItemDrawer.kt">
-        <error line="129" column="1" source="standard:no-consecutive-blank-lines" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/decorations/DefaultTagDecoration.kt">
-        <error line="7" column="1" source="standard:no-unused-imports" />
-        <error line="63" column="56" source="standard:comma-spacing" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/decorations/TagDecoration.kt">
         <error line="13" column="82" source="standard:function-return-type-spacing" />
@@ -490,9 +458,6 @@
         <error line="146" column="1" source="standard:indent" />
         <error line="147" column="1" source="standard:indent" />
         <error line="148" column="1" source="standard:indent" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/model/DrawStory.kt">
-        <error line="20" column="21" source="standard:no-multi-spaces" />
     </file>
     <file name="src/commonTest/kotlin/io/writeopia/ui/manager/WriteopiaStateManagerTest.kt">
         <error line="317" column="30" source="standard:discouraged-comment-location" />

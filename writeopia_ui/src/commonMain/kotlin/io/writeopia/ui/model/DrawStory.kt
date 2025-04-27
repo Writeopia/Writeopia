@@ -17,5 +17,5 @@ data class DrawStory(
 
     val desktopKey = storyStep.key + isSelected.let { if (it) 1 else 0 }
 
-    val mobileKey =  storyStep.key + isSelected.let { if (it) 1 else 0 }
+    val mobileKey = storyStep.key + isSelected.let { if (it) 1 else 0 }
 }

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,7 +48,10 @@ object DefaultTagDecoration : TagDecoration {
         }
     }
 
-    private fun paddingForTagInfo(tagInfoList: Iterable<TagInfo>, drawConfig: DrawConfig): PaddingValues {
+    private fun paddingForTagInfo(
+        tagInfoList: Iterable<TagInfo>,
+        drawConfig: DrawConfig
+    ): PaddingValues {
         val padding = 8.dp
         val startPadding = drawConfig.textDrawerInnerStartPadding
 
@@ -60,7 +62,7 @@ object DefaultTagDecoration : TagDecoration {
         return when (tagInfo.position) {
             -1 -> PaddingValues(start = startPadding.dp, top = padding)
             1 -> PaddingValues(start = startPadding.dp, bottom = padding)
-            2 -> PaddingValues(start = startPadding.dp,top = padding, bottom = padding)
+            2 -> PaddingValues(start = startPadding.dp, top = padding, bottom = padding)
             else -> PaddingValues(start = startPadding.dp)
         }
     }
