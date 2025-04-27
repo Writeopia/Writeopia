@@ -25,7 +25,6 @@ val LocalDragSelectionInfo = compositionLocalOf { DragSelectionInfo() }
 
 @Composable
 fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScope.() -> Unit) {
-
     var initialPosition by remember { mutableStateOf(Offset.Zero) }
     var thisDragAmount by remember { mutableStateOf(Offset.Zero) }
     var state by remember { mutableStateOf(DragSelectionInfo(isDragging = false)) }
@@ -88,7 +87,6 @@ fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScop
             }
         }
     }
-
 }
 
 private val dragBoxColor = Color(0xFF64B5F6)

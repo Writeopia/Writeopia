@@ -122,7 +122,6 @@ class ImageDrawer(
                                 modifier = imageModifier,
                                 dataToDrop = DropInfo(step, drawInfo.position)
                             ) {
-
                                 SubcomposeAsyncImage(
                                     model = ImageRequest.Builder(LocalPlatformContext.current)
                                         .data(step.url ?: step.path)
