@@ -2,8 +2,10 @@ package io.writeopia.documents.graph.navigation
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
@@ -11,6 +13,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import io.writeopia.common.utils.Destinations
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
+import io.writeopia.documents.graph.extensions.toGraph
 import io.writeopia.forcegraph.ForceDirectedGraph
 
 fun NavController.navigateToForceGraph() {
@@ -31,12 +34,15 @@ fun NavGraphBuilder.documentsGraphNavigation(
         val viewModel = documentsGraphInjection.injectViewModel()
         val state by viewModel.graphState.collectAsState()
 
-        ForceDirectedGraph(
-            modifier = Modifier.fillMaxSize(),
-            nodes = state.nodes,
-            links = state.links
-        ) { itemData ->
-            itemData.title
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            ForceDirectedGraph(
+                modifier = Modifier.fillMaxSize(),
+                nodes = state.nodes,
+                links = state.links
+            ) { itemData ->
+                itemData.title
+            }
         }
+
     }
 }
