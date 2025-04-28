@@ -2,6 +2,7 @@ package io.writeopia.forcegraph
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -40,7 +41,7 @@ data class Link(
 )
 
 @Composable
-fun ForceDirectedGraph(nodes: List<Node>, links: List<Link>) {
+fun BoxWithConstraintsScope.ForceDirectedGraph(nodes: List<Node>, links: List<Link>) {
     // Physics animation loop
     LaunchedEffect(nodes, links) {
         while (isActive) {
@@ -48,8 +49,6 @@ fun ForceDirectedGraph(nodes: List<Node>, links: List<Link>) {
             delay(16) // Changed from 200 to 16 for smoother animation
         }
     }
-
-    println("start drag!! nodes111: ${nodes.size}")
 
     val textMeasurer = rememberTextMeasurer()
     val textStyle =
@@ -128,7 +127,7 @@ fun ForceDirectedGraph(nodes: List<Node>, links: List<Link>) {
     }
 }
 
-fun tick(nodes: List<Node>, links: List<Link>, dt: Float) {
+fun BoxWithConstraintsScope.tick(nodes: List<Node>, links: List<Link>, dt: Float) {
     applyLinkForce(links)
     applyChargeForce(nodes)
     applyCenteringForce(nodes)
@@ -136,8 +135,8 @@ fun tick(nodes: List<Node>, links: List<Link>, dt: Float) {
 }
 
 fun applyLinkForce(links: List<Link>) {
-    val linkDistance = 100f
-    val strength = 0.1f // Increased from 0.01f
+    val linkDistance = 150f
+    val strength = 0.15f
 
     for (link in links) {
         val dx = link.target.x - link.source.x
@@ -155,7 +154,7 @@ fun applyLinkForce(links: List<Link>) {
 }
 
 fun applyChargeForce(nodes: List<Node>) {
-    val chargeStrength = 1000f // Reduced from 5000f
+    val chargeStrength = 3000f // Reduced from 5000f
 
     for (i in nodes.indices) {
         for (j in i + 1 until nodes.size) {
@@ -176,10 +175,10 @@ fun applyChargeForce(nodes: List<Node>) {
     }
 }
 
-fun applyCenteringForce(nodes: List<Node>) {
-    val centerX = 450f
-    val centerY = 350f
-    val strength = 0.01f // Increased from 0.005f
+fun BoxWithConstraintsScope.applyCenteringForce(nodes: List<Node>) {
+    val centerX = this.maxWidth.value / 2
+    val centerY = this.maxHeight.value / 2
+    val strength = 0.001f // Increased from 0.005f
 
     for (node in nodes) {
         node.vx += (centerX - node.x) * strength

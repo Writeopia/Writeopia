@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -34,11 +35,21 @@ fun NavGraphBuilder.documentsGraphNavigation(
         val viewModel = documentsGraphInjection.injectViewModel()
         val state by viewModel.graphState.collectAsState()
 
-        println("draw!")
+        val initialXPercentage = remember { (30..900).random().toFloat() / 1000 }
+        val initialYPercentage = remember { (30..950).random().toFloat() / 1000 }
 
-        ForceDirectedGraph(
-            nodes = state.nodes,
-            links = state.links
-        )
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val graph by derivedStateOf {
+                state.toGraph(
+                    this.maxWidth.value,
+                    this.maxHeight.value
+                )
+            }
+
+            ForceDirectedGraph(
+                nodes = graph.nodes,
+                links = graph.links
+            )
+        }
     }
 }
