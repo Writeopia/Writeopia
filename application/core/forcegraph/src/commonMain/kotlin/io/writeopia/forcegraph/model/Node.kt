@@ -7,4 +7,5 @@ data class Node<T>(
     val vx: Float = 0f,
     val vy: Float = 0f,
     val isDragged: Boolean = false,
+    val isFolder: Boolean
 )

@@ -11,7 +11,8 @@ internal fun Map<String, List<ItemData>>.toGraph(): Graph<ItemData> {
             Node(
                 data = item,
                 x = (100..800).random().toFloat(),
-                y = (100..600).random().toFloat()
+                y = (100..600).random().toFloat(),
+                isFolder = item.isFolder
             )
         }
     }

@@ -36,18 +36,26 @@ fun <T> ForceDirectedGraph(
 
         // Draw nodes
         nodes.forEach { node ->
-            drawCircle(
-                color = if (node.isDragged) Color.Red else Color(0xFF2196F3),
-                center = Offset(node.x, node.y),
-                radius = 8f
-            )
+            if (node.isFolder) {
+                drawCircle(
+                    color = if (node.isDragged) Color.Red else Color.Gray,
+                    center = Offset(node.x, node.y),
+                    radius = 12f
+                )
 
-            drawText(
-                textMeasurer,
-                text = getLabel(node.data),
-                topLeft = Offset(node.x, node.y + 8F),
-                style = textStyle
-            )
+                drawText(
+                    textMeasurer,
+                    text = getLabel(node.data),
+                    topLeft = Offset(node.x, node.y + 8F),
+                    style = textStyle
+                )
+            } else {
+                drawCircle(
+                    color = if (node.isDragged) Color.Red else Color(0xFF2196F3),
+                    center = Offset(node.x, node.y),
+                    radius = 6f
+                )
+            }
         }
     }
 }
