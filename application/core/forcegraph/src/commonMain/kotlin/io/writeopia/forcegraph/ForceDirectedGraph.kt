@@ -1,6 +1,7 @@
 package io.writeopia.forcegraph
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -12,7 +13,7 @@ import io.writeopia.forcegraph.model.Link
 import io.writeopia.forcegraph.model.Node
 
 @Composable
-fun <T> ForceDirectedGraph(
+fun <T> BoxWithConstraintsScope.ForceDirectedGraph(
     modifier: Modifier = Modifier,
     links: List<Link<T>>,
     nodes: List<Node<T>>,
@@ -28,8 +29,8 @@ fun <T> ForceDirectedGraph(
         links.forEach { link ->
             drawLine(
                 color = Color.LightGray,
-                start = Offset(link.source.x, link.source.y),
-                end = Offset(link.target.x, link.target.y),
+                start = Offset(link.source.x * maxWidth.value, link.source.y * maxHeight.value),
+                end = Offset(link.target.x * maxWidth.value, link.target.y * maxHeight.value),
                 strokeWidth = 2f
             )
         }
@@ -39,20 +40,20 @@ fun <T> ForceDirectedGraph(
             if (node.isFolder) {
                 drawCircle(
                     color = if (node.isDragged) Color.Red else Color.Gray,
-                    center = Offset(node.x, node.y),
+                    center = Offset(node.x * maxWidth.value, node.y * maxHeight.value),
                     radius = 12f
                 )
 
                 drawText(
                     textMeasurer,
                     text = getLabel(node.data),
-                    topLeft = Offset(node.x, node.y + 8F),
+                    topLeft = Offset(node.x * maxWidth.value, node.y * maxHeight.value + 8F),
                     style = textStyle
                 )
             } else {
                 drawCircle(
                     color = if (node.isDragged) Color.Red else Color(0xFF2196F3),
-                    center = Offset(node.x, node.y),
+                    center = Offset(node.x * maxWidth.value, node.y * maxHeight.value),
                     radius = 6f
                 )
             }
