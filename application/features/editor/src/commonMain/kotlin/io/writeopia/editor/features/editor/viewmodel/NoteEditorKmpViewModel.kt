@@ -42,6 +42,7 @@ import io.writeopia.ui.model.DrawState
 import io.writeopia.ui.utils.Spans
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -101,6 +102,7 @@ class NoteEditorKmpViewModel(
 
                         KeyboardEvent.CANCEL -> {
                             writeopiaManager.clearSelection()
+                            aiJob?.cancel()
                         }
 
                         KeyboardEvent.UNDO -> {
@@ -172,6 +174,8 @@ class NoteEditorKmpViewModel(
         .documentInfo
         .map { info -> !info.isFavorite }
         .stateIn(viewModelScope, started = SharingStarted.Lazily, initialValue = false)
+
+    private var aiJob: Job? = null
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val toDrawWithDecoration: StateFlow<DrawState> by lazy {
@@ -441,7 +445,7 @@ class NoteEditorKmpViewModel(
     override fun askAiBySelection() {
         if (ollamaRepository == null) return
 
-        viewModelScope.launch(Dispatchers.Default) {
+        aiJob = viewModelScope.launch(Dispatchers.Default) {
             PromptService.promptBySelection(writeopiaManager, ollamaRepository)
         }
     }
@@ -543,7 +547,7 @@ class NoteEditorKmpViewModel(
     private fun documentPrompt(promptFn: (String, String, String) -> Flow<ResultData<String>>) {
         if (ollamaRepository == null) return
 
-        viewModelScope.launch(Dispatchers.Default) {
+        aiJob = viewModelScope.launch(Dispatchers.Default) {
             PromptService.documentPrompt(promptFn, writeopiaManager, ollamaRepository)
         }
     }
