@@ -30,10 +30,13 @@ kotlin {
             dependencies {
                 implementation(project(":writeopia"))
                 implementation(project(":writeopia_models"))
+                implementation(project(":plugins:writeopia_persistence_core"))
 
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:models"))
+                implementation(project(":application:core:common_ui"))
                 implementation(project(":application:core:persistence_bridge"))
+                implementation(project(":application:core:configuration"))
 
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.datetime)

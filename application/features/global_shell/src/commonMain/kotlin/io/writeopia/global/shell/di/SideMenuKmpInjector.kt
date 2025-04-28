@@ -13,7 +13,7 @@ import io.writeopia.di.OllamaInjection
 import io.writeopia.global.shell.viewmodel.GlobalShellKmpViewModel
 import io.writeopia.global.shell.viewmodel.GlobalShellViewModel
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
-import io.writeopia.notemenu.data.usecase.NotesUseCase
+import io.writeopia.core.folders.repository.NotesUseCase
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector

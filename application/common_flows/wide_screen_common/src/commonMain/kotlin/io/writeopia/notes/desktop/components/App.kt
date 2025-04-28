@@ -40,8 +40,8 @@ import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNote
-import io.writeopia.notemenu.data.model.NotesNavigation
-import io.writeopia.notemenu.data.model.NotesNavigationType
+import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH

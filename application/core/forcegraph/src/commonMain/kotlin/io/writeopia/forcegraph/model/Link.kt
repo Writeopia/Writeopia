@@ -1,6 +1,6 @@
 package io.writeopia.forcegraph.model
 
-data class Link(
-    val source: Node,
-    val target: Node,
+data class Link<T>(
+    val source: Node<T>,
+    val target: Node<T>,
 )

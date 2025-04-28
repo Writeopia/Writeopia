@@ -21,7 +21,7 @@ import androidx.navigation.NavController
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.controller.OllamaConfigController
 import io.writeopia.model.ColorThemeOption
-import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.ui.screen.DesktopNotesMenu
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.sdk.models.files.ExternalFile

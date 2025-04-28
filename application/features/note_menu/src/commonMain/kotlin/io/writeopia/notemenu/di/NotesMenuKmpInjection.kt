@@ -7,8 +7,8 @@ import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.repository.FolderRepository
-import io.writeopia.notemenu.data.model.NotesNavigation
-import io.writeopia.notemenu.data.usecase.NotesUseCase
+import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.core.folders.repository.NotesUseCase
 import io.writeopia.notemenu.viewmodel.ChooseNoteKmpViewModel
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.FolderStateController

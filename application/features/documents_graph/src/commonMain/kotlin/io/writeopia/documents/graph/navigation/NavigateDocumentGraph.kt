@@ -9,6 +9,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import io.writeopia.common.utils.Destinations
 import io.writeopia.forcegraph.ForceDirectedGraph
+import io.writeopia.sdk.models.document.MenuItem
 
 fun NavController.navigateToForceGraph() {
     navigate(Destinations.FORCE_GRAPH.id)
@@ -24,7 +25,7 @@ fun NavGraphBuilder.documentsGraphNavigation(
     composable(
         route = graphForce(),
     ) {
-        ForceDirectedGraph(
+        ForceDirectedGraph<MenuItem>(
             modifier = Modifier.fillMaxSize(),
             nodes = emptyList(),
             links = emptyList()

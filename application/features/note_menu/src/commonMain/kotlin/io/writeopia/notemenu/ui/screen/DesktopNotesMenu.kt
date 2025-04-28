@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.file.directoryChooserSave
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.ui.LocalToastInfo
-import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.ui.screen.actions.DesktopNoteActionsMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesConfigurationMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu

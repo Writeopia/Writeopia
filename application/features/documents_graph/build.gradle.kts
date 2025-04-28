@@ -32,6 +32,7 @@ kotlin {
             dependencies {
                 implementation(project(":application:core:forcegraph"))
                 implementation(project(":application:core:utils"))
+                implementation(project(":application:core:models"))
                 implementation(project(":writeopia_models"))
 
                 implementation(compose.runtime)

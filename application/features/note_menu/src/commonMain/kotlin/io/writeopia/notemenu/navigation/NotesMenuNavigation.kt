@@ -13,8 +13,8 @@ import androidx.navigation.navArgument
 import io.writeopia.common.utils.Destinations
 import io.writeopia.di.OllamaConfigInjector
 import io.writeopia.model.ColorThemeOption
-import io.writeopia.notemenu.data.model.NotesNavigation
-import io.writeopia.notemenu.data.model.NotesNavigationType
+import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.notemenu.ui.screen.menu.NotesMenuScreen
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel

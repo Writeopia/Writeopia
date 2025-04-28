@@ -1,4 +1,4 @@
-package io.writeopia.notemenu.data.model
+package io.writeopia.common.utils
 
 sealed class NotesNavigation(val navigationType: NotesNavigationType, val id: String) {
     data object Favorites :

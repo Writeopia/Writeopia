@@ -9,8 +9,13 @@ import io.writeopia.forcegraph.model.Link
 import io.writeopia.forcegraph.model.Node
 
 @Composable
-fun ForceDirectedGraph(modifier: Modifier = Modifier, links: List<Link>, nodes: List<Node>) {
-    Canvas(modifier = modifier
+fun <T> ForceDirectedGraph(
+    modifier: Modifier = Modifier,
+    links: List<Link<T>>,
+    nodes: List<Node<T>>
+) {
+    Canvas(
+        modifier = modifier
 //        .pointerInput(Unit) {
 //            var draggingNode: Node? = null
 //

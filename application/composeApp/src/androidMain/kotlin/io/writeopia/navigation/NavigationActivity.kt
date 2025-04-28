@@ -21,7 +21,7 @@ import io.writeopia.common.utils.di.SharedPreferencesInjector
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.MobileSearchInjection
 import io.writeopia.mobile.AppMobile
-import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notemenu.navigation.NoteMenuDestiny
