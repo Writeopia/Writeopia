@@ -12,7 +12,6 @@ import androidx.navigation.compose.composable
 import io.writeopia.common.utils.Destinations
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.forcegraph.ForceDirectedGraph
-import io.writeopia.sdk.models.document.MenuItem
 
 fun NavController.navigateToForceGraph() {
     navigate(Destinations.FORCE_GRAPH.id)
@@ -32,7 +31,7 @@ fun NavGraphBuilder.documentsGraphNavigation(
         val viewModel = documentsGraphInjection.injectViewModel()
         val state by viewModel.graphState.collectAsState()
 
-        ForceDirectedGraph<MenuItem>(
+        ForceDirectedGraph(
             modifier = Modifier.fillMaxSize(),
             nodes = state.nodes,
             links = state.links

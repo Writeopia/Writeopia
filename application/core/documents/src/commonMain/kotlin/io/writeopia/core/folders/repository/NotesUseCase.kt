@@ -4,7 +4,6 @@ import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.collections.merge
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.models.interfaces.LoadDocuments
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
@@ -24,7 +23,7 @@ class NotesUseCase private constructor(
     private val documentRepository: DocumentRepository,
     private val notesConfig: ConfigurationRepository,
     private val folderRepository: FolderRepository
-): LoadDocuments {
+) {
 
     suspend fun createFolder(name: String, userId: String) {
         folderRepository.createFolder(Folder.fromName(name, userId))
@@ -88,7 +87,7 @@ class NotesUseCase private constructor(
      *
      * @param parentId The id of the folder
      */
-    override suspend fun listenForMenuItemsByParentId(
+    suspend fun listenForMenuItemsByParentId(
         parentId: String,
         userId: String,
     ): Flow<Map<String, List<MenuItem>>> =

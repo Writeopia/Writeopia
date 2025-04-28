@@ -1,11 +1,11 @@
 package io.writeopia.documents.graph.extensions
 
+import io.writeopia.documents.graph.ItemData
 import io.writeopia.forcegraph.Graph
 import io.writeopia.forcegraph.model.Link
 import io.writeopia.forcegraph.model.Node
-import io.writeopia.sdk.models.document.MenuItem
 
-internal fun Map<String, List<MenuItem>>.toGraph(): Graph<MenuItem> {
+internal fun Map<String, List<ItemData>>.toGraph(): Graph<ItemData> {
     val toNodes = this.mapValues { (id, menuItems) ->
         menuItems.map { item ->
             Node(
