@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.account.navigation.accountMenuNavigation
 import io.writeopia.common.utils.Destinations
+import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.documents.graph.navigation.documentsGraphNavigation
 import io.writeopia.documents.graph.navigation.navigateToForceGraph
 import io.writeopia.editor.di.TextEditorInjector
@@ -32,6 +33,7 @@ fun Navigation(
     startDestination: String = Destinations.AUTH_MENU_INNER_NAVIGATION.id,
     navController: NavHostController = rememberNavController(),
     notesMenuInjection: NotesMenuInjection,
+    documentsGraphInjection: DocumentsGraphInjection? = null,
     sideMenuKmpInjector: SideMenuKmpInjector? = null,
     editorInjector: TextEditorInjector,
     searchInjection: SearchInjection? = null,
@@ -53,10 +55,13 @@ fun Navigation(
                 navigateToForceGraph = navController::navigateToForceGraph
             )
 
-            documentsGraphNavigation(
-                navigationController = navController,
-                sharedTransitionScope = this@SharedTransitionLayout,
-            )
+            if (documentsGraphInjection != null) {
+                documentsGraphNavigation(
+                    navigationController = navController,
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    documentsGraphInjection = documentsGraphInjection
+                )
+            }
 
             editorNavigation(
                 navigateBack = {

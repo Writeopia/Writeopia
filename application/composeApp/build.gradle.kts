@@ -43,6 +43,7 @@ kotlin {
                 implementation(project(":application:core:navigation"))
                 implementation(project(":application:core:documents"))
 
+
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_serialization"))
                 implementation(project(":plugins:writeopia_network"))
@@ -54,6 +55,7 @@ kotlin {
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:resources"))
+                implementation(project(":application:features:documents_graph"))
                 implementation(project(":application:features:note_menu"))
                 implementation(project(":application:features:editor"))
                 implementation(project(":application:features:account"))

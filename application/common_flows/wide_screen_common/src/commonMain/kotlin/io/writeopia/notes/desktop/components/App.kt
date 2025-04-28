@@ -42,6 +42,7 @@ import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNote
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
+import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
@@ -50,6 +51,7 @@ import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.ui.screen.menu.EditFileScreen
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
 import io.writeopia.sql.WriteopiaDb
+import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
 import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.theme.WriteopiaTheme
@@ -94,6 +96,9 @@ fun DesktopApp(
     val sideMenuInjector = remember {
         SideMenuKmpInjector()
     }
+
+    val documentsGraphInjection =
+        DocumentsGraphInjection(repositoryInjection = SqlDelightDaoInjector.singleton())
 
     val globalShellViewModel: GlobalShellViewModel = sideMenuInjector.provideSideMenuViewModel()
     val colorTheme = colorThemeOption.collectAsState().value
@@ -181,6 +186,7 @@ fun DesktopApp(
                                 startDestination = startDestination,
                                 notesMenuInjection = notesMenuInjection,
                                 sideMenuKmpInjector = sideMenuInjector,
+                                documentsGraphInjection = documentsGraphInjection,
                                 editorInjector = editorInjector,
                                 selectColorTheme = selectColorTheme,
                                 navController = navigationController
