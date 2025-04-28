@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
@@ -14,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import io.writeopia.common.utils.Destinations
 import io.writeopia.di.OllamaConfigInjector
+import io.writeopia.forcegraph.ForceDirectedGraph
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.notemenu.data.model.NotesNavigation
 import io.writeopia.notemenu.data.model.NotesNavigationType
@@ -26,6 +28,7 @@ const val NAVIGATION_PATH = "path"
 
 object NoteMenuDestiny {
     fun noteMenu() = "${Destinations.CHOOSE_NOTE.id}/{$NAVIGATION_TYPE}/{$NAVIGATION_PATH}"
+    fun graphForce() = Destinations.FORCE_GRAPH.id
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -82,12 +85,19 @@ fun NavGraphBuilder.notesMenuNavigation(
             navigateToFolders = navigateToFolders,
             addFolder = chooseNoteViewModel::addFolder,
             editFolder = chooseNoteViewModel::editFolder,
+            onForceGraphSelected = { navigationController.navigateToForceGraph() },
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
     }
+
+    composable(
+        route = NoteMenuDestiny.graphForce(),
+    ) { 
+        ForceDirectedGraph(modifier = Modifier.fillMaxSize())
+    }
 }
 
-fun NavHostController.navigateToNotes(navigation: NotesNavigation) {
+fun NavController.navigateToNotes(navigation: NotesNavigation) {
     when (navigation) {
         is NotesNavigation.Folder -> {
             navigate(
@@ -99,4 +109,8 @@ fun NavHostController.navigateToNotes(navigation: NotesNavigation) {
             "${Destinations.CHOOSE_NOTE.id}/${navigation.navigationType.type}/path",
         )
     }
+}
+
+internal fun NavController.navigateToForceGraph() {
+    navigate(Destinations.FORCE_GRAPH.id)
 }

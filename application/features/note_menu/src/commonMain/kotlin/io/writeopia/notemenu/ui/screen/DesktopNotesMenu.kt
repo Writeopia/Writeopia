@@ -57,6 +57,7 @@ fun DesktopNotesMenu(
     onNewNoteClick: () -> Unit,
     onNoteClick: (String, String) -> Unit,
     navigateToNotes: (NotesNavigation) -> Unit,
+    navigateToForceGraph: () -> Unit,
 //    addFolder: () -> Unit,
 //    editFolder: (MenuItemUi.FolderUi) -> Unit,
     modifier: Modifier = Modifier,
@@ -145,6 +146,7 @@ fun DesktopNotesMenu(
                 syncInProgressState = chooseNoteViewModel.syncInProgress,
                 onSyncLocallySelected = chooseNoteViewModel::onSyncLocallySelected,
                 onWriteLocallySelected = chooseNoteViewModel::onWriteLocallySelected,
+                onForceGraphSelected = navigateToForceGraph
             )
 
             val showOnboard by chooseNoteViewModel.showOnboardingState.collectAsState()

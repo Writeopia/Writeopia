@@ -41,6 +41,7 @@ actual fun NotesMenuScreen(
     onNewNoteClick: () -> Unit,
     onNoteClick: (String, String) -> Unit,
     onAccountClick: () -> Unit,
+    onForceGraphSelected: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     navigateToFolders: (NotesNavigation) -> Unit,
     addFolder: () -> Unit,
@@ -72,6 +73,7 @@ actual fun NotesMenuScreen(
         onNewNoteClick = onNewNoteClick,
         onNoteClick = onNoteClick,
         navigateToNotes = navigateToFolders,
+        navigateToForceGraph = onForceGraphSelected,
 //        addFolder = addFolder,
 //        editFolder = editFolder,
         modifier = modifier.background(background).dragAndDropTarget(

@@ -24,6 +24,7 @@ actual fun NotesMenuScreen(
     onNewNoteClick: () -> Unit,
     onNoteClick: (String, String) -> Unit,
     onAccountClick: () -> Unit,
+    onForceGraphSelected: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     navigateToFolders: (NotesNavigation) -> Unit,
     addFolder: () -> Unit,

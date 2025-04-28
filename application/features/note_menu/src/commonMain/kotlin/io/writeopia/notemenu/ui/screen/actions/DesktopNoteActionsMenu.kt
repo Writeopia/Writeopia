@@ -37,9 +37,19 @@ fun DesktopNoteActionsMenu(
     syncInProgressState: StateFlow<SyncState>,
     onSyncLocallySelected: () -> Unit,
     onWriteLocallySelected: () -> Unit,
+    onForceGraphSelected: () -> Unit
 ) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         val showSyncLoading by syncInProgressState.collectAsState()
+
+        Icon(
+            imageVector = WrIcons.chart,
+            contentDescription = "Chart",
+            modifier = Modifier.icon(onForceGraphSelected)
+                .padding(2.dp)
+                .testTag("onForceGraphSelected"),
+            tint = MaterialTheme.colorScheme.onBackground
+        )
 
         LoadingBox(showSyncLoading == SyncState.LoadingWrite) {
             Icon(
@@ -169,6 +179,7 @@ private fun DesktopNoteActionsMenuPreview() {
         syncInProgressState = MutableStateFlow(SyncState.Idle),
         onSyncLocallySelected = {},
         onWriteLocallySelected = {},
-        exportAsTxtClick = {}
+        exportAsTxtClick = {},
+        onForceGraphSelected = {}
     )
 }
