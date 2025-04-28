@@ -57,8 +57,6 @@ fun Navigation(
 
             if (documentsGraphInjection != null) {
                 documentsGraphNavigation(
-                    navigationController = navController,
-                    sharedTransitionScope = this@SharedTransitionLayout,
                     documentsGraphInjection = documentsGraphInjection
                 )
             }

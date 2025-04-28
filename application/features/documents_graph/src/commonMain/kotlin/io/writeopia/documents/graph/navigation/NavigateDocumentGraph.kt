@@ -23,10 +23,7 @@ fun NavController.navigateToForceGraph() {
 
 fun graphForce() = Destinations.FORCE_GRAPH.id
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 fun NavGraphBuilder.documentsGraphNavigation(
-    navigationController: NavController,
-    sharedTransitionScope: SharedTransitionScope,
     documentsGraphInjection: DocumentsGraphInjection
 ) {
     composable(
@@ -34,9 +31,6 @@ fun NavGraphBuilder.documentsGraphNavigation(
     ) {
         val viewModel = documentsGraphInjection.injectViewModel()
         val state by viewModel.graphState.collectAsState()
-
-        val initialXPercentage = remember { (30..900).random().toFloat() / 1000 }
-        val initialYPercentage = remember { (30..950).random().toFloat() / 1000 }
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val graph by derivedStateOf {

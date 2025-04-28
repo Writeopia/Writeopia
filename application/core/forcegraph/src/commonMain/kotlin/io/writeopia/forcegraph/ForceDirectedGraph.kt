@@ -135,7 +135,7 @@ fun BoxWithConstraintsScope.tick(nodes: List<Node>, links: List<Link>, dt: Float
 }
 
 fun applyLinkForce(links: List<Link>) {
-    val linkDistance = 150f
+    val linkDistance = 40F
     val strength = 0.15f
 
     for (link in links) {
@@ -154,7 +154,7 @@ fun applyLinkForce(links: List<Link>) {
 }
 
 fun applyChargeForce(nodes: List<Node>) {
-    val chargeStrength = 3000f // Reduced from 5000f
+    val chargeStrength = 6000f // Reduced from 5000f
 
     for (i in nodes.indices) {
         for (j in i + 1 until nodes.size) {
