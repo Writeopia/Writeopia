@@ -18,7 +18,7 @@ class DocumentsGraphViewModel(
 
     private val _selectedOrigin = MutableStateFlow("root")
 
-    val graphState: StateFlow<Graph<ItemData>> by lazy {
+    val graphState: StateFlow<Graph> by lazy {
         _selectedOrigin.map { origin ->
             graphRepository.loadAllDocumentsAsAdjacencyList("disconnected_user")
         }.map { map ->

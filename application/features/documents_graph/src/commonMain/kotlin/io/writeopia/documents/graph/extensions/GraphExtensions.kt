@@ -2,25 +2,24 @@ package io.writeopia.documents.graph.extensions
 
 import io.writeopia.documents.graph.ItemData
 import io.writeopia.forcegraph.Graph
-import io.writeopia.forcegraph.model.Link
-import io.writeopia.forcegraph.model.Node
+import io.writeopia.forcegraph.Link
+import io.writeopia.forcegraph.Node
 
-internal fun Map<String, List<ItemData>>.toGraph(): Graph<ItemData> {
-    val range = (30..900)
-
+internal fun Map<String, List<ItemData>>.toGraph(): Graph {
     val toNodes = this.mapValues { (id, menuItems) ->
         menuItems.map { item ->
             Node(
-                data = item,
-                x = (30..900).random().toFloat().div(1000),
-                y = (30..970).random().toFloat().div(1000),
+                id = item.id,
+                label = item.title,
+                initialX = (30..900).random().toFloat(),
+                initialY = (30..970).random().toFloat(),
                 isFolder = item.isFolder
             )
         }
     }
 
     val nodes = toNodes.values.flatten()
-    val nodesMap = nodes.associateBy { it.data.id }
+    val nodesMap = nodes.associateBy { it.id }
 
     val links = toNodes.mapValues { (id, nodes) ->
         val sourceNode = nodesMap[id] ?: return@mapValues emptyList()
