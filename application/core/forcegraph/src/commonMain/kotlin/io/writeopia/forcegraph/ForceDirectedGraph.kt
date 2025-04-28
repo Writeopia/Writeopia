@@ -23,42 +23,7 @@ fun <T> ForceDirectedGraph(
     val textStyle =
         MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onBackground)
 
-    Canvas(
-        modifier = modifier
-//        .pointerInput(Unit) {
-//            var draggingNode: Node? = null
-//
-//            detectDragGestures(
-//                onDragStart = { offset ->
-//                    // Find if clicked on a node
-//                    draggingNode = nodes.find { node ->
-//                        val dx = node.x - offset.x
-//                        val dy = node.y - offset.y
-//                        sqrt(dx * dx + dy * dy) < 20f // 20px radius hit area
-//                    }?.also {
-//                        println("isDragged")
-//                        it.isDragged = true
-//                    }
-//                },
-//                onDragEnd = {
-//                    draggingNode?.isDragged = false
-//                    draggingNode = null
-//                },
-//                onDragCancel = {
-//                    draggingNode?.isDragged = false
-//                    draggingNode = null
-//                },
-//                onDrag = { change, dragAmount ->
-//                    draggingNode?.let { node ->
-//                        node.x += dragAmount.x
-//                        node.y += dragAmount.y
-//                        node.vx = 0f
-//                        node.vy = 0f
-//                    }
-//                }
-//            )
-//        }
-    ) {
+    Canvas(modifier = modifier) {
         // Draw links
         links.forEach { link ->
             drawLine(

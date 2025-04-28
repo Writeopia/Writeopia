@@ -14,10 +14,11 @@ class GraphRepository(
         val folders = folderRepository.getFoldersForUser(userId)
         val documents = documentRepository.loadDocumentsForUser(userId)
 
-        val items = folders + documents
-        val graph = items.map { item -> ItemData(item.id, item.title, item.parentId) }
-            .toAdjencyList()
-        
+        val root = ItemData(id = "root", title = "", parentId = "")
+        val items =
+            (folders + documents).map { item -> ItemData(item.id, item.title, item.parentId) }
+        val graph = (items + root).toAdjencyList()
+
         return graph
     }
 }
