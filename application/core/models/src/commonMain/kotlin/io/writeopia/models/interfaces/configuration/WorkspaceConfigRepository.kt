@@ -1,4 +1,4 @@
-package io.writeopia.models.configuration
+package io.writeopia.models.interfaces.configuration
 
 interface WorkspaceConfigRepository {
 

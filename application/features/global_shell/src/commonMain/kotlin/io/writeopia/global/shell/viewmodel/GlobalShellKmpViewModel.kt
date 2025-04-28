@@ -14,7 +14,7 @@ import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.common.utils.download.DownloadParser
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.map
-import io.writeopia.models.configuration.WorkspaceConfigRepository
+import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.model.ColorThemeOption

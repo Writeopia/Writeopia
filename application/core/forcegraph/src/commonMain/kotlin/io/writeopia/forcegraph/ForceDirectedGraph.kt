@@ -1,11 +1,7 @@
 package io.writeopia.forcegraph
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -13,36 +9,7 @@ import io.writeopia.forcegraph.model.Link
 import io.writeopia.forcegraph.model.Node
 
 @Composable
-fun ForceDirectedGraph(modifier: Modifier = Modifier) {
-    val nodes = remember { mutableStateListOf<Node>() }
-    val links = remember { mutableStateListOf<Link>() }
-
-    // Initialize nodes and links
-    LaunchedEffect(Unit) {
-        repeat(10) {
-            nodes += Node(
-                x = (100..800).random().toFloat(),
-                y = (100..600).random().toFloat()
-            )
-        }
-        // Randomly link some nodes
-        repeat(15) {
-            val source = nodes.random()
-            val target = nodes.random()
-            if (source != target) {
-                links += Link(source, target)
-            }
-        }
-    }
-
-    // Physics animation loop
-    LaunchedEffect(nodes) {
-//        while (isActive) {
-//            tick(nodes, links, dt = 0.016f) // ~60fps
-//            delay(16)
-//        }
-    }
-
+fun ForceDirectedGraph(modifier: Modifier = Modifier, links: List<Link>, nodes: List<Node>) {
     Canvas(modifier = modifier
 //        .pointerInput(Unit) {
 //            var draggingNode: Node? = null

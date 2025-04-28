@@ -9,6 +9,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.account.navigation.accountMenuNavigation
 import io.writeopia.common.utils.Destinations
+import io.writeopia.documents.graph.navigation.documentsGraphNavigation
+import io.writeopia.documents.graph.navigation.navigateToForceGraph
 import io.writeopia.editor.di.TextEditorInjector
 import io.writeopia.editor.navigation.editorNavigation
 import io.writeopia.features.notifications.navigation.notificationsNavigation
@@ -47,7 +49,13 @@ fun Navigation(
                 navigateToNote = navController::navigateToNote,
                 navigateToAccount = navController::navigateToAccount,
                 navigateToNewNote = navController::navigateToNewNote,
-                navigateToFolders = navController::navigateToFolder
+                navigateToFolders = navController::navigateToFolder,
+                navigateToForceGraph = navController::navigateToForceGraph
+            )
+
+            documentsGraphNavigation(
+                navigationController = navController,
+                sharedTransitionScope = this@SharedTransitionLayout,
             )
 
             editorNavigation(

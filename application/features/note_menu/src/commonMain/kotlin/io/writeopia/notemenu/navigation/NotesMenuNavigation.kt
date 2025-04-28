@@ -1,21 +1,17 @@
 package io.writeopia.notemenu.navigation
 
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import io.writeopia.common.utils.Destinations
 import io.writeopia.di.OllamaConfigInjector
-import io.writeopia.forcegraph.ForceDirectedGraph
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.notemenu.data.model.NotesNavigation
 import io.writeopia.notemenu.data.model.NotesNavigationType
@@ -28,7 +24,6 @@ const val NAVIGATION_PATH = "path"
 
 object NoteMenuDestiny {
     fun noteMenu() = "${Destinations.CHOOSE_NOTE.id}/{$NAVIGATION_TYPE}/{$NAVIGATION_PATH}"
-    fun graphForce() = Destinations.FORCE_GRAPH.id
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -41,6 +36,7 @@ fun NavGraphBuilder.notesMenuNavigation(
     navigateToNote: (String, String) -> Unit,
     navigateToNewNote: () -> Unit,
     navigateToAccount: () -> Unit,
+    navigateToForceGraph: () -> Unit,
     navigateToFolders: (NotesNavigation) -> Unit,
 ) {
     composable(
@@ -85,15 +81,9 @@ fun NavGraphBuilder.notesMenuNavigation(
             navigateToFolders = navigateToFolders,
             addFolder = chooseNoteViewModel::addFolder,
             editFolder = chooseNoteViewModel::editFolder,
-            onForceGraphSelected = { navigationController.navigateToForceGraph() },
+            onForceGraphSelected = navigateToForceGraph,
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
-    }
-
-    composable(
-        route = NoteMenuDestiny.graphForce(),
-    ) { 
-        ForceDirectedGraph(modifier = Modifier.fillMaxSize())
     }
 }
 
@@ -111,6 +101,3 @@ fun NavController.navigateToNotes(navigation: NotesNavigation) {
     }
 }
 
-internal fun NavController.navigateToForceGraph() {
-    navigate(Destinations.FORCE_GRAPH.id)
-}

@@ -1,4 +1,4 @@
-package io.writeopia.models.search
+package io.writeopia.models.interfaces.search
 
 import io.writeopia.sdk.models.document.Folder
 

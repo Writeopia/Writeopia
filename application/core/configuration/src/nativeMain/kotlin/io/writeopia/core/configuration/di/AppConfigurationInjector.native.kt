@@ -2,7 +2,7 @@ package io.writeopia.core.configuration.di
 
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.configuration.repository.ConfigurationSqlDelightRepository
-import io.writeopia.models.configuration.WorkspaceConfigRepository
+import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.sql.WriteopiaDb
 import io.writeopia.sqldelight.dao.ConfigurationSqlDelightDao
 import io.writeopia.sqldelight.di.WriteopiaDbInjector

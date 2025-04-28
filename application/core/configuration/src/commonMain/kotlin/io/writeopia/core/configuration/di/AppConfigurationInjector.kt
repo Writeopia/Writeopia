@@ -1,7 +1,7 @@
 package io.writeopia.core.configuration.di
 
 import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.models.configuration.WorkspaceConfigRepository
+import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 
 expect class AppConfigurationInjector {
 
