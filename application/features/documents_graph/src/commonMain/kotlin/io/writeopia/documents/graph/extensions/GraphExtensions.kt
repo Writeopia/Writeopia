@@ -6,12 +6,14 @@ import io.writeopia.forcegraph.model.Link
 import io.writeopia.forcegraph.model.Node
 
 internal fun Map<String, List<ItemData>>.toGraph(): Graph<ItemData> {
+    val range = (30..900)
+
     val toNodes = this.mapValues { (id, menuItems) ->
         menuItems.map { item ->
             Node(
                 data = item,
-                x = (100..800).random().toFloat(),
-                y = (100..600).random().toFloat(),
+                x = (30..900).random().toFloat().div(1000),
+                y = (30..970).random().toFloat().div(1000),
                 isFolder = item.isFolder
             )
         }
