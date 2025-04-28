@@ -17,10 +17,10 @@ internal fun Map<String, List<MenuItem>>.toGraph(): Graph<MenuItem> {
     }
 
     val nodes = toNodes.values.flatten()
-    val nodesMap = nodes.associateBy { it.data.parentId }
+    val nodesMap = nodes.associateBy { it.data.id }
 
     val links = toNodes.mapValues { (id, nodes) ->
-        val sourceNode = nodesMap[id]!!
+        val sourceNode = nodesMap[id] ?: return@mapValues emptyList()
 
         nodes.map { node ->
             Link(sourceNode, node)
