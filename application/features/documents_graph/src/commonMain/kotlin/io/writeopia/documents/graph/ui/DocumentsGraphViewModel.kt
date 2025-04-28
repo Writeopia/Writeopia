@@ -22,7 +22,15 @@ class DocumentsGraphViewModel(
         _selectedOrigin.map { origin ->
             graphRepository.loadAllDocumentsAsAdjacencyList("disconnected_user")
         }.map { map ->
-            map.mapKeys { it.key.id }.toGraph()
+            map.mapKeys { it.key.id }
+                .addRoot()
+                .toGraph()
         }.stateIn(viewModelScope, SharingStarted.Lazily, Graph())
+    }
+
+    private fun Map<String, List<ItemData>>.addRoot(): Map<String, List<ItemData>> {
+        val root = "root" to this.values.flatten().filter { it.parentId == "root" }
+
+        return this + root
     }
 }

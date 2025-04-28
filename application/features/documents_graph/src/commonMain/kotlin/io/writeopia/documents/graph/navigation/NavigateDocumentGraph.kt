@@ -35,6 +35,8 @@ fun NavGraphBuilder.documentsGraphNavigation(
             modifier = Modifier.fillMaxSize(),
             nodes = state.nodes,
             links = state.links
-        )
+        ) { itemData ->
+            itemData.title
+        }
     }
 }
