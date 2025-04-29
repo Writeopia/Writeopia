@@ -2,7 +2,7 @@ package io.writeopia.core.folders.repository
 
 import io.writeopia.common.utils.persistence.daos.FolderCommonDao
 import io.writeopia.sdk.models.document.Folder
-import io.writeopia.models.search.FolderSearch
+import io.writeopia.models.interfaces.search.FolderSearch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow

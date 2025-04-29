@@ -14,9 +14,9 @@ import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.core.configuration.models.NotesArrangement
-import io.writeopia.models.configuration.WorkspaceConfigRepository
-import io.writeopia.notemenu.data.model.NotesNavigation
-import io.writeopia.notemenu.data.usecase.NotesUseCase
+import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
+import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.core.folders.repository.NotesUseCase
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.export.DocumentToJson

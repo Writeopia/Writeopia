@@ -2,7 +2,7 @@ package io.writeopia.features.search.di
 
 import io.writeopia.features.search.repository.SearchRepository
 import io.writeopia.features.search.ui.SearchKmpViewModel
-import io.writeopia.models.search.FolderSearch
+import io.writeopia.models.interfaces.search.FolderSearch
 import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sql.WriteopiaDb

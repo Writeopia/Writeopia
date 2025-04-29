@@ -54,6 +54,7 @@ kotlin {
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:resources"))
+                implementation(project(":application:features:documents_graph"))
                 implementation(project(":application:features:note_menu"))
                 implementation(project(":application:features:editor"))
                 implementation(project(":application:features:account"))

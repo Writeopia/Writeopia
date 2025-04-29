@@ -37,6 +37,7 @@ kotlin {
                 implementation(project(":application:features:global_shell"))
                 implementation(project(":application:features:notifications"))
                 implementation(project(":application:features:search"))
+                implementation(project(":application:features:documents_graph"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:models"))

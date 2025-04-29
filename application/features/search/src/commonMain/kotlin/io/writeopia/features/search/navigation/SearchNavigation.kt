@@ -6,7 +6,7 @@ import androidx.navigation.compose.composable
 import io.writeopia.common.utils.Destinations
 import io.writeopia.features.search.DocumentsSearchScreen
 import io.writeopia.features.search.di.SearchInjection
-import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.common.utils.NotesNavigation
 
 object SearchDestiny {
     fun search() = Destinations.SEARCH.id

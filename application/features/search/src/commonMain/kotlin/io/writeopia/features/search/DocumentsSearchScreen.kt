@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.features.search.repository.SearchItem
 import io.writeopia.features.search.ui.SearchInput
 import io.writeopia.features.search.ui.SearchScreen
-import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 

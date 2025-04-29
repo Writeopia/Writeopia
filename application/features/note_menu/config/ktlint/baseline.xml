@@ -3,9 +3,6 @@
     <file name="src/commonMain/kotlin/io/writeopia/edit_folder/ui/EditFolderScreen.kt">
         <error line="1" column="9" source="standard:package-name" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/navigation/NotesMenuNavigation.kt">
-        <error line="3" column="1" source="standard:no-unused-imports" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/ui/screen/configuration/atoms/SortOptions.kt">
         <error line="23" column="1" source="standard:no-unused-imports" />
     </file>

@@ -16,7 +16,7 @@ import io.writeopia.core.folders.repository.FolderRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
-import io.writeopia.models.configuration.WorkspaceConfigRepository
+import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.repository.UiConfigurationRepository
 import io.writeopia.sdk.export.DocumentToJson
 import io.writeopia.sdk.export.DocumentToMarkdown

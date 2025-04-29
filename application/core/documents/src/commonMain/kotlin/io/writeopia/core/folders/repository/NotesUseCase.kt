@@ -1,17 +1,15 @@
-package io.writeopia.notemenu.data.usecase
+package io.writeopia.core.folders.repository
 
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.collections.merge
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.core.folders.repository.FolderRepository
-import io.writeopia.sdk.models.document.Folder
-import io.writeopia.notemenu.data.model.NotesNavigation
-import io.writeopia.notemenu.extensions.sortedWithOrderBy
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
-import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.persistence.core.sorting.OrderBy
+import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.Clock
@@ -98,8 +96,9 @@ class NotesUseCase private constructor(
             listenForDocumentsByParentId(parentId),
             notesConfig.listenOrderPreference(userId)
         ) { folders, documents, orderPreference ->
-            val order = orderPreference.takeIf { it.isNotEmpty() }?.let(OrderBy::fromString)
-                ?: OrderBy.UPDATE
+            val order =
+                orderPreference.takeIf { it.isNotEmpty() }?.let(OrderBy.Companion::fromString)
+                    ?: OrderBy.UPDATE
 
             folders.merge(documents).mapValues { (_, menuItems) ->
                 menuItems.sortedWithOrderBy(order)
@@ -257,3 +256,10 @@ private fun Document.duplicateWithNewIds(): Document =
             storyStep.copy(id = GenerateId.generate())
         }
     )
+
+fun List<MenuItem>.sortedWithOrderBy(orderBy: OrderBy): List<MenuItem> =
+    when (orderBy) {
+        OrderBy.CREATE -> this.sortedByDescending { menuItem -> menuItem.createdAt }
+        OrderBy.UPDATE -> this.sortedByDescending { menuItem -> menuItem.lastUpdatedAt }
+        OrderBy.NAME -> this.sortedBy { menuItem -> menuItem.title.lowercase() }
+    }

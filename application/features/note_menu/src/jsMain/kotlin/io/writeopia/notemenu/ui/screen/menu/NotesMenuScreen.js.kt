@@ -9,7 +9,7 @@ import androidx.navigation.NavController
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.controller.OllamaConfigController
 import io.writeopia.model.ColorThemeOption
-import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.ui.screen.DesktopNotesMenu
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 
@@ -25,6 +25,7 @@ actual fun NotesMenuScreen(
     onNewNoteClick: () -> Unit,
     onNoteClick: (String, String) -> Unit,
     onAccountClick: () -> Unit,
+    onForceGraphSelected: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     navigateToFolders: (NotesNavigation) -> Unit,
     addFolder: () -> Unit,
@@ -39,6 +40,7 @@ actual fun NotesMenuScreen(
         onNewNoteClick = onNewNoteClick,
         onNoteClick = onNoteClick,
         navigateToNotes = navigateToFolders,
+        navigateToForceGraph = onForceGraphSelected,
 //        addFolder = addFolder,
 //        editFolder = editFolder,
         modifier = modifier,

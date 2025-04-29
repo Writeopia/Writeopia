@@ -1,7 +1,7 @@
 package io.writeopia.features.search.repository
 
 import io.writeopia.sdk.models.document.Folder
-import io.writeopia.models.search.FolderSearch
+import io.writeopia.models.interfaces.search.FolderSearch
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.search.DocumentSearch
 

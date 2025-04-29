@@ -3,7 +3,7 @@ package io.writeopia.navigation.notes
 import androidx.navigation.NavController
 import androidx.navigation.NavOptionsBuilder
 import io.writeopia.common.utils.Destinations
-import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.common.utils.NotesNavigation
 
 fun NavController.navigateToNoteMenu(
     notesNavigation: NotesNavigation,

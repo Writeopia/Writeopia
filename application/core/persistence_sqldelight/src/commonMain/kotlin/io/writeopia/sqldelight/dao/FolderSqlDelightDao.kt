@@ -3,7 +3,7 @@ package io.writeopia.sqldelight.dao
 import io.writeopia.app.sql.FolderEntity
 import io.writeopia.app.sql.FolderEntityQueries
 import io.writeopia.sdk.models.document.Folder
-import io.writeopia.models.search.FolderSearch
+import io.writeopia.models.interfaces.search.FolderSearch
 import io.writeopia.sql.WriteopiaDb
 import io.writeopia.sqldelight.extensions.toModel
 import io.writeopia.sqldelight.utils.sumValues

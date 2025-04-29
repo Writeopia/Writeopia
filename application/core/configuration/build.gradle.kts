@@ -28,7 +28,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":application:core:models"))
-                implementation(project(":application:core:documents"))
                 implementation(project(":application:core:persistence_bridge"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:theme"))
