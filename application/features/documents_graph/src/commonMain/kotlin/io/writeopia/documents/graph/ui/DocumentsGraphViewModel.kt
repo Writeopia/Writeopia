@@ -31,15 +31,22 @@ class DocumentsGraphViewModel(
 ) : ViewModel() {
 
     private val _selectedOrigin = MutableStateFlow("root")
-
     private val _selectedNodes = MutableStateFlow(setOf<String>())
+
+    private var maxWidth: Float = 1000F
+    private var maxHeight: Float = 1000F
+
+    fun initSize(maxWidth: Float, maxHeight: Float) {
+        this.maxWidth = maxWidth
+        this.maxHeight = maxHeight
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val graphState: StateFlow<Graph> by lazy {
         _selectedOrigin.map { origin ->
             graphRepository.loadAllDocumentsAsAdjacencyList("disconnected_user")
         }.map { map ->
-            map.mapKeys { it.key.id }.addRoot().toGraph()
+            map.mapKeys { it.key.id }.addRoot().toGraph(maxWidth, maxHeight)
         }.flatMapLatest { graph ->
             flow {
                 while (currentCoroutineContext().isActive) {
@@ -126,8 +133,8 @@ class DocumentsGraphViewModel(
     }
 
     private fun applyCenteringForce(nodes: List<Node>) {
-        val centerX = 1000 / 2
-        val centerY = 1000 / 2
+        val centerX = maxWidth / 2
+        val centerY = maxHeight / 2
         val strength = 0.0003f
 
         for (node in nodes) {

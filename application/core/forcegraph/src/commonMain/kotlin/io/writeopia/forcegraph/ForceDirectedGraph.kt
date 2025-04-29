@@ -93,7 +93,7 @@ fun ForceDirectedGraph(
                         draggingNode?.isDragged = false
                         draggingNode = null
                     },
-                    onDrag = { change, dragAmount ->
+                    onDrag = { _, dragAmount ->
                         draggingNode?.let { node ->
                             node.x += dragAmount.x
                             node.y += dragAmount.y
@@ -129,7 +129,9 @@ fun ForceDirectedGraph(
                 center = Offset(node.x, node.y),
                 radius = if (node.isFolder) 12f else 6f
             )
+        }
 
+        nodes.forEach { node ->
             if (node.showName) {
                 val x = node.x
                 val y = node.y
@@ -137,7 +139,7 @@ fun ForceDirectedGraph(
                 if (x >= 0 && y >= 0) {
                     drawText(
                         textMeasurer,
-                        text = node.label,
+                        text = " ${node.label} ",
                         topLeft = Offset(node.x - 30, node.y + 20),
                         style = textStyle
                     )

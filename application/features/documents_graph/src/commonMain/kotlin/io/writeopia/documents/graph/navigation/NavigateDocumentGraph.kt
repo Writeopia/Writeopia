@@ -25,9 +25,10 @@ fun NavGraphBuilder.documentsGraphNavigation(
         route = graphForce(),
     ) {
         val viewModel = documentsGraphInjection.injectViewModel()
-        val state by viewModel.graphSelectedState.collectAsState()
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            viewModel.initSize(maxWidth.value, maxHeight.value)
+            val state by viewModel.graphSelectedState.collectAsState()
 
             ForceDirectedGraph(
                 nodes = state.nodes,
