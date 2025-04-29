@@ -1,6 +1,5 @@
 package io.writeopia.documents.graph.ui
 
-import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.documents.graph.ItemData
@@ -9,7 +8,6 @@ import io.writeopia.documents.graph.repository.GraphRepository
 import io.writeopia.forcegraph.Graph
 import io.writeopia.forcegraph.Link
 import io.writeopia.forcegraph.Node
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -19,11 +17,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.isActive
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlin.math.sqrt
 
 class DocumentsGraphViewModel(
