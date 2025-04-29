@@ -3,11 +3,9 @@ package io.writeopia.forcegraph
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -18,8 +16,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlin.math.sqrt
 
 class Node(
@@ -37,7 +33,7 @@ class Node(
     var vx by mutableStateOf(initialVx)
     var vy by mutableStateOf(initialVy)
     var isDragged by mutableStateOf(false)
-    var showName by mutableStateOf(selected)
+    var showName by mutableStateOf(selected || isFolder)
 }
 
 data class Link(
@@ -46,19 +42,11 @@ data class Link(
 )
 
 @Composable
-fun BoxWithConstraintsScope.ForceDirectedGraph(
+fun ForceDirectedGraph(
     nodes: List<Node>,
     links: List<Link>,
     onNodeSelected: (String) -> Unit
 ) {
-    // Physics animation loop
-    LaunchedEffect(nodes, links) {
-        while (isActive) {
-            tick(nodes, links, dt = 0.016f) // ~60fps
-            delay(16)
-        }
-    }
-
     val textMeasurer = rememberTextMeasurer()
     val textStyle =
         MaterialTheme.typography.labelSmall.copy(
@@ -77,7 +65,7 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
                             val dx = node.x - offset.x
                             val dy = node.y - offset.y
 
-                            sqrt(dx * dx + dy * dy) < 12f
+                            sqrt(dx * dx + dy * dy) < 20F
                         }?.also {
                             onNodeSelected(it.id)
                         }
@@ -142,7 +130,7 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
                 radius = if (node.isFolder) 12f else 6f
             )
 
-            if (node.isFolder || node.showName) {
+            if (node.showName) {
                 val x = node.x
                 val y = node.y
 
@@ -156,75 +144,5 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
                 }
             }
         }
-    }
-}
-
-fun BoxWithConstraintsScope.tick(nodes: List<Node>, links: List<Link>, dt: Float) {
-    applyLinkForce(links)
-    applyChargeForce(nodes)
-    applyCenteringForce(nodes)
-    updatePositions(nodes, dt)
-}
-
-fun applyLinkForce(links: List<Link>) {
-    val linkDistance = 40F
-    val strength = 0.15f
-
-    for (link in links) {
-        val dx = link.target.x - link.source.x
-        val dy = link.target.y - link.source.y
-        val distance = sqrt(dx * dx + dy * dy).coerceAtLeast(0.01f)
-        val force = (distance - linkDistance) * strength
-        val fx = force * dx / distance
-        val fy = force * dy / distance
-
-        link.source.vx += fx
-        link.source.vy += fy
-        link.target.vx -= fx
-        link.target.vy -= fy
-    }
-}
-
-fun applyChargeForce(nodes: List<Node>) {
-    val chargeStrength = 3000f // Reduced from 5000f
-
-    for (i in nodes.indices) {
-        for (j in i + 1 until nodes.size) {
-            val nodeA = nodes[i]
-            val nodeB = nodes[j]
-            val dx = nodeB.x - nodeA.x
-            val dy = nodeB.y - nodeA.y
-            val distanceSq = (dx * dx + dy * dy).coerceAtLeast(0.01f)
-            val force = chargeStrength / distanceSq
-            val fx = force * dx / sqrt(distanceSq)
-            val fy = force * dy / sqrt(distanceSq)
-
-            nodeA.vx -= fx
-            nodeA.vy -= fy
-            nodeB.vx += fx
-            nodeB.vy += fy
-        }
-    }
-}
-
-fun BoxWithConstraintsScope.applyCenteringForce(nodes: List<Node>) {
-    val centerX = this.maxWidth.value / 2
-    val centerY = this.maxHeight.value / 2
-    val strength = 0.0003f
-
-    for (node in nodes) {
-        node.vx += (centerX - node.x) * strength
-        node.vy += (centerY - node.y) * strength
-    }
-}
-
-fun updatePositions(nodes: List<Node>, dt: Float) {
-    val damping = 0.95f
-
-    for (node in nodes) {
-        node.vx *= damping
-        node.vy *= damping
-        node.x += node.vx * dt
-        node.y += node.vy * dt
     }
 }

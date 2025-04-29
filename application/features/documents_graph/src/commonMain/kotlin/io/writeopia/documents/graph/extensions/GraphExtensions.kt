@@ -5,14 +5,14 @@ import io.writeopia.forcegraph.Graph
 import io.writeopia.forcegraph.Link
 import io.writeopia.forcegraph.Node
 
-internal fun Map<String, List<ItemData>>.toGraph(maxWidth: Float, maxHeight: Float): Graph {
+internal fun Map<String, List<ItemData>>.toGraph(): Graph {
     val toNodes = this.mapValues { (id, menuItems) ->
         menuItems.map { item ->
             Node(
                 id = item.id,
                 label = item.title,
-                initialX = (200..700).random().toFloat() / 1000 * maxWidth * 2,
-                initialY = (300..600).random().toFloat() / 1000 * maxHeight * 2,
+                initialX = (200..700).random().toFloat() / 1000 * 1000 * 2,
+                initialY = (300..600).random().toFloat() / 1000 * 1000 * 2,
                 isFolder = item.isFolder,
                 selected = item.selected
             )
