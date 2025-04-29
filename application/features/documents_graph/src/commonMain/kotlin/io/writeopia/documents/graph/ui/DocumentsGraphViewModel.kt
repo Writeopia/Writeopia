@@ -3,9 +3,7 @@ package io.writeopia.documents.graph.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.documents.graph.ItemData
-import io.writeopia.documents.graph.extensions.toGraph
 import io.writeopia.documents.graph.repository.GraphRepository
-import io.writeopia.forcegraph.Graph
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

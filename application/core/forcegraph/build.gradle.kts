@@ -38,7 +38,6 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
-
             }
         }
 
@@ -48,7 +47,6 @@ kotlin {
         }
     }
 }
-
 
 android {
     namespace = "io.writeopia.forcegraph"

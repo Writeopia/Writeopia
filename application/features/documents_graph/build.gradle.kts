@@ -59,7 +59,6 @@ kotlin {
     }
 }
 
-
 android {
     namespace = "io.writeopia.documents.graph"
     compileSdk = 35

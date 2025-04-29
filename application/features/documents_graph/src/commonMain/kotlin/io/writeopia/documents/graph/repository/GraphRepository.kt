@@ -16,7 +16,7 @@ class GraphRepository(
 
         val root = ItemData(id = "root", title = "", parentId = "", isFolder = true)
         val items =
-            (folders.map { item ->
+            folders.map { item ->
                 ItemData(
                     item.id,
                     item.title,
@@ -30,7 +30,7 @@ class GraphRepository(
                     item.parentId,
                     isFolder = false
                 )
-            })
+            }
 
         val graph = (items + root).toAdjencyList()
         return graph
