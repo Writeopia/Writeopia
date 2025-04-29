@@ -2,6 +2,7 @@ package io.writeopia.forcegraph
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -14,7 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.math.sqrt
@@ -27,12 +30,14 @@ class Node(
     initialVx: Float = 0f,
     initialVy: Float = 0f,
     val isFolder: Boolean,
+    selected: Boolean
 ) {
     var x by mutableStateOf(initialX)
     var y by mutableStateOf(initialY)
     var vx by mutableStateOf(initialVx)
     var vy by mutableStateOf(initialVy)
     var isDragged by mutableStateOf(false)
+    var showName by mutableStateOf(selected)
 }
 
 data class Link(
@@ -41,22 +46,44 @@ data class Link(
 )
 
 @Composable
-fun BoxWithConstraintsScope.ForceDirectedGraph(nodes: List<Node>, links: List<Link>) {
+fun BoxWithConstraintsScope.ForceDirectedGraph(
+    nodes: List<Node>,
+    links: List<Link>,
+    onNodeSelected: (String) -> Unit
+) {
     // Physics animation loop
     LaunchedEffect(nodes, links) {
         while (isActive) {
             tick(nodes, links, dt = 0.016f) // ~60fps
-            delay(16) // Changed from 200 to 16 for smoother animation
+            delay(16)
         }
     }
 
     val textMeasurer = rememberTextMeasurer()
     val textStyle =
-        MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onBackground)
+        MaterialTheme.typography.labelSmall.copy(
+            color = Color.White,
+            background = Color.Blue,
+            fontSize = 10.sp
+        )
 
     Canvas(
         modifier = Modifier
             .fillMaxSize()
+            .pointerInput(nodes) {
+                detectTapGestures(
+                    onTap = { offset ->
+                        nodes.find { node ->
+                            val dx = node.x - offset.x
+                            val dy = node.y - offset.y
+
+                            sqrt(dx * dx + dy * dy) < 12f
+                        }?.also {
+                            onNodeSelected(it.id)
+                        }
+                    }
+                )
+            }
             .pointerInput(nodes) {
                 var draggingNode: Node? = null
                 detectDragGestures(
@@ -115,14 +142,19 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(nodes: List<Node>, links: List<Li
                 radius = if (node.isFolder) 12f else 6f
             )
 
-//            if (node.isFolder) {
-//                drawText(
-//                    textMeasurer,
-//                    text = node.label,
-//                    topLeft = Offset(node.x, node.y),
-//                    style = textStyle
-//                )
-//            }
+            if (node.isFolder || node.showName) {
+                val x = node.x
+                val y = node.y
+
+                if (x >= 0 && y >= 0) {
+                    drawText(
+                        textMeasurer,
+                        text = node.label,
+                        topLeft = Offset(node.x - 30, node.y + 20),
+                        style = textStyle
+                    )
+                }
+            }
         }
     }
 }
@@ -178,7 +210,7 @@ fun applyChargeForce(nodes: List<Node>) {
 fun BoxWithConstraintsScope.applyCenteringForce(nodes: List<Node>) {
     val centerX = this.maxWidth.value / 2
     val centerY = this.maxHeight.value / 2
-    val strength = 0.001f // Increased from 0.005f
+    val strength = 0.0003f
 
     for (node in nodes) {
         node.vx += (centerX - node.x) * strength
@@ -187,12 +219,12 @@ fun BoxWithConstraintsScope.applyCenteringForce(nodes: List<Node>) {
 }
 
 fun updatePositions(nodes: List<Node>, dt: Float) {
-    val damping = 0.95f // Increased from 0.9f for more stability
+    val damping = 0.95f
 
     for (node in nodes) {
         node.vx *= damping
         node.vy *= damping
-        node.x += node.vx * dt // Changed from /dt to *dt
-        node.y += node.vy * dt // Changed from /dt to *dt
+        node.x += node.vx * dt
+        node.y += node.vy * dt
     }
 }
