@@ -11,8 +11,8 @@ internal fun Map<String, List<ItemData>>.toGraph(maxWidth: Float, maxHeight: Flo
             Node(
                 id = item.id,
                 label = item.title,
-                initialX = (30..900).random().toFloat() / 1000 * maxWidth,
-                initialY = (30..970).random().toFloat() / 1000 * maxHeight,
+                initialX = (200..700).random().toFloat() / 1000 * maxWidth,
+                initialY = (300..600).random().toFloat() / 1000 * maxHeight,
                 isFolder = item.isFolder
             )
         }

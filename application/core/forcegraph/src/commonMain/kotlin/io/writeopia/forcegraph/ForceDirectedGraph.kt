@@ -154,7 +154,7 @@ fun applyLinkForce(links: List<Link>) {
 }
 
 fun applyChargeForce(nodes: List<Node>) {
-    val chargeStrength = 6000f // Reduced from 5000f
+    val chargeStrength = 3000f // Reduced from 5000f
 
     for (i in nodes.indices) {
         for (j in i + 1 until nodes.size) {
