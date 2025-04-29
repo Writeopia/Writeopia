@@ -6,5 +6,6 @@ data class ItemData(
     override val id: String,
     val title: String,
     override val parentId: String,
-    val isFolder: Boolean
+    val isFolder: Boolean,
+    val selected: Boolean = false
 ) : Traversable
