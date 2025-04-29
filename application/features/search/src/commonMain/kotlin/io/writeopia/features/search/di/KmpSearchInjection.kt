@@ -4,9 +4,8 @@ import io.writeopia.di.AppConnectionInjection
 import io.writeopia.features.search.api.SearchApi
 import io.writeopia.features.search.repository.SearchRepository
 import io.writeopia.features.search.ui.SearchKmpViewModel
-import io.writeopia.models.search.FolderSearch
-import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.models.interfaces.search.FolderSearch
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sql.WriteopiaDb

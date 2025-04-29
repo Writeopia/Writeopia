@@ -41,6 +41,7 @@ kotlin {
                 implementation(project(":application:core:persistence_bridge"))
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:configuration"))
+                implementation(project(":application:core:connection"))
 
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.datetime)

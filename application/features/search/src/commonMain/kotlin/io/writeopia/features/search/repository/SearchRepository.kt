@@ -1,16 +1,13 @@
 package io.writeopia.features.search.repository
 
 import io.writeopia.features.search.api.SearchApi
-import io.writeopia.sdk.models.document.Folder
-import io.writeopia.models.search.FolderSearch
-import io.writeopia.sdk.models.document.Document
 import io.writeopia.models.interfaces.search.FolderSearch
+import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.search.DocumentSearch
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
@@ -19,7 +16,6 @@ class SearchRepository(
     private val documentSearch: DocumentSearch,
     private val searchApi: SearchApi,
 ) {
-    @OptIn(FlowPreview::class)
     fun searchNotesAndFolders(query: String): Flow<List<SearchItem>> {
         if (query.isEmpty()) return flow { emit(getNotesAndFolders()) }
 

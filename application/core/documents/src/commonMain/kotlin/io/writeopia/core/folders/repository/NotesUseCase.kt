@@ -8,11 +8,8 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
-import io.writeopia.sdk.repository.DocumentRepository
-import io.writeopia.sdk.network.notes.NotesApi
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
-import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.models.sorting.OrderBy
+import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.Clock
@@ -26,7 +23,6 @@ class NotesUseCase private constructor(
     private val documentRepository: DocumentRepository,
     private val notesConfig: ConfigurationRepository,
     private val folderRepository: FolderRepository,
-    private val notesApi: NotesApi? = null
 ) {
 
     suspend fun createFolder(name: String, userId: String) {
@@ -274,13 +270,11 @@ class NotesUseCase private constructor(
             documentRepository: DocumentRepository,
             notesConfig: ConfigurationRepository,
             folderRepository: FolderRepository,
-            notesApi: NotesApi? = null
         ): NotesUseCase =
             instance ?: NotesUseCase(
                 documentRepository,
                 notesConfig,
                 folderRepository,
-                notesApi
             ).also {
                 instance = it
             }
