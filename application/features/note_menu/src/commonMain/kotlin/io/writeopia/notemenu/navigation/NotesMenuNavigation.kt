@@ -100,4 +100,3 @@ fun NavController.navigateToNotes(navigation: NotesNavigation) {
         )
     }
 }
-
