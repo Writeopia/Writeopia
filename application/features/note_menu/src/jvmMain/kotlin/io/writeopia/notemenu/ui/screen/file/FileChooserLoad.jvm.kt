@@ -9,10 +9,6 @@ actual fun fileChooserLoad(title: String): List<ExternalFile> {
     val dialog = FileDialog(ComposeWindow(), title, FileDialog.LOAD).apply {
         isMultipleMode = true
         isVisible = true
-
-        filenameFilter = FilenameFilter { file, s ->
-            file.extension == "json"
-        }
     }
 
     return dialog.files
