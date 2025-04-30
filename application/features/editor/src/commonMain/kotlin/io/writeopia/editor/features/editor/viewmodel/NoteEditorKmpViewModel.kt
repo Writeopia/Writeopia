@@ -518,6 +518,11 @@ class NoteEditorKmpViewModel(
         copyManager.copy(annotatedString)
     }
 
+    override fun cutSelection() {
+        copySelection()
+        deleteSelection()
+    }
+
     override fun deleteDocument() {
         viewModelScope.launch(Dispatchers.Default) {
             documentRepository.deleteDocument(writeopiaManager.getDocument())

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
@@ -34,6 +35,7 @@ fun EditionScreen(
     listItemClick: () -> Unit = {},
     onDelete: () -> Unit = {},
     onCopy: () -> Unit = {},
+    onCut: () -> Unit = {},
     onClose: () -> Unit = {},
 ) {
     val iconPadding = PaddingValues(vertical = 4.dp)
@@ -126,6 +128,19 @@ fun EditionScreen(
                 .padding(iconPadding),
             imageVector = WrSdkIcons.copy,
             contentDescription = "Copy",
+            tint = tint
+        )
+
+        Spacer(modifier = Modifier.width(spaceWidth))
+
+        Icon(
+            modifier = Modifier
+                .clip(clipShape)
+                .clickable(onClick = onCut)
+                .size(32.dp)
+                .padding(iconPadding),
+            imageVector = Icons.Default.ContentCut,
+            contentDescription = "Cut",
             tint = tint
         )
 

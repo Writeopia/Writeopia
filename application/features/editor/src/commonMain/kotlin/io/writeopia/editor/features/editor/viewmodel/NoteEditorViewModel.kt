@@ -107,6 +107,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun copySelection()
 
+    fun cutSelection()
+
     fun deleteDocument()
 
     fun toggleFavorite()
