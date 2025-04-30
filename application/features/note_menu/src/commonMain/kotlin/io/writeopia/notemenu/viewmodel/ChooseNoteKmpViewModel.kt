@@ -5,18 +5,17 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.data.User
 import io.writeopia.auth.core.manager.AuthManager
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.file.FileUtils
 import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.map
 import io.writeopia.common.utils.toBoolean
 import io.writeopia.commonui.extensions.toUiCard
-import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.sdk.models.document.Folder
 import io.writeopia.core.configuration.models.NotesArrangement
-import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
-import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.export.DocumentToJson
@@ -24,7 +23,9 @@ import io.writeopia.sdk.export.DocumentToMarkdown
 import io.writeopia.sdk.export.DocumentToTxt
 import io.writeopia.sdk.export.DocumentWriter
 import io.writeopia.sdk.import.json.WriteopiaJsonParser
+import io.writeopia.sdk.import.markdown.MarkdownToDocument
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
@@ -379,6 +380,7 @@ internal class ChooseNoteKmpViewModel(
 
         viewModelScope.launch(Dispatchers.Default) {
             importJsonNotes(filePaths, now)
+            importMarkdownNotes(filePaths, now)
             importImages(filePaths, now)
         }
     }
@@ -472,6 +474,33 @@ internal class ChooseNoteKmpViewModel(
                 }
             }
             .map { document ->
+                document.copy(
+                    parentId = notesNavigation.id,
+                    id = GenerateId.generate(),
+                    lastUpdatedAt = now,
+                    createdAt = now,
+                    userId = getUserId(),
+                    favorite = false
+                )
+            }
+            .collect(notesUseCase::saveDocument)
+    }
+
+    private suspend fun importMarkdownNotes(externalFiles: List<ExternalFile>, now: Instant) {
+        externalFiles.filter { file -> file.extension == "md" }
+            .map { file -> file.fullPath }
+            .let { files ->
+                MarkdownToDocument.readDocuments(files, getUserId(), notesNavigation.id)
+            }
+            .onCompletion { exception ->
+                if (exception == null) {
+//                        refreshNotes()
+                    cancelEditMenu()
+                }
+            }
+            .map { document ->
+                println("content size: ${document.content.size}")
+
                 document.copy(
                     parentId = notesNavigation.id,
                     id = GenerateId.generate(),
