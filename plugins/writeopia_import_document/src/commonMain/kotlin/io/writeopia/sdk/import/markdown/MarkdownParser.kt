@@ -10,8 +10,8 @@ object MarkdownParser {
 
     fun parse(lines: List<String>): List<StoryStepApi> {
         var acc = -1
+        // Take care when moving the code, order matters for comparations!
         return lines.map { it.trim() }
-            .filter { it.isNotEmpty() }
             .mapIndexed { i, trimmed ->
                 acc++
                 when {
@@ -85,8 +85,17 @@ object MarkdownParser {
                         )
                     }
 
+                    trimmed.startsWith("[] ") || trimmed.startsWith("-[] ") -> {
+                        val type = StoryTypes.CHECK_ITEM.type
+                        StoryStepApi(
+                            type = StoryTypeApi(type.name, type.number),
+                            text = trimmed.drop(3).trimStart(),
+                            position = acc
+                        )
+                    }
+
                     trimmed.startsWith("- ") || trimmed.startsWith("* ") -> {
-                        val type = StoryTypes.TEXT.type
+                        val type = StoryTypes.UNORDERED_LIST_ITEM.type
                         StoryStepApi(
                             type = StoryTypeApi(type.name, type.number),
                             text = trimmed.drop(2).trimStart(),

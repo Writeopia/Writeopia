@@ -92,4 +92,60 @@ class MarkdownParserTest {
 
         assertEquals(results.first().type.number, StoryTypes.TITLE.type.number)
     }
+
+    @Test
+    fun `empty lines should not be removed`() {
+        val sample = listOf(
+            "# Sample Markdown Document",
+            "",
+            "Welcome to this **Markdown** example!",
+        )
+
+        val expected = listOf(
+            StoryTypes.TITLE.type.number to "Sample Markdown Document",
+            StoryTypes.TEXT.type.number to "",
+            StoryTypes.TEXT.type.number to "Welcome to this **Markdown** example!",
+        )
+
+        val results = MarkdownParser.parse(sample)
+        assertEquals(results.size, 3)
+        val parsedResults = results.map { storyStepApi ->
+            storyStepApi.type.number to storyStepApi.text
+        }
+
+        // It is necessary to compare like this because the ids won't match.
+        assertEquals(expected, parsedResults)
+    }
+
+    @Test
+    fun `all types should be parsed`() {
+        val sample = listOf(
+            "# Sample Markdown Document",
+            "",
+            "[] Checkitem",
+            "-[] Checkitem2",
+            "- Item list",
+            "#",
+            "---",
+        )
+
+        val expected = listOf(
+            StoryTypes.TITLE.type.number to "Sample Markdown Document",
+            StoryTypes.TEXT.type.number to "",
+            StoryTypes.CHECK_ITEM.type.number to "Checkitem",
+            StoryTypes.CHECK_ITEM.type.number to "Checkitem2",
+            StoryTypes.UNORDERED_LIST_ITEM.type.number to "Item list",
+            StoryTypes.TEXT.type.number to "",
+            StoryTypes.DIVIDER.type.number to null,
+        )
+
+        val results = MarkdownParser.parse(sample)
+        assertEquals(results.size, 7)
+        val parsedResults = results.map { storyStepApi ->
+            storyStepApi.type.number to storyStepApi.text
+        }
+
+        // It is necessary to compare like this because the ids won't match.
+        assertEquals(expected, parsedResults)
+    }
 }
