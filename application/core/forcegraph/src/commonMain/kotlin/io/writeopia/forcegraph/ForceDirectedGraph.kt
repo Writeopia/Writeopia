@@ -3,6 +3,7 @@ package io.writeopia.forcegraph
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -16,6 +17,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
+import kotlin.math.min
 import kotlin.math.sqrt
 
 class Node(
@@ -42,7 +44,7 @@ data class Link(
 )
 
 @Composable
-fun ForceDirectedGraph(
+fun BoxWithConstraintsScope.ForceDirectedGraph(
     nodes: List<Node>,
     links: List<Link>,
     onNodeSelected: (String) -> Unit
@@ -54,6 +56,8 @@ fun ForceDirectedGraph(
             background = Color.Blue,
             fontSize = 10.sp
         )
+
+    val nodeRadius = if (nodes.size < 15) (25 - nodes.size).toFloat() else 8f
 
     Canvas(
         modifier = Modifier
@@ -104,12 +108,17 @@ fun ForceDirectedGraph(
                 )
             }
     ) {
-        // Draw links
         links.forEach { link ->
             drawLine(
                 color = Color.LightGray,
-                start = Offset(link.source.x, link.source.y),
-                end = Offset(link.target.x, link.target.y),
+                start = Offset(
+                    min(link.source.x, maxWidth.value),
+                    min(link.source.y, maxHeight.value)
+                ),
+                end = Offset(
+                    min(link.target.x, maxWidth.value),
+                    min(link.target.y, maxHeight.value)
+                ),
                 strokeWidth = 2f
             )
         }
@@ -122,12 +131,11 @@ fun ForceDirectedGraph(
             }
         }
 
-        // Draw nodes
         nodes.forEach { node ->
             drawCircle(
                 color = if (node.isDragged) Color.Red else nodeColor(node.isFolder),
-                center = Offset(node.x, node.y),
-                radius = if (node.isFolder) 12f else 6f
+                center = Offset(min(node.x, maxWidth.value), min(node.y, maxHeight.value)),
+                radius = if (node.isFolder) nodeRadius else nodeRadius / 2
             )
         }
 
@@ -136,7 +144,7 @@ fun ForceDirectedGraph(
                 val x = node.x
                 val y = node.y
 
-                if (x >= 0 && y >= 0) {
+                if (x >= 0 && y >= 0 && x <= maxWidth.value && y <= maxHeight.value) {
                     drawText(
                         textMeasurer,
                         text = " ${node.label} ",
