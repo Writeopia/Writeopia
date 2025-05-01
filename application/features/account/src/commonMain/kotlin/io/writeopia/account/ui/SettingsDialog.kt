@@ -175,8 +175,6 @@ fun SettingsScreen(
     }
 
     Spacer(modifier = Modifier.height(30.dp))
-
-    Text(WrStrings.version(), style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable

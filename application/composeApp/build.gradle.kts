@@ -141,7 +141,7 @@ compose.desktop {
             }
 
             linux {
-                packageVersion = "0.40.0"
+                packageVersion = "0.41.0"
                 iconFile.set(iconsRoot.resolve("icon-linux.png"))
             }
 
