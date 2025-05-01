@@ -40,7 +40,16 @@ class DocumentsGraphViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     private val graphState: StateFlow<Graph> by lazy {
         _selectedOrigin.map { origin ->
-            graphRepository.loadAllDocumentsAsAdjacencyList("disconnected_user")
+            val result = graphRepository.loadAllDocumentsAsAdjacencyList("disconnected_user")
+
+            val nodes = result.values.flatten()
+            val isSmall = nodes.size <= 12
+
+            if (isSmall) {
+                _selectedNodes.value = nodes.map { it.id }.toSet()
+            }
+
+            result
         }.map { map ->
             map.mapKeys { it.key.id }.addRoot().toGraph(maxWidth, maxHeight)
         }.flatMapLatest { graph ->
@@ -107,7 +116,7 @@ class DocumentsGraphViewModel(
     }
 
     private fun applyChargeForce(nodes: List<Node>) {
-        val chargeStrength = 3000f // Reduced from 5000f
+        val chargeStrength = if (nodes.size < 10) 100f else 2000f
 
         for (i in nodes.indices) {
             for (j in i + 1 until nodes.size) {
@@ -131,7 +140,7 @@ class DocumentsGraphViewModel(
     private fun applyCenteringForce(nodes: List<Node>) {
         val centerX = maxWidth / 2
         val centerY = maxHeight / 2
-        val strength = 0.0003f
+        val strength = 0.003f
 
         for (node in nodes) {
             node.vx += (centerX - node.x) * strength
