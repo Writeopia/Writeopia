@@ -3,7 +3,6 @@ package io.writeopia.core.folders.repository
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.collections.merge
 import io.writeopia.commonui.dtos.MenuItemUi
-import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
@@ -64,7 +63,7 @@ class NotesUseCase private constructor(
     }
 
     suspend fun moveItemsById(ids: Iterable<String>, parentId: String) {
-        val items = loadDocumentsByIds(ids)
+        val items = loadDocumentsByIds(ids).filter { it.id != parentId }
 
         items.forEach { moveItem(it, parentId) }
         folderRepository.refreshFolders()
@@ -93,7 +92,7 @@ class NotesUseCase private constructor(
         val folders = ids.mapNotNull { id -> folderRepository.getFolderById(id) }
         val documents = ids.mapNotNull { id -> documentRepository.loadDocumentById(id) }
 
-        return folders + documents
+        return (folders + documents)
     }
 
     /**
@@ -253,11 +252,11 @@ class NotesUseCase private constructor(
     private suspend fun moveItem(menuItem: MenuItem, parentId: String) {
         when (menuItem) {
             is Folder -> {
-                documentRepository.moveToFolder(menuItem.id, parentId)
+                folderRepository.moveToFolder(menuItem.id, parentId)
             }
 
             is Document -> {
-                folderRepository.moveToFolder(menuItem.id, parentId)
+                documentRepository.moveToFolder(menuItem.id, parentId)
             }
         }
 

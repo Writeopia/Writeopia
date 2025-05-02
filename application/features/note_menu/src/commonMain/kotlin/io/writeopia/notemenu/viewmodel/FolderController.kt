@@ -24,5 +24,7 @@ interface FolderController {
 
     fun toggleSelection(id: String)
 
+    fun onDocumentSelected(id: String, selected: Boolean)
+
     fun clearSelection()
 }

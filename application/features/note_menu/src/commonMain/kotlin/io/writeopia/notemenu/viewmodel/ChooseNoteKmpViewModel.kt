@@ -256,12 +256,6 @@ internal class ChooseNoteKmpViewModel(
         _editState.value = false
     }
 
-    override fun onDocumentSelected(id: String, selected: Boolean) {
-        viewModelScope.launch(Dispatchers.Default) {
-            toggleSelection(id)
-        }
-    }
-
     override fun listArrangementSelected() {
         viewModelScope.launch {
             notesConfig.saveDocumentArrangementPref(NotesArrangement.LIST, getUserId())

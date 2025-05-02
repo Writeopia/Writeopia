@@ -65,7 +65,7 @@ class FolderStateController(
         if (menuItemUi.documentId != parentId) {
             coroutineScope.launch(Dispatchers.Default) {
                 if (_selectedNotes.value.isEmpty()) {
-                    moveItemToFolder(menuItemUi, parentId, refresh = true)
+                    moveItemToFolder(menuItemUi, parentId)
                 } else {
                     notesUseCase.moveItemsById(ids = selectedNotes.value, parentId)
                 }
@@ -73,11 +73,7 @@ class FolderStateController(
         }
     }
 
-    private suspend fun moveItemToFolder(
-        menuItemUi: MenuItemUi,
-        parentId: String,
-        refresh: Boolean
-    ) {
+    private suspend fun moveItemToFolder(menuItemUi: MenuItemUi, parentId: String) {
         if (menuItemUi is MenuItemUi.FolderUi &&
             menuItemUi.anyNode { node -> node.id == parentId }
         ) {
@@ -86,7 +82,6 @@ class FolderStateController(
 
         notesUseCase.moveItem(menuItemUi, parentId)
     }
-
 
     override fun changeIcons(
         menuItemId: String,
@@ -118,6 +113,14 @@ class FolderStateController(
             _selectedNotes.value -= id
         } else {
             _selectedNotes.value += id
+        }
+    }
+
+    override fun onDocumentSelected(id: String, selected: Boolean) {
+        if (selected) {
+            _selectedNotes.value += id
+        } else {
+            _selectedNotes.value -= id
         }
     }
 

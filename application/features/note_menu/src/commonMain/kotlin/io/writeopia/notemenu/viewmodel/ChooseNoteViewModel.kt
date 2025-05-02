@@ -56,8 +56,6 @@ interface ChooseNoteViewModel : FolderController {
 
     fun loadFiles(filePaths: List<ExternalFile>)
 
-    fun onDocumentSelected(id: String, selected: Boolean)
-
     fun onSyncLocallySelected()
 
     fun configureDirectory()
