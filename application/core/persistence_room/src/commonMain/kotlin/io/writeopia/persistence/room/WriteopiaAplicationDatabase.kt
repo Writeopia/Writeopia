@@ -31,7 +31,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         FolderEntity::class,
         UiConfigurationRoomEntity::class,
     ],
-    version = 19,
+    version = 20,
     exportSchema = false
 )
 @TypeConverters(IdListConverter::class)
