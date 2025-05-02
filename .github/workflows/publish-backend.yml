@@ -28,4 +28,4 @@ jobs:
         with:
           context: ./Writeopia/backend/gateway
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/writeopia-backend:latest
+          tags: ghcr.io/writeopia/writeopia-backend:latest
