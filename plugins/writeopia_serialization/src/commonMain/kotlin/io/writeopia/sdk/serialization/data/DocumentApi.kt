@@ -11,7 +11,7 @@ data class DocumentApi(
     val content: List<StoryStepApi> = emptyList(),
     val createdAt: Long = Clock.System.now().toEpochMilliseconds(),
     val lastUpdatedAt: Long = Clock.System.now().toEpochMilliseconds(),
-    val isFavorite: Boolean,
+    val isFavorite: Boolean = false,
     val lastSyncedAt: Long? = null,
     val parentId: String? = null,
     val isLocked: Boolean = false,
