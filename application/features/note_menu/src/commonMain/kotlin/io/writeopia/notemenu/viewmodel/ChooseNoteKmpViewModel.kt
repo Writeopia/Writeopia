@@ -15,6 +15,7 @@ import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.core.folders.sync.DocumentsSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.onboarding.OnboardingState
@@ -29,9 +30,9 @@ import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
 import io.writeopia.sdk.preview.PreviewParser
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
@@ -58,6 +59,7 @@ internal class ChooseNoteKmpViewModel(
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
+    private val documentsSync: DocumentsSync,
     private val folderController: FolderStateController = FolderStateController(
         notesUseCase,
         authManager
@@ -257,25 +259,25 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun listArrangementSelected() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.saveDocumentArrangementPref(NotesArrangement.LIST, getUserId())
         }
     }
 
     override fun gridArrangementSelected() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.saveDocumentArrangementPref(NotesArrangement.GRID, getUserId())
         }
     }
 
     override fun staggeredGridArrangementSelected() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.saveDocumentArrangementPref(NotesArrangement.STAGGERED_GRID, getUserId())
         }
     }
 
     override fun sortingSelected(orderBy: OrderBy) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.saveDocumentSortingPref(orderBy, getUserId())
         }
     }
@@ -301,9 +303,7 @@ internal class ChooseNoteKmpViewModel(
 
         val allFavorites = (menuItemsState.value as? ResultData.Complete<List<MenuItem>>)
             ?.data
-            ?.filter { document ->
-                selectedIds.contains(document.id)
-            }
+            ?.filter { document -> selectedIds.contains(document.id) }
             ?.all { document -> document.favorite }
             ?: false
 
@@ -367,11 +367,11 @@ internal class ChooseNoteKmpViewModel(
 
                 when (_showLocalSyncConfig.value.getSyncRequest()) {
                     SyncRequest.WRITE -> {
-                        writeWorkspace(path)
+                        writeWorkspaceLocally(path)
                     }
 
                     SyncRequest.READ_WRITE -> {
-                        syncWorkplace(path)
+                        syncWorkplaceLocally(path)
                     }
 
                     SyncRequest.CONFIGURE, null -> {}
@@ -387,11 +387,11 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun onSyncLocallySelected() {
-        handleStorage(::syncWorkplace, SyncRequest.READ_WRITE)
+        handleStorage(::syncWorkplaceLocally, SyncRequest.READ_WRITE)
     }
 
     override fun onWriteLocallySelected() {
-        handleStorage(::writeWorkspace, SyncRequest.WRITE)
+        handleStorage(::writeWorkspaceLocally, SyncRequest.WRITE)
     }
 
     override fun requestPermissionToDeleteSelection() {
@@ -417,7 +417,7 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun completeOnboarding() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.setOnboarded()
             _showOnboardingState.value = OnboardingState.CONGRATULATION
             delay(3000)
@@ -426,9 +426,16 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun closeOnboardingPermanently() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             notesConfig.setOnboarded()
             _showOnboardingState.value = OnboardingState.COMPLETE
+        }
+    }
+
+    override fun syncFolderWithCloud() {
+        viewModelScope.launch(Dispatchers.Default) {
+            // Refresh happens inside syncFolder
+            documentsSync.syncFolder(notesNavigation.id)
         }
     }
 
@@ -452,7 +459,7 @@ internal class ChooseNoteKmpViewModel(
                     favorite = false
                 )
             }
-            .collect(notesUseCase::saveDocument)
+            .collect(notesUseCase::saveDocumentDb)
     }
 
     private suspend fun importMarkdownNotes(externalFiles: List<ExternalFile>, now: Instant) {
@@ -479,7 +486,7 @@ internal class ChooseNoteKmpViewModel(
                     favorite = false
                 )
             }
-            .collect(notesUseCase::saveDocument)
+            .collect(notesUseCase::saveDocumentDb)
     }
 
     private suspend fun importImages(externalFiles: List<ExternalFile>, now: Instant) {
@@ -502,6 +509,7 @@ internal class ChooseNoteKmpViewModel(
                     lastUpdatedAt = now,
                     createdAt = now,
                     userId = getUserId(),
+                    lastSyncedAt = null,
                     favorite = false,
                     title = "",
                     content = mapOf(
@@ -511,7 +519,7 @@ internal class ChooseNoteKmpViewModel(
                 )
             }
             .forEach { document ->
-                notesUseCase.saveDocument(document)
+                notesUseCase.saveDocumentDb(document)
             }
     }
 
@@ -528,14 +536,14 @@ internal class ChooseNoteKmpViewModel(
         }
     }
 
-    private suspend fun syncWorkplace(path: String) {
+    private suspend fun syncWorkplaceLocally(path: String) {
         _syncInProgress.value = SyncState.LoadingSync
 
         val userId = getUserId()
 
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
-            notesUseCase.loadDocumentsForUserAfterTime(userId, lastUpdated)
-        } ?: notesUseCase.loadDocumentsForUser(userId)
+            notesUseCase.loadDocumentsForUserAfterTimeFromDb(userId, lastUpdated)
+        } ?: notesUseCase.loadDocumentsForUserFromDb(userId)
 
         val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
             notesUseCase.loadFolderForUserAfterTime(userId, lastUpdated)
@@ -555,18 +563,18 @@ internal class ChooseNoteKmpViewModel(
                 delay(150)
                 _syncInProgress.value = SyncState.Idle
             }
-            .collect(notesUseCase::saveDocument)
+            .collect(notesUseCase::saveDocumentDb)
     }
 
-    private suspend fun writeWorkspace(path: String) {
+    private suspend fun writeWorkspaceLocally(path: String) {
         _syncInProgress.value = SyncState.LoadingWrite
 
         val userId = getUserId()
 
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
-            notesUseCase.loadDocumentsForUserAfterTime(userId, lastUpdated)
+            notesUseCase.loadDocumentsForUserAfterTimeFromDb(userId, lastUpdated)
         } ?: run {
-            notesUseCase.loadDocumentsForUser(userId)
+            notesUseCase.loadDocumentsForUserFromDb(userId)
         }
 
         val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
@@ -586,7 +594,7 @@ internal class ChooseNoteKmpViewModel(
 
     private fun directoryFilesAs(path: String, documentWriter: DocumentWriter) {
         viewModelScope.launch(Dispatchers.Default) {
-            val data = notesUseCase.loadDocumentsForUser(getUserId())
+            val data = notesUseCase.loadDocumentsForUserFromDb(getUserId())
             documentWriter.writeDocuments(data, path, usePath = true)
         }
     }

@@ -103,7 +103,7 @@ object PromptService {
             .map { result ->
                 when (result) {
                     is ResultData.Complete -> result.data
-                    is ResultData.Error -> "Error. Message: ${result.exception.message}"
+                    is ResultData.Error -> "Error. Message: ${result.exception?.message}"
                     is ResultData.Loading,
                     is ResultData.Idle,
                     is ResultData.InProgress -> ""

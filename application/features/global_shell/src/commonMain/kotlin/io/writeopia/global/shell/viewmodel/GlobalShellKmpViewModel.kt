@@ -82,7 +82,7 @@ class GlobalShellKmpViewModel(
                     .forEach { document ->
                         val now = Clock.System.now()
 
-                        notesUseCase.saveDocument(
+                        notesUseCase.saveDocumentDb(
                             document.copy(
                                 createdAt = now,
                                 lastUpdatedAt = now

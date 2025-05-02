@@ -3,15 +3,20 @@ package io.writeopia.notemenu.di
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.repository.ConfigurationRepository
+import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.repository.FolderRepository
-import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.core.folders.sync.DocumentConflictHandler
+import io.writeopia.core.folders.sync.DocumentsSync
+import io.writeopia.di.AppConnectionInjection
 import io.writeopia.notemenu.viewmodel.ChooseNoteKmpViewModel
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.FolderStateController
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
@@ -25,7 +30,10 @@ class NotesMenuKmpInjection private constructor(
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
     private val repositoryInjection: RepositoryInjector,
     private val selectionState: StateFlow<Boolean>,
-    private val keyboardEventFlow: Flow<KeyboardEvent>
+    private val keyboardEventFlow: Flow<KeyboardEvent>,
+    private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
+    private val connectionInjector: WriteopiaConnectionInjector =
+        WriteopiaConnectionInjector.singleton()
 ) : NotesMenuInjection {
 
     private fun provideDocumentRepository(): DocumentRepository =
@@ -46,6 +54,19 @@ class NotesMenuKmpInjection private constructor(
             authCoreInjection.provideAccountManager()
         )
 
+    private fun provideDocumentsApi() =
+        DocumentsApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+
+    private fun provideDocumentSync(): DocumentsSync {
+        val documentRepository = repositoryInjection.provideDocumentRepository()
+
+        return DocumentsSync(
+            documentRepository = documentRepository,
+            documentsApi = provideDocumentsApi(),
+            documentConflictHandler = DocumentConflictHandler(documentRepository)
+        )
+    }
+
     private fun provideChooseKmpNoteViewModel(
         notesNavigation: NotesNavigation,
         notesUseCase: NotesUseCase = provideNotesUseCase(),
@@ -61,6 +82,7 @@ class NotesMenuKmpInjection private constructor(
             folderController = provideFolderStateController(),
             keyboardEventFlow = keyboardEventFlow,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
+            documentsSync = provideDocumentSync(),
         )
 
     @Composable

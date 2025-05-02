@@ -42,7 +42,8 @@ fun MenuItem.toUiCard(
             parentId = parentId,
             isFavorite = favorite,
             highlighted = highlighted,
-            icon = icon
+            icon = icon,
+            isSynced = lastSyncedAt?.let { synced -> lastUpdatedAt <= synced } ?: false
         )
 
         else -> throw IllegalArgumentException("MenuItemUi could not me created")

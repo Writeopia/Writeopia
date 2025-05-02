@@ -74,10 +74,12 @@ fun Document.toApi(): DocumentApi =
         content = content.map { (position, story) -> story.toApi(position) },
         createdAt = createdAt.toEpochMilliseconds(),
         lastUpdatedAt = lastUpdatedAt.toEpochMilliseconds(),
+        lastSyncedAt = lastSyncedAt?.toEpochMilliseconds(),
         userId = userId,
         parentId = parentId,
         isLocked = isLocked,
-        icon = icon?.toApi()
+        icon = icon?.toApi(),
+        isFavorite = this.favorite
     )
 
 fun DocumentApi.toModel(): Document =
@@ -87,8 +89,9 @@ fun DocumentApi.toModel(): Document =
         content = content.associateBy { it.position }.mapValues { (_, story) -> story.toModel() },
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
+        lastSyncedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
         userId = userId,
-        parentId = parentId,
+        parentId = parentId ?: "",
         isLocked = isLocked,
         icon = icon?.toModel()
     )

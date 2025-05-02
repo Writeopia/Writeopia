@@ -2,6 +2,7 @@ plugins {
     kotlin("multiplatform")
     alias(libs.plugins.ktlint)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -32,14 +33,20 @@ kotlin {
                 implementation(project(":writeopia_models"))
                 implementation(project(":plugins:writeopia_persistence_core"))
 
+                implementation(project(":plugins:writeopia_serialization"))
+
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:common_ui"))
                 implementation(project(":application:core:persistence_bridge"))
+                implementation(project(":application:core:connection"))
                 implementation(project(":application:core:configuration"))
+                implementation(project(":application:core:connection"))
 
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.datetime)
+                implementation(libs.ktor.client.core)
+                implementation(libs.kotlinx.serialization.json)
             }
         }
     }

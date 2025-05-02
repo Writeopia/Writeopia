@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -171,7 +173,7 @@ fun NotesCards(
 
         is ResultData.Error -> {
             LaunchedEffect(key1 = true) {
-                documents.exception.printStackTrace()
+                documents.exception?.printStackTrace()
             }
 
             Box(modifier = modifier.fillMaxSize()) {
@@ -641,8 +643,6 @@ private fun DocumentItem(
                                 }
                             }
 
-                            documentUi.icon
-
                             drawers[storyStep.type.number]?.Step(
                                 step = storyStep,
                                 drawInfo = DrawInfo(
@@ -657,13 +657,24 @@ private fun DocumentItem(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    if (documentUi.isFavorite) {
-                        Icon(
-                            modifier = Modifier.align(Alignment.TopEnd).size(40.dp).padding(12.dp),
-                            imageVector = WrIcons.favorites,
-                            contentDescription = "Favorite",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
+                    Row(modifier = Modifier.align(Alignment.TopEnd).height(40.dp).padding(12.dp)) {
+                        if (documentUi.isFavorite) {
+                            Icon(
+                                imageVector = WrIcons.favorites,
+                                contentDescription = "Favorite",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+//                        if (!documentUi.isSynced) {
+//                            Icon(
+//                                imageVector = WrIcons.cloudSync,
+//                                contentDescription = "Cloud upload",
+//                                tint = MaterialTheme.colorScheme.onBackground
+//                            )
+//                        }
                     }
                 }
             }

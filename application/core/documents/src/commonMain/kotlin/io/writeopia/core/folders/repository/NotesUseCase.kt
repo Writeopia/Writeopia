@@ -8,7 +8,7 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
+import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -22,7 +22,7 @@ import kotlinx.datetime.Instant
 class NotesUseCase private constructor(
     private val documentRepository: DocumentRepository,
     private val notesConfig: ConfigurationRepository,
-    private val folderRepository: FolderRepository
+    private val folderRepository: FolderRepository,
 ) {
 
     suspend fun createFolder(name: String, userId: String) {
@@ -69,10 +69,10 @@ class NotesUseCase private constructor(
         folderRepository.refreshFolders()
     }
 
-    suspend fun loadDocumentsForUser(userId: String): List<Document> =
+    suspend fun loadDocumentsForUserFromDb(userId: String): List<Document> =
         documentRepository.loadDocumentsForUser(userId)
 
-    suspend fun loadDocumentsForUserAfterTime(userId: String, time: Instant): List<Document> =
+    suspend fun loadDocumentsForUserAfterTimeFromDb(userId: String, time: Instant): List<Document> =
         notesConfig.getOrderPreference(userId)
             .let { orderBy ->
                 documentRepository.loadDocumentsForUserAfterTime(
@@ -141,7 +141,7 @@ class NotesUseCase private constructor(
         duplicateFolders(ids)
     }
 
-    suspend fun saveDocument(document: Document) {
+    suspend fun saveDocumentDb(document: Document) {
         documentRepository.saveDocument(document)
         documentRepository.refreshDocuments()
     }
@@ -269,9 +269,13 @@ class NotesUseCase private constructor(
         fun singleton(
             documentRepository: DocumentRepository,
             notesConfig: ConfigurationRepository,
-            folderRepository: FolderRepository
+            folderRepository: FolderRepository,
         ): NotesUseCase =
-            instance ?: NotesUseCase(documentRepository, notesConfig, folderRepository).also {
+            instance ?: NotesUseCase(
+                documentRepository,
+                notesConfig,
+                folderRepository,
+            ).also {
                 instance = it
             }
     }

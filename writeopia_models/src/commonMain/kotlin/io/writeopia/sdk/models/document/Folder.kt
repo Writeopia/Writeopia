@@ -14,7 +14,7 @@ data class Folder(
     override val favorite: Boolean = false,
     override val icon: MenuItem.Icon? = null,
     val itemCount: Long,
-    val documentList: List<Document> = emptyList()
+    val documentList: List<Document> = emptyList(),
 ) : MenuItem {
     companion object {
         const val ROOT_PATH = "root"

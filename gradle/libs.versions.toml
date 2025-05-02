@@ -5,6 +5,7 @@ composeBom = "2025.03.01"
 composeShimmer = "1.0.5"
 espressoCore = "3.6.1"
 firebaseAdmin = "9.2.0"
+firebaseAuthProvider = "1.5.0"
 junit = "1.2.1"
 kotlinxCoroutines = "1.10.1"
 kotlinxCoroutinesSwing = "1.10.1"
@@ -15,6 +16,7 @@ ktlint = "12.1.2"
 ktx = "1.15.0"
 material = "1.12.0"
 postgresSocketFactory = "1.15.1"
+r2dbcDriver = "2.0.2"
 room = "2.7.0-rc03"
 agp = "8.9.2"
 kotlin = "2.1.10"
@@ -26,8 +28,6 @@ ksp = "2.1.10-1.0.30"
 compose-multiplatform = "1.8.0-beta01"
 dag-command = "1.11.0"
 dokka = "1.9.20"
-spring-boot = "3.1.5"
-spring-dependencyManagement = "1.1.3"
 firebase = "33.11.0"
 google-services = "4.4.2"
 logback-classic = "1.5.0"
@@ -53,10 +53,12 @@ coil-video = { module = "io.coil-kt.coil3:coil-video", version.ref = "coilVersio
 compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.ref = "composeShimmer" }
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebaseAdmin" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-auth-provider = { module = "com.kborowy:firebase-auth-provider", version.ref = "firebaseAuthProvider" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
+ktor-server-swagger = { module = "io.ktor:ktor-server-swagger" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinxCoroutinesSwing" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
@@ -76,6 +78,7 @@ ktor-server-core = { module = "io.ktor:ktor-server-core-jvm" }
 ktor-server-websocket = { module = "io.ktor:ktor-server-websockets-jvm" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm" }
 ktor-server-tests = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+r2dbc-driver = { module = "app.cash.sqldelight:r2dbc-driver", version.ref = "r2dbcDriver" }
 sql-postgres-socket-factory = { module = "com.google.cloud.sql:postgres-socket-factory", version.ref = "postgresSocketFactory" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
@@ -104,9 +107,6 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 dag-command = { id = "io.github.leandroborgesferreira.dag-command", version.ref = "dag-command" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
-spring-kotlin = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
-spring-dependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependencyManagement" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 ktor-framework = { id = "io.ktor.plugin", version.ref = "ktor" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }

@@ -26,6 +26,7 @@ import io.writeopia.common.utils.icons.all.CirclePlus
 import io.writeopia.common.utils.icons.all.ClipboardCopy
 import io.writeopia.common.utils.icons.all.ClockArrowDown
 import io.writeopia.common.utils.icons.all.CloudDownload
+import io.writeopia.common.utils.icons.all.CloudUpload
 import io.writeopia.common.utils.icons.all.Command
 import io.writeopia.common.utils.icons.all.Contrast
 import io.writeopia.common.utils.icons.all.Crosshair
@@ -166,6 +167,8 @@ object WrIcons {
     val ai = WandSparkles
 
     val command = Command
+
+    val cloudSync = CloudUpload
 
     val chart = ChartScatter
 
