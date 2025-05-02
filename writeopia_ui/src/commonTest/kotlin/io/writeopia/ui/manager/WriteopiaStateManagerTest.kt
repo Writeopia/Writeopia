@@ -82,7 +82,8 @@ class WriteopiaStateManagerTest {
                         createdAt = now,
                         lastUpdatedAt = now,
                         parentId = "root"
-                    )
+,
+                        lastSyncedAt = null,)
                 )
             }
 
@@ -127,7 +128,8 @@ class WriteopiaStateManagerTest {
                         userId = "",
                         createdAt = now,
                         lastUpdatedAt = now,
-                        parentId = "root"
+                        parentId = "root",
+                        lastSyncedAt = null,
                     )
                 )
             }
@@ -165,7 +167,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         val currentStory = storyManager.currentStory.value.stories
@@ -218,7 +221,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         val currentStory = storyManager.currentStory.value.stories
@@ -263,7 +267,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         val currentStory = storyManager.currentStory.value.stories
@@ -343,7 +348,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         val currentStory = storyManager.currentStory.value.stories
@@ -389,7 +395,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
         val positionTo = 1
         val positionFrom = 0
@@ -438,7 +445,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         val currentStory = storyManager.currentStory.value.stories
@@ -502,7 +510,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         val positionFrom = 0
@@ -545,7 +554,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         val positionFrom = 2
@@ -581,7 +591,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
         val groupPosition = 0
 
@@ -635,7 +646,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         storyManager.onDelete(
@@ -674,7 +686,8 @@ class WriteopiaStateManagerTest {
                     createdAt = now,
                     lastUpdatedAt = now,
                     parentId = "root"
-                )
+,
+                    lastSyncedAt = null,)
             )
 
             val stories = storyManager.currentStory.value.stories
@@ -708,7 +721,8 @@ class WriteopiaStateManagerTest {
                     createdAt = now,
                     lastUpdatedAt = now,
                     parentId = "root"
-                )
+,
+                    lastSyncedAt = null,)
             )
 
             val stories = storyManager.currentStory.value.stories
@@ -751,7 +765,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         val stories = storyManager.currentStory.value.stories
@@ -837,7 +852,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
         val currentStory = storyManager.currentStory.value.stories
 
@@ -868,7 +884,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
         val currentStory = storyManager.currentStory.value.stories
 
@@ -917,7 +934,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         storyManager.onSelected(true, 1)
@@ -945,7 +963,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         val selectionCount = 3
@@ -1002,7 +1021,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         val selectionCount = 3
@@ -1063,7 +1083,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         storyManager.clickAtTheEnd()
@@ -1093,7 +1114,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         repeat(3) { index ->
@@ -1126,7 +1148,8 @@ class WriteopiaStateManagerTest {
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root"
-            )
+,
+                lastSyncedAt = null,)
         )
 
         val text = "this will be BOLD"
