@@ -64,17 +64,29 @@ class FolderStateController(
     override fun moveToFolder(menuItemUi: MenuItemUi, parentId: String) {
         if (menuItemUi.documentId != parentId) {
             coroutineScope.launch(Dispatchers.Default) {
-                // Avoid cyclical graphs
-                if (menuItemUi is MenuItemUi.FolderUi &&
-                    menuItemUi.anyNode { node -> node.id == parentId }
-                ) {
-                    return@launch
+                if (_selectedNotes.value.isEmpty()) {
+                    moveItemToFolder(menuItemUi, parentId, refresh = true)
+                } else {
+                    notesUseCase.moveItemsById(ids = selectedNotes.value, parentId)
                 }
-
-                notesUseCase.moveItem(menuItemUi, parentId)
             }
         }
     }
+
+    private suspend fun moveItemToFolder(
+        menuItemUi: MenuItemUi,
+        parentId: String,
+        refresh: Boolean
+    ) {
+        if (menuItemUi is MenuItemUi.FolderUi &&
+            menuItemUi.anyNode { node -> node.id == parentId }
+        ) {
+            return
+        }
+
+        notesUseCase.moveItem(menuItemUi, parentId)
+    }
+
 
     override fun changeIcons(
         menuItemId: String,

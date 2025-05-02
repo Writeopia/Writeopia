@@ -76,7 +76,6 @@ internal class ChooseNoteKmpViewModel(
     override val showOnboardingState: StateFlow<OnboardingState> =
         _showOnboardingState.asStateFlow()
 
-//    private val selectedNotes = MutableStateFlow(setOf<String>())
     override val hasSelectedNotes: StateFlow<Boolean> by lazy {
         selectedNotes.map { selectedIds ->
             selectedIds.isNotEmpty()

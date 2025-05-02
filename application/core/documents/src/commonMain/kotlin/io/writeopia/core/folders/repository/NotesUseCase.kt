@@ -3,6 +3,7 @@ package io.writeopia.core.folders.repository
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.collections.merge
 import io.writeopia.commonui.dtos.MenuItemUi
+import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
@@ -62,6 +63,13 @@ class NotesUseCase private constructor(
         folderRepository.refreshFolders()
     }
 
+    suspend fun moveItemsById(ids: Iterable<String>, parentId: String) {
+        val items = loadDocumentsByIds(ids)
+
+        items.forEach { moveItem(it, parentId) }
+        folderRepository.refreshFolders()
+    }
+
     suspend fun loadDocumentsForUser(userId: String): List<Document> =
         documentRepository.loadDocumentsForUser(userId)
 
@@ -80,6 +88,13 @@ class NotesUseCase private constructor(
 
     suspend fun loadFoldersForUser(userId: String): List<Folder> =
         folderRepository.getFoldersForUser(userId)
+
+    private suspend fun loadDocumentsByIds(ids: Iterable<String>): List<MenuItem> {
+        val folders = ids.mapNotNull { id -> folderRepository.getFolderById(id) }
+        val documents = ids.mapNotNull { id -> documentRepository.loadDocumentById(id) }
+
+        return folders + documents
+    }
 
     /**
      * Listen and gets [MenuItem] groups by  parent folder.
@@ -234,6 +249,20 @@ class NotesUseCase private constructor(
         parentId: String
     ): Flow<Map<String, List<Folder>>> =
         folderRepository.listenForFoldersByParentId(parentId)
+
+    private suspend fun moveItem(menuItem: MenuItem, parentId: String) {
+        when (menuItem) {
+            is Folder -> {
+                documentRepository.moveToFolder(menuItem.id, parentId)
+            }
+
+            is Document -> {
+                folderRepository.moveToFolder(menuItem.id, parentId)
+            }
+        }
+
+        folderRepository.setLastUpdated(parentId, Clock.System.now().toEpochMilliseconds())
+    }
 
     companion object {
         private var instance: NotesUseCase? = null
