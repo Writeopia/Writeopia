@@ -52,7 +52,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
     val homeDirectory: String = System.getProperty("user.home")
     val appDirectory = File(homeDirectory, APP_DIRECTORY)
 
-    val dbName = "temp_writeopia_$DB_VERSION.db"
+    val dbName = "writeopia_$DB_VERSION.db"
     val dbPath = "$appDirectory${File.separator}$dbName"
     val url = "jdbc:sqlite:$dbPath"
 
