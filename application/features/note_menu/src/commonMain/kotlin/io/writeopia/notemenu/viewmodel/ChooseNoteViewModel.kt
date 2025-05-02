@@ -56,15 +56,11 @@ interface ChooseNoteViewModel : FolderController {
 
     fun loadFiles(filePaths: List<ExternalFile>)
 
-    fun onDocumentSelected(id: String, selected: Boolean)
-
     fun onSyncLocallySelected()
 
     fun configureDirectory()
 
     fun onWriteLocallySelected()
-
-    fun clearSelection()
 
     fun listArrangementSelected()
 
@@ -80,15 +76,11 @@ interface ChooseNoteViewModel : FolderController {
 
     fun favoriteSelectedNotes()
 
-    fun unSelectNotes()
-
     fun hideConfigSyncMenu()
 
     fun pathSelected(path: String)
 
     fun confirmWorkplacePath()
-
-    fun toggleSelection(id: String)
 
     fun requestPermissionToDeleteSelection()
 

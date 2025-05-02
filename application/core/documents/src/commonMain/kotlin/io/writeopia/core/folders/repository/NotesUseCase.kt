@@ -62,6 +62,13 @@ class NotesUseCase private constructor(
         folderRepository.refreshFolders()
     }
 
+    suspend fun moveItemsById(ids: Iterable<String>, parentId: String) {
+        val items = loadDocumentsByIds(ids).filter { it.id != parentId }
+
+        items.forEach { moveItem(it, parentId) }
+        folderRepository.refreshFolders()
+    }
+
     suspend fun loadDocumentsForUser(userId: String): List<Document> =
         documentRepository.loadDocumentsForUser(userId)
 
@@ -80,6 +87,13 @@ class NotesUseCase private constructor(
 
     suspend fun loadFoldersForUser(userId: String): List<Folder> =
         folderRepository.getFoldersForUser(userId)
+
+    private suspend fun loadDocumentsByIds(ids: Iterable<String>): List<MenuItem> {
+        val folders = ids.mapNotNull { id -> folderRepository.getFolderById(id) }
+        val documents = ids.mapNotNull { id -> documentRepository.loadDocumentById(id) }
+
+        return (folders + documents)
+    }
 
     /**
      * Listen and gets [MenuItem] groups by  parent folder.
@@ -234,6 +248,20 @@ class NotesUseCase private constructor(
         parentId: String
     ): Flow<Map<String, List<Folder>>> =
         folderRepository.listenForFoldersByParentId(parentId)
+
+    private suspend fun moveItem(menuItem: MenuItem, parentId: String) {
+        when (menuItem) {
+            is Folder -> {
+                folderRepository.moveToFolder(menuItem.id, parentId)
+            }
+
+            is Document -> {
+                documentRepository.moveToFolder(menuItem.id, parentId)
+            }
+        }
+
+        folderRepository.setLastUpdated(parentId, Clock.System.now().toEpochMilliseconds())
+    }
 
     companion object {
         private var instance: NotesUseCase? = null

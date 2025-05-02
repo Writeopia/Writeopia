@@ -10,6 +10,7 @@ import io.writeopia.sdk.models.document.MenuItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -21,6 +22,9 @@ class FolderStateController(
     private lateinit var coroutineScope: CoroutineScope
 
     private var localUserId: String? = null
+
+    private val _selectedNotes = MutableStateFlow<Set<String>>(setOf())
+    override val selectedNotes: StateFlow<Set<String>> = _selectedNotes.asStateFlow()
 
     // Todo: Change this to a usecase
     private val _editingFolder = MutableStateFlow<MenuItemUi.FolderUi?>(null)
@@ -60,16 +64,23 @@ class FolderStateController(
     override fun moveToFolder(menuItemUi: MenuItemUi, parentId: String) {
         if (menuItemUi.documentId != parentId) {
             coroutineScope.launch(Dispatchers.Default) {
-                // Avoid cyclical graphs
-                if (menuItemUi is MenuItemUi.FolderUi &&
-                    menuItemUi.anyNode { node -> node.id == parentId }
-                ) {
-                    return@launch
+                if (_selectedNotes.value.isEmpty()) {
+                    moveItemToFolder(menuItemUi, parentId)
+                } else {
+                    notesUseCase.moveItemsById(ids = selectedNotes.value, parentId)
                 }
-
-                notesUseCase.moveItem(menuItemUi, parentId)
             }
         }
+    }
+
+    private suspend fun moveItemToFolder(menuItemUi: MenuItemUi, parentId: String) {
+        if (menuItemUi is MenuItemUi.FolderUi &&
+            menuItemUi.anyNode { node -> node.id == parentId }
+        ) {
+            return
+        }
+
+        notesUseCase.moveItem(menuItemUi, parentId)
     }
 
     override fun changeIcons(
@@ -95,6 +106,26 @@ class FolderStateController(
                 }
             }
         }
+    }
+
+    override fun toggleSelection(id: String) {
+        if (_selectedNotes.value.contains(id)) {
+            _selectedNotes.value -= id
+        } else {
+            _selectedNotes.value += id
+        }
+    }
+
+    override fun onDocumentSelected(id: String, selected: Boolean) {
+        if (selected) {
+            _selectedNotes.value += id
+        } else {
+            _selectedNotes.value -= id
+        }
+    }
+
+    override fun clearSelection() {
+        _selectedNotes.value = emptySet()
     }
 
     private suspend fun getUserId(): String =

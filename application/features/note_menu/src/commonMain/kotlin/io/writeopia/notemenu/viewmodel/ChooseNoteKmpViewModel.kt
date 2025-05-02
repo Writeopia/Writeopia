@@ -76,9 +76,8 @@ internal class ChooseNoteKmpViewModel(
     override val showOnboardingState: StateFlow<OnboardingState> =
         _showOnboardingState.asStateFlow()
 
-    private val _selectedNotes = MutableStateFlow(setOf<String>())
     override val hasSelectedNotes: StateFlow<Boolean> by lazy {
-        _selectedNotes.map { selectedIds ->
+        selectedNotes.map { selectedIds ->
             selectedIds.isNotEmpty()
         }.stateIn(viewModelScope, SharingStarted.Lazily, false)
     }
@@ -149,7 +148,7 @@ internal class ChooseNoteKmpViewModel(
     override val titlesToDelete: StateFlow<List<String>> =
         combine(
             _askToDelete,
-            _selectedNotes,
+            selectedNotes,
             menuItemsState
         ) { shouldAsk, selectedIds, itemsState ->
             if (shouldAsk && itemsState is ResultData.Complete) {
@@ -167,7 +166,7 @@ internal class ChooseNoteKmpViewModel(
 
     override val documentsState: StateFlow<ResultData<NotesUi>> by lazy {
         combine(
-            _selectedNotes,
+            selectedNotes,
             menuItemsState,
             notesArrangement
         ) { selectedNoteIds, resultData, arrangement ->
@@ -241,23 +240,11 @@ internal class ChooseNoteKmpViewModel(
 
     override fun handleMenuItemTap(id: String): Boolean {
         return if (selectionState.value) {
-            if (_selectedNotes.value.contains(id)) {
-                _selectedNotes.value -= id
-            } else {
-                _selectedNotes.value += id
-            }
+            toggleSelection(id)
 
             true
         } else {
             false
-        }
-    }
-
-    override fun toggleSelection(id: String) {
-        if (_selectedNotes.value.contains(id)) {
-            _selectedNotes.value -= id
-        } else {
-            _selectedNotes.value += id
         }
     }
 
@@ -267,20 +254,6 @@ internal class ChooseNoteKmpViewModel(
 
     override fun cancelEditMenu() {
         _editState.value = false
-    }
-
-    override fun onDocumentSelected(id: String, selected: Boolean) {
-        viewModelScope.launch(Dispatchers.Default) {
-            if (selected) {
-                _selectedNotes.value += id
-            } else {
-                _selectedNotes.value -= id
-            }
-        }
-    }
-
-    override fun clearSelection() {
-        _selectedNotes.value = emptySet()
     }
 
     override fun listArrangementSelected() {
@@ -309,12 +282,12 @@ internal class ChooseNoteKmpViewModel(
 
     override fun copySelectedNotes() {
         viewModelScope.launch(Dispatchers.Default) {
-            notesUseCase.duplicateDocuments(_selectedNotes.value.toList(), getUserId())
+            notesUseCase.duplicateDocuments(selectedNotes.value.toList(), getUserId())
         }
     }
 
     override fun deleteSelectedNotes() {
-        val selected = _selectedNotes.value
+        val selected = selectedNotes.value
 
         viewModelScope.launch(Dispatchers.Default) {
             notesUseCase.deleteNotes(selected)
@@ -324,7 +297,7 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun favoriteSelectedNotes() {
-        val selectedIds = _selectedNotes.value
+        val selectedIds = selectedNotes.value
 
         val allFavorites = (menuItemsState.value as? ResultData.Complete<List<MenuItem>>)
             ?.data
@@ -341,10 +314,6 @@ internal class ChooseNoteKmpViewModel(
                 notesUseCase.favoriteDocuments(selectedIds)
             }
         }
-    }
-
-    override fun unSelectNotes() {
-        _selectedNotes.value = emptySet()
     }
 
     override fun showSortMenu() {
