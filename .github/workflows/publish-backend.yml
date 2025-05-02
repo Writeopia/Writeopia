@@ -7,6 +7,9 @@ jobs:
   publish_backend:
     name: Generate docker image and publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Check out code
         uses: actions/checkout@v4
