@@ -26,6 +26,6 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./Writeopia/backend/gateway
+          context: ./backend/gateway
           push: true
           tags: ghcr.io/writeopia/writeopia-backend:latest
