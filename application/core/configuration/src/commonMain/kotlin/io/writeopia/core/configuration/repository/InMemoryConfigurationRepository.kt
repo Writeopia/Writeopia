@@ -11,9 +11,11 @@ class InMemoryConfigurationRepository private constructor() : ConfigurationRepos
     private val arrangementPrefs = mutableMapOf<String, String>()
     private val sortPrefs = mutableMapOf<String, String>()
     private val workSpacePrefs = mutableMapOf<String, String>()
+    private val selfHostedBackendPrefs = mutableMapOf<String, String>()
 
     private val arrangementPrefsState = MutableStateFlow(NotesArrangement.STAGGERED_GRID.type)
     private val sortPrefsState = MutableStateFlow(OrderBy.UPDATE.type)
+    private val selfHostedBackendState = MutableStateFlow<String?>(null)
 
     override suspend fun saveDocumentArrangementPref(
         arrangement: NotesArrangement,
@@ -47,26 +49,36 @@ class InMemoryConfigurationRepository private constructor() : ConfigurationRepos
     override suspend fun listenOrderPreference(userId: String): Flow<String> =
         sortPrefsState.asStateFlow()
 
-    override suspend fun hasFirstConfiguration(userId: String): Boolean {
-        return false
+    override suspend fun saveSelfHostedBackendUrl(url: String, userId: String) {
+        selfHostedBackendPrefs[userId] = url
+        selfHostedBackendState.value = url
     }
 
-    override suspend fun setTutorialNotes(hasTutorials: Boolean, userId: String) {
-        TODO("Not yet implemented")
+    override suspend fun loadSelfHostedBackendUrl(userId: String): String? =
+        selfHostedBackendPrefs[userId]
+
+    override suspend fun listenForSelfHostedBackendUrl(userId: String): Flow<String?> =
+        selfHostedBackendState.asStateFlow()
+
+    override suspend fun clearSelfHostedBackendUrl(userId: String) {
+        selfHostedBackendPrefs.remove(userId)
+        selfHostedBackendState.value = null
     }
+
+    override suspend fun hasFirstConfiguration(userId: String): Boolean = false
+
+    override suspend fun setTutorialNotes(hasTutorials: Boolean, userId: String) {}
 
     override suspend fun isOnboarded(): Boolean = true
 
-    override suspend fun setOnboarded() { }
+    override suspend fun setOnboarded() {}
 
     companion object {
         private var instance: InMemoryConfigurationRepository? = null
 
-        fun singleton(): InMemoryConfigurationRepository {
-            return instance ?: run {
-                instance = InMemoryConfigurationRepository()
-                instance!!
+        fun singleton(): InMemoryConfigurationRepository =
+            instance ?: InMemoryConfigurationRepository().also {
+                instance = it
             }
-        }
     }
 }

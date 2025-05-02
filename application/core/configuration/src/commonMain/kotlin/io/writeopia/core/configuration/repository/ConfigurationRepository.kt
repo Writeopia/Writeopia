@@ -26,4 +26,13 @@ interface ConfigurationRepository : WorkspaceConfigRepository {
     suspend fun hasFirstConfiguration(userId: String): Boolean
 
     suspend fun setTutorialNotes(hasTutorials: Boolean, userId: String)
+
+    // Self-hosted backend URL
+    suspend fun saveSelfHostedBackendUrl(url: String, userId: String)
+
+    suspend fun loadSelfHostedBackendUrl(userId: String): String?
+
+    suspend fun listenForSelfHostedBackendUrl(userId: String): Flow<String?>
+
+    suspend fun clearSelfHostedBackendUrl(userId: String)
 }

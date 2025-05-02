@@ -37,7 +37,8 @@ fun DesktopNoteActionsMenu(
     syncInProgressState: StateFlow<SyncState>,
     onSyncLocallySelected: () -> Unit,
     onWriteLocallySelected: () -> Unit,
-    onForceGraphSelected: () -> Unit
+    onForceGraphSelected: () -> Unit,
+    configureSelfHostedBackend: () -> Unit = {}
 ) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         val showSyncLoading by syncInProgressState.collectAsState()
@@ -72,6 +73,15 @@ fun DesktopNoteActionsMenu(
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
+
+        Icon(
+            imageVector = WrIcons.cloud,
+            contentDescription = "Self-hosted Backend",
+            modifier = Modifier.icon(configureSelfHostedBackend)
+                .padding(2.dp)
+                .testTag("configureSelfHostedBackend"),
+            tint = MaterialTheme.colorScheme.onBackground
+        )
 
         MoreOptions(
             showExtraOptions,

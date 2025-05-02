@@ -1,6 +1,7 @@
 package io.writeopia.core.configuration.repository
 
 import io.writeopia.app.sql.NotesConfiguration
+import io.writeopia.app.sql.SelfHostedConfiguration
 import io.writeopia.app.sql.WorkspaceConfiguration
 import io.writeopia.common.utils.extensions.toBoolean
 import io.writeopia.common.utils.extensions.toLong
@@ -9,6 +10,7 @@ import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sqldelight.dao.ConfigurationSqlDelightDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 
 class ConfigurationSqlDelightRepository(
     private val configurationSqlDelightDao: ConfigurationSqlDelightDao
@@ -17,6 +19,7 @@ class ConfigurationSqlDelightRepository(
     private val _arrangementPref: MutableStateFlow<String> =
         MutableStateFlow(NotesArrangement.GRID.type)
     private val _orderPreference: MutableStateFlow<String> = MutableStateFlow(OrderBy.UPDATE.type)
+    private val _selfHostedBackendUrl: MutableStateFlow<String?> = MutableStateFlow(null)
 
     override suspend fun saveDocumentArrangementPref(
         arrangement: NotesArrangement,
@@ -98,11 +101,36 @@ class ConfigurationSqlDelightRepository(
         configurationSqlDelightDao.setOnboarded()
     }
 
+    override suspend fun saveSelfHostedBackendUrl(url: String, userId: String) {
+        configurationSqlDelightDao.saveSelfHostedConfiguration(
+            SelfHostedConfiguration(url = url, user_id = userId)
+        )
+        refreshSelfHostedBackendUrl(userId)
+    }
+
+    override suspend fun loadSelfHostedBackendUrl(userId: String): String? =
+        configurationSqlDelightDao.getSelfHostedByUserId(userId)?.url
+
+    override suspend fun listenForSelfHostedBackendUrl(userId: String): Flow<String?> {
+        refreshSelfHostedBackendUrl(userId)
+        return configurationSqlDelightDao.listenForSelfHostedConfigurationByUserId(userId)
+            .map { it?.url }
+    }
+
+    override suspend fun clearSelfHostedBackendUrl(userId: String) {
+        configurationSqlDelightDao.deleteSelfHostedConfiguration(userId)
+        refreshSelfHostedBackendUrl(userId)
+    }
+
     private suspend fun refreshArrangementPref(userId: String) {
         _arrangementPref.value = arrangementPref(userId)
     }
 
     private suspend fun refreshOrderPref(userId: String) {
         _orderPreference.value = getOrderPreference(userId)
+    }
+
+    private suspend fun refreshSelfHostedBackendUrl(userId: String) {
+        _selfHostedBackendUrl.value = loadSelfHostedBackendUrl(userId)
     }
 }

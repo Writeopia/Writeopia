@@ -1,0 +1,24 @@
+CREATE TABLE selfHostedConfiguration (
+  user_id TEXT PRIMARY KEY,
+  url TEXT NOT NULL
+);
+
+selectSelfHostedByUserId:
+SELECT *
+FROM selfHostedConfiguration
+WHERE selfHostedConfiguration.user_id = ?;
+
+listenForSelfHostedByUserId:
+SELECT *
+FROM selfHostedConfiguration
+WHERE selfHostedConfiguration.user_id = ?;
+
+insert:
+INSERT INTO selfHostedConfiguration(user_id, url)
+VALUES (?, ?)
+ON CONFLICT(user_id) DO
+UPDATE SET user_id=excluded.user_id, url=excluded.url;
+
+delete:
+DELETE FROM selfHostedConfiguration
+WHERE user_id = ?;

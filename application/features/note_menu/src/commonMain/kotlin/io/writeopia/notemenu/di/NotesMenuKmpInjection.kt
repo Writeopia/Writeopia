@@ -7,6 +7,8 @@ import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.api.SelfHostedBackendManager
+import io.writeopia.core.folders.di.DocumentsInjection
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.repository.FolderRepository
 import io.writeopia.core.folders.repository.NotesUseCase
@@ -36,6 +38,8 @@ class NotesMenuKmpInjection private constructor(
         WriteopiaConnectionInjector.singleton()
 ) : NotesMenuInjection {
 
+    private var documentsInjection: DocumentsInjection? = null
+
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
 
@@ -54,17 +58,27 @@ class NotesMenuKmpInjection private constructor(
             authCoreInjection.provideAccountManager()
         )
 
-    private fun provideDocumentsApi() =
-        DocumentsApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+    fun provideDocumentsInjection(): DocumentsInjection {
+        return documentsInjection ?: DocumentsInjection(
+            httpClient = appConnectionInjection.provideHttpClient(),
+            documentRepository = provideDocumentRepository(),
+            configurationRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
+            baseUrl = connectionInjector.baseUrl()
+        ).also {
+            documentsInjection = it
+        }
+    }
+
+    private fun provideSelfHostedBackendManager(): SelfHostedBackendManager {
+        return provideDocumentsInjection().provideSelfHostedBackendManager()
+    }
+
+    private fun provideDocumentsApi(): DocumentsApi {
+        return provideDocumentsInjection().provideDocumentsApi()
+    }
 
     private fun provideDocumentSync(): DocumentsSync {
-        val documentRepository = repositoryInjection.provideDocumentRepository()
-
-        return DocumentsSync(
-            documentRepository = documentRepository,
-            documentsApi = provideDocumentsApi(),
-            documentConflictHandler = DocumentConflictHandler(documentRepository)
-        )
+        return provideDocumentsInjection().provideDocumentsSync()
     }
 
     private fun provideChooseKmpNoteViewModel(
@@ -83,6 +97,7 @@ class NotesMenuKmpInjection private constructor(
             keyboardEventFlow = keyboardEventFlow,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             documentsSync = provideDocumentSync(),
+            documentsInjection = provideDocumentsInjection()
         )
 
     @Composable
