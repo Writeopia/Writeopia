@@ -64,8 +64,6 @@ interface ChooseNoteViewModel : FolderController {
 
     fun onWriteLocallySelected()
 
-    fun clearSelection()
-
     fun listArrangementSelected()
 
     fun gridArrangementSelected()
@@ -80,15 +78,11 @@ interface ChooseNoteViewModel : FolderController {
 
     fun favoriteSelectedNotes()
 
-    fun unSelectNotes()
-
     fun hideConfigSyncMenu()
 
     fun pathSelected(path: String)
 
     fun confirmWorkplacePath()
-
-    fun toggleSelection(id: String)
 
     fun requestPermissionToDeleteSelection()
 

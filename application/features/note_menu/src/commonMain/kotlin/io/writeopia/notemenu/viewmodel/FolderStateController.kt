@@ -10,6 +10,7 @@ import io.writeopia.sdk.models.document.MenuItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -21,6 +22,9 @@ class FolderStateController(
     private lateinit var coroutineScope: CoroutineScope
 
     private var localUserId: String? = null
+
+    private val _selectedNotes = MutableStateFlow<Set<String>>(setOf())
+    override val selectedNotes: StateFlow<Set<String>> = _selectedNotes.asStateFlow()
 
     // Todo: Change this to a usecase
     private val _editingFolder = MutableStateFlow<MenuItemUi.FolderUi?>(null)
@@ -95,6 +99,18 @@ class FolderStateController(
                 }
             }
         }
+    }
+
+    override fun toggleSelection(id: String) {
+        if (_selectedNotes.value.contains(id)) {
+            _selectedNotes.value -= id
+        } else {
+            _selectedNotes.value += id
+        }
+    }
+
+    override fun clearSelection() {
+        _selectedNotes.value = emptySet()
     }
 
     private suspend fun getUserId(): String =
