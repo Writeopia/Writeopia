@@ -25,8 +25,8 @@ class SearchKmpViewModel(
         searchState
             .debounce(2000)
             .flatMapLatest { query ->
-            searchRepository.searchNotesAndFolders(query)
-        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+                searchRepository.searchNotesAndFolders(query)
+            }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
 
     override fun init() {}

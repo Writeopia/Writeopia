@@ -14,11 +14,6 @@ import io.writeopia.common.utils.toBoolean
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.core.configuration.models.NotesArrangement
-import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.core.folders.repository.NotesUseCase
-import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
-import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.core.folders.repository.NotesUseCase
 import io.writeopia.core.folders.sync.DocumentsSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
@@ -491,7 +486,7 @@ internal class ChooseNoteKmpViewModel(
                     favorite = false
                 )
             }
-            .collect(notesUseCase::saveDocument)
+            .collect(notesUseCase::saveDocumentDb)
     }
 
     private suspend fun importImages(externalFiles: List<ExternalFile>, now: Instant) {
