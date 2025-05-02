@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
     alias(libs.plugins.ktor.framework)
-    alias(libs.plugins.sqldelight)
 }
 
 group = "io.writeopia"

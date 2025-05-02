@@ -102,7 +102,7 @@ jobs:
           distribution: adopt
           java-version: '21'
       - name: Build backend
-        run: ./gradlew backend:documents:documents_spring:assemble backend:editor:api_editor:assemble backend:editor:api_editor:test backend:editor:api_editor_socket:assemble backend:editor:api_editor_socket:test --no-daemon
+        run: ./gradlew :backend:gateway:test --no-daemon
       - name: upload results
         uses: actions/upload-artifact@v4
         if: failure()

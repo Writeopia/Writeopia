@@ -11,7 +11,6 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
-import io.writeopia.api.utils.example
 import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -56,7 +55,7 @@ class ApplicationTest {
 
         client.post("/api/document") {
             contentType(ContentType.Application.Json.withParameter("charset", "utf-8"))
-            setBody(DocumentApi.example(id = id))
+            setBody(DocumentApi(id = id, userId = "userId"))
         }.run {
             assertEquals(HttpStatusCode.Accepted, status)
         }
