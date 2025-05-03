@@ -24,6 +24,12 @@ services:
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
     restart: unless-stopped
+#  ai-hub:
+#    image: ghcr.io/writeopia/writeopia-ai-hub:latest
+#    container_name: writeopia-ai-hub
+#    ports:
+#      - "8000:8000"
+#    restart: unless-stopped
 
 volumes:
   postgres_data:
