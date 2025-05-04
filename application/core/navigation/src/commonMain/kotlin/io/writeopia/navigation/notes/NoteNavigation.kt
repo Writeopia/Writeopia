@@ -2,7 +2,7 @@ package io.writeopia.navigation.notes
 
 import androidx.navigation.NavController
 import io.writeopia.common.utils.Destinations
-import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
 import io.writeopia.notemenu.navigation.NAVIGATION_TYPE

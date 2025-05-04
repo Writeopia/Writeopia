@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.notemenu.ui.screen.configuration.molecules.MobileConfigurationsMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu
-import io.writeopia.notemenu.ui.screen.confirmation.DeleteConfirmationDialog
+import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.notemenu.ui.screen.documents.ADD_NOTE_TEST_TAG
 import io.writeopia.notemenu.ui.screen.documents.NotesCards
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
@@ -99,7 +99,7 @@ internal fun MobileChooseNoteScreen(
             onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
             onCopy = chooseNoteViewModel::copySelectedNotes,
             onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
-            onClose = chooseNoteViewModel::unSelectNotes,
+            onClose = chooseNoteViewModel::clearSelection,
             shape = MaterialTheme.shapes.large
         )
 

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -70,8 +72,10 @@ import io.writeopia.ui.components.multiselection.SelectableByDrag
 import io.writeopia.ui.draganddrop.target.DragCardTarget
 import io.writeopia.ui.draganddrop.target.DropTarget
 import io.writeopia.ui.drawer.StoryStepDrawer
+import io.writeopia.ui.drawer.preview.AiAnswerPreviewDrawer
 import io.writeopia.ui.drawer.preview.CheckItemPreviewDrawer
 import io.writeopia.ui.drawer.preview.HeaderPreviewDrawer
+import io.writeopia.ui.drawer.preview.ImagePreviewDrawer
 import io.writeopia.ui.drawer.preview.TextPreviewDrawer
 import io.writeopia.ui.drawer.preview.UnOrderedListItemPreviewDrawer
 import io.writeopia.ui.model.DrawInfo
@@ -169,7 +173,7 @@ fun NotesCards(
 
         is ResultData.Error -> {
             LaunchedEffect(key1 = true) {
-                documents.exception.printStackTrace()
+                documents.exception?.printStackTrace()
             }
 
             Box(modifier = modifier.fillMaxSize()) {
@@ -250,6 +254,8 @@ private fun LazyStaggeredGridNotes(
                     is MenuItemUi.FolderUi -> {
                         FolderItem(
                             menuItem,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
                             folderClick = folderClick,
                             position = i,
                             selectionListener = selectionListener,
@@ -326,6 +332,8 @@ private fun LazyGridNotes(
                     is MenuItemUi.FolderUi -> {
                         FolderItem(
                             menuItem,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
                             folderClick = folderClick,
                             moveRequest = moveRequest,
                             selectionListener = selectionListener,
@@ -396,7 +404,9 @@ private fun LazyColumnNotes(
                     is MenuItemUi.FolderUi -> {
                         FolderItem(
                             menuItem,
-                            folderClick,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            folderClick = folderClick,
                             selectionListener = selectionListener,
                             moveRequest = moveRequest,
                             changeIcon = { id, icon, tint ->
@@ -412,9 +422,12 @@ private fun LazyColumnNotes(
     )
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun FolderItem(
     folderUi: MenuItemUi.FolderUi,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     folderClick: (String) -> Unit,
     position: Int,
     moveRequest: (MenuItemUi, String) -> Unit,
@@ -423,7 +436,15 @@ private fun FolderItem(
     onDragIconClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(shadowModifier()) {
+//    sharedTransitionScope.run {
+    Box(
+        shadowModifier()
+//                .sharedBounds(
+//                rememberSharedContentState(key = "folderTransition${folderUi.documentId}"),
+//                animatedVisibilityScope = animatedVisibilityScope,
+//                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
+//            )
+    ) {
         DropTarget { inBound, data ->
             val menuItemUI = data?.info as? MenuItemUi
             if (inBound && menuItemUI != null) {
@@ -484,7 +505,8 @@ private fun FolderItem(
                                 .clickable { showIconsOptions = !showIconsOptions }
                                 .size(56.dp)
                                 .padding(6.dp),
-                            imageVector = folderUi.icon?.label?.let(WrIcons::fromName) ?: folder,
+                            imageVector = folderUi.icon?.label?.let(WrIcons::fromName)
+                                ?: folder,
                             contentDescription = "Folder",
                             tint = tint
                         )
@@ -495,7 +517,13 @@ private fun FolderItem(
                             modifier = Modifier.background(WriteopiaTheme.colorScheme.cardBg),
                         ) {
                             IconsPicker(
-                                iconSelect = { icon, tint -> changeIcon(folderUi.id, icon, tint) }
+                                iconSelect = { icon, tint ->
+                                    changeIcon(
+                                        folderUi.id,
+                                        icon,
+                                        tint
+                                    )
+                                }
                             )
                         }
 
@@ -529,6 +557,7 @@ private fun FolderItem(
             }
         }
     }
+//    }
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -614,8 +643,6 @@ private fun DocumentItem(
                                 }
                             }
 
-                            documentUi.icon
-
                             drawers[storyStep.type.number]?.Step(
                                 step = storyStep,
                                 drawInfo = DrawInfo(
@@ -630,13 +657,24 @@ private fun DocumentItem(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    if (documentUi.isFavorite) {
-                        Icon(
-                            modifier = Modifier.align(Alignment.TopEnd).size(40.dp).padding(12.dp),
-                            imageVector = WrIcons.favorites,
-                            contentDescription = "Favorite",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
+                    Row(modifier = Modifier.align(Alignment.TopEnd).height(40.dp).padding(12.dp)) {
+                        if (documentUi.isFavorite) {
+                            Icon(
+                                imageVector = WrIcons.favorites,
+                                contentDescription = "Favorite",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+//                        if (!documentUi.isSynced) {
+//                            Icon(
+//                                imageVector = WrIcons.cloudSync,
+//                                contentDescription = "Cloud upload",
+//                                tint = MaterialTheme.colorScheme.onBackground
+//                            )
+//                        }
                     }
                 }
             }
@@ -673,6 +711,8 @@ private fun previewDrawers(): Map<Int, StoryStepDrawer> {
         StoryTypes.CHECK_ITEM.type.number to CheckItemPreviewDrawer(),
         StoryTypes.TEXT.type.number to TextPreviewDrawer(),
         StoryTypes.UNORDERED_LIST_ITEM.type.number to unOrderedListItemPreviewDrawer,
+        StoryTypes.IMAGE.type.number to ImagePreviewDrawer(),
+        StoryTypes.AI_ANSWER.type.number to AiAnswerPreviewDrawer()
     )
 }
 

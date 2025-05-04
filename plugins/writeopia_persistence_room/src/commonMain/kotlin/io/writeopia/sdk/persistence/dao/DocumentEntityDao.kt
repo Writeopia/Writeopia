@@ -6,10 +6,10 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import io.writeopia.sdk.persistence.core.CREATED_AT
-import io.writeopia.sdk.persistence.core.DOCUMENT_ENTITY
-import io.writeopia.sdk.persistence.core.LAST_UPDATED_AT
-import io.writeopia.sdk.persistence.core.TITLE
+import io.writeopia.sdk.models.CREATED_AT
+import io.writeopia.sdk.models.DOCUMENT_ENTITY
+import io.writeopia.sdk.models.LAST_UPDATED_AT
+import io.writeopia.sdk.models.TITLE
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
 import io.writeopia.sdk.persistence.entity.story.STORY_UNIT_ENTITY
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
@@ -44,6 +44,9 @@ interface DocumentEntityDao {
 
     @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.parent_id = :id")
     suspend fun loadDocumentsByParentId(id: String): List<DocumentEntity>
+
+    @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.parent_id = :folderId AND $DOCUMENT_ENTITY.last_updated_at >  $DOCUMENT_ENTITY.last_synced_at")
+    suspend fun loadOutdatedDocumentsByFolderId(folderId: String): List<DocumentEntity>
 
     @Query("SELECT * FROM $DOCUMENT_ENTITY")
     suspend fun loadAllDocuments(): List<DocumentEntity>

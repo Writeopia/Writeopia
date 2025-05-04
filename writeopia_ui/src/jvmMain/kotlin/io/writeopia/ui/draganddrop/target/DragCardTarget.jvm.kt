@@ -2,7 +2,6 @@ package io.writeopia.ui.draganddrop.target
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -76,8 +75,8 @@ actual fun DragCardTarget(
         }
 
         val showDragIcon = showIcon ||
-            currentState.isDragging
-            && position == currentState.dataToDrop?.positionFrom
+            currentState.isDragging &&
+            position == currentState.dataToDrop?.positionFrom
 
         Crossfade(
             targetState = showDragIcon,

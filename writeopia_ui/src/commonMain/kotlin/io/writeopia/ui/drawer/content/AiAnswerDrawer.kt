@@ -4,10 +4,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,13 +18,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,16 +36,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.draganddrop.DropInfo
+import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.ui.components.SwipeBox
 import io.writeopia.ui.components.multiselection.SelectableByDrag
 import io.writeopia.ui.draganddrop.target.DragRowTarget
-import io.writeopia.ui.draganddrop.target.DropTargetHorizontalDivision
+import io.writeopia.ui.draganddrop.target.DropTargetVerticalDivision
 import io.writeopia.ui.draganddrop.target.InBounds
+import io.writeopia.ui.draganddrop.target.external.externalImageDropTarget
+import io.writeopia.ui.draganddrop.target.external.shouldAcceptImageDrop
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
+import org.jetbrains.compose.resources.stringResource
+import writeopia.writeopia_ui.generated.resources.Res
+import writeopia.writeopia_ui.generated.resources.ai_generated
 
 /**
  * Drawer for AI answers.
@@ -54,6 +59,8 @@ import io.writeopia.ui.model.DrawInfo
 class AiAnswerDrawer(
     private val modifier: Modifier = Modifier,
     private val customBackgroundColor: Color,
+    private val paddingValues: PaddingValues = PaddingValues(0.dp),
+    private val enabled: Boolean,
     private val onSelected: (Boolean, Int) -> Unit,
     private val dragIconWidth: Dp,
     private val config: DrawConfig,
@@ -61,8 +68,8 @@ class AiAnswerDrawer(
     private val onDragStart: () -> Unit,
     private val onDragStop: () -> Unit,
     private val moveRequest: (Action.Move) -> Unit,
-    private val enabled: Boolean,
-    private val paddingValues: PaddingValues = PaddingValues(0.dp),
+    private val receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
+    private val acceptStoryStep: (Int) -> Unit
 ) : StoryStepDrawer {
 
     @Composable
@@ -77,14 +84,29 @@ class AiAnswerDrawer(
             ?.let { 4 to 16 }
             ?: (0 to 0)
 
-        SelectableByDrag { isInsideDrag ->
+        SelectableByDrag(
+            modifier = Modifier.dragAndDropTarget(
+                shouldStartDragAndDrop = ::shouldAcceptImageDrop,
+                target = externalImageDropTarget(
+                    onStart = onDragStart,
+                    onEnd = onDragStop,
+                    onEnter = {
+                        onDragHover(drawInfo.position)
+                    },
+                    onExit = {},
+                    onFileReceived = { files ->
+                        receiveExternalFile(files, drawInfo.position + 1)
+                    }
+                )
+            )
+        ) { isInsideDrag ->
             if (isInsideDrag != null) {
                 LaunchedEffect(isInsideDrag) {
                     onSelected(isInsideDrag, drawInfo.position)
                 }
             }
 
-            DropTargetHorizontalDivision(
+            DropTargetVerticalDivision(
                 modifier = Modifier.padding(bottom = paddingBottom.dp, top = paddingTop.dp)
             ) { inBound, data ->
                 when (inBound) {
@@ -149,32 +171,52 @@ class AiAnswerDrawer(
                         exit = fadeOut(),
                         modifier = Modifier.align(Alignment.TopEnd).padding(end = 8.dp)
                     ) {
-                        Icon(
-                            imageVector = WrSdkIcons.copy,
-                            contentDescription = "Copy",
-                            tint = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .clickable {
-                                    clipboardManager.setText(
-                                        buildAnnotatedString { append(step.text) }
-                                    )
-                                }
-                                .size(32.dp)
-                                .padding(6.dp)
+                        Row {
+                            Icon(
+                                imageVector = WrSdkIcons.copy,
+                                contentDescription = "Copy",
+                                tint = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        clipboardManager.setText(
+                                            buildAnnotatedString { append(step.text) }
+                                        )
+                                    }
+                                    .size(32.dp)
+                                    .padding(6.dp)
+                            )
+
+                            Icon(
+                                imageVector = WrSdkIcons.check,
+                                contentDescription = "Accept",
+                                tint = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        acceptStoryStep(drawInfo.position)
+                                    }
+                                    .size(32.dp)
+                                    .padding(6.dp)
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        isHovered,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                        modifier = Modifier.align(Alignment.TopStart).padding(horizontal = 10.dp)
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.ai_generated),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
-
-            Text(
-                text = "AI generated",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.align(Alignment.TopStart)
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Bold
-            )
         }
     }
 

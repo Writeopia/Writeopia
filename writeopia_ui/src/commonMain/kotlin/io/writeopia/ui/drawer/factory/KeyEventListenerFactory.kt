@@ -119,7 +119,10 @@ object KeyEventListenerFactory {
 }
 
 enum class EndOfText {
-    SINGLE_LINE, FIRST_LINE, LAST_LINE, UNKNOWN;
+    SINGLE_LINE,
+    FIRST_LINE,
+    LAST_LINE,
+    UNKNOWN;
 
     fun shouldMoveDown() = this == SINGLE_LINE || this == LAST_LINE
 

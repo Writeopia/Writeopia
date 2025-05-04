@@ -20,6 +20,18 @@ class OllamaRepository(
     fun streamReply(model: String, prompt: String, url: String): Flow<ResultData<String>> =
         ollamaApi.streamReply(model, prompt, url)
 
+    fun streamSummary(model: String, prompt: String, url: String): Flow<ResultData<String>> =
+        ollamaApi.streamSummary(model, prompt, url)
+
+    fun streamActionsPoints(model: String, prompt: String, url: String): Flow<ResultData<String>> =
+        ollamaApi.streamActionsPoints(model, prompt, url)
+
+    fun streamFaq(model: String, prompt: String, url: String): Flow<ResultData<String>> =
+        ollamaApi.streamFaq(model, prompt, url)
+
+    fun streamTags(model: String, prompt: String, url: String): Flow<ResultData<String>> =
+        ollamaApi.streamTags(model, prompt, url)
+
     fun listenToModels(url: String): Flow<ResultData<ModelsResponse>> =
         ollamaApi.getModelsAsFlow(url)
 

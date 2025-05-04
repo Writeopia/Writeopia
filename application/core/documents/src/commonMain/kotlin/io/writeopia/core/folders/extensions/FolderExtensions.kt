@@ -2,7 +2,7 @@ package io.writeopia.core.folders.extensions
 
 import io.writeopia.app.sql.FolderEntity
 import io.writeopia.common.utils.extensions.toLong
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 
 fun Folder.toEntity() = FolderEntity(
     id = id,

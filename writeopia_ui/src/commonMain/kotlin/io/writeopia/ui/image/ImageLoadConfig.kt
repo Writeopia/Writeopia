@@ -18,15 +18,16 @@ object ImageLoadConfig {
         setSingletonImageLoaderFactory { context ->
             ImageLoader.Builder(context)
                 .components {
-                    add(KtorNetworkFetcherFactory(
-                        httpClient = { HttpClient() },
-                        cacheStrategy = { CacheStrategy.DEFAULT },
-                        connectivityChecker = { ctx -> ConnectivityChecker(ctx) }
-                    ))
+                    add(
+                        KtorNetworkFetcherFactory(
+                            httpClient = { HttpClient() },
+                            cacheStrategy = { CacheStrategy.DEFAULT },
+                            connectivityChecker = { ctx -> ConnectivityChecker(ctx) }
+                        )
+                    )
                 }
                 .crossfade(true)
                 .build()
         }
     }
-
 }

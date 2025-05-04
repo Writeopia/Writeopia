@@ -21,9 +21,10 @@ import androidx.navigation.NavController
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.controller.OllamaConfigController
 import io.writeopia.model.ColorThemeOption
-import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.ui.screen.DesktopNotesMenu
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
+import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.theme.WriteopiaTheme
 import java.awt.datatransfer.DataFlavor
 import java.io.File
@@ -31,6 +32,7 @@ import java.io.File
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalComposeUiApi::class)
 @Composable
 actual fun NotesMenuScreen(
+    folderId: String,
     chooseNoteViewModel: ChooseNoteViewModel,
     ollamaConfigController: OllamaConfigController?,
     navigationController: NavController,
@@ -39,6 +41,7 @@ actual fun NotesMenuScreen(
     onNewNoteClick: () -> Unit,
     onNoteClick: (String, String) -> Unit,
     onAccountClick: () -> Unit,
+    onForceGraphSelected: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     navigateToFolders: (NotesNavigation) -> Unit,
     addFolder: () -> Unit,
@@ -55,13 +58,14 @@ actual fun NotesMenuScreen(
         if (onDropEvent) highlightBackground else Color.Unspecified
     }
 
-    val dragAndDropTarget = dropTarget(
+    val dragAndDropTarget = documentFilesDropTarget(
         chooseNoteViewModel::loadFiles,
         onStart = { onDropEvent = true },
         onEnd = { onDropEvent = false },
     )
 
     DesktopNotesMenu(
+        folderId = folderId,
         chooseNoteViewModel = chooseNoteViewModel,
         ollamaConfigController = ollamaConfigController,
         sharedTransitionScope = sharedTransitionScope,
@@ -69,6 +73,7 @@ actual fun NotesMenuScreen(
         onNewNoteClick = onNewNoteClick,
         onNoteClick = onNoteClick,
         navigateToNotes = navigateToFolders,
+        navigateToForceGraph = onForceGraphSelected,
 //        addFolder = addFolder,
 //        editFolder = editFolder,
         modifier = modifier.background(background).dragAndDropTarget(
@@ -82,8 +87,8 @@ actual fun NotesMenuScreen(
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun dropTarget(
-    onFileReceived: (List<String>) -> Unit,
+private fun documentFilesDropTarget(
+    onFileReceived: (List<ExternalFile>) -> Unit,
     onStart: () -> Unit,
     onEnd: () -> Unit,
 ) = remember {
@@ -103,7 +108,15 @@ private fun dropTarget(
                         transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<File>
 
                     if (files.isNotEmpty()) {
-                        onFileReceived(files.map { file -> file.absolutePath })
+                        onFileReceived(
+                            files.map { file ->
+                                ExternalFile(
+                                    file.absolutePath,
+                                    file.extension,
+                                    file.name
+                                )
+                            }
+                        )
                     }
 
                     files

@@ -1,10 +1,11 @@
 package io.writeopia.sdk.serialization.data
 
+import io.writeopia.sdk.models.id.GenerateId
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class StoryStepApi(
-    val id: String,
+    val id: String = GenerateId.generate(),
     val type: StoryTypeApi,
     val parentId: String? = null,
     val url: String? = null,
@@ -15,6 +16,6 @@ data class StoryStepApi(
     val tags: Set<TagInfoApi> = emptySet(),
     val spans: Set<SpanInfoApi> = emptySet(),
     val decoration: DecorationApi = DecorationApi(),
-    val position: Int,
+    val position: Int = 0,
     val documentLink: DocumentLinkApi? = null
 )

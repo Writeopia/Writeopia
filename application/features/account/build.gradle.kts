@@ -49,14 +49,6 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
-                implementation(libs.appCompat)
-
-                implementation(libs.androidx.activity.compose)
-
-                implementation(libs.viewmodel.compose)
-                implementation(libs.runtime.compose)
-
-                implementation(project.dependencies.platform(libs.androidx.compose.bom))
             }
         }
 

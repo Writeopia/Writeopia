@@ -1,14 +1,11 @@
 package io.writeopia.ui.drawer.content
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,7 +28,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
@@ -74,7 +70,7 @@ class ImageDrawer(
             }
 
             DropTarget(
-                modifier = Modifier.padding(horizontal = 6.dp).height(300.dp)
+                modifier = Modifier.padding(horizontal = 6.dp)
             ) { inBound, data ->
 //            if (inBound && data != null) {
 //                mergeRequest(
@@ -126,14 +122,15 @@ class ImageDrawer(
                                 modifier = imageModifier,
                                 dataToDrop = DropInfo(step, drawInfo.position)
                             ) {
-
                                 SubcomposeAsyncImage(
                                     model = ImageRequest.Builder(LocalPlatformContext.current)
                                         .data(step.url ?: step.path)
                                         .build(),
                                     contentScale = ContentScale.Crop,
                                     contentDescription = "",
-                                    modifier = Modifier.clip(shape = RoundedCornerShape(size = 12.dp)),
+                                    modifier = Modifier.clip(
+                                        shape = RoundedCornerShape(size = 12.dp)
+                                    ),
                                     loading = {
                                         CircularProgressIndicator()
                                     }

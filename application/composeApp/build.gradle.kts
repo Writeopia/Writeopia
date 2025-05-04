@@ -31,6 +31,7 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
+                implementation(compose.ui)
 
                 implementation(project(":writeopia_ui"))
                 implementation(project(":writeopia"))
@@ -53,6 +54,7 @@ kotlin {
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:resources"))
+                implementation(project(":application:features:documents_graph"))
                 implementation(project(":application:features:note_menu"))
                 implementation(project(":application:features:editor"))
                 implementation(project(":application:features:account"))
@@ -89,20 +91,11 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
-                implementation(libs.androidx.ktx)
-                implementation(libs.appCompat)
-
                 implementation(libs.ktor.client.logging)
-
-                implementation(libs.androidx.lifecycle.runtime.compose)
-
-                implementation(libs.material)
-                implementation(libs.androidx.material3)
-                implementation(project.dependencies.platform(libs.androidx.compose.bom))
-
-                implementation(libs.androidx.ktx)
-                implementation(libs.appCompat)
                 implementation(libs.activity.compose)
+                implementation(libs.androidx.material3)
+                implementation(libs.material)
+                implementation(project.dependencies.platform(libs.androidx.compose.bom))
 
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:features:auth"))
@@ -149,6 +142,7 @@ compose.desktop {
             }
 
             linux {
+                packageVersion = "0.41.0"
                 iconFile.set(iconsRoot.resolve("icon-linux.png"))
             }
 
@@ -178,8 +172,8 @@ android {
         applicationId = "io.writeopia"
         minSdk = 24
         targetSdk = 35
-        versionCode = 31
-        versionName = "0.19.0"
+        versionCode = 33
+        versionName = "0.20.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

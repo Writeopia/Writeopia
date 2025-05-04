@@ -39,6 +39,7 @@ kotlin {
                 implementation(project(":plugins:writeopia_export"))
                 implementation(project(":plugins:writeopia_import_document"))
                 implementation(project(":plugins:writeopia_serialization"))
+                implementation(project(":plugins:writeopia_network"))
 
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:models"))
@@ -50,6 +51,8 @@ kotlin {
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:ollama"))
                 implementation(project(":application:core:configuration"))
+                implementation(project(":application:core:connection"))
+                implementation(project(":application:core:forcegraph"))
 
                 implementation(project(":application:features:account"))
                 implementation(project(":application:features:onboarding"))
@@ -63,19 +66,16 @@ kotlin {
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.compose.navigation)
                 implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.ktor.client.core)
             }
         }
 
         val androidMain by getting {
             dependencies {
-                implementation(libs.appCompat)
 
                 implementation(libs.coil.compose)
-                implementation(libs.viewmodel.compose)
 
                 implementation(libs.compose.shimmer)
-
-                implementation(project.dependencies.platform(libs.androidx.compose.bom))
                 implementation(libs.room.runtime)
             }
         }

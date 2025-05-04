@@ -13,7 +13,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import io.writeopia.sdk.model.draganddrop.DropInfo
 
 @Composable
-fun DropTargetHorizontalDivision(
+fun DropTargetVerticalDivision(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.(inBound: InBounds, data: DropInfo?) -> Unit,
 ) {

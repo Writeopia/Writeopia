@@ -27,6 +27,17 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
 
+private const val SUMMARY_PROMPT =
+    "A user has made a request. Summarize the following text while preserving its key points and main ideas. Use at most 12 lines. Keep the summary concise and clear. If the text contains multiple sections, highlight the most important aspects of each. Maintain the original tone and intent where possible. Detect the language of the text and write in the same language"
+private const val ACTIONS_POINTS_PROMPT =
+    "A user has made a request. Extract key action points from the following text. Create just an introduction and the list of action items with at most 10. Don't add conclusions or introductions. Use the language of the text"
+private const val FAQ_PROMPT =
+    "A user has made a request. Generate a list of frequently asked questions (FAQs) based on the following text. Include clear and concise answers that help users understand key points. Prioritize the most relevant and common concerns. Detect the language of the text and write in the same language"
+private const val TAGS_PROMPT =
+    "Generate a list of relevant tags based on the following text. The tags should capture key topics, themes, and important concepts. Use concise, single-word tags that accurately represent the content. Produce at most 10 tags. Detect the language of the text and write in the same language. "
+private const val SUMMARY_PROMPT_COMPLETE =
+    "Summarize the following text while preserving its key points and main ideas. Keep the summary concise and clear. If the text contains multiple sections, highlight the most important aspects of each. Maintain the original tone and intent where possible"
+
 /**
  * API for calling Ollama
  */
@@ -145,6 +156,34 @@ class OllamaApi(
                 emit(ResultData.Error(e))
             }
         }
+
+    fun streamSummary(
+        model: String,
+        prompt: String,
+        url: String
+    ): Flow<ResultData<String>> =
+        streamReply(model, "$SUMMARY_PROMPT:\n ```\n$prompt\n", url)
+
+    fun streamActionsPoints(
+        model: String,
+        prompt: String,
+        url: String
+    ): Flow<ResultData<String>> =
+        streamReply(model, "$ACTIONS_POINTS_PROMPT:\n ```\n$prompt\n", url)
+
+    fun streamFaq(
+        model: String,
+        prompt: String,
+        url: String
+    ): Flow<ResultData<String>> =
+        streamReply(model, "$FAQ_PROMPT:\n ```\n$prompt\n", url)
+
+    fun streamTags(
+        model: String,
+        prompt: String,
+        url: String
+    ): Flow<ResultData<String>> =
+        streamReply(model, "$TAGS_PROMPT:\n ```\n$prompt\n", url)
 
     fun getModelsAsFlow(url: String): Flow<ResultData<ModelsResponse>> {
         return flow {

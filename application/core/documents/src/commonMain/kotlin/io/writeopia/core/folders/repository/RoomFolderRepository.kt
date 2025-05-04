@@ -1,8 +1,8 @@
 package io.writeopia.core.folders.repository
 
 import io.writeopia.common.utils.persistence.daos.FolderCommonDao
-import io.writeopia.models.Folder
-import io.writeopia.models.search.FolderSearch
+import io.writeopia.sdk.models.document.Folder
+import io.writeopia.models.interfaces.search.FolderSearch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
@@ -25,6 +25,17 @@ class RoomFolderRepository(
         updateFolderById(folderId) { folder ->
             folder.copy(lastUpdatedAt = Instant.fromEpochMilliseconds(long))
         }
+    }
+
+    override suspend fun getFoldersForUserAfterTime(
+        userId: String,
+        instant: Instant
+    ): List<Folder> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getFoldersForUser(userId: String): List<Folder> {
+        TODO("Not yet implemented")
     }
 
     override suspend fun deleteFolderById(folderId: String) {

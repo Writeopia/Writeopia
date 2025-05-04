@@ -20,10 +20,18 @@ class PreviewParser(
     fun preview(stories: Iterable<StoryStep>, maxSize: Int = 10): List<StoryStep> {
         var acc = 0
 
-        return stories.asSequence()
+        val result = stories.asSequence()
             .filter { storyStep -> acceptedTypes.contains(storyStep.type.number) }
             .takeWhile { acc++ < maxSize }
             .toList()
+        return if (result.size == 2 &&
+            result.first().type.number == StoryTypes.TITLE.type.number &&
+            (result.first().text ?: "").isEmpty()
+        ) {
+            result.drop(1)
+        } else {
+            result
+        }
     }
 }
 
@@ -32,4 +40,6 @@ private fun defaultTypes() = setOf(
     StoryTypes.TEXT.type.number,
     StoryTypes.CHECK_ITEM.type.number,
     StoryTypes.UNORDERED_LIST_ITEM.type.number,
+    StoryTypes.IMAGE.type.number,
+    StoryTypes.AI_ANSWER.type.number,
 )

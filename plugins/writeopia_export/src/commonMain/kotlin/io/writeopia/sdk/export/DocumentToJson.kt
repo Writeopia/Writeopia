@@ -3,6 +3,8 @@ package io.writeopia.sdk.export
 import io.writeopia.sdk.export.files.KmpFileWriter
 import io.writeopia.sdk.export.files.name
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.writeopiaJsonPretty
 import io.writeopia.sdk.serialization.storage.WorkspaceStorageConfig
@@ -13,7 +15,7 @@ import kotlinx.serialization.json.Json
 class DocumentToJson(private val json: Json = writeopiaJsonPretty) : DocumentWriter {
 
     override fun writeDocuments(
-        documents: List<Document>,
+        documents: List<MenuItem>,
         path: String,
         writeConfigFile: Boolean,
         usePath: Boolean
@@ -26,22 +28,30 @@ class DocumentToJson(private val json: Json = writeopiaJsonPretty) : DocumentWri
     }
 
     private fun write(
-        documents: List<Document>,
+        menuItems: List<MenuItem>,
         path: String,
         writeConfigFile: Boolean,
         usePath: Boolean
     ) {
-        if (documents.isEmpty()) return
+        if (menuItems.isEmpty()) return
 
-        documents.forEach { document ->
+        menuItems.forEach { menuItem ->
             KmpFileWriter(
                 if (usePath) {
-                    name(document, path, ".json")
+                    name(menuItem, path, ".json")
                 } else {
                     path.takeIf { it.contains(".json") } ?: "$path.json"
                 }
             ).useKmp { writer ->
-                writer.writeObject(document.toApi(), json)
+                when (menuItem) {
+                    is Folder -> {
+                        writer.writeObject(menuItem.toApi(), json)
+                    }
+
+                    is Document -> {
+                        writer.writeObject(menuItem.toApi(), json)
+                    }
+                }
             }
         }
 

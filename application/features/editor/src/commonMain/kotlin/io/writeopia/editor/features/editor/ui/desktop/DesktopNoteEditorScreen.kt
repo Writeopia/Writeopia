@@ -22,9 +22,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.unit.dp
+import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
@@ -35,9 +34,9 @@ fun DesktopNoteEditorScreen(
     documentId: String?,
     noteEditorViewModel: NoteEditorViewModel,
     drawersFactory: DrawersFactory,
-    isUndoKeyEvent: (KeyEvent) -> Boolean,
     onPresentationClick: () -> Unit,
     onDocumentLinkClick: (String) -> Unit,
+    onDocumentDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -65,18 +64,14 @@ fun DesktopNoteEditorScreen(
                     drawersFactory = drawersFactory,
                     loadNoteId = documentId,
                     onDocumentLinkClick = onDocumentLinkClick,
-                    modifier = Modifier
-                        .onPreviewKeyEvent { keyEvent ->
-                            if (isUndoKeyEvent(keyEvent)) {
-                                noteEditorViewModel.undo()
-                                true
-                            } else {
-                                false
-                            }
-                        }.padding(start = 30.dp, end = 30.dp)
+                    modifier = Modifier.padding(start = 30.dp, end = 30.dp)
                 )
             }
         )
+
+        var showDeleteConfirmation by remember {
+            mutableStateOf(false)
+        }
 
         SideEditorOptions(
             modifier = Modifier
@@ -84,6 +79,7 @@ fun DesktopNoteEditorScreen(
                 .align(Alignment.TopEnd),
             fontStyleSelected = { noteEditorViewModel.fontFamily },
             isEditableState = noteEditorViewModel.isEditable,
+            isFavorite = noteEditorViewModel.notFavorite,
             boldClick = noteEditorViewModel::onAddSpanClick,
             setEditable = noteEditorViewModel::toggleEditable,
             checkItemClick = noteEditorViewModel::onAddCheckListClick,
@@ -100,8 +96,29 @@ fun DesktopNoteEditorScreen(
                 showFolderSelection = true
             },
             askAiBySelection = noteEditorViewModel::askAiBySelection,
-            addPage = noteEditorViewModel::addPage
+            addPage = noteEditorViewModel::addPage,
+            deleteDocument = {
+                showDeleteConfirmation = true
+            },
+            toggleFavorite = noteEditorViewModel::toggleFavorite,
+            aiSummary = noteEditorViewModel::aiSummary,
+            aiActionPoints = noteEditorViewModel::aiActionPoints,
+            aiFaq = noteEditorViewModel::aiFaq,
+            aiTags = noteEditorViewModel::aiTags,
         )
+
+        if (showDeleteConfirmation) {
+            DeleteConfirmationDialog(
+                onConfirmation = {
+                    noteEditorViewModel.deleteDocument()
+                    showDeleteConfirmation = false
+                    onDocumentDelete()
+                },
+                onCancel = {
+                    showDeleteConfirmation = false
+                }
+            )
+        }
 
         if (!isEditable) {
             Icon(

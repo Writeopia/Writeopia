@@ -4,6 +4,7 @@ enum class Destinations(val id: String, val root: String) {
     EDITOR("note_details", "Home"),
     PRESENTATION("presentations", "Home"),
     CHOOSE_NOTE("choose_note", "Home"),
+    FORCE_GRAPH("force_graph", "Home"),
     SEARCH("search", "io.writeopia.common.utils.icons.all.getSearch"),
     NOTIFICATIONS("notifications", "Notifications"),
     EDIT_FOLDER("edit_folder", "Home"),

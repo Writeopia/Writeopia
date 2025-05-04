@@ -25,7 +25,6 @@ fun ComposeUiTest.startApp(
         DesktopApp(
             coroutineScope = rememberCoroutineScope(),
             colorThemeOption = MutableStateFlow(ColorThemeOption.DARK),
-            isUndoKeyEvent = { false },
             selectColorTheme = {},
             selectionState = MutableStateFlow(false),
             keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),

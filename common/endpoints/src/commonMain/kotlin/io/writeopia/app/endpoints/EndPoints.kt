@@ -9,6 +9,10 @@ object EndPoints {
 
     fun userNotes() = "document/user/{id}"
 
+    fun documents() = "document"
+
+    fun documentsByParent() = "document/parent/{id}"
+
     fun proxyUserNotes(userId: String = "{userId}") = "proxy/document/user/$userId"
 
     fun userNotes(userId: String = "{userId}") = "document/user/$userId"

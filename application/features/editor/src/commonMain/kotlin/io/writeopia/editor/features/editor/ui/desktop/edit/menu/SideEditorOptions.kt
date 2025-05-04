@@ -60,6 +60,7 @@ fun SideEditorOptions(
     modifier: Modifier = Modifier,
     fontStyleSelected: () -> StateFlow<Font>,
     isEditableState: StateFlow<Boolean>,
+    isFavorite: StateFlow<Boolean>,
     boldClick: (Span) -> Unit,
     setEditable: () -> Unit,
     checkItemClick: () -> Unit,
@@ -74,7 +75,13 @@ fun SideEditorOptions(
     moveToRoot: () -> Unit,
     moveToClick: () -> Unit,
     askAiBySelection: () -> Unit,
+    aiSummary: () -> Unit,
+    aiActionPoints: () -> Unit,
+    aiFaq: () -> Unit,
+    aiTags: () -> Unit,
     addPage: () -> Unit,
+    deleteDocument: () -> Unit,
+    toggleFavorite: () -> Unit,
 ) {
     var menuType by remember {
         mutableStateOf(OptionsType.NONE)
@@ -109,13 +116,16 @@ fun SideEditorOptions(
                     OptionsType.NONE -> {}
 
                     OptionsType.PAGE_STYLE -> {
-                        PageStyleOptions(
+                        PageOptions(
                             changeFontFamily,
                             isEditableState,
+                            isFavorite,
                             setEditable,
                             fontStyleSelected(),
                             moveToClick,
-                            moveToRoot
+                            moveToRoot,
+                            deleteDocument,
+                            toggleFavorite
                         )
                     }
 
@@ -131,11 +141,20 @@ fun SideEditorOptions(
                         )
                     }
 
-                    OptionsType.ACTIONS -> {
+                    OptionsType.EXPORT -> {
                         Actions(
                             exportJson,
                             exportMarkdown,
-                            askAiBySelection = askAiBySelection
+                        )
+                    }
+
+                    OptionsType.AI -> {
+                        AiOptions(
+                            askAiBySelection = askAiBySelection,
+                            aiSummary = aiSummary,
+                            aiActionPoints = aiActionPoints,
+                            aiFaq = aiFaq,
+                            aiTags = aiTags,
                         )
                     }
                 }
@@ -211,52 +230,64 @@ fun SideEditorOptions(
                 tint = tint(OptionsType.TEXT_OPTIONS)
             )
 
-            Spacer(modifier = Modifier.height(spacing))
-
             Icon(
-                imageVector = WrIcons.zap,
-                contentDescription = "Zap",
+                imageVector = WrIcons.ai,
+                contentDescription = "AI",
                 modifier = Modifier
                     .padding(horizontal = spacing)
                     .clip(MaterialTheme.shapes.medium)
-                    .background(background(OptionsType.ACTIONS))
+                    .background(background(OptionsType.AI))
                     .clickable {
-                        menuType = if (menuType != OptionsType.ACTIONS) {
-                            OptionsType.ACTIONS
+                        menuType = if (menuType != OptionsType.AI) {
+                            OptionsType.AI
                         } else {
                             OptionsType.NONE
                         }
                     }
                     .size(40.dp)
                     .padding(9.dp),
-                tint = tint(OptionsType.ACTIONS)
+                tint = tint(OptionsType.AI)
             )
 
-//            Spacer(modifier = Modifier.height(spacing))
-//
-//            Icon(
-//                imageVector = WrIcons.play,
-//                contentDescription = "Presentation",
-//                modifier = Modifier
-//                    .padding(horizontal = spacing)
-//                    .clip(MaterialTheme.shapes.medium)
-//                    .clickable(onClick = onPresentationClick)
-//                    .size(40.dp)
-//                    .padding(9.dp),
-//                tint = MaterialTheme.colorScheme.onBackground
-//            )
+            Spacer(modifier = Modifier.height(spacing))
+
+            Spacer(modifier = Modifier.height(spacing))
+
+            Icon(
+                imageVector = WrIcons.exportFile,
+                contentDescription = "Export file",
+                modifier = Modifier
+                    .padding(horizontal = spacing)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(background(OptionsType.EXPORT))
+                    .clickable {
+                        menuType = if (menuType != OptionsType.EXPORT) {
+                            OptionsType.EXPORT
+                        } else {
+                            OptionsType.NONE
+                        }
+                    }
+                    .size(40.dp)
+                    .padding(9.dp),
+                tint = tint(OptionsType.EXPORT)
+            )
+
+            Spacer(modifier = Modifier.height(spacing))
         }
     }
 }
 
 @Composable
-fun PageStyleOptions(
+private fun PageOptions(
     changeFontFamily: (Font) -> Unit,
     isEditableState: StateFlow<Boolean>,
+    isFavoriteState: StateFlow<Boolean>,
     setEditable: () -> Unit,
     selectedState: StateFlow<Font>,
     moveButtonClick: () -> Unit,
     moveToRoot: () -> Unit,
+    deleteDocument: () -> Unit,
+    toggleFavorite: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -276,11 +307,25 @@ fun PageStyleOptions(
 
         Title("Actions")
         Spacer(modifier = Modifier.height(6.dp))
+
+        FavoriteButton(isFavorite = isFavoriteState, toggleFavorite)
+        Spacer(modifier = Modifier.height(4.dp))
+
         LockButton(isEditableState, setEditable)
         Spacer(modifier = Modifier.height(4.dp))
+
         MoveToButton(moveButtonClick)
         Spacer(modifier = Modifier.height(4.dp))
+
         MoveToHomeButton(moveToRoot)
+        Spacer(modifier = Modifier.height(4.dp))
+
+        TextButton(
+            text = WrStrings.delete(),
+            modifier = Modifier.fillMaxWidth(),
+            paddingValues = smallButtonPadding(),
+            onClick = deleteDocument
+        )
     }
 }
 
@@ -567,7 +612,52 @@ private fun TextOptions(
 private fun Actions(
     exportJson: (String) -> Unit,
     exportMarkdown: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.border(
+            1.dp,
+            MaterialTheme.colorScheme.surfaceVariant,
+            MaterialTheme.shapes.medium
+        ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
+            .width(250.dp)
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
+    ) {
+        Title(WrStrings.export())
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Row {
+            TextButton(
+                text = WrStrings.json(),
+                modifier = Modifier.weight(1F),
+                paddingValues = smallButtonPadding()
+            ) {
+                fileChooserSave()?.let {
+                    exportJson(it)
+                }
+            }
+
+            TextButton(
+                text = WrStrings.markdown(),
+                modifier = Modifier.weight(1F),
+                paddingValues = smallButtonPadding()
+            ) {
+                fileChooserSave()?.let(exportMarkdown)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+    }
+}
+
+@Composable
+private fun AiOptions(
     askAiBySelection: () -> Unit,
+    aiSummary: () -> Unit,
+    aiActionPoints: () -> Unit,
+    aiFaq: () -> Unit,
+    aiTags: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -585,52 +675,48 @@ private fun Actions(
 
         TextButton(
             modifier = Modifier.fillMaxWidth(),
-            text = WrStrings.askAi(),
+            text = "Prompt",
             paddingValues = smallButtonPadding(),
             onClick = askAiBySelection
         )
 
-//        TextButton(
-//            modifier = Modifier.fillMaxWidth(),
-//            text = "AI question box",
-//            paddingValues = smallButtonPadding()
-//        ) { }
+        Spacer(modifier = Modifier.height(2.dp))
 
-//        Spacer(modifier = Modifier.height(8.dp))
+        TextButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = WrStrings.summary(),
+            paddingValues = smallButtonPadding(),
+            onClick = aiSummary
+        )
 
-        Title(WrStrings.export())
+        Spacer(modifier = Modifier.height(2.dp))
 
-        Spacer(modifier = Modifier.height(4.dp))
+        TextButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = WrStrings.actionPoints(),
+            paddingValues = smallButtonPadding(),
+            onClick = aiActionPoints
+        )
 
-        Row {
-            TextButton(
-                text = WrStrings.json(),
-                modifier = Modifier.weight(1F),
-                paddingValues = smallButtonPadding()
-            ) {
-                fileChooserSave()?.let {
-                    exportJson(it)
-                }
-            }
+        Spacer(modifier = Modifier.height(2.dp))
 
-            Text(
-                WrStrings.markdown(),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .padding(2.dp)
-                    .background(
-                        MaterialTheme.colorScheme.surfaceVariant,
-                        MaterialTheme.shapes.medium
-                    ).weight(1F)
-                    .clip(MaterialTheme.shapes.medium)
-                    .clickable {
-                        fileChooserSave()?.let(exportMarkdown)
-                    }
-                    .padding(4.dp),
-                color = MaterialTheme.colorScheme.onBackground,
-                style = buttonsTextStyle()
-            )
-        }
+        TextButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = "FAQ",
+            paddingValues = smallButtonPadding(),
+            onClick = aiFaq
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        TextButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = "Tags",
+            paddingValues = smallButtonPadding(),
+            onClick = aiTags
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
 
         Spacer(modifier = Modifier.height(12.dp))
     }
@@ -647,5 +733,6 @@ private enum class OptionsType {
     NONE,
     PAGE_STYLE,
     TEXT_OPTIONS,
-    ACTIONS
+    EXPORT,
+    AI
 }

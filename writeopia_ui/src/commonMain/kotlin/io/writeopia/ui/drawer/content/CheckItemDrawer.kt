@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.model.action.Action
+import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.ui.drawer.SimpleTextDrawer
@@ -42,6 +43,7 @@ fun checkItemDrawer(
     checkBoxPadding: PaddingValues = PaddingValues(0.dp),
     isDesktop: Boolean,
     enabled: Boolean,
+    receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
     startContent: @Composable ((StoryStep, DrawInfo) -> Unit)? = { step, drawInfo ->
         CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
 //            Spacer(modifier = Modifier.width(8.dp))
@@ -77,6 +79,7 @@ fun checkItemDrawer(
         null,
         isDesktop,
         enabled,
+        receiveExternalFile,
         messageDrawer
     )
 
@@ -88,6 +91,7 @@ fun checkItemDrawer(
     checkBoxPadding: PaddingValues = PaddingValues(0.dp),
     isDesktop: Boolean,
     enabled: Boolean,
+    receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
     messageDrawer: @Composable RowScope.() -> SimpleTextDrawer
 ): StoryStepDrawer = checkItemDrawer(
     modifier = modifier,
@@ -103,6 +107,7 @@ fun checkItemDrawer(
     moveRequest = manager::moveRequest,
     enabled = enabled,
     isDesktop = isDesktop,
+    receiveExternalFile = receiveExternalFile,
     messageDrawer = {
         messageDrawer()
     },
@@ -120,6 +125,7 @@ fun CheckItemDrawerStepPreview() {
         config = DrawConfig(),
         isDesktop = true,
         enabled = true,
+        receiveExternalFile = { _, _ -> },
         messageDrawer = {
             TextDrawer(
                 selectionState = MutableStateFlow(false),

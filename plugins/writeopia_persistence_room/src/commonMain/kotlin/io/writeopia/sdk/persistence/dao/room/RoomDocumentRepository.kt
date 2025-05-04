@@ -190,4 +190,12 @@ class RoomDocumentRepository(
 
     override suspend fun stopListeningForFoldersByParentId(parentId: String) {
     }
+
+    override suspend fun loadOutdatedDocuments(folderId: String): List<Document> =
+        documentEntityDao.loadOutdatedDocumentsByFolderId(folderId).map { entity ->
+            val content = loadInnerSteps(
+                storyUnitEntityDao?.loadDocumentContent(entity.id) ?: emptyList()
+            )
+            entity.toModel(content = content)
+        }
 }

@@ -46,4 +46,14 @@ data class StoryStep(
     val isGroup: Boolean = steps.isNotEmpty()
 
     fun copyNewLocalId(localId: String = GenerateId.generate()): StoryStep = copy(localId = localId)
+
+    fun isTitle(): Boolean = when (StoryTypes.fromNumber(this.type.number)) {
+        StoryTypes.TEXT -> Tag.titleTags()
+            .map { TagInfo(it) }
+            .any { titleTag -> tags.contains(titleTag) }
+
+        StoryTypes.TITLE -> true
+
+        else -> false
+    }
 }

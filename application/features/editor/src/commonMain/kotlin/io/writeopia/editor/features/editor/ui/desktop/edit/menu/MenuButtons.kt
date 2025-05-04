@@ -62,6 +62,17 @@ fun MoveToHomeButton(clickListener: () -> Unit) {
 }
 
 @Composable
+fun FavoriteButton(isFavorite: StateFlow<Boolean>, clickListener: () -> Unit) {
+    CommonButton(
+        icon = WrIcons.favorites,
+        iconDescription = WrStrings.favorite(),
+        text = WrStrings.favorite(),
+        clickListener = clickListener,
+        isEnabledState = isFavorite
+    )
+}
+
+@Composable
 private fun CommonButton(
     icon: ImageVector,
     iconDescription: String,

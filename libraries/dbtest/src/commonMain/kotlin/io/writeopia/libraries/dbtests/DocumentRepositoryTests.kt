@@ -32,9 +32,10 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             ).toMap(),
             createdAt = now,
             lastUpdatedAt = now,
+            lastSyncedAt = null,
             userId = "userId",
             parentId = "root",
-            isLocked = false
+            isLocked = false,
         )
 
         documentRepository.saveDocument(document)
@@ -53,6 +54,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             content = emptyMap(),
             createdAt = now,
             lastUpdatedAt = now,
+            lastSyncedAt = null,
             userId = "userId",
             parentId = "root",
             isLocked = false
@@ -74,6 +76,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             content = simpleImage(),
             createdAt = now,
             lastUpdatedAt = now,
+            lastSyncedAt = null,
             userId = "userId",
             parentId = "root",
             isLocked = false
@@ -95,6 +98,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             content = imageStepsList(),
             createdAt = now,
             lastUpdatedAt = now,
+            lastSyncedAt = null,
             userId = "userId",
             parentId = "root",
             isLocked = false
@@ -117,6 +121,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             content = imageGroup(),
             createdAt = now,
             lastUpdatedAt = now,
+            lastSyncedAt = null,
             userId = "userId",
             parentId = "root",
             isLocked = false
@@ -138,6 +143,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             content = imageGroup(),
             createdAt = now,
             lastUpdatedAt = now,
+            lastSyncedAt = null,
             userId = "userIdasd",
             favorite = false,
             parentId = "parentId",
@@ -165,6 +171,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             content = emptyMap(),
             createdAt = Clock.System.now(),
             lastUpdatedAt = Clock.System.now(),
+            lastSyncedAt = null,
             userId = "userId",
             parentId = "parentId",
             isLocked = false

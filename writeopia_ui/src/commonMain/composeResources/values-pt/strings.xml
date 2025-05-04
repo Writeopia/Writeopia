@@ -1,3 +1,4 @@
 <resources>
   <string name="title">Título</string>
+  <string name="ai_generated">Gerado por IA</string>
 </resources>

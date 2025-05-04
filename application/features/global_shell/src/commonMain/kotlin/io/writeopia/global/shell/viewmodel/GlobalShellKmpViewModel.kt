@@ -14,15 +14,15 @@ import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.common.utils.download.DownloadParser
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.map
-import io.writeopia.models.configuration.WorkspaceConfigRepository
+import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
-import io.writeopia.models.Folder
-import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.sdk.models.document.Folder
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
-import io.writeopia.notemenu.data.usecase.NotesUseCase
+import io.writeopia.core.folders.repository.NotesUseCase
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.notemenu.viewmodel.FolderController
@@ -82,7 +82,7 @@ class GlobalShellKmpViewModel(
                     .forEach { document ->
                         val now = Clock.System.now()
 
-                        notesUseCase.saveDocument(
+                        notesUseCase.saveDocumentDb(
                             document.copy(
                                 createdAt = now,
                                 lastUpdatedAt = now
@@ -332,11 +332,17 @@ class GlobalShellKmpViewModel(
         viewModelScope.launch {
             when (iconChange) {
                 IconChange.FOLDER -> notesUseCase.updateFolderById(menuItemId) { folder ->
-                    folder.copy(icon = MenuItem.Icon(icon, tint))
+                    folder.copy(
+                        icon = MenuItem.Icon(icon, tint),
+                        lastUpdatedAt = Clock.System.now()
+                    )
                 }
 
                 IconChange.DOCUMENT -> notesUseCase.updateDocumentById(menuItemId) { document ->
-                    document.copy(icon = MenuItem.Icon(icon, tint))
+                    document.copy(
+                        icon = MenuItem.Icon(icon, tint),
+                        lastUpdatedAt = Clock.System.now()
+                    )
                 }
             }
         }

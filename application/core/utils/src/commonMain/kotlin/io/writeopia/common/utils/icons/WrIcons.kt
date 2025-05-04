@@ -17,6 +17,7 @@ import io.writeopia.common.utils.icons.all.ArrowDownUp
 import io.writeopia.common.utils.icons.all.Bold
 import io.writeopia.common.utils.icons.all.Bolt
 import io.writeopia.common.utils.icons.all.CalendarArrowDown
+import io.writeopia.common.utils.icons.all.ChartScatter
 import io.writeopia.common.utils.icons.all.ChevronDown
 import io.writeopia.common.utils.icons.all.ChevronRight
 import io.writeopia.common.utils.icons.all.CircleArrowLeft
@@ -25,6 +26,7 @@ import io.writeopia.common.utils.icons.all.CirclePlus
 import io.writeopia.common.utils.icons.all.ClipboardCopy
 import io.writeopia.common.utils.icons.all.ClockArrowDown
 import io.writeopia.common.utils.icons.all.CloudDownload
+import io.writeopia.common.utils.icons.all.CloudUpload
 import io.writeopia.common.utils.icons.all.Command
 import io.writeopia.common.utils.icons.all.Contrast
 import io.writeopia.common.utils.icons.all.Crosshair
@@ -166,6 +168,10 @@ object WrIcons {
 
     val command = Command
 
+    val cloudSync = CloudUpload
+
+    val chart = ChartScatter
+
     val allIcons: Map<String, ImageVector> =
         mapOf(
             "settings" to settings,
@@ -221,6 +227,7 @@ object WrIcons {
             "download" to download,
             "ai" to ai,
             "command" to command,
+            "chart" to chart,
         )
 
     fun fromName(name: String): ImageVector? = allIcons[name]

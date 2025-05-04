@@ -10,7 +10,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -29,7 +28,6 @@ fun NavGraphBuilder.editorNavigation(
     navigateBack: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
     editorInjector: TextEditorInjector,
-    isUndoKeyEvent: (KeyEvent) -> Boolean,
     navigateToNote: (String) -> Unit,
     navigateToPresentation: (String) -> Unit
 ) {
@@ -63,7 +61,6 @@ fun NavGraphBuilder.editorNavigation(
                     noteId.takeIf { it != "null" },
                     noteTitle.takeIf { it != "null" },
                     noteDetailsViewModel,
-                    isUndoKeyEvent = isUndoKeyEvent,
                     playPresentation = {
                         navigateToPresentation(noteId)
                     },
@@ -88,7 +85,6 @@ fun NavGraphBuilder.editorNavigation(
                 documentId = null,
                 title = null,
                 noteEditorViewModel = notesDetailsViewModel,
-                isUndoKeyEvent = isUndoKeyEvent,
                 navigateBack = navigateBack,
                 playPresentation = {
                     notesDetailsViewModel.writeopiaManager

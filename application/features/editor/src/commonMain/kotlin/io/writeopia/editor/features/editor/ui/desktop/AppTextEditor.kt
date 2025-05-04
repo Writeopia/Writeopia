@@ -33,9 +33,9 @@ fun AppTextEditor(
     drawersFactory: DrawersFactory,
     loadNoteId: String? = null,
     onDocumentLinkClick: (String) -> Unit,
+    listState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier
 ) {
-    val listState: LazyListState = rememberLazyListState()
     val coroutine = rememberCoroutineScope()
 
     coroutine.launch {
@@ -51,7 +51,12 @@ fun AppTextEditor(
     }
 
     Box(modifier) {
-        TextEditor(viewModel, drawersFactory, onDocumentLinkClick = onDocumentLinkClick)
+        TextEditor(
+            viewModel,
+            drawersFactory,
+            onDocumentLinkClick = onDocumentLinkClick,
+            listState = listState
+        )
 
         val isEditionHeader by viewModel.editHeader.collectAsState()
 

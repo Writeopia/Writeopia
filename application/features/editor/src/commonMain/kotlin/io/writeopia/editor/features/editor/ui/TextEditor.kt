@@ -30,9 +30,8 @@ internal fun TextEditor(
         drawStory.desktopKey + (drawStory.cursor?.position ?: 0)
     },
     onDocumentLinkClick: (String) -> Unit,
+    listState: LazyListState = rememberLazyListState(),
 ) {
-    val listState: LazyListState = rememberLazyListState()
-
     val storyState by noteEditorViewModel.toDrawWithDecoration.collectAsState()
     val editable by noteEditorViewModel.isEditable.collectAsState()
     val position by noteEditorViewModel.scrollToPosition.collectAsState()
@@ -73,7 +72,9 @@ internal fun TextEditor(
             groupsBackgroundColor = Color.Transparent,
             drawConfig = DrawConfigFactory.getDrawConfig(),
             fontFamily = fontFamily,
-            onDocumentLinkClick = onDocumentLinkClick
+            generateSection = noteEditorViewModel::aiSection,
+            receiveExternalFile = noteEditorViewModel::receiveExternalFile,
+            onDocumentLinkClick = onDocumentLinkClick,
         ),
         storyState = storyState,
     )

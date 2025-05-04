@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.dokka)
     alias(libs.plugins.sonatype.publish)
+    alias(libs.plugins.ktlint)
 }
 
 mavenPublishing {
@@ -52,7 +53,6 @@ mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = false)
 }
 
-
 kotlin {
     jvm {}
 
@@ -90,8 +90,6 @@ kotlin {
 
                 implementation(libs.coil.compose)
                 implementation(libs.coil.ktor3)
-
-
             }
         }
 
@@ -119,7 +117,6 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
-
             }
         }
     }

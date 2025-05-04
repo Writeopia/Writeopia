@@ -7,6 +7,7 @@ import io.writeopia.OllamaRepository
 import io.writeopia.auth.core.utils.USER_OFFLINE
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.collections.toNodeTree
+import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
@@ -15,7 +16,7 @@ import io.writeopia.core.folders.repository.FolderRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
-import io.writeopia.models.configuration.WorkspaceConfigRepository
+import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.repository.UiConfigurationRepository
 import io.writeopia.sdk.export.DocumentToJson
 import io.writeopia.sdk.export.DocumentToMarkdown
@@ -23,8 +24,8 @@ import io.writeopia.sdk.export.DocumentWriter
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
-import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
 import io.writeopia.sdk.repository.DocumentRepository
@@ -41,6 +42,7 @@ import io.writeopia.ui.model.DrawState
 import io.writeopia.ui.utils.Spans
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,7 +54,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -90,12 +91,26 @@ class NoteEditorKmpViewModel(
                             copySelection()
                         }
 
+                        KeyboardEvent.CUT -> {
+                            copySelection()
+                            deleteSelection()
+                        }
+
                         KeyboardEvent.AI_QUESTION -> {
                             askAiBySelection()
                         }
 
                         KeyboardEvent.CANCEL -> {
                             writeopiaManager.clearSelection()
+                            aiJob?.cancel()
+                        }
+
+                        KeyboardEvent.UNDO -> {
+                            writeopiaManager.undo()
+                        }
+
+                        KeyboardEvent.REDO -> {
+                            writeopiaManager.redo()
                         }
 
                         else -> {}
@@ -151,6 +166,16 @@ class NoteEditorKmpViewModel(
             .filterNotNull()
             .stateIn(viewModelScope, SharingStarted.Lazily, "")
     }
+
+    /**
+     * This property defines if the document is favorite
+     */
+    override val notFavorite: StateFlow<Boolean> = writeopiaManager
+        .documentInfo
+        .map { info -> !info.isFavorite }
+        .stateIn(viewModelScope, started = SharingStarted.Lazily, initialValue = false)
+
+    private var aiJob: Job? = null
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val toDrawWithDecoration: StateFlow<DrawState> by lazy {
@@ -352,6 +377,10 @@ class NoteEditorKmpViewModel(
         writeopiaManager.toggleLockDocument()
     }
 
+    override fun toggleFavorite() {
+        writeopiaManager.toggleFavoriteDocument()
+    }
+
     override fun changeFontFamily(font: Font) {
         viewModelScope.launch {
             uiConfigurationRepository.updateConfiguration(USER_OFFLINE) { config ->
@@ -361,7 +390,18 @@ class NoteEditorKmpViewModel(
     }
 
     override fun addImage(imagePath: String) {
-        writeopiaManager.addImage(imagePath)
+        viewModelScope.launch(Dispatchers.Default) {
+            val path = workspaceConfigRepository
+                .loadWorkspacePath("disconnected_user")
+                ?.let { workspace ->
+                    SaveImage.saveLocally(
+                        imagePath,
+                        "$workspace/images"
+                    )
+                } ?: imagePath
+
+            writeopiaManager.addImage(path)
+        }
     }
 
     override fun exportMarkdown(path: String) {
@@ -405,58 +445,52 @@ class NoteEditorKmpViewModel(
     override fun askAiBySelection() {
         if (ollamaRepository == null) return
 
+        aiJob = viewModelScope.launch(Dispatchers.Default) {
+            PromptService.promptBySelection(writeopiaManager, ollamaRepository)
+        }
+    }
+
+    override fun aiSummary() {
+        if (ollamaRepository == null) return
+
+        documentPrompt(ollamaRepository::streamSummary)
+    }
+
+    override fun aiActionPoints() {
+        if (ollamaRepository == null) return
+
+        documentPrompt(ollamaRepository::streamActionsPoints)
+    }
+
+    override fun aiFaq() {
+        if (ollamaRepository == null) return
+
+        documentPrompt(ollamaRepository::streamFaq)
+    }
+
+    override fun aiTags() {
+        if (ollamaRepository == null) return
+
+        documentPrompt(ollamaRepository::streamTags)
+    }
+
+    override fun aiSection(position: Int) {
+        if (ollamaRepository == null) return
+
+        val sectionText = writeopiaManager.getStory(position)?.text ?: return
+
         viewModelScope.launch(Dispatchers.Default) {
-            val text = writeopiaManager.getCurrentText()
-            val position = writeopiaManager.getNextPosition()
+            val prompt =
+                """
+                Create a document section for a document.
+                The document is:
+                ```
+                ${writeopiaManager.getDocumentText()}
+                ```
 
-            if (text != null && position != null) {
-                val url = ollamaRepository.getConfiguredOllamaUrl()?.trim()
-
-                if (url == null) {
-                    writeopiaManager.changeStoryState(
-                        Action.StoryStateChange(
-                            storyStep = StoryStep(
-                                type = StoryTypes.AI_ANSWER.type,
-                                text = "Ollama is not configured or not running."
-                            ),
-                            position = position,
-                        )
-                    )
-                } else {
-                    val model = ollamaRepository.getOllamaSelectedModel("disconnected_user")
-                        ?: return@launch
-
-                    ollamaRepository.streamReply(model, text, url)
-                        .onStart {
-                            writeopiaManager.addAtPosition(
-                                storyStep = StoryStep(
-                                    type = StoryTypes.LOADING.type,
-                                    ephemeral = true
-                                ),
-                                position = position
-                            )
-                        }
-                        .collect { result ->
-                            val text = when (result) {
-                                is ResultData.Complete -> result.data
-                                is ResultData.Error -> "Error. Message: ${result.exception.message}"
-                                is ResultData.Loading,
-                                is ResultData.Idle,
-                                is ResultData.InProgress -> ""
-                            }
-
-                            writeopiaManager.changeStoryState(
-                                Action.StoryStateChange(
-                                    storyStep = StoryStep(
-                                        type = StoryTypes.AI_ANSWER.type,
-                                        text = text
-                                    ),
-                                    position = position,
-                                )
-                            )
-                        }
-                }
-            }
+                Use the language of the text. Do not add titles. Create contect for this section: $sectionText
+                """
+            PromptService.prompt(prompt = prompt, writeopiaManager, ollamaRepository, position + 1)
         }
     }
 
@@ -482,6 +516,45 @@ class NoteEditorKmpViewModel(
             }
 
         copyManager.copy(annotatedString)
+    }
+
+    override fun cutSelection() {
+        copySelection()
+        deleteSelection()
+    }
+
+    override fun deleteDocument() {
+        viewModelScope.launch(Dispatchers.Default) {
+            documentRepository.deleteDocument(writeopiaManager.getDocument())
+        }
+    }
+
+    override fun receiveExternalFile(files: List<ExternalFile>, position: Int) {
+        viewModelScope.launch(Dispatchers.Default) {
+            val newFiles = workspaceConfigRepository
+                .loadWorkspacePath("disconnected_user")
+                ?.let { workspace ->
+                    files.map { file ->
+                        if (writeopiaManager.supportedImageFiles.contains(file.extension)) {
+                            val newPath = SaveImage.saveLocally(file.fullPath, "$workspace/images")
+
+                            file.copy(fullPath = newPath)
+                        } else {
+                            file
+                        }
+                    }
+                } ?: files
+
+            writeopiaManager.receiveExternalFiles(newFiles, position)
+        }
+    }
+
+    private fun documentPrompt(promptFn: (String, String, String) -> Flow<ResultData<String>>) {
+        if (ollamaRepository == null) return
+
+        aiJob = viewModelScope.launch(Dispatchers.Default) {
+            PromptService.documentPrompt(promptFn, writeopiaManager, ollamaRepository)
+        }
     }
 
     private fun saveDocumentInWorkSpace() {

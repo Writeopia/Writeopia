@@ -42,7 +42,7 @@ class HeaderPreviewDrawer(
             modifier = modifier
                 .padding(bottom = 16.dp)
                 .fillMaxWidth()
-                .defaultMinSize(minHeight = 70.dp)
+                .defaultMinSize(minHeight = if (hasContent(step, drawInfo)) 70.dp else 20.dp)
                 .let { modifierLet ->
                     val backgroundColor = step.decoration.backgroundColor
                     if (backgroundColor != null) {
@@ -52,49 +52,54 @@ class HeaderPreviewDrawer(
                     }
                 }
         ) {
-            Row(
-                modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .align(Alignment.BottomStart),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val extraData = drawInfo.extraData
+            if (hasContent(step, drawInfo)) {
+                Row(
+                    modifier = Modifier
+                        .padding(vertical = 12.dp)
+                        .align(Alignment.BottomStart),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val extraData = drawInfo.extraData
 
-                if (extraData.containsKey("imageVector")) {
-                    val imageVector = extraData["imageVector"] as ImageVector
+                    if (extraData.containsKey("imageVector")) {
+                        val imageVector = extraData["imageVector"] as ImageVector
 
-                    val tint = if (extraData.containsKey("imageVectorTint")) {
-                        val tintColor = extraData["imageVectorTint"] as Int
-                        Color(tintColor)
+                        val tint = if (extraData.containsKey("imageVectorTint")) {
+                            val tintColor = extraData["imageVectorTint"] as Int
+                            Color(tintColor)
+                        } else {
+                            MaterialTheme.colorScheme.onBackground
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Icon(
+                            imageVector = imageVector,
+                            "header icon",
+                            tint = tint,
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
                     } else {
-                        MaterialTheme.colorScheme.onBackground
+                        Spacer(modifier = Modifier.width(12.dp))
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Icon(
-                        imageVector = imageVector,
-                        "header icon",
-                        tint = tint,
-                        modifier = Modifier.size(20.dp)
+                    Text(
+                        text = step.text ?: "",
+                        style = style ?: MaterialTheme.typography.titleLarge,
+                        color = textColor,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(end = 12.dp)
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-                } else {
-                    Spacer(modifier = Modifier.width(12.dp))
                 }
-
-                Text(
-                    text = step.text ?: "",
-                    style = style ?: MaterialTheme.typography.titleLarge,
-                    color = textColor,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(end = 12.dp)
-                )
             }
         }
     }
+
+    private fun hasContent(step: StoryStep, drawInfo: DrawInfo): Boolean =
+        step.text?.isNotEmpty() == true || drawInfo.extraData.containsKey("imageVector")
 }
 
 @Preview

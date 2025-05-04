@@ -5,7 +5,7 @@ const sidebars : SidebarsConfig = {
     {
       type: 'doc',
       id: 'sdk/overview',
-    },  
+    },
     {
       type: 'category',
       label: 'Getting started',
@@ -15,7 +15,7 @@ const sidebars : SidebarsConfig = {
       type: 'category',
       label: 'Customize Drawing',
       items: ['sdk/customize-drawing/customize-drawers', 'sdk/customize-drawing/default-drawers', 'sdk/customize-drawing/default-types'],
-    }, 
+    },
     {
       type: 'doc',
       id: 'sdk/customize-behaviour/customize-ui-commands',
@@ -35,11 +35,21 @@ const sidebars : SidebarsConfig = {
       id: 'sdk/api_reference',
     }
   ],
-  
+
   appSidebar: [
     {
       type: 'doc',
       id: 'application/overview',
+    },
+    {
+      type: 'doc',
+      label: 'AI Commands',
+      id: 'application/ai/ai',
+    },
+    {
+      type: 'doc',
+      label: 'Sync',
+      id: 'application/sync-workspace/sync-workspace',
     },
     {
       type: 'doc',
@@ -52,7 +62,7 @@ const sidebars : SidebarsConfig = {
     },
     {
       type: 'doc',
-      id: 'application/slides/slides',
+      id: 'application/drag-and-drop/drag-and-drop',
     }
   ],
 
@@ -60,9 +70,9 @@ const sidebars : SidebarsConfig = {
     {
       type: 'doc',
       id: 'local-dev/getting-started',
-    }, 
+    },
   ]
-  
+
 };
 
 export default sidebars;

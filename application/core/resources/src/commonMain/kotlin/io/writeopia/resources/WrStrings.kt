@@ -4,16 +4,22 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.access_ollama_site
+import writeopia.application.core.resources.generated.resources.action_points
 import writeopia.application.core.resources.generated.resources.actions
 import writeopia.application.core.resources.generated.resources.arrangement
 import writeopia.application.core.resources.generated.resources.ask_ai
 import writeopia.application.core.resources.generated.resources.available_models
 import writeopia.application.core.resources.generated.resources.box
+import writeopia.application.core.resources.generated.resources.cancel
 import writeopia.application.core.resources.generated.resources.close
 import writeopia.application.core.resources.generated.resources.color_theme
+import writeopia.application.core.resources.generated.resources.confirmation_delete_multiple_items
 import writeopia.application.core.resources.generated.resources.content
+import writeopia.application.core.resources.generated.resources.copy_note
 import writeopia.application.core.resources.generated.resources.dark_theme
 import writeopia.application.core.resources.generated.resources.decoration
+import writeopia.application.core.resources.generated.resources.delete
+import writeopia.application.core.resources.generated.resources.document
 import writeopia.application.core.resources.generated.resources.download_models
 import writeopia.application.core.resources.generated.resources.download_ollama
 import writeopia.application.core.resources.generated.resources.error_model_download
@@ -21,6 +27,8 @@ import writeopia.application.core.resources.generated.resources.error_requesting
 import writeopia.application.core.resources.generated.resources.export
 import writeopia.application.core.resources.generated.resources.export_json
 import writeopia.application.core.resources.generated.resources.export_markdown
+import writeopia.application.core.resources.generated.resources.export_txt
+import writeopia.application.core.resources.generated.resources.favorite
 import writeopia.application.core.resources.generated.resources.favorites
 import writeopia.application.core.resources.generated.resources.folder
 import writeopia.application.core.resources.generated.resources.font
@@ -35,10 +43,12 @@ import writeopia.application.core.resources.generated.resources.light_theme
 import writeopia.application.core.resources.generated.resources.links
 import writeopia.application.core.resources.generated.resources.local_folder
 import writeopia.application.core.resources.generated.resources.lock_document
+import writeopia.application.core.resources.generated.resources.markdown
 import writeopia.application.core.resources.generated.resources.move_to
 import writeopia.application.core.resources.generated.resources.move_to_home
 import writeopia.application.core.resources.generated.resources.name
 import writeopia.application.core.resources.generated.resources.no_models
+import writeopia.application.core.resources.generated.resources.ok
 import writeopia.application.core.resources.generated.resources.ollama
 import writeopia.application.core.resources.generated.resources.ollama_configuration_complete
 import writeopia.application.core.resources.generated.resources.onboarding_explain1
@@ -56,6 +66,7 @@ import writeopia.application.core.resources.generated.resources.sort_by_name
 import writeopia.application.core.resources.generated.resources.sort_by_update
 import writeopia.application.core.resources.generated.resources.sorting
 import writeopia.application.core.resources.generated.resources.suggestions
+import writeopia.application.core.resources.generated.resources.summarize
 import writeopia.application.core.resources.generated.resources.system_theme
 import writeopia.application.core.resources.generated.resources.tap_to_start
 import writeopia.application.core.resources.generated.resources.text
@@ -131,6 +142,9 @@ object WrStrings {
     fun exportMarkdown() = stringResource(Res.string.export_markdown)
 
     @Composable
+    fun exportAsTxt() = stringResource(Res.string.export_txt)
+
+    @Composable
     fun exportJson() = stringResource(Res.string.export_json)
 
     @Composable
@@ -182,13 +196,19 @@ object WrStrings {
     fun askAi() = stringResource(Res.string.ask_ai)
 
     @Composable
+    fun summary() = stringResource(Res.string.summarize)
+
+    @Composable
+    fun actionPoints() = stringResource(Res.string.action_points)
+
+    @Composable
     fun export() = stringResource(Res.string.export)
 
     @Composable
     fun json() = stringResource(Res.string.json)
 
     @Composable
-    fun markdown() = stringResource(Res.string.json)
+    fun markdown() = stringResource(Res.string.markdown)
 
     @Composable
     fun tapToStart() = stringResource(Res.string.tap_to_start)
@@ -240,4 +260,25 @@ object WrStrings {
 
     @Composable
     fun smallRobot() = stringResource(Res.string.small_robot)
+
+    @Composable
+    fun copyDocument() = stringResource(Res.string.copy_note)
+
+    @Composable
+    fun delete() = stringResource(Res.string.delete)
+
+    @Composable
+    fun document() = stringResource(Res.string.document)
+
+    @Composable
+    fun favorite() = stringResource(Res.string.favorite)
+
+    @Composable
+    fun confirmDeleteMultipleItems() = stringResource(Res.string.confirmation_delete_multiple_items)
+
+    @Composable
+    fun ok() = stringResource(Res.string.ok)
+
+    @Composable
+    fun cancel() = stringResource(Res.string.cancel)
 }

@@ -50,6 +50,7 @@ class OnUpdateDocumentTracker(
                             title = titleFromContent ?: documentInfo.title,
                             createdAt = documentInfo.createdAt,
                             lastUpdatedAt = Clock.System.now(),
+                            lastSyncedAt = documentInfo.lastSyncedAt,
                             userId = userId,
                             parentId = documentInfo.parentId,
                             icon = documentInfo.icon,
@@ -75,6 +76,7 @@ class OnUpdateDocumentTracker(
                         content = documentFilter.removeTypesFromDocument(stories),
                         createdAt = documentInfo.createdAt,
                         lastUpdatedAt = Clock.System.now(),
+                        lastSyncedAt = documentInfo.lastSyncedAt,
                         userId = userId,
                         parentId = documentInfo.parentId,
                         icon = documentInfo.icon,
@@ -98,6 +100,7 @@ class OnUpdateDocumentTracker(
                             title = titleFromContent ?: documentInfo.title,
                             createdAt = documentInfo.createdAt,
                             lastUpdatedAt = Clock.System.now(),
+                            lastSyncedAt = documentInfo.lastSyncedAt,
                             userId = userId,
                             parentId = documentInfo.parentId,
                             icon = documentInfo.icon,
@@ -128,10 +131,12 @@ class OnUpdateDocumentTracker(
                             title = titleFromContent ?: documentInfo.title,
                             createdAt = documentInfo.createdAt,
                             lastUpdatedAt = Clock.System.now(),
+                            lastSyncedAt = documentInfo.lastSyncedAt,
                             userId = userId,
                             parentId = documentInfo.parentId,
                             icon = documentInfo.icon,
-                            isLocked = documentInfo.isLocked
+                            isLocked = documentInfo.isLocked,
+                            favorite = documentInfo.isFavorite
                         )
                     )
                 }

@@ -30,7 +30,7 @@ import io.writeopia.navigation.NavigationViewModel
 import io.writeopia.navigation.notes.navigateToNoteMenu
 import io.writeopia.navigation.notifications.navigateToNotifications
 import io.writeopia.navigation.search.navigateToSearch
-import io.writeopia.notemenu.data.model.NotesNavigation
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.viewmodel.UiConfigurationViewModel
@@ -105,7 +105,6 @@ fun AppMobile(
                     editorInjector = editorInjector,
                     selectColorTheme = uiConfigViewModel::changeColorTheme,
                     searchInjection = searchInjector,
-                    isUndoKeyEvent = { false },
                     builder = builder
                 )
             }

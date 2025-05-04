@@ -35,3 +35,8 @@ deleteByDocumentId:
 DELETE
 FROM storyStepEntity
 WHERE document_id = ?;
+
+deleteByDocumentIds:
+DELETE
+FROM storyStepEntity
+WHERE document_id IN ?;

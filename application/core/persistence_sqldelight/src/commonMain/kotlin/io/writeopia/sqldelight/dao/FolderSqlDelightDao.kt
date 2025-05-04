@@ -2,8 +2,8 @@ package io.writeopia.sqldelight.dao
 
 import io.writeopia.app.sql.FolderEntity
 import io.writeopia.app.sql.FolderEntityQueries
-import io.writeopia.models.Folder
-import io.writeopia.models.search.FolderSearch
+import io.writeopia.sdk.models.document.Folder
+import io.writeopia.models.interfaces.search.FolderSearch
 import io.writeopia.sql.WriteopiaDb
 import io.writeopia.sqldelight.extensions.toModel
 import io.writeopia.sqldelight.utils.sumValues
@@ -60,6 +60,18 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
         )
         refreshFolders()
     }
+
+    suspend fun selectByUserId(userId: String): List<Folder> =
+        folderEntityQueries?.selectByUserId(userId)
+            ?.executeAsList()
+            ?.map { it.toModel(0) }
+            ?: emptyList()
+
+    suspend fun selectByUserIdAfterTime(userId: String, instant: Long): List<Folder> =
+        folderEntityQueries?.selectByUserIdAfterTime(userId, instant)
+            ?.executeAsList()
+            ?.map { it.toModel(0) }
+            ?: emptyList()
 
     suspend fun setLastUpdate(id: String, lastUpdateTimeStamp: Long) {
         folderEntityQueries?.setLastUpdate(lastUpdateTimeStamp, id)

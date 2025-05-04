@@ -175,8 +175,6 @@ fun SettingsScreen(
     }
 
     Spacer(modifier = Modifier.height(30.dp))
-
-    Text(WrStrings.version(), style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable
@@ -505,7 +503,7 @@ fun DownloadModels(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                "${WrStrings.errorModelDownload()} ${downloadState.exception.message}",
+                "${WrStrings.errorModelDownload()} ${downloadState.exception?.message}",
                 style = MaterialTheme.typography.bodySmall
             )
         }

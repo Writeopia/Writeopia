@@ -17,7 +17,7 @@
   <string name="name">Name</string>
   <string name="add_note">Add note</string>
   <string name="back">Back</string>
-  <string name="copy_note">Copy note</string>
+  <string name="copy_note">Copy document</string>
   <string name="favorite">Favorite</string>
   <string name="delete">Delete</string>
   <string name="logout">Logout</string>
@@ -44,6 +44,8 @@
   <string name="recent">Recent</string>
   <string name="color_theme">Color Theme</string>
   <string name="local_folder">Local Folder</string>
+  <string name="ollama">Ollama</string>
+  <string name="url">Url</string>
   <string name="available_models">Available Models</string>
   <string name="no_models">No models</string>
   <string name="error_requesting_models">Error when requesting models. Did you start Ollama? \n</string>
@@ -51,14 +53,15 @@
   <string name="download_models">Download Model</string>
   <string name="suggestions">Suggestions:</string>
   <string name="error_model_download">Error when downloading model.</string>
-  <string name="version">"Version: alpha33 - Amado, Jorge"</string>
+  <string name="version">Alpha41 - Amado, Jorge</string>
   <string name="light_theme">Light</string>
   <string name="dark_theme">Dark</string>
   <string name="system_theme">System</string>
   <string name="export_markdown">Export as Markdown</string>
+  <string name="export_txt">Export as TXT</string>
   <string name="import_file">Import file</string>
   <string name="sort_by_name">Sort by name</string>
-  <string name="sort_by_creation">Sort by creation</string>
+  <string name="sort_by_creation">Sort by creation date</string>
   <string name="sort_by_update">Sort by last update</string>
   <string name="lock_document">Lock document</string>
   <string name="move_to">Move to...</string>
@@ -69,8 +72,11 @@
   <string name="box">Box</string>
   <string name="content">Content</string>
   <string name="image">Image</string>
+  <string name="links">Links</string>
   <string name="page">Page</string>
   <string name="ask_ai">Ask AI</string>
+  <string name="json">JSON</string>
+  <string name="markdown">Markdown</string>
   <string name="tap_to_start">Tap here to <font fgcolor='#FFFF3B30'>write</font> the next big thing</string>
   <string name="font">Font</string>
   <string name="actions">Actions</string>
@@ -83,4 +89,10 @@
   <string name="ollama_configuration_complete">Configuration completed!</string>
   <string name="private_ai_enabled">You can write now using private AI</string>
   <string name="small_robot">Small robot</string>
+  <string name="document">Document</string>
+  <string name="confirmation_delete_multiple_items">Are you sure you would like to delete the selected items?</string>
+  <string name="cancel">Cancel</string>
+  <string name="ok">ok</string>
+  <string name="summarize">Summarize</string>
+  <string name="action_points">Action Points</string>
 </resources>

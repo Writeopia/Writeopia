@@ -1,6 +1,7 @@
 package io.writeopia.ui.drawer.content
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -16,13 +17,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.draganddrop.DropInfo
+import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.ui.components.SwipeBox
 import io.writeopia.ui.components.multiselection.SelectableByDrag
 import io.writeopia.ui.draganddrop.target.DragRowTarget
-import io.writeopia.ui.draganddrop.target.DropTargetHorizontalDivision
+import io.writeopia.ui.draganddrop.target.DropTargetVerticalDivision
 import io.writeopia.ui.draganddrop.target.InBounds
+import io.writeopia.ui.draganddrop.target.external.externalImageDropTarget
+import io.writeopia.ui.draganddrop.target.external.shouldAcceptImageDrop
 import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.drawer.decorations.DefaultTagDecoration
@@ -48,6 +52,7 @@ class DesktopTextItemDrawer(
     private val endContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
     private val isDesktop: Boolean,
     private val enabled: Boolean,
+    private val receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
     private val messageDrawer: @Composable RowScope.() -> SimpleTextDrawer,
     private val tagDecoration: TagDecoration = DefaultTagDecoration,
     private val paddingValues: PaddingValues = PaddingValues(0.dp),
@@ -67,14 +72,29 @@ class DesktopTextItemDrawer(
             ?.let { 4 to 16 }
             ?: (0 to 0)
 
-        SelectableByDrag { isInsideDrag ->
+        SelectableByDrag(
+            modifier = Modifier.dragAndDropTarget(
+                shouldStartDragAndDrop = ::shouldAcceptImageDrop,
+                target = externalImageDropTarget(
+                    onStart = onDragStart,
+                    onEnd = onDragStop,
+                    onEnter = {
+                        onDragHover(drawInfo.position)
+                    },
+                    onExit = {},
+                    onFileReceived = { files ->
+                        receiveExternalFile(files, drawInfo.position + 1)
+                    }
+                )
+            )
+        ) { isInsideDrag ->
             if (isInsideDrag != null) {
                 LaunchedEffect(isInsideDrag) {
                     onSelected(isInsideDrag, drawInfo.position)
                 }
             }
 
-            DropTargetHorizontalDivision(
+            DropTargetVerticalDivision(
                 modifier = Modifier.padding(bottom = paddingBottom.dp, top = paddingTop.dp)
             ) { inBound, data ->
                 when (inBound) {

@@ -22,7 +22,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
@@ -41,8 +40,9 @@ import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNote
-import io.writeopia.notemenu.data.model.NotesNavigation
-import io.writeopia.notemenu.data.model.NotesNavigationType
+import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.common.utils.NotesNavigationType
+import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
@@ -50,7 +50,9 @@ import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.ui.screen.menu.EditFileScreen
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sql.WriteopiaDb
+import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
 import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.theme.WriteopiaTheme
@@ -70,11 +72,12 @@ fun DesktopApp(
     keyboardEventFlow: Flow<KeyboardEvent>,
     colorThemeOption: StateFlow<ColorThemeOption?>,
     coroutineScope: CoroutineScope,
-    isUndoKeyEvent: (KeyEvent) -> Boolean,
     selectColorTheme: (ColorThemeOption) -> Unit,
     toggleMaxScreen: () -> Unit,
     startDestination: String = startDestination(),
 ) {
+    WriteopiaConnectionInjector.setBaseUrl("http://localhost:8080")
+
     if (writeopiaDb != null) {
         WriteopiaDbInjector.initialize(writeopiaDb)
     }
@@ -89,13 +92,16 @@ fun DesktopApp(
     val notesMenuInjection = remember {
         NotesMenuKmpInjection.desktop(
             selectionState = selectionState,
-            keyboardEventFlow = keyboardEventFlow
+            keyboardEventFlow = keyboardEventFlow,
         )
     }
 
     val sideMenuInjector = remember {
         SideMenuKmpInjector()
     }
+
+    val documentsGraphInjection =
+        DocumentsGraphInjection(repositoryInjection = SqlDelightDaoInjector.singleton())
 
     val globalShellViewModel: GlobalShellViewModel = sideMenuInjector.provideSideMenuViewModel()
     val colorTheme = colorThemeOption.collectAsState().value
@@ -183,8 +189,8 @@ fun DesktopApp(
                                 startDestination = startDestination,
                                 notesMenuInjection = notesMenuInjection,
                                 sideMenuKmpInjector = sideMenuInjector,
+                                documentsGraphInjection = documentsGraphInjection,
                                 editorInjector = editorInjector,
-                                isUndoKeyEvent = isUndoKeyEvent,
                                 selectColorTheme = selectColorTheme,
                                 navController = navigationController
                             ) {}

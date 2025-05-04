@@ -10,8 +10,8 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.search.DocumentSearch
-import io.writeopia.sdk.persistence.core.extensions.sortWithOrderBy
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
+import io.writeopia.sdk.models.extensions.sortWithOrderBy
+import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.persistence.sqldelight.toLong
 import io.writeopia.sdk.sql.DocumentEntityQueries
 import io.writeopia.sdk.sql.StoryStepEntityQueries
@@ -31,6 +31,7 @@ class DocumentSqlDao(
                 title = entity.title,
                 createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                 lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
                 userId = entity.user_id,
                 favorite = entity.favorite == 1L,
                 parentId = entity.parent_document_id,
@@ -48,6 +49,7 @@ class DocumentSqlDao(
                 title = entity.title,
                 createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                 lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
                 userId = entity.user_id,
                 favorite = entity.favorite == 1L,
                 parentId = entity.parent_document_id,
@@ -72,12 +74,13 @@ class DocumentSqlDao(
             title = document.title,
             created_at = document.createdAt.toEpochMilliseconds(),
             last_updated_at = document.lastUpdatedAt.toEpochMilliseconds(),
+            last_synced_at = document.lastSyncedAt?.toEpochMilliseconds(),
             user_id = document.userId,
             favorite = document.favorite.toLong(),
             parent_document_id = document.parentId,
             icon = document.icon?.label,
             icon_tint = document.icon?.tint?.toLong(),
-            is_locked = document.isLocked.toLong()
+            is_locked = document.isLocked.toLong(),
         )
     }
 
@@ -120,6 +123,7 @@ class DocumentSqlDao(
                     content = emptyMap(),
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                    lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
                     userId = entity.user_id,
                     favorite = entity.favorite == 1L,
                     parentId = entity.parent_document_id,
@@ -184,6 +188,7 @@ class DocumentSqlDao(
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
                         userId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
@@ -249,6 +254,7 @@ class DocumentSqlDao(
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
                         userId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
@@ -320,6 +326,7 @@ class DocumentSqlDao(
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
                         userId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
@@ -391,6 +398,7 @@ class DocumentSqlDao(
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
                         userId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
@@ -406,12 +414,85 @@ class DocumentSqlDao(
             } ?: emptyList()
     }
 
-    suspend fun deleteDocumentById(document: String) {
-        documentQueries?.delete(document)
+
+    suspend fun loadDocumentsWithContentByFolderIdAfterTime(
+        userId: String,
+        time: Long
+    ): List<Document> {
+        return documentQueries?.selectWithContentByUserIdAfterTime(userId, time)
+            ?.awaitAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (documentId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        !innerContent.id_.isNullOrEmpty()
+                    }.associate { innerContent ->
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!.toInt()).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked == 1L,
+//                                steps = emptyList(), // Todo: Fix!
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color?.toInt(),
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { documentId ->
+                                val title = documentQueries.selectTitleByDocumentId(documentId)
+                                    .executeAsOneOrNull()
+
+                                DocumentLink(documentId, title)
+                            }
+                        )
+
+                        innerContent.position!!.toInt() to storyStep
+                    }
+
+                    Document(
+                        id = documentId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
+                        userId = document.user_id,
+                        favorite = document.favorite == 1L,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(
+                                it,
+                                document.icon_tint?.toInt()
+                            )
+                        },
+                        isLocked = document.is_locked == 1L
+                    )
+                }
+            } ?: emptyList()
+    }
+
+    suspend fun deleteDocumentById(documentId: String) {
+        documentQueries?.delete(documentId)
+        storyStepQueries?.deleteByDocumentId(documentId)
     }
 
     suspend fun deleteDocumentByIds(ids: Set<String>) {
         documentQueries?.deleteByIds(ids)
+        storyStepQueries?.deleteByDocumentIds(ids)
     }
 
     suspend fun loadDocumentWithContentById(documentId: String): Document? =
@@ -465,6 +546,7 @@ class DocumentSqlDao(
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
                         userId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
@@ -502,16 +584,18 @@ class DocumentSqlDao(
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color?.toInt(),
                             ),
-                            tags = innerContent.tags!!
-                                .split(",")
-                                .filter { it.isNotEmpty() }
-                                .mapNotNull(TagInfo.Companion::fromString)
-                                .toSet(),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
                             spans = innerContent.spans
-                                !!.split(",")
-                                .filter { it.isNotEmpty() }
-                                .map(SpanInfo::fromString)
-                                .toSet(),
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
                             documentLink = innerContent.link_to_document?.let { documentId ->
                                 val title = documentQueries.selectTitleByDocumentId(documentId)
                                     .executeAsOneOrNull()
@@ -529,6 +613,7 @@ class DocumentSqlDao(
                         content = innerContent,
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
                         userId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
@@ -543,6 +628,78 @@ class DocumentSqlDao(
                 }
             } ?: emptyList()
     }
+
+    suspend fun loadOutdatedDocumentByParentId(parentId: String): List<Document> {
+        return documentQueries?.selectWithContentByFolderIdOutdatedDocuments(parentId)
+            ?.awaitAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (documentId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        innerContent.id_?.isNotEmpty() == true
+                    }.associate { innerContent ->
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!.toInt()).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked == 1L,
+//                                steps = emptyList(), // Todo: Fix!
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color?.toInt(),
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { documentId ->
+                                val title = documentQueries.selectTitleByDocumentId(documentId)
+                                    .executeAsOneOrNull()
+
+                                DocumentLink(documentId, title)
+                            }
+                        )
+
+                        innerContent.position!!.toInt() to storyStep
+                    }
+
+                    Document(
+                        id = documentId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
+                        userId = document.user_id,
+                        favorite = document.favorite == 1L,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(
+                                it,
+                                document.icon_tint?.toInt()
+                            )
+                        },
+                        isLocked = document.is_locked == 1L
+                    )
+                }
+            } ?: emptyList()
+    }
+
+    suspend fun loadDocumentIdsByParentId(parentId: String): List<String> =
+        documentQueries?.selectIdsByParentId(parentId)
+            ?.awaitAsList()
+            ?: emptyList()
 
     suspend fun deleteDocumentsByUserId(userId: String) {
         documentQueries?.deleteByUserId(userId)

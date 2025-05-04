@@ -103,4 +103,3 @@ object StepsModifier {
         return resultList
     }
 }
-

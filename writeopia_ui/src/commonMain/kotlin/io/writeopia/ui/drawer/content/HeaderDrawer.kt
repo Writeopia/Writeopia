@@ -80,16 +80,16 @@ class HeaderDrawer(
         val interactionSource = remember { MutableInteractionSource() }
         val isHovered by interactionSource.collectIsHoveredAsState()
 
-        Box(modifier = Modifier.hoverable(interactionSource)) {
+        Box(modifier = Modifier.hoverable(interactionSource).padding(bottom = 16.dp)) {
             Row(
                 modifier = modifier
                     .let { modifierLet ->
                         if (backgroundColor != null) {
                             modifierLet
                                 .background(Color(backgroundColor))
-                                .padding(top = 130.dp)
+                                .padding(top = 114.dp)
                         } else {
-                            modifierLet.padding(top = 30.dp)
+                            modifierLet.padding(top = 14.dp)
                         }
                     }
                     .fillMaxWidth(),

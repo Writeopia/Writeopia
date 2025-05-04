@@ -8,17 +8,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.model.action.Action
-import io.writeopia.ui.model.DrawInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.ui.draganddrop.target.DropTarget
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.drawer.decorations.DefaultTagDecoration
 import io.writeopia.ui.drawer.decorations.TagDecoration
 import io.writeopia.ui.model.DrawConfig
+import io.writeopia.ui.model.DrawInfo
 
 /**
  * Draws a white space. This Drawer is very important for accepting drop os other Composables for
@@ -35,7 +34,9 @@ class SpaceDrawer(
 
     @Composable
     override fun Step(step: StoryStep, drawInfo: DrawInfo) {
-        DropTarget { inBound, data ->
+        DropTarget(
+            modifier = Modifier
+        ) { inBound, data ->
             if (inBound && data != null) {
                 moveRequest(
                     Action.Move(

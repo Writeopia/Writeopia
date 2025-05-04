@@ -1,22 +1,28 @@
+import ReactPlayer from 'react-player'
+import how_to_select from '../../../static/vid/how_to_select.mov'
+import moving_lines from '../../../static/vid/moving_lines.mov'
+import undo_mobile from '../../../static/vid/undo_mobile.mov'
+
 # UI Commands
 
-This sections explains the actions that Writeopia provides by clicking in the buttons of the UI. 
+This sections explains the actions that Writeopia provides by clicking in the buttons of the UI.
 
-## Swipe to Edit
-One way to edit messages, checkbox, images, etc, is to to horizontally swipe to select the content. 
+## Select text
+There are 3 ways to select text. It is possible to horizontally swipe the text, click in the drag button or click in the text after pressing Crtl + Alt (Windows/Linux) or Ctrl + CMD (macOS).
 
-![swipe to edit sample](../../../static/img/swipe_to_edit.gif)
+<ReactPlayer playing playing={false} controls url={how_to_select} />
+<br/>
 
-Once multiple paragraphs are selection, many bulk actions can be done, like deleting many lines at once or moving many at once.
+Once multiple paragraphs are selection, many bulk actions can be done, like deleting many lines at once, moving many at once or making a AI question that includes many lines.
 
 ## Drag and Drop
-The way to move content is to use the drag icon on the right side of it. Draging the icon will trigger the drag and drop action.
+The way to move content is to use the drag icon on the right side of it. Dragging the icon will trigger the drag and drop action.
 
-![drag and drop sample](../../../static/img/drag_and_drop.gif)
-
+<ReactPlayer playing playing={false} controls url={moving_lines} />
+<br/>
 
 ## Undo/Redo
-**Android:** By clicking in the arrows in the bottom of the editor, you can undo actions. 
-**Web and desktop:** By pressing cmd+z (macos) or ctrl+z (windows/linux), , you can undo actions.  
+**Android:** By clicking in the arrows in the bottom of the editor, you can undo actions.
+**Web and desktop:** By pressing cmd+z (macos) or ctrl+z (windows/linux), , you can undo actions.
 
-![backstack sample](../../../static/img/backstack_sample.gif)
+<ReactPlayer playing playing={false} controls url={undo_mobile} />

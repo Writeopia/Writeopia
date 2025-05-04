@@ -161,6 +161,8 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel.canRedo,
                     noteEditorViewModel::onAddSpanClick,
                     noteEditorViewModel::deleteSelection,
+                    noteEditorViewModel::copySelection,
+                    noteEditorViewModel::cutSelection,
                     noteEditorViewModel::clearSelections,
                     noteEditorViewModel::onAddCheckListClick,
                     noteEditorViewModel::onAddListItemClick
@@ -316,6 +318,8 @@ private fun BottomScreen(
     canRedo: StateFlow<Boolean>,
     onSpanSelected: (Span) -> Unit = {},
     deleteSelection: () -> Unit = {},
+    copySelection: () -> Unit = {},
+    cutSelection: () -> Unit = {},
     onClose: () -> Unit = {},
     onCheckItem: () -> Unit = {},
     onListItem: () -> Unit = {}
@@ -358,6 +362,8 @@ private fun BottomScreen(
                     modifier = containerModifier,
                     onSpanClick = onSpanSelected,
                     onDelete = deleteSelection,
+                    onCopy = copySelection,
+                    onCut = cutSelection,
                     onClose = onClose,
                     checkboxClick = onCheckItem,
                     listItemClick = onListItem

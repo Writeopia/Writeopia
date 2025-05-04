@@ -1,9 +1,10 @@
 package io.writeopia.core.folders.repository
 
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.datetime.Instant
 
 class InMemoryFolderRepository : FolderRepository {
 
@@ -19,6 +20,17 @@ class InMemoryFolderRepository : FolderRepository {
     override suspend fun updateFolder(folder: Folder) {
         mutableMap[folder.id] = listOf(folder)
         refreshState()
+    }
+
+    override suspend fun getFoldersForUserAfterTime(
+        userId: String,
+        instant: Instant
+    ): List<Folder> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getFoldersForUser(userId: String): List<Folder> {
+        TODO("Not yet implemented")
     }
 
     override suspend fun listenForFoldersByParentId(parentId: String): Flow<Map<String, List<Folder>>> {

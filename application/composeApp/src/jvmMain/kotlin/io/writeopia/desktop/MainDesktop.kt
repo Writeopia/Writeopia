@@ -10,12 +10,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
 import io.writeopia.common.utils.keyboard.KeyboardCommands
+import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.common.utils.ui.GlobalToastBox
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
@@ -74,7 +74,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
     }
 
     val handleKeyboardEvent: (KeyEvent) -> Boolean = { keyEvent ->
-        selectionState.value = keyEvent.isAltPressed
+        selectionState.value = keyEvent.isMultiSelectionTrigger()
 
         when {
             KeyboardCommands.isDeleteEvent(keyEvent) -> {
@@ -122,6 +122,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 false
             }
 
+            KeyboardCommands.isCutEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.CUT)
+                false
+            }
+
             KeyboardCommands.isQuestionEvent(keyEvent) -> {
                 sendEvent(KeyboardEvent.AI_QUESTION)
                 false
@@ -129,6 +134,16 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
             KeyboardCommands.isCancelEvent(keyEvent) -> {
                 sendEvent(KeyboardEvent.CANCEL)
+                false
+            }
+
+            KeyboardCommands.isUndoKeyboardEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.UNDO)
+                false
+            }
+
+            KeyboardCommands.isRedoKeyboardEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.REDO)
                 false
             }
 
@@ -192,7 +207,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                             selectionState = selectionState,
                             keyboardEventFlow = keyboardEventFlow.filterNotNull(),
                             coroutineScope = coroutineScope,
-                            isUndoKeyEvent = KeyboardCommands::isUndoKeyboardEvent,
                             colorThemeOption = colorTheme,
                             selectColorTheme = uiConfigurationViewModel::changeColorTheme,
                             toggleMaxScreen = topDoubleBarClick

@@ -57,6 +57,7 @@ class SqlDelightDocumentRepositoryTest {
             val document = Document(
                 createdAt = instant,
                 lastUpdatedAt = instant,
+                lastSyncedAt = null,
                 userId = userId,
                 parentId = "",
                 content = bigContent
@@ -86,6 +87,7 @@ class SqlDelightDocumentRepositoryTest {
             id = documentId,
             createdAt = now,
             lastUpdatedAt = now,
+            lastSyncedAt = null,
             userId = userId,
             parentId = "",
             icon = MenuItem.Icon(icon, tint)
@@ -99,7 +101,7 @@ class SqlDelightDocumentRepositoryTest {
     }
 
     @Test
-    fun `it shouold be possible to save the lock state`() = runTest {
+    fun `it should be possible to save the lock state`() = runTest {
         val now = Clock.System.now()
         val documentId = "asdasdasdgf"
         val icon = "newIcon"
@@ -110,6 +112,7 @@ class SqlDelightDocumentRepositoryTest {
             id = documentId,
             createdAt = now,
             lastUpdatedAt = now,
+            lastSyncedAt = null,
             userId = userId,
             parentId = "",
             icon = MenuItem.Icon(icon, tint),
@@ -120,5 +123,59 @@ class SqlDelightDocumentRepositoryTest {
 
         val newDocument = documentRepository.loadDocumentById(documentId)
         assertTrue { newDocument!!.isLocked }
+    }
+
+    @Test
+    fun `it should be possible to get outdated documents`() = runTest {
+        val now = Clock.System.now()
+        val documentId = "asdasdasdgf"
+        val icon = "newIcon"
+        val tint = 123
+
+        val userId = "disconnected_user"
+        val document = Document(
+            id = documentId,
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = Instant.DISTANT_PAST,
+            userId = userId,
+            parentId = "root",
+            icon = MenuItem.Icon(icon, tint),
+            isLocked = true
+        )
+
+        documentRepository.saveDocument(document)
+
+        val newDocument = documentRepository.loadOutdatedDocuments("root")
+
+        assertEquals(1, newDocument.size)
+        assertEquals(documentId, newDocument.first().id)
+    }
+
+    @Test
+    fun `it should be possible to get outdated documents with null last sync`() = runTest {
+        val now = Clock.System.now()
+        val documentId = "asdasdasdgf"
+        val icon = "newIcon"
+        val tint = 123
+
+        val userId = "disconnected_user"
+        val document = Document(
+            id = documentId,
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            userId = userId,
+            parentId = "root",
+            icon = MenuItem.Icon(icon, tint),
+            isLocked = true
+        )
+
+        documentRepository.saveDocument(document)
+
+        val newDocument = documentRepository.loadOutdatedDocuments("root")
+
+        assertEquals(1, newDocument.size)
+        assertEquals(documentId, newDocument.first().id)
     }
 }

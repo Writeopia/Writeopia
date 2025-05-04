@@ -4,8 +4,9 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
-import io.writeopia.models.Folder
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.core.configuration.repository.ConfigurationRoomRepository
+import io.writeopia.core.folders.repository.NotesUseCase
 import io.writeopia.persistence.room.WriteopiaApplicationDatabase
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
@@ -53,7 +54,7 @@ class NotesUseCaseIntegrationTest {
     fun itShouldBePossibleToSaveAndLoadDocument() = runTest {
         val now = Clock.System.now()
 
-        notesUseCase.saveDocument(
+        notesUseCase.saveDocumentDb(
             Document(
                 id = "documentId",
                 title = "Document1",
@@ -65,7 +66,7 @@ class NotesUseCaseIntegrationTest {
         )
 
         assertTrue {
-            notesUseCase.loadDocumentsForUser(DISCONNECTED_USER_ID).isNotEmpty()
+            notesUseCase.loadDocumentsForUserFromDb(DISCONNECTED_USER_ID).isNotEmpty()
         }
     }
 
@@ -73,7 +74,7 @@ class NotesUseCaseIntegrationTest {
     fun itShouldBePossibleToSaveAndLoadDocumentByParentId() = runTest {
         val now = Clock.System.now()
 
-        notesUseCase.saveDocument(
+        notesUseCase.saveDocumentDb(
             Document(
                 id = "documentId",
                 title = "Document1",
@@ -111,7 +112,7 @@ class NotesUseCaseIntegrationTest {
         val now = Clock.System.now()
         val documentId = "documentId"
 
-        notesUseCase.saveDocument(
+        notesUseCase.saveDocumentDb(
             Document(
                 id = documentId,
                 title = "Document1",

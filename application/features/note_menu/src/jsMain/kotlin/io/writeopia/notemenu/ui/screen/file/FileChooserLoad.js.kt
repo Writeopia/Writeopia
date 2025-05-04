@@ -1,3 +1,5 @@
 package io.writeopia.notemenu.ui.screen.file
 
-actual fun fileChooserLoad(title: String): List<String> = emptyList()
+import io.writeopia.sdk.models.files.ExternalFile
+
+actual fun fileChooserLoad(title: String): List<ExternalFile> = emptyList()

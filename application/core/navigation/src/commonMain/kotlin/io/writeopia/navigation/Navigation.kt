@@ -3,13 +3,15 @@ package io.writeopia.navigation
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.input.key.KeyEvent
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.account.navigation.accountMenuNavigation
 import io.writeopia.common.utils.Destinations
+import io.writeopia.documents.graph.di.DocumentsGraphInjection
+import io.writeopia.documents.graph.navigation.documentsGraphNavigation
+import io.writeopia.documents.graph.navigation.navigateToForceGraph
 import io.writeopia.editor.di.TextEditorInjector
 import io.writeopia.editor.navigation.editorNavigation
 import io.writeopia.features.notifications.navigation.notificationsNavigation
@@ -31,10 +33,10 @@ fun Navigation(
     startDestination: String = Destinations.AUTH_MENU_INNER_NAVIGATION.id,
     navController: NavHostController = rememberNavController(),
     notesMenuInjection: NotesMenuInjection,
+    documentsGraphInjection: DocumentsGraphInjection? = null,
     sideMenuKmpInjector: SideMenuKmpInjector? = null,
     editorInjector: TextEditorInjector,
     searchInjection: SearchInjection? = null,
-    isUndoKeyEvent: (KeyEvent) -> Boolean,
     selectColorTheme: (ColorThemeOption) -> Unit,
     builder: NavGraphBuilder.() -> Unit
 ) {
@@ -49,15 +51,21 @@ fun Navigation(
                 navigateToNote = navController::navigateToNote,
                 navigateToAccount = navController::navigateToAccount,
                 navigateToNewNote = navController::navigateToNewNote,
-                navigateToFolders = navController::navigateToFolder
+                navigateToFolders = navController::navigateToFolder,
+                navigateToForceGraph = navController::navigateToForceGraph
             )
+
+            if (documentsGraphInjection != null) {
+                documentsGraphNavigation(
+                    documentsGraphInjection = documentsGraphInjection
+                )
+            }
 
             editorNavigation(
                 navigateBack = {
                     navController.navigateUp()
                 },
                 editorInjector = editorInjector,
-                isUndoKeyEvent = isUndoKeyEvent,
                 navigateToPresentation = navController::navigateToPresentation,
                 sharedTransitionScope = this@SharedTransitionLayout,
                 navigateToNote = { id ->

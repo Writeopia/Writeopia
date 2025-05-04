@@ -55,9 +55,6 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
-                implementation(libs.appCompat)
-                implementation(libs.viewmodel.compose)
-                implementation(project.dependencies.platform(libs.androidx.compose.bom))
                 implementation(project(":plugins:writeopia_persistence_room"))
             }
         }

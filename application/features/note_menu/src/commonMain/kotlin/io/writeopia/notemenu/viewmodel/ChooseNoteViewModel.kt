@@ -5,7 +5,8 @@ import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.models.document.MenuItem
-import io.writeopia.sdk.persistence.core.sorting.OrderBy
+import io.writeopia.sdk.models.files.ExternalFile
+import io.writeopia.sdk.models.sorting.OrderBy
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 
@@ -51,17 +52,15 @@ interface ChooseNoteViewModel : FolderController {
 
     fun directoryFilesAsMarkdown(path: String)
 
-    fun loadFiles(filePaths: List<String>)
+    fun directoryFilesAsTxt(path: String)
 
-    fun onDocumentSelected(id: String, selected: Boolean)
+    fun loadFiles(filePaths: List<ExternalFile>)
 
     fun onSyncLocallySelected()
 
     fun configureDirectory()
 
     fun onWriteLocallySelected()
-
-    fun clearSelection()
 
     fun listArrangementSelected()
 
@@ -77,15 +76,11 @@ interface ChooseNoteViewModel : FolderController {
 
     fun favoriteSelectedNotes()
 
-    fun unSelectNotes()
-
     fun hideConfigSyncMenu()
 
     fun pathSelected(path: String)
 
     fun confirmWorkplacePath()
-
-    fun toggleSelection(id: String)
 
     fun requestPermissionToDeleteSelection()
 
@@ -98,6 +93,8 @@ interface ChooseNoteViewModel : FolderController {
     fun closeOnboardingPermanently()
 
     fun completeOnboarding()
+
+    fun syncFolderWithCloud()
 }
 
 sealed interface UserState<T> {

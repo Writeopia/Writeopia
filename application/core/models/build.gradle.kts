@@ -27,6 +27,7 @@ kotlin {
             dependencies {
                 implementation(project(":writeopia_models"))
                 implementation(libs.kotlinx.datetime)
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
 

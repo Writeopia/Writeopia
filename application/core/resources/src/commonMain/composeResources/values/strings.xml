@@ -17,7 +17,7 @@
   <string name="name">Name</string>
   <string name="add_note">Add note</string>
   <string name="back">Back</string>
-  <string name="copy_note">Copy note</string>
+  <string name="copy_note">Copy document</string>
   <string name="favorite">Favorite</string>
   <string name="delete">Delete</string>
   <string name="logout">Logout</string>
@@ -53,11 +53,12 @@
   <string name="download_models">Download Model</string>
   <string name="suggestions">Suggestions:</string>
   <string name="error_model_download">Error when downloading model.</string>
-  <string name="version">Version: alpha33 - Amado, Jorge</string>
+  <string name="version">Alpha41 - Amado, Jorge</string>
   <string name="light_theme">Light</string>
   <string name="dark_theme">Dark</string>
   <string name="system_theme">System</string>
   <string name="export_markdown">Export as Markdown</string>
+  <string name="export_txt">Export as TXT</string>
   <string name="import_file">Import file</string>
   <string name="sort_by_name">Sort by name</string>
   <string name="sort_by_creation">Sort by creation date</string>
@@ -88,4 +89,10 @@
   <string name="ollama_configuration_complete">Configuration completed!</string>
   <string name="private_ai_enabled">You can write now using private AI</string>
   <string name="small_robot">Small robot</string>
+  <string name="document">Document</string>
+  <string name="confirmation_delete_multiple_items">Are you sure you would like to delete the selected items?</string>
+  <string name="cancel">Cancel</string>
+  <string name="ok">ok</string>
+  <string name="summarize">Summarize</string>
+  <string name="action_points">Action Points</string>
 </resources>

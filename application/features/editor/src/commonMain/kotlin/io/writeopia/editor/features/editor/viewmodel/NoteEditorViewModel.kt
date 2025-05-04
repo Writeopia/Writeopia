@@ -3,6 +3,7 @@ package io.writeopia.editor.features.editor.viewmodel
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
+import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.ui.backstack.BackstackHandler
 import io.writeopia.ui.backstack.BackstackInform
@@ -37,6 +38,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     val listenForFolders: StateFlow<List<MenuItemUi.FolderUi>>
 
     val loadingState: StateFlow<Boolean>
+
+    val notFavorite: StateFlow<Boolean>
 
     fun toggleEditable()
 
@@ -90,9 +93,27 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun askAiBySelection()
 
+    fun aiSummary()
+
+    fun aiActionPoints()
+
+    fun aiFaq()
+
+    fun aiTags()
+
+    fun aiSection(position: Int)
+
     fun addPage()
 
     fun copySelection()
+
+    fun cutSelection()
+
+    fun deleteDocument()
+
+    fun toggleFavorite()
+
+    fun receiveExternalFile(files: List<ExternalFile>, position: Int)
 }
 
 data class ShareDocument(val content: String, val title: String, val type: String)

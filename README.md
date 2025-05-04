@@ -54,7 +54,7 @@ Some useful commands for this project:
 To start the desktop app:
 
 ```
-./gradlew application:desktopApp:run
+./gradlew application:composeApp:run
 ```
 
 To start the web app:
@@ -63,7 +63,7 @@ To start the web app:
 ./gradlew jsBrowserRun
 ```
 
-Runnig the tests of the project:
+Running the tests of the project:
 
 ```
 ./gradlew jvmTest

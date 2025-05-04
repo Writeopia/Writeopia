@@ -1,0 +1,130 @@
+CREATE TABLE document_entity (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  last_updated_at BIGINT NOT NULL,
+  last_synced BIGINT NOT NULL,
+  user_id TEXT NOT NULL,
+  favorite BOOLEAN NOT NULL,
+  parent_document_id TEXT NOT NULL,
+  icon TEXT,
+  icon_tint INTEGER,
+  is_locked BOOLEAN NOT NULL
+);
+
+selectAll:
+SELECT *
+FROM document_entity;
+
+selectLastUpdatedAt:
+SELECT *
+FROM document_entity
+ORDER BY last_synced
+LIMIT 10;
+
+selectTitleByDocumentId:
+SELECT title
+FROM document_entity
+WHERE id = ?;
+
+query:
+SELECT *
+FROM document_entity
+WHERE title LIKE '%' || ? || '%'
+ORDER BY last_synced;
+
+selectById:
+SELECT *
+FROM document_entity
+WHERE document_entity.id=?
+LIMIT 1;
+
+selectWithContent:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+ORDER BY position;
+
+selectWithContentByIds:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE document_entity.id IN ?
+ORDER BY position;
+
+selectWithContentByUserId:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE document_entity.user_id = ?
+ORDER BY position;
+
+selectFavoritesWithContentByUserId:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE document_entity.user_id = ? AND document_entity.favorite = 1
+ORDER BY position;
+
+selectWithContentByUserIdAfterTime:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE document_entity.user_id = ? AND last_synced > ?
+ORDER BY position;
+
+selectWithContentByFolderIdAfterTime:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE document_entity.parent_document_id = ? AND last_synced > ?
+ORDER BY position;
+
+selectWithContentById:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE document_entity.id = ?
+ORDER BY position;
+
+selectWithContentByParentId:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE document_entity.parent_document_id = ?
+ORDER BY position;
+
+selectIdsByParentId:
+SELECT id
+FROM document_entity
+WHERE document_entity.parent_document_id = ?;
+
+insert:
+INSERT INTO document_entity(id, title, created_at, last_updated_at, last_synced, user_id, favorite, parent_document_id, icon, icon_tint, is_locked)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at, last_updated_at=excluded.last_updated_at,
+last_synced=excluded.last_synced, user_id=excluded.user_id, favorite=excluded.favorite,
+parent_document_id=excluded.parent_document_id, icon=excluded.icon, icon_tint=excluded.icon_tint,
+is_locked=excluded.is_locked;
+
+delete:
+DELETE FROM document_entity WHERE id = ?;
+
+deleteByIds:
+DELETE FROM document_entity WHERE id IN ?;
+
+deleteByUserId:
+DELETE FROM document_entity WHERE user_id = ?;
+
+deleteByFolderId:
+DELETE FROM document_entity WHERE parent_document_id = ?;
+
+favoriteById:
+UPDATE document_entity SET favorite = 1 WHERE id = ?;
+
+unFavoriteById:
+UPDATE document_entity SET favorite = 0 WHERE id = ?;
+
+moveToFolder:
+UPDATE document_entity SET parent_document_id = ?, last_synced = ? WHERE id = ?;
