@@ -99,6 +99,7 @@ fun AppMobile(
         ) { padding ->
             Box(modifier = Modifier.padding(padding)) {
                 Navigation(
+                    isDarkTheme = colorTheme.isDarkTheme(),
                     startDestination = startDestination,
                     notesMenuInjection = notesMenuInjection,
                     navController = navController,

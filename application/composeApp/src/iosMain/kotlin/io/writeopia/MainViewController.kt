@@ -78,7 +78,8 @@ fun MainViewController() = ComposeUIViewController {
 
             val navController = rememberNavController()
 
-            AppMobile(
+            //Todo: Fix this!
+            AppMobile(isDarkTheme = true,
                 navController = navController,
                 searchInjector = searchInjection,
                 uiConfigViewModel = uiConfigurationViewModel,

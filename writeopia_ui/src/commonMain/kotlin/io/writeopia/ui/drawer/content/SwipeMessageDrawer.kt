@@ -104,7 +104,11 @@ private fun SwipeMessageDrawerPreview() {
         enabled = true,
         receiveExternalFile = { _, _ -> },
         messageDrawer = {
-            TextDrawer(selectionState = MutableStateFlow(false), onSelectionLister = {})
+            TextDrawer(
+                selectionState = MutableStateFlow(false),
+                onSelectionLister = {},
+                isDarkTheme = true
+            )
         },
     ).Step(
         step = StoryStep(text = "Some text", type = StoryTypes.TEXT.type),

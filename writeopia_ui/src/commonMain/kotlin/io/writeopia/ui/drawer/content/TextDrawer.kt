@@ -52,6 +52,7 @@ import kotlin.math.abs
  */
 class TextDrawer(
     private val modifier: Modifier = Modifier,
+    private val isDarkTheme: Boolean,
     private val onKeyEvent: (KeyEvent, TextFieldValue, StoryStep, Int, EmptyErase, Int, EndOfText) -> Boolean =
         { _, _, _, _, _, _, _ -> false },
     private val textStyle: @Composable (StoryStep) -> TextStyle = { defaultTextStyle(it) },
@@ -79,7 +80,7 @@ class TextDrawer(
         var inputText by remember {
             mutableStateOf(
                 TextFieldValue(
-                    Spans.createStringWithSpans(step.text, spans),
+                    Spans.createStringWithSpans(step.text, spans, isDarkTheme),
                     selection = drawInfo.selection?.toTextRange(step.text ?: "")
                         ?: TextRange.Zero
                 )
@@ -177,7 +178,8 @@ class TextDrawer(
                     inputText = value.copy(
                         Spans.createStringWithSpans(
                             value.text.replace("\n", ""),
-                            spans
+                            spans,
+                            isDarkTheme
                         )
                     )
                 }
@@ -212,7 +214,10 @@ class TextDrawer(
 @Preview
 @Composable
 fun DesktopMessageDrawerPreview() {
-    TextDrawer(selectionState = MutableStateFlow(false), onSelectionLister = {}).Text(
+    TextDrawer(
+        isDarkTheme = true,
+        selectionState = MutableStateFlow(false),
+        onSelectionLister = {}).Text(
         step = StoryStep(text = "Some text", type = StoryTypes.TEXT.type),
         drawInfo = DrawInfo(),
         interactionSource = remember { MutableInteractionSource() },

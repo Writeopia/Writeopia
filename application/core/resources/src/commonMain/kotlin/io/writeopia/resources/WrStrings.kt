@@ -32,6 +32,7 @@ import writeopia.application.core.resources.generated.resources.favorite
 import writeopia.application.core.resources.generated.resources.favorites
 import writeopia.application.core.resources.generated.resources.folder
 import writeopia.application.core.resources.generated.resources.font
+import writeopia.application.core.resources.generated.resources.highlight
 import writeopia.application.core.resources.generated.resources.home
 import writeopia.application.core.resources.generated.resources.image
 import writeopia.application.core.resources.generated.resources.import_file
@@ -170,6 +171,9 @@ object WrStrings {
 
     @Composable
     fun text() = stringResource(Res.string.text)
+
+    @Composable
+    fun highlighting() = stringResource(Res.string.highlight)
 
     @Composable
     fun insert() = stringResource(Res.string.insert)

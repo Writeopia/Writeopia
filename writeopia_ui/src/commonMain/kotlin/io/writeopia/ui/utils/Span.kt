@@ -8,7 +8,11 @@ import kotlin.math.abs
 import kotlin.math.min
 
 object Spans {
-    fun createStringWithSpans(text: String?, spans: Iterable<SpanInfo>): AnnotatedString {
+    fun createStringWithSpans(
+        text: String?,
+        spans: Iterable<SpanInfo>,
+        isDarkTheme: Boolean,
+    ): AnnotatedString {
         val lastPosition = text?.length ?: 0
 
         return buildAnnotatedString {
@@ -16,7 +20,7 @@ object Spans {
 
             spans.forEach { spanInfo ->
                 addStyle(
-                    spanInfo.span.toSpanStyle(),
+                    spanInfo.span.toSpanStyle(isDarkTheme),
                     min(lastPosition, spanInfo.start),
                     min(lastPosition, spanInfo.end)
                 )

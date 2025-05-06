@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 internal fun TextEditor(
+    isDarkTheme: Boolean,
     noteEditorViewModel: NoteEditorViewModel,
     drawersFactory: DrawersFactory,
     modifier: Modifier = Modifier,
@@ -69,6 +70,7 @@ internal fun TextEditor(
             defaultBorder = clipShape,
             onHeaderClick = noteEditorViewModel::onHeaderClick,
             editable = isEditable,
+            isDarkTheme = isDarkTheme,
             groupsBackgroundColor = Color.Transparent,
             drawConfig = DrawConfigFactory.getDrawConfig(),
             fontFamily = fontFamily,

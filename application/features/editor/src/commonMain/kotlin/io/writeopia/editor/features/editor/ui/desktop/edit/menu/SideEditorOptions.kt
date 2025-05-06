@@ -12,6 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +61,7 @@ import kotlinx.coroutines.flow.StateFlow
 @Composable
 fun SideEditorOptions(
     modifier: Modifier = Modifier,
+    isDarkTheme: Boolean,
     fontStyleSelected: () -> StateFlow<Font>,
     isEditableState: StateFlow<Boolean>,
     isFavorite: StateFlow<Boolean>,
@@ -131,6 +135,7 @@ fun SideEditorOptions(
 
                     OptionsType.TEXT_OPTIONS -> {
                         TextOptions(
+                            isDarkTheme,
                             boldClick,
                             checkItemClick,
                             listItemClick,
@@ -382,6 +387,49 @@ private fun TextChanges(spanClick: (Span) -> Unit) {
 }
 
 @Composable
+private fun HighlightText(isDarkTheme: Boolean, spanClick: (Span) -> Unit) {
+    Row(
+        modifier = Modifier.horizontalOptionsRow(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        val colors = if (isDarkTheme) {
+            listOf(
+                Span.HIGHLIGHT_RED to Color(0xFFD32F2F),
+                Span.HIGHLIGHT_GREEN to Color(0xFF2E7D32),
+                Span.HIGHLIGHT_YELLOW to Color(0xFFF9A825)
+            )
+        } else {
+            listOf(
+                Span.HIGHLIGHT_RED to Color(0xFFE57373),
+                Span.HIGHLIGHT_GREEN to Color.Green,
+                Span.HIGHLIGHT_YELLOW to Color.Yellow
+            )
+        }
+
+        colors.forEach { (span, color) ->
+            Box(
+                modifier = Modifier.weight(1F)
+                    .size(32.dp)
+                    .clickableWithoutGettingFocus {
+                        spanClick(span)
+                    },
+            ) {
+                Box(
+                    modifier = Modifier.size(16.dp)
+                        .align(Alignment.Center)
+                        .background(color, CircleShape)
+                        .clip(CircleShape)
+                        .clickableWithoutGettingFocus {
+                            spanClick(span)
+                        }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun IconAndText(text: String, iconImage: ImageVector, click: () -> Unit) {
     Row(
         modifier = Modifier
@@ -553,6 +601,7 @@ internal fun FontOptions(
 
 @Composable
 private fun TextOptions(
+    isDarkTheme: Boolean,
     spanClick: (Span) -> Unit,
     checkItemClick: () -> Unit,
     listItemClick: () -> Unit,
@@ -574,6 +623,11 @@ private fun TextOptions(
         Title(WrStrings.text())
         Spacer(modifier = Modifier.height(4.dp))
         TextChanges(spanClick)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Title(WrStrings.highlighting())
+        Spacer(modifier = Modifier.height(4.dp))
+        HighlightText(isDarkTheme, spanClick)
         Spacer(modifier = Modifier.height(8.dp))
 
         Title(WrStrings.insert())

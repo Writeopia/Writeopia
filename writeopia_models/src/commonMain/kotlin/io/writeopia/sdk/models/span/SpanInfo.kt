@@ -109,13 +109,16 @@ enum class Span(val label: String) {
     BOLD("BOLD"),
     ITALIC("ITALIC"),
     UNDERLINE("UNDERLINE"),
-    HIGHLIGHT("HIGHLIGHT");
+    HIGHLIGHT_YELLOW("HIGHLIGHT"),
+    HIGHLIGHT_GREEN("HIGHLIGHT_GREEN"),
+    HIGHLIGHT_RED("HIGHLIGHT_RED"),
+    NONE("");
 
     fun toText() = this.label
 
     companion object {
         fun textFromString(label: String): Span = entries.find { option ->
             option.label.equals(label, ignoreCase = true)
-        } ?: throw IllegalArgumentException("This is span can't be found: $label")
+        } ?: NONE
     }
 }

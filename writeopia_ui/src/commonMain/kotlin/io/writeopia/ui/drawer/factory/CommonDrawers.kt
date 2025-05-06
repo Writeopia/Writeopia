@@ -60,6 +60,7 @@ object CommonDrawers {
         drawConfig: DrawConfig,
         eventListener: (KeyEvent, TextFieldValue, StoryStep, Int, EmptyErase, Int, EndOfText) -> Boolean,
         isDesktop: Boolean,
+        isDarkTheme: Boolean,
         fontFamily: FontFamily? = null,
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit = { _, _ -> },
         headerEndContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
@@ -80,6 +81,7 @@ object CommonDrawers {
                     lineBreakByContent = lineBreakByContent,
                     emptyErase = emptyErase,
                     enabled = editable,
+                    isDarkTheme = isDarkTheme,
                     onSelectionLister = manager::toggleSelection,
                     textStyle = { defaultTextStyle(it, fontFamily) }
                 )
@@ -114,6 +116,7 @@ object CommonDrawers {
                     lineBreakByContent = lineBreakByContent,
                     emptyErase = EmptyErase.CHANGE_TYPE,
                     enabled = editable,
+                    isDarkTheme = isDarkTheme,
                     onSelectionLister = manager::toggleSelection,
                 )
             }
@@ -216,6 +219,7 @@ object CommonDrawers {
             selectionState = manager.selectionState,
             drawConfig = drawConfig,
             fontFamily = fontFamily,
+            isDarkTheme = isDarkTheme,
         )
 
         val imageDrawer = ImageDrawer(
@@ -287,6 +291,7 @@ private fun RowScope.messageDrawer(
     textStyle: @Composable (StoryStep) -> TextStyle = { defaultTextStyle(it) },
     lineBreakByContent: Boolean,
     enabled: Boolean,
+    isDarkTheme: Boolean,
     emptyErase: EmptyErase,
     eventListener: (KeyEvent, TextFieldValue, StoryStep, Int, EmptyErase, Int, EndOfText) -> Boolean,
     onSelectionLister: (Int) -> Unit
@@ -303,6 +308,7 @@ private fun RowScope.messageDrawer(
         enabled = enabled,
         emptyErase = emptyErase,
         selectionState = manager.selectionState,
-        onSelectionLister = onSelectionLister
+        onSelectionLister = onSelectionLister,
+        isDarkTheme = isDarkTheme
     )
 }

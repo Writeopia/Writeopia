@@ -16,6 +16,7 @@ interface DrawersFactory {
         manager: WriteopiaStateManager,
         defaultBorder: Shape,
         editable: Boolean,
+        isDarkTheme: Boolean,
         groupsBackgroundColor: Color,
         onHeaderClick: () -> Unit,
         drawConfig: DrawConfig,

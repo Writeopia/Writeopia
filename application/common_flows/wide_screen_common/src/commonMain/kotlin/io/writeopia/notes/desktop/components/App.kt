@@ -186,6 +186,7 @@ fun DesktopApp(
                                 .background(MaterialTheme.colorScheme.background)
                         ) {
                             Navigation(
+                                isDarkTheme = colorTheme.isDarkTheme(),
                                 startDestination = startDestination,
                                 notesMenuInjection = notesMenuInjection,
                                 sideMenuKmpInjector = sideMenuInjector,

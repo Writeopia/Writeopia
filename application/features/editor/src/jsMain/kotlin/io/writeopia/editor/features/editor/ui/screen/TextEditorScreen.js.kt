@@ -10,6 +10,7 @@ import io.writeopia.ui.drawer.factory.DefaultDrawersJs
 actual fun TextEditorScreen(
     documentId: String?,
     title: String?,
+    isDarkTheme: Boolean,
     noteEditorViewModel: NoteEditorViewModel,
     navigateBack: () -> Unit,
     playPresentation: () -> Unit,

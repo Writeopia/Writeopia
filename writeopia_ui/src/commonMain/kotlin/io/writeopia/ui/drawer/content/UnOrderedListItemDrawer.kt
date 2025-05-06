@@ -117,7 +117,8 @@ private fun UnOrderedListItemPreview() {
         messageDrawer = {
             TextDrawer(
                 selectionState = MutableStateFlow(false),
-                onSelectionLister = {}
+                onSelectionLister = {},
+                isDarkTheme = true
             )
         }
     ).Step(

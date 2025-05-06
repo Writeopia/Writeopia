@@ -10,6 +10,7 @@ import io.writeopia.ui.drawer.factory.DefaultDrawersDesktop
 actual fun TextEditorScreen(
     documentId: String?,
     title: String?,
+    isDarkTheme: Boolean,
     noteEditorViewModel: NoteEditorViewModel,
     navigateBack: () -> Unit,
     playPresentation: () -> Unit,
@@ -17,6 +18,7 @@ actual fun TextEditorScreen(
     modifier: Modifier,
 ) {
     DesktopNoteEditorScreen(
+        isDarkTheme = isDarkTheme,
         documentId = documentId,
         noteEditorViewModel = noteEditorViewModel,
         drawersFactory = DefaultDrawersDesktop,
