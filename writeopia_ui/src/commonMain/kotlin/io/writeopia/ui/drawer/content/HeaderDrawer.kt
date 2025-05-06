@@ -261,4 +261,3 @@ private fun sampleStoryStep() = StoryStep(
     ),
     text = "Document Title",
 )
-

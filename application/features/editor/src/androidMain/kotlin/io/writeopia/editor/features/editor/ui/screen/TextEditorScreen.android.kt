@@ -16,6 +16,7 @@ actual fun TextEditorScreen(
     modifier: Modifier
 ) {
     NoteEditorScreen(
+        isDarkTheme = isDarkTheme,
         documentId = documentId,
         title = title,
         noteEditorViewModel = noteEditorViewModel,

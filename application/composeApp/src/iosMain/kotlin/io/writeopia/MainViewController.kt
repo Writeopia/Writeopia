@@ -7,18 +7,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.ComposeUIViewController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import io.writeopia.auth.core.token.AppBearerTokenHandler
 import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.navigation.authNavigation
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.KmpSearchInjection
 import io.writeopia.mobile.AppMobile
 import io.writeopia.navigation.MobileNavigationViewModel
-import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notemenu.navigation.navigateToNotes
-import io.writeopia.sdk.network.injector.ConnectionInjector
 import io.writeopia.sqldelight.database.DatabaseCreation
 import io.writeopia.sqldelight.database.DatabaseFactory
 import io.writeopia.sqldelight.database.driver.DriverFactory
@@ -55,31 +53,14 @@ fun MainViewController() = ComposeUIViewController {
                 NotesMenuKmpInjection.mobile(sqlDelightDaoInjector)
             }
 
-            val connectionInjection =
-                remember {
-                    ConnectionInjector(
-                        bearerTokenHandler = AppBearerTokenHandler,
-                        baseUrl = "https://writeopia.io/api",
-                        disableWebsocket = true
-                    )
-                }
+            val editorInjector = EditorKmpInjector.mobile(sqlDelightDaoInjector)
 
-            val editorInjector = EditorKmpInjector.mobile(
-                sqlDelightDaoInjector,
-                connectionInjection,
-                uiConfigurationInjector.provideUiConfigurationRepository(),
-            )
-
-            val authInjection = AuthInjection(
-                connectionInjection,
-                sqlDelightDaoInjector
-            )
+            val authInjection = AuthInjection(sqlDelightDaoInjector)
             val navigationViewModel = viewModel { MobileNavigationViewModel() }
 
             val navController = rememberNavController()
 
-            //Todo: Fix this!
-            AppMobile(isDarkTheme = true,
+            AppMobile(
                 navController = navController,
                 searchInjector = searchInjection,
                 uiConfigViewModel = uiConfigurationViewModel,

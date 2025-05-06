@@ -76,6 +76,7 @@ const val NOTE_EDITION_SCREEN_TITLE_TEST_TAG = "noteEditionScreenTitle"
 
 @Composable
 internal fun NoteEditorScreen(
+    isDarkTheme: Boolean,
     documentId: String?,
     title: String?,
     noteEditorViewModel: NoteEditorViewModel,
@@ -144,6 +145,7 @@ internal fun NoteEditorScreen(
                     .background(MaterialTheme.colorScheme.background)
             ) {
                 TextEditor(
+                    isDarkTheme = isDarkTheme,
                     noteEditorViewModel,
                     DefaultDrawersAndroid,
                     Modifier

@@ -217,7 +217,8 @@ fun DesktopMessageDrawerPreview() {
     TextDrawer(
         isDarkTheme = true,
         selectionState = MutableStateFlow(false),
-        onSelectionLister = {}).Text(
+        onSelectionLister = {}
+    ).Text(
         step = StoryStep(text = "Some text", type = StoryTypes.TEXT.type),
         drawInfo = DrawInfo(),
         interactionSource = remember { MutableInteractionSource() },

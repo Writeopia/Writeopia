@@ -18,6 +18,7 @@ actual fun TextEditorScreen(
     modifier: Modifier,
 ) {
     DesktopNoteEditorScreen(
+        isDarkTheme = isDarkTheme,
         documentId = documentId,
         noteEditorViewModel = noteEditorViewModel,
         drawersFactory = DefaultDrawersJs,

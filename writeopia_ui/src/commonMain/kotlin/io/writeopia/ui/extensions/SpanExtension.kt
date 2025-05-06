@@ -24,7 +24,7 @@ fun Span.toSpanStyle(isDarkTheme: Boolean): SpanStyle =
             SpanStyle(background = Color.Green)
         }
 
-        Span.HIGHLIGHT_RED -> if(isDarkTheme) {
+        Span.HIGHLIGHT_RED -> if (isDarkTheme) {
             SpanStyle(background = Color(0xFFD32F2F))
         } else {
             SpanStyle(background = Color(0xFFEF9A9A))

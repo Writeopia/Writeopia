@@ -132,7 +132,8 @@ fun CheckItemDrawerStepPreview() {
                 onSelectionLister = {},
                 isDarkTheme = true
             )
-        }).Step(
+        }
+    ).Step(
         step = StoryStep(
             type = StoryTypes.CHECK_ITEM.type,
             text = "This is a check item"
