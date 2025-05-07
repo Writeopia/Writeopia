@@ -15,6 +15,7 @@ ktor = "3.0.3"
 ktlint = "12.1.2"
 ktx = "1.15.0"
 material = "1.12.0"
+platformtools = "0.2.9"
 postgresSocketFactory = "1.15.1"
 r2dbcDriver = "2.0.2"
 room = "2.7.0-rc03"
@@ -78,6 +79,8 @@ ktor-server-core = { module = "io.ktor:ktor-server-core-jvm" }
 ktor-server-websocket = { module = "io.ktor:ktor-server-websockets-jvm" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm" }
 ktor-server-tests = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+#material3-desktop = { module = "org.jetbrains.compose.material3:material3-desktop", version.ref = "material3" }
+platformtools-darkmodedetector = { module = "io.github.kdroidfilter:platformtools.darkmodedetector", version.ref = "platformtools" }
 r2dbc-driver = { module = "app.cash.sqldelight:r2dbc-driver", version.ref = "r2dbcDriver" }
 sql-postgres-socket-factory = { module = "com.google.cloud.sql:postgres-socket-factory", version.ref = "postgresSocketFactory" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }

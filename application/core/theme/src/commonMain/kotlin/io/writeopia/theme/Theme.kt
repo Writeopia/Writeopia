@@ -1,6 +1,5 @@
 package io.writeopia.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -9,6 +8,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 
 private val DarkColorPalette = darkColorScheme(
     primary = LIGHT_PURPLE,
@@ -71,7 +71,7 @@ val LocalWriteopiaColors = staticCompositionLocalOf {
 
 @Composable
 fun WrieopiaTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = isSystemInDarkMode(),
     content: @Composable () -> Unit
 ) {
     val globalBackground = if (darkTheme) Color(0xFF252525) else Color(0xFFF8F0F9)

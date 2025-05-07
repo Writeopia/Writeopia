@@ -11,12 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.ApplicationScope
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.*
+import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
+import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.common.utils.ui.GlobalToastBox
@@ -167,7 +164,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
             windowState.placement = WindowPlacement.Floating
         }
     }
-
     Window(
         onCloseRequest = onCloseRequest,
         title = "",
@@ -177,6 +173,12 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
         },
         icon = CommonImages.logo()
     ) {
+        //  Synchronize the topbar on Windows OS with the System Theme
+        window.setWindowsAdaptiveTitleBar(
+            dark = isSystemInDarkMode()
+            // TODO Syncrhonize with the selected Theme by the user
+        )
+
         Box(Modifier.fillMaxSize()) {
             LaunchedEffect(window.rootPane) {
                 with(window.rootPane) {

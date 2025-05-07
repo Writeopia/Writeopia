@@ -64,6 +64,7 @@ kotlin {
                 implementation(libs.room.runtime)
 
                 implementation(libs.compose.navigation)
+                implementation(libs.platformtools.darkmodedetector)
             }
         }
 

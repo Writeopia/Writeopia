@@ -1,7 +1,7 @@
 package io.writeopia.model
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 
 enum class ColorThemeOption(val theme: String) {
     LIGHT("light"),
@@ -20,6 +20,6 @@ fun ColorThemeOption?.isDarkTheme(): Boolean =
     when (this) {
         ColorThemeOption.LIGHT -> false
         ColorThemeOption.DARK -> true
-        ColorThemeOption.SYSTEM -> isSystemInDarkTheme()
-        else -> isSystemInDarkTheme()
+        ColorThemeOption.SYSTEM -> isSystemInDarkMode()
+        else -> isSystemInDarkMode()
     }
