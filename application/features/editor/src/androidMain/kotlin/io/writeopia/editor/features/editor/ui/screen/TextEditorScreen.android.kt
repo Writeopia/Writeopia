@@ -8,6 +8,7 @@ import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 actual fun TextEditorScreen(
     documentId: String?,
     title: String?,
+    isDarkTheme: Boolean,
     noteEditorViewModel: NoteEditorViewModel,
     navigateBack: () -> Unit,
     playPresentation: () -> Unit,
@@ -15,6 +16,7 @@ actual fun TextEditorScreen(
     modifier: Modifier
 ) {
     NoteEditorScreen(
+        isDarkTheme = isDarkTheme,
         documentId = documentId,
         title = title,
         noteEditorViewModel = noteEditorViewModel,

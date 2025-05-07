@@ -89,4 +89,5 @@
   <string name="ok">Confirmar</string>
   <string name="summarize">Resumir</string>
   <string name="action_points">Acionáveis</string>
+  <string name="highlight">Marca texto</string>
 </resources>

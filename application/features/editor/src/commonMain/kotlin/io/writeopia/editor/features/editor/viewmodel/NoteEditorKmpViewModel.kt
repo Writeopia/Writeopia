@@ -119,6 +119,8 @@ class NoteEditorKmpViewModel(
         }
     }
 
+    private var isDarkTheme: Boolean = true
+
     /**
      * This property defines if the document should be edited (you can write in it, for example)
      */
@@ -248,6 +250,10 @@ class NoteEditorKmpViewModel(
 
     override fun deleteSelection() {
         writeopiaManager.deleteSelection()
+    }
+
+    override fun setTheme(isDarkTheme: Boolean) {
+        this.isDarkTheme = isDarkTheme
     }
 
     override fun handleBackAction(navigateBack: () -> Unit) {
@@ -510,7 +516,7 @@ class NoteEditorKmpViewModel(
             .map { storyStep ->
                 val text = storyStep.text ?: ""
 
-                Spans.createStringWithSpans(text, storyStep.spans)
+                Spans.createStringWithSpans(text, storyStep.spans, isDarkTheme)
             }.reduce { acc, annotatedString ->
                 acc + lineBreak + annotatedString
             }

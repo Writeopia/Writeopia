@@ -28,6 +28,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AppTextEditor(
+    isDarkTheme: Boolean,
     manager: WriteopiaStateManager,
     viewModel: NoteEditorViewModel,
     drawersFactory: DrawersFactory,
@@ -52,6 +53,7 @@ fun AppTextEditor(
 
     Box(modifier) {
         TextEditor(
+            isDarkTheme = isDarkTheme,
             viewModel,
             drawersFactory,
             onDocumentLinkClick = onDocumentLinkClick,

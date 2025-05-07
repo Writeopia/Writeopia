@@ -30,6 +30,7 @@ import io.writeopia.notemenu.navigation.notesMenuNavigation
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun Navigation(
+    isDarkTheme: Boolean,
     startDestination: String = Destinations.AUTH_MENU_INNER_NAVIGATION.id,
     navController: NavHostController = rememberNavController(),
     notesMenuInjection: NotesMenuInjection,
@@ -62,6 +63,7 @@ fun Navigation(
             }
 
             editorNavigation(
+                isDarkTheme = isDarkTheme,
                 navigateBack = {
                     navController.navigateUp()
                 },

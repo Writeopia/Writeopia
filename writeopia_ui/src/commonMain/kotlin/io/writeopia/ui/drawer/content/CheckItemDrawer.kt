@@ -129,9 +129,11 @@ fun CheckItemDrawerStepPreview() {
         messageDrawer = {
             TextDrawer(
                 selectionState = MutableStateFlow(false),
-                onSelectionLister = {}
+                onSelectionLister = {},
+                isDarkTheme = true
             )
-        }).Step(
+        }
+    ).Step(
         step = StoryStep(
             type = StoryTypes.CHECK_ITEM.type,
             text = "This is a check item"

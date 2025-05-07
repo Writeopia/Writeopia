@@ -38,6 +38,7 @@ object DefaultDrawersDesktop : DrawersFactory {
         manager: WriteopiaStateManager,
         defaultBorder: Shape,
         editable: Boolean,
+        isDarkTheme: Boolean,
         groupsBackgroundColor: Color,
         onHeaderClick: () -> Unit,
         drawConfig: DrawConfig,
@@ -55,6 +56,7 @@ object DefaultDrawersDesktop : DrawersFactory {
             dragIconWidth = 16.dp,
             lineBreakByContent = true,
             isDesktop = true,
+            isDarkTheme = isDarkTheme,
             drawConfig = drawConfig,
             eventListener = KeyEventListenerFactory.desktop(
                 manager = manager,

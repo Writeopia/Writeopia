@@ -256,12 +256,6 @@
     <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/external/HandleImageDrop.kt">
         <error line="13" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/CheckItemDrawer.kt">
-        <error line="134" column="9" source="standard:wrapping" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/HeaderDrawer.kt">
-        <error line="261" column="1" source="standard:no-consecutive-blank-lines" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/decorations/TagDecoration.kt">
         <error line="13" column="82" source="standard:function-return-type-spacing" />
         <error line="13" column="83" source="standard:colon-spacing" />
@@ -458,9 +452,6 @@
         <error line="146" column="1" source="standard:indent" />
         <error line="147" column="1" source="standard:indent" />
         <error line="148" column="1" source="standard:indent" />
-    </file>
-    <file name="src/commonTest/kotlin/io/writeopia/ui/manager/WriteopiaStateManagerTest.kt">
-        <error line="317" column="30" source="standard:discouraged-comment-location" />
     </file>
     <file name="src/commonTest/kotlin/io/writeopia/ui/utils/MapStoryData.kt">
         <error line="189" column="1" source="standard:max-line-length" />

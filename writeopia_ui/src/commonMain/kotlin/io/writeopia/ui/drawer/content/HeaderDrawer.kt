@@ -181,6 +181,7 @@ fun headerDrawer(
     selectionState: StateFlow<Boolean>,
     drawConfig: DrawConfig,
     enabled: Boolean = true,
+    isDarkTheme: Boolean,
     fontFamily: FontFamily? = null
 ): StoryStepDrawer =
     HeaderDrawer(
@@ -189,6 +190,7 @@ fun headerDrawer(
             TextDrawer(
                 modifier = Modifier.padding(start = drawConfig.textDrawerStartPadding.dp),
                 enabled = enabled,
+                isDarkTheme = isDarkTheme,
                 onTextEdit = manager::handleTextInput,
                 onKeyEvent = onKeyEvent,
                 lineBreakByContent = lineBreakByContent,
@@ -211,6 +213,7 @@ private fun HeaderDrawerStepPreview() {
         textDrawer = {
             TextDrawer(
                 modifier = Modifier.padding(start = 16.dp, bottom = 16.dp),
+                isDarkTheme = true,
                 onTextEdit = { _, _, _ -> },
                 textStyle = {
                     MaterialTheme.typography.headlineMedium.copy(
@@ -235,6 +238,7 @@ private fun HeaderDrawerStepPreviewNoColor() {
         textDrawer = {
             TextDrawer(
                 modifier = Modifier.padding(start = 16.dp, bottom = 16.dp),
+                isDarkTheme = true,
                 onTextEdit = { _, _, _ -> },
                 textStyle = {
                     MaterialTheme.typography.headlineMedium.copy(
@@ -257,4 +261,3 @@ private fun sampleStoryStep() = StoryStep(
     ),
     text = "Document Title",
 )
-

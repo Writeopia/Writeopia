@@ -30,6 +30,7 @@ object DefaultDrawersAndroid : DrawersFactory {
         manager: WriteopiaStateManager,
         defaultBorder: Shape,
         editable: Boolean,
+        isDarkTheme: Boolean,
         groupsBackgroundColor: Color,
         onHeaderClick: () -> Unit,
         drawConfig: DrawConfig,
@@ -46,6 +47,7 @@ object DefaultDrawersAndroid : DrawersFactory {
             onHeaderClick,
             lineBreakByContent = true,
             isDesktop = false,
+            isDarkTheme = isDarkTheme,
             drawConfig = drawConfig,
             eventListener = KeyEventListenerFactory.android(
                 manager,

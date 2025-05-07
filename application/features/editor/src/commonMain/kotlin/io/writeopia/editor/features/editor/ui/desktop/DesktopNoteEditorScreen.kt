@@ -31,6 +31,7 @@ import io.writeopia.ui.drawer.factory.DrawersFactory
 
 @Composable
 fun DesktopNoteEditorScreen(
+    isDarkTheme: Boolean,
     documentId: String?,
     noteEditorViewModel: NoteEditorViewModel,
     drawersFactory: DrawersFactory,
@@ -59,6 +60,7 @@ fun DesktopNoteEditorScreen(
                 .padding(end = 56.dp),
             content = {
                 AppTextEditor(
+                    isDarkTheme = isDarkTheme,
                     noteEditorViewModel.writeopiaManager,
                     noteEditorViewModel,
                     drawersFactory = drawersFactory,
@@ -77,6 +79,7 @@ fun DesktopNoteEditorScreen(
             modifier = Modifier
                 .padding(horizontal = 10.dp, vertical = 40.dp)
                 .align(Alignment.TopEnd),
+            isDarkTheme,
             fontStyleSelected = { noteEditorViewModel.fontFamily },
             isEditableState = noteEditorViewModel.isEditable,
             isFavorite = noteEditorViewModel.notFavorite,

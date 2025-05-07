@@ -25,6 +25,7 @@ import io.writeopia.theme.WriteopiaTheme
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 fun NavGraphBuilder.editorNavigation(
+    isDarkTheme: Boolean,
     navigateBack: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
     editorInjector: TextEditorInjector,
@@ -57,9 +58,12 @@ fun NavGraphBuilder.editorNavigation(
                         copyManager = CopyManager(LocalClipboardManager.current)
                     )
 
+                noteDetailsViewModel.setTheme(isDarkTheme)
+
                 TextEditorScreen(
                     noteId.takeIf { it != "null" },
                     noteTitle.takeIf { it != "null" },
+                    isDarkTheme,
                     noteDetailsViewModel,
                     playPresentation = {
                         navigateToPresentation(noteId)
@@ -79,11 +83,14 @@ fun NavGraphBuilder.editorNavigation(
                 editorInjector.provideNoteDetailsViewModel(
                     parentFolderId ?: "root",
                     copyManager = CopyManager(LocalClipboardManager.current)
-                )
+                ).apply {
+                    setTheme(isDarkTheme)
+                }
 
             TextEditorScreen(
                 documentId = null,
                 title = null,
+                isDarkTheme = isDarkTheme,
                 noteEditorViewModel = notesDetailsViewModel,
                 navigateBack = navigateBack,
                 playPresentation = {

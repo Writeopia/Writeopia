@@ -114,6 +114,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun toggleFavorite()
 
     fun receiveExternalFile(files: List<ExternalFile>, position: Int)
+
+    fun setTheme(isDarkTheme: Boolean)
 }
 
 data class ShareDocument(val content: String, val title: String, val type: String)
