@@ -57,8 +57,26 @@ jobs:
   general_build:
     name: General - Build debug
     runs-on: ubuntu-22.04
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: writeopia
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     env:
       isCI: "true"
+      IN_MEMORY_DATABASE: 'true'
+      DB_USER: 'user'
+      WRITEOPIA_FIREBASE_ID: 'id'
+      WRITEOPIA_CLIENT_BASE_URL: "baseurl"
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -67,6 +85,18 @@ jobs:
         with:
           distribution: adopt
           java-version: '21'
+      - name: Wait for Postgres to be healthy
+        run: |
+          for i in {1..10}; do
+            pg_isready -h localhost -p 5432 && echo "Postgres is ready" && break
+            echo "Waiting for postgres..." && sleep 5
+          done
+      - name: Run SQL init script
+        run: |
+          sudo apt-get install -y postgresql-client
+          psql -h localhost -U postgres -d writeopia -f ./docker/postgres/init.sql
+        env:
+          PGPASSWORD: postgres
       - name: Build debug
         run: ./gradlew assembleDebug test --no-daemon
   ios_build:
