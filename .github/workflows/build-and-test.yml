@@ -124,7 +124,7 @@ jobs:
       - name: Run SQL init script
         run: |
           sudo apt-get install -y postgresql-client
-          psql -h localhost -U postgres -d writeopia -f ./init.sql
+          psql -h localhost -U postgres -d writeopia -f ./docker/postgres/init.sql
         env:
           PGPASSWORD: postgres
       - name: Build backend
