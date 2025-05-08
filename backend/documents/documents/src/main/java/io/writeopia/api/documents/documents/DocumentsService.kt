@@ -22,13 +22,14 @@ object DocumentsService {
 
     suspend fun receiveDocuments(
         documents: List<Document>,
-        writeopiaDb: WriteopiaDbBackend
+        writeopiaDb: WriteopiaDbBackend,
+        useAi: Boolean
     ): Boolean {
         documents.forEach { document ->
             writeopiaDb.saveDocument(document)
         }
 
-        return sendToAiHub(documents)
+        return if(useAi) sendToAiHub(documents) else true
     }
 
     suspend fun search(query: String, writeopiaDb: WriteopiaDbBackend): ResultData<List<Document>> =

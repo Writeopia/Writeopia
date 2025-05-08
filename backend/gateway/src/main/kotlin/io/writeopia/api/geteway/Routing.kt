@@ -8,9 +8,9 @@ import io.ktor.server.routing.routing
 import io.writeopia.api.documents.routing.documentsRoute
 import io.writeopia.sql.WriteopiaDbBackend
 
-fun Application.configureRouting(writeopiaDb: WriteopiaDbBackend) {
+fun Application.configureRouting(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
     routing {
-        documentsRoute(writeopiaDb)
+        documentsRoute(writeopiaDb, useAi)
 
         get {
             call.respondText("Hi")

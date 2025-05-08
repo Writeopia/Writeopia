@@ -15,8 +15,11 @@ fun main() {
     ).start(wait = true)
 }
 
-fun Application.module(writeopiaDb: WriteopiaDbBackend= configurePersistence()) {
-    configureRouting(writeopiaDb)
+fun Application.module(
+    writeopiaDb: WriteopiaDbBackend = configurePersistence(),
+    useAi: Boolean = System.getenv("WRITEOPIA_USE_AI")?.toBoolean() ?: false
+) {
+    configureRouting(writeopiaDb, useAi)
     configureSerialization()
     configureEditorSockets()
     configureHTTP()

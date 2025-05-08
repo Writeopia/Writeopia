@@ -18,7 +18,7 @@ import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sql.WriteopiaDbBackend
 
-fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
+fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
     route("api/document") {
         get("/{id}") {
             val id = call.pathParameters["id"]!!
@@ -74,7 +74,6 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
         }
 
         get("/search") {
-            println("received search request!")
             val query = call.queryParameters["q"]
 
             if (query == null) {
@@ -93,13 +92,12 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend) {
         }
 
         post<List<DocumentApi>> { documentApiList ->
-            println("Received documents!")
-
             try {
                 if (documentApiList.isNotEmpty()) {
                     val addedToHub = DocumentsService.receiveDocuments(
                         documentApiList.map { it.toModel() },
-                        writeopiaDb
+                        writeopiaDb,
+                        useAi
                     )
 
                     if (addedToHub) {
