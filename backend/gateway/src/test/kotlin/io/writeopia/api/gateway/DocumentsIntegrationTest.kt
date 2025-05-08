@@ -19,10 +19,9 @@ import kotlin.test.assertEquals
 
 class ApplicationTest {
 
-    val db = configurePersistence()
+    private val db = configurePersistence()
 
     @Test
-    @Ignore
     fun `it should be possible to save and query document by id`() = testApplication {
         application {
             module(db)
@@ -30,33 +29,37 @@ class ApplicationTest {
 
         val client = defaultClient()
 
-        val documentApi = DocumentApi(
-            id = "testiaskkakakaka",
-            title = "Test Note",
-            userId = "some user",
-            parentId = "parentIdddd",
-            isLocked = false,
-            createdAt = 1000L,
-            lastUpdatedAt = 2000L
+        val documentApiList = listOf(
+            DocumentApi(
+                id = "testiaskkakakaka",
+                title = "Test Note",
+                userId = "some user",
+                parentId = "parentIdddd",
+                isLocked = false,
+                createdAt = 1000L,
+                lastUpdatedAt = 2000L,
+                lastSyncedAt = 2000
+            )
         )
 
         val response = client.post("/api/document") {
             contentType(ContentType.Application.Json)
-            setBody(documentApi)
+            setBody(documentApiList)
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("/api/document/${documentApi.id}")
+        val response1 = client.get("/api/document/${documentApiList.first().id}")
 
         assertEquals(HttpStatusCode.OK, response1.status)
-        assertEquals(documentApi, response1.body())
+        assertEquals(documentApiList.first(), response1.body())
 
-        db.deleteDocumentById(documentApi.id)
+        documentApiList.forEach { documentApi ->
+            db.deleteDocumentById(documentApi.id)
+        }
     }
 
     @Test
-    @Ignore
     fun `it should be possible to save and query documents by parent id`() = testApplication {
         application {
             module(db)
@@ -64,33 +67,39 @@ class ApplicationTest {
 
         val client = defaultClient()
 
-        val documentApi = DocumentApi(
-            id = "testias",
-            title = "Test Note",
-            userId = "some user",
-            parentId = "parentId",
-            isLocked = false,
-            createdAt = 1000L,
-            lastUpdatedAt = 2000L
+        val documentApiList = listOf(
+            DocumentApi(
+                id = "testiaskkakakaka",
+                title = "Test Note",
+                userId = "some user",
+                parentId = "parentIdddd",
+                isLocked = false,
+                createdAt = 1000L,
+                lastUpdatedAt = 2000L,
+                lastSyncedAt = 2000
+            )
         )
 
         val response = client.post("/api/document") {
             contentType(ContentType.Application.Json)
-            setBody(documentApi)
+            setBody(documentApiList)
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("/api/document/parent/${documentApi.parentId}")
+        val response1 = client.get(
+            "/api/document/parent/${documentApiList.first().parentId}"
+        )
 
         assertEquals(HttpStatusCode.OK, response1.status)
-        assertEquals(listOf(documentApi), response1.body())
+        assertEquals(listOf(documentApiList.first()), response1.body())
 
-        db.deleteDocumentById(documentApi.id)
+        documentApiList.forEach { documentApi ->
+            db.deleteDocumentById(documentApi.id)
+        }
     }
 
     @Test
-    @Ignore
     fun `it should be possible to save and query ids by parent id`() = testApplication {
         application {
             module(db)
@@ -125,7 +134,6 @@ class ApplicationTest {
     }
 
     @Test
-    @Ignore
     fun `it should be possible to get diff of folders`() = testApplication {
         application {
             module(db)
@@ -140,21 +148,22 @@ class ApplicationTest {
             parentId = "parentId",
             isLocked = false,
             createdAt = 1000L,
-            lastUpdatedAt = 2000L
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 4000
         )
 
         val documentApi2 = documentApi.copy(id = "testias2", lastUpdatedAt = 4000L)
 
         val response = client.post("/api/document") {
             contentType(ContentType.Application.Json)
-            setBody(documentApi)
+            setBody(listOf(documentApi))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
         val response1 = client.post("/api/document") {
             contentType(ContentType.Application.Json)
-            setBody(documentApi2)
+            setBody(listOf(documentApi2))
         }
 
         assertEquals(HttpStatusCode.OK, response1.status)
