@@ -23,6 +23,7 @@ services:
       DATABASE_URL: jdbc:postgresql://postgres:5432/writeopia
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
+      WRITEOPIA_USE_AI: false
     restart: unless-stopped
 #  ai-hub:
 #    image: ghcr.io/writeopia/writeopia-ai-hub:latest
