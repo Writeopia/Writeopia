@@ -31,6 +31,8 @@ interface ChooseNoteViewModel : FolderController {
 
     val showLocalSyncConfigState: StateFlow<ConfigState>
 
+    val showSelfHostedBackendConfigState: StateFlow<Boolean>
+
     val syncInProgress: StateFlow<SyncState>
 
     val titlesToDelete: StateFlow<List<String>>
@@ -59,6 +61,10 @@ interface ChooseNoteViewModel : FolderController {
     fun onSyncLocallySelected()
 
     fun configureDirectory()
+
+    fun configureSelfHostedBackend()
+
+    fun hideSelfHostedBackendConfig()
 
     fun onWriteLocallySelected()
 

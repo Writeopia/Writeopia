@@ -32,6 +32,7 @@ import io.writeopia.common.utils.file.directoryChooserSave
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.ui.LocalToastInfo
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.notemenu.ui.components.SelfHostedBackendDialog
 import io.writeopia.notemenu.ui.screen.actions.DesktopNoteActionsMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesConfigurationMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu
@@ -147,7 +148,8 @@ fun DesktopNotesMenu(
                 syncInProgressState = chooseNoteViewModel.syncInProgress,
                 onSyncLocallySelected = chooseNoteViewModel::onSyncLocallySelected,
                 onWriteLocallySelected = chooseNoteViewModel::onWriteLocallySelected,
-                onForceGraphSelected = navigateToForceGraph
+                onForceGraphSelected = navigateToForceGraph,
+                configureSelfHostedBackend = chooseNoteViewModel::configureSelfHostedBackend
             )
 
             val showOnboard by chooseNoteViewModel.showOnboardingState.collectAsState()
@@ -206,6 +208,18 @@ fun DesktopNotesMenu(
                     onDismissRequest = chooseNoteViewModel::hideConfigSyncMenu,
                     onConfirmation = chooseNoteViewModel::confirmWorkplacePath
                 )
+            }
+
+            val showSelfHostedConfig by chooseNoteViewModel.showSelfHostedBackendConfigState.collectAsState()
+
+            if (showSelfHostedConfig) {
+                val notesMenuInjection = (chooseNoteViewModel as? ChooseNoteKmpViewModel)?.documentsInjection
+                if (notesMenuInjection != null) {
+                    SelfHostedBackendDialog(
+                        documentsInjection = notesMenuInjection,
+                        onDismiss = chooseNoteViewModel::hideSelfHostedBackendConfig
+                    )
+                }
             }
 
             val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
