@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  writeopia-backend:
+    build:
+      context: ../../..
+      dockerfile: backend/documents/self_hosted/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - writeopia-data:/root/.writeopia
+    restart: unless-stopped
+
+volumes:
+  writeopia-data:

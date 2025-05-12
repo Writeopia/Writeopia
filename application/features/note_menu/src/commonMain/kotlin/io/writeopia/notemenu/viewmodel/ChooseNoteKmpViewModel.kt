@@ -14,6 +14,7 @@ import io.writeopia.common.utils.toBoolean
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
+import io.writeopia.core.folders.di.DocumentsInjection
 import io.writeopia.core.folders.repository.NotesUseCase
 import io.writeopia.core.folders.sync.DocumentsSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
@@ -60,6 +61,7 @@ internal class ChooseNoteKmpViewModel(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val documentsSync: DocumentsSync,
+    private val documentsInjection: DocumentsInjection? = null,
     private val folderController: FolderStateController = FolderStateController(
         notesUseCase,
         authManager
@@ -135,6 +137,9 @@ internal class ChooseNoteKmpViewModel(
 
     private val _showLocalSyncConfig = MutableStateFlow<ConfigState>(ConfigState.Idle)
     override val showLocalSyncConfigState = _showLocalSyncConfig.asStateFlow()
+
+    private val _showSelfHostedBackendConfig = MutableStateFlow(false)
+    override val showSelfHostedBackendConfigState = _showSelfHostedBackendConfig.asStateFlow()
 
     private val _editState = MutableStateFlow(false)
     override val editState: StateFlow<Boolean> = _editState.asStateFlow()
@@ -600,4 +605,12 @@ internal class ChooseNoteKmpViewModel(
     }
 
     private suspend fun getUserId(): String = authManager.getUser().id
+
+    override fun configureSelfHostedBackend() {
+        _showSelfHostedBackendConfig.value = true
+    }
+
+    override fun hideSelfHostedBackendConfig() {
+        _showSelfHostedBackendConfig.value = false
+    }
 }

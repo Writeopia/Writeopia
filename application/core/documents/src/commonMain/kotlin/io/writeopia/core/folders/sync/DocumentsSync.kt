@@ -2,6 +2,7 @@ package io.writeopia.core.folders.sync
 
 import io.writeopia.common.utils.ResultData
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.api.SelfHostedBackendManager
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -9,7 +10,8 @@ import kotlinx.datetime.Instant
 class DocumentsSync(
     private val documentRepository: DocumentRepository,
     private val documentsApi: DocumentsApi,
-    private val documentConflictHandler: DocumentConflictHandler
+    private val documentConflictHandler: DocumentConflictHandler,
+    private val selfHostedBackendManager: SelfHostedBackendManager? = null
 ) {
 
     /**

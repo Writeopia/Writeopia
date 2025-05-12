@@ -13,12 +13,28 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.datetime.Instant
 
-class DocumentsApi(private val client: HttpClient, private val baseUrl: String) {
+class DocumentsApi(
+    private val client: HttpClient,
+    private val baseUrl: String,
+    private val selfHostedBackendManager: SelfHostedBackendManager? = null
+) {
+
+    private suspend fun getEffectiveBaseUrl(): String {
+        // If there's a connected self-hosted backend, use that URL instead
+        val connectionState = selfHostedBackendManager?.connectionState?.firstOrNull()
+        return if (connectionState is SelfHostedConnectionState.Connected) {
+            connectionState.url
+        } else {
+            baseUrl
+        }
+    }
 
     suspend fun getNewDocuments(folderId: String, lastSync: Instant): ResultData<List<Document>> {
-        val response = client.post("$baseUrl/api/document/folder/diff") {
+        val effectiveBaseUrl = getEffectiveBaseUrl()
+        val response = client.post("$effectiveBaseUrl/api/document/folder/diff") {
             contentType(ContentType.Application.Json)
             setBody(FolderDiffRequest(folderId, lastSync.toEpochMilliseconds()))
         }
@@ -32,7 +48,8 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
     }
 
     suspend fun sendDocuments(documents: List<Document>): ResultData<Unit> {
-        val response = client.post("$baseUrl/api/document") {
+        val effectiveBaseUrl = getEffectiveBaseUrl()
+        val response = client.post("$effectiveBaseUrl/api/document") {
             contentType(ContentType.Application.Json)
             setBody(documents.map { it.toApi() })
         }
