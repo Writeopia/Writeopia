@@ -151,7 +151,10 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
                     drawText(
                         textMeasurer,
                         text = " ${node.label} ",
-                        topLeft = Offset(node.x - 30, node.y + 20),
+                        topLeft = Offset(
+                            max(min(node.x - 30, maxWidth.value - 50), 0F + 50),
+                            max(min(node.y + 20, maxHeight.value - 50), 0F + 50)
+                        ),
                         style = textStyle
                     )
                 }

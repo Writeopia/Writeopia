@@ -1,12 +1,10 @@
 package io.writeopia.documents.graph.navigation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
@@ -33,7 +31,7 @@ fun NavGraphBuilder.documentsGraphNavigation(
             val state by viewModel.graphSelectedState.collectAsState()
 
             ForceDirectedGraph(
-                modifier = Modifier.fillMaxSize().background(Color.LightGray),
+                modifier = Modifier.fillMaxSize(),
                 nodes = state.nodes,
                 links = state.links,
                 onNodeSelected = viewModel::selectNode
