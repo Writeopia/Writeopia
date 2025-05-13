@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.documents.graph.ItemData
 import io.writeopia.documents.graph.extensions.toGraph
 import io.writeopia.documents.graph.repository.GraphRepository
-import io.writeopia.forcegraph.Graph
+import io.writeopia.forcegraph.model.Graph
 import io.writeopia.forcegraph.Link
 import io.writeopia.forcegraph.Node
 import kotlinx.coroutines.ExperimentalCoroutinesApi
