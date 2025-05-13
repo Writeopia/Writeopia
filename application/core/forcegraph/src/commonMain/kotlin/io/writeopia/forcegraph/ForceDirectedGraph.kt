@@ -17,6 +17,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
 
@@ -45,6 +46,7 @@ data class Link(
 
 @Composable
 fun BoxWithConstraintsScope.ForceDirectedGraph(
+    modifier: Modifier = Modifier,
     nodes: List<Node>,
     links: List<Link>,
     onNodeSelected: (String) -> Unit
@@ -60,8 +62,7 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
     val nodeRadius = if (nodes.size < 15) (25 - nodes.size).toFloat() else 8f
 
     Canvas(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = modifier
             .pointerInput(nodes) {
                 detectTapGestures(
                     onTap = { offset ->
@@ -134,7 +135,10 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
         nodes.forEach { node ->
             drawCircle(
                 color = if (node.isDragged) Color.Red else nodeColor(node.isFolder),
-                center = Offset(min(node.x, maxWidth.value), min(node.y, maxHeight.value)),
+                center = Offset(
+                    max(min(node.x, maxWidth.value - nodeRadius / 2), 0F + nodeRadius / 2),
+                    max(min(node.y, maxHeight.value - nodeRadius / 2), 0F + nodeRadius / 2)
+                ),
                 radius = if (node.isFolder) nodeRadius else nodeRadius / 2
             )
         }

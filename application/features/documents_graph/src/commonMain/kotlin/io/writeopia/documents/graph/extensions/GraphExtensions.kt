@@ -1,7 +1,7 @@
 package io.writeopia.documents.graph.extensions
 
 import io.writeopia.documents.graph.ItemData
-import io.writeopia.forcegraph.Graph
+import io.writeopia.forcegraph.model.Graph
 import io.writeopia.forcegraph.Link
 import io.writeopia.forcegraph.Node
 
