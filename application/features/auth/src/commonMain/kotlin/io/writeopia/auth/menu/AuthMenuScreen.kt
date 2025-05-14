@@ -28,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -74,19 +76,19 @@ fun AuthMenuScreen(
                     LaunchedEffect("navigateUp") {
                         navigateToApp()
                     }
-                } else {
-                    AuthMenuContentScreen(
-                        emailState,
-                        passwordState,
-                        loginState,
-                        emailChanged,
-                        passwordChanged,
-                        onLoginRequest,
-                        onLoginSuccess,
-                        navigateToRegister,
-                        navigateToApp
-                    )
                 }
+                
+                AuthMenuContentScreen(
+                    emailState,
+                    passwordState,
+                    loginState,
+                    emailChanged,
+                    passwordChanged,
+                    onLoginRequest,
+                    onLoginSuccess,
+                    navigateToRegister,
+                    navigateToApp,
+                )
             }
 
             is ResultData.Error -> {
@@ -104,6 +106,19 @@ fun AuthMenuScreen(
             }
 
             is ResultData.Idle, is ResultData.Loading, is ResultData.InProgress -> {
+                AuthMenuContentScreen(
+                    emailState,
+                    passwordState,
+                    loginState,
+                    emailChanged,
+                    passwordChanged,
+                    onLoginRequest,
+                    onLoginSuccess,
+                    navigateToRegister,
+                    navigateToApp,
+                    Modifier.blur(10.dp),
+                )
+
                 LoadingScreen()
             }
         }
@@ -127,13 +142,14 @@ private fun AuthMenuContentScreen(
     onLoginRequest: () -> Unit,
     onLoginSuccess: () -> Unit,
     navigateToRegister: () -> Unit,
-    navigateToApp: () -> Unit
+    navigateToApp: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val email by emailState.collectAsState()
     val password by passwordState.collectAsState()
     var showPassword by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.align(Alignment.Center).loginScreen(),
             horizontalAlignment = Alignment.CenterHorizontally
