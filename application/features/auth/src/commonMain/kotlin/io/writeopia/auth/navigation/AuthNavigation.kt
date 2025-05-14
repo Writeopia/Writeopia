@@ -32,18 +32,25 @@ fun NavGraphBuilder.authNavigation(
         route = Destinations.AUTH_MENU_INNER_NAVIGATION.id
     ) {
         composable(Destinations.AUTH_MENU.id) {
-            println("menu nagition!")
             val authMenuViewModel: AuthMenuViewModel = authInjection.provideAuthMenuViewModel()
 
-            LaunchedEffect(key1 = true, block = {
-                authMenuViewModel.checkLoggedIn()
-            })
+            LaunchedEffect(
+                key1 = true,
+                block = { authMenuViewModel.checkLoggedIn() }
+            )
 
             val colorTheme by colorThemeOption.collectAsState()
 
             WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
                 AuthMenuScreen(
                     modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+                    emailState = authMenuViewModel.email,
+                    passwordState = authMenuViewModel.password,
+                    loginState = authMenuViewModel.loginState,
+                    emailChanged = authMenuViewModel::emailChanged,
+                    passwordChanged = authMenuViewModel::passwordChanged,
+                    onLoginRequest = authMenuViewModel::onLoginRequest,
+                    onLoginSuccess = {},
                     isConnectedState = authMenuViewModel.isConnected,
                     navigateToLogin = navController::navigateAuthLogin,
                     saveUserChoiceOffline = authMenuViewModel::saveUserChoiceOffline,
@@ -73,12 +80,7 @@ fun NavGraphBuilder.authNavigation(
         }
 
         composable(Destinations.AUTH_LOGIN.id) {
-            val loginViewModel = authInjection.provideLoginViewModel()
-            val colorTheme by colorThemeOption.collectAsState()
 
-            WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
-                LoginScreenBinding(loginViewModel, toAppNavigation)
-            }
         }
     }
 }
