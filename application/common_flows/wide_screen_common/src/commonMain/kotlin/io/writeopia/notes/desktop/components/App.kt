@@ -74,6 +74,7 @@ fun DesktopApp(
     coroutineScope: CoroutineScope,
     selectColorTheme: (ColorThemeOption) -> Unit,
     toggleMaxScreen: () -> Unit,
+    navigateToRegister: () -> Unit,
     startDestination: String = startDestination(),
 ) {
     WriteopiaConnectionInjector.setBaseUrl("http://localhost:8080")
@@ -137,14 +138,16 @@ fun DesktopApp(
                         foldersState = globalShellViewModel.sideMenuItems,
                         width = sideMenuWidth.dp,
                         homeClick = {
-                            val navType = navigationController.currentBackStackEntry
-                                ?.arguments
-                                ?.getString(NAVIGATION_TYPE)
-                                ?.let(NotesNavigationType::fromType)
+//                            val navType = navigationController.currentBackStackEntry
+//                                ?.arguments
+//                                ?.getString(NAVIGATION_TYPE)
+//                                ?.let(NotesNavigationType::fromType)
+//
+//                            if (navType != NotesNavigationType.ROOT) {
+//                                navigationController.navigateToNotes(NotesNavigation.Root)
+//                            }
 
-                            if (navType != NotesNavigationType.ROOT) {
-                                navigationController.navigateToNotes(NotesNavigation.Root)
-                            }
+                            navigateToRegister()
                         },
                         favoritesClick = {
                             val navType = navigationController.currentBackStackEntry

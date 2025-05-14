@@ -3,27 +3,38 @@ package io.writeopia.desktop
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
+import androidx.navigation.compose.rememberNavController
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
+import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.common.utils.ui.GlobalToastBox
+import io.writeopia.model.isDarkTheme
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
+import io.writeopia.notes.desktop.components.startDestination
 import io.writeopia.resources.CommonImages
 import io.writeopia.sqldelight.database.DatabaseCreation
 import io.writeopia.sqldelight.database.DatabaseFactory
 import io.writeopia.sqldelight.database.driver.DriverFactory
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
+import io.writeopia.theme.WrieopiaTheme
+import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
@@ -201,16 +212,36 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     val colorTheme =
                         uiConfigurationViewModel.listenForColorTheme { "disconnected_user" }
 
+                    val navigationController = rememberNavController()
+
                     GlobalToastBox {
-                        DesktopApp(
-                            writeopiaDb = database,
-                            selectionState = selectionState,
-                            keyboardEventFlow = keyboardEventFlow.filterNotNull(),
-                            coroutineScope = coroutineScope,
-                            colorThemeOption = colorTheme,
-                            selectColorTheme = uiConfigurationViewModel::changeColorTheme,
-                            toggleMaxScreen = topDoubleBarClick
-                        )
+                        NavHost(
+                            navController = navigationController,
+                            startDestination = Destinations.START_APP.id
+                        ) {
+                            composable(route = Destinations.START_APP.id) {
+                                DesktopApp(
+                                    writeopiaDb = database,
+                                    selectionState = selectionState,
+                                    keyboardEventFlow = keyboardEventFlow.filterNotNull(),
+                                    coroutineScope = coroutineScope,
+                                    colorThemeOption = colorTheme,
+                                    selectColorTheme = uiConfigurationViewModel::changeColorTheme,
+                                    toggleMaxScreen = topDoubleBarClick,
+                                    navigateToRegister = {
+                                        navigationController.navigate(Destinations.DESKTOP_AUTH.id)
+                                    }
+                                )
+                            }
+
+                            composable(route = Destinations.DESKTOP_AUTH.id) {
+                                val colorThemeValue by colorTheme.collectAsState()
+
+                                WrieopiaTheme(darkTheme = colorThemeValue.isDarkTheme()) {
+                                    Text("To implement!!!")
+                                }
+                            }
+                        }
                     }
                 }
 
