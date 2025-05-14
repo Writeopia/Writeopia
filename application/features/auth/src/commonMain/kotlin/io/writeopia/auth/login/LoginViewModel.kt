@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 
 // The NavigationActivity won't leak because it is the single activity of the whole project
 internal class LoginViewModel(
-    private val introNotesUseCase: IntroNotesUseCase,
     private val authManager: AuthManager
 ) : ViewModel() {
 
@@ -42,7 +41,7 @@ internal class LoginViewModel(
 
             if (result.toBoolean()) {
                 try {
-                    introNotesUseCase.addIntroNotes(authManager.getUser().id)
+//                    introNotesUseCase.addIntroNotes(authManager.getUser().id)
                 } catch (e: Exception) {
 //                    Log.d("LoginViewModel", "Could not add intro notes. Error: ${e.message}")
                 }

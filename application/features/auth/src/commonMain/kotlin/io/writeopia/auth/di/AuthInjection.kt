@@ -15,35 +15,18 @@ import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 
 class AuthInjection(
-    private val daosInjection: RepositoryInjector,
-    private val apiClientInjector: WriteopiaConnectionInjector =
-        WriteopiaConnectionInjector.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton()
 ) {
 
-    private fun provideDocumentRepository(): DocumentRepository =
-        daosInjection.provideDocumentRepository()
-
-    private fun provideIntroNotesUseCase(
-        documentRepository: DocumentRepository = provideDocumentRepository(),
-        notesApi: NotesApi = apiClientInjector.notesApi()
-    ): IntroNotesUseCase =
-        IntroNotesUseCase(
-            documentRepository = documentRepository,
-            notesApi = notesApi
-        )
-
     @Composable
     internal fun provideRegisterViewModel(
-        introNotesUseCase: IntroNotesUseCase = provideIntroNotesUseCase(),
         authManager: AuthManager = authCoreInjection.provideAccountManager()
-    ): RegisterViewModel = viewModel { RegisterViewModel(introNotesUseCase, authManager) }
+    ): RegisterViewModel = viewModel { RegisterViewModel(authManager) }
 
     @Composable
     internal fun provideLoginViewModel(
-        introNotesUseCase: IntroNotesUseCase = provideIntroNotesUseCase(),
         authManager: AuthManager = authCoreInjection.provideAccountManager()
-    ): LoginViewModel = viewModel { LoginViewModel(introNotesUseCase, authManager) }
+    ): LoginViewModel = viewModel { LoginViewModel(authManager) }
 
     @Composable
     internal fun provideAuthMenuViewModel(

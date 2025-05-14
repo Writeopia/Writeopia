@@ -79,7 +79,7 @@ fun NavigationGraph(
     WriteopiaConnectionInjector.setBaseUrl(BuildConfig.BASE_URL)
     val uiConfigViewModel = uiConfigInjection.provideUiConfigurationViewModel()
     val repositoryInjection = RoomRepositoryInjection.singleton()
-    val authInjection = AuthInjection(repositoryInjection)
+    val authInjection = AuthInjection()
     val editorInjector = EditorKmpInjector.mobile(repositoryInjection)
     val notesMenuInjection = NotesMenuKmpInjection.mobile(repositoryInjection)
 

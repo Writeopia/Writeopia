@@ -3,13 +3,16 @@ package io.writeopia.auth.menu
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -18,26 +21,43 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.writeopia.auth.utils.loginScreen
 import io.writeopia.common.utils.ResultData
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun AuthMenuScreen(
+    modifier: Modifier = Modifier,
     isConnectedState: StateFlow<ResultData<Boolean>>,
     saveUserChoiceOffline: () -> Unit,
     navigateToLogin: () -> Unit,
     navigateToRegister: () -> Unit,
     navigateToApp: () -> Unit
 ) {
-    when (val isConnected = isConnectedState.collectAsState().value) {
-        is ResultData.Complete -> {
-            if (isConnected.data) {
-                LaunchedEffect("navigateUp") {
-                    navigateToApp()
+    Box(modifier = modifier.fillMaxSize()) {
+        when (val isConnected = isConnectedState.collectAsState().value) {
+            is ResultData.Complete -> {
+                if (isConnected.data) {
+                    println("complete! connected")
+                    LaunchedEffect("navigateUp") {
+                        navigateToApp()
+                    }
+                } else {
+                    println("complete! auth")
+                    AuthMenuContentScreen(
+                        navigateToLogin,
+                        navigateToRegister,
+                        navigateToApp,
+                        saveUserChoiceOffline
+                    )
                 }
-            } else {
+            }
+
+            is ResultData.Error -> {
+                println("error")
                 AuthMenuContentScreen(
                     navigateToLogin,
                     navigateToRegister,
@@ -45,19 +65,10 @@ fun AuthMenuScreen(
                     saveUserChoiceOffline
                 )
             }
-        }
 
-        is ResultData.Error -> {
-            AuthMenuContentScreen(
-                navigateToLogin,
-                navigateToRegister,
-                navigateToApp,
-                saveUserChoiceOffline
-            )
-        }
-
-        is ResultData.Idle, is ResultData.Loading, is ResultData.InProgress -> {
-            LoadingScreen()
+            is ResultData.Idle, is ResultData.Loading, is ResultData.InProgress -> {
+                LoadingScreen()
+            }
         }
     }
 }
@@ -91,69 +102,79 @@ private fun AuthMenuContentScreen(
 //        )
 
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.align(Alignment.Center).loginScreen(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(50.dp))
 
-//            Image(
-//                modifier = Modifier
-//                    .height(270.dp)
-//                    .padding(vertical = 25.dp),
-//                painter = painterResource(id = R.drawable.ic_auth_menu_logo),
-//                contentDescription = "",
-//                contentScale = ContentScale.FillHeight,
-//            )
+            val shape = MaterialTheme.shapes.large
 
-            Spacer(modifier = Modifier.weight(1F))
+            Text(
+                "Let's start now!",
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(horizontal = 10.dp),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
 
-            TextButton(
-                modifier = Modifier
-                    .padding(horizontal = 24.dp)
-                    .background(MaterialTheme.colorScheme.primary)
-                    .fillMaxWidth(),
-                onClick = navigateToLogin
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                "Sign in to your account at Writeopia.",
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(horizontal = 10.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            OutlinedTextField(
+                "Email",
+                onValueChange = {},
+                shape = shape,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                "Password",
+                onValueChange = {},
+                shape = shape,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+            )
+
+
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                HorizontalDivider(modifier = Modifier.weight(1F))
+
                 Text(
-                    text = "Sign in",
-                    color = MaterialTheme.colorScheme.onPrimary
+                    "OR",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(horizontal = 10.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold
                 )
+
+                HorizontalDivider(modifier = Modifier.weight(1F))
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
             TextButton(
                 modifier = Modifier
                     .padding(horizontal = 24.dp)
-                    .background(MaterialTheme.colorScheme.primary)
+                    .background(MaterialTheme.colorScheme.primary, shape = shape)
                     .fillMaxWidth(),
                 onClick = navigateToRegister
             ) {
                 Text(
-                    text = "Sign up with email",
+                    text = "Create an account",
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-
-            TextButton(
-                modifier = Modifier
-                    .padding(horizontal = 24.dp)
-                    .background(MaterialTheme.colorScheme.primary)
-                    .fillMaxWidth(),
-                onClick = {
-                    saveUserChoiceOffline()
-                    navigateToApp()
-                }
-            ) {
-                Text(
-                    text = "Enter without register",
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(50.dp))
         }
     }
 }

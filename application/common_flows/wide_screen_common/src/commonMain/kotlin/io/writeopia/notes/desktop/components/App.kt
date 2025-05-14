@@ -105,7 +105,7 @@ fun DesktopApp(
         DocumentsGraphInjection(repositoryInjection = SqlDelightDaoInjector.singleton())
 
     val globalShellViewModel: GlobalShellViewModel = sideMenuInjector.provideSideMenuViewModel()
-    val colorTheme = colorThemeOption.collectAsState().value
+    val colorTheme by colorThemeOption.collectAsState()
     val navigationController: NavHostController = rememberNavController()
     val searchViewModel = KmpSearchInjection.singleton().provideViewModel()
 

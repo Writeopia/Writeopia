@@ -60,6 +60,7 @@ kotlin {
                 implementation(project(":application:features:account"))
                 implementation(project(":application:features:search"))
                 implementation(project(":application:features:global_shell"))
+                implementation(project(":application:features:auth"))
 
                 implementation(libs.room.runtime)
 

@@ -9,5 +9,5 @@ class MockAuthRepository : AuthRepository {
     override fun eraseUserChoiceOffline() {
     }
 
-    override fun isUserOfflineByChoice(): Boolean = true
+    override fun isUserOfflineByChoice(): Boolean = false
 }

@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 
 // The NavigationActivity won't leak because it is the single activity of the whole project
 internal class RegisterViewModel(
-    private val introNotesUseCase: IntroNotesUseCase,
     private val authManager: AuthManager
 ) : ViewModel() {
 
@@ -47,7 +46,7 @@ internal class RegisterViewModel(
             val result = authManager.signUp(_email.value, _password.value, _name.value)
             if (result.toBoolean()) {
                 try {
-                    introNotesUseCase.addIntroNotes(authManager.getUser().id)
+//                    introNotesUseCase.addIntroNotes(authManager.getUser().id)
                 } catch (e: Exception) {
 //                    Log.d("RegisterViewModel", "Could not add intro notes. Error: ${e.message}")
                 }
