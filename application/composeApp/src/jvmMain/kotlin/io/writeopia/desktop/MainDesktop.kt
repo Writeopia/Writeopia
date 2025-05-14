@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -217,53 +218,44 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
                     val navigationController = rememberNavController()
 
-                    GlobalToastBox {
-                        NavHost(
-                            navController = navigationController,
-                            startDestination = Destinations.START_APP.id
+                    WrieopiaTheme(darkTheme = colorTheme.value.isDarkTheme()) {
+                        GlobalToastBox(
+                            modifier = Modifier
+                                .background(WriteopiaTheme.colorScheme.globalBackground)
                         ) {
-                            composable(route = Destinations.START_APP.id) {
-                                DesktopApp(
-                                    writeopiaDb = database,
-                                    selectionState = selectionState,
-                                    keyboardEventFlow = keyboardEventFlow.filterNotNull(),
-                                    coroutineScope = coroutineScope,
-                                    colorThemeOption = colorTheme,
-                                    selectColorTheme = uiConfigurationViewModel::changeColorTheme,
-                                    toggleMaxScreen = topDoubleBarClick,
-                                    navigateToRegister = {
-                                        navigationController.navigate(
-                                            Destinations.AUTH_MENU_INNER_NAVIGATION.id
-                                        )
-                                    }
-                                )
-                            }
-
-                            composable(route = Destinations.DESKTOP_AUTH.id) {
-                                val colorThemeValue by colorTheme.collectAsState()
-
-                                WrieopiaTheme(darkTheme = colorThemeValue.isDarkTheme()) {
-                                    val globalBackground =
-                                        WriteopiaTheme.colorScheme.globalBackground
-                                    Box(
-                                        modifier = Modifier.background(globalBackground)
-                                            .fillMaxSize()
-                                    ) {
-                                        Text("To implement!!!")
-                                    }
-                                }
-                            }
-
-                            authNavigation(
+                            NavHost(
                                 navController = navigationController,
-                                authInjection = AuthInjection(),
-                                colorThemeOption = colorTheme
+                                startDestination = Destinations.START_APP.id
                             ) {
-                                navigationController.navigate(Destinations.START_APP.id)
+                                composable(route = Destinations.START_APP.id) {
+                                    DesktopApp(
+                                        writeopiaDb = database,
+                                        selectionState = selectionState,
+                                        keyboardEventFlow = keyboardEventFlow.filterNotNull(),
+                                        coroutineScope = coroutineScope,
+                                        colorThemeOption = colorTheme,
+                                        selectColorTheme = uiConfigurationViewModel::changeColorTheme,
+                                        toggleMaxScreen = topDoubleBarClick,
+                                        navigateToRegister = {
+                                            navigationController.navigate(
+                                                Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                                            )
+                                        }
+                                    )
+                                }
+
+                                authNavigation(
+                                    navController = navigationController,
+                                    authInjection = AuthInjection(),
+                                    colorThemeOption = colorTheme
+                                ) {
+                                    navigationController.navigate(Destinations.START_APP.id)
+                                }
                             }
                         }
                     }
                 }
+
 
                 DatabaseCreation.Loading -> {
                     ScreenLoading()
