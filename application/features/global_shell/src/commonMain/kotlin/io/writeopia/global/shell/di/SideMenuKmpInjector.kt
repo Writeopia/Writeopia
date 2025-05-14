@@ -1,6 +1,7 @@
 package io.writeopia.global.shell.di
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.controller.OllamaConfigController
 import io.writeopia.core.configuration.di.AppConfigurationInjector
@@ -38,16 +39,18 @@ class SideMenuKmpInjector(
 
     @Composable
     override fun provideSideMenuViewModel(): GlobalShellViewModel =
-        GlobalShellKmpViewModel(
-            notesUseCase = provideNotesUseCase(),
-            uiConfigurationRepo = UiConfigurationCoreInjector.singleton()
-                .provideUiConfigurationRepository(),
-            authManager = authCoreInjection.provideAccountManager(),
-            notesNavigationUseCase = NotesNavigationUseCase.singleton(),
-            workspaceConfigRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
-            ollamaRepository = ollamaInjection.provideRepository(),
-            configRepository = appConfigurationInjector.provideNotesConfigurationRepository()
-        )
+        viewModel {
+            GlobalShellKmpViewModel(
+                notesUseCase = provideNotesUseCase(),
+                uiConfigurationRepo = UiConfigurationCoreInjector.singleton()
+                    .provideUiConfigurationRepository(),
+                authManager = authCoreInjection.provideAccountManager(),
+                notesNavigationUseCase = NotesNavigationUseCase.singleton(),
+                workspaceConfigRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
+                ollamaRepository = ollamaInjection.provideRepository(),
+                configRepository = appConfigurationInjector.provideNotesConfigurationRepository()
+            )
+        }
 
     @Composable
     override fun provideOllamaConfigController(): OllamaConfigController =
