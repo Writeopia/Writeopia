@@ -259,7 +259,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                 authInjection = AuthInjection(),
                                 colorThemeOption = colorTheme
                             ) {
-//                                navigationController.navigate(Destinations.START_APP.id)
+                                navigationController.navigate(Destinations.START_APP.id)
                             }
                         }
                     }

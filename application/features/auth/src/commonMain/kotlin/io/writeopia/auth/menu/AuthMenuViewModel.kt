@@ -27,18 +27,8 @@ class AuthMenuViewModel(
         MutableStateFlow(ResultData.Idle())
     val loginState = _loginState.asStateFlow()
 
-    private val _isConnected = MutableStateFlow<ResultData<Boolean>>(ResultData.Idle())
+    private val _isConnected = MutableStateFlow<ResultData<Boolean>>(ResultData.Complete(false))
     val isConnected = _isConnected.asStateFlow()
-
-    fun checkLoggedIn() {
-        viewModelScope.launch(Dispatchers.Default) {
-            _isConnected.value = ResultData.Loading()
-            _isConnected.value =
-                authManager.isLoggedIn().map { isConnected ->
-                    isConnected || authRepository.isUserOfflineByChoice()
-                }
-        }
-    }
 
     fun saveUserChoiceOffline() {
         authRepository.saveUserChoiceOffline()

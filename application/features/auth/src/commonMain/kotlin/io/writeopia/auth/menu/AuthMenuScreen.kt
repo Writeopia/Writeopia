@@ -17,7 +17,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,7 +38,6 @@ import io.writeopia.auth.utils.loginScreen
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.icons.WrIcons
 import kotlinx.coroutines.flow.StateFlow
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun AuthMenuScreen(
@@ -57,8 +55,19 @@ fun AuthMenuScreen(
     navigateToRegister: () -> Unit,
     navigateToApp: () -> Unit,
 ) {
-
     Box(modifier = modifier.fillMaxSize()) {
+        Icon(
+            modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp)
+                .clip(CircleShape)
+                .clickable {
+                    navigateToApp()
+                }
+                .padding(6.dp),
+            imageVector = WrIcons.backArrowDesktop,
+            contentDescription = "Arrow back",
+            tint = MaterialTheme.colorScheme.onBackground
+        )
+
         when (val isConnected = isConnectedState.collectAsState().value) {
             is ResultData.Complete -> {
                 if (isConnected.data) {
@@ -163,7 +172,8 @@ private fun AuthMenuContentScreen(
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             )
-            Spacer(modifier = Modifier.height(12.dp))
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 password,
@@ -200,6 +210,21 @@ private fun AuthMenuContentScreen(
                     }
                 }
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TextButton(
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .background(MaterialTheme.colorScheme.primary, shape = shape)
+                    .fillMaxWidth(),
+                onClick = navigateToRegister
+            ) {
+                Text(
+                    text = "Enter",
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            }
 
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),

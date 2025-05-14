@@ -10,7 +10,6 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import io.writeopia.auth.di.AuthInjection
-import io.writeopia.auth.login.LoginScreenBinding
 import io.writeopia.auth.menu.AuthMenuScreen
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterScreen
@@ -33,12 +32,6 @@ fun NavGraphBuilder.authNavigation(
     ) {
         composable(Destinations.AUTH_MENU.id) {
             val authMenuViewModel: AuthMenuViewModel = authInjection.provideAuthMenuViewModel()
-
-            LaunchedEffect(
-                key1 = true,
-                block = { authMenuViewModel.checkLoggedIn() }
-            )
-
             val colorTheme by colorThemeOption.collectAsState()
 
             WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
@@ -77,10 +70,6 @@ fun NavGraphBuilder.authNavigation(
                     onRegisterSuccess = toAppNavigation,
                 )
             }
-        }
-
-        composable(Destinations.AUTH_LOGIN.id) {
-
         }
     }
 }
