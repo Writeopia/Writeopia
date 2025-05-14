@@ -1,5 +1,6 @@
 package io.writeopia.desktop
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.CircularProgressIndicator
@@ -238,7 +239,14 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                 val colorThemeValue by colorTheme.collectAsState()
 
                                 WrieopiaTheme(darkTheme = colorThemeValue.isDarkTheme()) {
-                                    Text("To implement!!!")
+                                    val globalBackground =
+                                        WriteopiaTheme.colorScheme.globalBackground
+                                    Box(
+                                        modifier = Modifier.background(globalBackground)
+                                            .fillMaxSize()
+                                    ) {
+                                        Text("To implement!!!")
+                                    }
                                 }
                             }
                         }
