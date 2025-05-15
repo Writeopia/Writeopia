@@ -153,7 +153,6 @@ private fun AuthMenuContentScreen(
             modifier = Modifier.align(Alignment.Center).loginScreen(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             val shape = MaterialTheme.shapes.large
 
             Text(

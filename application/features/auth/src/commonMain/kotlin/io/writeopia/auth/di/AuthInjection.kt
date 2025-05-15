@@ -5,14 +5,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.AuthManager
 import io.writeopia.auth.core.repository.AuthRepository
-import io.writeopia.auth.intronotes.IntroNotesUseCase
 import io.writeopia.auth.login.LoginViewModel
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterViewModel
-import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
-import io.writeopia.sdk.network.notes.NotesApi
-import io.writeopia.sdk.persistence.core.di.RepositoryInjector
-import io.writeopia.sdk.repository.DocumentRepository
 
 class AuthInjection(
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton()

@@ -3,7 +3,6 @@ package io.writeopia.auth.register
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.manager.AuthManager
-import io.writeopia.auth.intronotes.IntroNotesUseCase
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.toBoolean
 import kotlinx.coroutines.flow.MutableStateFlow
