@@ -58,6 +58,7 @@ fun NavGraphBuilder.authNavigation(
 
             WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
                 RegisterScreen(
+                    modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
                     nameState = registerViewModel.name,
                     emailState = registerViewModel.email,
                     passwordState = registerViewModel.password,

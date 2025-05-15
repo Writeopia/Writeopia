@@ -44,6 +44,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun RegisterScreen(
+    modifier: Modifier = Modifier,
     nameState: StateFlow<String>,
     emailState: StateFlow<String>,
     passwordState: StateFlow<String>,
@@ -55,11 +56,7 @@ fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     navigateBack: () -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
         Icon(
             modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp)
                 .clip(CircleShape)
