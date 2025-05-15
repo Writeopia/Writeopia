@@ -138,16 +138,14 @@ fun DesktopApp(
                         foldersState = globalShellViewModel.sideMenuItems,
                         width = sideMenuWidth.dp,
                         homeClick = {
-//                            val navType = navigationController.currentBackStackEntry
-//                                ?.arguments
-//                                ?.getString(NAVIGATION_TYPE)
-//                                ?.let(NotesNavigationType::fromType)
-//
-//                            if (navType != NotesNavigationType.ROOT) {
-//                                navigationController.navigateToNotes(NotesNavigation.Root)
-//                            }
+                            val navType = navigationController.currentBackStackEntry
+                                ?.arguments
+                                ?.getString(NAVIGATION_TYPE)
+                                ?.let(NotesNavigationType::fromType)
 
-                            navigateToRegister()
+                            if (navType != NotesNavigationType.ROOT) {
+                                navigationController.navigateToNotes(NotesNavigation.Root)
+                            }
                         },
                         favoritesClick = {
                             val navType = navigationController.currentBackStackEntry
@@ -232,7 +230,8 @@ fun DesktopApp(
                                     downloadModel = { model ->
                                         globalShellViewModel.modelToDownload(model)
                                     },
-                                    deleteModel = globalShellViewModel::deleteModel
+                                    deleteModel = globalShellViewModel::deleteModel,
+                                    signIn = navigateToRegister
                                 )
                             }
 

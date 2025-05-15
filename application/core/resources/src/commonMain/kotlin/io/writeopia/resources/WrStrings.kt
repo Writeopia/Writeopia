@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.access_ollama_site
+import writeopia.application.core.resources.generated.resources.account
 import writeopia.application.core.resources.generated.resources.action_points
 import writeopia.application.core.resources.generated.resources.actions
 import writeopia.application.core.resources.generated.resources.arrangement
@@ -32,6 +33,7 @@ import writeopia.application.core.resources.generated.resources.favorite
 import writeopia.application.core.resources.generated.resources.favorites
 import writeopia.application.core.resources.generated.resources.folder
 import writeopia.application.core.resources.generated.resources.font
+import writeopia.application.core.resources.generated.resources.general
 import writeopia.application.core.resources.generated.resources.highlight
 import writeopia.application.core.resources.generated.resources.home
 import writeopia.application.core.resources.generated.resources.image
@@ -61,6 +63,7 @@ import writeopia.application.core.resources.generated.resources.recent
 import writeopia.application.core.resources.generated.resources.retry
 import writeopia.application.core.resources.generated.resources.search
 import writeopia.application.core.resources.generated.resources.settings
+import writeopia.application.core.resources.generated.resources.sign_in
 import writeopia.application.core.resources.generated.resources.small_robot
 import writeopia.application.core.resources.generated.resources.sort_by_creation
 import writeopia.application.core.resources.generated.resources.sort_by_name
@@ -73,6 +76,8 @@ import writeopia.application.core.resources.generated.resources.tap_to_start
 import writeopia.application.core.resources.generated.resources.text
 import writeopia.application.core.resources.generated.resources.url
 import writeopia.application.core.resources.generated.resources.version
+import writeopia.application.core.resources.generated.resources.workspaceName
+import writeopia.application.core.resources.generated.resources.you_are_offline
 
 object WrStrings {
 
@@ -285,4 +290,22 @@ object WrStrings {
 
     @Composable
     fun cancel() = stringResource(Res.string.cancel)
+
+    @Composable
+    fun general() = stringResource(Res.string.general)
+
+    @Composable
+    fun appearance() = stringResource(Res.string.general)
+
+    @Composable
+    fun account() = stringResource(Res.string.account)
+
+    @Composable
+    fun workspaceName() = stringResource(Res.string.workspaceName)
+
+    @Composable
+    fun singIn() = stringResource(Res.string.sign_in)
+
+    @Composable
+    fun youAreOffline() = stringResource(Res.string.you_are_offline)
 }

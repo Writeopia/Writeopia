@@ -90,4 +90,9 @@
   <string name="summarize">Resumir</string>
   <string name="action_points">Acionáveis</string>
   <string name="highlight">Marca texto</string>
+  <string name="general">Geral</string>
+  <string name="appearance">Aparência</string>
+  <string name="account">Conta</string>
+  <string name="workspaceName">Área de trabalho</string>
+  <string name="you_are_offline">Você está usando a área de trabalha offline</string>
 </resources>

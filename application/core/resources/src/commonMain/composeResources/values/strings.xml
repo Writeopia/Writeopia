@@ -96,4 +96,9 @@
   <string name="summarize">Summarize</string>
   <string name="action_points">Action Points</string>
   <string name="highlight">Highlighting</string>
+  <string name="general">General</string>
+  <string name="appearance">Appearance</string>
+  <string name="account">Account</string>
+  <string name="workspaceName">Workspace</string>
+  <string name="you_are_offline">You are using the offline workspace</string>
 </resources>

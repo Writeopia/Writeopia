@@ -35,30 +35,31 @@ fun SettingsPanel(
     modifier: Modifier = Modifier,
 ) {
     var pageState by remember {
-        mutableStateOf(SettingsPage.APPEARANCE)
+        mutableStateOf(SettingsPage.ACCOUNT)
     }
 
     Row(modifier = modifier) {
         Column(modifier = Modifier.width(180.dp).fillMaxHeight()) {
-//            Text(
-//                "Account",
-//                modifier = Modifier.fillMaxWidth()
-//                    .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
-//                    .clip(MaterialTheme.shapes.medium)
-//                    .background(
-//                        if (pageState == SettingsPage.ACCOUNT) {
-//                            WriteopiaTheme.colorScheme.highlight
-//                        } else {
-//                            Color.Unspecified
-//                        }
-//                    )
-//                    .clickable {
-//                        pageState = SettingsPage.ACCOUNT
-//                    }.padding(vertical = 4.dp, horizontal = 12.dp)
-//            )
+            Text(
+                WrStrings.account(),
+                modifier = Modifier.fillMaxWidth()
+                    .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(
+                        if (pageState == SettingsPage.ACCOUNT) {
+                            WriteopiaTheme.colorScheme.highlight
+                        } else {
+                            Color.Unspecified
+                        }
+                    )
+                    .clickable {
+                        pageState = SettingsPage.ACCOUNT
+                    }.padding(vertical = 4.dp, horizontal = 12.dp),
+                style = MaterialTheme.typography.bodyMedium
+            )
 
             Text(
-                "Appearance",
+                WrStrings.appearance(),
                 modifier = Modifier.fillMaxWidth()
                     .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
                     .clip(MaterialTheme.shapes.medium)
@@ -71,7 +72,8 @@ fun SettingsPanel(
                     )
                     .clickable {
                         pageState = SettingsPage.APPEARANCE
-                    }.padding(vertical = 4.dp, horizontal = 12.dp)
+                    }.padding(vertical = 4.dp, horizontal = 12.dp),
+                style = MaterialTheme.typography.bodyMedium
             )
 
             Text(
@@ -88,11 +90,12 @@ fun SettingsPanel(
                     )
                     .clickable {
                         pageState = SettingsPage.AI
-                    }.padding(vertical = 4.dp, horizontal = 12.dp)
+                    }.padding(vertical = 4.dp, horizontal = 12.dp),
+                style = MaterialTheme.typography.bodyMedium
             )
 
             Text(
-                "Directory",
+                WrStrings.workspaceName(),
                 modifier = Modifier.fillMaxWidth()
                     .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
                     .clip(MaterialTheme.shapes.medium)
@@ -105,7 +108,8 @@ fun SettingsPanel(
                     )
                     .clickable {
                         pageState = SettingsPage.DIRECTORY
-                    }.padding(vertical = 4.dp, horizontal = 12.dp)
+                    }.padding(vertical = 4.dp, horizontal = 12.dp),
+                style = MaterialTheme.typography.bodyMedium
             )
 
             Spacer(modifier = Modifier.height(40.dp))

@@ -1,7 +1,6 @@
 package io.writeopia.auth.navigation
 
 import androidx.compose.foundation.background
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -68,6 +67,9 @@ fun NavGraphBuilder.authNavigation(
                     passwordChanged = registerViewModel::passwordChanged,
                     onRegisterRequest = registerViewModel::onRegister,
                     onRegisterSuccess = toAppNavigation,
+                    navigateBack = {
+                        navController.navigateUp()
+                    }
                 )
             }
         }
