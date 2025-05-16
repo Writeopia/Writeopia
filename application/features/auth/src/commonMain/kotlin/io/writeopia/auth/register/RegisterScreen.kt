@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.auth.utils.loginScreen
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -129,7 +130,7 @@ private fun BoxScope.RegisterContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "Create your account",
+            WrStrings.createYourAccount(),
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 10.dp),
             style = MaterialTheme.typography.headlineMedium,
@@ -139,7 +140,7 @@ private fun BoxScope.RegisterContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            "Your journey begins here.",
+            WrStrings.journeyStarts(),
             color = WriteopiaTheme.colorScheme.textLight,
             modifier = Modifier.padding(horizontal = 10.dp),
             style = MaterialTheme.typography.bodyMedium,
@@ -155,7 +156,7 @@ private fun BoxScope.RegisterContent(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
             placeholder = {
-                Text("Name")
+                Text(WrStrings.name())
             },
         )
 
@@ -188,7 +189,7 @@ private fun BoxScope.RegisterContent(
                 PasswordVisualTransformation()
             },
             placeholder = {
-                Text("Password")
+                Text(WrStrings.password())
             },
             trailingIcon = {
                 if (showPassword) {
@@ -221,7 +222,7 @@ private fun BoxScope.RegisterContent(
             onClick = onRegisterRequest
         ) {
             Text(
-                text = "Register",
+                text = WrStrings.createAccount(),
                 color = MaterialTheme.colorScheme.onPrimary
             )
         }

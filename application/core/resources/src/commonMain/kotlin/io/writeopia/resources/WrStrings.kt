@@ -17,6 +17,8 @@ import writeopia.application.core.resources.generated.resources.color_theme
 import writeopia.application.core.resources.generated.resources.confirmation_delete_multiple_items
 import writeopia.application.core.resources.generated.resources.content
 import writeopia.application.core.resources.generated.resources.copy_note
+import writeopia.application.core.resources.generated.resources.create_account
+import writeopia.application.core.resources.generated.resources.create_your_account
 import writeopia.application.core.resources.generated.resources.dark_theme
 import writeopia.application.core.resources.generated.resources.decoration
 import writeopia.application.core.resources.generated.resources.delete
@@ -39,6 +41,7 @@ import writeopia.application.core.resources.generated.resources.home
 import writeopia.application.core.resources.generated.resources.image
 import writeopia.application.core.resources.generated.resources.import_file
 import writeopia.application.core.resources.generated.resources.insert
+import writeopia.application.core.resources.generated.resources.jorney_starts
 import writeopia.application.core.resources.generated.resources.json
 import writeopia.application.core.resources.generated.resources.last_created
 import writeopia.application.core.resources.generated.resources.last_updated
@@ -57,18 +60,22 @@ import writeopia.application.core.resources.generated.resources.ollama_configura
 import writeopia.application.core.resources.generated.resources.onboarding_explain1
 import writeopia.application.core.resources.generated.resources.onboarding_hello
 import writeopia.application.core.resources.generated.resources.onboarding_select_ai
+import writeopia.application.core.resources.generated.resources.or_word
 import writeopia.application.core.resources.generated.resources.page
+import writeopia.application.core.resources.generated.resources.password
 import writeopia.application.core.resources.generated.resources.private_ai_enabled
 import writeopia.application.core.resources.generated.resources.recent
 import writeopia.application.core.resources.generated.resources.retry
 import writeopia.application.core.resources.generated.resources.search
 import writeopia.application.core.resources.generated.resources.settings
 import writeopia.application.core.resources.generated.resources.sign_in
+import writeopia.application.core.resources.generated.resources.sign_in_account
 import writeopia.application.core.resources.generated.resources.small_robot
 import writeopia.application.core.resources.generated.resources.sort_by_creation
 import writeopia.application.core.resources.generated.resources.sort_by_name
 import writeopia.application.core.resources.generated.resources.sort_by_update
 import writeopia.application.core.resources.generated.resources.sorting
+import writeopia.application.core.resources.generated.resources.start_now
 import writeopia.application.core.resources.generated.resources.suggestions
 import writeopia.application.core.resources.generated.resources.summarize
 import writeopia.application.core.resources.generated.resources.system_theme
@@ -308,4 +315,25 @@ object WrStrings {
 
     @Composable
     fun youAreOffline() = stringResource(Res.string.you_are_offline)
+
+    @Composable
+    fun journeyStarts() = stringResource(Res.string.jorney_starts)
+
+    @Composable
+    fun createYourAccount() = stringResource(Res.string.create_your_account)
+
+    @Composable
+    fun createAccount() = stringResource(Res.string.create_account)
+
+    @Composable
+    fun startNow() = stringResource(Res.string.start_now)
+
+    @Composable
+    fun signInToAccount() = stringResource(Res.string.sign_in_account)
+
+    @Composable
+    fun or() = stringResource(Res.string.or_word)
+
+    @Composable
+    fun password() = stringResource(Res.string.password)
 }

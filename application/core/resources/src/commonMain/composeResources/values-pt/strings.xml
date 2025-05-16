@@ -95,4 +95,10 @@
   <string name="account">Conta</string>
   <string name="workspaceName">Área de trabalho</string>
   <string name="you_are_offline">Você está usando a área de trabalha offline</string>
+  <string name="create_your_account">Crie sua conta</string>
+  <string name="create_account">Criar conta</string>
+  <string name="jorney_starts">Comece sua jornada</string>
+  <string name="start_now">Comece agora!</string>
+  <string name="sign_in_account">Entre em sua conta no Writeopia</string>
+  <string name="or_word">OU</string>
 </resources>

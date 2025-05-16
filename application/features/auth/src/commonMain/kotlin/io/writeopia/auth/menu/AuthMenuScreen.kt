@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.auth.utils.loginScreen
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.resources.WrStrings
+import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
@@ -69,6 +72,20 @@ fun AuthMenuScreen(
             tint = MaterialTheme.colorScheme.onBackground
         )
 
+        val authScreen = @Composable { modifier: Modifier ->
+            AuthMenuContentScreen(
+                emailState,
+                passwordState,
+                loginState,
+                emailChanged,
+                passwordChanged,
+                onLoginRequest,
+                onLoginSuccess,
+                navigateToRegister,
+                modifier,
+            )
+        }
+
         when (val isConnected = isConnectedState.collectAsState().value) {
             is ResultData.Complete -> {
                 if (isConnected.data) {
@@ -76,47 +93,15 @@ fun AuthMenuScreen(
                         navigateToApp()
                     }
                 }
-
-                AuthMenuContentScreen(
-                    emailState,
-                    passwordState,
-                    loginState,
-                    emailChanged,
-                    passwordChanged,
-                    onLoginRequest,
-                    onLoginSuccess,
-                    navigateToRegister,
-                    navigateToApp,
-                )
+                authScreen(Modifier)
             }
 
             is ResultData.Error -> {
-                AuthMenuContentScreen(
-                    emailState,
-                    passwordState,
-                    loginState,
-                    emailChanged,
-                    passwordChanged,
-                    onLoginRequest,
-                    onLoginSuccess,
-                    navigateToRegister,
-                    navigateToApp
-                )
+                authScreen(Modifier)
             }
 
             is ResultData.Idle, is ResultData.Loading, is ResultData.InProgress -> {
-                AuthMenuContentScreen(
-                    emailState,
-                    passwordState,
-                    loginState,
-                    emailChanged,
-                    passwordChanged,
-                    onLoginRequest,
-                    onLoginSuccess,
-                    navigateToRegister,
-                    navigateToApp,
-                    Modifier.blur(10.dp),
-                )
+                authScreen(Modifier.blur(8.dp))
 
                 LoadingScreen()
             }
@@ -141,7 +126,6 @@ private fun AuthMenuContentScreen(
     onLoginRequest: () -> Unit,
     onLoginSuccess: () -> Unit,
     navigateToRegister: () -> Unit,
-    navigateToApp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val email by emailState.collectAsState()
@@ -156,7 +140,7 @@ private fun AuthMenuContentScreen(
             val shape = MaterialTheme.shapes.large
 
             Text(
-                "Let's start now!",
+                WrStrings.startNow(),
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(horizontal = 10.dp),
                 style = MaterialTheme.typography.headlineMedium,
@@ -166,7 +150,7 @@ private fun AuthMenuContentScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                "Sign in to your account at Writeopia.",
+                WrStrings.signInToAccount(),
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(horizontal = 10.dp),
                 style = MaterialTheme.typography.bodyMedium,
@@ -202,7 +186,7 @@ private fun AuthMenuContentScreen(
                     PasswordVisualTransformation()
                 },
                 placeholder = {
-                    Text("Password")
+                    Text(WrStrings.password())
                 },
                 trailingIcon = {
                     if (showPassword) {
@@ -232,10 +216,11 @@ private fun AuthMenuContentScreen(
                     .padding(horizontal = 24.dp)
                     .background(MaterialTheme.colorScheme.primary, shape = shape)
                     .fillMaxWidth(),
-                onClick = navigateToRegister
+                onClick = navigateToRegister,
+                shape = shape
             ) {
                 Text(
-                    text = "Enter",
+                    text = WrStrings.singIn(),
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             }
@@ -247,7 +232,7 @@ private fun AuthMenuContentScreen(
                 HorizontalDivider(modifier = Modifier.weight(1F))
 
                 Text(
-                    "OR",
+                    WrStrings.or(),
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(horizontal = 10.dp),
                     style = MaterialTheme.typography.bodySmall,
@@ -260,13 +245,15 @@ private fun AuthMenuContentScreen(
             TextButton(
                 modifier = Modifier
                     .padding(horizontal = 24.dp)
-                    .background(MaterialTheme.colorScheme.primary, shape = shape)
+                    .background(WriteopiaTheme.colorScheme.defaultButton, shape = shape)
                     .fillMaxWidth(),
-                onClick = navigateToRegister
+                onClick = navigateToRegister,
+                contentPadding = PaddingValues(0.dp),
+                shape = shape
             ) {
                 Text(
-                    text = "Create an account",
-                    color = MaterialTheme.colorScheme.onPrimary
+                    text = WrStrings.createYourAccount(),
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
 
