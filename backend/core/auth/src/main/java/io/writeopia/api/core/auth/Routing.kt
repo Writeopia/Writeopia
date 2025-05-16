@@ -15,7 +15,9 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.writeopia.api.core.auth.model.LoginRequest
+import io.writeopia.api.core.auth.model.RegisterRequest
 import io.writeopia.api.core.auth.repository.getUser
+import io.writeopia.api.core.auth.repository.insertUser
 import io.writeopia.sql.WriteopiaDbBackend
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
@@ -29,6 +31,13 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
         } else {
             call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
         }
+    }
+
+    post("api/register") {
+        val (name, email, password) = call.receive<RegisterRequest>()
+        writeopiaDb.insertUser(name, email, password)
+
+        call.respond(HttpStatusCode.Created, "Created")
     }
 
     authenticate("auth-jwt") {
