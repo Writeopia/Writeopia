@@ -30,3 +30,11 @@ CREATE TABLE story_step_entity (
   spans TEXT NOT NULL,
   link_to_document TEXT
 );
+
+CREATE TABLE user_entity (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  email TEXT NOT NULL,
+  password TEXT NOT NULL
+);

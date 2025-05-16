@@ -15,12 +15,13 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.writeopia.api.core.auth.model.LoginRequest
+import io.writeopia.api.core.auth.repository.getUser
 import io.writeopia.sql.WriteopiaDbBackend
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
     post("api/login") {
         val credentials = call.receive<LoginRequest>()
-        val user = writeopiaDb.findUser(credentials.email, credentials.password)
+        val user = writeopiaDb.getUser(credentials.email, credentials.password)
 
         if (user != null) {
             val token = JwtConfig.generateToken(user.id)

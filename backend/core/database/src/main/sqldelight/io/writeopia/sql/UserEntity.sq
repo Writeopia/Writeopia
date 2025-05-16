@@ -1,0 +1,13 @@
+CREATE TABLE user_entity (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  email TEXT NOT NULL,
+  password TEXT NOT NULL
+);
+
+selectUser:
+SELECT *
+FROM user_entity
+WHERE email = ? AND password = ?
+LIMIT 1;
