@@ -9,7 +9,7 @@ object JwtConfig {
     private val secret = System.getenv("JWT_SECRET")
     private const val ISSUER = "writeopia"
     private const val AUDIENCE = "writeopia-app"
-    private const val VALIDITY_IN_MS = 36_000_00 * 24L // 24 hours
+    private const val VALIDITY_IN_MS = 36_000_00 * 24L
 
     private val algorithm = Algorithm.HMAC256(secret)
 
@@ -18,10 +18,11 @@ object JwtConfig {
         .withAudience(AUDIENCE)
         .build()
 
-    fun generateToken(userId: String): String = JWT.create()
-        .withAudience(AUDIENCE)
-        .withIssuer(ISSUER)
-        .withClaim("userId", userId)
-        .withExpiresAt(Instant.now().plusMillis(VALIDITY_IN_MS))
-        .sign(algorithm)
+    fun generateToken(userId: String): String =
+        JWT.create()
+            .withAudience(AUDIENCE)
+            .withIssuer(ISSUER)
+            .withClaim("userId", userId)
+            .withExpiresAt(Instant.now().plusMillis(VALIDITY_IN_MS))
+            .sign(algorithm)
 }

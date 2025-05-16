@@ -23,7 +23,7 @@ CREATE TABLE story_step_entity (
   checked BOOLEAN NOT NULL,
   position INTEGER NOT NULL,
   document_id TEXT NOT NULL,
-  is_group BOOLEAN NOT NULL,
+  is_group BOOL EAN NOT NULL,
   has_inner_steps BOOLEAN NOT NULL,
   background_color INTEGER,
   tags TEXT NOT NULL,
@@ -33,8 +33,9 @@ CREATE TABLE story_step_entity (
 
 CREATE TABLE user_entity (
   id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
+  name TEXT NOT NULL,
   created_at BIGINT NOT NULL,
   email TEXT NOT NULL,
-  password TEXT NOT NULL
+  password TEXT NOT NULL,
+  enabled BOOLEAN NOT NULL
 );

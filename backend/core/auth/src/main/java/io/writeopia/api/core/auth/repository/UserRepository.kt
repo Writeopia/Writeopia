@@ -17,6 +17,18 @@ fun WriteopiaDbBackend.getUser(email: String, password: String): WriteopiaUser? 
             )
         }
 
+fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaUser? =
+    this.userEntityQueries
+        .selectUserByEmail(email)
+        .executeAsOneOrNull()
+        ?.let { userEntity ->
+            WriteopiaUser(
+                id = userEntity.id,
+                email = userEntity.email,
+                password = userEntity.password,
+            )
+        }
+
 fun WriteopiaDbBackend.insertUser(name: String, email: String, password: String) {
     this.userEntityQueries.insertUser(
         id = UUID.randomUUID().toString(),
@@ -26,4 +38,12 @@ fun WriteopiaDbBackend.insertUser(name: String, email: String, password: String)
         name = name,
         enabled = false,
     )
+}
+
+fun WriteopiaDbBackend.deleteUserById(id: String) {
+    this.userEntityQueries.deleteUser(id)
+}
+
+fun WriteopiaDbBackend.deleteUserByEmail(email: String) {
+    this.userEntityQueries.deleteUserByEmail(email)
 }

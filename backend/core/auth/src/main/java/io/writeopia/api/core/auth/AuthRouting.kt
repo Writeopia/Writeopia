@@ -17,6 +17,7 @@ import io.ktor.server.routing.post
 import io.writeopia.api.core.auth.model.LoginRequest
 import io.writeopia.api.core.auth.model.RegisterRequest
 import io.writeopia.api.core.auth.repository.getUser
+import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.insertUser
 import io.writeopia.sql.WriteopiaDbBackend
 
@@ -35,9 +36,15 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
 
     post("api/register") {
         val (name, email, password) = call.receive<RegisterRequest>()
-        writeopiaDb.insertUser(name, email, password)
 
-        call.respond(HttpStatusCode.Created, "Created")
+        val user = writeopiaDb.getUserByEmail(email)
+
+        if (user == null) {
+            writeopiaDb.insertUser(name, email, password)
+            call.respond(HttpStatusCode.Created, "Created")
+        } else {
+            call.respond(HttpStatusCode.Conflict, "Not Created")
+        }
     }
 
     authenticate("auth-jwt") {

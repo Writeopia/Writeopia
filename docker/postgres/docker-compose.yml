@@ -6,6 +6,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: writeopia
+      JWT_SECRET: dont_use_this
     ports:
       - "5432:5432"
     volumes:
