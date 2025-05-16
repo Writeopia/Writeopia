@@ -8,8 +8,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -18,11 +16,11 @@ import io.writeopia.BuildConfig
 import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.common.utils.Destinations
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.di.SharedPreferencesInjector
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.MobileSearchInjection
 import io.writeopia.mobile.AppMobile
-import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notemenu.navigation.NoteMenuDestiny
@@ -91,8 +89,7 @@ fun NavigationGraph(
     }
 
     val navigationViewModel = viewModel { MobileNavigationViewModel() }
-
-    val colorTheme by uiConfigViewModel.listenForColorTheme { "disconnected_user" }.collectAsState()
+    val colorThemeState = uiConfigViewModel.listenForColorTheme { "disconnected_user" }
 
     AppMobile(
         startDestination = startDestination,
@@ -103,7 +100,7 @@ fun NavigationGraph(
         editorInjector = editorInjector,
         navigationViewModel = navigationViewModel
     ) {
-        authNavigation(navController, authInjection) {
+        authNavigation(navController, authInjection, colorThemeState) {
             navController.navigateToNotes(NotesNavigation.Root)
         }
     }
