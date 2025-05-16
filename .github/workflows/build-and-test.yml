@@ -169,7 +169,7 @@ jobs:
         if: failure()
         with:
           name: test-results-backend
-          path: ./backend/editor/api_editor_spring/build/reports/
+          path: .backend/gateway/build
   web_build:
     name: Web - Build debug
     runs-on: ubuntu-22.04
