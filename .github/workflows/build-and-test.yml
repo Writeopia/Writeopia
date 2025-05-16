@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       isCI: "true"
-      JWT_SECRET: testing-secret
+      JWT_SECRET: "testingsecret"
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
       DB_USER: 'user'
       WRITEOPIA_FIREBASE_ID: 'id'
       WRITEOPIA_CLIENT_BASE_URL: "baseurl"
-      JWT_SECRET: testing-secret
+      JWT_SECRET: "testingsecret"
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -66,7 +66,7 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: writeopia
-          JWT_SECRET: testing-secret
+          JWT_SECRET: "testingsecret"
         ports:
           - 5432:5432
         options: >-
@@ -80,7 +80,7 @@ jobs:
       DB_USER: 'user'
       WRITEOPIA_FIREBASE_ID: 'id'
       WRITEOPIA_CLIENT_BASE_URL: "baseurl"
-      JWT_SECRET: testing-secret
+      JWT_SECRET: "testingsecret"
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -141,7 +141,7 @@ jobs:
       DB_USER: 'user'
       WRITEOPIA_FIREBASE_ID: 'id'
       WRITEOPIA_CLIENT_BASE_URL: "baseurl"
-      JWT_SECRET: testing-secret
+      JWT_SECRET: "testingsecret"
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -175,7 +175,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       isCI: "true"
-      JWT_SECRET: testing-secret
+      JWT_SECRET: "testingsecret"
     steps:
       - name: Check out code
         uses: actions/checkout@v4
