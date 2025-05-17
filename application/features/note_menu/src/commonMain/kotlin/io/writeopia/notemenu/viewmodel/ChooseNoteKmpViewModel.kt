@@ -3,7 +3,7 @@ package io.writeopia.notemenu.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.data.User
-import io.writeopia.auth.core.manager.AuthManager
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.ResultData
@@ -33,6 +33,7 @@ import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.preview.PreviewParser
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
@@ -55,14 +56,14 @@ import kotlinx.datetime.Instant
 internal class ChooseNoteKmpViewModel(
     private val notesUseCase: NotesUseCase,
     private val notesConfig: ConfigurationRepository,
-    private val authManager: AuthManager,
+    private val authRepository: AuthRepository,
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val documentsSync: DocumentsSync,
     private val folderController: FolderStateController = FolderStateController(
         notesUseCase,
-        authManager
+        authRepository
     ),
     private val notesNavigation: NotesNavigation = NotesNavigation.Root,
     private val previewParser: PreviewParser = PreviewParser(),
@@ -86,7 +87,7 @@ internal class ChooseNoteKmpViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
-        authManager.listenForUser()
+        authRepository.listenForUser()
             .flatMapLatest { user ->
                 notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id)
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
@@ -106,7 +107,9 @@ internal class ChooseNoteKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Loading())
     }
 
-    private val _user: MutableStateFlow<UserState<User>> = MutableStateFlow(UserState.Idle())
+    private val _user: MutableStateFlow<UserState<WriteopiaUser>> =
+        MutableStateFlow(UserState.Idle())
+
     override val userName: StateFlow<UserState<String>> by lazy {
         _user.map { userState ->
             userState.map { user ->
@@ -117,7 +120,7 @@ internal class ChooseNoteKmpViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val notesArrangement: StateFlow<NotesArrangement> by lazy {
-        authManager.listenForUser()
+        authRepository.listenForUser()
             .flatMapLatest { user ->
                 notesConfig.listenForArrangementPref(user.id).map(NotesArrangement::fromString)
             }
@@ -126,7 +129,7 @@ internal class ChooseNoteKmpViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val orderByState: StateFlow<OrderBy> by lazy {
-        authManager.listenForUser()
+        authRepository.listenForUser()
             .flatMapLatest { user ->
                 notesConfig.listenOrderPreference(user.id).map(OrderBy::fromString)
             }
@@ -224,8 +227,8 @@ internal class ChooseNoteKmpViewModel(
 
     override suspend fun requestUser() {
         try {
-            _user.value = if (authManager.isLoggedIn().toBoolean()) {
-                val user = authManager.getUser()
+            _user.value = if (authRepository.isLoggedIn().toBoolean()) {
+                val user = authRepository.getUser()
 
                 if (user.id != DISCONNECTED_USER_ID) {
                     UserState.ConnectedUser(user)
@@ -233,7 +236,7 @@ internal class ChooseNoteKmpViewModel(
                     UserState.UserNotReturned()
                 }
             } else {
-                UserState.DisconnectedUser(User.disconnectedUser())
+                UserState.DisconnectedUser(WriteopiaUser.disconnectedUser())
             }
         } catch (error: Exception) {
 //            Log.d("ChooseNoteViewModel", "Error fetching user attributes. Error: $error")
@@ -599,5 +602,5 @@ internal class ChooseNoteKmpViewModel(
         }
     }
 
-    private suspend fun getUserId(): String = authManager.getUser().id
+    private suspend fun getUserId(): String = authRepository.getUser().id
 }

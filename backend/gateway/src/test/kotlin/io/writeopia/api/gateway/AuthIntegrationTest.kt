@@ -6,8 +6,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
-import io.writeopia.api.core.auth.model.LoginRequest
-import io.writeopia.api.core.auth.model.RegisterRequest
+import io.writeopia.sdk.serialization.data.LoginRequest
+import io.writeopia.sdk.serialization.data.RegisterRequest
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module

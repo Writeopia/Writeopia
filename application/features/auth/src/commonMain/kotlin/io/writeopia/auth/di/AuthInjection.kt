@@ -2,10 +2,9 @@ package io.writeopia.auth.di
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
-import io.writeopia.auth.core.manager.AuthManager
-import io.writeopia.auth.core.repository.AuthRepository
-import io.writeopia.auth.login.LoginViewModel
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterViewModel
 
@@ -15,17 +14,13 @@ class AuthInjection(
 
     @Composable
     internal fun provideRegisterViewModel(
-        authManager: AuthManager = authCoreInjection.provideAccountManager()
-    ): RegisterViewModel = viewModel { RegisterViewModel(authManager) }
-
-    @Composable
-    internal fun provideLoginViewModel(
-        authManager: AuthManager = authCoreInjection.provideAccountManager()
-    ): LoginViewModel = viewModel { LoginViewModel(authManager) }
+        authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
+        authApi: AuthApi = authCoreInjection.provideAuthApi()
+    ): RegisterViewModel = viewModel { RegisterViewModel(authRepository, authApi) }
 
     @Composable
     internal fun provideAuthMenuViewModel(
-        authManager: AuthManager = authCoreInjection.provideAccountManager(),
-        authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
-    ): AuthMenuViewModel = viewModel { AuthMenuViewModel(authManager, authRepository) }
+        authManager: AuthRepository = authCoreInjection.provideAuthRepository(),
+        authApi: AuthApi = authCoreInjection.provideAuthApi()
+    ): AuthMenuViewModel = viewModel { AuthMenuViewModel(authManager, authApi) }
 }

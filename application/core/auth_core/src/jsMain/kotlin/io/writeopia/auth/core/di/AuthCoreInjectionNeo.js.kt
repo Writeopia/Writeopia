@@ -1,14 +1,10 @@
 package io.writeopia.auth.core.di
 
-import io.writeopia.auth.core.manager.AuthManager
-import io.writeopia.auth.core.manager.MockAuthManager
-import io.writeopia.auth.core.repository.AuthRepository
-import io.writeopia.auth.core.repository.MockAuthRepository
+import io.writeopia.auth.core.manager.AuthRepository
 
 actual class AuthCoreInjectionNeo {
-    actual fun provideAccountManager(): AuthManager = MockAuthManager()
-
-    actual fun provideAuthRepository(): AuthRepository = MockAuthRepository()
+    actual fun provideAccountManager(): io.writeopia.auth.core.manager.AuthRepository =
+        io.writeopia.auth.core.manager.SqlDelightRepository()
 
     actual companion object {
         private var instance: AuthCoreInjectionNeo? = null

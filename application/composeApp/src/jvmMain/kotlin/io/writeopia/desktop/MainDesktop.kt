@@ -33,6 +33,7 @@ import io.writeopia.model.isDarkTheme
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.resources.CommonImages
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sqldelight.database.DatabaseCreation
 import io.writeopia.sqldelight.database.DatabaseFactory
 import io.writeopia.sqldelight.database.driver.DriverFactory
@@ -207,6 +208,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     val database = databaseState.writeopiaDb
 
                     WriteopiaDbInjector.initialize(database)
+                    WriteopiaConnectionInjector.setBaseUrl("http://localhost:8080")
 
                     val uiConfigurationInjector = UiConfigurationInjector.singleton()
 

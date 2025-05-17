@@ -2,8 +2,7 @@ package io.writeopia.account.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.writeopia.auth.core.manager.AuthManager
-import io.writeopia.auth.core.repository.AuthRepository
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.toBoolean
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 internal class AccountMenuKmpViewModel(
-    private val authManager: AuthManager,
+    private val authManager: AuthRepository,
     private val authRepository: AuthRepository,
 ) : AccountMenuViewModel, ViewModel() {
     private val _isLoggedIn: MutableStateFlow<ResultData<Boolean>> by lazy {
@@ -25,7 +24,7 @@ internal class AccountMenuKmpViewModel(
     override fun checkLoggedIn() {
         viewModelScope.launch {
             _isLoggedIn.value = ResultData.Loading()
-            _isLoggedIn.value = authManager.isLoggedIn()
+//            _isLoggedIn.value = authManager.isLoggedIn()
         }
     }
 
@@ -41,7 +40,7 @@ internal class AccountMenuKmpViewModel(
 
     override fun eraseOfflineByChoice(navigateToRegister: () -> Unit) {
         viewModelScope.launch {
-            authRepository.eraseUserChoiceOffline()
+//            authRepository.eraseUserChoiceOffline()
             navigateToRegister()
         }
     }

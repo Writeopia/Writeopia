@@ -1,6 +1,6 @@
 package io.writeopia.notemenu.viewmodel
 
-import io.writeopia.auth.core.manager.AuthManager
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.common.utils.anyNode
 import io.writeopia.commonui.dtos.MenuItemUi
@@ -17,7 +17,7 @@ import kotlinx.datetime.Clock
 
 class FolderStateController(
     private val notesUseCase: NotesUseCase,
-    private val authManager: AuthManager,
+    private val authRepository: AuthRepository,
 ) : FolderController {
     private lateinit var coroutineScope: CoroutineScope
 
@@ -129,7 +129,7 @@ class FolderStateController(
     }
 
     private suspend fun getUserId(): String =
-        localUserId ?: authManager.getUser().id.also { id ->
+        localUserId ?: authRepository.getUser().id.also { id ->
             localUserId = id
         }
 }

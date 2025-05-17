@@ -6,7 +6,7 @@ import io.writeopia.auth.core.data.User
 import io.writeopia.common.utils.ResultData
 import kotlinx.coroutines.tasks.await
 
-class FirebaseAuthManager(private val auth: FirebaseAuth) : AuthManager {
+class FirebaseAuthRepository(private val auth: FirebaseAuth) : AuthRepository {
 
     override suspend fun getUser(): User =
         auth.currentUser?.let { firebaseUser ->

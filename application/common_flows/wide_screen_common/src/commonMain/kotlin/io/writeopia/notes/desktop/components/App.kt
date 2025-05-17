@@ -77,7 +77,6 @@ fun DesktopApp(
     navigateToRegister: () -> Unit,
     startDestination: String = startDestination(),
 ) {
-    WriteopiaConnectionInjector.setBaseUrl("http://localhost:8080")
 
     if (writeopiaDb != null) {
         WriteopiaDbInjector.initialize(writeopiaDb)

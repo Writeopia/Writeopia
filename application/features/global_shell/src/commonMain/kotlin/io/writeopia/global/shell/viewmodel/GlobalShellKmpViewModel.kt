@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
 import io.writeopia.api.OllamaApi
-import io.writeopia.auth.core.manager.AuthManager
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.icons.IconChange
@@ -56,11 +56,11 @@ import kotlin.random.Random
 class GlobalShellKmpViewModel(
     private val notesUseCase: NotesUseCase,
     private val uiConfigurationRepo: UiConfigurationRepository,
-    private val authManager: AuthManager,
+    private val authRepository: AuthRepository,
     private val notesNavigationUseCase: NotesNavigationUseCase,
     private val folderStateController: FolderStateController = FolderStateController(
         notesUseCase,
-        authManager
+        authRepository
     ),
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val ollamaRepository: OllamaRepository,
@@ -212,7 +212,7 @@ class GlobalShellKmpViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
         combine(
-            authManager.listenForUser(),
+            authRepository.listenForUser(),
             notesNavigationUseCase.navigationState
         ) { user, notesNavigation ->
             user to notesNavigation
@@ -416,7 +416,7 @@ class GlobalShellKmpViewModel(
     }
 
     private suspend fun getUserId(): String =
-        localUserId ?: authManager.getUser().id.also { id ->
+        localUserId ?: authRepository.getUser().id.also { id ->
             localUserId = id
         }
 }

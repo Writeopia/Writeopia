@@ -2,17 +2,18 @@ package io.writeopia.auth.menu
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.writeopia.auth.core.manager.AuthManager
-import io.writeopia.auth.core.repository.AuthRepository
+import io.writeopia.auth.core.data.AuthApi
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.ResultData
+import io.writeopia.common.utils.map
 import io.writeopia.common.utils.toBoolean
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AuthMenuViewModel(
-    private val authManager: AuthManager,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val authApi: AuthApi,
 ) : ViewModel() {
 
     private val _email = MutableStateFlow("")
@@ -29,7 +30,7 @@ class AuthMenuViewModel(
     val isConnected = _isConnected.asStateFlow()
 
     fun saveUserChoiceOffline() {
-        authRepository.saveUserChoiceOffline()
+//        authRepository.saveUserChoiceOffline()
     }
 
     fun emailChanged(name: String) {
@@ -44,19 +45,13 @@ class AuthMenuViewModel(
         _loginState.value = ResultData.Loading()
 
         viewModelScope.launch {
-            val result = authManager.signIn(_email.value, _password.value)
+            val result = authApi.login(_email.value, _password.value)
 
-            if (result.toBoolean()) {
-                try {
-//                    introNotesUseCase.addIntroNotes(authManager.getUser().id)
-                } catch (e: Exception) {
-//                    Log.d("LoginViewModel", "Could not add intro notes. Error: ${e.message}")
-                }
+            if (result is ResultData.Complete) {
+                _loginState.value = result.map { true }
             } else if (result is Error) {
-//                Log.d("LoginViewModel", "error when singing in: ${result.message}")
+                _loginState.value = result.map { false }
             }
-
-            _loginState.value = result
         }
     }
 }

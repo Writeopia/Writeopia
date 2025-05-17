@@ -16,12 +16,14 @@ kotlin {
 
 
 dependencies {
+    implementation(project(":plugins:writeopia_serialization"))
+    implementation(project(":writeopia_models"))
+
     implementation(libs.ktor.server.core)
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
 
-    implementation(libs.firebase.admin)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.content.negotiation)

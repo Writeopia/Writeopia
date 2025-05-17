@@ -2,16 +2,18 @@ package io.writeopia.auth.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.writeopia.auth.core.manager.AuthManager
+import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.common.utils.ResultData
-import io.writeopia.common.utils.toBoolean
+import io.writeopia.common.utils.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 // The NavigationActivity won't leak because it is the single activity of the whole project
 internal class RegisterViewModel(
-    private val authManager: AuthManager
+    private val authRepository: AuthRepository,
+    private val authApi: AuthApi,
 ) : ViewModel() {
 
     private val _name = MutableStateFlow("")
@@ -42,16 +44,14 @@ internal class RegisterViewModel(
         _register.value = ResultData.Loading()
 
         viewModelScope.launch {
-            val result = authManager.signUp(_email.value, _password.value, _name.value)
-            if (result.toBoolean()) {
-                try {
-//                    introNotesUseCase.addIntroNotes(authManager.getUser().id)
-                } catch (e: Exception) {
-//                    Log.d("RegisterViewModel", "Could not add intro notes. Error: ${e.message}")
-                }
+            val result = authApi.register(
+                name = _name.value,
+                email = _email.value,
+                password = _password.value
+            )
+            if (result is ResultData.Complete) {
+                _register.value = result.map { true }
             }
-
-            _register.value = result
         }
     }
 }
