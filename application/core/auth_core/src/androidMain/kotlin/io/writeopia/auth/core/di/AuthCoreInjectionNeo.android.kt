@@ -4,9 +4,8 @@ import android.content.SharedPreferences
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
-import io.writeopia.auth.core.manager.FirebaseAuthRepository
-import io.writeopia.auth.core.repository.SharedPrefsAuthRepository
 import io.writeopia.common.utils.di.SharedPreferencesInjector
 
 actual class AuthCoreInjectionNeo private constructor(
@@ -15,10 +14,13 @@ actual class AuthCoreInjectionNeo private constructor(
 
     private val auth: FirebaseAuth = Firebase.auth
 
-    actual fun provideAccountManager(): io.writeopia.auth.core.manager.AuthRepository = FirebaseAuthRepository(auth)
+    actual fun provideAuthApi(): AuthApi {
+        TODO("Not yet implemented")
+    }
 
-    actual fun provideAuthRepository(): AuthRepository =
-        SharedPrefsAuthRepository(sharedPreferences)
+    actual fun provideAuthRepository(): AuthRepository {
+        TODO("Not yet implemented")
+    }
 
     actual companion object {
         private var instance: AuthCoreInjectionNeo? = null
@@ -30,4 +32,6 @@ actual class AuthCoreInjectionNeo private constructor(
                 instance = it
             }
     }
+
+
 }
