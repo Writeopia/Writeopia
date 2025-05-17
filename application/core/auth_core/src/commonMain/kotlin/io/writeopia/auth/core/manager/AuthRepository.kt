@@ -14,4 +14,10 @@ interface AuthRepository {
     suspend fun isLoggedIn(): ResultData<Boolean>
 
     suspend fun logout(): ResultData<Boolean>
+
+    suspend fun saveUser(user: WriteopiaUser, selected: Boolean)
+
+    suspend fun saveToken(userId: String, token: String)
+
+    suspend fun getAuthToken(userId: String): String?
 }

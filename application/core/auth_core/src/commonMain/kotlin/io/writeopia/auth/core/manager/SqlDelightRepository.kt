@@ -2,10 +2,13 @@ package io.writeopia.auth.core.manager
 
 import io.writeopia.auth.core.utils.toModel
 import io.writeopia.common.utils.ResultData
+import io.writeopia.common.utils.extensions.toLong
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sql.WriteopiaDb
 
-internal class SqlDelightRepository(private val writeopiaDb: WriteopiaDb?) : AuthRepository {
+internal class SqlDelightRepository(
+    private val writeopiaDb: WriteopiaDb?
+) : AuthRepository {
 
     override suspend fun getUser(): WriteopiaUser =
         writeopiaDb?.writeopiaUserEntityQueries
@@ -35,5 +38,26 @@ internal class SqlDelightRepository(private val writeopiaDb: WriteopiaDb?) : Aut
         }
 
         return ResultData.Complete(true)
+    }
+
+    override suspend fun saveUser(user: WriteopiaUser, selected: Boolean) {
+        writeopiaDb?.writeopiaUserEntityQueries
+            ?.insertUser(
+                id = user.id,
+                name = user.name,
+                email = user.email,
+                password = user.password,
+                selected = selected.toLong(),
+            )
+    }
+
+    override suspend fun getAuthToken(userId: String): String? =
+        writeopiaDb?.tokenEntityQueries
+            ?.selectTokenByUserId(userId)
+            ?.executeAsOneOrNull()
+
+    override suspend fun saveToken(userId: String, token: String) {
+        writeopiaDb?.tokenEntityQueries
+            ?.insertToken(userId, token)
     }
 }

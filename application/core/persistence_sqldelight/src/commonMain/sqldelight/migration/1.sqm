@@ -5,3 +5,8 @@ CREATE TABLE writeopia_user_entity (
   password TEXT NOT NULL,
   selected INTEGER NOT NULL
 );
+
+CREATE TABLE token_entity (
+  user_id TEXT PRIMARY KEY,
+  token TEXT NOT NULL
+);

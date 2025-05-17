@@ -15,7 +15,9 @@ import io.writeopia.sdk.serialization.data.RegisterRequest
 import io.writeopia.api.core.auth.repository.getUser
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.insertUser
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.serialization.data.AuthResponse
+import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
 import java.util.UUID
 
@@ -26,7 +28,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
 
         if (user != null) {
             val token = JwtConfig.generateToken(user.id)
-            call.respond(HttpStatusCode.OK, AuthResponse(token))
+            call.respond(HttpStatusCode.OK, AuthResponse(token, user.toApi()))
         } else {
             call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
         }
@@ -43,9 +45,10 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
                 val token = JwtConfig.generateToken(id)
 
                 writeopiaDb.insertUser(id, name, email, password)
+                val user = WriteopiaUser(id, name, email, password)
 
                 println("created!")
-                call.respond(HttpStatusCode.Created, AuthResponse(token))
+                call.respond(HttpStatusCode.Created, AuthResponse(token, user.toApi()))
             } else {
                 println("User already in db!")
                 call.respond(HttpStatusCode.Conflict, "Not Created")

@@ -6,6 +6,7 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.map
+import io.writeopia.sdk.serialization.data.toModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,6 +55,11 @@ internal class RegisterViewModel(
 
                 _register.value = when (result) {
                     is ResultData.Complete -> {
+                        val user = result.data.writeopiaUser.toModel()
+
+                        authRepository.saveUser(user = user, selected = true)
+                        authRepository.saveToken(user.id, result.data.token)
+
                         result.map { true }
                     }
 
