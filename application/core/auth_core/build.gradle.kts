@@ -33,6 +33,7 @@ kotlin {
 
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:persistence_bridge"))
+                implementation(project(":plugins:writeopia_persistence_sqldelight"))
 
                 implementation(project(":plugins:writeopia_network"))
                 implementation(project(":plugins:writeopia_serialization"))

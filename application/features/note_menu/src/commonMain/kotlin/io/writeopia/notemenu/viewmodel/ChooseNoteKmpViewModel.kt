@@ -230,7 +230,7 @@ internal class ChooseNoteKmpViewModel(
             _user.value = if (authRepository.isLoggedIn().toBoolean()) {
                 val user = authRepository.getUser()
 
-                if (user.id != DISCONNECTED_USER_ID) {
+                if (user != null && user.id != DISCONNECTED_USER_ID) {
                     UserState.ConnectedUser(user)
                 } else {
                     UserState.UserNotReturned()
