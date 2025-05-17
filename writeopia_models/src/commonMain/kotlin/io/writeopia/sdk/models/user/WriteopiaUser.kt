@@ -7,6 +7,8 @@ data class WriteopiaUser(
     val name: String
 ) {
     companion object {
+        const val DISCONNECTED = "disconnected_user"
+
         fun disconnectedUser(): WriteopiaUser = WriteopiaUser(id = "disconnected_user", "", "", "")
     }
 }

@@ -17,13 +17,12 @@ internal class SqlDelightRepository(
             ?.toModel()
             ?: WriteopiaUser.disconnectedUser()
 
-    override suspend fun isLoggedIn(): ResultData<Boolean> =
-        ResultData.Complete(
-            writeopiaDb?.writeopiaUserEntityQueries
-                ?.selectCurrentUser()
-                ?.executeAsOneOrNull()
-                ?.toModel() == null
-        )
+    override suspend fun isLoggedIn(): Boolean =
+        writeopiaDb?.writeopiaUserEntityQueries
+            ?.selectCurrentUser()
+            ?.executeAsOneOrNull()
+            ?.toModel() == null
+
 
     override suspend fun logout(): ResultData<Boolean> {
         getUser().let { user ->

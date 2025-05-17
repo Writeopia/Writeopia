@@ -30,6 +30,7 @@ import io.writeopia.notemenu.viewmodel.FolderStateController
 import io.writeopia.repository.UiConfigurationRepository
 import io.writeopia.responses.DownloadModelResponse
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -44,6 +45,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
@@ -65,7 +67,7 @@ class GlobalShellKmpViewModel(
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val ollamaRepository: OllamaRepository,
     private val configRepository: ConfigurationRepository,
-    private val json: Json = writeopiaJson
+    private val json: Json = writeopiaJson,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     init {
@@ -114,6 +116,10 @@ class GlobalShellKmpViewModel(
     override val workspaceLocalPath: StateFlow<String> = _workspaceLocalPath.asStateFlow()
 
     private val _retryModels = MutableStateFlow(0)
+
+    override val userState: StateFlow<WriteopiaUser> = flow {
+        emit(authRepository.getUser())
+    }.stateIn(viewModelScope, SharingStarted.Lazily, WriteopiaUser.disconnectedUser())
 
     private val _downloadModelState =
         MutableStateFlow<ResultData<DownloadModelResponse>>(ResultData.Idle())

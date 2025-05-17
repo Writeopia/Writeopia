@@ -28,9 +28,6 @@ class AuthMenuViewModel(
         MutableStateFlow(ResultData.Idle())
     val loginState = _loginState.asStateFlow()
 
-    private val _isConnected = MutableStateFlow<ResultData<Boolean>>(ResultData.Complete(false))
-    val isConnected = _isConnected.asStateFlow()
-
     fun saveUserChoiceOffline() {
 //        authRepository.saveUserChoiceOffline()
     }
@@ -52,6 +49,7 @@ class AuthMenuViewModel(
 
                 _loginState.value = when (result) {
                     is ResultData.Complete -> {
+                        println("login complete!")
                         val user = result.data.writeopiaUser.toModel()
 
                         authRepository.saveUser(user = user, selected = true)
@@ -61,16 +59,20 @@ class AuthMenuViewModel(
                     }
 
                     is Error -> {
+                        println("login error!")
                         delay(300)
                         result.map { false }
                     }
 
                     else -> {
+                        println("login error2!")
                         delay(300)
                         ResultData.Idle()
                     }
                 }
             } catch (e: Exception) {
+                e.printStackTrace()
+                println("login error3! ${e.message}")
                 delay(300)
                 _loginState.value = ResultData.Error(e)
             }

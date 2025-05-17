@@ -29,8 +29,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation(project(":writeopia_models"))
                 implementation(project(":application:core:utils"))
-                implementation(project(":application:core:auth_core"))
                 implementation(project(":application:core:auth_core"))
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:common_ui"))

@@ -11,7 +11,7 @@ interface AuthRepository {
 
     suspend fun getUser(): WriteopiaUser
 
-    suspend fun isLoggedIn(): ResultData<Boolean>
+    suspend fun isLoggedIn(): Boolean
 
     suspend fun logout(): ResultData<Boolean>
 

@@ -227,7 +227,7 @@ internal class ChooseNoteKmpViewModel(
 
     override suspend fun requestUser() {
         try {
-            _user.value = if (authRepository.isLoggedIn().toBoolean()) {
+            _user.value = if (authRepository.isLoggedIn()) {
                 val user = authRepository.getUser()
 
                 if (user.id != DISCONNECTED_USER_ID) {

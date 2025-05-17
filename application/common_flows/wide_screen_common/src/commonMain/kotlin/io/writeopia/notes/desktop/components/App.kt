@@ -220,6 +220,7 @@ fun DesktopApp(
                                     ollamaAvailableModels = globalShellViewModel.modelsForUrl,
                                     ollamaSelectedModel = globalShellViewModel.ollamaSelectedModelState,
                                     downloadModelState = globalShellViewModel.downloadModelState,
+                                    userOnlineState = globalShellViewModel.userState,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
                                     selectWorkplacePath = globalShellViewModel::changeWorkspaceLocalPath,
