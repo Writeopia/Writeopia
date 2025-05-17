@@ -8,7 +8,9 @@ import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sql.WriteopiaDb
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
 
+
 actual class AuthCoreInjectionNeo(
+    // Change this to use a different persistence
     private val writeopiaDb: WriteopiaDb? = WriteopiaDbInjector.singleton()?.database,
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val connectionInjector: WriteopiaConnectionInjector =
