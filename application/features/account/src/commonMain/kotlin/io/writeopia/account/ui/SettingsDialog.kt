@@ -55,9 +55,11 @@ import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SettingsPanel
+import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -73,6 +75,7 @@ fun SettingsDialog(
     ollamaAvailableModels: Flow<ResultData<List<String>>>,
     ollamaSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
+    userOnlineState: StateFlow<WriteopiaUser>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectWorkplacePath: (String) -> Unit,
@@ -81,6 +84,8 @@ fun SettingsDialog(
     ollamaModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    signIn: () -> Unit,
+    logout: () -> Unit
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -98,7 +103,7 @@ fun SettingsDialog(
             SettingsPanel(
                 modifier = Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
                 accountScreen = {
-                    Text("Todo!")
+                    AccountScreen(signIn, logout, userOnlineState)
                 },
                 appearanceScreen = {
                     ColorThemeOptions(
@@ -175,6 +180,59 @@ fun SettingsScreen(
     }
 
     Spacer(modifier = Modifier.height(30.dp))
+}
+
+@Composable
+private fun AccountScreen(
+    signIn: () -> Unit,
+    logout: () -> Unit,
+    userOnlineState: StateFlow<WriteopiaUser>
+) {
+    Column {
+        val titleStyle = MaterialTheme.typography.titleLarge
+        val titleColor = MaterialTheme.colorScheme.onBackground
+
+        Text(WrStrings.account(), style = titleStyle, color = titleColor)
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        val userOnline by userOnlineState.collectAsState()
+
+        if (userOnline.id != WriteopiaUser.DISCONNECTED) {
+            Text(
+                "Account: ${userOnline.name}",
+                style = MaterialTheme.typography.bodySmall,
+                color = titleColor,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .fillMaxWidth()
+            )
+
+            CommonButton(text = "Change account") {
+                signIn()
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            CommonButton(text = "Logout") {
+                logout()
+            }
+        } else {
+            Text(
+                WrStrings.youAreOffline(),
+                style = MaterialTheme.typography.bodySmall,
+                color = titleColor,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .fillMaxWidth()
+            )
+
+            CommonButton(text = WrStrings.singIn()) {
+                signIn()
+            }
+        }
+    }
 }
 
 @Composable

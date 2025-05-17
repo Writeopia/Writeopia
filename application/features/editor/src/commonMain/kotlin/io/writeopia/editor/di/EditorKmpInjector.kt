@@ -3,7 +3,7 @@ package io.writeopia.editor.di
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
-import io.writeopia.auth.core.manager.AuthManager
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.folders.di.FoldersInjector
@@ -43,10 +43,10 @@ class EditorKmpInjector private constructor(
     private fun provideWriteopiaManager(): WriteopiaManager = WriteopiaManager()
 
     private fun provideWriteopiaStateManager(
-        authManager: AuthManager = authCoreInjection.provideAccountManager(),
+        authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
         writeopiaManager: WriteopiaManager = provideWriteopiaManager()
     ) = WriteopiaStateManager.create(
-        userId = { authManager.getUser().id },
+        userId = { authRepository.getUser().id },
         dispatcher = Dispatchers.Default,
         writeopiaManager = writeopiaManager,
         selectionState = selectionState,

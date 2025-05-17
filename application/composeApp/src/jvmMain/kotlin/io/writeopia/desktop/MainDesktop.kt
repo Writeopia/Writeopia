@@ -1,5 +1,6 @@
 package io.writeopia.desktop
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.CircularProgressIndicator
@@ -11,19 +12,34 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.*
+import androidx.compose.ui.window.ApplicationScope
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
+import io.writeopia.auth.di.AuthInjection
+import io.writeopia.auth.navigation.authNavigation
+import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.common.utils.ui.GlobalToastBox
+import io.writeopia.model.isDarkTheme
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.resources.CommonImages
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sqldelight.database.DatabaseCreation
 import io.writeopia.sqldelight.database.DatabaseFactory
 import io.writeopia.sqldelight.database.driver.DriverFactory
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
+import io.writeopia.theme.WrieopiaTheme
+import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
@@ -192,6 +208,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     val database = databaseState.writeopiaDb
 
                     WriteopiaDbInjector.initialize(database)
+                    WriteopiaConnectionInjector.setBaseUrl("http://localhost:8080")
 
                     val uiConfigurationInjector = UiConfigurationInjector.singleton()
 
@@ -201,16 +218,43 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     val colorTheme =
                         uiConfigurationViewModel.listenForColorTheme { "disconnected_user" }
 
-                    GlobalToastBox {
-                        DesktopApp(
-                            writeopiaDb = database,
-                            selectionState = selectionState,
-                            keyboardEventFlow = keyboardEventFlow.filterNotNull(),
-                            coroutineScope = coroutineScope,
-                            colorThemeOption = colorTheme,
-                            selectColorTheme = uiConfigurationViewModel::changeColorTheme,
-                            toggleMaxScreen = topDoubleBarClick
-                        )
+                    val navigationController = rememberNavController()
+
+                    WrieopiaTheme(darkTheme = colorTheme.value.isDarkTheme()) {
+                        GlobalToastBox(
+                            modifier = Modifier
+                                .background(WriteopiaTheme.colorScheme.globalBackground)
+                        ) {
+                            NavHost(
+                                navController = navigationController,
+                                startDestination = Destinations.START_APP.id
+                            ) {
+                                composable(route = Destinations.START_APP.id) {
+                                    DesktopApp(
+                                        writeopiaDb = database,
+                                        selectionState = selectionState,
+                                        keyboardEventFlow = keyboardEventFlow.filterNotNull(),
+                                        coroutineScope = coroutineScope,
+                                        colorThemeOption = colorTheme,
+                                        selectColorTheme = uiConfigurationViewModel::changeColorTheme,
+                                        toggleMaxScreen = topDoubleBarClick,
+                                        navigateToRegister = {
+                                            navigationController.navigate(
+                                                Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                                            )
+                                        }
+                                    )
+                                }
+
+                                authNavigation(
+                                    navController = navigationController,
+                                    authInjection = AuthInjection(),
+                                    colorThemeOption = colorTheme
+                                ) {
+                                    navigationController.navigate(Destinations.START_APP.id)
+                                }
+                            }
+                        }
                     }
                 }
 

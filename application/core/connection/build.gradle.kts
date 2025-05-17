@@ -36,7 +36,6 @@ kotlin {
                 implementation(libs.ktor.serialization.json)
 
                 implementation(project(":plugins:writeopia_network"))
-                implementation(project(":application:core:auth_core"))
             }
         }
     }

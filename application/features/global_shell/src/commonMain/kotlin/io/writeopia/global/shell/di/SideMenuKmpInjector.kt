@@ -44,7 +44,7 @@ class SideMenuKmpInjector(
                 notesUseCase = provideNotesUseCase(),
                 uiConfigurationRepo = UiConfigurationCoreInjector.singleton()
                     .provideUiConfigurationRepository(),
-                authManager = authCoreInjection.provideAccountManager(),
+                authRepository = authCoreInjection.provideAuthRepository(),
                 notesNavigationUseCase = NotesNavigationUseCase.singleton(),
                 workspaceConfigRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
                 ollamaRepository = ollamaInjection.provideRepository(),

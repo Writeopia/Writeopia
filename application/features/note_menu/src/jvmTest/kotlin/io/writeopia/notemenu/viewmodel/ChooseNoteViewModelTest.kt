@@ -2,7 +2,7 @@ package io.writeopia.notemenu.viewmodel
 
 import io.mockk.coEvery
 import io.mockk.mockk
-import io.writeopia.auth.core.manager.AuthManager
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.NotesUseCase
 import io.writeopia.ui.keyboard.KeyboardEvent
@@ -20,7 +20,7 @@ class ChooseNoteViewModelTest {
 
     private val notesUseCase: NotesUseCase = mockk()
     private val notesConfig: ConfigurationRepository = mockk()
-    private val authManager: AuthManager = mockk()
+    private val authRepository: AuthRepository = mockk()
 
     @Test
     @Ignore("Todo: Fix")
@@ -34,7 +34,7 @@ class ChooseNoteViewModelTest {
             val viewModel = ChooseNoteKmpViewModel(
                 notesUseCase = notesUseCase,
                 notesConfig = notesConfig,
-                authManager = authManager,
+                authRepository = authRepository,
                 selectionState = MutableStateFlow(false),
                 keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
                 workspaceConfigRepository = mockk(),

@@ -1,14 +1,27 @@
 package io.writeopia.auth.core.di
 
-import io.writeopia.auth.core.manager.AuthManager
-import io.writeopia.auth.core.manager.MockAuthManager
-import io.writeopia.auth.core.repository.AuthRepository
-import io.writeopia.auth.core.repository.MockAuthRepository
+import io.writeopia.auth.core.data.AuthApi
+import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.auth.core.manager.SqlDelightRepository
+import io.writeopia.di.AppConnectionInjection
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
+import io.writeopia.sql.WriteopiaDb
+import io.writeopia.sqldelight.di.WriteopiaDbInjector
 
-actual class AuthCoreInjectionNeo {
-    actual fun provideAccountManager(): AuthManager = MockAuthManager()
+actual class AuthCoreInjectionNeo(
+    private val writeopiaDb: WriteopiaDb? = WriteopiaDbInjector.singleton()?.database,
+    private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
+    private val connectionInjector: WriteopiaConnectionInjector =
+        WriteopiaConnectionInjector.singleton()
+) {
 
-    actual fun provideAuthRepository(): AuthRepository = MockAuthRepository()
+    actual fun provideAuthRepository(): AuthRepository = SqlDelightRepository(writeopiaDb)
+
+    actual fun provideAuthApi(): AuthApi =
+        AuthApi(
+            client = appConnectionInjection.provideHttpClient(),
+            baseUrl = connectionInjector.baseUrl()
+        )
 
     actual companion object {
         private var instance: AuthCoreInjectionNeo? = null

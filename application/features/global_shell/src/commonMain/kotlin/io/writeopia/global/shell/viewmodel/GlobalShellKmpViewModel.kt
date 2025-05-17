@@ -5,31 +5,33 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
 import io.writeopia.api.OllamaApi
-import io.writeopia.auth.core.manager.AuthManager
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.ResultData
-import io.writeopia.common.utils.icons.IconChange
-import io.writeopia.common.utils.collections.traverse
 import io.writeopia.common.utils.collections.toNodeTree
+import io.writeopia.common.utils.collections.traverse
 import io.writeopia.common.utils.download.DownloadParser
 import io.writeopia.common.utils.download.DownloadState
+import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.common.utils.map
-import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
-import io.writeopia.model.ColorThemeOption
-import io.writeopia.model.UiConfiguration
-import io.writeopia.sdk.models.document.Folder
-import io.writeopia.common.utils.NotesNavigation
-import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
-import io.writeopia.core.folders.repository.NotesUseCase
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
+import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.model.ColorThemeOption
+import io.writeopia.model.UiConfiguration
+import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
+import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.notemenu.viewmodel.FolderStateController
 import io.writeopia.repository.UiConfigurationRepository
 import io.writeopia.responses.DownloadModelResponse
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -56,16 +58,16 @@ import kotlin.random.Random
 class GlobalShellKmpViewModel(
     private val notesUseCase: NotesUseCase,
     private val uiConfigurationRepo: UiConfigurationRepository,
-    private val authManager: AuthManager,
+    private val authRepository: AuthRepository,
     private val notesNavigationUseCase: NotesNavigationUseCase,
     private val folderStateController: FolderStateController = FolderStateController(
         notesUseCase,
-        authManager
+        authRepository
     ),
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val ollamaRepository: OllamaRepository,
     private val configRepository: ConfigurationRepository,
-    private val json: Json = writeopiaJson
+    private val json: Json = writeopiaJson,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     init {
@@ -114,6 +116,12 @@ class GlobalShellKmpViewModel(
     override val workspaceLocalPath: StateFlow<String> = _workspaceLocalPath.asStateFlow()
 
     private val _retryModels = MutableStateFlow(0)
+
+    private val _loginStateTrigger = MutableStateFlow(GenerateId.generate())
+
+    override val userState: StateFlow<WriteopiaUser> = _loginStateTrigger.map {
+        authRepository.getUser()
+    }.stateIn(viewModelScope, SharingStarted.Lazily, WriteopiaUser.disconnectedUser())
 
     private val _downloadModelState =
         MutableStateFlow<ResultData<DownloadModelResponse>>(ResultData.Idle())
@@ -212,7 +220,7 @@ class GlobalShellKmpViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
         combine(
-            authManager.listenForUser(),
+            authRepository.listenForUser(),
             notesNavigationUseCase.navigationState
         ) { user, notesNavigation ->
             user to notesNavigation
@@ -415,8 +423,15 @@ class GlobalShellKmpViewModel(
         }
     }
 
+    override fun logout() {
+        viewModelScope.launch {
+            authRepository.logout()
+            _loginStateTrigger.value = GenerateId.generate()
+        }
+    }
+
     private suspend fun getUserId(): String =
-        localUserId ?: authManager.getUser().id.also { id ->
+        localUserId ?: authRepository.getUser().id.also { id ->
             localUserId = id
         }
 }

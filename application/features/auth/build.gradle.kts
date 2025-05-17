@@ -38,6 +38,9 @@ kotlin {
                 implementation(project(":application:core:navigation"))
                 implementation(project(":application:core:auth_core"))
                 implementation(project(":application:core:persistence_bridge"))
+                implementation(project(":application:core:theme"))
+                implementation(project(":application:core:resources"))
+
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_serialization"))
 

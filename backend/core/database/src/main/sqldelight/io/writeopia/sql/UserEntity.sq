@@ -1,0 +1,34 @@
+CREATE TABLE user_entity (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  email TEXT NOT NULL,
+  password TEXT NOT NULL,
+  enabled BOOLEAN NOT NULL
+);
+
+selectUser:
+SELECT *
+FROM user_entity
+WHERE email = ? AND password = ?
+LIMIT 1;
+
+selectUserByEmail:
+SELECT *
+FROM user_entity
+WHERE email = ?
+LIMIT 1;
+
+insertUser:
+INSERT INTO user_entity(id, name, created_at, email, password, enabled)
+VALUES (?, ?, ?, ?, ?, ?);
+
+deleteUser:
+DELETE
+FROM user_entity
+WHERE id = ?;
+
+deleteUserByEmail:
+DELETE
+FROM user_entity
+WHERE email = ?;

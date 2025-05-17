@@ -38,6 +38,7 @@ fun CreateAppInMemory() {
         selectColorTheme = uiConfigurationViewModel::changeColorTheme,
         coroutineScope = coroutineScope,
         keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
-        toggleMaxScreen = {}
+        toggleMaxScreen = {},
+        navigateToRegister = {}
     )
 }

@@ -10,7 +10,7 @@ class AccountMenuKmpInjector private constructor() {
 
     private fun provideAccountMenuKmpViewModel(): AccountMenuKmpViewModel =
         AccountMenuKmpViewModel(
-            authManager = AuthCoreInjectionNeo.singleton().provideAccountManager(),
+            authManager = AuthCoreInjectionNeo.singleton().provideAuthRepository(),
             authRepository = AuthCoreInjectionNeo.singleton().provideAuthRepository()
         )
 

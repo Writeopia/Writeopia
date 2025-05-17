@@ -10,12 +10,11 @@ enum class Destinations(val id: String, val root: String) {
     EDIT_FOLDER("edit_folder", "Home"),
     ACCOUNT("account", "Home"),
 
-    AUTH_REGISTER("auth_register", "Home"),
-
-    /**
-     * THis
-     */
     AUTH_MENU_INNER_NAVIGATION("auth_menu_inner_navigation", "Home"),
+    AUTH_REGISTER("auth_register", "Home"),
     AUTH_MENU("auth_menu", "Home"),
-    AUTH_LOGIN("auth_login", "Home")
+    AUTH_LOGIN("auth_login", "Home"),
+
+    START_APP("start_app", "Home"),
+    DESKTOP_AUTH("desktop_auth", "Home")
 }

@@ -51,7 +51,7 @@ class NotesMenuKmpInjection private constructor(
     private fun provideFolderStateController(): FolderStateController =
         FolderStateController(
             provideNotesUseCase(),
-            authCoreInjection.provideAccountManager()
+            authCoreInjection.provideAuthRepository()
         )
 
     private fun provideDocumentsApi() =
@@ -76,7 +76,7 @@ class NotesMenuKmpInjection private constructor(
         ChooseNoteKmpViewModel(
             notesUseCase = notesUseCase,
             notesConfig = notesConfig,
-            authManager = authCoreInjection.provideAccountManager(),
+            authRepository = authCoreInjection.provideAuthRepository(),
             selectionState = selectionState,
             notesNavigation = notesNavigation,
             folderController = provideFolderStateController(),
