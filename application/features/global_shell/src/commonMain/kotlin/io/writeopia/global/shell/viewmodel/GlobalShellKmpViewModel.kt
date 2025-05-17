@@ -30,6 +30,7 @@ import io.writeopia.notemenu.viewmodel.FolderStateController
 import io.writeopia.repository.UiConfigurationRepository
 import io.writeopia.responses.DownloadModelResponse
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toModel
@@ -117,8 +118,10 @@ class GlobalShellKmpViewModel(
 
     private val _retryModels = MutableStateFlow(0)
 
-    override val userState: StateFlow<WriteopiaUser> = flow {
-        emit(authRepository.getUser())
+    private val _loginStateTrigger = MutableStateFlow(GenerateId.generate())
+
+    override val userState: StateFlow<WriteopiaUser> = _loginStateTrigger.map {
+        authRepository.getUser()
     }.stateIn(viewModelScope, SharingStarted.Lazily, WriteopiaUser.disconnectedUser())
 
     private val _downloadModelState =
@@ -418,6 +421,13 @@ class GlobalShellKmpViewModel(
 
                 retryModels()
             }
+        }
+    }
+
+    override fun logout() {
+        viewModelScope.launch {
+            authRepository.logout()
+            _loginStateTrigger.value = GenerateId.generate()
         }
     }
 

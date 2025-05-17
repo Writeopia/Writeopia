@@ -85,6 +85,7 @@ fun SettingsDialog(
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     signIn: () -> Unit,
+    logout: () -> Unit
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -102,7 +103,7 @@ fun SettingsDialog(
             SettingsPanel(
                 modifier = Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
                 accountScreen = {
-                    AccountScreen(signIn, userOnlineState)
+                    AccountScreen(signIn, logout, userOnlineState)
                 },
                 appearanceScreen = {
                     ColorThemeOptions(
@@ -182,7 +183,11 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun AccountScreen(signIn: () -> Unit, userOnlineState: StateFlow<WriteopiaUser>) {
+private fun AccountScreen(
+    signIn: () -> Unit,
+    logout: () -> Unit,
+    userOnlineState: StateFlow<WriteopiaUser>
+) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
         val titleColor = MaterialTheme.colorScheme.onBackground
@@ -205,6 +210,12 @@ private fun AccountScreen(signIn: () -> Unit, userOnlineState: StateFlow<Writeop
 
             CommonButton(text = "Change account") {
                 signIn()
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            CommonButton(text = "Logout") {
+                logout()
             }
         } else {
             Text(

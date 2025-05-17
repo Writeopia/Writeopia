@@ -229,7 +229,8 @@ fun DesktopApp(
                                         globalShellViewModel.modelToDownload(model)
                                     },
                                     deleteModel = globalShellViewModel::deleteModel,
-                                    signIn = navigateToRegister
+                                    signIn = navigateToRegister,
+                                    logout = globalShellViewModel::logout
                                 )
                             }
 

@@ -59,6 +59,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     fun changeWorkspaceLocalPath(path: String)
 
+    fun logout()
+
     override fun changeOllamaUrl(url: String)
 
     override fun selectOllamaModel(model: String)
