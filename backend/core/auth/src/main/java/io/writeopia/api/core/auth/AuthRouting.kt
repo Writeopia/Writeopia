@@ -33,19 +33,28 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
     }
 
     post("api/register") {
-        val (name, email, password) = call.receive<RegisterRequest>()
+        try {
+            println("received register!")
+            val (name, email, password) = call.receive<RegisterRequest>()
 
-        val user = writeopiaDb.getUserByEmail(email)
-        if (user == null) {
-            val id = UUID.randomUUID().toString()
-            val token = JwtConfig.generateToken(id)
+            val user = writeopiaDb.getUserByEmail(email)
+            if (user == null) {
+                val id = UUID.randomUUID().toString()
+                val token = JwtConfig.generateToken(id)
 
-            writeopiaDb.insertUser(id, name, email, password)
+                writeopiaDb.insertUser(id, name, email, password)
 
-            call.respond(HttpStatusCode.Created, AuthResponse(token))
-        } else {
-            call.respond(HttpStatusCode.Conflict, "Not Created")
+                println("created!")
+                call.respond(HttpStatusCode.Created, AuthResponse(token))
+            } else {
+                println("User already in db!")
+                call.respond(HttpStatusCode.Conflict, "Not Created")
+            }
+        } catch (e: Exception) {
+            println("exception: ${e.message}")
+            e.printStackTrace()
         }
+
     }
 
     authenticate("auth-jwt") {

@@ -7,6 +7,7 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.map
 import io.writeopia.common.utils.toBoolean
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -45,12 +46,27 @@ class AuthMenuViewModel(
         _loginState.value = ResultData.Loading()
 
         viewModelScope.launch {
-            val result = authApi.login(_email.value, _password.value)
+            try {
+                val result = authApi.login(_email.value, _password.value)
 
-            if (result is ResultData.Complete) {
-                _loginState.value = result.map { true }
-            } else if (result is Error) {
-                _loginState.value = result.map { false }
+                _loginState.value = when (result) {
+                    is ResultData.Complete -> {
+                        result.map { true }
+                    }
+
+                    is Error -> {
+                        delay(300)
+                        result.map { false }
+                    }
+
+                    else -> {
+                        delay(300)
+                        ResultData.Idle()
+                    }
+                }
+            } catch (e: Exception) {
+                delay(300)
+                _loginState.value = ResultData.Error(e)
             }
         }
     }

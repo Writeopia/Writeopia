@@ -9,6 +9,7 @@ import io.ktor.http.contentType
 import io.writeopia.common.utils.ResultData
 import io.writeopia.sdk.serialization.data.LoginRequest
 import io.writeopia.sdk.serialization.data.AuthResponse
+import io.writeopia.sdk.serialization.data.RegisterRequest
 
 class AuthApi(private val client: HttpClient, private val baseUrl: String) {
 
@@ -29,7 +30,7 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         return try {
             val response = client.post("$baseUrl/api/register") {
                 contentType(ContentType.Application.Json)
-                setBody(LoginRequest(email, password))
+                setBody(RegisterRequest(name, email, password))
             }.body<AuthResponse>()
 
             ResultData.Complete(response)

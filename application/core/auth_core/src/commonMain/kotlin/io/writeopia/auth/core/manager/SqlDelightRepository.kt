@@ -23,7 +23,7 @@ internal class SqlDelightRepository(private val writeopiaDb: WriteopiaDb?) : Aut
         )
 
     override suspend fun logout(): ResultData<Boolean> {
-        getUser()?.let { user ->
+        getUser().let { user ->
             writeopiaDb?.writeopiaUserEntityQueries
                 ?.insertUser(
                     id = user.id,

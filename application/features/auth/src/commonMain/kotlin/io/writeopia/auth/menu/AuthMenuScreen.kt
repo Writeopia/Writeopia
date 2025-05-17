@@ -46,14 +46,12 @@ import kotlinx.coroutines.flow.StateFlow
 @Composable
 fun AuthMenuScreen(
     modifier: Modifier = Modifier,
-    isConnectedState: StateFlow<ResultData<Boolean>>,
     emailState: StateFlow<String>,
     passwordState: StateFlow<String>,
     loginState: StateFlow<ResultData<Boolean>>,
     emailChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
-    onLoginSuccess: () -> Unit,
     saveUserChoiceOffline: () -> Unit,
     navigateToLogin: () -> Unit,
     navigateToRegister: () -> Unit,
@@ -76,17 +74,15 @@ fun AuthMenuScreen(
             AuthMenuContentScreen(
                 emailState,
                 passwordState,
-                loginState,
                 emailChanged,
                 passwordChanged,
                 onLoginRequest,
-                onLoginSuccess,
                 navigateToRegister,
                 modifier,
             )
         }
 
-        when (val isConnected = isConnectedState.collectAsState().value) {
+        when (val isConnected = loginState.collectAsState().value) {
             is ResultData.Complete -> {
                 if (isConnected.data) {
                     LaunchedEffect("navigateUp") {
@@ -100,10 +96,14 @@ fun AuthMenuScreen(
                 authScreen(Modifier)
             }
 
-            is ResultData.Idle, is ResultData.Loading, is ResultData.InProgress -> {
+            is ResultData.Loading, is ResultData.InProgress -> {
                 authScreen(Modifier.blur(8.dp))
 
                 LoadingScreen()
+            }
+
+            is ResultData.Idle -> {
+                authScreen(Modifier)
             }
         }
     }
@@ -120,11 +120,9 @@ private fun LoadingScreen() {
 private fun AuthMenuContentScreen(
     emailState: StateFlow<String>,
     passwordState: StateFlow<String>,
-    loginState: StateFlow<ResultData<Boolean>>,
     emailChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
-    onLoginSuccess: () -> Unit,
     navigateToRegister: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -216,7 +214,7 @@ private fun AuthMenuContentScreen(
                     .padding(horizontal = 24.dp)
                     .background(MaterialTheme.colorScheme.primary, shape = shape)
                     .fillMaxWidth(),
-                onClick = navigateToRegister,
+                onClick = onLoginRequest,
                 shape = shape
             ) {
                 Text(

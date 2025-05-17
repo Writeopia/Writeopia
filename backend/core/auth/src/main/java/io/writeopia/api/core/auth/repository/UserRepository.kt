@@ -14,6 +14,7 @@ fun WriteopiaDbBackend.getUser(email: String, password: String): WriteopiaUser? 
                 id = userEntity.id,
                 email = userEntity.email,
                 password = userEntity.password,
+                name = userEntity.name
             )
         }
 
@@ -26,6 +27,7 @@ fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaUser? =
                 id = userEntity.id,
                 email = userEntity.email,
                 password = userEntity.password,
+                name = userEntity.name
             )
         }
 

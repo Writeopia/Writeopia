@@ -42,8 +42,6 @@ fun NavGraphBuilder.authNavigation(
                     emailChanged = authMenuViewModel::emailChanged,
                     passwordChanged = authMenuViewModel::passwordChanged,
                     onLoginRequest = authMenuViewModel::onLoginRequest,
-                    onLoginSuccess = {},
-                    isConnectedState = authMenuViewModel.isConnected,
                     navigateToLogin = navController::navigateAuthLogin,
                     saveUserChoiceOffline = authMenuViewModel::saveUserChoiceOffline,
                     navigateToRegister = navController::navigateAuthRegister,

@@ -6,6 +6,7 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.map
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -44,13 +45,32 @@ internal class RegisterViewModel(
         _register.value = ResultData.Loading()
 
         viewModelScope.launch {
-            val result = authApi.register(
-                name = _name.value,
-                email = _email.value,
-                password = _password.value
-            )
-            if (result is ResultData.Complete) {
-                _register.value = result.map { true }
+            try {
+                val result = authApi.register(
+                    name = _name.value,
+                    email = _email.value,
+                    password = _password.value
+                )
+
+                _register.value = when (result) {
+                    is ResultData.Complete -> {
+                        result.map { true }
+                    }
+
+                    is Error -> {
+                        delay(300)
+                        result.map { false }
+                    }
+
+                    else -> {
+                        delay(300)
+                        ResultData.Idle()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                delay(300)
+                _register.value = ResultData.Error(e)
             }
         }
     }
