@@ -23,7 +23,6 @@ internal class SqlDelightRepository(
             ?.executeAsOneOrNull()
             ?.toModel() == null
 
-
     override suspend fun logout(): ResultData<Boolean> {
         getUser().let { user ->
             writeopiaDb?.writeopiaUserEntityQueries

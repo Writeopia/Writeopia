@@ -38,5 +38,4 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
             ResultData.Error(e)
         }
     }
-
 }

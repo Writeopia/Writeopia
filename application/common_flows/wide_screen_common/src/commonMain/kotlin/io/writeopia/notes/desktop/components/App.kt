@@ -29,6 +29,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.account.ui.SettingsDialog
 import io.writeopia.common.utils.Destinations
+import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.common.utils.NotesNavigationType
+import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.KmpSearchInjection
 import io.writeopia.features.search.ui.SearchDialog
@@ -40,9 +43,6 @@ import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNote
-import io.writeopia.common.utils.NotesNavigation
-import io.writeopia.common.utils.NotesNavigationType
-import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
@@ -50,7 +50,6 @@ import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.ui.screen.menu.EditFileScreen
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
-import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sql.WriteopiaDb
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
@@ -77,7 +76,6 @@ fun DesktopApp(
     navigateToRegister: () -> Unit,
     startDestination: String = startDestination(),
 ) {
-
     if (writeopiaDb != null) {
         WriteopiaDbInjector.initialize(writeopiaDb)
     }

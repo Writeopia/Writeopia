@@ -26,4 +26,3 @@ fun WriteopiaUser.toApi(): WriteopiaUserApi =
         password = this.password,
         name = this.name
     )
-
