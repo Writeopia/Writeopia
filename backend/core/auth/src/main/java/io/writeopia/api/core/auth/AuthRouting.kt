@@ -45,13 +45,13 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
 
                 writeopiaDb.insertUser(id, name, email, password)
                 val user = WriteopiaUser(id, name, email, password)
-                
+
                 call.respond(HttpStatusCode.Created, AuthResponse(token, user.toApi()))
             } else {
                 call.respond(HttpStatusCode.Conflict, "Not Created")
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            call.respond(HttpStatusCode.InternalServerError, "Unknown error")
         }
 
     }

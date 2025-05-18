@@ -74,7 +74,6 @@ internal class RegisterViewModel(
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
                 delay(300)
                 _register.value = ResultData.Error(e)
             }
