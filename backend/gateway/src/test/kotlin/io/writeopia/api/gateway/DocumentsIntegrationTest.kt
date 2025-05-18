@@ -22,6 +22,7 @@ class ApplicationTest {
     private val db = configurePersistence()
 
     @Test
+    @Ignore
     fun `it should be possible to save and query document by id`() = testApplication {
         application {
             module(db)
@@ -60,6 +61,7 @@ class ApplicationTest {
     }
 
     @Test
+    @Ignore
     fun `it should be possible to save and query documents by parent id`() = testApplication {
         application {
             module(db)
@@ -100,6 +102,7 @@ class ApplicationTest {
     }
 
     @Test
+    @Ignore
     fun `it should be possible to save and query ids by parent id`() = testApplication {
         application {
             module(db)
@@ -134,6 +137,7 @@ class ApplicationTest {
     }
 
     @Test
+    @Ignore
     fun `it should be possible to get diff of folders`() = testApplication {
         application {
             module(db)

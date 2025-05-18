@@ -2,34 +2,74 @@ package io.writeopia.auth.menu
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.writeopia.auth.core.manager.AuthManager
-import io.writeopia.auth.core.repository.AuthRepository
+import io.writeopia.auth.core.data.AuthApi
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.map
-import kotlinx.coroutines.Dispatchers
+import io.writeopia.sdk.serialization.data.toModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AuthMenuViewModel(
-    private val authManager: AuthManager,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val authApi: AuthApi,
 ) : ViewModel() {
 
-    private val _isConnected = MutableStateFlow<ResultData<Boolean>>(ResultData.Idle())
-    val isConnected = _isConnected.asStateFlow()
+    private val _email = MutableStateFlow("")
+    val email = _email.asStateFlow()
 
-    fun checkLoggedIn() {
-        viewModelScope.launch(Dispatchers.Default) {
-            _isConnected.value = ResultData.Loading()
-            _isConnected.value =
-                authManager.isLoggedIn().map { isConnected ->
-                    isConnected || authRepository.isUserOfflineByChoice()
-                }
-        }
-    }
+    private val _password = MutableStateFlow("")
+    val password = _password.asStateFlow()
+
+    private val _loginState: MutableStateFlow<ResultData<Boolean>> =
+        MutableStateFlow(ResultData.Idle())
+    val loginState = _loginState.asStateFlow()
 
     fun saveUserChoiceOffline() {
-        authRepository.saveUserChoiceOffline()
+//        authRepository.saveUserChoiceOffline()
+    }
+
+    fun emailChanged(name: String) {
+        _email.value = name
+    }
+
+    fun passwordChanged(name: String) {
+        _password.value = name
+    }
+
+    fun onLoginRequest() {
+        _loginState.value = ResultData.Loading()
+
+        viewModelScope.launch {
+            try {
+                val result = authApi.login(_email.value, _password.value)
+
+                _loginState.value = when (result) {
+                    is ResultData.Complete -> {
+                        val user = result.data.writeopiaUser.toModel()
+
+                        authRepository.saveUser(user = user, selected = true)
+                        authRepository.saveToken(user.id, result.data.token)
+
+                        result.map { true }
+                    }
+
+                    is Error -> {
+                        delay(300)
+                        result.map { false }
+                    }
+
+                    else -> {
+                        delay(300)
+                        ResultData.Idle()
+                    }
+                }
+            } catch (e: Exception) {
+                delay(300)
+                _loginState.value = ResultData.Error(e)
+            }
+        }
     }
 }

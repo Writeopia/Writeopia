@@ -1,0 +1,14 @@
+CREATE TABLE token_entity (
+  user_id TEXT PRIMARY KEY,
+  token TEXT NOT NULL
+);
+
+selectTokenByUserId:
+SELECT token
+FROM token_entity
+WHERE user_id = ?
+LIMIT 1;
+
+insertToken:
+INSERT INTO token_entity(user_id, token)
+VALUES (?, ?);

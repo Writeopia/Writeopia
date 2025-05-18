@@ -28,6 +28,5 @@ dependencies {
     implementation(libs.kotlinx.datetime)
 
     implementation(libs.ktor.server.core)
-
     implementation(libs.ktor.client.core)
 }

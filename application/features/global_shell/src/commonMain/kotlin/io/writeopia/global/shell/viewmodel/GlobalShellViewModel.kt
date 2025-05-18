@@ -7,6 +7,7 @@ import io.writeopia.controller.OllamaConfigController
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.user.WriteopiaUser
 import kotlinx.coroutines.flow.StateFlow
 
 interface GlobalShellViewModel : FolderController, OllamaConfigController {
@@ -27,6 +28,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
     val showSearchDialog: StateFlow<Boolean>
 
     val workspaceLocalPath: StateFlow<String>
+
+    val userState: StateFlow<WriteopiaUser>
 
     override val ollamaSelectedModelState: StateFlow<String>
 
@@ -55,6 +58,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
     fun hideSearch()
 
     fun changeWorkspaceLocalPath(path: String)
+
+    fun logout()
 
     override fun changeOllamaUrl(url: String)
 
