@@ -36,7 +36,6 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
 
     post("api/register") {
         try {
-            println("received register!")
             val (name, email, password) = call.receive<RegisterRequest>()
 
             val user = writeopiaDb.getUserByEmail(email)
@@ -46,15 +45,12 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
 
                 writeopiaDb.insertUser(id, name, email, password)
                 val user = WriteopiaUser(id, name, email, password)
-
-                println("created!")
+                
                 call.respond(HttpStatusCode.Created, AuthResponse(token, user.toApi()))
             } else {
-                println("User already in db!")
                 call.respond(HttpStatusCode.Conflict, "Not Created")
             }
         } catch (e: Exception) {
-            println("exception: ${e.message}")
             e.printStackTrace()
         }
 
