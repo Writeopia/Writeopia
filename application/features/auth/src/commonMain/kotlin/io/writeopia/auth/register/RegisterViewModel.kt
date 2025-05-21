@@ -58,7 +58,6 @@ internal class RegisterViewModel(
                         val user = result.data.writeopiaUser.toModel()
 
                         authRepository.saveUser(user = user, selected = true)
-                        authRepository.saveToken(user.id, result.data.token)
 
                         result.map { true }
                     }

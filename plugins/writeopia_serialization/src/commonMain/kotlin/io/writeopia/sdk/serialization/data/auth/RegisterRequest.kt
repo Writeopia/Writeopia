@@ -1,4 +1,4 @@
-package io.writeopia.sdk.serialization.data
+package io.writeopia.sdk.serialization.data.auth
 
 import kotlinx.serialization.Serializable
 

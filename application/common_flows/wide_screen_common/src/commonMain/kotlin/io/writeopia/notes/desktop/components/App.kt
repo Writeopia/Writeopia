@@ -219,6 +219,7 @@ fun DesktopApp(
                                     ollamaSelectedModel = globalShellViewModel.ollamaSelectedModelState,
                                     downloadModelState = globalShellViewModel.downloadModelState,
                                     userOnlineState = globalShellViewModel.userState,
+                                    showDeleteConfirmation = globalShellViewModel.showDeleteConfirmation,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
                                     selectWorkplacePath = globalShellViewModel::changeWorkspaceLocalPath,
@@ -230,7 +231,10 @@ fun DesktopApp(
                                     },
                                     deleteModel = globalShellViewModel::deleteModel,
                                     signIn = navigateToRegister,
-                                    logout = globalShellViewModel::logout
+                                    logout = globalShellViewModel::logout,
+                                    showDeleteConfirm = globalShellViewModel::showDeleteConfirm,
+                                    dismissDeleteConfirm = globalShellViewModel::dismissDeleteConfirm,
+                                    deleteAccount = globalShellViewModel::deleteAccount
                                 )
                             }
 

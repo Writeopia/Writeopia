@@ -30,6 +30,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":writeopia_models"))
+                implementation(project(":application:core:models"))
 
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:persistence_bridge"))
@@ -62,6 +63,9 @@ kotlin {
                 implementation(libs.firebase.auth)
                 implementation(project.dependencies.platform(libs.firebase.bom.get()))
             }
+        }
+
+        nativeMain.dependencies {
         }
     }
 }

@@ -8,29 +8,51 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Routing
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
-import io.writeopia.sdk.serialization.data.LoginRequest
-import io.writeopia.sdk.serialization.data.RegisterRequest
-import io.writeopia.api.core.auth.repository.getUser
+import io.writeopia.api.core.auth.hash.HashUtils
+import io.writeopia.api.core.auth.hash.toBase64
+import io.writeopia.api.core.auth.models.toApi
+import io.writeopia.api.core.auth.repository.deleteUserById
+import io.writeopia.sdk.serialization.data.auth.LoginRequest
+import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.insertUser
 import io.writeopia.sdk.models.user.WriteopiaUser
-import io.writeopia.sdk.serialization.data.AuthResponse
+import io.writeopia.sdk.serialization.data.auth.AuthResponse
+import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
 import java.util.UUID
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
     post("api/login") {
-        val credentials = call.receive<LoginRequest>()
-        val user = writeopiaDb.getUser(credentials.email, credentials.password)
+        try {
+            val credentials = call.receive<LoginRequest>()
+            val user = writeopiaDb.getUserByEmail(credentials.email)
 
-        if (user != null) {
-            val token = JwtConfig.generateToken(user.id)
-            call.respond(HttpStatusCode.OK, AuthResponse(token, user.toApi()))
-        } else {
-            call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
+            if (user != null) {
+                val hash = user.password
+                val salt = user.salt
+
+                val isVerified = HashUtils.verifyPassword(
+                    inputPassword = credentials.password,
+                    storedHashBase64 = hash,
+                    storedSaltBase64 = salt
+                )
+
+                if (isVerified) {
+                    val token = JwtConfig.generateToken(user.id)
+                    call.respond(HttpStatusCode.OK, AuthResponse(token, user.toApi()))
+                } else {
+                    call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
+                }
+            } else {
+                call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
+            }
+        } catch (e: Exception) {
+            throw e
         }
     }
 
@@ -41,19 +63,40 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
             val user = writeopiaDb.getUserByEmail(email)
             if (user == null) {
                 val id = UUID.randomUUID().toString()
-                val token = JwtConfig.generateToken(id)
 
-                writeopiaDb.insertUser(id, name, email, password)
-                val user = WriteopiaUser(id, name, email, password)
+                val salt = HashUtils.generateSalt()
+                val hash = HashUtils.hashPassword(password, salt).toBase64()
 
-                call.respond(HttpStatusCode.Created, AuthResponse(token, user.toApi()))
+                writeopiaDb.insertUser(id, name, email, hash, salt.toBase64())
+                val wUser = WriteopiaUser(
+                    id = id,
+                    name = name,
+                    email = email,
+                )
+
+                call.respond(HttpStatusCode.Created, AuthResponse(null, wUser.toApi()))
             } else {
                 call.respond(HttpStatusCode.Conflict, "Not Created")
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             call.respond(HttpStatusCode.InternalServerError, "Unknown error")
         }
 
+    }
+
+    authenticate("auth-jwt") {
+        delete("api/account") {
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.payload?.getClaim("userId")?.asString()
+
+            if (userId != null) {
+                writeopiaDb.deleteUserById(id = userId)
+                call.respond(DeleteAccountResponse(true))
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
+        }
     }
 
     authenticate("auth-jwt") {

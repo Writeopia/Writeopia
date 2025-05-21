@@ -30,7 +30,6 @@ internal class SqlDelightRepository(
                     id = user.id,
                     name = user.name,
                     email = user.email,
-                    password = user.password,
                     selected = 0,
                 )
         }
@@ -44,14 +43,13 @@ internal class SqlDelightRepository(
                 id = user.id,
                 name = user.name,
                 email = user.email,
-                password = user.password,
                 selected = selected.toLong(),
             )
     }
 
-    override suspend fun getAuthToken(userId: String): String? =
+    override suspend fun getAuthToken(): String? =
         writeopiaDb?.tokenEntityQueries
-            ?.selectTokenByUserId(userId)
+            ?.selectTokenByUserId(getUser().id)
             ?.executeAsOneOrNull()
 
     override suspend fun saveToken(userId: String, token: String) {

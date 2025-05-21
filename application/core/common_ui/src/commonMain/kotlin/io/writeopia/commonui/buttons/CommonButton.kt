@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun CommonButton(
+    modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     iconDescription: String? = null,
     text: String,
@@ -42,7 +44,7 @@ fun CommonButton(
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
+        modifier = modifier
             .background(lockButtonColor, shape)
             .clip(shape)
             .clickable(onClick = clickListener)
@@ -65,6 +67,41 @@ fun CommonButton(
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+
+@Composable
+fun CommonTextButton(
+    modifier: Modifier = Modifier,
+    text: String,
+    defaultColor: Color = WriteopiaTheme.colorScheme.defaultButton,
+    selectedColor: Color = WriteopiaTheme.colorScheme.highlight,
+    textColor: Color = MaterialTheme.colorScheme.onBackground,
+    isEnabledState: StateFlow<Boolean> = MutableStateFlow(true),
+    clickListener: () -> Unit,
+) {
+    val isEditable by isEnabledState.collectAsState()
+    val lockButtonColor = if (isEditable) defaultColor else selectedColor
+
+    val shape = MaterialTheme.shapes.medium
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .background(lockButtonColor, shape)
+            .clip(shape)
+            .clickable(onClick = clickListener)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = textColor,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }

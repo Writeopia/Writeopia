@@ -31,6 +31,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     val userState: StateFlow<WriteopiaUser>
 
+    val showDeleteConfirmation: StateFlow<Boolean>
+
     override val ollamaSelectedModelState: StateFlow<String>
 
     override val ollamaUrl: StateFlow<String>
@@ -60,6 +62,12 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
     fun changeWorkspaceLocalPath(path: String)
 
     fun logout()
+
+    fun dismissDeleteConfirm()
+
+    fun showDeleteConfirm()
+
+    fun deleteAccount()
 
     override fun changeOllamaUrl(url: String)
 

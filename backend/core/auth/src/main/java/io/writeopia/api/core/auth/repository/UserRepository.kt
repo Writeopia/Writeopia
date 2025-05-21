@@ -1,33 +1,21 @@
 package io.writeopia.api.core.auth.repository
 
-import io.writeopia.sdk.models.user.WriteopiaUser
+import io.writeopia.api.core.auth.models.WriteopiaBeUser
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.datetime.Clock
 import java.util.UUID
 
-fun WriteopiaDbBackend.getUser(email: String, password: String): WriteopiaUser? =
-    this.userEntityQueries
-        .selectUser(email, password)
-        .executeAsOneOrNull()
-        ?.let { userEntity ->
-            WriteopiaUser(
-                id = userEntity.id,
-                email = userEntity.email,
-                password = userEntity.password,
-                name = userEntity.name
-            )
-        }
-
-fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaUser? =
+fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaBeUser? =
     this.userEntityQueries
         .selectUserByEmail(email)
         .executeAsOneOrNull()
         ?.let { userEntity ->
-            WriteopiaUser(
+            WriteopiaBeUser(
                 id = userEntity.id,
                 email = userEntity.email,
                 password = userEntity.password,
-                name = userEntity.name
+                name = userEntity.name,
+                salt = userEntity.salt
             )
         }
 
@@ -35,13 +23,15 @@ fun WriteopiaDbBackend.insertUser(
     id: String = UUID.randomUUID().toString(),
     name: String,
     email: String,
-    password: String
+    password: String,
+    salt: String
 ) {
     this.userEntityQueries.insertUser(
         id = id,
         created_at = Clock.System.now().toEpochMilliseconds(),
         email = email,
         password = password,
+        salt = salt,
         name = name,
         enabled = false,
     )
