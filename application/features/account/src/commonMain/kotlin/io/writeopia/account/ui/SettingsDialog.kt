@@ -288,7 +288,8 @@ private fun AccountScreen(
                                     singleLine = true,
                                     placeholder = {
                                         Text("Email")
-                                    })
+                                    }
+                                )
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -315,7 +316,6 @@ private fun AccountScreen(
                     }
                 }
             }
-
         } else {
             Text(
                 WrStrings.youAreOffline(),

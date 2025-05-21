@@ -14,7 +14,8 @@ data class WriteopiaUser(
 }
 
 enum class Tier {
-    FREE, PREMIUM;
+    FREE,
+    PREMIUM;
 
     fun tierName() =
         when (this) {
