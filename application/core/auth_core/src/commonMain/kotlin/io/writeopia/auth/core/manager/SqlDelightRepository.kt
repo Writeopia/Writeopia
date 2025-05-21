@@ -49,9 +49,9 @@ internal class SqlDelightRepository(
             )
     }
 
-    override suspend fun getAuthToken(userId: String): String? =
+    override suspend fun getAuthToken(): String? =
         writeopiaDb?.tokenEntityQueries
-            ?.selectTokenByUserId(userId)
+            ?.selectTokenByUserId(getUser().id)
             ?.executeAsOneOrNull()
 
     override suspend fun saveToken(userId: String, token: String) {

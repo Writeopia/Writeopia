@@ -23,7 +23,7 @@ CREATE TABLE story_step_entity (
   checked BOOLEAN NOT NULL,
   position INTEGER NOT NULL,
   document_id TEXT NOT NULL,
-  is_group BOOL EAN NOT NULL,
+  is_group BOOLEAN NOT NULL,
   has_inner_steps BOOLEAN NOT NULL,
   background_color INTEGER,
   tags TEXT NOT NULL,

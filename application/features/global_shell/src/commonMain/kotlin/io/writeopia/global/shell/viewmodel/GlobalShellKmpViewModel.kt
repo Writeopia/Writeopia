@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
 import io.writeopia.api.OllamaApi
+import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.common.utils.NotesNavigation
@@ -59,6 +60,7 @@ class GlobalShellKmpViewModel(
     private val notesUseCase: NotesUseCase,
     private val uiConfigurationRepo: UiConfigurationRepository,
     private val authRepository: AuthRepository,
+    private val authApi: AuthApi,
     private val notesNavigationUseCase: NotesNavigationUseCase,
     private val folderStateController: FolderStateController = FolderStateController(
         notesUseCase,
@@ -273,6 +275,9 @@ class GlobalShellKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
 
+    private val _showDeleteConfirmation = MutableStateFlow(false)
+    override val showDeleteConfirmation: StateFlow<Boolean> = _showDeleteConfirmation.asStateFlow()
+
     override fun init() {
         viewModelScope.launch {
             _workspaceLocalPath.value =
@@ -428,6 +433,32 @@ class GlobalShellKmpViewModel(
             authRepository.logout()
             _loginStateTrigger.value = GenerateId.generate()
         }
+    }
+
+    override fun deleteAccount() {
+        viewModelScope.launch {
+            val id = authRepository.getUser().id
+
+            if (id != WriteopiaUser.DISCONNECTED) {
+                val result = authRepository.getAuthToken()?.let { token ->
+                    authApi.deleteAccount(token)
+                }
+
+                if (result is ResultData.Complete && result.data) {
+                    authRepository.logout()
+                    _loginStateTrigger.value = GenerateId.generate()
+                    dismissDeleteConfirm()
+                }
+            }
+        }
+    }
+
+    override fun dismissDeleteConfirm() {
+        _showDeleteConfirmation.value = false
+    }
+
+    override fun showDeleteConfirm() {
+        _showDeleteConfirmation.value = true
     }
 
     private suspend fun getUserId(): String =

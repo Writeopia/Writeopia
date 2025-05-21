@@ -3,10 +3,15 @@ accompanist = "0.36.0"
 coilVersion = "3.0.4"
 composeBom = "2025.03.01"
 composeShimmer = "1.0.5"
+cryptographyCore = "0.4.0"
+cryptographyProviderApple = "0.4.0"
+cryptographyProviderJdk = "0.4.0"
+cryptographyProviderWebcrypto = "0.4.0"
 espressoCore = "3.6.1"
 firebaseAdmin = "9.2.0"
 firebaseAuthProvider = "1.5.0"
 junit = "1.2.1"
+korlibsCrypto = "6.0.0-beta2"
 kotlinxCoroutines = "1.10.1"
 kotlinxCoroutinesSwing = "1.10.1"
 kotlinxDatetime = "0.6.0"
@@ -52,6 +57,10 @@ coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilVe
 coil-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coilVersion" }
 coil-video = { module = "io.coil-kt.coil3:coil-video", version.ref = "coilVersion" }
 compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.ref = "composeShimmer" }
+cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptographyCore" }
+cryptography-provider-apple = { module = "dev.whyoleg.cryptography:cryptography-provider-apple", version.ref = "cryptographyProviderApple" }
+cryptography-provider-jdk = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "cryptographyProviderJdk" }
+cryptography-provider-webcrypto = { module = "dev.whyoleg.cryptography:cryptography-provider-webcrypto", version.ref = "cryptographyProviderWebcrypto" }
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebaseAdmin" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-auth-provider = { module = "com.kborowy:firebase-auth-provider", version.ref = "firebaseAuthProvider" }

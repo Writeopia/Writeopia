@@ -30,6 +30,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":writeopia_models"))
+                implementation(project(":application:core:models"))
 
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:persistence_bridge"))
@@ -44,16 +45,20 @@ kotlin {
                 implementation(libs.kotlinx.serialization.json)
 
                 implementation(libs.ktor.client.core)
+
+                implementation(libs.cryptography.core)
             }
         }
 
         val jvmMain by getting {
             dependencies {
+                implementation(libs.cryptography.provider.jdk)
             }
         }
 
         val jsMain by getting {
             dependencies {
+                implementation(libs.cryptography.provider.webcrypto)
             }
         }
 
@@ -62,6 +67,10 @@ kotlin {
                 implementation(libs.firebase.auth)
                 implementation(project.dependencies.platform(libs.firebase.bom.get()))
             }
+        }
+
+        nativeMain.dependencies {
+            implementation(libs.cryptography.provider.apple)
         }
     }
 }

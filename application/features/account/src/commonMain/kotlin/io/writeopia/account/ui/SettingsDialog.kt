@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -27,7 +29,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -56,6 +60,7 @@ import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SettingsPanel
 import io.writeopia.commonui.buttons.CommonButton
+import io.writeopia.commonui.buttons.CommonTextButton
 import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
@@ -76,6 +81,7 @@ fun SettingsDialog(
     ollamaSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
     userOnlineState: StateFlow<WriteopiaUser>,
+    showDeleteConfirmation: StateFlow<Boolean>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectWorkplacePath: (String) -> Unit,
@@ -85,7 +91,10 @@ fun SettingsDialog(
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     signIn: () -> Unit,
-    logout: () -> Unit
+    logout: () -> Unit,
+    showDeleteConfirm: () -> Unit,
+    dismissDeleteConfirm: () -> Unit,
+    deleteAccount: () -> Unit,
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -103,7 +112,15 @@ fun SettingsDialog(
             SettingsPanel(
                 modifier = Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
                 accountScreen = {
-                    AccountScreen(signIn, logout, userOnlineState)
+                    AccountScreen(
+                        userOnlineState,
+                        showDeleteConfirmation,
+                        signIn,
+                        logout,
+                        dismissDeleteConfirm,
+                        showDeleteConfirm,
+                        deleteAccount
+                    )
                 },
                 appearanceScreen = {
                     ColorThemeOptions(
@@ -184,9 +201,13 @@ fun SettingsScreen(
 
 @Composable
 private fun AccountScreen(
+    userOnlineState: StateFlow<WriteopiaUser>,
+    showDeleteConfirmation: StateFlow<Boolean>,
     signIn: () -> Unit,
     logout: () -> Unit,
-    userOnlineState: StateFlow<WriteopiaUser>
+    dismissDeleteConfirm: () -> Unit,
+    showDeleteConfirm: () -> Unit,
+    deleteAccount: () -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -199,7 +220,7 @@ private fun AccountScreen(
 
         if (userOnline.id != WriteopiaUser.DISCONNECTED) {
             Text(
-                "Account: ${userOnline.name}",
+                "Account: ${userOnline.name} - ${userOnline.tier.tierName()}",
                 style = MaterialTheme.typography.bodySmall,
                 color = titleColor,
                 fontWeight = FontWeight.Bold,
@@ -208,15 +229,93 @@ private fun AccountScreen(
                     .fillMaxWidth()
             )
 
-            CommonButton(text = "Change account") {
-                signIn()
+            Column(modifier = Modifier.width(IntrinsicSize.Max)) {
+                CommonTextButton(text = "Change account", modifier = Modifier.fillMaxWidth()) {
+                    signIn()
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                CommonTextButton(text = "Logout", modifier = Modifier.fillMaxWidth()) {
+                    logout()
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                val showDelete by showDeleteConfirmation.collectAsState()
+
+                CommonTextButton(
+                    text = "Delete account",
+                    modifier = Modifier.fillMaxWidth(),
+                    defaultColor = Color.Red,
+                    textColor = MaterialTheme.colorScheme.onPrimary,
+                    clickListener = showDeleteConfirm
+                )
+
+                if (showDelete) {
+                    Dialog(onDismissRequest = dismissDeleteConfirm) {
+                        Card(modifier = Modifier, shape = MaterialTheme.shapes.large) {
+                            Column(
+                                modifier = Modifier.padding(
+                                    start = 30.dp,
+                                    end = 30.dp,
+                                    bottom = 20.dp,
+                                    top = 20.dp
+                                ),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "Are you sure?",
+                                    style = MaterialTheme.typography.displaySmall
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Text(
+                                    "All your notes will be deleted.",
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text("Type your email to confirm")
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                OutlinedTextField(
+                                    "",
+                                    onValueChange = {},
+                                    singleLine = true,
+                                    placeholder = {
+                                        Text("Email")
+                                    })
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center,
+                                ) {
+                                    TextButton(
+                                        onClick = dismissDeleteConfirm,
+                                        modifier = Modifier.padding(8.dp),
+                                    ) {
+                                        Text("Dismiss")
+                                    }
+
+                                    TextButton(
+                                        onClick = {
+                                            deleteAccount()
+                                        },
+                                        modifier = Modifier.padding(8.dp),
+                                    ) {
+                                        Text("Confirm")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            CommonButton(text = "Logout") {
-                logout()
-            }
         } else {
             Text(
                 WrStrings.youAreOffline(),

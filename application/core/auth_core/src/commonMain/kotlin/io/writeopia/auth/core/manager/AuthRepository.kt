@@ -19,5 +19,5 @@ interface AuthRepository {
 
     suspend fun saveToken(userId: String, token: String)
 
-    suspend fun getAuthToken(userId: String): String?
+    suspend fun getAuthToken(): String?
 }
