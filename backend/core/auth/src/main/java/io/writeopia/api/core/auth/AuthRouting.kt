@@ -11,10 +11,12 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.writeopia.api.core.auth.hash.HashUtils
+import io.writeopia.api.core.auth.hash.toBase64
+import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.deleteUserById
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
-import io.writeopia.api.core.auth.repository.getUser
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.insertUser
 import io.writeopia.sdk.models.user.WriteopiaUser
@@ -28,11 +30,24 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
     post("api/login") {
         try {
             val credentials = call.receive<LoginRequest>()
-            val user = writeopiaDb.getUser(credentials.email, credentials.password)
+            val user = writeopiaDb.getUserByEmail(credentials.email)
 
             if (user != null) {
-                val token = JwtConfig.generateToken(user.id)
-                call.respond(HttpStatusCode.OK, AuthResponse(token, user.toApi()))
+                val hash = user.password
+                val salt = user.salt
+
+                val isVerified = HashUtils.verifyPassword(
+                    inputPassword = credentials.password,
+                    storedHashBase64 = hash,
+                    storedSaltBase64 = salt
+                )
+
+                if (isVerified) {
+                    val token = JwtConfig.generateToken(user.id)
+                    call.respond(HttpStatusCode.OK, AuthResponse(token, user.toApi()))
+                } else {
+                    call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
+                }
             } else {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
             }
@@ -49,12 +64,14 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
             if (user == null) {
                 val id = UUID.randomUUID().toString()
 
-                writeopiaDb.insertUser(id, name, email, password)
+                val salt = HashUtils.generateSalt()
+                val hash = HashUtils.hashPassword(password, salt).toBase64()
+
+                writeopiaDb.insertUser(id, name, email, hash, salt.toBase64())
                 val wUser = WriteopiaUser(
                     id = id,
                     name = name,
                     email = email,
-                    password = password
                 )
 
                 call.respond(HttpStatusCode.Created, AuthResponse(null, wUser.toApi()))
@@ -62,6 +79,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
                 call.respond(HttpStatusCode.Conflict, "Not Created")
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             call.respond(HttpStatusCode.InternalServerError, "Unknown error")
         }
 

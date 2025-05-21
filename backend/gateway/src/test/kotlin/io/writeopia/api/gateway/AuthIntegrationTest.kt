@@ -18,6 +18,7 @@ import io.writeopia.api.geteway.module
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountRequest
 import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -25,7 +26,7 @@ class AuthIntegrationTest {
 
     private val db = configurePersistence()
 
-    @AfterTest
+    @BeforeTest
     fun setUp() {
         db.deleteUserByEmail("email@gmail.com")
     }
@@ -50,37 +51,6 @@ class AuthIntegrationTest {
         }
 
         assertEquals(response.status, HttpStatusCode.Created)
-    }
-
-    @Test
-    fun `it should be possible to register an user and receive a token`() = testApplication {
-        application {
-            module(db)
-        }
-
-        val client = defaultClient()
-
-        val response = client.post("/api/register") {
-            contentType(ContentType.Application.Json)
-            setBody(
-                RegisterRequest(
-                    name = "Name",
-                    email = "email@gmail.com",
-                    password = "lasjbdalsdq08w9y&"
-                )
-            )
-        }
-
-        assertEquals(response.status, HttpStatusCode.Created)
-
-        val response1 = client.post("api/login") {
-            contentType(ContentType.Application.Json)
-            setBody(
-                LoginRequest("email@gmail.com", "lasjbdalsdq08w9y&")
-            )
-        }
-
-        assertEquals(response1.status, HttpStatusCode.OK)
     }
 
     @Test
@@ -124,6 +94,7 @@ class AuthIntegrationTest {
         }
 
         val client = defaultClient()
+        val password = "lasjbdalsdq08w9y&"
 
         val response = client.post("/api/register") {
             contentType(ContentType.Application.Json)
@@ -131,7 +102,7 @@ class AuthIntegrationTest {
                 RegisterRequest(
                     name = "Name",
                     email = "email@gmail.com",
-                    password = "lasjbdalsdq08w9y&"
+                    password = password
                 )
             )
         }
@@ -140,9 +111,7 @@ class AuthIntegrationTest {
 
         val response1 = client.post("api/login") {
             contentType(ContentType.Application.Json)
-            setBody(
-                LoginRequest("email@gmail.com", "lasjbdalsdq08w9y&")
-            )
+            setBody(LoginRequest("email@gmail.com", password))
         }
 
         assertEquals(response1.status, HttpStatusCode.OK)

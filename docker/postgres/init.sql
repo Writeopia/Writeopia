@@ -37,5 +37,6 @@ CREATE TABLE user_entity (
   created_at BIGINT NOT NULL,
   email TEXT NOT NULL,
   password TEXT NOT NULL,
+  salt TEXT NOT NULL,
   enabled BOOLEAN NOT NULL
 );

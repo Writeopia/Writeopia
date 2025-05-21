@@ -30,7 +30,6 @@ internal class SqlDelightRepository(
                     id = user.id,
                     name = user.name,
                     email = user.email,
-                    password = user.password,
                     selected = 0,
                 )
         }
@@ -44,7 +43,6 @@ internal class SqlDelightRepository(
                 id = user.id,
                 name = user.name,
                 email = user.email,
-                password = user.password,
                 selected = selected.toLong(),
             )
     }

@@ -28,8 +28,6 @@ kotlin {
                 implementation(project(":writeopia_models"))
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.coroutines.core)
-
-                implementation(libs.cryptography.core)
             }
         }
 
@@ -40,18 +38,15 @@ kotlin {
 
         val jvmTest by getting {
             dependencies {
-                implementation(libs.cryptography.provider.jdk)
             }
         }
 
         val jsMain by getting {
             dependencies {
-                implementation(libs.cryptography.provider.webcrypto)
             }
         }
 
         nativeMain.dependencies {
-            implementation(libs.cryptography.provider.apple)
         }
     }
 }
