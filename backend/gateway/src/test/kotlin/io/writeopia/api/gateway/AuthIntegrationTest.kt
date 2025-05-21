@@ -31,6 +31,11 @@ class AuthIntegrationTest {
         db.deleteUserByEmail("email@gmail.com")
     }
 
+    @AfterTest
+    fun tearDown() {
+        db.deleteUserByEmail("email@gmail.com")
+    }
+
     @Test
     fun `it should be possible to register an user`() = testApplication {
         application {

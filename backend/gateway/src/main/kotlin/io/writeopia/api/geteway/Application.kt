@@ -10,7 +10,7 @@ import io.writeopia.sql.WriteopiaDbBackend
 fun main() {
     embeddedServer(
         Netty,
-        port = 8080, // This is the port on which Ktor is listening
+        port = 8080,
         host = "127.0.0.1",
         module = Application::module
     ).start(wait = true)
