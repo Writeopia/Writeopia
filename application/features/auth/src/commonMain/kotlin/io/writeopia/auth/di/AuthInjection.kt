@@ -7,6 +7,7 @@ import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterViewModel
+import io.writeopia.auth.register.ResetPasswordViewModel
 
 class AuthInjection(
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton()
@@ -17,6 +18,12 @@ class AuthInjection(
         authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
         authApi: AuthApi = authCoreInjection.provideAuthApi()
     ): RegisterViewModel = viewModel { RegisterViewModel(authRepository, authApi) }
+
+    @Composable
+    internal fun provideResetPasswordViewModel(
+        authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
+        authApi: AuthApi = authCoreInjection.provideAuthApi()
+    ): ResetPasswordViewModel = viewModel { ResetPasswordViewModel(authRepository, authApi) }
 
     @Composable
     internal fun provideAuthMenuViewModel(

@@ -242,6 +242,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                             navigationController.navigate(
                                                 Destinations.AUTH_MENU_INNER_NAVIGATION.id
                                             )
+                                        },
+                                        navigateToResetPassword = {
+                                            navigationController.navigate(
+                                                Destinations.AUTH_RESET_PASSWORD.id
+                                            )
                                         }
                                     )
                                 }

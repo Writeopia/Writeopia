@@ -11,10 +11,12 @@ import androidx.navigation.navigation
 import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.menu.AuthMenuScreen
 import io.writeopia.auth.menu.AuthMenuViewModel
+import io.writeopia.auth.register.RegisterPasswordScreen
 import io.writeopia.auth.register.RegisterScreen
 import io.writeopia.common.utils.Destinations
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
+import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +27,26 @@ fun NavGraphBuilder.authNavigation(
     colorThemeOption: StateFlow<ColorThemeOption?>,
     toAppNavigation: () -> Unit
 ) {
+    composable(Destinations.AUTH_RESET_PASSWORD.id) {
+        val viewModel = authInjection.provideResetPasswordViewModel()
+        val colorTheme by colorThemeOption.collectAsState()
+
+        WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+            RegisterPasswordScreen(
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+                passwordState = viewModel.password,
+                repeatPasswordState = viewModel.repeatPassword,
+                registerState = viewModel.register,
+                passwordChanged = viewModel::passwordChanged,
+                onPasswordResetRequest = {},
+                onPasswordResetSuccess = {},
+                navigateBack = {
+                    navController.navigateUp()
+                }
+            )
+        }
+    }
+
     navigation(
         startDestination = Destinations.AUTH_MENU.id,
         route = Destinations.AUTH_MENU_INNER_NAVIGATION.id
@@ -46,6 +68,31 @@ fun NavGraphBuilder.authNavigation(
                     saveUserChoiceOffline = authMenuViewModel::saveUserChoiceOffline,
                     navigateToRegister = navController::navigateAuthRegister,
                     navigateToApp = toAppNavigation
+                )
+            }
+        }
+
+        composable(Destinations.AUTH_REGISTER.id) {
+            val registerViewModel = authInjection.provideRegisterViewModel()
+            val colorTheme by colorThemeOption.collectAsState()
+
+            WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+                RegisterScreen(
+                    modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+                    nameState = registerViewModel.name,
+                    companyState = registerViewModel.company,
+                    emailState = registerViewModel.email,
+                    passwordState = registerViewModel.password,
+                    registerState = registerViewModel.register,
+                    nameChanged = registerViewModel::nameChanged,
+                    companyChanged = registerViewModel::companyChanged,
+                    emailChanged = registerViewModel::emailChanged,
+                    passwordChanged = registerViewModel::passwordChanged,
+                    onRegisterRequest = registerViewModel::onRegister,
+                    onRegisterSuccess = toAppNavigation,
+                    navigateBack = {
+                        navController.navigateUp()
+                    }
                 )
             }
         }
