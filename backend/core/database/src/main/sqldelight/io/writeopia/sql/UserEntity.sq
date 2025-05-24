@@ -5,7 +5,8 @@ CREATE TABLE user_entity (
   email TEXT NOT NULL,
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
-  enabled BOOLEAN NOT NULL
+  enabled BOOLEAN NOT NULL,
+  company TEXT NOT NULL
 );
 
 selectUserByEmail:
@@ -14,9 +15,15 @@ FROM user_entity
 WHERE email = ?
 LIMIT 1;
 
+selectUserById:
+SELECT *
+FROM user_entity
+WHERE id = ?
+LIMIT 1;
+
 insertUser:
-INSERT INTO user_entity(id, name, created_at, email, password, salt, enabled)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO user_entity(id, name, created_at, email, password, salt, enabled, company)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 deleteUser:
 DELETE

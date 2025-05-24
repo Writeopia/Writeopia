@@ -58,10 +58,12 @@ fun NavGraphBuilder.authNavigation(
                 RegisterScreen(
                     modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
                     nameState = registerViewModel.name,
+                    companyState = registerViewModel.company,
                     emailState = registerViewModel.email,
                     passwordState = registerViewModel.password,
                     registerState = registerViewModel.register,
                     nameChanged = registerViewModel::nameChanged,
+                    companyChanged = registerViewModel::companyChanged,
                     emailChanged = registerViewModel::emailChanged,
                     passwordChanged = registerViewModel::passwordChanged,
                     onRegisterRequest = registerViewModel::onRegister,

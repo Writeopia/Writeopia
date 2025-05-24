@@ -50,7 +50,8 @@ class AuthIntegrationTest {
                 RegisterRequest(
                     name = "Name",
                     email = "email@gmail.com",
-                    password = "lasjbdalsdq08w9y&"
+                    password = "lasjbdalsdq08w9y&",
+                    company = ""
                 )
             )
         }
@@ -72,7 +73,8 @@ class AuthIntegrationTest {
                 RegisterRequest(
                     name = "Name",
                     email = "email@gmail.com",
-                    password = "lasjbdalsdq08w9y&"
+                    password = "lasjbdalsdq08w9y&",
+                    company = ""
                 )
             )
         }
@@ -83,7 +85,8 @@ class AuthIntegrationTest {
                 RegisterRequest(
                     name = "Name",
                     email = "email@gmail.com",
-                    password = "lasjbdalsdq08w9y&"
+                    password = "lasjbdalsdq08w9y&",
+                    company = ""
                 )
             )
         }
@@ -107,7 +110,8 @@ class AuthIntegrationTest {
                 RegisterRequest(
                     name = "Name",
                     email = "email@gmail.com",
-                    password = password
+                    password = password,
+                    company = ""
                 )
             )
         }

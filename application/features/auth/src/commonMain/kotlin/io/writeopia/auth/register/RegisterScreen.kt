@@ -48,9 +48,11 @@ fun RegisterScreen(
     modifier: Modifier = Modifier,
     nameState: StateFlow<String>,
     emailState: StateFlow<String>,
+    companyState: StateFlow<String>,
     passwordState: StateFlow<String>,
     registerState: StateFlow<ResultData<Boolean>>,
     nameChanged: (String) -> Unit,
+    companyChanged: (String) -> Unit,
     emailChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onRegisterRequest: () -> Unit,
@@ -72,9 +74,11 @@ fun RegisterScreen(
             RegisterContent(
                 nameState,
                 emailState,
+                companyState,
                 passwordState,
                 nameChanged,
                 emailChanged,
+                companyChanged,
                 passwordChanged,
                 onRegisterRequest,
                 modifier
@@ -109,14 +113,17 @@ fun RegisterScreen(
 private fun BoxScope.RegisterContent(
     nameState: StateFlow<String>,
     emailState: StateFlow<String>,
+    companyState: StateFlow<String>,
     passwordState: StateFlow<String>,
     nameChanged: (String) -> Unit,
     emailChanged: (String) -> Unit,
+    companyChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onRegisterRequest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val name by nameState.collectAsState()
+    val company by companyState.collectAsState()
     val email by emailState.collectAsState()
     val password by passwordState.collectAsState()
     var showPassword by remember { mutableStateOf(false) }
@@ -172,6 +179,19 @@ private fun BoxScope.RegisterContent(
                 Text("Email")
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            company,
+            onValueChange = companyChanged,
+            shape = shape,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            singleLine = true,
+            placeholder = {
+                Text("Company")
+            },
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -235,9 +255,11 @@ fun AuthScreenPreview() {
     RegisterScreen(
         nameState = MutableStateFlow(""),
         emailState = MutableStateFlow(""),
+        companyState = MutableStateFlow(""),
         passwordState = MutableStateFlow(""),
         registerState = MutableStateFlow(ResultData.Idle()),
         nameChanged = {},
+        companyChanged = {},
         emailChanged = {},
         passwordChanged = {},
         onRegisterRequest = {},
