@@ -23,7 +23,9 @@ LIMIT 1;
 
 insertUser:
 INSERT INTO user_entity(id, name, created_at, email, password, salt, enabled, company)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET id=excluded.id, name=excluded.name, created_at=excluded.created_at, email=excluded.email, password=excluded.password, salt=excluded.salt, enabled=excluded.enabled, company=excluded.company;
 
 deleteUser:
 DELETE

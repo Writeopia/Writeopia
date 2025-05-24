@@ -104,6 +104,21 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
     }
 
     authenticate("auth-jwt") {
+        get("api/user/current") {
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.payload?.getClaim("userId")?.asString()
+
+            val user = userId?.let(writeopiaDb::getUserById)
+
+            if (user != null) {
+                call.respond(HttpStatusCode.OK, user.toApi())
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
+        }
+    }
+
+    authenticate("auth-jwt") {
         get("api/hello-auth") {
             val principal = call.principal<JWTPrincipal>()
             val username = principal!!.payload.getClaim("username").asString()
