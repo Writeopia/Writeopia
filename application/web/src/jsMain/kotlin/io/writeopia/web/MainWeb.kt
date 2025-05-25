@@ -53,6 +53,5 @@ fun CreateAppInMemory() {
                 Destinations.AUTH_RESET_PASSWORD.id
             )
         }
-
     )
 }
