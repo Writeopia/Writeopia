@@ -122,7 +122,7 @@ private fun BoxScope.ResetPasswordContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "Reset your password",
+            WrStrings.resetPassword(),
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 10.dp),
             style = MaterialTheme.typography.headlineMedium,
@@ -132,7 +132,7 @@ private fun BoxScope.ResetPasswordContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            "Type the new password",
+            WrStrings.typeNewPassword(),
             color = WriteopiaTheme.colorScheme.textLight,
             modifier = Modifier.padding(horizontal = 10.dp),
             style = MaterialTheme.typography.bodyMedium,
@@ -154,7 +154,7 @@ private fun BoxScope.ResetPasswordContent(
                 PasswordVisualTransformation()
             },
             placeholder = {
-                Text("New password")
+                Text(WrStrings.newPassword())
             },
             trailingIcon = {
                 if (showPassword) {
@@ -192,7 +192,7 @@ private fun BoxScope.ResetPasswordContent(
                 PasswordVisualTransformation()
             },
             placeholder = {
-                Text("Repeat password")
+                Text(WrStrings.repeatPassword())
             },
             trailingIcon = {
                 if (showRepeatPassword) {

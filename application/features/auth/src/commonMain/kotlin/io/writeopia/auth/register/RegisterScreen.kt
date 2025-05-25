@@ -176,7 +176,7 @@ private fun BoxScope.RegisterContent(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
             placeholder = {
-                Text("Email")
+                Text(WrStrings.email())
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
         )
@@ -190,7 +190,7 @@ private fun BoxScope.RegisterContent(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
             placeholder = {
-                Text("Company")
+                Text(WrStrings.company())
             },
         )
 
