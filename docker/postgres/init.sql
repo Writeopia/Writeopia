@@ -38,5 +38,11 @@ CREATE TABLE user_entity (
   email TEXT NOT NULL,
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
-  enabled BOOLEAN NOT NULL
+  enabled BOOLEAN NOT NULL,
+  company TEXT NOT NULL
+);
+
+CREATE TABLE company_entity (
+  domain TEXT PRIMARY KEY,
+  name TEXT NOT NULL
 );

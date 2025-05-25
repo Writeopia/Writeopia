@@ -15,7 +15,23 @@ fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaBeUser? =
                 email = userEntity.email,
                 password = userEntity.password,
                 name = userEntity.name,
-                salt = userEntity.salt
+                salt = userEntity.salt,
+                companyDomain = userEntity.company
+            )
+        }
+
+fun WriteopiaDbBackend.getUserById(id: String): WriteopiaBeUser? =
+    this.userEntityQueries
+        .selectUserById(id)
+        .executeAsOneOrNull()
+        ?.let { userEntity ->
+            WriteopiaBeUser(
+                id = userEntity.id,
+                email = userEntity.email,
+                password = userEntity.password,
+                name = userEntity.name,
+                salt = userEntity.salt,
+                companyDomain = userEntity.company
             )
         }
 
@@ -24,7 +40,8 @@ fun WriteopiaDbBackend.insertUser(
     name: String,
     email: String,
     password: String,
-    salt: String
+    salt: String,
+    companyDomain: String
 ) {
     this.userEntityQueries.insertUser(
         id = id,
@@ -34,6 +51,20 @@ fun WriteopiaDbBackend.insertUser(
         salt = salt,
         name = name,
         enabled = false,
+        company = companyDomain
+    )
+}
+
+fun WriteopiaDbBackend.insertUser(
+    user: WriteopiaBeUser
+) {
+    insertUser(
+        id = user.id,
+        name = user.name,
+        email = user.email,
+        password = user.password,
+        salt = user.salt,
+        companyDomain = user.companyDomain
     )
 }
 

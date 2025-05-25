@@ -14,6 +14,7 @@ import writeopia.application.core.resources.generated.resources.box
 import writeopia.application.core.resources.generated.resources.cancel
 import writeopia.application.core.resources.generated.resources.close
 import writeopia.application.core.resources.generated.resources.color_theme
+import writeopia.application.core.resources.generated.resources.company
 import writeopia.application.core.resources.generated.resources.confirmation_delete_multiple_items
 import writeopia.application.core.resources.generated.resources.content
 import writeopia.application.core.resources.generated.resources.copy_note
@@ -25,6 +26,7 @@ import writeopia.application.core.resources.generated.resources.delete
 import writeopia.application.core.resources.generated.resources.document
 import writeopia.application.core.resources.generated.resources.download_models
 import writeopia.application.core.resources.generated.resources.download_ollama
+import writeopia.application.core.resources.generated.resources.email
 import writeopia.application.core.resources.generated.resources.error_model_download
 import writeopia.application.core.resources.generated.resources.error_requesting_models
 import writeopia.application.core.resources.generated.resources.export
@@ -53,6 +55,7 @@ import writeopia.application.core.resources.generated.resources.markdown
 import writeopia.application.core.resources.generated.resources.move_to
 import writeopia.application.core.resources.generated.resources.move_to_home
 import writeopia.application.core.resources.generated.resources.name
+import writeopia.application.core.resources.generated.resources.new_password
 import writeopia.application.core.resources.generated.resources.no_models
 import writeopia.application.core.resources.generated.resources.ok
 import writeopia.application.core.resources.generated.resources.ollama
@@ -63,8 +66,10 @@ import writeopia.application.core.resources.generated.resources.onboarding_selec
 import writeopia.application.core.resources.generated.resources.or_word
 import writeopia.application.core.resources.generated.resources.page
 import writeopia.application.core.resources.generated.resources.password
+import writeopia.application.core.resources.generated.resources.reset_password
 import writeopia.application.core.resources.generated.resources.private_ai_enabled
 import writeopia.application.core.resources.generated.resources.recent
+import writeopia.application.core.resources.generated.resources.repeat_password
 import writeopia.application.core.resources.generated.resources.retry
 import writeopia.application.core.resources.generated.resources.search
 import writeopia.application.core.resources.generated.resources.settings
@@ -81,6 +86,7 @@ import writeopia.application.core.resources.generated.resources.summarize
 import writeopia.application.core.resources.generated.resources.system_theme
 import writeopia.application.core.resources.generated.resources.tap_to_start
 import writeopia.application.core.resources.generated.resources.text
+import writeopia.application.core.resources.generated.resources.type_new_password
 import writeopia.application.core.resources.generated.resources.url
 import writeopia.application.core.resources.generated.resources.version
 import writeopia.application.core.resources.generated.resources.workspaceName
@@ -336,4 +342,22 @@ object WrStrings {
 
     @Composable
     fun password() = stringResource(Res.string.password)
+
+    @Composable
+    fun resetPassword() = stringResource(Res.string.reset_password)
+
+    @Composable
+    fun typeNewPassword() = stringResource(Res.string.type_new_password)
+
+    @Composable
+    fun newPassword() = stringResource(Res.string.new_password)
+
+    @Composable
+    fun repeatPassword() = stringResource(Res.string.repeat_password)
+
+    @Composable
+    fun email() = stringResource(Res.string.email)
+
+    @Composable
+    fun company() = stringResource(Res.string.company)
 }

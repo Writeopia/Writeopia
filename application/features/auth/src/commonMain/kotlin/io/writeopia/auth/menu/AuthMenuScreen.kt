@@ -164,7 +164,7 @@ private fun AuthMenuContentScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 singleLine = true,
                 placeholder = {
-                    Text("Email")
+                    Text(WrStrings.email())
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             )

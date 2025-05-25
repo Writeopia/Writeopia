@@ -74,6 +74,7 @@ fun DesktopApp(
     selectColorTheme: (ColorThemeOption) -> Unit,
     toggleMaxScreen: () -> Unit,
     navigateToRegister: () -> Unit,
+    navigateToResetPassword: () -> Unit,
     startDestination: String = startDestination(),
 ) {
     if (writeopiaDb != null) {
@@ -231,6 +232,7 @@ fun DesktopApp(
                                     },
                                     deleteModel = globalShellViewModel::deleteModel,
                                     signIn = navigateToRegister,
+                                    resetPassword = navigateToResetPassword,
                                     logout = globalShellViewModel::logout,
                                     showDeleteConfirm = globalShellViewModel::showDeleteConfirm,
                                     dismissDeleteConfirm = globalShellViewModel::dismissDeleteConfirm,
