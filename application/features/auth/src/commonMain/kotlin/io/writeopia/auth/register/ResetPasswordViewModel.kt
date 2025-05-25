@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// The NavigationActivity won't leak because it is the single activity of the whole project
 internal class ResetPasswordViewModel(
     private val authApi: AuthApi,
     private val authRepository: AuthRepository,
