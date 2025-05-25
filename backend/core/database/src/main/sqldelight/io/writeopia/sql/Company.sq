@@ -1,0 +1,14 @@
+CREATE TABLE company_entity (
+  domain TEXT PRIMARY KEY,
+  name TEXT NOT NULL
+);
+
+selectByDomain:
+SELECT *
+FROM company_entity
+WHERE domain = ?
+LIMIT 1;
+
+insertCompany:
+INSERT INTO company_entity(domain, name)
+VALUES (?, ?);

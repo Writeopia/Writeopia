@@ -91,6 +91,7 @@ fun SettingsDialog(
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     signIn: () -> Unit,
+    resetPassword: () -> Unit,
     logout: () -> Unit,
     showDeleteConfirm: () -> Unit,
     dismissDeleteConfirm: () -> Unit,
@@ -116,6 +117,7 @@ fun SettingsDialog(
                         userOnlineState,
                         showDeleteConfirmation,
                         signIn,
+                        resetPassword,
                         logout,
                         dismissDeleteConfirm,
                         showDeleteConfirm,
@@ -204,6 +206,7 @@ private fun AccountScreen(
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
     signIn: () -> Unit,
+    resetPassword: () -> Unit,
     logout: () -> Unit,
     dismissDeleteConfirm: () -> Unit,
     showDeleteConfirm: () -> Unit,
@@ -232,6 +235,12 @@ private fun AccountScreen(
             Column(modifier = Modifier.width(IntrinsicSize.Max)) {
                 CommonTextButton(text = "Change account", modifier = Modifier.fillMaxWidth()) {
                     signIn()
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                CommonTextButton(text = "Reset Password", modifier = Modifier.fillMaxWidth()) {
+                    resetPassword()
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))

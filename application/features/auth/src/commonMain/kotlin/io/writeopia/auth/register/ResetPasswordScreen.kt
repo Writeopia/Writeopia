@@ -39,24 +39,18 @@ import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun RegisterScreen(
+fun RegisterPasswordScreen(
     modifier: Modifier = Modifier,
-    nameState: StateFlow<String>,
-    emailState: StateFlow<String>,
-    companyState: StateFlow<String>,
     passwordState: StateFlow<String>,
-    registerState: StateFlow<ResultData<Boolean>>,
-    nameChanged: (String) -> Unit,
-    companyChanged: (String) -> Unit,
-    emailChanged: (String) -> Unit,
+    repeatPasswordState: StateFlow<String>,
+    resetPasswordState: StateFlow<ResultData<Boolean>>,
     passwordChanged: (String) -> Unit,
-    onRegisterRequest: () -> Unit,
-    onRegisterSuccess: () -> Unit,
+    repeatPasswordChanged: (String) -> Unit,
+    onPasswordResetRequest: () -> Unit,
+    onPasswordResetSuccess: () -> Unit,
     navigateBack: () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -71,25 +65,21 @@ fun RegisterScreen(
         )
 
         val registerScreen = @Composable { modifier: Modifier ->
-            RegisterContent(
-                nameState,
-                emailState,
-                companyState,
+            ResetPasswordContent(
                 passwordState,
-                nameChanged,
-                emailChanged,
-                companyChanged,
+                repeatPasswordState,
                 passwordChanged,
-                onRegisterRequest,
+                repeatPasswordChanged,
+                onPasswordResetRequest,
                 modifier
             )
         }
 
-        when (val register = registerState.collectAsState().value) {
+        when (val register = resetPasswordState.collectAsState().value) {
             is ResultData.Complete -> {
                 if (register.data) {
                     LaunchedEffect(key1 = "navigation") {
-                        onRegisterSuccess()
+                        onPasswordResetSuccess()
                     }
                 }
 
@@ -110,23 +100,18 @@ fun RegisterScreen(
 }
 
 @Composable
-private fun BoxScope.RegisterContent(
-    nameState: StateFlow<String>,
-    emailState: StateFlow<String>,
-    companyState: StateFlow<String>,
+private fun BoxScope.ResetPasswordContent(
     passwordState: StateFlow<String>,
-    nameChanged: (String) -> Unit,
-    emailChanged: (String) -> Unit,
-    companyChanged: (String) -> Unit,
+    repeatPasswordState: StateFlow<String>,
     passwordChanged: (String) -> Unit,
-    onRegisterRequest: () -> Unit,
+    repeatPasswordChanged: (String) -> Unit,
+    onPasswordResetRequest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val name by nameState.collectAsState()
-    val company by companyState.collectAsState()
-    val email by emailState.collectAsState()
     val password by passwordState.collectAsState()
+    val repeatPassword by repeatPasswordState.collectAsState()
     var showPassword by remember { mutableStateOf(false) }
+    var showRepeatPassword by remember { mutableStateOf(false) }
     val shape = MaterialTheme.shapes.large
 
     Column(
@@ -137,7 +122,7 @@ private fun BoxScope.RegisterContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            WrStrings.createYourAccount(),
+            WrStrings.resetPassword(),
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 10.dp),
             style = MaterialTheme.typography.headlineMedium,
@@ -147,7 +132,7 @@ private fun BoxScope.RegisterContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            WrStrings.journeyStarts(),
+            WrStrings.typeNewPassword(),
             color = WriteopiaTheme.colorScheme.textLight,
             modifier = Modifier.padding(horizontal = 10.dp),
             style = MaterialTheme.typography.bodyMedium,
@@ -155,46 +140,6 @@ private fun BoxScope.RegisterContent(
         )
 
         Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            name,
-            onValueChange = nameChanged,
-            shape = shape,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-            singleLine = true,
-            placeholder = {
-                Text(WrStrings.name())
-            },
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            email,
-            onValueChange = emailChanged,
-            shape = shape,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-            singleLine = true,
-            placeholder = {
-                Text(WrStrings.email())
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            company,
-            onValueChange = companyChanged,
-            shape = shape,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-            singleLine = true,
-            placeholder = {
-                Text(WrStrings.company())
-            },
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             password,
@@ -209,7 +154,7 @@ private fun BoxScope.RegisterContent(
                 PasswordVisualTransformation()
             },
             placeholder = {
-                Text(WrStrings.password())
+                Text(WrStrings.newPassword())
             },
             trailingIcon = {
                 if (showPassword) {
@@ -232,6 +177,44 @@ private fun BoxScope.RegisterContent(
             }
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            repeatPassword,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            onValueChange = repeatPasswordChanged,
+            shape = shape,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            visualTransformation = if (showRepeatPassword) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            placeholder = {
+                Text(WrStrings.repeatPassword())
+            },
+            trailingIcon = {
+                if (showRepeatPassword) {
+                    Icon(
+                        modifier = Modifier.clip(CircleShape)
+                            .clickable { showRepeatPassword = !showRepeatPassword }
+                            .padding(4.dp),
+                        imageVector = WrIcons.visibilityOff,
+                        contentDescription = "Eye closed"
+                    )
+                } else {
+                    Icon(
+                        modifier = Modifier.clip(CircleShape)
+                            .clickable { showRepeatPassword = !showRepeatPassword }
+                            .padding(4.dp),
+                        imageVector = WrIcons.visibilityOn,
+                        contentDescription = "Eye open"
+                    )
+                }
+            }
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(
@@ -239,7 +222,7 @@ private fun BoxScope.RegisterContent(
                 .padding(horizontal = 24.dp)
                 .background(MaterialTheme.colorScheme.primary, shape = shape)
                 .fillMaxWidth(),
-            onClick = onRegisterRequest
+            onClick = onPasswordResetRequest
         ) {
             Text(
                 text = WrStrings.createAccount(),
@@ -247,23 +230,4 @@ private fun BoxScope.RegisterContent(
             )
         }
     }
-}
-
-@Preview
-@Composable
-fun AuthScreenPreview() {
-    RegisterScreen(
-        nameState = MutableStateFlow(""),
-        emailState = MutableStateFlow(""),
-        companyState = MutableStateFlow(""),
-        passwordState = MutableStateFlow(""),
-        registerState = MutableStateFlow(ResultData.Idle()),
-        nameChanged = {},
-        companyChanged = {},
-        emailChanged = {},
-        passwordChanged = {},
-        onRegisterRequest = {},
-        onRegisterSuccess = {},
-        navigateBack = {}
-    )
 }

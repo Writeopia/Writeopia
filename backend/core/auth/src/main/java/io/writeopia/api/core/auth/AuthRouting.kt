@@ -11,20 +11,19 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.hash.HashUtils
-import io.writeopia.api.core.auth.hash.toBase64
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.deleteUserById
-import io.writeopia.sdk.serialization.data.auth.LoginRequest
-import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.api.core.auth.repository.getUserByEmail
-import io.writeopia.api.core.auth.repository.insertUser
-import io.writeopia.sdk.models.user.WriteopiaUser
+import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
+import io.writeopia.sdk.serialization.data.auth.LoginRequest
+import io.writeopia.sdk.serialization.data.auth.RegisterRequest
+import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
-import java.util.UUID
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
     post("api/login") {
@@ -58,21 +57,11 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
 
     post("api/register") {
         try {
-            val (name, email, password) = call.receive<RegisterRequest>()
+            val request = call.receive<RegisterRequest>()
+            val user = writeopiaDb.getUserByEmail(request.email)
 
-            val user = writeopiaDb.getUserByEmail(email)
             if (user == null) {
-                val id = UUID.randomUUID().toString()
-
-                val salt = HashUtils.generateSalt()
-                val hash = HashUtils.hashPassword(password, salt).toBase64()
-
-                writeopiaDb.insertUser(id, name, email, hash, salt.toBase64())
-                val wUser = WriteopiaUser(
-                    id = id,
-                    name = name,
-                    email = email,
-                )
+                val wUser = AuthService.createUser(writeopiaDb, request)
 
                 call.respond(HttpStatusCode.Created, AuthResponse(null, wUser.toApi()))
             } else {
@@ -82,7 +71,6 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
             e.printStackTrace()
             call.respond(HttpStatusCode.InternalServerError, "Unknown error")
         }
-
     }
 
     authenticate("auth-jwt") {
@@ -93,6 +81,37 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
             if (userId != null) {
                 writeopiaDb.deleteUserById(id = userId)
                 call.respond(DeleteAccountResponse(true))
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
+        }
+    }
+
+    authenticate("auth-jwt") {
+        put("api/password/reset") {
+            val request = call.receive<ResetPasswordRequest>()
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.payload?.getClaim("userId")?.asString()
+            val user = userId?.let(writeopiaDb::getUserById)
+
+            if (user != null) {
+                AuthService.resetPassword(writeopiaDb, user, request.newPassword)
+                call.respond(HttpStatusCode.OK)
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
+        }
+    }
+
+    authenticate("auth-jwt") {
+        get("api/user/current") {
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.payload?.getClaim("userId")?.asString()
+
+            val user = userId?.let(writeopiaDb::getUserById)
+
+            if (user != null) {
+                call.respond(HttpStatusCode.OK, user.toApi())
             } else {
                 call.respond(HttpStatusCode.NotFound)
             }

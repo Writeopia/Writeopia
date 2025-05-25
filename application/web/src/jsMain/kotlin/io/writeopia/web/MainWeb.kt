@@ -10,6 +10,8 @@ import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.jetbrains.skiko.wasm.onWasmReady
+import androidx.navigation.compose.rememberNavController
+import io.writeopia.common.utils.Destinations
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
@@ -32,6 +34,8 @@ fun CreateAppInMemory() {
     val colorTheme =
         uiConfigurationViewModel.listenForColorTheme { "disconnected_user" }
 
+    val navigationController = rememberNavController()
+
     DesktopApp(
         selectionState = selectionState,
         colorThemeOption = colorTheme,
@@ -39,6 +43,15 @@ fun CreateAppInMemory() {
         coroutineScope = coroutineScope,
         keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
         toggleMaxScreen = {},
-        navigateToRegister = {}
+        navigateToRegister = {
+            navigationController.navigate(
+                Destinations.AUTH_MENU_INNER_NAVIGATION.id
+            )
+        },
+        navigateToResetPassword = {
+            navigationController.navigate(
+                Destinations.AUTH_RESET_PASSWORD.id
+            )
+        }
     )
 }

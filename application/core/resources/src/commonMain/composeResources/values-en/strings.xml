@@ -107,4 +107,9 @@
   <string name="start_now">Let's start now!</string>
   <string name="sign_in_account">Sign in to your account at Writeopia.</string>
   <string name="or_word">OR</string>
+  <string name="reset_password">Reset your password</string>
+  <string name="type_new_password">Type the new password</string>
+  <string name="new_password">New password</string>
+  <string name="repeat_password">Repeat password</string>
+  <string name="company">Company</string>
 </resources>

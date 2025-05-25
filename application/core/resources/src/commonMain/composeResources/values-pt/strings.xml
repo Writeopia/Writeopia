@@ -101,4 +101,9 @@
   <string name="start_now">Comece agora!</string>
   <string name="sign_in_account">Entre em sua conta no Writeopia</string>
   <string name="or_word">OU</string>
+  <string name="reset_password">Mudar a senha</string>
+  <string name="type_new_password">Digite a nova senha</string>
+  <string name="new_password">Senha nova</string>
+  <string name="repeat_password">Repita a senha</string>
+  <string name="company">Empresa</string>
 </resources>
