@@ -46,7 +46,7 @@ fun RegisterPasswordScreen(
     modifier: Modifier = Modifier,
     passwordState: StateFlow<String>,
     repeatPasswordState: StateFlow<String>,
-    registerState: StateFlow<ResultData<Boolean>>,
+    resetPasswordState: StateFlow<ResultData<Boolean>>,
     passwordChanged: (String) -> Unit,
     repeatPasswordChanged: (String) -> Unit,
     onPasswordResetRequest: () -> Unit,
@@ -67,13 +67,15 @@ fun RegisterPasswordScreen(
         val registerScreen = @Composable { modifier: Modifier ->
             ResetPasswordContent(
                 passwordState,
+                repeatPasswordState,
                 passwordChanged,
+                repeatPasswordChanged,
                 onPasswordResetRequest,
                 modifier
             )
         }
 
-        when (val register = registerState.collectAsState().value) {
+        when (val register = resetPasswordState.collectAsState().value) {
             is ResultData.Complete -> {
                 if (register.data) {
                     LaunchedEffect(key1 = "navigation") {
@@ -102,11 +104,14 @@ private fun BoxScope.ResetPasswordContent(
     passwordState: StateFlow<String>,
     repeatPasswordState: StateFlow<String>,
     passwordChanged: (String) -> Unit,
+    repeatPasswordChanged: (String) -> Unit,
     onPasswordResetRequest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val password by passwordState.collectAsState()
+    val repeatPassword by repeatPasswordState.collectAsState()
     var showPassword by remember { mutableStateOf(false) }
+    var showRepeatPassword by remember { mutableStateOf(false) }
     val shape = MaterialTheme.shapes.large
 
     Column(
@@ -175,13 +180,13 @@ private fun BoxScope.ResetPasswordContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            password,
+            repeatPassword,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-            onValueChange = passwordChanged,
+            onValueChange = repeatPasswordChanged,
             shape = shape,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            visualTransformation = if (showPassword) {
+            visualTransformation = if (showRepeatPassword) {
                 VisualTransformation.None
             } else {
                 PasswordVisualTransformation()
@@ -190,10 +195,10 @@ private fun BoxScope.ResetPasswordContent(
                 Text("Repeat password")
             },
             trailingIcon = {
-                if (showPassword) {
+                if (showRepeatPassword) {
                     Icon(
                         modifier = Modifier.clip(CircleShape)
-                            .clickable { showPassword = !showPassword }
+                            .clickable { showRepeatPassword = !showRepeatPassword }
                             .padding(4.dp),
                         imageVector = WrIcons.visibilityOff,
                         contentDescription = "Eye closed"
@@ -201,7 +206,7 @@ private fun BoxScope.ResetPasswordContent(
                 } else {
                     Icon(
                         modifier = Modifier.clip(CircleShape)
-                            .clickable { showPassword = !showPassword }
+                            .clickable { showRepeatPassword = !showRepeatPassword }
                             .padding(4.dp),
                         imageVector = WrIcons.visibilityOn,
                         contentDescription = "Eye open"

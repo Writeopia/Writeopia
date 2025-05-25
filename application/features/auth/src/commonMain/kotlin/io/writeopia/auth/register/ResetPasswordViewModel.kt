@@ -14,8 +14,8 @@ import kotlinx.coroutines.launch
 
 // The NavigationActivity won't leak because it is the single activity of the whole project
 internal class ResetPasswordViewModel(
-    private val authRepository: AuthRepository,
     private val authApi: AuthApi,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _password = MutableStateFlow("")
@@ -24,26 +24,48 @@ internal class ResetPasswordViewModel(
     private val _repeatPassword = MutableStateFlow("")
     val repeatPassword = _repeatPassword.asStateFlow()
 
-    private val _register = MutableStateFlow<ResultData<Boolean>>(ResultData.Idle())
-    val register = _register.asStateFlow()
+    private val _resetPassword = MutableStateFlow<ResultData<Boolean>>(ResultData.Idle())
+    val resetPassword = _resetPassword.asStateFlow()
 
     fun passwordChanged(password: String) {
         _password.value = password
     }
 
     fun repeatPasswordChanged(password: String) {
-        _password.value = password
+        _repeatPassword.value = password
     }
 
-    fun onRegister() {
-        _register.value = ResultData.Loading()
+    fun onResetPassword() {
+        if (_password.value != _repeatPassword.value) {
+            // Show problem to user!
+            return
+        }
+
+        _resetPassword.value = ResultData.Loading()
 
         viewModelScope.launch {
             try {
+                val token = authRepository.getAuthToken()
+                val result = authApi.resetPassword(_password.value, token ?: "")
 
+                _resetPassword.value = when (result) {
+                    is ResultData.Complete -> {
+                        result.map { true }
+                    }
+
+                    is Error -> {
+                        delay(300)
+                        result.map { false }
+                    }
+
+                    else -> {
+                        delay(300)
+                        ResultData.Idle()
+                    }
+                }
             } catch (e: Exception) {
                 delay(300)
-                _register.value = ResultData.Error(e)
+                _resetPassword.value = ResultData.Error(e)
             }
         }
     }

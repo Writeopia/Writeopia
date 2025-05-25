@@ -16,7 +16,6 @@ import io.writeopia.auth.register.RegisterScreen
 import io.writeopia.common.utils.Destinations
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
-import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
@@ -36,10 +35,13 @@ fun NavGraphBuilder.authNavigation(
                 modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
                 passwordState = viewModel.password,
                 repeatPasswordState = viewModel.repeatPassword,
-                registerState = viewModel.register,
+                resetPasswordState = viewModel.resetPassword,
                 passwordChanged = viewModel::passwordChanged,
-                onPasswordResetRequest = {},
-                onPasswordResetSuccess = {},
+                repeatPasswordChanged = viewModel::repeatPasswordChanged,
+                onPasswordResetRequest = viewModel::onResetPassword,
+                onPasswordResetSuccess = {
+                    toAppNavigation()
+                },
                 navigateBack = {
                     navController.navigateUp()
                 }

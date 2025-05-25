@@ -21,9 +21,9 @@ class AuthInjection(
 
     @Composable
     internal fun provideResetPasswordViewModel(
+        authApi: AuthApi = authCoreInjection.provideAuthApi(),
         authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
-        authApi: AuthApi = authCoreInjection.provideAuthApi()
-    ): ResetPasswordViewModel = viewModel { ResetPasswordViewModel(authRepository, authApi) }
+    ): ResetPasswordViewModel = viewModel { ResetPasswordViewModel(authApi, authRepository) }
 
     @Composable
     internal fun provideAuthMenuViewModel(
