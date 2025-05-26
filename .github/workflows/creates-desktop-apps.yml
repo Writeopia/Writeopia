@@ -23,6 +23,7 @@ jobs:
           name: Writeopia-windows
           path: application/composeApp/build/compose/binaries/main-release/msi
       - id: optional_step_id
+        name: Sign Windows app
         uses: signpath/github-action-submit-signing-request@v1.1
         with:
           api-token: '${{ secrets.SIGN_PATH_API_TOKEN }}'
@@ -30,8 +31,8 @@ jobs:
           project-slug: 'Writeopia'
           signing-policy-slug: 'test-signing'
           github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+          artifact-configuration-slug: 'Windows_artifact'
           wait-for-completion: true
-          output-artifact-directory: './'
   create_deb_app:
     name: Create Deb App
     runs-on: ubuntu-22.04
