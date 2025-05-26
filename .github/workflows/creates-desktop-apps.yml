@@ -17,11 +17,21 @@ jobs:
           java-version: '21'
       - name: Generate windows app
         run: ./gradlew packageReleaseMsi
-      - name: Upload App
+      - name: upload-unsigned-artifact
         uses: actions/upload-artifact@v4
         with:
           name: Writeopia-windows
           path: application/composeApp/build/compose/binaries/main-release/msi
+      - id: optional_step_id
+        uses: signpath/github-action-submit-signing-request@v1.1
+        with:
+          api-token: '${{ secrets.SIGN_PATH_API_TOKEN }}'
+          organization-id: '${{ secrets.SIGN_PATH_ORG_ID }}'
+          project-slug: 'Writeopia'
+          signing-policy-slug: 'test-signing'
+          github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: './'
   create_deb_app:
     name: Create Deb App
     runs-on: ubuntu-22.04
