@@ -17,7 +17,8 @@ jobs:
           java-version: '21'
       - name: Generate windows app
         run: ./gradlew packageReleaseMsi
-      - name: upload-unsigned-artifact
+      - name: upload unsigned artifact
+        id: upload-unsigned-artifact
         uses: actions/upload-artifact@v4
         with:
           name: Writeopia-windows
