@@ -131,7 +131,6 @@ class TextDrawer(
 
         BasicTextField(
             modifier = modifier
-                .background(Color.Blue)
                 .let { modifierLet ->
                     if (focusRequester != null) {
                         modifierLet.focusRequester(focusRequester)
