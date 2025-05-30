@@ -32,7 +32,7 @@ jobs:
           project-slug: 'Writeopia'
           signing-policy-slug: 'test-signing'
           github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
-          artifact-configuration-slug: 'test3'
+          artifact-configuration-slug: 'msisign'
           wait-for-completion: true
   create_deb_app:
     name: Create Deb App
