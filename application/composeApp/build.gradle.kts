@@ -143,12 +143,12 @@ compose.desktop {
             }
 
             linux {
-                packageVersion = "0.42.0"
+                packageVersion = "0.43.0"
                 iconFile.set(iconsRoot.resolve("icon-linux.png"))
             }
 
             windows {
-                packageVersion = "0.42.0"
+                packageVersion = "0.43.0"
                 iconFile.set(iconsRoot.resolve("icon-windows.ico"))
             }
         }
