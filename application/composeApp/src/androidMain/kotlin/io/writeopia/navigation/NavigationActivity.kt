@@ -39,15 +39,12 @@ class NavigationActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val startDestination = if (BuildConfig.DEBUG) {
-                NoteMenuDestiny.noteMenu()
-            } else {
-                Destinations.AUTH_MENU_INNER_NAVIGATION.id
-            }
-
             ImageLoadConfig.configImageLoad()
 
-            NavigationGraph(application = application, startDestination = startDestination)
+            NavigationGraph(
+                application = application,
+                startDestination = NoteMenuDestiny.noteMenu()
+            )
         }
     }
 }
@@ -66,7 +63,7 @@ fun NavigationGraph(
             application
         )
     ),
-    startDestination: String = Destinations.AUTH_MENU_INNER_NAVIGATION.id
+    startDestination: String
 ) {
     SharedPreferencesInjector.init(sharedPreferences)
     WriteopiaRoomInjector.init(database)
