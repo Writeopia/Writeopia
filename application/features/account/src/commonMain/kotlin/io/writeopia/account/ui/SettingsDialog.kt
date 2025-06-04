@@ -223,7 +223,7 @@ private fun AccountScreen(
 
         if (userOnline.id != WriteopiaUser.DISCONNECTED) {
             Text(
-                "Account: ${userOnline.name} - ${userOnline.tier.tierName()}",
+                "${WrStrings.account()}: ${userOnline.name} - ${userOnline.tier.tierName()}",
                 style = MaterialTheme.typography.bodySmall,
                 color = titleColor,
                 fontWeight = FontWeight.Bold,
@@ -233,19 +233,25 @@ private fun AccountScreen(
             )
 
             Column(modifier = Modifier.width(IntrinsicSize.Max)) {
-                CommonTextButton(text = "Change account", modifier = Modifier.fillMaxWidth()) {
+                CommonTextButton(
+                    text = WrStrings.changeAccount(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     signIn()
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                CommonTextButton(text = "Reset Password", modifier = Modifier.fillMaxWidth()) {
+                CommonTextButton(
+                    text = WrStrings.resetPassword(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     resetPassword()
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                CommonTextButton(text = "Logout", modifier = Modifier.fillMaxWidth()) {
+                CommonTextButton(text = WrStrings.logout(), modifier = Modifier.fillMaxWidth()) {
                     logout()
                 }
 
@@ -254,7 +260,7 @@ private fun AccountScreen(
                 val showDelete by showDeleteConfirmation.collectAsState()
 
                 CommonTextButton(
-                    text = "Delete account",
+                    text = WrStrings.deleteAccount(),
                     modifier = Modifier.fillMaxWidth(),
                     defaultColor = Color.Red,
                     textColor = MaterialTheme.colorScheme.onPrimary,
@@ -274,20 +280,20 @@ private fun AccountScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    "Are you sure?",
+                                    WrStrings.areYouSure(),
                                     style = MaterialTheme.typography.displaySmall
                                 )
 
                                 Spacer(modifier = Modifier.height(12.dp))
 
                                 Text(
-                                    "All your notes will be deleted.",
+                                    WrStrings.notesWillBeDeleted(),
                                     fontWeight = FontWeight.Bold
                                 )
 
                                 Spacer(modifier = Modifier.height(4.dp))
 
-                                Text("Type your email to confirm")
+                                Text(WrStrings.confirmEmail())
 
                                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -296,7 +302,7 @@ private fun AccountScreen(
                                     onValueChange = {},
                                     singleLine = true,
                                     placeholder = {
-                                        Text("Email")
+                                        Text(WrStrings.email())
                                     }
                                 )
 
@@ -308,7 +314,7 @@ private fun AccountScreen(
                                         onClick = dismissDeleteConfirm,
                                         modifier = Modifier.padding(8.dp),
                                     ) {
-                                        Text("Dismiss")
+                                        Text(WrStrings.dismiss())
                                     }
 
                                     TextButton(
@@ -317,7 +323,7 @@ private fun AccountScreen(
                                         },
                                         modifier = Modifier.padding(8.dp),
                                     ) {
-                                        Text("Confirm")
+                                        Text(WrStrings.confirm())
                                     }
                                 }
                             }
@@ -636,7 +642,7 @@ fun DownloadModels(
                     interactionSource = interactionSource,
                     placeholder = {
                         Text(
-                            text = "Write your AI model",
+                            text = WrStrings.writeYourAiModel(),
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = MaterialTheme.colorScheme.onBackground
                             )
@@ -657,7 +663,7 @@ fun DownloadModels(
                     downloadModel(modelToDownload)
                 }.padding(6.dp),
             imageVector = WrIcons.download,
-            contentDescription = "Download model",
+            contentDescription = WrStrings.downloadModel(),
             //            stringResource(R.string.note_list),
             tint = MaterialTheme.colorScheme.onBackground
         )

@@ -15,7 +15,6 @@ import androidx.navigation.compose.rememberNavController
 import io.writeopia.BuildConfig
 import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.navigation.authNavigation
-import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.di.SharedPreferencesInjector
 import io.writeopia.editor.di.EditorKmpInjector

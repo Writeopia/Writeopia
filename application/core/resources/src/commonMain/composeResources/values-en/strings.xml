@@ -112,4 +112,13 @@
   <string name="new_password">New password</string>
   <string name="repeat_password">Repeat password</string>
   <string name="company">Company</string>
+  <string name="change_account">Change account</string>
+  <string name="delete_account">Delete Account</string>
+  <string name="are_you_sure">Are you sure?</string>
+  <string name="notes_will_be_deleted">All your notes will be deleted.</string>
+  <string name="email_to_confirm">Type your email to confirm</string>
+  <string name="dismiss">Dismiss</string>
+  <string name="confirm">Confirm</string>
+  <string name="download_model">Download model</string>
+  <string name="choose_your_model">Write your AI model</string>
 </resources>

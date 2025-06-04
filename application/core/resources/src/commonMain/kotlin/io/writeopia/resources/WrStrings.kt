@@ -7,14 +7,18 @@ import writeopia.application.core.resources.generated.resources.access_ollama_si
 import writeopia.application.core.resources.generated.resources.account
 import writeopia.application.core.resources.generated.resources.action_points
 import writeopia.application.core.resources.generated.resources.actions
+import writeopia.application.core.resources.generated.resources.are_you_sure
 import writeopia.application.core.resources.generated.resources.arrangement
 import writeopia.application.core.resources.generated.resources.ask_ai
 import writeopia.application.core.resources.generated.resources.available_models
 import writeopia.application.core.resources.generated.resources.box
 import writeopia.application.core.resources.generated.resources.cancel
+import writeopia.application.core.resources.generated.resources.change_account
+import writeopia.application.core.resources.generated.resources.choose_your_model
 import writeopia.application.core.resources.generated.resources.close
 import writeopia.application.core.resources.generated.resources.color_theme
 import writeopia.application.core.resources.generated.resources.company
+import writeopia.application.core.resources.generated.resources.confirm
 import writeopia.application.core.resources.generated.resources.confirmation_delete_multiple_items
 import writeopia.application.core.resources.generated.resources.content
 import writeopia.application.core.resources.generated.resources.copy_note
@@ -23,7 +27,10 @@ import writeopia.application.core.resources.generated.resources.create_your_acco
 import writeopia.application.core.resources.generated.resources.dark_theme
 import writeopia.application.core.resources.generated.resources.decoration
 import writeopia.application.core.resources.generated.resources.delete
+import writeopia.application.core.resources.generated.resources.delete_account
+import writeopia.application.core.resources.generated.resources.dismiss
 import writeopia.application.core.resources.generated.resources.document
+import writeopia.application.core.resources.generated.resources.download_model
 import writeopia.application.core.resources.generated.resources.download_models
 import writeopia.application.core.resources.generated.resources.download_ollama
 import writeopia.application.core.resources.generated.resources.email
@@ -51,12 +58,14 @@ import writeopia.application.core.resources.generated.resources.light_theme
 import writeopia.application.core.resources.generated.resources.links
 import writeopia.application.core.resources.generated.resources.local_folder
 import writeopia.application.core.resources.generated.resources.lock_document
+import writeopia.application.core.resources.generated.resources.logout
 import writeopia.application.core.resources.generated.resources.markdown
 import writeopia.application.core.resources.generated.resources.move_to
 import writeopia.application.core.resources.generated.resources.move_to_home
 import writeopia.application.core.resources.generated.resources.name
 import writeopia.application.core.resources.generated.resources.new_password
 import writeopia.application.core.resources.generated.resources.no_models
+import writeopia.application.core.resources.generated.resources.notes_will_be_deleted
 import writeopia.application.core.resources.generated.resources.ok
 import writeopia.application.core.resources.generated.resources.ollama
 import writeopia.application.core.resources.generated.resources.ollama_configuration_complete
@@ -360,4 +369,34 @@ object WrStrings {
 
     @Composable
     fun company() = stringResource(Res.string.company)
+
+    @Composable
+    fun changeAccount() = stringResource(Res.string.change_account)
+
+    @Composable
+    fun logout() = stringResource(Res.string.logout)
+
+    @Composable
+    fun deleteAccount() = stringResource(Res.string.delete_account)
+
+    @Composable
+    fun areYouSure() = stringResource(Res.string.are_you_sure)
+
+    @Composable
+    fun notesWillBeDeleted() = stringResource(Res.string.notes_will_be_deleted)
+
+    @Composable
+    fun confirmEmail() = stringResource(Res.string.notes_will_be_deleted)
+
+    @Composable
+    fun dismiss() = stringResource(Res.string.dismiss)
+
+    @Composable
+    fun confirm() = stringResource(Res.string.confirm)
+
+    @Composable
+    fun downloadModel() = stringResource(Res.string.download_model)
+
+    @Composable
+    fun writeYourAiModel() = stringResource(Res.string.choose_your_model)
 }
