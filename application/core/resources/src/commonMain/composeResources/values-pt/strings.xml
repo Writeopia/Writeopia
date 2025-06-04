@@ -106,4 +106,13 @@
   <string name="new_password">Senha nova</string>
   <string name="repeat_password">Repita a senha</string>
   <string name="company">Empresa</string>
+  <string name="change_account">Trocar conta</string>
+  <string name="delete_account">Deletar conta</string>
+  <string name="are_you_sure">Tem certeza?</string>
+  <string name="notes_will_be_deleted">Suas notas serão deletadas.</string>
+  <string name="email_to_confirm">Escreva seu email para confirmar</string>
+  <string name="dismiss">Fechar</string>
+  <string name="confirm">Confirmar</string>
+  <string name="download_model">Baixar modelo</string>
+  <string name="choose_your_model">Escolhe seu modelo de IA</string>
 </resources>
