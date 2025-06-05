@@ -15,6 +15,12 @@ FROM user_entity
 WHERE email = ?
 LIMIT 1;
 
+selectEnabledUserByEmail:
+SELECT *
+FROM user_entity
+WHERE email = ? AND enabled = TRUE
+LIMIT 1;
+
 selectUserById:
 SELECT *
 FROM user_entity

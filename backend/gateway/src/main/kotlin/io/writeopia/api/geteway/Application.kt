@@ -18,10 +18,11 @@ fun main() {
 
 fun Application.module(
     writeopiaDb: WriteopiaDbBackend = configurePersistence(),
-    useAi: Boolean = System.getenv("WRITEOPIA_USE_AI")?.toBoolean() ?: false
+    useAi: Boolean = System.getenv("WRITEOPIA_USE_AI")?.toBoolean() ?: false,
+    debugMode: Boolean = false
 ) {
     installAuth()
-    configureRouting(writeopiaDb, useAi)
+    configureRouting(writeopiaDb, useAi, debugMode = debugMode)
     configureSerialization()
     configureEditorSockets()
     configureHTTP()

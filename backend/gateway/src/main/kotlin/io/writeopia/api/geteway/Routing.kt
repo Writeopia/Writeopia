@@ -9,7 +9,11 @@ import io.writeopia.api.core.auth.authRoute
 import io.writeopia.api.documents.routing.documentsRoute
 import io.writeopia.sql.WriteopiaDbBackend
 
-fun Application.configureRouting(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
+fun Application.configureRouting(
+    writeopiaDb: WriteopiaDbBackend,
+    useAi: Boolean,
+    debugMode: Boolean = false
+) {
     routing {
         documentsRoute(writeopiaDb, useAi)
 
@@ -17,6 +21,6 @@ fun Application.configureRouting(writeopiaDb: WriteopiaDbBackend, useAi: Boolean
             call.respondText("Hi")
         }
 
-        authRoute(writeopiaDb)
+        authRoute(writeopiaDb, debugMode)
     }
 }
