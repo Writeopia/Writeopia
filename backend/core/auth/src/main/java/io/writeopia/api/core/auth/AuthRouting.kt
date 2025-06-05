@@ -15,6 +15,7 @@ import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.hash.HashUtils
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.deleteUserById
+import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
@@ -25,11 +26,15 @@ import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
 
-fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend) {
+fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
     post("api/login") {
         try {
             val credentials = call.receive<LoginRequest>()
-            val user = writeopiaDb.getUserByEmail(credentials.email)
+            val user = if (debugMode) {
+                writeopiaDb.getUserByEmail(credentials.email)
+            } else {
+                writeopiaDb.getEnabledUserByEmail(credentials.email)
+            }
 
             if (user != null) {
                 val hash = user.password

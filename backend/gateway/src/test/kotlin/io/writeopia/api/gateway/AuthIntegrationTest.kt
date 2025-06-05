@@ -43,7 +43,7 @@ class AuthIntegrationTest {
     @Test
     fun `it should be possible to register an user`() = testApplication {
         application {
-            module(db)
+            module(db, debugMode = true)
         }
 
         val client = defaultClient()
@@ -66,7 +66,7 @@ class AuthIntegrationTest {
     @Test
     fun `it should not be possible create 2 users with the same email`() = testApplication {
         application {
-            module(db)
+            module(db, debugMode = true)
         }
 
         val client = defaultClient()
@@ -102,7 +102,7 @@ class AuthIntegrationTest {
     @Test
     fun `it should be possible to delete your account, if your logged in`() = testApplication {
         application {
-            module(db)
+            module(db, debugMode = true)
         }
 
         val client = defaultClient()
@@ -143,7 +143,7 @@ class AuthIntegrationTest {
     fun `it should be possible to delete your account, if don't have the right token`() =
         testApplication {
             application {
-                module(db)
+                module(db, debugMode = true)
             }
 
             val response2 = client.delete("api/account") {
@@ -157,7 +157,7 @@ class AuthIntegrationTest {
     @Test
     fun `it should be possible to reset my password`() = testApplication {
         application {
-            module(db)
+            module(db, debugMode = true)
         }
 
         val client = defaultClient()
