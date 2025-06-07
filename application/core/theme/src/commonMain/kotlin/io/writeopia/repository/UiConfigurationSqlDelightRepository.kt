@@ -40,7 +40,7 @@ class UiConfigurationSqlDelightRepository internal constructor(
     }
 
     override fun listenForUiConfiguration(
-        getUserId: suspend () -> String,
+        getUserId: String,
         coroutineScope: CoroutineScope
     ): Flow<UiConfiguration?> =
         uiConfigurationDao.listenForConfigurationByUserId(getUserId, coroutineScope)
