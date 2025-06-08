@@ -88,13 +88,14 @@ class SqlDelightDocumentRepository(
     ): List<Document> =
         documentSqlDao.loadDocumentWithContentByIds(ids)
 
-    override suspend fun saveDocument(document: Document) {
-        documentSqlDao.insertDocumentWithContent(document)
+    override suspend fun saveDocument(document: Document, userId: String) {
+        // Todo: Add company later
+        documentSqlDao.insertDocumentWithContent(document, userId, null)
         refreshDocuments()
     }
 
-    override suspend fun saveDocumentMetadata(document: Document) {
-        documentSqlDao.insertDocument(document)
+    override suspend fun saveDocumentMetadata(document: Document, userId: String) {
+        documentSqlDao.insertDocument(document, userId, null)
 
         refreshDocuments()
     }

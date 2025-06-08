@@ -46,12 +46,12 @@ class EditorKmpInjector private constructor(
         authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
         writeopiaManager: WriteopiaManager = provideWriteopiaManager()
     ) = WriteopiaStateManager.create(
-        userId = { authRepository.getUser().id },
         dispatcher = Dispatchers.Default,
         writeopiaManager = writeopiaManager,
         selectionState = selectionState,
         keyboardEventFlow = keyboardEventFlow,
-        documentRepository = repositoryInjection.provideDocumentRepository()
+        documentRepository = repositoryInjection.provideDocumentRepository(),
+        userRepository = authRepository
     )
 
     private fun provideNoteEditorViewModel(
@@ -73,6 +73,7 @@ class EditorKmpInjector private constructor(
             keyboardEventFlow = keyboardEventFlow,
             copyManager = copyManager,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
+            authRepository = authCoreInjection.provideAuthRepository()
         )
 
     @Composable

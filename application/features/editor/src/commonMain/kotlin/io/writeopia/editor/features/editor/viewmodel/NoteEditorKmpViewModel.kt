@@ -4,7 +4,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
-import io.writeopia.auth.core.utils.USER_OFFLINE
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.common.utils.file.SaveImage
@@ -72,6 +72,7 @@ class NoteEditorKmpViewModel(
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val copyManager: CopyManager,
+    private val authRepository: AuthRepository,
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -366,9 +367,11 @@ class NoteEditorKmpViewModel(
         writeopiaManager.clearSelection()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override val fontFamily: StateFlow<Font> by lazy {
-        uiConfigurationRepository.listenForUiConfiguration({ USER_OFFLINE }, viewModelScope)
-            .filterNotNull()
+        authRepository.listenForUser().flatMapLatest { user ->
+            uiConfigurationRepository.listenForUiConfiguration(user.id, viewModelScope)
+        }.filterNotNull()
             .map { it.font }
             .stateIn(viewModelScope, SharingStarted.Lazily, Font.SYSTEM)
     }
@@ -389,7 +392,7 @@ class NoteEditorKmpViewModel(
 
     override fun changeFontFamily(font: Font) {
         viewModelScope.launch {
-            uiConfigurationRepository.updateConfiguration(USER_OFFLINE) { config ->
+            uiConfigurationRepository.updateConfiguration(authRepository.getUser().id) { config ->
                 config.copy(font = font)
             }
         }
@@ -398,7 +401,7 @@ class NoteEditorKmpViewModel(
     override fun addImage(imagePath: String) {
         viewModelScope.launch(Dispatchers.Default) {
             val path = workspaceConfigRepository
-                .loadWorkspacePath("disconnected_user")
+                .loadWorkspacePath(authRepository.getUser().id)
                 ?.let { workspace ->
                     SaveImage.saveLocally(
                         imagePath,
@@ -452,7 +455,11 @@ class NoteEditorKmpViewModel(
         if (ollamaRepository == null) return
 
         aiJob = viewModelScope.launch(Dispatchers.Default) {
-            PromptService.promptBySelection(writeopiaManager, ollamaRepository)
+            PromptService.promptBySelection(
+                authRepository.getUser().id,
+                writeopiaManager,
+                ollamaRepository
+            )
         }
     }
 
@@ -496,7 +503,13 @@ class NoteEditorKmpViewModel(
 
                 Use the language of the text. Do not add titles. Create contect for this section: $sectionText
                 """
-            PromptService.prompt(prompt = prompt, writeopiaManager, ollamaRepository, position + 1)
+            PromptService.prompt(
+                userId = authRepository.getUser().id,
+                prompt = prompt,
+                writeopiaManager,
+                ollamaRepository,
+                position + 1
+            )
         }
     }
 
@@ -538,7 +551,7 @@ class NoteEditorKmpViewModel(
     override fun receiveExternalFile(files: List<ExternalFile>, position: Int) {
         viewModelScope.launch(Dispatchers.Default) {
             val newFiles = workspaceConfigRepository
-                .loadWorkspacePath("disconnected_user")
+                .loadWorkspacePath(authRepository.getUser().id)
                 ?.let { workspace ->
                     files.map { file ->
                         if (writeopiaManager.supportedImageFiles.contains(file.extension)) {
@@ -559,7 +572,12 @@ class NoteEditorKmpViewModel(
         if (ollamaRepository == null) return
 
         aiJob = viewModelScope.launch(Dispatchers.Default) {
-            PromptService.documentPrompt(promptFn, writeopiaManager, ollamaRepository)
+            PromptService.documentPrompt(
+                userId = authRepository.getUser().id,
+                promptFn,
+                writeopiaManager,
+                ollamaRepository
+            )
         }
     }
 

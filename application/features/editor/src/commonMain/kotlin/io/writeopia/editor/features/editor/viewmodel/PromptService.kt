@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.onStart
 object PromptService {
 
     suspend fun documentPrompt(
+        userId: String,
         promptFn: (String, String, String) -> Flow<ResultData<String>>,
         writeopiaManager: WriteopiaStateManager,
         ollamaRepository: OllamaRepository
@@ -24,7 +25,7 @@ object PromptService {
         val position =
             writeopiaManager.positionAfterSelection() ?: writeopiaManager.lastPosition()
 
-        val url = ollamaRepository.getConfiguredOllamaUrl()?.trim()
+        val url = ollamaRepository.getConfiguredOllamaUrl(userId)?.trim()
 
         if (url == null) {
             writeopiaManager.changeStoryState(
@@ -45,15 +46,17 @@ object PromptService {
     }
 
     suspend fun promptBySelection(
+        userId: String,
         writeopiaManager: WriteopiaStateManager,
         ollamaRepository: OllamaRepository
     ) {
         val text = writeopiaManager.getCurrentText()
 
-        prompt(text, writeopiaManager, ollamaRepository)
+        prompt(userId, text, writeopiaManager, ollamaRepository)
     }
 
     suspend fun prompt(
+        userId: String,
         prompt: String?,
         writeopiaManager: WriteopiaStateManager,
         ollamaRepository: OllamaRepository,
@@ -62,7 +65,7 @@ object PromptService {
         val position = promptPosition ?: writeopiaManager.getNextPosition()
 
         if (prompt != null && position != null) {
-            val url = ollamaRepository.getConfiguredOllamaUrl()?.trim()
+            val url = ollamaRepository.getConfiguredOllamaUrl(userId)?.trim()
 
             if (url == null) {
                 writeopiaManager.changeStoryState(

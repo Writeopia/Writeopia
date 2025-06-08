@@ -18,7 +18,7 @@ class DocumentsSync(
      * This logic is atomic. If it fails, the whole process must be tried again in a future time.
      * The sync time of the folder will only be updated with everything works correctly.
      */
-    suspend fun syncFolder(folderId: String) {
+    suspend fun syncFolder(folderId: String, userId: String) {
         val lastSync = documentRepository.loadDocumentById(folderId)?.lastSyncedAt
 
         // First, receive the documents for the backend.
@@ -43,7 +43,7 @@ class DocumentsSync(
             // If everything ran accordingly, update the sync time of the folder.
             documentsNotSent.forEach { document ->
                 val newDocument = document.copy(lastSyncedAt = now)
-                documentRepository.saveDocumentMetadata(newDocument)
+                documentRepository.saveDocumentMetadata(newDocument, userId)
             }
 
             documentRepository.refreshDocuments()

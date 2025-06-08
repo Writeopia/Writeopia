@@ -9,16 +9,19 @@ CREATE TABLE documentEntity (
   parent_document_id TEXT NOT NULL,
   icon TEXT,
   icon_tint INTEGER,
-  is_locked INTEGER NOT NULL
+  is_locked INTEGER NOT NULL,
+  company_id TEXT
 );
 
-selectAll:
-SELECT *
-FROM documentEntity;
-
-selectLastUpdatedAt:
+selectAllFromUser:
 SELECT *
 FROM documentEntity
+WHERE user_id = ?;
+
+selectLastUpdatedAtFromUser:
+SELECT *
+FROM documentEntity
+WHERE user_id = ?
 ORDER BY last_updated_at
 LIMIT 10;
 
@@ -30,19 +33,19 @@ WHERE id = ?;
 query:
 SELECT *
 FROM documentEntity
-WHERE title LIKE '%' || ? || '%'
+WHERE title LIKE '%' || ? || '%' AND user_id = ?
 ORDER BY last_updated_at;
 
 selectById:
 SELECT *
 FROM documentEntity
-WHERE documentEntity.id=?
+WHERE documentEntity.id= ?
 LIMIT 1;
 
-selectWithContent:
+selectWithContentFromUser:
 SELECT *
 FROM documentEntity
-LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id AND user_id = ?
 ORDER BY position;
 
 selectWithContentByIds:
@@ -107,13 +110,14 @@ FROM documentEntity
 WHERE documentEntity.parent_document_id = ?;
 
 insert:
-INSERT INTO documentEntity(id, title, created_at, last_updated_at, last_synced_at, user_id, favorite, parent_document_id, icon, icon_tint, is_locked)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO documentEntity(id, title, created_at, last_updated_at, last_synced_at, user_id, favorite, parent_document_id, icon, icon_tint, is_locked, user_id, company_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at,
 last_updated_at=excluded.last_updated_at, last_synced_at=excluded.last_synced_at, user_id=excluded.user_id,
 favorite=excluded.favorite,parent_document_id=excluded.parent_document_id, icon=excluded.icon,
- icon_tint=excluded.icon_tint, is_locked=excluded.is_locked;
+icon_tint=excluded.icon_tint, is_locked=excluded.is_locked,
+user_id=excluded.user_id, company_id=excluded.company_id;
 
 delete:
 DELETE FROM documentEntity WHERE id = ?;

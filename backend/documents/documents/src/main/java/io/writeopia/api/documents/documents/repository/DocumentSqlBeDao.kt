@@ -21,41 +21,43 @@ class DocumentSqlBeDao(
     private val storyStepQueries: StoryStepEntityQueries?,
 ) : DocumentSearch {
 
-    override suspend fun search(query: String): List<Document> = documentQueries?.query(query)
-        ?.executeAsList()
-        ?.map { entity ->
-            Document(
-                id = entity.id,
-                title = entity.title,
-                createdAt = Instant.fromEpochMilliseconds(entity.created_at),
-                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
-                lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
-                userId = entity.user_id,
-                favorite = entity.favorite,
-                parentId = entity.parent_document_id,
-                icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
-                isLocked = entity.is_locked,
-            )
-        }
-        ?: emptyList()
+    override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
+        documentQueries?.query(query)
+            ?.executeAsList()
+            ?.map { entity ->
+                Document(
+                    id = entity.id,
+                    title = entity.title,
+                    createdAt = Instant.fromEpochMilliseconds(entity.created_at),
+                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                    lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
+                    userId = entity.user_id,
+                    favorite = entity.favorite,
+                    parentId = entity.parent_document_id,
+                    icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
+                    isLocked = entity.is_locked,
+                )
+            }
+            ?: emptyList()
 
-    override suspend fun getLastUpdatedAt(): List<Document> = documentQueries?.selectLastUpdatedAt()
-        ?.executeAsList()
-        ?.map { entity ->
-            Document(
-                id = entity.id,
-                title = entity.title,
-                createdAt = Instant.fromEpochMilliseconds(entity.created_at),
-                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
-                lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
-                userId = entity.user_id,
-                favorite = entity.favorite,
-                parentId = entity.parent_document_id,
-                icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
-                isLocked = entity.is_locked
-            )
-        }
-        ?: emptyList()
+    override suspend fun getLastUpdatedAt(userId: String): List<Document> =
+        documentQueries?.selectLastUpdatedAt()
+            ?.executeAsList()
+            ?.map { entity ->
+                Document(
+                    id = entity.id,
+                    title = entity.title,
+                    createdAt = Instant.fromEpochMilliseconds(entity.created_at),
+                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                    lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
+                    userId = entity.user_id,
+                    favorite = entity.favorite,
+                    parentId = entity.parent_document_id,
+                    icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
+                    isLocked = entity.is_locked
+                )
+            }
+            ?: emptyList()
 
     fun insertDocumentWithContent(document: Document) {
         storyStepQueries?.deleteByDocumentId(document.id)
@@ -66,13 +68,13 @@ class DocumentSqlBeDao(
         insertDocument(document)
     }
 
-    fun insertDocument(document: Document) {
+    private fun insertDocument(document: Document) {
         documentQueries?.insert(
             id = document.id,
             title = document.title,
             created_at = document.createdAt.toEpochMilliseconds(),
             last_updated_at = document.lastUpdatedAt.toEpochMilliseconds(),
-            last_synced =  document.lastUpdatedAt.toEpochMilliseconds(),
+            last_synced = document.lastUpdatedAt.toEpochMilliseconds(),
             user_id = document.userId,
             favorite = document.favorite,
             parent_document_id = document.parentId,
@@ -82,7 +84,7 @@ class DocumentSqlBeDao(
         )
     }
 
-    fun insertStoryStep(storyStep: StoryStep, position: Long, documentId: String) {
+    private fun insertStoryStep(storyStep: StoryStep, position: Long, documentId: String) {
         storyStep.run {
             storyStepQueries?.insert(
                 id = id,
@@ -654,5 +656,4 @@ class DocumentSqlBeDao(
             documentId
         )
     }
-
 }

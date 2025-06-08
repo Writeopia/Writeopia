@@ -39,7 +39,7 @@ class UiConfigurationRepositoryImpl(
     }
 
     override fun listenForUiConfiguration(
-        getUserId: suspend () -> String,
+        getUserId: String,
         coroutineScope: CoroutineScope
     ): Flow<UiConfiguration?> =
         uiConfigurationDao.listenForConfigurationByUserId("disconnected_user")

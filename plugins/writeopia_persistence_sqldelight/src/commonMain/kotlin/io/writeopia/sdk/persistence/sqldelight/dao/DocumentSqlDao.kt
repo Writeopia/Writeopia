@@ -23,52 +23,52 @@ class DocumentSqlDao(
     private val storyStepQueries: StoryStepEntityQueries?,
 ) : DocumentSearch {
 
-    override suspend fun search(query: String): List<Document> = documentQueries?.query(query)
-        ?.executeAsList()
-        ?.map { entity ->
-            Document(
-                id = entity.id,
-                title = entity.title,
-                createdAt = Instant.fromEpochMilliseconds(entity.created_at),
-                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
-                lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                userId = entity.user_id,
-                favorite = entity.favorite == 1L,
-                parentId = entity.parent_document_id,
-                icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
-                isLocked = entity.is_locked == 1L
-            )
-        }
-        ?: emptyList()
+    override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
+        documentQueries?.query(query, user_id = userId)
+            ?.executeAsList()
+            ?.map { entity ->
+                Document(
+                    id = entity.id,
+                    title = entity.title,
+                    createdAt = Instant.fromEpochMilliseconds(entity.created_at),
+                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                    lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
+                    userId = entity.user_id,
+                    favorite = entity.favorite == 1L,
+                    parentId = entity.parent_document_id,
+                    icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
+                    isLocked = entity.is_locked == 1L
+                )
+            } ?: emptyList()
 
-    override suspend fun getLastUpdatedAt(): List<Document> = documentQueries?.selectLastUpdatedAt()
-        ?.executeAsList()
-        ?.map { entity ->
-            Document(
-                id = entity.id,
-                title = entity.title,
-                createdAt = Instant.fromEpochMilliseconds(entity.created_at),
-                lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
-                lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                userId = entity.user_id,
-                favorite = entity.favorite == 1L,
-                parentId = entity.parent_document_id,
-                icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
-                isLocked = entity.is_locked == 1L
-            )
-        }
-        ?: emptyList()
+    override suspend fun getLastUpdatedAt(userId: String): List<Document> =
+        documentQueries?.selectLastUpdatedAtFromUser(userId)
+            ?.executeAsList()
+            ?.map { entity ->
+                Document(
+                    id = entity.id,
+                    title = entity.title,
+                    createdAt = Instant.fromEpochMilliseconds(entity.created_at),
+                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                    lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
+                    userId = entity.user_id,
+                    favorite = entity.favorite == 1L,
+                    parentId = entity.parent_document_id,
+                    icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
+                    isLocked = entity.is_locked == 1L
+                )
+            } ?: emptyList()
 
-    suspend fun insertDocumentWithContent(document: Document) {
+    suspend fun insertDocumentWithContent(document: Document, userId: String, companyId: String?) {
         storyStepQueries?.deleteByDocumentId(document.id)
         document.content.values.forEachIndexed { i, storyStep ->
             insertStoryStep(storyStep, i.toLong(), document.id)
         }
 
-        insertDocument(document)
+        insertDocument(document, userId, companyId)
     }
 
-    suspend fun insertDocument(document: Document) {
+    suspend fun insertDocument(document: Document, userId: String, companyId: String?) {
         documentQueries?.insert(
             id = document.id,
             title = document.title,
@@ -81,6 +81,8 @@ class DocumentSqlDao(
             icon = document.icon?.label,
             icon_tint = document.icon?.tint?.toLong(),
             is_locked = document.isLocked.toLong(),
+            user_id_ = userId,
+            company_id = companyId
         )
     }
 
@@ -104,12 +106,6 @@ class DocumentSqlDao(
                 spans = spans.joinToString(separator = ",") { it.toText() },
                 link_to_document = documentLink?.id
             )
-        }
-    }
-
-    suspend fun insertDocuments(vararg documents: Document) {
-        documents.forEach { document ->
-            insertDocumentWithContent(document)
         }
     }
 

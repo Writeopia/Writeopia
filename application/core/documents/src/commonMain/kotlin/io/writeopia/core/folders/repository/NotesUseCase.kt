@@ -1,5 +1,6 @@
 package io.writeopia.core.folders.repository
 
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.collections.merge
 import io.writeopia.commonui.dtos.MenuItemUi
@@ -23,6 +24,7 @@ class NotesUseCase private constructor(
     private val documentRepository: DocumentRepository,
     private val notesConfig: ConfigurationRepository,
     private val folderRepository: FolderRepository,
+    private val authRepository: AuthRepository
 ) {
 
     suspend fun createFolder(name: String, userId: String) {
@@ -43,8 +45,12 @@ class NotesUseCase private constructor(
     suspend fun updateDocumentById(id: String, documentChange: (Document) -> Document) {
         documentRepository.loadDocumentById(id)
             ?.let(documentChange)
-            ?.let { newDocument -> documentRepository.saveDocumentMetadata(newDocument) }
-            ?.also { documentRepository.refreshDocuments() }
+            ?.let { newDocument ->
+                documentRepository.saveDocumentMetadata(
+                    newDocument,
+                    authRepository.getUser().id
+                )
+            }?.also { documentRepository.refreshDocuments() }
     }
 
     suspend fun moveItem(menuItem: MenuItemUi, parentId: String) {
@@ -142,7 +148,7 @@ class NotesUseCase private constructor(
     }
 
     suspend fun saveDocumentDb(document: Document) {
-        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(document, authRepository.getUser().id)
         documentRepository.refreshDocuments()
     }
 
@@ -180,7 +186,7 @@ class NotesUseCase private constructor(
         }.map { document ->
             document.duplicateWithNewIds()
         }.forEach { document ->
-            documentRepository.saveDocument(document)
+            documentRepository.saveDocument(document, authRepository.getUser().id)
         }
 
         documentRepository.refreshDocuments()
@@ -231,7 +237,7 @@ class NotesUseCase private constructor(
                         parentId = newFolder.id
                     )
                 }.forEach { document ->
-                    documentRepository.saveDocument(document)
+                    documentRepository.saveDocument(document, authRepository.getUser().id)
                 }
 
             newFolder
@@ -270,11 +276,13 @@ class NotesUseCase private constructor(
             documentRepository: DocumentRepository,
             notesConfig: ConfigurationRepository,
             folderRepository: FolderRepository,
+            authRepository: AuthRepository
         ): NotesUseCase =
             instance ?: NotesUseCase(
                 documentRepository,
                 notesConfig,
                 folderRepository,
+                authRepository
             ).also {
                 instance = it
             }

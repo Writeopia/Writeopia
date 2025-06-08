@@ -30,7 +30,7 @@ class UiConfigurationMemoryRepository : UiConfigurationRepository {
     }
 
     override fun listenForUiConfiguration(
-        getUserId: suspend () -> String,
+        getUserId: String,
         coroutineScope: CoroutineScope
     ): Flow<UiConfiguration?> = uiConfiguration
 }

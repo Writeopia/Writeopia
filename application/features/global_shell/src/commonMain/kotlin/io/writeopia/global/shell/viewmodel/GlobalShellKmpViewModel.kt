@@ -7,7 +7,6 @@ import io.writeopia.OllamaRepository
 import io.writeopia.api.OllamaApi
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
-import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.collections.toNodeTree
@@ -39,6 +38,7 @@ import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.tutorials.Tutorials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -121,6 +121,11 @@ class GlobalShellKmpViewModel(
 
     private val _loginStateTrigger = MutableStateFlow(GenerateId.generate())
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _ollamaConfigState = authRepository.listenForUser().flatMapLatest { user ->
+        ollamaRepository.listenForConfiguration(user.id)
+    }
+
     override val userState: StateFlow<WriteopiaUser> = _loginStateTrigger.map {
         authRepository.getUser()
     }.stateIn(viewModelScope, SharingStarted.Lazily, WriteopiaUser.disconnectedUser())
@@ -154,14 +159,11 @@ class GlobalShellKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Idle())
 
     override val ollamaUrl: StateFlow<String> =
-        ollamaRepository.listenForConfiguration("disconnected_user")
-            .map { config ->
-                config?.url.takeIf { it?.isNotEmpty() == true } ?: ""
-            }
-            .stateIn(viewModelScope, SharingStarted.Lazily, "")
+        _ollamaConfigState.map { config ->
+            config?.url.takeIf { it?.isNotEmpty() == true } ?: ""
+        }.stateIn(viewModelScope, SharingStarted.Lazily, "")
 
-    override val ollamaSelectedModelState = ollamaRepository
-        .listenForConfiguration("disconnected_user")
+    override val ollamaSelectedModelState = _ollamaConfigState
         .map { config -> config?.selectedModel ?: "" }
         .stateIn(viewModelScope, SharingStarted.Lazily, "")
 
@@ -209,10 +211,16 @@ class GlobalShellKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, null)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _uiConfiguration: Flow<UiConfiguration> by lazy {
+        authRepository.listenForUser().flatMapLatest { user ->
+            uiConfigurationRepo.listenForUiConfiguration(user.id, viewModelScope)
+        }.filterNotNull()
+    }
+
     override val showSideMenuState: StateFlow<Float> by lazy {
         combine(
-            uiConfigurationRepo.listenForUiConfiguration(::getUserId, viewModelScope)
-                .filterNotNull(),
+            _uiConfiguration,
             sideMenuWidthState.asStateFlow()
         ) { configuration, width ->
             width ?: configuration.sideMenuWidth
@@ -281,7 +289,7 @@ class GlobalShellKmpViewModel(
     override fun init() {
         viewModelScope.launch {
             _workspaceLocalPath.value =
-                workspaceConfigRepository.loadWorkspacePath(DISCONNECTED_USER_ID) ?: ""
+                workspaceConfigRepository.loadWorkspacePath(authRepository.getUser().id) ?: ""
         }
     }
 
@@ -311,7 +319,7 @@ class GlobalShellKmpViewModel(
 
         viewModelScope.launch(Dispatchers.Default) {
             val uiConfiguration =
-                uiConfigurationRepo.getUiConfigurationEntity("disconnected_user")
+                uiConfigurationRepo.getUiConfigurationEntity(authRepository.getUser().id)
                     ?: UiConfiguration(
                         userId = "disconnected_user",
                         colorThemeOption = ColorThemeOption.SYSTEM,
@@ -363,21 +371,22 @@ class GlobalShellKmpViewModel(
 
     override fun changeWorkspaceLocalPath(path: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            workspaceConfigRepository.saveWorkspacePath(path, DISCONNECTED_USER_ID)
-            _workspaceLocalPath.value =
-                workspaceConfigRepository.loadWorkspacePath(DISCONNECTED_USER_ID) ?: ""
+            val userId = authRepository.getUser().id
+
+            workspaceConfigRepository.saveWorkspacePath(path, userId)
+            _workspaceLocalPath.value = workspaceConfigRepository.loadWorkspacePath(userId) ?: ""
         }
     }
 
     override fun changeOllamaUrl(url: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            ollamaRepository.saveOllamaUrl("disconnected_user", url)
+            ollamaRepository.saveOllamaUrl(authRepository.getUser().id, url)
         }
     }
 
     override fun selectOllamaModel(model: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            ollamaRepository.saveOllamaSelectedModel("disconnected_user", model)
+            ollamaRepository.saveOllamaSelectedModel(authRepository.getUser().id, model)
         }
     }
 
@@ -407,7 +416,7 @@ class GlobalShellKmpViewModel(
                             modelsResult.data.models.size == 1
                         ) {
                             ollamaRepository.saveOllamaSelectedModel(
-                                "disconnected_user",
+                                authRepository.getUser().id,
                                 modelsResult.data.models.first().model
                             )
                         }

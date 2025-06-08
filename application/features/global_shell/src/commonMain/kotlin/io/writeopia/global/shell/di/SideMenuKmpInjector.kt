@@ -34,7 +34,12 @@ class SideMenuKmpInjector(
             appConfigurationInjector.provideNotesConfigurationRepository(),
         folderRepository: FolderRepository = FoldersInjector.singleton().provideFoldersRepository(),
     ): NotesUseCase {
-        return NotesUseCase.singleton(documentRepository, configurationRepository, folderRepository)
+        return NotesUseCase.singleton(
+            documentRepository,
+            configurationRepository,
+            folderRepository,
+            authCoreInjection.provideAuthRepository()
+        )
     }
 
     @Composable

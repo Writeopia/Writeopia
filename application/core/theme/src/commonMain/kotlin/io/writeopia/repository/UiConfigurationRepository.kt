@@ -12,7 +12,7 @@ interface UiConfigurationRepository {
     suspend fun updateConfiguration(userId: String, change: (UiConfiguration) -> UiConfiguration)
 
     fun listenForUiConfiguration(
-        getUserId: suspend () -> String,
+        getUserId: String,
         coroutineScope: CoroutineScope
     ): Flow<UiConfiguration?>
 }

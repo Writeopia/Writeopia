@@ -18,7 +18,9 @@ data class DocumentInfo(
     val isLocked: Boolean,
     val parentId: String = "root",
     val icon: MenuItem.Icon? = null,
-    val isFavorite: Boolean
+    val isFavorite: Boolean,
+    val userId: String,
+    val companyId: String?
 ) {
     companion object {
         fun empty(): DocumentInfo {
@@ -28,13 +30,15 @@ data class DocumentInfo(
                 lastUpdatedAt = now,
                 lastSyncedAt = null,
                 isLocked = false,
-                isFavorite = false
+                isFavorite = false,
+                userId = "",
+                companyId = ""
             )
         }
     }
 }
 
-fun Document.info(): DocumentInfo = DocumentInfo(
+fun Document.info(userId: String = "", companyId: String? = null): DocumentInfo = DocumentInfo(
     id = this.id,
     title = this.title,
     createdAt = this.createdAt,
@@ -43,7 +47,9 @@ fun Document.info(): DocumentInfo = DocumentInfo(
     parentId = this.parentId,
     icon = this.icon,
     isLocked = this.isLocked,
-    isFavorite = favorite
+    isFavorite = favorite,
+    userId = userId,
+    companyId = companyId
 )
 
 fun DocumentInfo.document(userId: String): Document = Document(

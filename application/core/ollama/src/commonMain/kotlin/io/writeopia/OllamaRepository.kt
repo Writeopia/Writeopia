@@ -64,7 +64,7 @@ class OllamaRepository(
     }
 
     suspend fun getConfiguredOllamaUrl(id: String = "disconnected_user"): String? =
-        ollamaDao?.getConfiguration()?.url
+        ollamaDao?.getConfiguration(id)?.url
 
     suspend fun deleteModel(model: String, url: String): ResultData<Boolean> =
         ollamaApi.removeModel(model, url)

@@ -63,13 +63,13 @@ class SqlDelightDocumentRepositoryTest {
                 content = bigContent
             )
 
-            documentRepository.saveDocument(document)
+            documentRepository.saveDocument(document, "userId")
             val result = documentRepository.loadDocumentById(document.id)
 
             assertEquals(result, document)
 
             val newDocument = document.copy(content = smallContent)
-            documentRepository.saveDocument(newDocument)
+            documentRepository.saveDocument(newDocument, userId)
             val result1 = documentRepository.loadDocumentById(newDocument.id)
 
             assertEquals(result1?.content, smallContent)
@@ -93,7 +93,7 @@ class SqlDelightDocumentRepositoryTest {
             icon = MenuItem.Icon(icon, tint)
         )
 
-        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(document, "userId")
 
         val newDocument = documentRepository.loadDocumentById(documentId)
         assertEquals(newDocument?.icon?.label, icon)
@@ -119,7 +119,7 @@ class SqlDelightDocumentRepositoryTest {
             isLocked = true
         )
 
-        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(document, userId)
 
         val newDocument = documentRepository.loadDocumentById(documentId)
         assertTrue { newDocument!!.isLocked }
@@ -144,7 +144,7 @@ class SqlDelightDocumentRepositoryTest {
             isLocked = true
         )
 
-        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(document, "userId")
 
         val newDocument = documentRepository.loadOutdatedDocuments("root")
 
@@ -171,7 +171,7 @@ class SqlDelightDocumentRepositoryTest {
             isLocked = true
         )
 
-        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(document, "userId")
 
         val newDocument = documentRepository.loadOutdatedDocuments("root")
 

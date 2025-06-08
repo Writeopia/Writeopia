@@ -436,7 +436,7 @@ internal class ChooseNoteKmpViewModel(
     override fun syncFolderWithCloud() {
         viewModelScope.launch(Dispatchers.Default) {
             // Refresh happens inside syncFolder
-            documentsSync.syncFolder(notesNavigation.id)
+            documentsSync.syncFolder(notesNavigation.id, authRepository.getUser().id)
         }
     }
 

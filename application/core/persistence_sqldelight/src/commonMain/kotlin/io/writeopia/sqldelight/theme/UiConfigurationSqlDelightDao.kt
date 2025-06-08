@@ -29,27 +29,22 @@ class UiConfigurationSqlDelightDao(database: WriteopiaDb?) {
             )
         }
 
-//        if (userId == uiConfiguration.user_id) {
+        if (userId == uiConfiguration.user_id) {
             configurationState.value = uiConfiguration
-//        }
+        }
     }
 
     suspend fun getConfigurationByUserId(userId: String): UiConfigurationEntity? =
-        uiConfigurationQueries?.selectConfigurationByUserId(
-            "disconnected_user"
-//            userId
-        )?.awaitAsOneOrNull()
+        uiConfigurationQueries?.selectConfigurationByUserId(userId)?.awaitAsOneOrNull()
 
     fun listenForConfigurationByUserId(
-        getUserId: suspend () -> String,
+        userId: String,
         coroutineScope: CoroutineScope
     ): Flow<UiConfigurationEntity?> {
-        coroutineScope.launch(Dispatchers.Default) {
-            val id = "disconnected_user"
-//                getUserId()
+        this.userId = userId
 
-            userId = id
-            val config = getConfigurationByUserId(id)
+        coroutineScope.launch(Dispatchers.Default) {
+            val config = getConfigurationByUserId(userId)
             configurationState.value = config
         }
 

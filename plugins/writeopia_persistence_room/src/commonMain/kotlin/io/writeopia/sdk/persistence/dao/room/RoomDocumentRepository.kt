@@ -34,10 +34,10 @@ class RoomDocumentRepository(
     override suspend fun deleteDocumentByFolder(folderId: String) {
     }
 
-    override suspend fun search(query: String): List<Document> =
+    override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
         documentEntityDao.search(query).map { it.toModel() }
 
-    override suspend fun getLastUpdatedAt(): List<Document> =
+    override suspend fun getLastUpdatedAt(userId: String): List<Document> =
         documentEntityDao.selectByLastUpdated().map { it.toModel() }
 
     override suspend fun listenForDocumentsByParentId(
@@ -106,8 +106,8 @@ class RoomDocumentRepository(
                 documentEntity.toModel(content)
             }
 
-    override suspend fun saveDocument(document: Document) {
-        saveDocumentMetadata(document)
+    override suspend fun saveDocument(document: Document, userId: String) {
+        saveDocumentMetadata(document, userId)
 
         document.content.toEntity(document.id).let { data ->
             storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
@@ -115,7 +115,7 @@ class RoomDocumentRepository(
         }
     }
 
-    override suspend fun saveDocumentMetadata(document: Document) {
+    override suspend fun saveDocumentMetadata(document: Document, userId: String) {
         documentEntityDao.insertDocuments(document.toEntity())
     }
 

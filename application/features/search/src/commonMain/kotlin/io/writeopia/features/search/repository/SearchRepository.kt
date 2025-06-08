@@ -1,5 +1,6 @@
 package io.writeopia.features.search.repository
 
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.features.search.api.SearchApi
 import io.writeopia.models.interfaces.search.FolderSearch
 import io.writeopia.sdk.models.document.Document
@@ -15,6 +16,7 @@ class SearchRepository(
     private val folderSearch: FolderSearch,
     private val documentSearch: DocumentSearch,
     private val searchApi: SearchApi,
+    private val authRepository: AuthRepository,
 ) {
     fun searchNotesAndFolders(query: String): Flow<List<SearchItem>> {
         if (query.isEmpty()) return flow { emit(getNotesAndFolders()) }
@@ -23,7 +25,14 @@ class SearchRepository(
             emit(folderSearch.search(query))
         }
         val documentsFlow: Flow<List<Document>> = flow {
-            emit(documentSearch.search(query))
+            emit(
+                documentSearch.search(
+                    query,
+                    authRepository.getUser().id,
+                    // Todo: Add company later
+                    null
+                )
+            )
         }
         val documentsApiFlow: Flow<List<Document>> = flow {
             println("triggering documentsApiFlow")
@@ -45,7 +54,7 @@ class SearchRepository(
 
     private suspend fun getNotesAndFolders(): List<SearchItem> {
         val folders = folderSearch.getLastUpdated()
-        val documents = documentSearch.getLastUpdatedAt()
+        val documents = documentSearch.getLastUpdatedAt(authRepository.getUser().id)
 
         return (folders + documents).toSearchItems()
     }

@@ -36,6 +36,7 @@ kotlin {
                 implementation(project(":plugins:writeopia_serialization"))
 
                 implementation(project(":application:core:utils"))
+                implementation(project(":application:core:auth_core"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:common_ui"))
                 implementation(project(":application:core:persistence_bridge"))

@@ -30,6 +30,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":writeopia_models"))
+                implementation(project(":writeopia"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:auth_core"))
                 implementation(project(":application:core:theme"))
