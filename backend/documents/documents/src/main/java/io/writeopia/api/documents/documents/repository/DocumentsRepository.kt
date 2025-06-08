@@ -31,8 +31,8 @@ suspend fun WriteopiaDbBackend.folderDiff(
 suspend fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
     getDocumentDaoFn().loadDocumentByParentId(parentId)
 
-suspend fun WriteopiaDbBackend.getDocumentById(id: String = "test"): Document? =
-    getDocumentDaoFn().loadDocumentById(id)
+suspend fun WriteopiaDbBackend.getDocumentById(id: String = "test", userId: String): Document? =
+    getDocumentDaoFn().loadDocumentById(id, userId)
 
 suspend fun WriteopiaDbBackend.getIdsByParentId(parentId: String = "root"): List<String> =
     getDocumentDaoFn().loadDocumentIdsByParentId(parentId)

@@ -58,7 +58,7 @@ class DocumentSqlBeDao(
             } ?: emptyList()
 
     fun insertDocumentWithContent(document: Document) {
-        val result = documentQueries?.selectById(document.userId)?.executeAsOneOrNull()
+        val result = documentQueries?.selectById(document.id, document.userId)?.executeAsOneOrNull()
 
         if (result != null) {
             storyStepQueries?.deleteByDocumentId(document.id)
@@ -111,8 +111,8 @@ class DocumentSqlBeDao(
         }
     }
 
-    fun loadDocumentById(id: String): Document? =
-        documentQueries?.selectById(id)
+    fun loadDocumentById(id: String, userId: String): Document? =
+        documentQueries?.selectById(id, userId)
             ?.executeAsOneOrNull()
             ?.let { entity ->
                 Document(

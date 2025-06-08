@@ -37,7 +37,7 @@ ORDER BY last_synced;
 selectById:
 SELECT *
 FROM document_entity
-WHERE document_entity.id=?
+WHERE document_entity.id = ? AND user_id = ?
 LIMIT 1;
 
 selectWithContent:

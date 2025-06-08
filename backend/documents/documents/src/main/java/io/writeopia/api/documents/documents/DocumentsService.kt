@@ -37,8 +37,12 @@ object DocumentsService {
     ): ResultData<List<Document>> =
         SearchDocument.search(query, userId, writeopiaDb)
 
-    suspend fun getDocumentById(id: String, writeopiaDb: WriteopiaDbBackend): Document? =
-        writeopiaDb.getDocumentById(id)
+    suspend fun getDocumentById(
+        id: String,
+        userId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Document? =
+        writeopiaDb.getDocumentById(id, userId)
 
     private suspend fun sendToAiHub(documents: List<Document>) =
         wrWebClient.post("${Urls.AI_HUB}/documents/") {

@@ -9,7 +9,8 @@ CREATE TABLE document_entity (
   parent_document_id TEXT NOT NULL,
   icon TEXT,
   icon_tint INTEGER,
-  is_locked BOOLEAN NOT NULL
+  is_locked BOOLEAN NOT NULL,
+  company_id TEXT NULL
 );
 
 CREATE TABLE story_step_entity (

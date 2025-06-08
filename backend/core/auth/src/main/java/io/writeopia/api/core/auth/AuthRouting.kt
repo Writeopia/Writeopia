@@ -8,6 +8,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Routing
+import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -27,7 +28,7 @@ import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
-    post("api/login") {
+    post("/api/login") {
         try {
             val credentials = call.receive<LoginRequest>()
             val user = if (debugMode) {
@@ -60,7 +61,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         }
     }
 
-    post("api/register") {
+    post("/api/register") {
         try {
             val request = call.receive<RegisterRequest>()
             val user = writeopiaDb.getUserByEmail(request.email)
@@ -78,10 +79,9 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         }
     }
 
-    authenticate("auth-jwt") {
-        delete("api/account") {
-            val principal = call.principal<JWTPrincipal>()
-            val userId = principal?.payload?.getClaim("userId")?.asString()
+    authenticate("auth-jwt", optional = debugMode) {
+        delete("/api/account") {
+            val userId = getUserId()
 
             if (userId != null) {
                 writeopiaDb.deleteUserById(id = userId)
@@ -92,11 +92,10 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         }
     }
 
-    authenticate("auth-jwt") {
-        put("api/password/reset") {
+    authenticate("auth-jwt", optional = debugMode) {
+        put("/api/password/reset") {
             val request = call.receive<ResetPasswordRequest>()
-            val principal = call.principal<JWTPrincipal>()
-            val userId = principal?.payload?.getClaim("userId")?.asString()
+            val userId = getUserId()
             val user = userId?.let(writeopiaDb::getUserById)
 
             if (user != null) {
@@ -108,10 +107,9 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         }
     }
 
-    authenticate("auth-jwt") {
-        get("api/user/current") {
-            val principal = call.principal<JWTPrincipal>()
-            val userId = principal?.payload?.getClaim("userId")?.asString()
+    authenticate("auth-jwt", optional = debugMode) {
+        get("/api/user/current") {
+            val userId = getUserId()
 
             val user = userId?.let(writeopiaDb::getUserById)
 
@@ -123,14 +121,19 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         }
     }
 
-    authenticate("auth-jwt") {
-        get("api/hello-auth") {
+    authenticate("auth-jwt", optional = debugMode) {
+        get("/api/hello-auth") {
             val principal = call.principal<JWTPrincipal>()
             val username = principal!!.payload.getClaim("username").asString()
             val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
             call.respondText("Hello, $username! Token is expired at $expiresAt ms.")
         }
     }
+}
+
+fun RoutingContext.getUserId(): String? {
+    val principal = call.principal<JWTPrincipal>()
+    return principal?.payload?.getClaim("userId")?.asString()
 }
 
 //suspend fun ApplicationCall.withAuth(

@@ -22,7 +22,7 @@ object SearchDocument {
     ): ResultData<List<Document>> {
         return semanticSearch(query, userId).mapSuspend { idList ->
             idList.mapNotNull { id ->
-                writeopiaDb.getDocumentById(id)
+                writeopiaDb.getDocumentById(id, userId)
             }
         }
     }

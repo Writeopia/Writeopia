@@ -7,6 +7,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.writeopia.api.core.auth.getUserId
 import io.writeopia.api.documents.documents.DocumentsService
 import io.writeopia.api.documents.documents.dto.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.folderDiff
@@ -15,18 +16,18 @@ import io.writeopia.api.documents.documents.repository.getIdsByParentId
 import io.writeopia.connection.ResultData
 import io.writeopia.connection.map
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
-import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sql.WriteopiaDbBackend
 
-fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
-    authenticate("auth-jwt") {
-        route("api/document") {
+fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean, debug: Boolean = false) {
+    authenticate("auth-jwt", optional = debug) {
+        route("/api/document") {
             get("/{id}") {
                 val id = call.pathParameters["id"]!!
+                val userId = getUserId()
 
-                val document = DocumentsService.getDocumentById(id, writeopiaDb)
+                val document = DocumentsService.getDocumentById(id, userId ?: "", writeopiaDb)
 
                 if (document != null) {
                     call.respond(
@@ -43,8 +44,8 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
         }
     }
 
-    authenticate("auth-jwt") {
-        get("/parent/{parentId}") {
+    authenticate("auth-jwt", optional = debug) {
+        get("/api/document/parent/{parentId}") {
             val parentId = call.pathParameters["parentId"]!!
 
             val documentList = writeopiaDb.getDocumentsByParentId(parentId)
@@ -63,8 +64,8 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
         }
     }
 
-    authenticate("auth-jwt") {
-        get("/parent/id/{id}") {
+    authenticate("auth-jwt", optional = debug) {
+        get("/api/parent/{id}") {
             val id = call.pathParameters["id"]!!
             val ids = writeopiaDb.getIdsByParentId(id)
 
@@ -82,8 +83,8 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
         }
     }
 
-    authenticate("auth-jwt") {
-        get("/search") {
+    authenticate("auth-jwt", optional = debug) {
+        get("/api/search") {
             val query = call.queryParameters["q"]
             val user = call.queryParameters["user"]
 
@@ -103,8 +104,8 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
         }
     }
 
-    authenticate("auth-jwt") {
-        post<SendDocumentsRequest> { request ->
+    authenticate("auth-jwt", optional = debug) {
+        post<SendDocumentsRequest>("/api/document") { request ->
             val documentList = request.documents
 
             try {
@@ -141,13 +142,13 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
         }
     }
 
-    authenticate("auth-jwt") {
-        post<FolderDiffRequest>("/folder/diff") { folderDiff ->
+    authenticate("auth-jwt", optional = debug) {
+        post<FolderDiffRequest>("/api/document/folder/diff") { folderDiff ->
             try {
                 val documents =
                     writeopiaDb.folderDiff(
                         folderDiff.folderId,
-                        folderDiff.userId,
+                        getUserId() ?: "",
                         folderDiff.lastFolderSync
                     )
 

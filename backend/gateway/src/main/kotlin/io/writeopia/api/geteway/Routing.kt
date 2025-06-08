@@ -15,7 +15,7 @@ fun Application.configureRouting(
     debugMode: Boolean = false
 ) {
     routing {
-        documentsRoute(writeopiaDb, useAi)
+        documentsRoute(writeopiaDb, useAi, debugMode)
 
         get {
             call.respondText("Hi")

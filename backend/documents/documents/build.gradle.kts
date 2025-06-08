@@ -24,6 +24,7 @@ dependencies {
     implementation(project(":common:endpoints"))
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
+    implementation(project(":backend:core:auth"))
 
     implementation(libs.kotlinx.datetime)
 
