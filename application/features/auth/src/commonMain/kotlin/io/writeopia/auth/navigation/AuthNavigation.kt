@@ -24,7 +24,7 @@ fun NavGraphBuilder.authNavigation(
     navController: NavController,
     authInjection: AuthInjection,
     colorThemeOption: StateFlow<ColorThemeOption?>,
-    toAppNavigation: () -> Unit
+    toAppNavigation: () -> Unit,
 ) {
     composable(Destinations.AUTH_RESET_PASSWORD.id) {
         val viewModel = authInjection.provideResetPasswordViewModel()
@@ -66,33 +66,8 @@ fun NavGraphBuilder.authNavigation(
                     emailChanged = authMenuViewModel::emailChanged,
                     passwordChanged = authMenuViewModel::passwordChanged,
                     onLoginRequest = authMenuViewModel::onLoginRequest,
-                    navigateToLogin = navController::navigateAuthLogin,
-                    saveUserChoiceOffline = authMenuViewModel::saveUserChoiceOffline,
                     navigateToRegister = navController::navigateAuthRegister,
-                    navigateToApp = toAppNavigation
-                )
-            }
-        }
-
-        composable(Destinations.AUTH_REGISTER.id) {
-            val registerViewModel = authInjection.provideRegisterViewModel()
-            val colorTheme by colorThemeOption.collectAsState()
-
-            WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
-                RegisterScreen(
-                    modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
-                    nameState = registerViewModel.name,
-                    companyState = registerViewModel.company,
-                    emailState = registerViewModel.email,
-                    passwordState = registerViewModel.password,
-                    registerState = registerViewModel.register,
-                    nameChanged = registerViewModel::nameChanged,
-                    companyChanged = registerViewModel::companyChanged,
-                    emailChanged = registerViewModel::emailChanged,
-                    passwordChanged = registerViewModel::passwordChanged,
-                    onRegisterRequest = registerViewModel::onRegister,
-                    onRegisterSuccess = toAppNavigation,
-                    navigateBack = {
+                    navigateUp = {
                         navController.navigateUp()
                     }
                 )

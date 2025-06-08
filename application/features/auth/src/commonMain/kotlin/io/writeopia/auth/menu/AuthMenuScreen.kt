@@ -52,17 +52,15 @@ fun AuthMenuScreen(
     emailChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
-    saveUserChoiceOffline: () -> Unit,
-    navigateToLogin: () -> Unit,
     navigateToRegister: () -> Unit,
-    navigateToApp: () -> Unit,
+    navigateUp: () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Icon(
             modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp)
                 .clip(CircleShape)
                 .clickable {
-                    navigateToApp()
+                    navigateUp()
                 }
                 .padding(6.dp),
             imageVector = WrIcons.backArrowDesktop,
@@ -86,7 +84,7 @@ fun AuthMenuScreen(
             is ResultData.Complete -> {
                 if (isConnected.data) {
                     LaunchedEffect("navigateUp") {
-                        navigateToApp()
+                        navigateUp()
                     }
                 }
                 authScreen(Modifier)

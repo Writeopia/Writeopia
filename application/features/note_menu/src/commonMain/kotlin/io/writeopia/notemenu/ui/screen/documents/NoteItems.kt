@@ -668,13 +668,13 @@ private fun DocumentItem(
 
                         Spacer(modifier = Modifier.width(4.dp))
 
-//                        if (!documentUi.isSynced) {
-//                            Icon(
-//                                imageVector = WrIcons.cloudSync,
-//                                contentDescription = "Cloud upload",
-//                                tint = MaterialTheme.colorScheme.onBackground
-//                            )
-//                        }
+                        if (!documentUi.isSynced) {
+                            Icon(
+                                imageVector = WrIcons.cloudSync,
+                                contentDescription = "Cloud upload",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
                     }
                 }
             }

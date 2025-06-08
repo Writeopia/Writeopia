@@ -13,11 +13,14 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import kotlinx.datetime.Instant
 
 class DocumentsApi(private val client: HttpClient, private val baseUrl: String) {
 
     suspend fun getNewDocuments(folderId: String, lastSync: Instant): ResultData<List<Document>> {
+        println("get new documents. $lastSync")
+
         val response = client.post("$baseUrl/api/document/folder/diff") {
             contentType(ContentType.Application.Json)
             setBody(FolderDiffRequest(folderId, lastSync.toEpochMilliseconds()))
@@ -34,7 +37,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
     suspend fun sendDocuments(documents: List<Document>): ResultData<Unit> {
         val response = client.post("$baseUrl/api/document") {
             contentType(ContentType.Application.Json)
-            setBody(documents.map { it.toApi() })
+            setBody(SendDocumentsRequest(documents.map { it.toApi() }))
         }
 
         return if (response.status.isSuccess()) {

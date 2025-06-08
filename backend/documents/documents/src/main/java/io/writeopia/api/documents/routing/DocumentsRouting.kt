@@ -9,7 +9,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.writeopia.api.core.auth.getUserId
 import io.writeopia.api.documents.documents.DocumentsService
-import io.writeopia.api.documents.documents.dto.SendDocumentsRequest
+import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.folderDiff
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
@@ -145,12 +145,18 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean, debu
     authenticate("auth-jwt", optional = debug) {
         post<FolderDiffRequest>("/api/document/folder/diff") { folderDiff ->
             try {
+                println("loading diff")
+                println("user id: ${getUserId()}")
+                println("last sync: ${folderDiff.lastFolderSync}")
+
                 val documents =
                     writeopiaDb.folderDiff(
                         folderDiff.folderId,
                         getUserId() ?: "",
                         folderDiff.lastFolderSync
                     )
+
+                println("returning ${documents.count()} documents")
 
                 call.respond(
                     status = HttpStatusCode.OK,

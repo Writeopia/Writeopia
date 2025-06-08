@@ -1,4 +1,4 @@
-package io.writeopia.api.documents.documents.dto
+package io.writeopia.sdk.serialization.json
 
 import io.writeopia.sdk.serialization.data.DocumentApi
 import kotlinx.serialization.Serializable

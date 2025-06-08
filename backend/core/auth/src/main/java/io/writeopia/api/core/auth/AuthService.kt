@@ -3,6 +3,7 @@ package io.writeopia.api.core.auth
 import io.writeopia.api.core.auth.hash.HashUtils
 import io.writeopia.api.core.auth.hash.toBase64
 import io.writeopia.api.core.auth.models.WriteopiaBeUser
+import io.writeopia.api.core.auth.repository.getCompanyByDomain
 import io.writeopia.api.core.auth.repository.insertCompany
 import io.writeopia.api.core.auth.repository.insertUser
 import io.writeopia.sdk.models.user.WriteopiaUser
@@ -18,7 +19,11 @@ object AuthService {
         val (name, email, companyDomain, password) = registerRequest
 
         if (companyDomain.isNotEmpty()) {
-            writeopiaDb.insertCompany(companyDomain)
+            val company = writeopiaDb.getCompanyByDomain(companyDomain)
+
+            if (company == null) {
+                writeopiaDb.insertCompany(companyDomain)
+            }
         }
 
         val id = UUID.randomUUID().toString()
