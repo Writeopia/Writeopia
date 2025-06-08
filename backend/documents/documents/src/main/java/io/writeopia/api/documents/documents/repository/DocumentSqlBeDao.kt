@@ -37,8 +37,7 @@ class DocumentSqlBeDao(
                     icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
                     isLocked = entity.is_locked,
                 )
-            }
-            ?: emptyList()
+            } ?: emptyList()
 
     override suspend fun getLastUpdatedAt(userId: String): List<Document> =
         documentQueries?.selectLastUpdatedAt()
@@ -56,11 +55,15 @@ class DocumentSqlBeDao(
                     icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
                     isLocked = entity.is_locked
                 )
-            }
-            ?: emptyList()
+            } ?: emptyList()
 
     fun insertDocumentWithContent(document: Document) {
-        storyStepQueries?.deleteByDocumentId(document.id)
+        val result = documentQueries?.selectById(document.id, document.userId)?.executeAsOneOrNull()
+
+        if (result != null) {
+            storyStepQueries?.deleteByDocumentId(document.id)
+        }
+
         document.content.values.forEachIndexed { i, storyStep ->
             insertStoryStep(storyStep, i.toLong(), document.id)
         }
@@ -80,7 +83,8 @@ class DocumentSqlBeDao(
             parent_document_id = document.parentId,
             icon = document.icon?.label,
             icon_tint = document.icon?.tint,
-            is_locked = document.isLocked
+            is_locked = document.isLocked,
+            company_id = ""
         )
     }
 
@@ -107,14 +111,8 @@ class DocumentSqlBeDao(
         }
     }
 
-    fun insertDocuments(vararg documents: Document) {
-        documents.forEach { document ->
-            insertDocumentWithContent(document)
-        }
-    }
-
-    fun loadDocumentById(id: String): Document? =
-        documentQueries?.selectById(id)
+    fun loadDocumentById(id: String, userId: String): Document? =
+        documentQueries?.selectById(id, userId)
             ?.executeAsOneOrNull()
             ?.let { entity ->
                 Document(
@@ -416,9 +414,10 @@ class DocumentSqlBeDao(
 
     fun loadDocumentsWithContentFolderIdAfterTime(
         folderId: String,
+        userId: String,
         time: Long
     ): List<Document> {
-        return documentQueries?.selectWithContentByFolderIdAfterTime(folderId, time)
+        return documentQueries?.selectWithContentByFolderIdAfterTime(folderId, time, userId)
             ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->

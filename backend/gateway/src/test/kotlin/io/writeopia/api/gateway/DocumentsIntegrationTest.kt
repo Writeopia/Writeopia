@@ -8,12 +8,12 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
+import io.writeopia.api.documents.documents.dto.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.deleteDocumentById
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.data.DocumentApi
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -22,10 +22,9 @@ class ApplicationTest {
     private val db = configurePersistence()
 
     @Test
-    @Ignore
     fun `it should be possible to save and query document by id`() = testApplication {
         application {
-            module(db)
+            module(db, debugMode = true)
         }
 
         val client = defaultClient()
@@ -34,7 +33,7 @@ class ApplicationTest {
             DocumentApi(
                 id = "testiaskkakakaka",
                 title = "Test Note",
-                userId = "some user",
+                userId = "",
                 parentId = "parentIdddd",
                 isLocked = false,
                 createdAt = 1000L,
@@ -45,7 +44,7 @@ class ApplicationTest {
 
         val response = client.post("/api/document") {
             contentType(ContentType.Application.Json)
-            setBody(documentApiList)
+            setBody(SendDocumentsRequest(documentApiList))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
@@ -61,10 +60,9 @@ class ApplicationTest {
     }
 
     @Test
-    @Ignore
     fun `it should be possible to save and query documents by parent id`() = testApplication {
         application {
-            module(db)
+            module(db, debugMode = true)
         }
 
         val client = defaultClient()
@@ -73,7 +71,7 @@ class ApplicationTest {
             DocumentApi(
                 id = "testiaskkakakaka",
                 title = "Test Note",
-                userId = "some user",
+                userId = "",
                 parentId = "parentIdddd",
                 isLocked = false,
                 createdAt = 1000L,
@@ -84,7 +82,7 @@ class ApplicationTest {
 
         val response = client.post("/api/document") {
             contentType(ContentType.Application.Json)
-            setBody(documentApiList)
+            setBody(SendDocumentsRequest(documentApiList))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
@@ -102,10 +100,9 @@ class ApplicationTest {
     }
 
     @Test
-    @Ignore
     fun `it should be possible to save and query ids by parent id`() = testApplication {
         application {
-            module(db)
+            module(db, debugMode = true)
         }
 
         val client = defaultClient()
@@ -113,7 +110,7 @@ class ApplicationTest {
         val documentApi = DocumentApi(
             id = "testias",
             title = "Test Note",
-            userId = "some user",
+            userId = "",
             parentId = "parentId",
             isLocked = false,
             createdAt = 1000L,
@@ -122,25 +119,26 @@ class ApplicationTest {
 
         val response = client.post("/api/document") {
             contentType(ContentType.Application.Json)
-            setBody(listOf(documentApi))
+            setBody(SendDocumentsRequest(listOf(documentApi)))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 =
-            client.get("/api/document/parent/id/${documentApi.parentId}")
+        val response1 = client.get("/api/document/parent/${documentApi.parentId}")
 
         assertEquals(HttpStatusCode.OK, response1.status)
-        assertEquals(listOf(documentApi.id), response1.body())
+        assertEquals(
+            listOf(documentApi).map { it.id },
+            response1.body<List<DocumentApi>>().map { it.id }
+        )
 
         db.deleteDocumentById(documentApi.id)
     }
 
     @Test
-    @Ignore
     fun `it should be possible to get diff of folders`() = testApplication {
         application {
-            module(db)
+            module(db, debugMode = true)
         }
 
         val client = defaultClient()
@@ -148,7 +146,7 @@ class ApplicationTest {
         val documentApi = DocumentApi(
             id = "testias",
             title = "Test Note",
-            userId = "some user",
+            userId = "",
             parentId = "parentId",
             isLocked = false,
             createdAt = 1000L,
@@ -160,18 +158,17 @@ class ApplicationTest {
 
         val response = client.post("/api/document") {
             contentType(ContentType.Application.Json)
-            setBody(listOf(documentApi))
+            setBody(SendDocumentsRequest(listOf(documentApi)))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
         val response1 = client.post("/api/document") {
             contentType(ContentType.Application.Json)
-            setBody(listOf(documentApi2))
+            setBody(SendDocumentsRequest(listOf(documentApi2)))
         }
 
         assertEquals(HttpStatusCode.OK, response1.status)
-
 
         val request = FolderDiffRequest(
             folderId = "parentId",

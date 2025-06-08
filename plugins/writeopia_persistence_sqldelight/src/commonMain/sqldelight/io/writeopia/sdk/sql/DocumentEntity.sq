@@ -80,7 +80,7 @@ selectWithContentByFolderIdAfterTime:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.parent_document_id = ? AND last_synced_at > ?
+WHERE documentEntity.parent_document_id = ? AND last_synced_at > ? AND user_id = ?
 ORDER BY position;
 
 selectWithContentById:
