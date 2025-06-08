@@ -4,5 +4,4 @@ import io.writeopia.sdk.serialization.data.DocumentApi
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class SendDocumentsRequest(val documents: List<DocumentApi>
-)
+data class SendDocumentsRequest(val documents: List<DocumentApi>)
