@@ -17,6 +17,5 @@ enum class Destinations(val id: String, val root: String) {
     AUTH_LOGIN("auth_login", "Home"),
 
     START_APP("start_app", "Home"),
-    INTRO("intro", "Home"),
     DESKTOP_AUTH("desktop_auth", "Home")
 }

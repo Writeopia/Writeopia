@@ -67,9 +67,8 @@ fun NavGraphBuilder.authNavigation(
                     passwordChanged = authMenuViewModel::passwordChanged,
                     onLoginRequest = authMenuViewModel::onLoginRequest,
                     navigateToRegister = navController::navigateAuthRegister,
-                    navigateUp = {
-                        navController.navigateUp()
-                    }
+                    offlineUsage = toAppNavigation,
+                    navigateUp = navController::navigateUp
                 )
             }
         }

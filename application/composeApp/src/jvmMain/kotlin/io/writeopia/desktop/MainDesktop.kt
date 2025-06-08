@@ -3,7 +3,6 @@ package io.writeopia.desktop
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,7 +24,6 @@ import androidx.navigation.compose.rememberNavController
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
 import io.writeopia.auth.di.AuthInjection
-import io.writeopia.auth.intro.IntroScreen
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.keyboard.KeyboardCommands
@@ -229,64 +227,8 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                         ) {
                             NavHost(
                                 navController = navigationController,
-                                startDestination = Destinations.START_APP.id
+                                startDestination = Destinations.AUTH_MENU_INNER_NAVIGATION.id
                             ) {
-                                composable(route = Destinations.START_APP.id) {
-                                    WrieopiaTheme(darkTheme = colorTheme.value.isDarkTheme()) {
-                                        Box(
-                                            Modifier.background(
-                                                WriteopiaTheme.colorScheme.globalBackground
-                                            ).fillMaxSize()
-                                        ) {
-                                            Box(
-                                                modifier = Modifier.align(Alignment.Center)
-                                                    .width(400.dp)
-                                            ) {
-                                                IntroScreen(
-                                                    signInClick = {
-                                                        navigationController.navigate(
-                                                            Destinations.AUTH_MENU.id
-                                                        )
-                                                    },
-                                                    offlineUsageClick = {
-                                                        navigationController.navigate(
-                                                            Destinations.CHOOSE_NOTE.id
-                                                        )
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                composable(route = Destinations.INTRO.id) {
-                                    WrieopiaTheme(darkTheme = colorTheme.value.isDarkTheme()) {
-                                        Box(
-                                            Modifier.background(
-                                                WriteopiaTheme.colorScheme.globalBackground
-                                            ).fillMaxSize()
-                                        ) {
-                                            Box(
-                                                modifier = Modifier.align(Alignment.Center)
-                                                    .width(400.dp)
-                                            ) {
-                                                IntroScreen(
-                                                    signInClick = {
-                                                        navigationController.navigate(
-                                                            Destinations.AUTH_MENU.id
-                                                        )
-                                                    },
-                                                    offlineUsageClick = {
-                                                        navigationController.navigate(
-                                                            Destinations.CHOOSE_NOTE.id
-                                                        )
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
                                 composable(route = Destinations.CHOOSE_NOTE.id) {
                                     DesktopApp(
                                         writeopiaDb = database,
