@@ -172,7 +172,6 @@ class ApplicationTest {
 
         val request = FolderDiffRequest(
             folderId = "parentId",
-            userId = "userId",
             lastFolderSync = 3000L
         )
 
