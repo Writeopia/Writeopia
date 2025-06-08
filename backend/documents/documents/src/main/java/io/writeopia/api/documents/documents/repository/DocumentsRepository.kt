@@ -23,8 +23,10 @@ suspend fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
 
 suspend fun WriteopiaDbBackend.folderDiff(
     folderId: String,
+    userId: String,
     lastSync: Long
-): List<Document> = getDocumentDaoFn().loadDocumentsWithContentFolderIdAfterTime(folderId, lastSync)
+): List<Document> =
+    getDocumentDaoFn().loadDocumentsWithContentFolderIdAfterTime(folderId, userId, lastSync)
 
 suspend fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
     getDocumentDaoFn().loadDocumentByParentId(parentId)

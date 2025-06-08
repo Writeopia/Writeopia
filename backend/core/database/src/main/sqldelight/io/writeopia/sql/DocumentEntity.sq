@@ -9,7 +9,8 @@ CREATE TABLE document_entity (
   parent_document_id TEXT NOT NULL,
   icon TEXT,
   icon_tint INTEGER,
-  is_locked BOOLEAN NOT NULL
+  is_locked BOOLEAN NOT NULL,
+  company_id TEXT NULL
 );
 
 selectAll:
@@ -77,7 +78,7 @@ selectWithContentByFolderIdAfterTime:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.parent_document_id = ? AND last_synced > ?
+WHERE document_entity.parent_document_id = ? AND last_synced > ? AND user_id = ?
 ORDER BY position;
 
 selectWithContentById:
@@ -100,13 +101,13 @@ FROM document_entity
 WHERE document_entity.parent_document_id = ?;
 
 insert:
-INSERT INTO document_entity(id, title, created_at, last_updated_at, last_synced, user_id, favorite, parent_document_id, icon, icon_tint, is_locked)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO document_entity(id, title, created_at, last_updated_at, last_synced, user_id, favorite, parent_document_id, icon, icon_tint, is_locked, company_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at, last_updated_at=excluded.last_updated_at,
 last_synced=excluded.last_synced, user_id=excluded.user_id, favorite=excluded.favorite,
 parent_document_id=excluded.parent_document_id, icon=excluded.icon, icon_tint=excluded.icon_tint,
-is_locked=excluded.is_locked;
+is_locked=excluded.is_locked, company_id=excluded.company_id;
 
 delete:
 DELETE FROM document_entity WHERE id = ?;

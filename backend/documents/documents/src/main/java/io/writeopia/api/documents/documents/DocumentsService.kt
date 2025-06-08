@@ -1,7 +1,5 @@
 package io.writeopia.api.documents.documents
 
-import io.ktor.client.call.body
-import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -29,11 +27,15 @@ object DocumentsService {
             writeopiaDb.saveDocument(document)
         }
 
-        return if(useAi) sendToAiHub(documents) else true
+        return if (useAi) sendToAiHub(documents) else true
     }
 
-    suspend fun search(query: String, writeopiaDb: WriteopiaDbBackend): ResultData<List<Document>> =
-        SearchDocument.search(query, writeopiaDb)
+    suspend fun search(
+        query: String,
+        userId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): ResultData<List<Document>> =
+        SearchDocument.search(query, userId, writeopiaDb)
 
     suspend fun getDocumentById(id: String, writeopiaDb: WriteopiaDbBackend): Document? =
         writeopiaDb.getDocumentById(id)

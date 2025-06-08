@@ -15,15 +15,19 @@ import io.writeopia.sql.WriteopiaDbBackend
 
 object SearchDocument {
 
-    suspend fun search(query: String, writeopiaDb: WriteopiaDbBackend): ResultData<List<Document>> {
-        return semanticSearch(query).mapSuspend { idList ->
+    suspend fun search(
+        query: String,
+        userId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): ResultData<List<Document>> {
+        return semanticSearch(query, userId).mapSuspend { idList ->
             idList.mapNotNull { id ->
                 writeopiaDb.getDocumentById(id)
             }
         }
     }
 
-    private suspend fun semanticSearch(query: String): ResultData<List<String>> {
+    private suspend fun semanticSearch(query: String, userId: String): ResultData<List<String>> {
         val request = wrWebClient.get("${Urls.AI_HUB}/documents/search/?q=${query}") {
             contentType(ContentType.Application.Json)
         }

@@ -8,6 +8,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.writeopia.api.documents.documents.DocumentsService
+import io.writeopia.api.documents.documents.dto.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.folderDiff
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
@@ -84,11 +85,12 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
     authenticate("auth-jwt") {
         get("/search") {
             val query = call.queryParameters["q"]
+            val user = call.queryParameters["user"]
 
-            if (query == null) {
+            if (query == null || user == null) {
                 call.respond(HttpStatusCode.BadRequest)
             } else {
-                val result = DocumentsService.search(query, writeopiaDb).map { resultData ->
+                val result = DocumentsService.search(query, user, writeopiaDb).map { resultData ->
                     resultData.map { document -> document.toApi() }
                 }
 
@@ -102,11 +104,13 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
     }
 
     authenticate("auth-jwt") {
-        post<List<DocumentApi>> { documentApiList ->
+        post<SendDocumentsRequest> { request ->
+            val documentList = request.documents
+
             try {
-                if (documentApiList.isNotEmpty()) {
+                if (documentList.isNotEmpty()) {
                     val addedToHub = DocumentsService.receiveDocuments(
-                        documentApiList.map { it.toModel() },
+                        documentList.map { it.toModel() },
                         writeopiaDb,
                         useAi
                     )
@@ -141,7 +145,11 @@ fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean) {
         post<FolderDiffRequest>("/folder/diff") { folderDiff ->
             try {
                 val documents =
-                    writeopiaDb.folderDiff(folderDiff.folderId, folderDiff.lastFolderSync)
+                    writeopiaDb.folderDiff(
+                        folderDiff.folderId,
+                        folderDiff.userId,
+                        folderDiff.lastFolderSync
+                    )
 
                 call.respond(
                     status = HttpStatusCode.OK,
