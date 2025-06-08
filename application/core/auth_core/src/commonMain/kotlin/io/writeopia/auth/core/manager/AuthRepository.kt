@@ -2,14 +2,15 @@ package io.writeopia.auth.core.manager
 
 import io.writeopia.common.utils.ResultData
 import io.writeopia.sdk.models.user.WriteopiaUser
+import io.writeopia.sdk.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-interface AuthRepository {
+interface AuthRepository : UserRepository {
 
-    fun listenForUser(): Flow<WriteopiaUser> = flow { emit(getUser()) }
+    override fun listenForUser(): Flow<WriteopiaUser> = flow { emit(getUser()) }
 
-    suspend fun getUser(): WriteopiaUser
+    override suspend fun getUser(): WriteopiaUser
 
     suspend fun isLoggedIn(): Boolean
 

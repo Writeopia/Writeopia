@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 internal class AccountMenuKmpViewModel(
-    private val authManager: AuthRepository,
     private val authRepository: AuthRepository,
 ) : AccountMenuViewModel, ViewModel() {
     private val _isLoggedIn: MutableStateFlow<ResultData<Boolean>> by lazy {
@@ -30,7 +29,7 @@ internal class AccountMenuKmpViewModel(
 
     override fun logout(onLogOutSuccess: () -> Unit) {
         viewModelScope.launch {
-            val result = authManager.logout()
+            val result = authRepository.logout()
 
             if (result.toBoolean()) {
                 onLogOutSuccess()

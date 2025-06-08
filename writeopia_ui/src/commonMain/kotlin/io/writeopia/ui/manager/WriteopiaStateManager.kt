@@ -24,6 +24,7 @@ import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.repository.UserRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
 import io.writeopia.sdk.utils.extensions.toEditState
@@ -69,7 +70,7 @@ class WriteopiaStateManager(
     private val dispatcher: CoroutineDispatcher,
     private val coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext),
     private val backStackManager: SnapshotBackstackManager,
-    private val userId: suspend () -> String = { "no_user_id_provided" },
+    private val userRepository: UserRepository,
     private val writeopiaManager: WriteopiaManager,
     val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
@@ -202,11 +203,6 @@ class WriteopiaStateManager(
         }
 
     private var _initialized = false
-
-    private suspend fun getUserId(): String =
-        localUserId ?: userId.invoke().also { id ->
-            localUserId = id
-        }
 
     val isOnSelection: Boolean
         get() = _positionsOnEdit.value.isNotEmpty()
@@ -908,10 +904,12 @@ class WriteopiaStateManager(
             }
         }
 
-        val newDocument =
-            documentInfo.document(userId()).copy(content = stories, title = text)
+        val userId = getUserId()
 
-        documentRepository.saveDocument(newDocument)
+        val newDocument =
+            documentInfo.document(getUserId()).copy(content = stories, title = text)
+
+        documentRepository.saveDocument(newDocument, userId)
         documentRepository.refreshDocuments()
 
         _currentStory.value = writeopiaManager.addDocumentLink(
@@ -962,6 +960,8 @@ class WriteopiaStateManager(
             trackState()
         }
     }
+
+    private suspend fun getUserId(): String = userRepository.getUser().id
 
     /**
      * Moves the focus to the next available [StoryStep] if it can't find a step to focus, it
@@ -1175,13 +1175,13 @@ class WriteopiaStateManager(
                 },
             coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext),
             backStackManager: SnapshotBackstackManager = SnapshotBackstackManager(),
-            userId: suspend () -> String = { "no_user_id_provided" },
+            userRepository: UserRepository,
         ) = WriteopiaStateManager(
             stepsNormalizer,
             dispatcher,
             coroutineScope,
             backStackManager,
-            userId,
+            userRepository,
             writeopiaManager,
             selectionState,
             keyboardEventFlow.filterNotNull(),

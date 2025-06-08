@@ -12,13 +12,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class UiConfigurationKmpViewModel(
-    private val uiConfigurationSqlDelightRepository: UiConfigurationRepository
+    private val uiConfigurationSqlDelightRepository: UiConfigurationRepository,
 ) : ViewModel(), UiConfigurationViewModel {
 
     override fun listenForColorTheme(
         getUserId: suspend () -> String
     ): StateFlow<ColorThemeOption?> =
-        uiConfigurationSqlDelightRepository.listenForUiConfiguration(getUserId, viewModelScope)
+        // Todo: Add support for multiple configurations per user in a later moment
+        uiConfigurationSqlDelightRepository.listenForUiConfiguration("disconnected_user", viewModelScope)
             .map { uiConfiguration ->
                 uiConfiguration?.colorThemeOption ?: ColorThemeOption.SYSTEM
             }.stateIn(viewModelScope, SharingStarted.Lazily, null)

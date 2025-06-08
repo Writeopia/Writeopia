@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
 import io.writeopia.auth.core.manager.AuthRepository
-import io.writeopia.auth.core.utils.USER_OFFLINE
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.common.utils.file.SaveImage
@@ -456,7 +455,11 @@ class NoteEditorKmpViewModel(
         if (ollamaRepository == null) return
 
         aiJob = viewModelScope.launch(Dispatchers.Default) {
-            PromptService.promptBySelection(writeopiaManager, ollamaRepository)
+            PromptService.promptBySelection(
+                authRepository.getUser().id,
+                writeopiaManager,
+                ollamaRepository
+            )
         }
     }
 
@@ -500,7 +503,13 @@ class NoteEditorKmpViewModel(
 
                 Use the language of the text. Do not add titles. Create contect for this section: $sectionText
                 """
-            PromptService.prompt(prompt = prompt, writeopiaManager, ollamaRepository, position + 1)
+            PromptService.prompt(
+                userId = authRepository.getUser().id,
+                prompt = prompt,
+                writeopiaManager,
+                ollamaRepository,
+                position + 1
+            )
         }
     }
 
@@ -563,7 +572,12 @@ class NoteEditorKmpViewModel(
         if (ollamaRepository == null) return
 
         aiJob = viewModelScope.launch(Dispatchers.Default) {
-            PromptService.documentPrompt(promptFn, writeopiaManager, ollamaRepository)
+            PromptService.documentPrompt(
+                userId = authRepository.getUser().id,
+                promptFn,
+                writeopiaManager,
+                ollamaRepository
+            )
         }
     }
 

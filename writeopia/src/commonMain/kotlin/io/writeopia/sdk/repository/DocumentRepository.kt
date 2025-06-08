@@ -46,14 +46,14 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
     /**
      * Saves document. Both with content and meta data.
      */
-    override suspend fun saveDocument(document: Document)
+    override suspend fun saveDocument(document: Document, userId: String)
 
     /**
      * Saves the document meta data. Use this was updating the content of the document is not
      * necessary. This is a much lighter operation than [saveDocument], because it is not
      * necessary to save/update all lines of content.
      */
-    override suspend fun saveDocumentMetadata(document: Document)
+    override suspend fun saveDocumentMetadata(document: Document, userId: String)
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Int, documentId: String)
 

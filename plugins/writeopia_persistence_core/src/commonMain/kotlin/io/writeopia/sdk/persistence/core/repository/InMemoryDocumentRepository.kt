@@ -58,11 +58,11 @@ class InMemoryDocumentRepository : DocumentRepository {
         return documentsMap.filter { (key, _) -> idSet.contains(key) }.values.toList()
     }
 
-    override suspend fun saveDocument(document: Document) {
+    override suspend fun saveDocument(document: Document, userId: String) {
         documentsMap["root"] = document
     }
 
-    override suspend fun saveDocumentMetadata(document: Document) {
+    override suspend fun saveDocumentMetadata(document: Document, userId: String) {
         documentsMap["root"]?.let { currentDocument ->
             documentsMap["root"] = currentDocument.copy(title = document.title)
         }
@@ -93,10 +93,10 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun updateStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
     }
 
-    override suspend fun search(query: String): List<Document> =
-        documentsMap.values.filter { it.title.contains("query") }
+    override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
+        documentsMap.values.filter { it.title.contains(query) }
 
-    override suspend fun getLastUpdatedAt(): List<Document> =
+    override suspend fun getLastUpdatedAt(userId: String): List<Document> =
         documentsMap.values.sortedByDescending { it.lastUpdatedAt }
 
     override suspend fun favoriteDocumentByIds(ids: Set<String>) {

@@ -38,7 +38,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             isLocked = false,
         )
 
-        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(document, "")
         val loadedDocument = documentRepository.loadDocumentById(id)
 
         assertEquals(document, loadedDocument)
@@ -60,7 +60,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             isLocked = false
         )
 
-        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(document, "")
         val loadedDocument = documentRepository.loadDocumentById(id)
 
         assertEquals(document, loadedDocument)
@@ -82,7 +82,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             isLocked = false
         )
 
-        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(document, "")
         val loadedDocument = documentRepository.loadDocumentById(id)
 
         assertEquals(document, loadedDocument)
@@ -104,7 +104,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             isLocked = false
         )
 
-        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(document, "")
         val loadedDocument = documentRepository.loadDocumentById(id)
 
         assertTrue(loadedDocument?.content?.isNotEmpty() == true)
@@ -127,7 +127,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             isLocked = false
         )
 
-        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(document, "")
         val loadedDocument = documentRepository.loadDocumentById(id)
 
         assertEquals(document, loadedDocument)
@@ -150,7 +150,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             isLocked = false
         )
 
-        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(document, "")
 
         val loadedDocument0 = documentRepository.loadDocumentById(id)
         assertTrue(loadedDocument0?.favorite == false)
@@ -178,7 +178,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         )
 
         val loadedDocument = documentRepository.run {
-            saveDocument(document)
+            saveDocument(document, "")
             loadDocumentsByParentId("parentId")
         }.first()
 

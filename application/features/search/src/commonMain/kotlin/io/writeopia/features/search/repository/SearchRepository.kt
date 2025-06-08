@@ -25,7 +25,14 @@ class SearchRepository(
             emit(folderSearch.search(query))
         }
         val documentsFlow: Flow<List<Document>> = flow {
-            emit(documentSearch.search(query, authRepository.getUser().id, ))
+            emit(
+                documentSearch.search(
+                    query,
+                    authRepository.getUser().id,
+                    // Todo: Add company later
+                    null
+                )
+            )
         }
         val documentsApiFlow: Flow<List<Document>> = flow {
             println("triggering documentsApiFlow")
@@ -47,7 +54,7 @@ class SearchRepository(
 
     private suspend fun getNotesAndFolders(): List<SearchItem> {
         val folders = folderSearch.getLastUpdated()
-        val documents = documentSearch.getLastUpdatedAt()
+        val documents = documentSearch.getLastUpdatedAt(authRepository.getUser().id)
 
         return (folders + documents).toSearchItems()
     }
