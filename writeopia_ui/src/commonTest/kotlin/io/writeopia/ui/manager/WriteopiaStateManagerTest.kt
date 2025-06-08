@@ -44,7 +44,7 @@ class WriteopiaStateManagerTest {
     private val userRepository: UserRepository = object : UserRepository {
         override suspend fun getUser(): WriteopiaUser = WriteopiaUser.disconnectedUser()
     }
-    
+
     @Test
     fun aNewStoryShouldStartCorrectly() {
         val manager = WriteopiaStateManager.create(
