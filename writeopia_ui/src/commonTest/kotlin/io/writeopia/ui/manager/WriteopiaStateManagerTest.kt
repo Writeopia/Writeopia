@@ -6,7 +6,9 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.repository.StoriesRepository
+import io.writeopia.sdk.repository.UserRepository
 import io.writeopia.ui.model.TextInput
 import io.writeopia.ui.utils.MapStoryData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,12 +41,16 @@ class WriteopiaStateManagerTest {
         override suspend fun history(): Map<Int, StoryStep> = MapStoryData.syncHistory()
     }
 
+    private val userRepository: UserRepository = object : UserRepository {
+        override suspend fun getUser(): WriteopiaUser = WriteopiaUser.disconnectedUser()
+    }
+    
     @Test
     fun aNewStoryShouldStartCorrectly() {
         val manager = WriteopiaStateManager.create(
             writeopiaManager = WriteopiaManager(),
             dispatcher = UnconfinedTestDispatcher(),
-            userId = { "" }
+            userRepository = userRepository,
         )
 
         manager.newDocument()
@@ -73,7 +79,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(),
-                userId = { "" }
+                userRepository = userRepository,
             ).apply {
                 loadDocument(
                     Document(
@@ -120,7 +126,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(),
-                userId = { "" }
+                userRepository = userRepository,
             ).apply {
                 loadDocument(
                     Document(
@@ -157,7 +163,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         val now = Clock.System.now()
         storyManager.loadDocument(
@@ -210,7 +216,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         val now = Clock.System.now()
 
@@ -257,7 +263,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         val now = Clock.System.now()
         storyManager.loadDocument(
@@ -340,7 +346,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -387,7 +393,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -437,7 +443,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -502,7 +508,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -545,7 +551,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
 
         storyManager.loadDocument(
@@ -583,7 +589,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -638,7 +644,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -678,7 +684,7 @@ class WriteopiaStateManagerTest {
             val storyManager = WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" },
+                userRepository = userRepository,
             )
             storyManager.loadDocument(
                 Document(
@@ -713,7 +719,7 @@ class WriteopiaStateManagerTest {
             val storyManager = WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
             storyManager.loadDocument(
                 Document(
@@ -757,7 +763,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -842,7 +848,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(),
-                userId = { "" }
+                userRepository = userRepository,
             )
         val input = MapStoryData.singleCheckItem()
 
@@ -874,7 +880,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         val input = MapStoryData.singleCheckItem()
 
@@ -926,7 +932,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -955,7 +961,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -1013,7 +1019,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -1075,7 +1081,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -1106,7 +1112,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
@@ -1140,7 +1146,7 @@ class WriteopiaStateManagerTest {
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
                 dispatcher = UnconfinedTestDispatcher(testScheduler),
-                userId = { "" }
+                userRepository = userRepository,
             )
         storyManager.loadDocument(
             Document(
