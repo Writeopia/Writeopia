@@ -20,6 +20,7 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.di.AppConnectionInjection
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
@@ -437,10 +438,12 @@ class GlobalShellKmpViewModel(
         }
     }
 
-    override fun logout() {
+    override fun logout(sideEffect: () -> Unit) {
         viewModelScope.launch {
             authRepository.logout()
+            AppConnectionInjection.singleton().setJwtToken("")
             _loginStateTrigger.value = GenerateId.generate()
+            sideEffect()
         }
     }
 

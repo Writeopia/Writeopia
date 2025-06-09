@@ -49,6 +49,7 @@ kotlin {
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:core:persistence_sqldelight"))
+                implementation(project(":application:core:connection"))
 
                 implementation(project(":application:features:note_menu"))
 
