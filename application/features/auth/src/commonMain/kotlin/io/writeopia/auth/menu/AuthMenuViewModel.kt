@@ -3,9 +3,11 @@ package io.writeopia.auth.menu
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.data.AuthApi
+import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.map
+import io.writeopia.di.AppConnectionInjection
 import io.writeopia.sdk.serialization.data.toModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,7 +53,10 @@ class AuthMenuViewModel(
                         val user = result.data.writeopiaUser.toModel()
 
                         authRepository.saveUser(user = user, selected = true)
-                        authRepository.saveToken(user.id, result.data.token!!)
+                        result.data.token?.let { token ->
+                            authRepository.saveToken(user.id, token)
+                            AppConnectionInjection.singleton().setJwtToken(token)
+                        }
 
                         result.map { true }
                     }

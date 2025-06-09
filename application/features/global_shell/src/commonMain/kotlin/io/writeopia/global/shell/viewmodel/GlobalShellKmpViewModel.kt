@@ -440,7 +440,11 @@ class GlobalShellKmpViewModel(
 
     override fun logout(sideEffect: () -> Unit) {
         viewModelScope.launch {
+            val currentUserId = authRepository.getUser().id
+
             authRepository.logout()
+            authRepository.saveToken(currentUserId, "")
+
             AppConnectionInjection.singleton().setJwtToken("")
             _loginStateTrigger.value = GenerateId.generate()
             sideEffect()

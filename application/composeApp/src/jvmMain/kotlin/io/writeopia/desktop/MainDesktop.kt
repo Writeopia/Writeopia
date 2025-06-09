@@ -236,7 +236,8 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                         keyboardEventFlow = keyboardEventFlow.filterNotNull(),
                                         coroutineScope = coroutineScope,
                                         colorThemeOption = colorTheme,
-                                        selectColorTheme = uiConfigurationViewModel::changeColorTheme,
+                                        selectColorTheme =
+                                            uiConfigurationViewModel::changeColorTheme,
                                         toggleMaxScreen = topDoubleBarClick,
                                         navigateToRegister = {
                                             navigationController.navigate(

@@ -36,6 +36,7 @@ kotlin {
                 implementation(project(":writeopia_models"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:navigation"))
+                implementation(project(":application:core:connection"))
                 implementation(project(":application:core:auth_core"))
                 implementation(project(":application:core:persistence_bridge"))
                 implementation(project(":application:core:theme"))
