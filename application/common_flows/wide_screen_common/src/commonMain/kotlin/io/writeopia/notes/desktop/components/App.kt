@@ -49,7 +49,6 @@ import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
 import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
-import io.writeopia.notemenu.navigation.navigateToIntro
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.ui.screen.menu.EditFileScreen
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
@@ -247,7 +246,11 @@ fun DesktopApp(
                                     },
                                     showDeleteConfirm = globalShellViewModel::showDeleteConfirm,
                                     dismissDeleteConfirm = globalShellViewModel::dismissDeleteConfirm,
-                                    deleteAccount = globalShellViewModel::deleteAccount
+                                    deleteAccount = {
+                                        globalShellViewModel.deleteAccount(
+                                            sideEffect = navigateToRegister
+                                        )
+                                    }
                                 )
                             }
 

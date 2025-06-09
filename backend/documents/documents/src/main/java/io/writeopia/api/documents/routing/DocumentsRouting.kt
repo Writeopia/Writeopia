@@ -20,7 +20,11 @@ import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sql.WriteopiaDbBackend
 
-fun Routing.documentsRoute(writeopiaDb: WriteopiaDbBackend, useAi: Boolean, debug: Boolean = false) {
+fun Routing.documentsRoute(
+    writeopiaDb: WriteopiaDbBackend,
+    useAi: Boolean,
+    debug: Boolean = false
+) {
     authenticate("auth-jwt", optional = debug) {
         route("/api/document") {
             get("/{id}") {

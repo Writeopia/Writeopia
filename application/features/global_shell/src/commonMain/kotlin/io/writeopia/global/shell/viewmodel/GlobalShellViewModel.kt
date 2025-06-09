@@ -67,7 +67,7 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     fun showDeleteConfirm()
 
-    fun deleteAccount()
+    fun deleteAccount(sideEffect: () -> Unit)
 
     override fun changeOllamaUrl(url: String)
 

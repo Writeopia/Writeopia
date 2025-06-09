@@ -447,7 +447,7 @@ class GlobalShellKmpViewModel(
         }
     }
 
-    override fun deleteAccount() {
+    override fun deleteAccount(sideEffect: () -> Unit) {
         viewModelScope.launch {
             val id = authRepository.getUser().id
 
@@ -460,6 +460,7 @@ class GlobalShellKmpViewModel(
                     authRepository.logout()
                     _loginStateTrigger.value = GenerateId.generate()
                     dismissDeleteConfirm()
+                    logout(sideEffect = sideEffect)
                 }
             }
         }

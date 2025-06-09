@@ -68,7 +68,8 @@ fun NavGraphBuilder.authNavigation(
                     onLoginRequest = authMenuViewModel::onLoginRequest,
                     navigateToRegister = navController::navigateAuthRegister,
                     offlineUsage = toAppNavigation,
-                    navigateUp = navController::navigateUp
+                    navigateUp = navController::navigateUp,
+                    navigateToApp = navController::navigateToApp
                 )
             }
         }
@@ -104,10 +105,7 @@ fun NavController.navigateAuthRegister() {
     navigate(Destinations.AUTH_REGISTER.id)
 }
 
-fun NavController.navigateAuthLogin() {
-    navigate(Destinations.AUTH_LOGIN.id)
+fun NavController.navigateToApp() {
+    navigate(Destinations.CHOOSE_NOTE.id)
 }
 
-fun NavController.navigateToAuthMenu() {
-    navigate(Destinations.AUTH_MENU.id)
-}

@@ -11,13 +11,14 @@ data class WriteopiaBeUser(
     val password: String,
     val salt: String,
     val companyDomain: String,
+    val enabled: Boolean,
     val tier: Tier = Tier.FREE
 ) {
     companion object {
         const val DISCONNECTED = "disconnected_user"
 
         fun disconnectedUser(): WriteopiaBeUser =
-            WriteopiaBeUser(id = "disconnected_user", "", "", "", "", "")
+            WriteopiaBeUser(id = "disconnected_user", "", "", "", "", "", enabled = false)
     }
 }
 

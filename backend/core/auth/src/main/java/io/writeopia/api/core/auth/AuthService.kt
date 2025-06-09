@@ -14,7 +14,8 @@ import java.util.UUID
 object AuthService {
     fun createUser(
         writeopiaDb: WriteopiaDbBackend,
-        registerRequest: RegisterRequest
+        registerRequest: RegisterRequest,
+        enabled: Boolean
     ): WriteopiaUser {
         val (name, email, companyDomain, password) = registerRequest
 
@@ -38,6 +39,7 @@ object AuthService {
             password = hash,
             salt = salt.toBase64(),
             companyDomain = companyDomain,
+            enabled = enabled
         )
 
         return WriteopiaUser(

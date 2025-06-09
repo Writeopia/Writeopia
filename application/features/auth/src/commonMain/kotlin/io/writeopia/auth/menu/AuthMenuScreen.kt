@@ -56,6 +56,7 @@ fun AuthMenuScreen(
     navigateToRegister: () -> Unit,
     offlineUsage: () -> Unit,
     navigateUp: () -> Unit,
+    navigateToApp: () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Icon(
@@ -87,7 +88,7 @@ fun AuthMenuScreen(
             is ResultData.Complete -> {
                 if (isConnected.data) {
                     LaunchedEffect("navigateUp") {
-                        navigateUp()
+                        navigateToApp()
                     }
                 }
                 authScreen(Modifier)
