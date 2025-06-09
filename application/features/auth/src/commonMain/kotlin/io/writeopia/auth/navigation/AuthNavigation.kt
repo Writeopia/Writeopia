@@ -92,9 +92,7 @@ fun NavGraphBuilder.authNavigation(
                     passwordChanged = registerViewModel::passwordChanged,
                     onRegisterRequest = registerViewModel::onRegister,
                     onRegisterSuccess = toAppNavigation,
-                    navigateBack = {
-                        navController.navigateUp()
-                    }
+                    navigateBack = navController::navigateUp
                 )
             }
         }
@@ -108,4 +106,3 @@ fun NavController.navigateAuthRegister() {
 fun NavController.navigateToApp() {
     navigate(Destinations.CHOOSE_NOTE.id)
 }
-
