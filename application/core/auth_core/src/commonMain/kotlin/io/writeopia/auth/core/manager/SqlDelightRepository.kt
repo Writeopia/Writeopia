@@ -3,6 +3,7 @@ package io.writeopia.auth.core.manager
 import io.writeopia.auth.core.utils.toModel
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.extensions.toLong
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sql.WriteopiaDb
 
@@ -31,6 +32,7 @@ internal class SqlDelightRepository(
                     name = user.name,
                     email = user.email,
                     selected = 0,
+                    tier = user.tier.name
                 )
         }
 
@@ -44,6 +46,7 @@ internal class SqlDelightRepository(
                 name = user.name,
                 email = user.email,
                 selected = selected.toLong(),
+                tier = user.tier.tierName()
             )
     }
 
