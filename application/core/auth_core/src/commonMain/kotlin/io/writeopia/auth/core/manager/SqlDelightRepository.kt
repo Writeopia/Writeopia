@@ -3,7 +3,6 @@ package io.writeopia.auth.core.manager
 import io.writeopia.auth.core.utils.toModel
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.extensions.toLong
-import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sql.WriteopiaDb
 
