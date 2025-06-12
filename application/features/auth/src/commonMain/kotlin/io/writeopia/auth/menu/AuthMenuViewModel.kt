@@ -10,8 +10,10 @@ import io.writeopia.di.AppConnectionInjection
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.serialization.data.toModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 
 class AuthMenuViewModel(
@@ -39,6 +41,10 @@ class AuthMenuViewModel(
 
     fun passwordChanged(name: String) {
         _password.value = name
+    }
+
+    fun isLoggedIn(): Flow<Boolean> = flow {
+        emit(authRepository.isLoggedIn())
     }
 
     fun onLoginRequest() {
