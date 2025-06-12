@@ -8,7 +8,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
-import io.writeopia.api.documents.documents.dto.SendDocumentsRequest
+import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.deleteDocumentById
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module

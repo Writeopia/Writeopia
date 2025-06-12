@@ -5,7 +5,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import io.writeopia.api.documents.documents.dto.SendDocumentsRequest
+import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.search.SearchDocument

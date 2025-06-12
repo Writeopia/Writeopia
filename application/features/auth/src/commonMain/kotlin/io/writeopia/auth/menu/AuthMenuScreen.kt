@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import io.writeopia.auth.utils.loginScreen
 import io.writeopia.common.utils.ResultData
@@ -52,9 +53,9 @@ fun AuthMenuScreen(
     emailChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
-    saveUserChoiceOffline: () -> Unit,
-    navigateToLogin: () -> Unit,
     navigateToRegister: () -> Unit,
+    offlineUsage: () -> Unit,
+    navigateUp: () -> Unit,
     navigateToApp: () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -62,7 +63,7 @@ fun AuthMenuScreen(
             modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp)
                 .clip(CircleShape)
                 .clickable {
-                    navigateToApp()
+                    navigateUp()
                 }
                 .padding(6.dp),
             imageVector = WrIcons.backArrowDesktop,
@@ -78,6 +79,7 @@ fun AuthMenuScreen(
                 passwordChanged,
                 onLoginRequest,
                 navigateToRegister,
+                offlineUsage,
                 modifier,
             )
         }
@@ -124,6 +126,7 @@ private fun AuthMenuContentScreen(
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
     navigateToRegister: () -> Unit,
+    offlineUsage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val email by emailState.collectAsState()
@@ -139,17 +142,17 @@ private fun AuthMenuContentScreen(
 
             Text(
                 WrStrings.startNow(),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = WriteopiaTheme.colorScheme.textLight,
                 modifier = Modifier.padding(horizontal = 10.dp),
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
                 WrStrings.signInToAccount(),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = WriteopiaTheme.colorScheme.textLighter,
                 modifier = Modifier.padding(horizontal = 10.dp),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold
@@ -255,7 +258,17 @@ private fun AuthMenuContentScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Use in offline mode",
+                color = MaterialTheme.colorScheme.onBackground,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.large)
+                    .clickable(onClick = offlineUsage)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            )
         }
     }
 }

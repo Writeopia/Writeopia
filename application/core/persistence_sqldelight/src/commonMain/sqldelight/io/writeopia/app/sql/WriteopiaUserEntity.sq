@@ -2,7 +2,8 @@ CREATE TABLE writeopia_user_entity (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT NOT NULL,
-  selected INTEGER NOT NULL
+  selected INTEGER NOT NULL,
+  tier TEXT NOT NULL
 );
 
 selectUserByEmail:
@@ -18,10 +19,10 @@ WHERE selected = 1
 LIMIT 1;
 
 insertUser:
-INSERT INTO writeopia_user_entity(id, name, email, selected)
-VALUES (?, ?, ?, ?)
+INSERT INTO writeopia_user_entity(id, name, email, selected, tier)
+VALUES (?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
-UPDATE SET id=excluded.id, name=excluded.name, email=excluded.email, selected=excluded.selected;
+UPDATE SET id=excluded.id, name=excluded.name, email=excluded.email, selected=excluded.selected, tier=excluded.tier;
 
 deleteUser:
 DELETE

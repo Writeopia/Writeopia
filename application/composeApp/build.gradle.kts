@@ -38,7 +38,6 @@ kotlin {
                 implementation(project(":writeopia_models"))
 
                 implementation(project(":application:core:persistence_sqldelight"))
-                implementation(project(":application:core:theme"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:navigation"))
                 implementation(project(":application:core:documents"))

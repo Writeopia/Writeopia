@@ -17,11 +17,7 @@ internal class SqlDelightRepository(
             ?.toModel()
             ?: WriteopiaUser.disconnectedUser()
 
-    override suspend fun isLoggedIn(): Boolean =
-        writeopiaDb?.writeopiaUserEntityQueries
-            ?.selectCurrentUser()
-            ?.executeAsOneOrNull()
-            ?.toModel() == null
+    override suspend fun isLoggedIn(): Boolean = getAuthToken() != null
 
     override suspend fun logout(): ResultData<Boolean> {
         getUser().let { user ->
@@ -31,6 +27,7 @@ internal class SqlDelightRepository(
                     name = user.name,
                     email = user.email,
                     selected = 0,
+                    tier = user.tier.name
                 )
         }
 
@@ -44,6 +41,7 @@ internal class SqlDelightRepository(
                 name = user.name,
                 email = user.email,
                 selected = selected.toLong(),
+                tier = user.tier.tierName()
             )
     }
 
