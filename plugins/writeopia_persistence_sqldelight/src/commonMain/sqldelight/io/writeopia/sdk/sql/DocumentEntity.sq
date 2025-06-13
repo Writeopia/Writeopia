@@ -10,30 +10,31 @@ CREATE TABLE documentEntity (
   icon TEXT,
   icon_tint INTEGER,
   is_locked INTEGER NOT NULL,
-  company_id TEXT
+  company_id TEXT,
+  deleted INTEGER NOT NULL
 );
 
 selectAllFromUser:
 SELECT *
 FROM documentEntity
-WHERE user_id = ?;
+WHERE user_id = ? AND deleted = 0;
 
 selectLastUpdatedAtFromUser:
 SELECT *
 FROM documentEntity
-WHERE user_id = ?
+WHERE user_id = ? AND deleted = 0
 ORDER BY last_updated_at
 LIMIT 10;
 
 selectTitleByDocumentId:
 SELECT title
 FROM documentEntity
-WHERE id = ?;
+WHERE id = ? AND deleted = 0;
 
 query:
 SELECT *
 FROM documentEntity
-WHERE title LIKE '%' || ? || '%' AND user_id = ?
+WHERE title LIKE '%' || ? || '%' AND user_id = ? AND deleted = 0
 ORDER BY last_updated_at;
 
 selectById:
@@ -52,84 +53,84 @@ selectWithContentByIds:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.id IN ?
+WHERE documentEntity.id IN ? AND deleted = 0
 ORDER BY position;
 
 selectWithContentByUserId:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.user_id = ?
+WHERE documentEntity.user_id = ? AND deleted = 0
 ORDER BY position;
 
 selectFavoritesWithContentByUserId:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.user_id = ? AND documentEntity.favorite = 1
+WHERE documentEntity.user_id = ? AND documentEntity.favorite = 1 AND deleted = 0
 ORDER BY position;
 
 selectWithContentByUserIdAfterTime:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.user_id = ? AND last_updated_at > ?
+WHERE documentEntity.user_id = ? AND last_updated_at > ? AND deleted = 0
 ORDER BY position;
 
 selectWithContentByFolderIdAfterTime:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.parent_document_id = ? AND last_synced_at > ? AND user_id = ?
+WHERE documentEntity.parent_document_id = ? AND last_synced_at > ? AND user_id = ? AND deleted = 0
 ORDER BY position;
 
 selectWithContentById:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.id = ?
+WHERE documentEntity.id = ? AND deleted = 0
 ORDER BY position;
 
 selectWithContentByFolderIdOutdatedDocuments:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.parent_document_id = ? AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)
+WHERE documentEntity.parent_document_id = ? AND (last_synced_at IS NULL OR last_updated_at > last_synced_at) AND deleted = 0
 ORDER BY position;
 
 selectWithContentByParentId:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.parent_document_id = ?
+WHERE documentEntity.parent_document_id = ? AND deleted = 0
 ORDER BY position;
 
 selectIdsByParentId:
 SELECT id
 FROM documentEntity
-WHERE documentEntity.parent_document_id = ?;
+WHERE documentEntity.parent_document_id = ? AND deleted = 0;
 
 insert:
-INSERT INTO documentEntity(id, title, created_at, last_updated_at, last_synced_at, user_id, favorite, parent_document_id, icon, icon_tint, is_locked, user_id, company_id)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO documentEntity(id, title, created_at, last_updated_at, last_synced_at, user_id, favorite, parent_document_id, icon, icon_tint, is_locked, user_id, company_id, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at,
 last_updated_at=excluded.last_updated_at, last_synced_at=excluded.last_synced_at, user_id=excluded.user_id,
 favorite=excluded.favorite,parent_document_id=excluded.parent_document_id, icon=excluded.icon,
 icon_tint=excluded.icon_tint, is_locked=excluded.is_locked,
-user_id=excluded.user_id, company_id=excluded.company_id;
+user_id=excluded.user_id, company_id=excluded.company_id, deleted=excluded.deleted;
 
 delete:
-DELETE FROM documentEntity WHERE id = ?;
+UPDATE documentEntity SET deleted = 1 WHERE id = ?;
 
 deleteByIds:
-DELETE FROM documentEntity WHERE id IN ?;
+UPDATE documentEntity SET deleted = 1 WHERE id IN ?;
 
 deleteByUserId:
-DELETE FROM documentEntity WHERE user_id = ?;
+UPDATE documentEntity SET deleted = 1 WHERE user_id = ?;
 
 deleteByFolderId:
-DELETE FROM documentEntity WHERE parent_document_id = ?;
+UPDATE documentEntity SET deleted = 1 WHERE parent_document_id = ?;
 
 favoriteById:
 UPDATE documentEntity SET favorite = 1 WHERE id = ?;

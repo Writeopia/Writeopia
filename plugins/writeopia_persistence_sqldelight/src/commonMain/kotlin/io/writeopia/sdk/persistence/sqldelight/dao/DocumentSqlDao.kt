@@ -82,7 +82,8 @@ class DocumentSqlDao(
             icon_tint = document.icon?.tint?.toLong(),
             is_locked = document.isLocked.toLong(),
             user_id_ = userId,
-            company_id = companyId
+            company_id = companyId,
+            deleted = 0
         )
     }
 
