@@ -19,5 +19,10 @@ fun FolderEntity.toModel(count: Long) =
         icon = if (this.icon != null && this.icon_tint != null) MenuItem.Icon(
             this.icon,
             this.icon_tint.toInt()
-        ) else null
+        ) else null,
+        lastSyncedAt = if (last_synced_at != null) {
+            Instant.fromEpochMilliseconds(last_synced_at)
+        } else {
+            null
+        }
     )

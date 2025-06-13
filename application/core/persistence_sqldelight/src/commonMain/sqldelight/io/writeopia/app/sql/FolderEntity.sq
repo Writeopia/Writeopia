@@ -5,6 +5,7 @@ CREATE TABLE folderEntity (
   title TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   last_updated_at INTEGER NOT NULL,
+  last_synced_at INTEGER,
   favorite INTEGER NOT NULL,
   icon TEXT,
   icon_tint INTEGER
@@ -57,10 +58,12 @@ FROM documentEntity
 GROUP BY parent_document_id;
 
 insert:
-INSERT INTO folderEntity(id, parent_id, user_id, title, created_at, last_updated_at, favorite, icon, icon_tint)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO folderEntity(id, parent_id, user_id, title, created_at, last_updated_at, favorite, icon, icon_tint, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
-UPDATE SET id=excluded.id, parent_id=excluded.parent_id, user_id=excluded.user_id, title=excluded.title, created_at=excluded.created_at, last_updated_at=excluded.last_updated_at, favorite=excluded.favorite, icon=excluded.icon, icon_tint=excluded.icon_tint;
+UPDATE SET id=excluded.id, parent_id=excluded.parent_id, user_id=excluded.user_id, title=excluded.title,
+ created_at=excluded.created_at, last_updated_at=excluded.last_updated_at, favorite=excluded.favorite,
+  icon=excluded.icon, icon_tint=excluded.icon_tint, last_synced_at=excluded.last_synced_at;
 
 -- update:
 -- UPDATE(title, parent_id, update_at): SET title=title, parent_id=parent_id, update_at=update_at;

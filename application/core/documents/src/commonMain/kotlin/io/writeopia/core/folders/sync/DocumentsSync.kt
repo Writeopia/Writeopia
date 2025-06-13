@@ -4,6 +4,8 @@ import io.writeopia.common.utils.ResultData
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.FolderRepository
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.document.Folder.Companion.ROOT_PATH
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -14,7 +16,6 @@ class DocumentsSync(
     private val documentConflictHandler: DocumentConflictHandler,
     private val folderRepository: FolderRepository
 ) {
-
     /**
      * Sync the folder with the backend end. The lastSync should be data fetched from the backend.
      *
@@ -23,15 +24,23 @@ class DocumentsSync(
      */
     suspend fun syncFolder(folderId: String, userId: String) {
         println("folderId: $folderId")
-        val folder: Folder? = folderRepository.getFolderById(folderId)
+        val folder: Folder = folderRepository.getFolderById(folderId) ?: run {
+            val folder = Folder(
+                id = "root",
+                parentId = "null",
+                title = "root",
+                createdAt = Instant.DISTANT_PAST,
+                lastUpdatedAt = Instant.DISTANT_PAST,
+                itemCount = 0,
+                userId = userId,
+            )
 
-        if (folder == null) {
-            println("Sync. folder not found")
-            return
+            folderRepository.createFolder(folder)
+            folder
         }
 
-//        val lastSync = folder.lastSyncedAt
-        val lastSync = Instant.DISTANT_PAST
+        val lastSync = folder.lastSyncedAt
+        println("Sync. lastSync: $lastSync")
 
         // First, receive the documents for the backend.
         val response = documentsApi.getNewDocuments(
@@ -65,7 +74,7 @@ class DocumentsSync(
             }
 
             documentRepository.refreshDocuments()
-
+            folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
         } else {
             return
         }
