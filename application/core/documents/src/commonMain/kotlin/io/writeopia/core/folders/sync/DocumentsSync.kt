@@ -4,8 +4,6 @@ import io.writeopia.common.utils.ResultData
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.FolderRepository
 import io.writeopia.sdk.models.document.Folder
-import io.writeopia.sdk.models.document.Folder.Companion.ROOT_PATH
-import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
