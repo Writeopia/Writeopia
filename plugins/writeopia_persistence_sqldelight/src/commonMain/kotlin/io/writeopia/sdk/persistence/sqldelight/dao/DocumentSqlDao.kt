@@ -83,7 +83,7 @@ class DocumentSqlDao(
             is_locked = document.isLocked.toLong(),
             user_id_ = userId,
             company_id = companyId,
-            deleted = 0
+            deleted = document.deleted.toLong()
         )
     }
 
@@ -195,7 +195,8 @@ class DocumentSqlDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked == 1L,
+                        deleted = document.deleted == 1L
                     )
                 }
             } ?: emptyList()
@@ -261,7 +262,8 @@ class DocumentSqlDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked == 1L,
+                        deleted = document.deleted == 1L
                     )
                 }
             }
@@ -333,7 +335,8 @@ class DocumentSqlDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked == 1L,
+                        deleted = document.deleted == 1L
                     )
                 }
             }
@@ -405,7 +408,8 @@ class DocumentSqlDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked == 1L,
+                        deleted = document.deleted == 1L
                     )
                 }
             } ?: emptyList()
@@ -476,7 +480,8 @@ class DocumentSqlDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked == 1L,
+                        deleted = document.deleted == 1L
                     )
                 }
             } ?: emptyList()
@@ -553,7 +558,8 @@ class DocumentSqlDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked == 1L,
+                        deleted = document.deleted == 1L
                     )
                 }
             }
@@ -620,7 +626,8 @@ class DocumentSqlDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked == 1L,
+                        deleted = document.deleted == 1L
                     )
                 }
             } ?: emptyList()
@@ -687,7 +694,8 @@ class DocumentSqlDao(
                                 document.icon_tint?.toInt()
                             )
                         },
-                        isLocked = document.is_locked == 1L
+                        isLocked = document.is_locked == 1L,
+                        deleted = document.deleted == 1L,
                     )
                 }
             } ?: emptyList()

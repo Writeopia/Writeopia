@@ -23,7 +23,7 @@ class DocumentsSync(
      * The sync time of the folder will only be updated with everything works correctly.
      */
     suspend fun syncFolder(folderId: String, userId: String) {
-        println("folderId: $folderId")
+//        println("folderId: $folderId")
         val folder: Folder = folderRepository.getFolderById(folderId) ?: run {
             val folder = Folder(
                 id = "root",
@@ -40,7 +40,7 @@ class DocumentsSync(
         }
 
         val lastSync = folder.lastSyncedAt
-        println("Sync. lastSync: $lastSync")
+//        println("Sync. lastSync: $lastSync")
 
         // First, receive the documents for the backend.
         val response = documentsApi.getNewDocuments(
@@ -48,7 +48,8 @@ class DocumentsSync(
             lastSync ?: Instant.DISTANT_PAST
         )
         val newDocuments = if (response is ResultData.Complete) response.data else return
-        println("Sync. received ${newDocuments.size} new documents")
+//        println("Sync. received ${newDocuments.size} new documents")
+//        println("Documents: ${newDocuments.joinToString(separator = "\n\n")}")
 
         // Then, load the outdated documents.
         // These documents were updated locally, but were not sent to the backend yet
@@ -60,7 +61,8 @@ class DocumentsSync(
             documentConflictHandler.handleConflict(localOutdatedDocs, newDocuments)
         documentRepository.refreshDocuments()
 
-        println("Sync. sending ${documentsNotSent.size} documents")
+//        println("Sync. sending ${documentsNotSent.size} documents")
+//        println("Documents sent: ${documentsNotSent.joinToString(separator = "\n\n")}")
 
         // Send documents to backend
         val resultSend = documentsApi.sendDocuments(documentsNotSent)

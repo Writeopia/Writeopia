@@ -40,13 +40,13 @@ ORDER BY last_updated_at;
 selectById:
 SELECT *
 FROM documentEntity
-WHERE documentEntity.id= ?
+WHERE documentEntity.id = ?
 LIMIT 1;
 
 selectWithContentFromUser:
 SELECT *
 FROM documentEntity
-LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id AND user_id = ?
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id AND user_id = ? AND deleted = 0
 ORDER BY position;
 
 selectWithContentByIds:

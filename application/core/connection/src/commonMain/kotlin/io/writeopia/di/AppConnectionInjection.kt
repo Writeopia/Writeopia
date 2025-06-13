@@ -55,7 +55,6 @@ object ApiInjectorDefaults {
         }
 
         install(DefaultRequest) {
-            println("Bearer $tokenJwt")
             header(HttpHeaders.Authorization, "Bearer $tokenJwt")
         }
 
