@@ -79,7 +79,8 @@ fun Document.toApi(): DocumentApi =
         parentId = parentId,
         isLocked = isLocked,
         icon = icon?.toApi(),
-        isFavorite = this.favorite
+        isFavorite = this.favorite,
+        deleted = deleted
     )
 
 fun DocumentApi.toModel(): Document =
@@ -93,7 +94,9 @@ fun DocumentApi.toModel(): Document =
         userId = userId,
         parentId = parentId ?: "",
         isLocked = isLocked,
-        icon = icon?.toModel()
+        icon = icon?.toModel(),
+        favorite = isFavorite,
+        deleted = deleted
     )
 
 fun FolderApi.toModel(): Folder = Folder(

@@ -84,7 +84,8 @@ class DocumentSqlBeDao(
             icon = document.icon?.label,
             icon_tint = document.icon?.tint,
             is_locked = document.isLocked,
-            company_id = ""
+            company_id = "",
+            deleted = false
         )
     }
 
@@ -484,12 +485,13 @@ class DocumentSqlBeDao(
     }
 
     fun deleteDocumentById(documentId: String) {
-        documentQueries?.delete(documentId)
+        val now = Clock.System.now().toEpochMilliseconds()
+        documentQueries?.delete(now, documentId)
         storyStepQueries?.deleteByDocumentId(documentId)
     }
 
     fun deleteDocumentByIds(ids: Set<String>) {
-        documentQueries?.deleteByIds(ids)
+        documentQueries?.deleteByIds(Clock.System.now().toEpochMilliseconds(), ids)
         storyStepQueries?.deleteByDocumentIds(ids)
     }
 
@@ -633,11 +635,11 @@ class DocumentSqlBeDao(
             ?: emptyList()
 
     fun deleteDocumentsByUserId(userId: String) {
-        documentQueries?.deleteByUserId(userId)
+        documentQueries?.deleteByUserId(Clock.System.now().toEpochMilliseconds(), userId)
     }
 
     fun deleteDocumentsByFolderId(folderId: String) {
-        documentQueries?.deleteByFolderId(folderId)
+        documentQueries?.deleteByFolderId(Clock.System.now().toEpochMilliseconds(), folderId)
     }
 
     fun favoriteById(documentId: String) {

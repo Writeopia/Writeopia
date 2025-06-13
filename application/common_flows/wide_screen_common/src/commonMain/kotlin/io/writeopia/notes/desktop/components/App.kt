@@ -28,11 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.account.ui.SettingsDialog
-import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
-import io.writeopia.di.AppConnectionInjection
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.KmpSearchInjection
@@ -81,12 +79,6 @@ fun DesktopApp(
 ) {
     if (writeopiaDb != null) {
         WriteopiaDbInjector.initialize(writeopiaDb)
-    }
-
-    LaunchedEffect("JWTToken") {
-        AuthCoreInjectionNeo.singleton().provideAuthRepository().getAuthToken()?.let { token ->
-            AppConnectionInjection.singleton().setJwtToken(token)
-        }
     }
 
     val editorInjector = remember {

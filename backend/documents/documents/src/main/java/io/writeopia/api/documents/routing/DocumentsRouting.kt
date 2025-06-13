@@ -19,6 +19,7 @@ import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sql.WriteopiaDbBackend
+import kotlinx.datetime.Instant
 
 fun Routing.documentsRoute(
     writeopiaDb: WriteopiaDbBackend,
@@ -151,7 +152,7 @@ fun Routing.documentsRoute(
             try {
                 println("loading diff")
                 println("user id: ${getUserId()}")
-                println("last sync: ${folderDiff.lastFolderSync}")
+                println("last sync: ${Instant.fromEpochMilliseconds(folderDiff.lastFolderSync)}")
 
                 val documents =
                     writeopiaDb.folderDiff(

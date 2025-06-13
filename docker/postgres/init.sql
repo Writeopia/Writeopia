@@ -10,7 +10,8 @@ CREATE TABLE document_entity (
   icon TEXT,
   icon_tint INTEGER,
   is_locked BOOLEAN NOT NULL,
-  company_id TEXT NULL
+  company_id TEXT NULL,
+  deleted BOOLEAN NOT NULL
 );
 
 CREATE TABLE story_step_entity (

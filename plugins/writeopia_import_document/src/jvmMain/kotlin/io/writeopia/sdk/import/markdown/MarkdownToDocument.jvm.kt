@@ -34,7 +34,8 @@ actual object MarkdownToDocument {
                     parentId = parentId,
                     isLocked = false,
                     content = content,
-                    isFavorite = false
+                    isFavorite = false,
+                    deleted = false
                 )
             }
             .map { it.toModel() }
