@@ -2,6 +2,8 @@ package io.writeopia.core.folders.sync
 
 import io.writeopia.common.utils.ResultData
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.repository.FolderRepository
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -9,7 +11,8 @@ import kotlinx.datetime.Instant
 class DocumentsSync(
     private val documentRepository: DocumentRepository,
     private val documentsApi: DocumentsApi,
-    private val documentConflictHandler: DocumentConflictHandler
+    private val documentConflictHandler: DocumentConflictHandler,
+    private val folderRepository: FolderRepository
 ) {
 
     /**
@@ -19,7 +22,16 @@ class DocumentsSync(
      * The sync time of the folder will only be updated with everything works correctly.
      */
     suspend fun syncFolder(folderId: String, userId: String) {
-        val lastSync = documentRepository.loadDocumentById(folderId)?.lastSyncedAt
+        println("folderId: $folderId")
+        val folder: Folder? = folderRepository.getFolderById(folderId)
+
+        if (folder == null) {
+            println("Sync. folder not found")
+            return
+        }
+
+//        val lastSync = folder.lastSyncedAt
+        val lastSync = Instant.DISTANT_PAST
 
         // First, receive the documents for the backend.
         val response = documentsApi.getNewDocuments(
@@ -27,6 +39,7 @@ class DocumentsSync(
             lastSync ?: Instant.DISTANT_PAST
         )
         val newDocuments = if (response is ResultData.Complete) response.data else return
+        println("Sync. received ${newDocuments.size} new documents")
 
         // Then, load the outdated documents.
         // These documents were updated locally, but were not sent to the backend yet
@@ -37,6 +50,8 @@ class DocumentsSync(
         val documentsNotSent =
             documentConflictHandler.handleConflict(localOutdatedDocs, newDocuments)
         documentRepository.refreshDocuments()
+
+        println("Sync. sending ${documentsNotSent.size} documents")
 
         // Send documents to backend
         val resultSend = documentsApi.sendDocuments(documentsNotSent)
@@ -50,6 +65,7 @@ class DocumentsSync(
             }
 
             documentRepository.refreshDocuments()
+
         } else {
             return
         }

@@ -95,7 +95,7 @@ selectWithContentByFolderIdOutdatedDocuments:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.parent_document_id = ? AND (last_synced_at IS NULL OR last_updated_at > last_synced_at) AND deleted = 0
+WHERE documentEntity.parent_document_id = ? AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)
 ORDER BY position;
 
 selectWithContentByParentId:

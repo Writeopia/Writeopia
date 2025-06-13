@@ -39,11 +39,13 @@ class NotesMenuKmpInjection private constructor(
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
 
+    private fun provideFolderRepository() = FoldersInjector.singleton().provideFoldersRepository()
+
     private fun provideNotesUseCase(
         documentRepository: DocumentRepository = provideDocumentRepository(),
         configurationRepository: ConfigurationRepository =
             appConfigurationInjector.provideNotesConfigurationRepository(),
-        folderRepository: FolderRepository = FoldersInjector.singleton().provideFoldersRepository()
+        folderRepository: FolderRepository = provideFolderRepository()
     ): NotesUseCase {
         return NotesUseCase.singleton(
             documentRepository,
@@ -71,7 +73,8 @@ class NotesMenuKmpInjection private constructor(
             documentConflictHandler = DocumentConflictHandler(
                 documentRepository,
                 authCoreInjection.provideAuthRepository()
-            )
+            ),
+            folderRepository = provideFolderRepository()
         )
     }
 
