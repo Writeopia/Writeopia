@@ -121,16 +121,32 @@ icon_tint=excluded.icon_tint, is_locked=excluded.is_locked,
 user_id=excluded.user_id, company_id=excluded.company_id, deleted=excluded.deleted;
 
 delete:
-UPDATE documentEntity SET deleted = 1 WHERE id = ?;
+UPDATE documentEntity
+SET
+    deleted = 1,
+    last_updated_at = ?
+WHERE id = ?;
 
 deleteByIds:
-UPDATE documentEntity SET deleted = 1 WHERE id IN ?;
+UPDATE documentEntity
+SET
+    deleted = 1,
+    last_updated_at = ?
+WHERE id IN ?;
 
 deleteByUserId:
-UPDATE documentEntity SET deleted = 1 WHERE user_id = ?;
+UPDATE documentEntity
+SET
+    deleted = 1,
+    last_updated_at = ?
+WHERE user_id = ?;
 
 deleteByFolderId:
-UPDATE documentEntity SET deleted = 1 WHERE parent_document_id = ?;
+UPDATE documentEntity
+SET
+    deleted = 1,
+    last_updated_at = ?
+WHERE parent_document_id = ?;
 
 favoriteById:
 UPDATE documentEntity SET favorite = 1 WHERE id = ?;

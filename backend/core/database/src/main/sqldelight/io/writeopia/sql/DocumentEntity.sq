@@ -10,116 +10,136 @@ CREATE TABLE document_entity (
   icon TEXT,
   icon_tint INTEGER,
   is_locked BOOLEAN NOT NULL,
-  company_id TEXT NULL
+  company_id TEXT NULL,
+  deleted BOOLEAN NOT NULL
 );
 
 selectAll:
 SELECT *
-FROM document_entity;
+FROM document_entity
+WHERE deleted = FALSE;
 
 selectLastUpdatedAt:
 SELECT *
 FROM document_entity
+WHERE deleted = FALSE
 ORDER BY last_synced
 LIMIT 10;
 
 selectTitleByDocumentId:
 SELECT title
 FROM document_entity
-WHERE id = ?;
+WHERE id = ? AND deleted = FALSE;
 
 query:
 SELECT *
 FROM document_entity
-WHERE title LIKE '%' || ? || '%'
+WHERE title LIKE '%' || ? || '%' AND deleted = FALSE
 ORDER BY last_synced;
 
 selectById:
 SELECT *
 FROM document_entity
-WHERE document_entity.id = ? AND user_id = ?
+WHERE document_entity.id = ? AND user_id = ? AND deleted = FALSE
 LIMIT 1;
 
 selectWithContent:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE deleted = FALSE
 ORDER BY position;
 
 selectWithContentByIds:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.id IN ?
+WHERE document_entity.id IN ? AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentByUserId:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.user_id = ?
+WHERE document_entity.user_id = ? AND deleted = FALSE
 ORDER BY position;
 
 selectFavoritesWithContentByUserId:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.user_id = ? AND document_entity.favorite = 1
+WHERE document_entity.user_id = ? AND document_entity.favorite = 1 AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentByUserIdAfterTime:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.user_id = ? AND last_synced > ?
+WHERE document_entity.user_id = ? AND last_synced > ? AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentByFolderIdAfterTime:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.parent_document_id = ? AND last_synced > ? AND user_id = ?
+WHERE document_entity.parent_document_id = ? AND last_synced > ? AND user_id = ? AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentById:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.id = ?
+WHERE document_entity.id = ? AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentByParentId:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.parent_document_id = ?
+WHERE document_entity.parent_document_id = ? AND deleted = FALSE
 ORDER BY position;
 
 selectIdsByParentId:
 SELECT id
 FROM document_entity
-WHERE document_entity.parent_document_id = ?;
+WHERE document_entity.parent_document_id = ? AND deleted = FALSE;
 
 insert:
-INSERT INTO document_entity(id, title, created_at, last_updated_at, last_synced, user_id, favorite, parent_document_id, icon, icon_tint, is_locked, company_id)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO document_entity(id, title, created_at, last_updated_at, last_synced, user_id, favorite, parent_document_id, icon, icon_tint, is_locked, company_id, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at, last_updated_at=excluded.last_updated_at,
 last_synced=excluded.last_synced, user_id=excluded.user_id, favorite=excluded.favorite,
 parent_document_id=excluded.parent_document_id, icon=excluded.icon, icon_tint=excluded.icon_tint,
-is_locked=excluded.is_locked, company_id=excluded.company_id;
+is_locked=excluded.is_locked, company_id=excluded.company_id, deleted=excluded.deleted;
 
 delete:
-DELETE FROM document_entity WHERE id = ?;
+UPDATE document_entity
+SET
+    deleted = TRUE,
+    last_updated_at = ?
+WHERE id = ?;
 
 deleteByIds:
-DELETE FROM document_entity WHERE id IN ?;
+UPDATE document_entity
+SET
+    deleted = TRUE,
+    last_updated_at = ?
+WHERE id IN ?;
 
 deleteByUserId:
-DELETE FROM document_entity WHERE user_id = ?;
+UPDATE document_entity
+SET
+    deleted = TRUE,
+    last_updated_at = ?
+WHERE user_id = ?;
 
 deleteByFolderId:
-DELETE FROM document_entity WHERE parent_document_id = ?;
+UPDATE document_entity
+SET
+    deleted = TRUE,
+    last_updated_at = ?
+WHERE parent_document_id = ?;
 
 favoriteById:
 UPDATE document_entity SET favorite = 1 WHERE id = ?;

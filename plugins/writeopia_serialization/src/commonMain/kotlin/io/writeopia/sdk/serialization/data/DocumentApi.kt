@@ -15,5 +15,6 @@ data class DocumentApi(
     val lastSyncedAt: Long? = null,
     val parentId: String? = null,
     val isLocked: Boolean = false,
-    val icon: IconApi? = null
+    val icon: IconApi? = null,
+    val deleted: Boolean = false
 )

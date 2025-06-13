@@ -483,12 +483,12 @@ class DocumentSqlDao(
     }
 
     suspend fun deleteDocumentById(documentId: String) {
-        documentQueries?.delete(documentId)
+        documentQueries?.delete(Clock.System.now().toEpochMilliseconds(), documentId)
         storyStepQueries?.deleteByDocumentId(documentId)
     }
 
     suspend fun deleteDocumentByIds(ids: Set<String>) {
-        documentQueries?.deleteByIds(ids)
+        documentQueries?.deleteByIds(Clock.System.now().toEpochMilliseconds(), ids)
         storyStepQueries?.deleteByDocumentIds(ids)
     }
 
@@ -699,11 +699,11 @@ class DocumentSqlDao(
             ?: emptyList()
 
     suspend fun deleteDocumentsByUserId(userId: String) {
-        documentQueries?.deleteByUserId(userId)
+        documentQueries?.deleteByUserId(Clock.System.now().toEpochMilliseconds(), userId)
     }
 
     suspend fun deleteDocumentsByFolderId(folderId: String) {
-        documentQueries?.deleteByFolderId(folderId)
+        documentQueries?.deleteByFolderId(Clock.System.now().toEpochMilliseconds(), folderId)
     }
 
     suspend fun favoriteById(documentId: String) {

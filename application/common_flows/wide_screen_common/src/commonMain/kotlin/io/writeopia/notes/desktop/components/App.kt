@@ -83,12 +83,6 @@ fun DesktopApp(
         WriteopiaDbInjector.initialize(writeopiaDb)
     }
 
-    LaunchedEffect("JWTToken") {
-        AuthCoreInjectionNeo.singleton().provideAuthRepository().getAuthToken()?.let { token ->
-            AppConnectionInjection.singleton().setJwtToken(token)
-        }
-    }
-
     val editorInjector = remember {
         EditorKmpInjector.desktop(
             selectionState = selectionState,
