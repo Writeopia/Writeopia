@@ -22,7 +22,10 @@ class DocumentsSync(
         val lastSync = documentRepository.loadDocumentById(folderId)?.lastSyncedAt
 
         // First, receive the documents for the backend.
-        val response = documentsApi.getNewDocuments(folderId, lastSync ?: Instant.DISTANT_PAST.also { println("last sync it now available") })
+        val response = documentsApi.getNewDocuments(
+            folderId,
+            lastSync ?: Instant.DISTANT_PAST
+        )
         val newDocuments = if (response is ResultData.Complete) response.data else return
 
         // Then, load the outdated documents.
