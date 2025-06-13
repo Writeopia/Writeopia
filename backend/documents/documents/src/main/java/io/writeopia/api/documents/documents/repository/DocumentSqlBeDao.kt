@@ -85,7 +85,7 @@ class DocumentSqlBeDao(
             icon_tint = document.icon?.tint,
             is_locked = document.isLocked,
             company_id = "",
-            deleted = false
+            deleted = document.deleted
         )
     }
 

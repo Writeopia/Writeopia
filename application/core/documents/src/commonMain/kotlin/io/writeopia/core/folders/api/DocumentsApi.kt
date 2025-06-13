@@ -19,8 +19,6 @@ import kotlinx.datetime.Instant
 class DocumentsApi(private val client: HttpClient, private val baseUrl: String) {
 
     suspend fun getNewDocuments(folderId: String, lastSync: Instant): ResultData<List<Document>> {
-        println("get new documents. $lastSync")
-
         val response = client.post("$baseUrl/api/document/folder/diff") {
             contentType(ContentType.Application.Json)
             setBody(FolderDiffRequest(folderId, lastSync.toEpochMilliseconds()))
@@ -29,7 +27,6 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         return if (response.status.isSuccess()) {
             ResultData.Complete(response.body<List<DocumentApi>>().map { it.toModel() })
         } else {
-            println("getNewDocuments status: ${response.status.value}")
             ResultData.Error()
         }
     }
@@ -43,7 +40,6 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         return if (response.status.isSuccess()) {
             ResultData.Complete(Unit)
         } else {
-            println("sendDocuments status: ${response.status.value}")
             ResultData.Error()
         }
     }
