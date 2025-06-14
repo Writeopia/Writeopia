@@ -17,7 +17,8 @@ fun main() {
 }
 
 fun Application.module(
-    writeopiaDb: WriteopiaDbBackend = configurePersistence(),
+    writeopiaDb: WriteopiaDbBackend? = null,
+//        configurePersistence(),
     useAi: Boolean = System.getenv("WRITEOPIA_USE_AI")?.toBoolean() ?: false,
     debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false
 ) {

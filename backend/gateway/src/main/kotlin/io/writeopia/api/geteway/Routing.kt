@@ -10,17 +10,21 @@ import io.writeopia.api.documents.routing.documentsRoute
 import io.writeopia.sql.WriteopiaDbBackend
 
 fun Application.configureRouting(
-    writeopiaDb: WriteopiaDbBackend,
+    writeopiaDb: WriteopiaDbBackend?,
     useAi: Boolean,
     debugMode: Boolean = false
 ) {
     routing {
-        documentsRoute(writeopiaDb, useAi, debugMode)
+        if (writeopiaDb != null) {
+            documentsRoute(writeopiaDb, useAi, debugMode)
+        }
 
         get {
             call.respondText("Hi")
         }
 
-        authRoute(writeopiaDb, debugMode)
+        if (writeopiaDb != null) {
+            authRoute(writeopiaDb, debugMode)
+        }
     }
 }
