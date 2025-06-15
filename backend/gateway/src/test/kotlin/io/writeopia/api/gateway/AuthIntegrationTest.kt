@@ -12,14 +12,12 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
-import io.writeopia.sdk.serialization.data.auth.LoginRequest
-import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.geteway.configurePersistence
-import io.writeopia.api.geteway.configureSerialization
 import io.writeopia.api.geteway.module
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
-import io.writeopia.sdk.serialization.data.auth.DeleteAccountRequest
+import io.writeopia.sdk.serialization.data.auth.LoginRequest
+import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
