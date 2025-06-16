@@ -65,7 +65,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: writeopia
+          POSTGRES_DB: postgres
           JWT_SECRET: "testingsecret"
         ports:
           - 5432:5432
