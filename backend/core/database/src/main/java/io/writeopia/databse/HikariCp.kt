@@ -7,9 +7,9 @@ import com.zaxxer.hikari.HikariDataSource
 import io.writeopia.sql.WriteopiaDbBackend
 
 private val config = HikariConfig().apply {
-    jdbcUrl = "jdbc:postgresql://localhost:5432/${System.getenv("DB_NAME") ?: "writeopia"}"
-    username = System.getenv("DB_USER") ?: "postgres"
-    password = System.getenv("DB_PASS") ?: "postgres"
+    jdbcUrl = "jdbc:postgresql://localhost:5432/${System.getenv("WR_DB_NAME") ?: "writeopia"}"
+    username = System.getenv("WR_DB_USER") ?: "postgres"
+    password = System.getenv("WR_DB_PASS") ?: "postgres"
     maximumPoolSize = 10
     isAutoCommit = true
     transactionIsolation = "TRANSACTION_REPEATABLE_READ"
