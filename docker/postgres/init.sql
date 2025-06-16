@@ -37,7 +37,7 @@ CREATE TABLE user_entity (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   created_at BIGINT NOT NULL,
-  email TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
   enabled BOOLEAN NOT NULL,

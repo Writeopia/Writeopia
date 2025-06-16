@@ -95,3 +95,11 @@ fun WriteopiaDbBackend.deleteUserById(id: String) {
 fun WriteopiaDbBackend.deleteUserByEmail(email: String) {
     this.userEntityQueries.deleteUserByEmail(email)
 }
+
+fun WriteopiaDbBackend.enableUserByEmail(email: String) {
+    this.userEntityQueries.enableUserByEmail(email)
+}
+
+fun WriteopiaDbBackend.disableUserByEmail(email: String) {
+    this.userEntityQueries.disableUserByEmail(email)
+}

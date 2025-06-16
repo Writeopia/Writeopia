@@ -1,4 +1,4 @@
-package io.writeopia.api.core.auth
+package io.writeopia.api.core.auth.routing
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.authenticate
@@ -13,6 +13,8 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
+import io.writeopia.api.core.auth.AuthService
+import io.writeopia.api.core.auth.JwtConfig
 import io.writeopia.api.core.auth.hash.HashUtils
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.deleteUserById

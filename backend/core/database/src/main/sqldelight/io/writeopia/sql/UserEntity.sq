@@ -2,7 +2,7 @@ CREATE TABLE user_entity (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   created_at BIGINT NOT NULL,
-  email TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
   enabled BOOLEAN NOT NULL,
@@ -42,3 +42,14 @@ deleteUserByEmail:
 DELETE
 FROM user_entity
 WHERE email = ?;
+
+enableUserByEmail:
+UPDATE user_entity
+SET enabled = TRUE
+WHERE email = ?;
+
+disableUserByEmail:
+UPDATE user_entity
+SET enabled = FALSE
+WHERE email = ?;
+
