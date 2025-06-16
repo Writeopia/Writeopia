@@ -65,7 +65,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
+          POSTGRES_DB: writeopia
           JWT_SECRET: "testingsecret"
         ports:
           - 5432:5432
@@ -77,7 +77,7 @@ jobs:
     env:
       isCI: "true"
       IN_MEMORY_DATABASE: 'true'
-      DB_USER: 'user'
+      DB_USER: 'postgres'
       WRITEOPIA_FIREBASE_ID: 'id'
       WRITEOPIA_CLIENT_BASE_URL: "baseurl"
       JWT_SECRET: "testingsecret"
