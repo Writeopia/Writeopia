@@ -7,7 +7,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import io.writeopia.api.core.auth.getUserId
+import io.writeopia.api.core.auth.routing.getUserId
 import io.writeopia.api.documents.documents.DocumentsService
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.folderDiff
