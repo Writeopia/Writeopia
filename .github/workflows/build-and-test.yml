@@ -32,7 +32,7 @@ jobs:
     env:
       isCI: "true"
       IN_MEMORY_DATABASE: 'true'
-      DB_USER: 'user'
+      DB_USER: 'postgres'
       WRITEOPIA_FIREBASE_ID: 'id'
       WRITEOPIA_CLIENT_BASE_URL: "baseurl"
       JWT_SECRET: "testingsecret"
@@ -138,7 +138,7 @@ jobs:
     env:
       isCI: "true"
       IN_MEMORY_DATABASE: 'true'
-      DB_USER: 'user'
+      DB_USER: 'postgres'
       WRITEOPIA_FIREBASE_ID: 'id'
       WRITEOPIA_CLIENT_BASE_URL: "baseurl"
       JWT_SECRET: "testingsecret"
