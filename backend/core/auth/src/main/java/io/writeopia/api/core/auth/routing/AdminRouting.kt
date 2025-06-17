@@ -38,11 +38,8 @@ suspend fun RoutingContext.adminUserFn(
     if (providedKey != apiKey) {
         call.respond(HttpStatusCode.Unauthorized, "Invalid admin key")
     } else {
-        val userEmail = call.parameters["userEmail"]
-            ?: return call.respond(HttpStatusCode.BadRequest)
-
         func()
 
-        call.respond(HttpStatusCode.OK, "User $userEmail enabled")
+        call.respond(HttpStatusCode.OK, "User enabled")
     }
 }
