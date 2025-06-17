@@ -32,4 +32,5 @@ dependencies {
     implementation(libs.ktor.server.auth.jwt)
 
     implementation(project(":backend:core:database"))
+    implementation(project(":backend:core:connection"))
 }

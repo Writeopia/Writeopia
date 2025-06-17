@@ -16,6 +16,7 @@ dependencies {
 
     implementation(project(":backend:core:auth"))
     implementation(project(":backend:core:database"))
+    implementation(project(":backend:core:connection"))
     implementation(project(":backend:documents:documents"))
     implementation(project(":backend:editor:api_editor_socket"))
 

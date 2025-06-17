@@ -21,6 +21,7 @@ import io.writeopia.api.core.auth.repository.deleteUserById
 import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserById
+import io.writeopia.connection.logger
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
@@ -28,10 +29,7 @@ import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
-private val logger: Logger = LoggerFactory.getLogger("WriteopiaBackend")
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
     post("/api/login") {
