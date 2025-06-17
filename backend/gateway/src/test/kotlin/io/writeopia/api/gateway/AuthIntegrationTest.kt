@@ -4,6 +4,7 @@ import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -12,6 +13,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
+import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
@@ -200,4 +202,43 @@ class AuthIntegrationTest {
 
         assertEquals(response3.status, HttpStatusCode.OK)
     }
+
+    @Test
+    fun `it should be possible enable a user`() = testApplication {
+        application {
+            module(db, debugMode = true, adminKey = "somekey")
+        }
+
+        val client = defaultClient()
+
+        val response = client.post("admin/enable-user") {
+            contentType(ContentType.Application.Json)
+            setBody(ManageUserRequest(email = "lehen01@gmail.com"))
+            headers {
+                this.append("X-Admin-Key", "somekey")
+            }
+        }
+
+        assertEquals(response.status, HttpStatusCode.OK)
+    }
+
+    @Test
+    fun `it should be possible disable a user`() = testApplication {
+        application {
+            module(db, debugMode = true, adminKey = "somekey")
+        }
+
+        val client = defaultClient()
+
+        val response = client.post("admin/disable-user") {
+            contentType(ContentType.Application.Json)
+            setBody(ManageUserRequest(email = "lehen01@gmail.com"))
+            headers {
+                this.append("X-Admin-Key", "somekey")
+            }
+        }
+
+        assertEquals(response.status, HttpStatusCode.OK)
+    }
+
 }
