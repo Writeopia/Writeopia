@@ -28,6 +28,10 @@ import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
+import org.slf4j.LoggerFactory
+
+val logger = LoggerFactory.getLogger("WriteopiaBackend")
+
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
     post("/api/login") {
@@ -65,6 +69,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
     post("/api/register") {
         try {
+            logger.info("register request received")
             val request = call.receive<RegisterRequest>()
             val user = writeopiaDb.getUserByEmail(request.email)
 
@@ -73,9 +78,11 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
                 call.respond(HttpStatusCode.Created, AuthResponse(null, wUser.toApi()))
             } else {
+                logger.info("register request - user already exists")
                 call.respond(HttpStatusCode.Conflict, "Not Created")
             }
         } catch (e: Exception) {
+            logger.info("register request error message: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, "Unknown error")
         }
     }
