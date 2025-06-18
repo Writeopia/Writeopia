@@ -1,0 +1,2 @@
+ALTER TABLE documentEntity ADD COLUMN company_id INTEGER;
+ALTER TABLE documentEntity ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0;
