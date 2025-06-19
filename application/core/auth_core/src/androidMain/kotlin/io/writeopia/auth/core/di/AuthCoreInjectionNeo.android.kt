@@ -18,7 +18,7 @@ actual class AuthCoreInjectionNeo(
 ) {
 
     actual fun provideAuthRepository(): AuthRepository =
-        RoomAuthRepository(appsDaosInjection.provideUserDao())
+        RoomAuthRepository(appsDaosInjection.provideUserDao(), appsDaosInjection.provideTokenDao())
 
     actual fun provideAuthApi(): AuthApi =
         AuthApi(
