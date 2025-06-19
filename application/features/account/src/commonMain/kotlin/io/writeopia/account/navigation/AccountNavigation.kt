@@ -2,7 +2,6 @@ package io.writeopia.account.navigation
 
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import io.writeopia.account.di.AccountMenuKmpInjector

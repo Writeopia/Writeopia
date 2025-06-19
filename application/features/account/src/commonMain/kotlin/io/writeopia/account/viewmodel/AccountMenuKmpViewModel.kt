@@ -6,10 +6,8 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.toBoolean
 import io.writeopia.sdk.models.user.WriteopiaUser
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -32,5 +30,4 @@ internal class AccountMenuKmpViewModel(
             }
         }
     }
-
 }

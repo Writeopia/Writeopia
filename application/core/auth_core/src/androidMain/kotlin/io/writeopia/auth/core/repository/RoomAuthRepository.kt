@@ -22,9 +22,7 @@ class RoomAuthRepository(private val userDao: UserCommonDao) : AuthRepository {
         userDao.insertUser(user, selected)
     }
 
-    override suspend fun saveToken(userId: String, token: String) {
-
-    }
+    override suspend fun saveToken(userId: String, token: String) { }
 
     override suspend fun getAuthToken(): String? = ""
 

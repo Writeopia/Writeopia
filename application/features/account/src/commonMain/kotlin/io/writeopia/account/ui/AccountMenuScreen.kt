@@ -72,7 +72,8 @@ private fun Connect(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            modifier = Modifier, text = WrStrings.youAreOffline(),
+            modifier = Modifier,
+            text = WrStrings.youAreOffline(),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,

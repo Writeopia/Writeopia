@@ -22,17 +22,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
-import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.di.AuthInjection
-import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.common.utils.ui.GlobalToastBox
-import io.writeopia.di.AppConnectionInjection
 import io.writeopia.model.isDarkTheme
-import io.writeopia.navigation.IntroScreen
 import io.writeopia.navigation.ScreenLoading
 import io.writeopia.navigation.startScreen
 import io.writeopia.notemenu.di.UiConfigurationInjector
