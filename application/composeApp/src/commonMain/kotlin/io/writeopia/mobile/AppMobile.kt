@@ -37,7 +37,7 @@ import io.writeopia.viewmodel.UiConfigurationViewModel
 
 @Composable
 fun AppMobile(
-    startDestination: String = Destinations.AUTH_MENU_INNER_NAVIGATION.id,
+    startDestination: String,
     navController: NavHostController,
     searchInjector: SearchInjection,
     uiConfigViewModel: UiConfigurationViewModel,

@@ -8,6 +8,7 @@ import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.map
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.sdk.models.user.Tier
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.serialization.data.toModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -31,10 +32,6 @@ class AuthMenuViewModel(
         MutableStateFlow(ResultData.Idle())
     val loginState = _loginState.asStateFlow()
 
-    fun saveUserChoiceOffline() {
-//        authRepository.saveUserChoiceOffline()
-    }
-
     fun emailChanged(name: String) {
         _email.value = name
     }
@@ -44,7 +41,17 @@ class AuthMenuViewModel(
     }
 
     fun isLoggedIn(): Flow<Boolean> = flow {
-        emit(authRepository.isLoggedIn())
+        val user = authRepository.getUser()
+        val loggedId = authRepository.isLoggedIn() || user.id != WriteopiaUser.DISCONNECTED
+
+        emit(loggedId)
+    }
+
+    fun useOffline(sideEffect: () -> Unit) {
+        viewModelScope.launch {
+            authRepository.useOffline()
+            sideEffect()
+        }
     }
 
     fun onLoginRequest() {

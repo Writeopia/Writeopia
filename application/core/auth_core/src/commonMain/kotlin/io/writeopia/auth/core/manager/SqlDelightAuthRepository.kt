@@ -6,7 +6,7 @@ import io.writeopia.common.utils.extensions.toLong
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sql.WriteopiaDb
 
-internal class SqlDelightRepository(
+internal class SqlDelightAuthRepository(
     private val writeopiaDb: WriteopiaDb?
 ) : AuthRepository {
 
@@ -53,5 +53,10 @@ internal class SqlDelightRepository(
     override suspend fun saveToken(userId: String, token: String) {
         writeopiaDb?.tokenEntityQueries
             ?.insertToken(userId, token)
+    }
+
+    override suspend fun useOffline() {
+        val user = getUser()
+        saveUser(user.copy(id = WriteopiaUser.OFFLINE), true)
     }
 }

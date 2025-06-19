@@ -31,7 +31,7 @@ import io.writeopia.notemenu.navigation.notesMenuNavigation
 @Composable
 fun Navigation(
     isDarkTheme: Boolean,
-    startDestination: String = Destinations.AUTH_MENU_INNER_NAVIGATION.id,
+    startDestination: String,
     navController: NavHostController = rememberNavController(),
     notesMenuInjection: NotesMenuInjection,
     documentsGraphInjection: DocumentsGraphInjection? = null,
@@ -76,7 +76,9 @@ fun Navigation(
             )
 
             accountMenuNavigation(
-                navigateToAuthMenu = { },
+                navigateToAuthMenu = {
+                    navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
+                },
                 selectColorTheme = selectColorTheme
             )
 

@@ -2,21 +2,23 @@ package io.writeopia.auth.core.di
 
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
-import io.writeopia.auth.core.manager.SqlDelightRepository
+import io.writeopia.auth.core.repository.RoomAuthRepository
+import io.writeopia.common.utils.persistence.di.AppDaosInjection
 import io.writeopia.di.AppConnectionInjection
+import io.writeopia.persistence.room.injection.AppRoomDaosInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
-import io.writeopia.sql.WriteopiaDb
-import io.writeopia.sqldelight.di.WriteopiaDbInjector
 
+// Todo: Fix this
 actual class AuthCoreInjectionNeo(
     // Change this to use a different persistence
-    private val writeopiaDb: WriteopiaDb? = WriteopiaDbInjector.singleton()?.database,
+    private val appsDaosInjection: AppDaosInjection = AppRoomDaosInjection.singleton(),
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val connectionInjector: WriteopiaConnectionInjector =
         WriteopiaConnectionInjector.singleton()
 ) {
 
-    actual fun provideAuthRepository(): AuthRepository = SqlDelightRepository(writeopiaDb)
+    actual fun provideAuthRepository(): AuthRepository =
+        RoomAuthRepository(appsDaosInjection.provideUserDao())
 
     actual fun provideAuthApi(): AuthApi =
         AuthApi(

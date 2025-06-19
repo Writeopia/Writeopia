@@ -3,8 +3,6 @@ package io.writeopia.desktop
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,8 +31,10 @@ import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.common.utils.ui.GlobalToastBox
 import io.writeopia.di.AppConnectionInjection
-import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
+import io.writeopia.navigation.IntroScreen
+import io.writeopia.navigation.ScreenLoading
+import io.writeopia.navigation.startScreen
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.resources.CommonImages
@@ -236,32 +236,9 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                 navController = navigationController,
                                 startDestination = Destinations.START_APP.id
                             ) {
-                                composable(route = Destinations.START_APP.id) {
-                                    val authMenuViewModel: AuthMenuViewModel =
-                                        authInjection.provideAuthMenuViewModel()
+                                startScreen(navigationController, authInjection, colorTheme)
 
-                                    IntroScreen(colorTheme.value)
-
-                                    LaunchedEffect(Unit) {
-                                        AuthCoreInjectionNeo.singleton()
-                                            .provideAuthRepository()
-                                            .getAuthToken()
-                                            ?.let(AppConnectionInjection.singleton()::setJwtToken)
-
-                                        authMenuViewModel.isLoggedIn().collect { loggedIn ->
-                                            delay(300)
-                                            navigationController.navigate(
-                                                if (loggedIn) {
-                                                    Destinations.CHOOSE_NOTE.id
-                                                } else {
-                                                    Destinations.AUTH_MENU_INNER_NAVIGATION.id
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-
-                                composable(route = Destinations.CHOOSE_NOTE.id) {
+                                composable(route = Destinations.MAIN_APP.id) {
                                     DesktopApp(
                                         writeopiaDb = database,
                                         selectionState = selectionState,
@@ -289,7 +266,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                     authInjection = authInjection,
                                     colorThemeOption = colorTheme
                                 ) {
-                                    navigationController.navigate(Destinations.CHOOSE_NOTE.id)
+                                    navigationController.navigate(Destinations.MAIN_APP.id)
                                 }
                             }
                         }
@@ -300,31 +277,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     ScreenLoading()
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ScreenLoading() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-    }
-}
-
-@Composable
-private fun IntroScreen(colorThemeOption: ColorThemeOption?) {
-    WrieopiaTheme(darkTheme = colorThemeOption.isDarkTheme()) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    WriteopiaTheme.colorScheme.globalBackground
-                )
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.onBackground
-            )
         }
     }
 }

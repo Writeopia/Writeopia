@@ -100,6 +100,7 @@ import writeopia.application.core.resources.generated.resources.url
 import writeopia.application.core.resources.generated.resources.version
 import writeopia.application.core.resources.generated.resources.workspaceName
 import writeopia.application.core.resources.generated.resources.you_are_offline
+import writeopia.application.core.resources.generated.resources.use_offline
 
 object WrStrings {
 
@@ -399,4 +400,7 @@ object WrStrings {
 
     @Composable
     fun writeYourAiModel() = stringResource(Res.string.choose_your_model)
+
+    @Composable
+    fun useOffline() = stringResource(Res.string.use_offline)
 }

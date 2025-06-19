@@ -9,6 +9,7 @@ fun Writeopia_user_entity.toModel(): WriteopiaUser {
         id = this.id,
         email = this.email,
         name = this.name,
-        tier = Tier.valueOf(this.tier)
+        tier = Tier.valueOf(this.tier),
+        company = ""
     )
 }

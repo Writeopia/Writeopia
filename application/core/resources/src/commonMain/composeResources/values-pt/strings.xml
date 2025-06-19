@@ -115,4 +115,5 @@
   <string name="confirm">Confirmar</string>
   <string name="download_model">Baixar modelo</string>
   <string name="choose_your_model">Escolhe seu modelo de IA</string>
+  <string name="use_offline">User offline</string>
 </resources>

@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import io.writeopia.BuildConfig
 import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.navigation.authNavigation
+import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.di.SharedPreferencesInjector
 import io.writeopia.editor.di.EditorKmpInjector
@@ -22,7 +23,6 @@ import io.writeopia.features.search.di.MobileSearchInjection
 import io.writeopia.mobile.AppMobile
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
-import io.writeopia.notemenu.navigation.NoteMenuDestiny
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.persistence.room.DatabaseConfigAndroid
 import io.writeopia.persistence.room.WriteopiaApplicationDatabase
@@ -42,7 +42,7 @@ class NavigationActivity : ComponentActivity() {
 
             NavigationGraph(
                 application = application,
-                startDestination = NoteMenuDestiny.noteMenu()
+                startDestination = Destinations.START_APP.id
             )
         }
     }
@@ -96,6 +96,8 @@ fun NavigationGraph(
         editorInjector = editorInjector,
         navigationViewModel = navigationViewModel
     ) {
+        startScreen(navController, authInjection, colorThemeState)
+
         authNavigation(navController, authInjection, colorThemeState) {
             navController.navigateToNotes(NotesNavigation.Root)
         }

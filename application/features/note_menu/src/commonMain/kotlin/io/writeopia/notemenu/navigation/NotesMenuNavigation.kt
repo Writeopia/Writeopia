@@ -85,6 +85,32 @@ fun NavGraphBuilder.notesMenuNavigation(
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
     }
+
+    composable(route = Destinations.MAIN_APP.id) { backStackEntry ->
+        val notesNavigation = NotesNavigation.Root
+
+        val chooseNoteViewModel: ChooseNoteViewModel =
+            notesMenuInjection.provideChooseNoteViewModel(notesNavigation = notesNavigation)
+        val ollamaConfigController = ollamaConfigInjector?.provideOllamaConfigController()
+
+        NotesMenuScreen(
+            folderId = notesNavigation.id,
+            chooseNoteViewModel = chooseNoteViewModel,
+            ollamaConfigController = ollamaConfigController,
+            navigationController = navigationController,
+            animatedVisibilityScope = this@composable,
+            sharedTransitionScope = sharedTransitionScope,
+            onNewNoteClick = navigateToNewNote,
+            onNoteClick = navigateToNote,
+            onAccountClick = navigateToAccount,
+            selectColorTheme = selectColorTheme,
+            navigateToFolders = navigateToFolders,
+            addFolder = chooseNoteViewModel::addFolder,
+            editFolder = chooseNoteViewModel::editFolder,
+            onForceGraphSelected = navigateToForceGraph,
+            modifier = Modifier.background(MaterialTheme.colorScheme.background)
+        )
+    }
 }
 
 fun NavController.navigateToNotes(navigation: NotesNavigation) {

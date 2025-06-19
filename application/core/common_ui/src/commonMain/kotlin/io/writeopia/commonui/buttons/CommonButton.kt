@@ -27,6 +27,29 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
+fun AccentButton(
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    iconDescription: String? = null,
+    text: String,
+    defaultColor: Color = WriteopiaTheme.colorScheme.defaultButton,
+    selectedColor: Color = WriteopiaTheme.colorScheme.highlight,
+    isEnabledState: StateFlow<Boolean> = MutableStateFlow(true),
+    clickListener: () -> Unit,
+) {
+    CommonButton(
+        modifier = modifier,
+        icon = icon,
+        iconDescription = iconDescription,
+        text = text,
+        defaultColor = WriteopiaTheme.colorScheme.cardBg,
+        selectedColor = selectedColor,
+        isEnabledState = isEnabledState,
+        clickListener = clickListener
+    )
+}
+
+@Composable
 fun CommonButton(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
@@ -70,7 +93,6 @@ fun CommonButton(
         )
     }
 }
-
 
 @Composable
 fun CommonTextButton(

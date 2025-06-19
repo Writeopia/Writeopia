@@ -29,10 +29,6 @@ fun NavGraphBuilder.accountMenuNavigation(
     ) {
         val accountMenuViewModel = AccountMenuKmpInjector.singleton().provideAccountMenuViewModel()
 
-        LaunchedEffect(key1 = "start") {
-            accountMenuViewModel.checkLoggedIn()
-        }
-
         AccountMenuScreen(
             accountMenuViewModel = accountMenuViewModel,
             isLoggedInState = accountMenuViewModel.isLoggedIn,
