@@ -46,6 +46,7 @@ object AuthService {
             id = id,
             name = name,
             email = email,
+            company = ""
         )
     }
 
