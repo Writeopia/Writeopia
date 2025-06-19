@@ -42,7 +42,6 @@ fun NavGraphBuilder.startScreen(
                 ?.let(AppConnectionInjection.singleton()::setJwtToken)
 
             authMenuViewModel.isLoggedIn().collect { loggedIn ->
-                println("logged in: $loggedIn")
                 delay(300)
                 navigationController.navigate(
                     if (loggedIn) {
