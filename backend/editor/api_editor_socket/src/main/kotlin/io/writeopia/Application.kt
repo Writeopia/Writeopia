@@ -1,14 +1,14 @@
 package io.writeopia
 
 import io.ktor.server.application.Application
+import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
 import io.writeopia.plugins.configureFirebase
 import io.writeopia.plugins.configureSerialization
 
 fun main() {
     embeddedServer(
-        Netty,
+        CIO,
         port = 8080,
         host = "0.0.0.0",
         module = Application::module
