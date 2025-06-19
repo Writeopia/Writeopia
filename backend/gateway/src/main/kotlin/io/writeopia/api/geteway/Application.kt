@@ -1,15 +1,15 @@
 package io.writeopia.api.geteway
 
 import io.ktor.server.application.Application
+import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
 import io.writeopia.api.core.auth.installAuth
 import io.writeopia.plugins.configureEditorSockets
 import io.writeopia.sql.WriteopiaDbBackend
 
 fun main() {
     embeddedServer(
-        Netty,
+        CIO,
         port = 8080,
 //        host = "127.0.0.1",
         host = "0.0.0.0",

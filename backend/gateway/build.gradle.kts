@@ -24,9 +24,8 @@ dependencies {
 
     implementation(project(":common:endpoints"))
 
-    implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.websocket)
-    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.cio)
     implementation(libs.logback.classic)
     implementation(libs.ktor.client.logging)
 
