@@ -121,4 +121,5 @@
   <string name="confirm">Confirm</string>
   <string name="download_model">Download model</string>
   <string name="choose_your_model">Write your AI model</string>
+  <string name="use_offline">Use in offline mode</string>
 </resources>

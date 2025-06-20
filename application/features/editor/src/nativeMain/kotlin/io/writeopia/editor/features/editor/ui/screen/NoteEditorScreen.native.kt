@@ -1,7 +1,6 @@
 package io.writeopia.editor.features.editor.ui.screen
 
 // import androidx.compose.ui.tooling.preview.Preview
-// import io.writeopia.appresourcers.R
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring

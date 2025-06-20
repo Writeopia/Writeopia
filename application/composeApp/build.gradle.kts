@@ -168,7 +168,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        val baseUrl = System.getenv("WRITEOPIA_CLIENT_BASE_URL")
+        val baseUrl = "https://writeopia.dev"
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
 
         applicationId = "io.writeopia"

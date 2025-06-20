@@ -59,6 +59,7 @@ internal fun MobileChooseNoteScreen(
 ) {
     LaunchedEffect(key1 = "refresh", block = {
         chooseNoteViewModel.requestUser()
+        chooseNoteViewModel.syncFolderWithCloud()
 //        chooseNoteViewModel.requestDocuments(false)
     })
 

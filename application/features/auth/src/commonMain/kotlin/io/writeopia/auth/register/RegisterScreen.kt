@@ -131,7 +131,6 @@ private fun BoxScope.RegisterContent(
 
     Column(
         modifier = modifier
-            .padding(horizontal = 50.dp)
             .align(Alignment.Center)
             .loginScreen(),
         horizontalAlignment = Alignment.CenterHorizontally

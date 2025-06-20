@@ -2,7 +2,7 @@ package io.writeopia.auth.core.di
 
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
-import io.writeopia.auth.core.manager.SqlDelightRepository
+import io.writeopia.auth.core.manager.SqlDelightAuthRepository
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sql.WriteopiaDb
@@ -15,7 +15,7 @@ actual class AuthCoreInjectionNeo(
         WriteopiaConnectionInjector.singleton()
 ) {
 
-    actual fun provideAuthRepository(): AuthRepository = SqlDelightRepository(writeopiaDb)
+    actual fun provideAuthRepository(): AuthRepository = SqlDelightAuthRepository(writeopiaDb)
 
     actual fun provideAuthApi(): AuthApi =
         AuthApi(

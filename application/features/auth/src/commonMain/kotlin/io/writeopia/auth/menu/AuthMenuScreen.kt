@@ -261,7 +261,7 @@ private fun AuthMenuContentScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Use in offline mode",
+                text = WrStrings.useOffline(),
                 color = MaterialTheme.colorScheme.onBackground,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier

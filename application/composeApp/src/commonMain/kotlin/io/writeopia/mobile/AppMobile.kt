@@ -19,7 +19,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
-import io.writeopia.common.utils.Destinations
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.di.TextEditorInjector
 import io.writeopia.features.search.di.SearchInjection
@@ -30,14 +30,13 @@ import io.writeopia.navigation.NavigationViewModel
 import io.writeopia.navigation.notes.navigateToNoteMenu
 import io.writeopia.navigation.notifications.navigateToNotifications
 import io.writeopia.navigation.search.navigateToSearch
-import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.viewmodel.UiConfigurationViewModel
 
 @Composable
 fun AppMobile(
-    startDestination: String = Destinations.AUTH_MENU_INNER_NAVIGATION.id,
+    startDestination: String,
     navController: NavHostController,
     searchInjector: SearchInjection,
     uiConfigViewModel: UiConfigurationViewModel,

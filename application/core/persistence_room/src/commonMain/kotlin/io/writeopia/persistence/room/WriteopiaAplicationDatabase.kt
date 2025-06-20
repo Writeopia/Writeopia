@@ -7,10 +7,14 @@ import androidx.room.RoomDatabaseConstructor
 import androidx.room.TypeConverters
 import io.writeopia.persistence.room.data.daos.FolderRoomDao
 import io.writeopia.persistence.room.data.daos.NotesConfigurationRoomDao
+import io.writeopia.persistence.room.data.daos.TokenDao
 import io.writeopia.persistence.room.data.daos.UiConfigurationRoomDao
+import io.writeopia.persistence.room.data.daos.UserDao
 import io.writeopia.persistence.room.data.entities.FolderEntity
 import io.writeopia.persistence.room.data.entities.NotesConfigurationEntity
+import io.writeopia.persistence.room.data.entities.TokenEntity
 import io.writeopia.persistence.room.data.entities.UiConfigurationRoomEntity
+import io.writeopia.persistence.room.data.entities.UserEntity
 import io.writeopia.sdk.persistence.converter.IdListConverter
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
 import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
@@ -30,8 +34,10 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         NotesConfigurationEntity::class,
         FolderEntity::class,
         UiConfigurationRoomEntity::class,
+        UserEntity::class,
+        TokenEntity::class
     ],
-    version = 20,
+    version = 22,
     exportSchema = false
 )
 @TypeConverters(IdListConverter::class)
@@ -46,7 +52,11 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
 
     abstract fun folderRoomDao(): FolderRoomDao
 
+    abstract fun userDao(): UserDao
+
     abstract fun uiConfigDao(): UiConfigurationRoomDao
+
+    abstract fun tokenDao(): TokenDao
 
     companion object {
         private var instance: WriteopiaApplicationDatabase? = null

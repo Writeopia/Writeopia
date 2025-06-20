@@ -21,4 +21,6 @@ interface AuthRepository : UserRepository {
     suspend fun saveToken(userId: String, token: String)
 
     suspend fun getAuthToken(): String?
+
+    suspend fun useOffline()
 }

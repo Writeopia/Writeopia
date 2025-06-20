@@ -34,5 +34,6 @@ fun WriteopiaUserApi.toModel() =
     WriteopiaUser(
         id = id,
         email = email,
-        name = name
+        name = name,
+        company = ""
     )

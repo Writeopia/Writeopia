@@ -1,7 +1,6 @@
 package io.writeopia.editor.features.editor.ui.screen
 
 // import androidx.compose.ui.tooling.preview.Preview
-// import io.writeopia.appresourcers.R
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.BackHandler
