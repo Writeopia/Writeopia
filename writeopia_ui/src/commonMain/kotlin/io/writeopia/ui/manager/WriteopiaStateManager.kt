@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -93,38 +94,40 @@ class WriteopiaStateManager(
             keyboardEventFlow
                 .onEach { delay(60) }
                 .collect { event ->
-                    when (event) {
-                        KeyboardEvent.DELETE -> {
-                            if (_positionsOnEdit.value.isNotEmpty()) {
-                                deleteSelection()
+                    if (_isEditable.value) {
+                        when (event) {
+                            KeyboardEvent.DELETE -> {
+                                if (_positionsOnEdit.value.isNotEmpty()) {
+                                    deleteSelection()
+                                }
                             }
-                        }
 
-                        KeyboardEvent.SELECT_ALL -> {
-                            selectAll()
-                        }
+                            KeyboardEvent.SELECT_ALL -> {
+                                selectAll()
+                            }
 
-                        KeyboardEvent.BOLD -> {
-                            toggleSpan(Span.BOLD)
-                        }
+                            KeyboardEvent.BOLD -> {
+                                toggleSpan(Span.BOLD)
+                            }
 
-                        KeyboardEvent.ITALIC -> {
-                            toggleSpan(Span.ITALIC)
-                        }
+                            KeyboardEvent.ITALIC -> {
+                                toggleSpan(Span.ITALIC)
+                            }
 
-                        KeyboardEvent.UNDERLINE -> {
-                            toggleSpan(Span.UNDERLINE)
-                        }
+                            KeyboardEvent.UNDERLINE -> {
+                                toggleSpan(Span.UNDERLINE)
+                            }
 
-                        KeyboardEvent.LINK -> {
-                            addLinkToDocument()
-                        }
+                            KeyboardEvent.LINK -> {
+                                addLinkToDocument()
+                            }
 
-                        KeyboardEvent.BOX -> {
-                            toggleHighLightBlock()
-                        }
+                            KeyboardEvent.BOX -> {
+                                toggleHighLightBlock()
+                            }
 
-                        else -> {}
+                            else -> {}
+                        }
                     }
                 }
         }
@@ -160,6 +163,10 @@ class WriteopiaStateManager(
 
     private val _documentInfo: MutableStateFlow<DocumentInfo> =
         MutableStateFlow(DocumentInfo.empty())
+
+    private val _isEditable: StateFlow<Boolean> = _documentInfo.map { info ->
+        !info.isLocked
+    }.stateIn(coroutineScope, SharingStarted.Lazily, true)
 
     val documentInfo: StateFlow<DocumentInfo> = _documentInfo.asStateFlow()
 
@@ -288,6 +295,8 @@ class WriteopiaStateManager(
      * @param info [Action.Merge]
      */
     fun mergeRequest(info: Action.Merge) {
+        if (!_isEditable.value) return
+
         if (isOnSelection) {
             clearSelection()
         }
@@ -303,6 +312,7 @@ class WriteopiaStateManager(
      * @param move [Action.Move]
      */
     fun moveRequest(move: Action.Move) {
+        if (!_isEditable.value) return
         val fixedMove = move.fixMove()
 
         backStackManager.addState(_currentStory.value)
@@ -330,6 +340,7 @@ class WriteopiaStateManager(
      * @param stateChange [Action.StoryStateChange]
      */
     fun changeStoryState(stateChange: Action.StoryStateChange, trackIt: Boolean = true) {
+        if (!_isEditable.value) return
         changeStoryStateAndTrackIt(stateChange, trackIt)
     }
 
@@ -341,6 +352,7 @@ class WriteopiaStateManager(
      * Click lister when user clicks in the menu to add a check item
      */
     fun onCheckItemClicked() {
+        if (!_isEditable.value) return
         val onEdit = _positionsOnEdit.value
 
         if (onEdit.isNotEmpty()) {
@@ -354,6 +366,7 @@ class WriteopiaStateManager(
      * Click lister when user clicks in the menu to add a list item
      */
     fun onListItemClicked() {
+        if (!_isEditable.value) return
         val onEdit = _positionsOnEdit.value
 
         if (onEdit.isNotEmpty()) {
@@ -364,6 +377,7 @@ class WriteopiaStateManager(
     }
 
     fun toggleHighLightBlock() {
+        if (!_isEditable.value) return
         val onEdit = _positionsOnEdit.value
 
         if (onEdit.isNotEmpty()) {
@@ -376,6 +390,7 @@ class WriteopiaStateManager(
     }
 
     fun toggleTagForPosition(position: Int, tag: TagInfo, commandInfo: CommandInfo? = null) {
+        if (!_isEditable.value) return
         val story = getStory(position)
         val storyText = story?.text
 
@@ -430,6 +445,7 @@ class WriteopiaStateManager(
      * @param stateChange [Action.StoryStateChange]
      */
     private fun changeStoryText(stateChange: Action.StoryStateChange) {
+        if (!_isEditable.value) return
         backStackManager.addTextState(_currentStory.value, stateChange.position)
 
         changeStoryStateAndTrackIt(stateChange, trackIt = false)
@@ -445,6 +461,7 @@ class WriteopiaStateManager(
      * @param commandInfo [CommandInfo]
      */
     fun changeStoryType(position: Int, typeInfo: TypeInfo, commandInfo: CommandInfo?) {
+        if (!_isEditable.value) return
         if (isOnSelection) {
             clearSelection()
         }
@@ -454,6 +471,7 @@ class WriteopiaStateManager(
     }
 
     fun removeTags(position: Int) {
+        if (!_isEditable.value) return
         _currentStory.value =
             writeopiaManager.removeTags(position, _currentStory.value)
     }
@@ -465,6 +483,7 @@ class WriteopiaStateManager(
      * @param lineBreak [Action.LineBreak]
      */
     fun onLineBreak(lineBreak: Action.LineBreak) {
+        if (!_isEditable.value) return
         val lastBreak = lastLineBreak
 
         val now = Clock.System.now().toEpochMilliseconds()
@@ -514,6 +533,7 @@ class WriteopiaStateManager(
     }
 
     private fun selected(isSelected: Boolean, position: Int) {
+        if (!_isEditable.value) return
         if (_currentStory.value.stories[position] != null) {
             if (isSelected) {
                 _positionsOnEdit.value += position
@@ -528,10 +548,12 @@ class WriteopiaStateManager(
      * perform bulk actions, like bulk edition and bulk deletion.
      */
     fun onSelected(isSelected: Boolean, position: Int) {
+        if (!_isEditable.value) return
         selectionBuffer.send(isSelected to position)
     }
 
     fun onSectionSelected(position: Int) {
+        if (!_isEditable.value) return
         val isSelected = _positionsOnEdit.value.contains(position)
         val stories = getStories()
 
@@ -555,6 +577,7 @@ class WriteopiaStateManager(
     }
 
     fun toggleSelection(position: Int) {
+        if (!_isEditable.value) return
         onSelected(!_positionsOnEdit.value.contains(position), position)
     }
 
@@ -604,6 +627,7 @@ class WriteopiaStateManager(
      * Undo the last action.
      */
     override fun undo() {
+        if (!_isEditable.value) return
         if (!backStackManager.canUndo.value) return
 
         coroutineScope.launch(dispatcher) {
@@ -622,6 +646,7 @@ class WriteopiaStateManager(
      * Redo the last undone action.
      */
     override fun redo() {
+        if (!_isEditable.value) return
         if (!backStackManager.canRedo.value) return
 
         coroutineScope.launch(dispatcher) {
@@ -642,6 +667,7 @@ class WriteopiaStateManager(
      * @param deleteStory [Action.DeleteStory]
      */
     fun onDelete(deleteStory: Action.DeleteStory) {
+        if (!_isEditable.value) return
         backStackManager.addState(_currentStory.value)
 
         coroutineScope.launch(dispatcher) {
@@ -652,6 +678,7 @@ class WriteopiaStateManager(
     }
 
     fun onErase(eraseStory: Action.EraseStory) {
+        if (!_isEditable.value) return
         coroutineScope.launch(dispatcher) {
             val previousInfo = writeopiaManager.previousTextStory(
                 _currentStory.value.stories,
@@ -682,6 +709,7 @@ class WriteopiaStateManager(
      * Deletes the whole selection. All [StoryStep] in the selection will be deleted.
      */
     fun deleteSelection() {
+        if (!_isEditable.value) return
         coroutineScope.launch(dispatcher) {
             val (newStories, _) = writeopiaManager.bulkDelete(
                 _positionsOnEdit.value,
@@ -751,25 +779,28 @@ class WriteopiaStateManager(
     }
 
     fun toggleSpan(span: Span) {
-        val onEdit = _positionsOnEdit.value
+        if (!_isEditable.value) {
+            val onEdit = _positionsOnEdit.value
 
-        if (onEdit.isNotEmpty()) {
-            _currentStory.value =
-                writeopiaManager.addSpanToStories(_currentStory.value, onEdit, span)
-        } else {
-            val selection = currentStory.value.selection
+            if (onEdit.isNotEmpty()) {
+                _currentStory.value =
+                    writeopiaManager.addSpanToStories(_currentStory.value, onEdit, span)
+            } else {
+                val selection = currentStory.value.selection
 
-            val (start, end) = selection.sortedPositions()
+                val (start, end) = selection.sortedPositions()
 
-            _currentStory.value = writeopiaManager.addSpan(
-                _currentStory.value,
-                selection.position,
-                SpanInfo.create(start, end, span)
-            )
+                _currentStory.value = writeopiaManager.addSpan(
+                    _currentStory.value,
+                    selection.position,
+                    SpanInfo.create(start, end, span)
+                )
+            }
         }
     }
 
     fun addImage(imagePath: String, position: Int? = null) {
+        if (!_isEditable.value) return
         (position ?: currentPosition())?.let { pos ->
             val story = getStory(pos)
 
@@ -792,6 +823,7 @@ class WriteopiaStateManager(
      * Adds a story in a position.
      */
     fun addAtPosition(storyStep: StoryStep, position: Int) {
+        if (!_isEditable.value) return
         _currentStory.value = writeopiaManager.addAtPosition(
             _currentStory.value,
             storyStep,
@@ -805,6 +837,7 @@ class WriteopiaStateManager(
         lineBreakByContent: Boolean,
         trackIt: Boolean = true
     ) {
+        if (!_isEditable.value) return
         val text = input.text
         val step = _currentStory.value.stories[position] ?: return
 
@@ -884,6 +917,7 @@ class WriteopiaStateManager(
     fun lastPosition(): Int = getStories().size
 
     suspend fun addLinkToDocument() {
+        if (!_isEditable.value) return
         if (documentRepository == null) return
 
         val lastSelection = _positionsOnEdit.value.max()
@@ -972,6 +1006,7 @@ class WriteopiaStateManager(
      * @param cursor Int
      */
     private fun nextFocusOrCreate(position: Int, cursor: Int) {
+        if (!_isEditable.value) return
         coroutineScope.launch(dispatcher) {
             _currentStory.value =
                 writeopiaManager.nextFocus(position, cursor, _currentStory.value)
@@ -1021,6 +1056,7 @@ class WriteopiaStateManager(
     }
 
     private fun toggleStateForStories(onEdit: Set<Int>, storyTypes: StoryTypes) {
+        if (!_isEditable.value) return
         val currentStories = currentStory.value.stories
 
         trackState()
@@ -1046,6 +1082,7 @@ class WriteopiaStateManager(
         tag: TagInfo,
         currentStories: Map<Int, StoryStep> = currentStory.value.stories
     ) {
+        if (!_isEditable.value) return
         trackState()
 
         val change = onEdit.map { position -> position to currentStories[position] }
@@ -1065,6 +1102,7 @@ class WriteopiaStateManager(
     }
 
     private fun changeCurrentStoryType(storyTypes: StoryTypes) {
+        if (!_isEditable.value) return
         changeCurrentStoryState { storyStep ->
             val newType = if (storyStep.type == storyTypes.type) {
                 StoryTypes.TEXT.type
@@ -1081,6 +1119,7 @@ class WriteopiaStateManager(
     }
 
     private fun changeCurrentStoryState(stateChange: (StoryStep) -> StoryStep) {
+        if (!_isEditable.value) return
         val currentStepEntry = currentFocus()
 
         if (currentStepEntry != null) {
@@ -1109,6 +1148,7 @@ class WriteopiaStateManager(
         stateChange: Action.StoryStateChange,
         trackIt: Boolean = true
     ) {
+        if (!_isEditable.value) return
         if (lastStateChange == stateChange) return
         lastStateChange = stateChange
 
