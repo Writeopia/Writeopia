@@ -454,10 +454,10 @@
         <error line="148" column="1" source="standard:indent" />
     </file>
     <file name="src/commonTest/kotlin/io/writeopia/ui/utils/MapStoryData.kt">
-        <error line="189" column="1" source="standard:max-line-length" />
-        <error line="288" column="1" source="standard:max-line-length" />
-        <error line="303" column="1" source="standard:max-line-length" />
-        <error line="372" column="1" source="standard:max-line-length" />
+        <error line="197" column="1" source="standard:max-line-length" />
+        <error line="296" column="1" source="standard:max-line-length" />
+        <error line="311" column="1" source="standard:max-line-length" />
+        <error line="380" column="1" source="standard:max-line-length" />
     </file>
     <file name="src/jsMain/kotlin/io/writeopia/ui/draganddrop/target/DragCardTarget.js.kt">
         <error line="76" column="13" source="standard:chain-wrapping" />

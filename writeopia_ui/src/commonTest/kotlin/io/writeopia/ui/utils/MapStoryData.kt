@@ -172,6 +172,14 @@ object MapStoryData {
         )
     )
 
+    fun singleMessageLineBreak(): Map<Int, StoryStep> = mapOf(
+        0 to StoryStep(
+            localId = "0",
+            type = StoryTypes.TEXT.type,
+            text = "hi!\n",
+        )
+    )
+
     fun messagesInLine(): Map<Int, StoryStep> = mapOf(
         0 to StoryStep(
             localId = "0",
