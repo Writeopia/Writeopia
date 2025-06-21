@@ -11,10 +11,12 @@ import io.writeopia.sdk.repository.StoriesRepository
 import io.writeopia.sdk.repository.UserRepository
 import io.writeopia.ui.model.TextInput
 import io.writeopia.ui.utils.MapStoryData
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
 import kotlin.test.*
 
@@ -35,6 +37,10 @@ class WriteopiaStateManagerTest {
 
     private val singleMessageRepo: StoriesRepository = object : StoriesRepository {
         override suspend fun history(): Map<Int, StoryStep> = MapStoryData.singleMessage()
+    }
+
+    private val singleMessageRepoLineBreak: StoriesRepository = object : StoriesRepository {
+        override suspend fun history(): Map<Int, StoryStep> = MapStoryData.singleMessageLineBreak()
     }
 
     private val complexMessagesRepository: StoriesRepository = object : StoriesRepository {
@@ -115,8 +121,6 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    // Todo: Come back to this test later
-    @Ignore
     fun whenNewTitleChangesItShouldChangeTheDocumentTitleChangesToo() = runTest {
         val input = MapStoryData.singleCheckItem()
 
@@ -125,7 +129,7 @@ class WriteopiaStateManagerTest {
         val storyManager =
             WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
-                dispatcher = UnconfinedTestDispatcher(),
+                dispatcher = Dispatchers.Main,
                 userRepository = userRepository,
             ).apply {
                 loadDocument(
@@ -539,7 +543,6 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    @Ignore // This should be fixed later
     fun itShouldBePossibleToRevertMove() = runTest {
         val now = Clock.System.now()
 
@@ -676,19 +679,18 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    @Ignore
     fun whenALineBreakHappensANewStoryUnitWithTheSameTypeShouldBeCreated_SimpleTest() =
         runTest {
             val now = Clock.System.now()
 
             val storyManager = WriteopiaStateManager.create(
                 writeopiaManager = WriteopiaManager(),
-                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                dispatcher = Dispatchers.Unconfined,
                 userRepository = userRepository,
             )
             storyManager.loadDocument(
                 Document(
-                    content = singleMessageRepo.history(),
+                    content = singleMessageRepoLineBreak.history(),
                     userId = "",
                     createdAt = now,
                     lastUpdatedAt = now,
@@ -711,7 +713,6 @@ class WriteopiaStateManagerTest {
         }
 
     @Test
-    @Ignore
     fun whenALineBreakHappensANewStoryUnitWithTheSameTypeShouldBeCreated_ComplexTest() =
         runTest {
             val now = Clock.System.now()
@@ -723,7 +724,7 @@ class WriteopiaStateManagerTest {
             )
             storyManager.loadDocument(
                 Document(
-                    content = messagesRepo.history(),
+                    content = singleMessageRepoLineBreak.history(),
                     userId = "",
                     createdAt = now,
                     lastUpdatedAt = now,
@@ -840,7 +841,6 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    @Ignore
     fun itShouldBePossibleToAddContentAndUndoIt_OneUnit() {
         val now = Clock.System.now()
 
@@ -872,7 +872,6 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    @Ignore
     fun itShouldBePossibleToAddContentAndUndoIt_ManyUnits() = runTest {
         val now = Clock.System.now()
 
