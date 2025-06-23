@@ -1,0 +1,33 @@
+package io.writeopia.sqldelight.dao
+
+import io.writeopia.models.Workspace
+import io.writeopia.sql.WriteopiaDb
+import kotlinx.datetime.Instant
+
+class WorkspaceSqlDelightDao(private val database: WriteopiaDb?) {
+
+    suspend fun insert(workspace: Workspace) {
+        database?.workspaceEntityQueries
+            ?.insert(
+                id = workspace.id,
+                user_id = workspace.userId,
+                name = workspace.name,
+                last_synced_at = workspace.lastSync.toEpochMilliseconds(),
+                icon = null,
+                icon_tint = null,
+            )
+    }
+
+    suspend fun getById(id: String): Workspace? =
+        database?.workspaceEntityQueries
+            ?.getWorkspaceById(id)
+            ?.executeAsOneOrNull()
+            ?.let { entity ->
+                Workspace(
+                    id = entity.id,
+                    userId = entity.user_id,
+                    name = entity.name,
+                    lastSync = Instant.fromEpochMilliseconds(entity.last_synced_at),
+                )
+            }
+}
