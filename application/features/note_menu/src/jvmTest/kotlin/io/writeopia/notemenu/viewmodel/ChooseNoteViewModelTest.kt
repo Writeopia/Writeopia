@@ -4,7 +4,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,7 +38,7 @@ class ChooseNoteViewModelTest {
                 selectionState = MutableStateFlow(false),
                 keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
                 workspaceConfigRepository = mockk(),
-                documentsSync = mockk()
+                folderSync = mockk()
             )
 
             val selectedNotesList = mutableListOf<Boolean>()
