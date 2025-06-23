@@ -166,7 +166,8 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::cutSelection,
                     noteEditorViewModel::clearSelections,
                     noteEditorViewModel::onAddCheckListClick,
-                    noteEditorViewModel::onAddListItemClick
+                    noteEditorViewModel::onAddListItemClick,
+                    noteEditorViewModel::addPage,
                 )
             }
 
@@ -323,7 +324,8 @@ private fun BottomScreen(
     cutSelection: () -> Unit = {},
     onClose: () -> Unit = {},
     onCheckItem: () -> Unit = {},
-    onListItem: () -> Unit = {}
+    onListItem: () -> Unit = {},
+    onAddPage: () -> Unit = {},
 ) {
     val edit by editState.collectAsState()
 
@@ -367,7 +369,8 @@ private fun BottomScreen(
                     onCut = cutSelection,
                     onClose = onClose,
                     checkboxClick = onCheckItem,
-                    listItemClick = onListItem
+                    listItemClick = onListItem,
+                    onAddPage = onAddPage,
                 )
             }
         }

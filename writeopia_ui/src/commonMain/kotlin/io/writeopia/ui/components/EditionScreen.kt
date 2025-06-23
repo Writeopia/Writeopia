@@ -37,6 +37,7 @@ fun EditionScreen(
     onCopy: () -> Unit = {},
     onCut: () -> Unit = {},
     onClose: () -> Unit = {},
+    onAddPage: () -> Unit = {},
 ) {
     val iconPadding = PaddingValues(vertical = 4.dp)
     val clipShape = MaterialTheme.shapes.medium
@@ -155,6 +156,19 @@ fun EditionScreen(
             imageVector = Icons.Default.DeleteOutline,
             contentDescription = "Delete",
 //            contentDescription = stringResource(R.string.delete),
+            tint = tint
+        )
+
+        Spacer(modifier = Modifier.width(spaceWidth))
+
+        Icon(
+            modifier = Modifier
+                .clip(clipShape)
+                .clickable(onClick = onAddPage)
+                .size(iconSize)
+                .padding(iconPadding),
+            imageVector = WrSdkIcons.linkPage,
+            contentDescription = "Link to page",
             tint = tint
         )
 
