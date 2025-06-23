@@ -1,4 +1,4 @@
-package io.writeopia.core.folders.repository
+package io.writeopia.core.folders.repository.folder
 
 import io.writeopia.sdk.models.document.Folder
 import kotlinx.coroutines.flow.Flow
