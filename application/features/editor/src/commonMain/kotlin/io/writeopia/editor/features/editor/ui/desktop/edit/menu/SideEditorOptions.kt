@@ -658,7 +658,7 @@ private fun TextOptions(
 
         Title(WrStrings.links())
         Spacer(modifier = Modifier.height(4.dp))
-        IconAndText(WrStrings.page(), WrIcons.file, addPage)
+        IconAndText(WrStrings.page(), WrSdkIcons.linkPage, addPage)
     }
 }
 
