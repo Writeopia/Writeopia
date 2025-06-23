@@ -34,7 +34,7 @@ Writeopia is built for writers, developers, and researchers who want the power o
 You can check the documentation of the project in the [application documentation](https://docs.writeopia.io/docs/application/overview).
 
 ## App download
-You can go to https://writeopia.io and download the MacOS app under the download section. We would love your feedback about the app!
+You can go to https://writeopia.io/download and download the app. It is available for macOS, Linux and Windows. We would love your feedback about the app!
 
 ## Development
 You can check how to [work locally](https://docs.writeopia.io/docs/local-dev/getting-started) if you would like to contribute with fixes, improvements or try Writeopia from source code.
