@@ -1,12 +1,14 @@
 package io.writeopia.ui.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.DeleteOutline
@@ -36,8 +38,8 @@ fun EditionScreen(
     onDelete: () -> Unit = {},
     onCopy: () -> Unit = {},
     onCut: () -> Unit = {},
-    onClose: () -> Unit = {},
     onAddPage: () -> Unit = {},
+    onClose: () -> Unit = {},
 ) {
     val iconPadding = PaddingValues(vertical = 4.dp)
     val clipShape = MaterialTheme.shapes.medium
@@ -47,132 +49,137 @@ fun EditionScreen(
     Row(modifier = modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
         val tint = MaterialTheme.colorScheme.onPrimary
 
-        Icon(
+        Row(
             modifier = Modifier
-                .clip(clipShape)
-                .clickable {
-                    onSpanClick(Span.BOLD)
-                }
-                .size(iconSize)
-                .padding(iconPadding),
-            imageVector = Icons.Outlined.FormatBold,
-            contentDescription = "BOLD",
+                .weight(1f)
+                .horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable {
+                        onSpanClick(Span.BOLD)
+                    }
+                    .size(iconSize)
+                    .padding(iconPadding),
+                imageVector = Icons.Outlined.FormatBold,
+                contentDescription = "BOLD",
 //            contentDescription = stringResource(R.string.delete),
-            tint = tint
-        )
+                tint = tint
+            )
 
-        Icon(
-            modifier = Modifier
-                .clip(clipShape)
-                .clickable {
-                    onSpanClick(Span.ITALIC)
-                }
-                .size(iconSize)
-                .padding(iconPadding),
-            imageVector = Icons.Outlined.FormatItalic,
-            contentDescription = "ITALIC",
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable {
+                        onSpanClick(Span.ITALIC)
+                    }
+                    .size(iconSize)
+                    .padding(iconPadding),
+                imageVector = Icons.Outlined.FormatItalic,
+                contentDescription = "ITALIC",
 //            contentDescription = stringResource(R.string.delete),
-            tint = tint
-        )
+                tint = tint
+            )
 
-        Spacer(modifier = Modifier.width(spaceWidth))
+            Spacer(modifier = Modifier.width(spaceWidth))
 
-        Icon(
-            modifier = Modifier
-                .clip(clipShape)
-                .clickable {
-                    onSpanClick(Span.UNDERLINE)
-                }
-                .size(iconSize)
-                .padding(iconPadding),
-            imageVector = Icons.Outlined.FormatUnderlined,
-            contentDescription = "UNDERLINE",
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable {
+                        onSpanClick(Span.UNDERLINE)
+                    }
+                    .size(iconSize)
+                    .padding(iconPadding),
+                imageVector = Icons.Outlined.FormatUnderlined,
+                contentDescription = "UNDERLINE",
 //            contentDescription = stringResource(R.string.delete),
-            tint = tint
-        )
+                tint = tint
+            )
 
-        Spacer(modifier = Modifier.width(spaceWidth))
+            Spacer(modifier = Modifier.width(spaceWidth))
 
-        Icon(
-            modifier = Modifier
-                .clip(clipShape)
-                .clickable(onClick = checkboxClick)
-                .size(iconSize)
-                .padding(iconPadding),
-            imageVector = WrSdkIcons.checkbox,
-            contentDescription = "Checkbox",
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable(onClick = checkboxClick)
+                    .size(iconSize)
+                    .padding(iconPadding),
+                imageVector = WrSdkIcons.checkbox,
+                contentDescription = "Checkbox",
 //            contentDescription = stringResource(R.string.delete),
-            tint = tint
-        )
+                tint = tint
+            )
 
-        Spacer(modifier = Modifier.width(spaceWidth))
+            Spacer(modifier = Modifier.width(spaceWidth))
 
-        Icon(
-            modifier = Modifier
-                .clip(clipShape)
-                .clickable(onClick = listItemClick)
-                .size(iconSize)
-                .padding(iconPadding),
-            imageVector = WrSdkIcons.list,
-            contentDescription = "List item",
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable(onClick = listItemClick)
+                    .size(iconSize)
+                    .padding(iconPadding),
+                imageVector = WrSdkIcons.list,
+                contentDescription = "List item",
 //            contentDescription = stringResource(R.string.delete),
-            tint = tint
-        )
+                tint = tint
+            )
 
-        Spacer(modifier = Modifier.width(spaceWidth))
+            Spacer(modifier = Modifier.width(spaceWidth))
 
-        Icon(
-            modifier = Modifier
-                .clip(clipShape)
-                .clickable(onClick = onCopy)
-                .size(32.dp)
-                .padding(iconPadding),
-            imageVector = WrSdkIcons.copy,
-            contentDescription = "Copy",
-            tint = tint
-        )
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable(onClick = onCopy)
+                    .size(32.dp)
+                    .padding(iconPadding),
+                imageVector = WrSdkIcons.copy,
+                contentDescription = "Copy",
+                tint = tint
+            )
 
-        Spacer(modifier = Modifier.width(spaceWidth))
+            Spacer(modifier = Modifier.width(spaceWidth))
 
-        Icon(
-            modifier = Modifier
-                .clip(clipShape)
-                .clickable(onClick = onCut)
-                .size(32.dp)
-                .padding(iconPadding),
-            imageVector = Icons.Default.ContentCut,
-            contentDescription = "Cut",
-            tint = tint
-        )
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable(onClick = onCut)
+                    .size(32.dp)
+                    .padding(iconPadding),
+                imageVector = Icons.Default.ContentCut,
+                contentDescription = "Cut",
+                tint = tint
+            )
 
-        Spacer(modifier = Modifier.width(spaceWidth))
+            Spacer(modifier = Modifier.width(spaceWidth))
 
-        Icon(
-            modifier = Modifier
-                .clip(clipShape)
-                .clickable(onClick = onDelete)
-                .size(iconSize)
-                .padding(iconPadding),
-            imageVector = Icons.Default.DeleteOutline,
-            contentDescription = "Delete",
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable(onClick = onDelete)
+                    .size(iconSize)
+                    .padding(iconPadding),
+                imageVector = Icons.Default.DeleteOutline,
+                contentDescription = "Delete",
 //            contentDescription = stringResource(R.string.delete),
-            tint = tint
-        )
+                tint = tint
+            )
 
-        Spacer(modifier = Modifier.width(spaceWidth))
+            Spacer(modifier = Modifier.width(spaceWidth))
 
-        Icon(
-            modifier = Modifier
-                .clip(clipShape)
-                .clickable(onClick = onAddPage)
-                .size(iconSize)
-                .padding(iconPadding),
-            imageVector = WrSdkIcons.linkPage,
-            contentDescription = "Link to page",
-            tint = tint
-        )
-
-        Spacer(modifier = Modifier.weight(1F))
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable(onClick = onAddPage)
+                    .size(iconSize)
+                    .padding(iconPadding),
+                imageVector = WrSdkIcons.linkPage,
+                contentDescription = "Link to page",
+                tint = tint
+            )
+        }
 
         Icon(
             modifier = Modifier
@@ -181,7 +188,7 @@ fun EditionScreen(
                 .size(iconSize)
                 .padding(iconPadding),
             imageVector = WrSdkIcons.close,
-            contentDescription = "List item",
+            contentDescription = "Close",
 //            contentDescription = stringResource(R.string.delete),
             tint = tint
         )
