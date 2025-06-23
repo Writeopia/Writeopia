@@ -11,7 +11,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toFolderUi
-import io.writeopia.core.folders.repository.FolderRepository
+import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
