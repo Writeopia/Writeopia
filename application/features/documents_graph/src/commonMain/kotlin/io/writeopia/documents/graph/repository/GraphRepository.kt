@@ -1,6 +1,6 @@
 package io.writeopia.documents.graph.repository
 
-import io.writeopia.core.folders.repository.FolderRepository
+import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.documents.graph.ItemData
 import io.writeopia.sdk.models.utils.toAdjencyList
 import io.writeopia.sdk.repository.DocumentRepository
