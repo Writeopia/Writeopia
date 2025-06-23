@@ -1,0 +1,22 @@
+CREATE TABLE workspaceEntity (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  last_synced_at INTEGER NOT NULL,
+  icon TEXT,
+  icon_tint INTEGER,
+  selected
+);
+
+getWorkspaceById:
+SELECT *
+FROM workspaceEntity
+WHERE id = ?
+LIMIT 1;
+
+insert:
+INSERT INTO workspaceEntity(id, user_id, name, last_synced_at, icon, icon_tint)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET id=excluded.id, user_id=excluded.user_id, last_synced_at=excluded.last_synced_at, icon=excluded.icon,
+icon_tint=excluded.icon_tint;
