@@ -3,9 +3,9 @@ package io.writeopia.account.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.manager.AuthRepository
-import io.writeopia.common.utils.ResultData
-import io.writeopia.common.utils.toBoolean
+import io.writeopia.sdk.models.utils.toBoolean
 import io.writeopia.sdk.models.user.WriteopiaUser
+import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map

@@ -1,10 +1,10 @@
 package io.writeopia
 
 import io.writeopia.api.OllamaApi
-import io.writeopia.common.utils.ResultData
 import io.writeopia.persistence.OllamaDao
 import io.writeopia.requests.ModelsResponse
 import io.writeopia.responses.DownloadModelResponse
+import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 

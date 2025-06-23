@@ -77,7 +77,11 @@ class WriteopiaStateManager(
     private val documentRepository: DocumentRepository? = null,
     val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
     private val drawStateModify: (List<DrawStory>, Int) -> (List<DrawStory>) = StepsModifier::modify,
-    private val permanentTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number)
+    private val permanentTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number),
+    private val listTypes: Set<Int> = setOf(
+        StoryTypes.CHECK_ITEM.type.number,
+        StoryTypes.UNORDERED_LIST_ITEM.type.number,
+    )
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     private val selectionBuffer: EventBuffer<Pair<Boolean, Int>> = EventBuffer(coroutineScope)
@@ -466,6 +470,12 @@ class WriteopiaStateManager(
 
         _currentStory.value =
             writeopiaManager.changeStoryType(position, typeInfo, commandInfo, _currentStory.value)
+
+        if (listTypes.contains(typeInfo.storyType.number)) {
+            loadingAtPosition(position + 1)
+
+
+        }
     }
 
     fun removeTags(position: Int) {
@@ -820,12 +830,21 @@ class WriteopiaStateManager(
     /**
      * Adds a story in a position.
      */
-    fun addAtPosition(storyStep: StoryStep, position: Int) {
+    private fun addAtPosition(storyStep: StoryStep, position: Int) {
         if (!isEditable) return
         _currentStory.value = writeopiaManager.addAtPosition(
             _currentStory.value,
             storyStep,
             position
+        )
+    }
+
+    fun loadingAtPosition(position: Int) {
+        if (StoryTypes.LOADING.type == getStory(position)?.type) return
+
+        addAtPosition(
+            StoryStep(type = StoryTypes.LOADING.type, ephemeral = true),
+            position = position
         )
     }
 

@@ -1,7 +1,7 @@
 package io.writeopia.auth.core.manager
 
-import io.writeopia.common.utils.ResultData
 import io.writeopia.sdk.models.user.WriteopiaUser
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

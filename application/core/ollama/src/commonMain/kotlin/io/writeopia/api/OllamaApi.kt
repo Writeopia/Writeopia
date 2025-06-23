@@ -14,13 +14,13 @@ import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readUTF8Line
 import io.writeopia.app.endpoints.EndPoints
-import io.writeopia.common.utils.ResultData
 import io.writeopia.requests.DeleteModelRequest
 import io.writeopia.requests.DownloadModelRequest
 import io.writeopia.requests.ModelsResponse
 import io.writeopia.requests.OllamaGenerateRequest
 import io.writeopia.responses.DownloadModelResponse
 import io.writeopia.responses.OllamaResponse
+import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -45,7 +45,6 @@ class OllamaApi(
     private val client: HttpClient,
     private val json: Json
 ) {
-
     suspend fun generateReply(
         model: String,
         prompt: String,
