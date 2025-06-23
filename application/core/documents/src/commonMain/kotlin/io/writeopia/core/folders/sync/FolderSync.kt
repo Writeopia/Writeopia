@@ -1,14 +1,14 @@
 package io.writeopia.core.folders.sync
 
 import io.writeopia.core.folders.api.DocumentsApi
-import io.writeopia.core.folders.repository.FolderRepository
+import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
-class DocumentsSync(
+class FolderSync(
     private val documentRepository: DocumentRepository,
     private val documentsApi: DocumentsApi,
     private val documentConflictHandler: DocumentConflictHandler,
@@ -41,7 +41,7 @@ class DocumentsSync(
 //        println("Sync. lastSync: $lastSync")
 
         // First, receive the documents for the backend.
-        val response = documentsApi.getNewDocuments(
+        val response = documentsApi.getFolderNewDocuments(
             folderId,
             lastSync ?: Instant.DISTANT_PAST
         )

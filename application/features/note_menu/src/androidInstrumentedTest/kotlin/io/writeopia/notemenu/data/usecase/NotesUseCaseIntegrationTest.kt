@@ -6,7 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.core.configuration.repository.ConfigurationRoomRepository
-import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.persistence.room.WriteopiaApplicationDatabase
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem

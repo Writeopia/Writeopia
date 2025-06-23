@@ -8,10 +8,10 @@ import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.di.FoldersInjector
-import io.writeopia.core.folders.repository.FolderRepository
-import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.core.folders.repository.folder.FolderRepository
+import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.DocumentConflictHandler
-import io.writeopia.core.folders.sync.DocumentsSync
+import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.notemenu.viewmodel.ChooseNoteKmpViewModel
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
@@ -64,10 +64,10 @@ class NotesMenuKmpInjection private constructor(
     private fun provideDocumentsApi() =
         DocumentsApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
 
-    private fun provideDocumentSync(): DocumentsSync {
+    private fun provideDocumentSync(): FolderSync {
         val documentRepository = repositoryInjection.provideDocumentRepository()
 
-        return DocumentsSync(
+        return FolderSync(
             documentRepository = documentRepository,
             documentsApi = provideDocumentsApi(),
             documentConflictHandler = DocumentConflictHandler(
@@ -93,7 +93,7 @@ class NotesMenuKmpInjection private constructor(
             folderController = provideFolderStateController(),
             keyboardEventFlow = keyboardEventFlow,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
-            documentsSync = provideDocumentSync(),
+            folderSync = provideDocumentSync(),
         )
 
     @Composable
