@@ -1,5 +1,6 @@
 package io.writeopia.sdk.manager
 
+import io.writeopia.sdk.ai.AiClient
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.models.span.SpanInfo
@@ -11,7 +12,10 @@ import io.writeopia.sdk.models.command.TypeInfo
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
 import io.writeopia.sdk.utils.extensions.toEditState
@@ -28,7 +32,8 @@ class WriteopiaManager(
         stepsNormalizer = stepsNormalizer
     ),
     private val focusHandler: FocusHandler = FocusHandler(),
-    private val spanHandler: SpansHandler = SpansHandler
+    private val spanHandler: SpansHandler = SpansHandler,
+    private val aiClient: AiClient? = null
 ) {
 
     fun newDocument(
@@ -310,5 +315,26 @@ class WriteopiaManager(
             stories = newStories,
             lastEdit = LastEdit.LineEdition(position, newStories[position]!!)
         )
+    }
+
+    suspend fun generateSuggestionsList(
+        storyState: StoryState,
+        storyType: StoryType,
+        position: Int,
+        context: String,
+        model: String,
+        aiUrl: String
+    ) {
+        val suggestionsResult =
+            aiClient?.generateListItems(model = model, context = context, url = aiUrl)
+
+        if (suggestionsResult is ResultData.Complete) {
+            val suggestions = suggestionsResult.data
+            suggestions.map { suggestion ->
+                StoryStep(text = suggestion, type = storyType)
+            }.forEach { step ->
+                
+            }
+        }
     }
 }

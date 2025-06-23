@@ -4,10 +4,9 @@ import io.writeopia.sdk.models.utils.ResultData
 
 interface AiClient {
 
-    suspend fun generateReply(
+    suspend fun generateListItems(
         model: String,
-        prompt: String,
+        context: String,
         url: String
-    ): ResultData<List<String>> =
-        ResultData.Complete(listOf())
+    ): ResultData<List<String>>
 }

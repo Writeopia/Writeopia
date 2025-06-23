@@ -30,6 +30,7 @@ kotlin {
             dependencies {
                 implementation(project(":common:endpoints"))
                 implementation(project(":writeopia_models"))
+                implementation(project(":writeopia"))
 
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:utils"))

@@ -45,6 +45,7 @@ class OllamaApi(
     private val client: HttpClient,
     private val json: Json
 ) {
+
     suspend fun generateReply(
         model: String,
         prompt: String,
