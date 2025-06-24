@@ -38,7 +38,7 @@ object PromptService {
                 )
             )
         } else {
-            val model = ollamaRepository.getSelectedModel("disconnected_user")
+            val model = ollamaRepository.getSelectedModel(userId)
                 ?: return
 
             promptFn(model, text, url).handleStream(writeopiaManager, position)
@@ -78,7 +78,7 @@ object PromptService {
                     )
                 )
             } else {
-                val model = ollamaRepository.getSelectedModel("disconnected_user")
+                val model = ollamaRepository.getSelectedModel(userId)
                     ?: return
 
                 ollamaRepository.streamReply(model, prompt, url)

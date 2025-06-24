@@ -32,7 +32,7 @@ class WriteopiaManager(
     ),
     private val focusHandler: FocusHandler = FocusHandler(),
     private val spanHandler: SpansHandler = SpansHandler,
-    private val aiClient: AiClient? = null
+    private val aiClient: AiClient?
 ) {
 
     fun newDocument(
@@ -323,22 +323,28 @@ class WriteopiaManager(
         context: String,
         userId: String,
     ): StoryState {
+        println("generateSuggestionsList")
         val model = aiClient?.getSelectedModel(userId) ?: return storyState
         val url = aiClient.getConfiguredUrl(userId) ?: return storyState
+
+        println("generateSuggestionsList1")
 
         val suggestionsResult =
             aiClient.generateListItems(model = model, context = context, url = url)
 
         return if (suggestionsResult is ResultData.Complete) {
+            println("generateSuggestionsList1 compltee")
             val suggestions = suggestionsResult.data
             val newState = suggestions.map { suggestion ->
                 StoryStep(text = suggestion, type = storyType)
             }.fold(storyState) { state, story ->
+                println("story: ${story.text}")
                 addAtPosition(state, story, position)
             }
 
             newState
         } else {
+            println("generateSuggestionsList1 else")
             storyState
         }
     }

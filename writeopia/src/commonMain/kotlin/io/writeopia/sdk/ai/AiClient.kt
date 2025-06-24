@@ -12,5 +12,5 @@ interface AiClient {
 
     suspend fun getSelectedModel(userId: String): String?
 
-    suspend fun getConfiguredUrl(id: String = "disconnected_user"): String?
+    suspend fun getConfiguredUrl(id: String): String?
 }

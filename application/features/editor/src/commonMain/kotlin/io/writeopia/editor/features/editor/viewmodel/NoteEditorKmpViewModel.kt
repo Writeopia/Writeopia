@@ -586,7 +586,7 @@ class NoteEditorKmpViewModel(
             _loadingState.value = true
 
             val document = writeopiaManager.getDocument()
-            val path = workspaceConfigRepository.loadWorkspacePath("disconnected_user")
+            val path = workspaceConfigRepository.loadWorkspacePath(authRepository.getUser().id)
 
             // Todo: When path is null, the user should be asked to configure it.
             if (path != null) {

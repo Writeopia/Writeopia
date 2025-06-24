@@ -25,6 +25,8 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
 private const val SUMMARY_PROMPT =
@@ -46,15 +48,18 @@ class OllamaApi(
     private val json: Json
 ) {
 
+    private val generateReplyMutex = Mutex()
+
     suspend fun generateReply(
         model: String,
         prompt: String,
         url: String
-    ): OllamaResponse =
+    ): OllamaResponse = generateReplyMutex.withLock {
         client.post("$url/api/${EndPoints.ollamaGenerate()}") {
             contentType(ContentType.Application.Json)
             setBody(OllamaGenerateRequest(model, prompt, false))
         }.body<OllamaResponse>()
+    }
 
     fun downloadModel(
         model: String,

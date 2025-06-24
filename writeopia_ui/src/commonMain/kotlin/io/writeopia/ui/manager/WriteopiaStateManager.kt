@@ -476,7 +476,7 @@ class WriteopiaStateManager(
                 val addingPosition = position + 1
                 loadingAtPosition(addingPosition)
 
-                writeopiaManager.generateSuggestionsList(
+                _currentStory.value = writeopiaManager.generateSuggestionsList(
                     storyState = _currentStory.value,
                     storyType = typeInfo.storyType,
                     position = addingPosition,

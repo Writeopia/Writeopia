@@ -40,7 +40,9 @@ class EditorKmpInjector private constructor(
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
 
-    private fun provideWriteopiaManager(): WriteopiaManager = WriteopiaManager()
+    private fun provideWriteopiaManager(): WriteopiaManager = WriteopiaManager(
+        aiClient = ollamaInjection?.provideRepository()
+    )
 
     private fun provideWriteopiaStateManager(
         authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),

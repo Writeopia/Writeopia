@@ -322,7 +322,7 @@ class GlobalShellKmpViewModel(
             val uiConfiguration =
                 uiConfigurationRepo.getUiConfigurationEntity(authRepository.getUser().id)
                     ?: UiConfiguration(
-                        userId = "disconnected_user",
+                        userId = getUserId(),
                         colorThemeOption = ColorThemeOption.SYSTEM,
                         sideMenuWidth = width
                     )
@@ -381,13 +381,13 @@ class GlobalShellKmpViewModel(
 
     override fun changeOllamaUrl(url: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            ollamaRepository.saveOllamaUrl(authRepository.getUser().id, url)
+            ollamaRepository.saveOllamaUrl(getUserId(), url)
         }
     }
 
     override fun selectOllamaModel(model: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            ollamaRepository.saveOllamaSelectedModel(authRepository.getUser().id, model)
+            ollamaRepository.saveOllamaSelectedModel(getUserId(), model)
         }
     }
 
@@ -399,7 +399,7 @@ class GlobalShellKmpViewModel(
         if (model.isEmpty()) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val url = ollamaRepository.getConfiguredUrl()?.trim()
+            val url = ollamaRepository.getConfiguredUrl(getUserId())?.trim()
 
             if (url != null) {
                 ollamaRepository.downloadModel(model, url)
@@ -428,7 +428,8 @@ class GlobalShellKmpViewModel(
 
     override fun deleteModel(model: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            val url = ollamaRepository.getConfiguredUrl()?.trim()
+            val url = ollamaRepository.getConfiguredUrl(getUserId())?.trim()
+            println("deleteModel. url: $url")
 
             if (url != null) {
                 ollamaRepository.deleteModel(model, url)

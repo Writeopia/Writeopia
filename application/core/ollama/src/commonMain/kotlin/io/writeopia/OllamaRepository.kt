@@ -11,10 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val SUGGESTION_PROMPT =
     """
-        Generate a list of options.
-        Start each options with a line break and "-".
-        Generate at most 5 items.
-        Use this context to generate the list:
+        Generate a list of options. Start each options with a line break and "-". Generate at most 5 items. Use this context to generate the list:
     """
 
 class OllamaRepository(
@@ -30,10 +27,15 @@ class OllamaRepository(
         val result = ollamaApi.generateReply(model, "$SUGGESTION_PROMPT $context", url)
 
         return if (result.done == true && result.response?.isNotEmpty() == true) {
+            println("Result: ${result.response}")
             result.response
                 .split("\n")
-                .filter { line -> line.startsWith("-") }
-                .let { list -> ResultData.Complete(list) }
+                .filter { line -> line.trim().startsWith("-") }
+                .filter { line -> line.isNotEmpty() }
+                .let { list ->
+                    println("list: ${list.joinToString()}")
+                    ResultData.Complete(list)
+                }
         } else {
             ResultData.Error()
         }

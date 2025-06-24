@@ -496,7 +496,7 @@ internal class ChooseNoteKmpViewModel(
                 val imagePath = externalImage.fullPath
 
                 val path = workspaceConfigRepository
-                    .loadWorkspacePath("disconnected_user")
+                    .loadWorkspacePath(authRepository.getUser().id)
                     ?.let { workspace ->
                         SaveImage.saveLocally(
                             imagePath,
