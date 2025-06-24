@@ -399,7 +399,7 @@ class GlobalShellKmpViewModel(
         if (model.isEmpty()) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val url = ollamaRepository.getConfiguredOllamaUrl()?.trim()
+            val url = ollamaRepository.getConfiguredUrl()?.trim()
 
             if (url != null) {
                 ollamaRepository.downloadModel(model, url)
@@ -428,7 +428,7 @@ class GlobalShellKmpViewModel(
 
     override fun deleteModel(model: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            val url = ollamaRepository.getConfiguredOllamaUrl()?.trim()
+            val url = ollamaRepository.getConfiguredUrl()?.trim()
 
             if (url != null) {
                 ollamaRepository.deleteModel(model, url)

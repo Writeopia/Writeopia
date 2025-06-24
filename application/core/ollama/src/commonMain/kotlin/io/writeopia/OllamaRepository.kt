@@ -79,7 +79,7 @@ class OllamaRepository(
         refreshConfiguration(id)
     }
 
-    suspend fun getOllamaSelectedModel(userId: String): String? =
+    override suspend fun getSelectedModel(userId: String): String? =
         ollamaDao?.getConfiguration(userId)?.selectedModel
 
     fun listenForConfiguration(id: String) =
@@ -89,7 +89,7 @@ class OllamaRepository(
         ollamaDao?.refreshStateOfId(id)
     }
 
-    suspend fun getConfiguredOllamaUrl(id: String = "disconnected_user"): String? =
+    override suspend fun getConfiguredUrl(id: String): String? =
         ollamaDao?.getConfiguration(id)?.url
 
     suspend fun deleteModel(model: String, url: String): ResultData<Boolean> =

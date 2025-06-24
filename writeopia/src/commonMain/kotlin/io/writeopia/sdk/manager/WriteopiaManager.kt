@@ -15,7 +15,6 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
-import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
 import io.writeopia.sdk.utils.extensions.toEditState
@@ -322,19 +321,25 @@ class WriteopiaManager(
         storyType: StoryType,
         position: Int,
         context: String,
-        model: String,
-        aiUrl: String
-    ) {
-        val suggestionsResult =
-            aiClient?.generateListItems(model = model, context = context, url = aiUrl)
+        userId: String,
+    ): StoryState {
+        val model = aiClient?.getSelectedModel(userId) ?: return storyState
+        val url = aiClient.getConfiguredUrl(userId) ?: return storyState
 
-        if (suggestionsResult is ResultData.Complete) {
+        val suggestionsResult =
+            aiClient.generateListItems(model = model, context = context, url = url)
+
+        return if (suggestionsResult is ResultData.Complete) {
             val suggestions = suggestionsResult.data
-            suggestions.map { suggestion ->
+            val newState = suggestions.map { suggestion ->
                 StoryStep(text = suggestion, type = storyType)
-            }.forEach { step ->
-                
+            }.fold(storyState) { state, story ->
+                addAtPosition(state, story, position)
             }
+
+            newState
+        } else {
+            storyState
         }
     }
 }

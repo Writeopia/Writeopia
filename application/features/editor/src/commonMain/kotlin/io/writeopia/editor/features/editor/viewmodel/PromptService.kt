@@ -25,7 +25,7 @@ object PromptService {
         val position =
             writeopiaManager.positionAfterSelection() ?: writeopiaManager.lastPosition()
 
-        val url = ollamaRepository.getConfiguredOllamaUrl(userId)?.trim()
+        val url = ollamaRepository.getConfiguredUrl(userId)?.trim()
 
         if (url == null) {
             writeopiaManager.changeStoryState(
@@ -38,7 +38,7 @@ object PromptService {
                 )
             )
         } else {
-            val model = ollamaRepository.getOllamaSelectedModel("disconnected_user")
+            val model = ollamaRepository.getSelectedModel("disconnected_user")
                 ?: return
 
             promptFn(model, text, url).handleStream(writeopiaManager, position)
@@ -65,7 +65,7 @@ object PromptService {
         val position = promptPosition ?: writeopiaManager.getNextPosition()
 
         if (prompt != null && position != null) {
-            val url = ollamaRepository.getConfiguredOllamaUrl(userId)?.trim()
+            val url = ollamaRepository.getConfiguredUrl(userId)?.trim()
 
             if (url == null) {
                 writeopiaManager.changeStoryState(
@@ -78,7 +78,7 @@ object PromptService {
                     )
                 )
             } else {
-                val model = ollamaRepository.getOllamaSelectedModel("disconnected_user")
+                val model = ollamaRepository.getSelectedModel("disconnected_user")
                     ?: return
 
                 ollamaRepository.streamReply(model, prompt, url)

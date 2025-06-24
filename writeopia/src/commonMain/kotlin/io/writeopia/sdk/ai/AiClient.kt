@@ -9,4 +9,8 @@ interface AiClient {
         context: String,
         url: String
     ): ResultData<List<String>>
+
+    suspend fun getSelectedModel(userId: String): String?
+
+    suspend fun getConfiguredUrl(id: String = "disconnected_user"): String?
 }

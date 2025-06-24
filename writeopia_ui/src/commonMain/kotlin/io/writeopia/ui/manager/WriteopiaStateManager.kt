@@ -472,9 +472,18 @@ class WriteopiaStateManager(
             writeopiaManager.changeStoryType(position, typeInfo, commandInfo, _currentStory.value)
 
         if (listTypes.contains(typeInfo.storyType.number)) {
-            loadingAtPosition(position + 1)
+            coroutineScope.launch {
+                val addingPosition = position + 1
+                loadingAtPosition(addingPosition)
 
-
+                writeopiaManager.generateSuggestionsList(
+                    storyState = _currentStory.value,
+                    storyType = typeInfo.storyType,
+                    position = addingPosition,
+                    context = getCurrentText() ?: "",
+                    userId = getUserId(),
+                )
+            }
         }
     }
 
