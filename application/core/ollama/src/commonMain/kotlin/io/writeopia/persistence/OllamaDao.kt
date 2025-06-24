@@ -7,7 +7,7 @@ interface OllamaDao {
 
     suspend fun getConfiguration(id: String = "disconnected_user"): OllamaConfig?
 
-    suspend fun saveConfiguration(ollamaConfig: OllamaConfig)
+    suspend fun saveConfiguration(id: String, ollamaConfig: OllamaConfig)
 
     fun listenForConfiguration(id: String = "disconnected_user"): StateFlow<OllamaConfig?>
 

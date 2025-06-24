@@ -11,12 +11,12 @@ class OllamaSqlDao(private val ollamaQueries: OllamaEntityQueries?) : OllamaDao 
 
     override suspend fun getConfiguration(id: String): OllamaConfig? =
         ollamaQueries?.query(id)?.executeAsOneOrNull()?.let { entity ->
-            OllamaConfig(url = entity.url ?: "", selectedModel = entity.selected_model ?: "")
+            OllamaConfig(url = entity.url, selectedModel = entity.selected_model ?: "")
         }
 
-    override suspend fun saveConfiguration(ollamaConfig: OllamaConfig) {
+    override suspend fun saveConfiguration(id: String, ollamaConfig: OllamaConfig) {
         ollamaQueries?.insert(
-            id = "disconnected_user",
+            id = id,
             url = ollamaConfig.url,
             selected_model = ollamaConfig.selectedModel
         )
@@ -28,7 +28,7 @@ class OllamaSqlDao(private val ollamaQueries: OllamaEntityQueries?) : OllamaDao 
     ) {
         val config = getConfiguration(id) ?: OllamaConfig()
 
-        saveConfiguration(ollamaConfigFn(config))
+        saveConfiguration(id, ollamaConfigFn(config))
     }
 
     override fun listenForConfiguration(id: String): StateFlow<OllamaConfig?> {
