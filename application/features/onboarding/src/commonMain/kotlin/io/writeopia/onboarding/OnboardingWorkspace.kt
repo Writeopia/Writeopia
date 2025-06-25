@@ -33,11 +33,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.writeopia.account.ui.DownloadModels
-import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrImages
 import io.writeopia.resources.WrStrings
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 

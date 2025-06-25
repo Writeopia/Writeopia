@@ -35,9 +35,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import io.writeopia.auth.utils.loginScreen
-import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 

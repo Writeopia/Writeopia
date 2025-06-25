@@ -31,6 +31,7 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.components.uiToolingPreview)
 
+            implementation(project(":writeopia_models"))
             implementation(project(":application:core:theme"))
             implementation(project(":application:core:utils"))
             implementation(project(":application:features:account"))

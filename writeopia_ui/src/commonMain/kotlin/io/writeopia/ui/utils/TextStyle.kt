@@ -2,21 +2,28 @@ package io.writeopia.ui.utils
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.sp
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.Tag
+import io.writeopia.sdk.models.story.TagInfo
 
 @Composable
-fun defaultTextStyle(storyStep: StoryStep, fontFamily: FontFamily? = null) =
-    TextStyle(
+fun defaultTextStyle(storyStep: StoryStep, fontFamily: FontFamily? = null): TextStyle {
+    val isAiSuggestion = storyStep.tags.contains(TagInfo(Tag.AI_SUGGESTION))
+
+    return TextStyle(
         textDecoration = if (storyStep.checked == true) TextDecoration.LineThrough else null,
-        color = MaterialTheme.colorScheme.onBackground,
+        color = if (isAiSuggestion) Color.Gray else MaterialTheme.colorScheme.onBackground,
         fontSize = textSizeFromTags(storyStep.tags.map { it.tag }),
-        fontFamily = fontFamily
+        fontFamily = fontFamily,
+        fontStyle = if (isAiSuggestion) FontStyle.Italic else FontStyle.Normal
     )
+}
 
 @Composable
 fun previewTextStyle(storyStep: StoryStep, fontFamily: FontFamily? = null) =

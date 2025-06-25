@@ -154,6 +154,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 false
             }
 
+            KeyboardCommands.isAcceptAiEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.ACCEPT_AI)
+                false
+            }
+
             KeyboardCommands.isUndoKeyboardEvent(keyEvent) -> {
                 sendEvent(KeyboardEvent.UNDO)
                 false

@@ -31,6 +31,18 @@ fun <T> Map<Int, T>.addElementInPosition(
     return mutable.associateWithPosition()
 }
 
+fun <T> Map<Int, T>.removeElementInPosition(position: Int): Map<Int, T> {
+    val mutable = this.values.toMutableList()
+    mutable.removeAt(position)
+    // Todo: associateWithPosition doesn't need to start in the 0 position here
+    return mutable.associateWithPosition()
+}
+
+fun <T> Map<Int, T>.removeBy(predicate: (T) -> Boolean): Map<Int, T> =
+    this.values
+        .filterNot(predicate)
+        .associateWithPosition()
+
 fun <T> Map<Int, T>.addElementsInPosition(
     elements: Iterable<T>,
     position: Int

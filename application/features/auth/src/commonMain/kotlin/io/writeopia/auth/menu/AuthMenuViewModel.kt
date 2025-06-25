@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
-import io.writeopia.common.utils.ResultData
-import io.writeopia.common.utils.map
+import io.writeopia.sdk.models.utils.map
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.data.toModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow

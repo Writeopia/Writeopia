@@ -13,11 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.writeopia.account.viewmodel.AccountMenuViewModel
-import io.writeopia.common.utils.ResultData
-import io.writeopia.common.utils.toBoolean
+import io.writeopia.sdk.models.utils.toBoolean
 import io.writeopia.commonui.buttons.AccentButton
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
+import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

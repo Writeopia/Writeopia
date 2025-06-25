@@ -8,13 +8,12 @@ import io.writeopia.api.OllamaApi
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.NotesNavigation
-import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.common.utils.collections.traverse
 import io.writeopia.common.utils.download.DownloadParser
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.IconChange
-import io.writeopia.common.utils.map
+import io.writeopia.sdk.models.utils.map
 import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
@@ -33,6 +32,7 @@ import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.user.WriteopiaUser
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -322,7 +322,7 @@ class GlobalShellKmpViewModel(
             val uiConfiguration =
                 uiConfigurationRepo.getUiConfigurationEntity(authRepository.getUser().id)
                     ?: UiConfiguration(
-                        userId = "disconnected_user",
+                        userId = getUserId(),
                         colorThemeOption = ColorThemeOption.SYSTEM,
                         sideMenuWidth = width
                     )
@@ -381,13 +381,13 @@ class GlobalShellKmpViewModel(
 
     override fun changeOllamaUrl(url: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            ollamaRepository.saveOllamaUrl(authRepository.getUser().id, url)
+            ollamaRepository.saveOllamaUrl(getUserId(), url)
         }
     }
 
     override fun selectOllamaModel(model: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            ollamaRepository.saveOllamaSelectedModel(authRepository.getUser().id, model)
+            ollamaRepository.saveOllamaSelectedModel(getUserId(), model)
         }
     }
 
@@ -399,7 +399,7 @@ class GlobalShellKmpViewModel(
         if (model.isEmpty()) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val url = ollamaRepository.getConfiguredOllamaUrl()?.trim()
+            val url = ollamaRepository.getConfiguredUrl(getUserId())?.trim()
 
             if (url != null) {
                 ollamaRepository.downloadModel(model, url)
@@ -428,7 +428,8 @@ class GlobalShellKmpViewModel(
 
     override fun deleteModel(model: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            val url = ollamaRepository.getConfiguredOllamaUrl()?.trim()
+            val url = ollamaRepository.getConfiguredUrl(getUserId())?.trim()
+            println("deleteModel. url: $url")
 
             if (url != null) {
                 ollamaRepository.deleteModel(model, url)

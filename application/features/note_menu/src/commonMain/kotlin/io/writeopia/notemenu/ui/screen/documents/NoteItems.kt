@@ -53,7 +53,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.writeopia.common.utils.ResultData
 import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.icons.WrIcons.folder
@@ -65,6 +64,7 @@ import io.writeopia.notemenu.utils.minimalNoteCardWidth
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.model.draganddrop.DropInfo
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.components.SwipeBox
 import io.writeopia.ui.components.multiselection.SelectableByDrag

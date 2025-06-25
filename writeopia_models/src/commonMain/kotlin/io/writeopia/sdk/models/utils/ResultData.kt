@@ -1,4 +1,4 @@
-package io.writeopia.common.utils
+package io.writeopia.sdk.models.utils
 
 sealed interface ResultData<T> {
     class Idle<T> : ResultData<T>

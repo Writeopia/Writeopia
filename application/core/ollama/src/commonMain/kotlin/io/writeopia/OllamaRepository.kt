@@ -1,17 +1,55 @@
 package io.writeopia
 
 import io.writeopia.api.OllamaApi
-import io.writeopia.common.utils.ResultData
 import io.writeopia.persistence.OllamaDao
 import io.writeopia.requests.ModelsResponse
 import io.writeopia.responses.DownloadModelResponse
+import io.writeopia.sdk.ai.AiClient
+import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+
+private const val SUGGESTION_PROMPT =
+    """
+        Generate a list of options. Start each options with a line break and "-". Generate at most 5 items. Use this context to generate the list:
+    """
 
 class OllamaRepository(
     private val ollamaApi: OllamaApi,
     private val ollamaDao: OllamaDao?
-) {
+) : AiClient {
+
+    private var generatingListItems = false
+
+    override suspend fun generateListItems(
+        model: String,
+        context: String,
+        url: String
+    ): ResultData<List<String>> {
+        try {
+            if (generatingListItems) return ResultData.Loading()
+
+            generatingListItems = true
+            val result = ollamaApi.generateReply(model, "$SUGGESTION_PROMPT $context", url)
+
+            return if (result.done == true && result.response?.isNotEmpty() == true) {
+                result.response
+                    .split("\n")
+                    .filter { line -> line.trim().startsWith("-") }
+                    .filter { line -> line.isNotEmpty() }
+                    .map { line -> line.substring(1).trim() }
+                    .let { list ->
+                        ResultData.Complete(list)
+                    }
+            } else {
+                ResultData.Error()
+            }
+        } catch (e: Exception) {
+            return ResultData.Error()
+        } finally {
+            generatingListItems = false
+        }
+    }
 
     suspend fun generateReply(model: String, prompt: String, url: String): String {
         return ollamaApi.generateReply(model, prompt, url).response ?: ""
@@ -53,7 +91,7 @@ class OllamaRepository(
         refreshConfiguration(id)
     }
 
-    suspend fun getOllamaSelectedModel(userId: String): String? =
+    override suspend fun getSelectedModel(userId: String): String? =
         ollamaDao?.getConfiguration(userId)?.selectedModel
 
     fun listenForConfiguration(id: String) =
@@ -63,7 +101,7 @@ class OllamaRepository(
         ollamaDao?.refreshStateOfId(id)
     }
 
-    suspend fun getConfiguredOllamaUrl(id: String = "disconnected_user"): String? =
+    override suspend fun getConfiguredUrl(id: String): String? =
         ollamaDao?.getConfiguration(id)?.url
 
     suspend fun deleteModel(model: String, url: String): ResultData<Boolean> =

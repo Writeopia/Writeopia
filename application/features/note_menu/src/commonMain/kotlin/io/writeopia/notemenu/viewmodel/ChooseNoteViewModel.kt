@@ -1,12 +1,12 @@
 package io.writeopia.notemenu.viewmodel
 
-import io.writeopia.common.utils.ResultData
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.sorting.OrderBy
+import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 

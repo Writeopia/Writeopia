@@ -1,5 +1,6 @@
 package io.writeopia.sdk.manager
 
+import io.writeopia.sdk.ai.AiClient
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.models.span.SpanInfo
@@ -11,7 +12,11 @@ import io.writeopia.sdk.models.command.TypeInfo
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.story.Tag
+import io.writeopia.sdk.models.story.TagInfo
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
 import io.writeopia.sdk.utils.extensions.toEditState
@@ -28,7 +33,8 @@ class WriteopiaManager(
         stepsNormalizer = stepsNormalizer
     ),
     private val focusHandler: FocusHandler = FocusHandler(),
-    private val spanHandler: SpansHandler = SpansHandler
+    private val spanHandler: SpansHandler = SpansHandler,
+    private val aiClient: AiClient? = null
 ) {
 
     fun newDocument(
@@ -292,6 +298,16 @@ class WriteopiaManager(
         )
     }
 
+    fun removeAtPosition(storyState: StoryState, position: Int): StoryState {
+        val newStory = contentHandler.removeContent(storyState.stories, position)
+        return storyState.copy(stories = newStory)
+    }
+
+    fun removeBy(storyState: StoryState, predicate: (StoryStep) -> Boolean): StoryState {
+        val newStory = contentHandler.removeBy(storyState.stories, predicate)
+        return storyState.copy(stories = newStory)
+    }
+
     fun addDocumentLink(
         storyState: StoryState,
         position: Int,
@@ -310,5 +326,37 @@ class WriteopiaManager(
             stories = newStories,
             lastEdit = LastEdit.LineEdition(position, newStories[position]!!)
         )
+    }
+
+    suspend fun generateSuggestionsList(
+        storyState: () -> StoryState,
+        storyType: StoryType,
+        position: Int,
+        context: String,
+        userId: String,
+    ): StoryState {
+        val model = aiClient?.getSelectedModel(userId) ?: return storyState()
+        val url = aiClient.getConfiguredUrl(userId) ?: return storyState()
+
+        val suggestionsResult =
+            aiClient.generateListItems(model = model, context = context, url = url)
+
+        return if (suggestionsResult is ResultData.Complete) {
+            val suggestions = suggestionsResult.data
+            suggestions.map { suggestion ->
+                StoryStep(text = suggestion, type = storyType)
+            }.fold(storyState()) { state, story ->
+                addAtPosition(
+                    state,
+                    story.copy(
+                        ephemeral = true,
+                        tags = story.tags + TagInfo(Tag.AI_SUGGESTION)
+                    ),
+                    position
+                )
+            }.copy(lastEdit = LastEdit.Whole)
+        } else {
+            storyState()
+        }
     }
 }

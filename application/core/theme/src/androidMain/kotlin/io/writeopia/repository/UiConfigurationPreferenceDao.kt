@@ -31,7 +31,7 @@ class UiConfigurationPreferenceDao(
 
     override suspend fun getConfigurationByUserId(userId: String): UiConfigurationEntity =
         UiConfigurationEntity(
-            userId = "disconnected_user",
+            userId = userId,
             sharedPreferences.getString(
                 COLOR_THEME_OPTION,
                 ColorThemeOption.LIGHT.theme
@@ -44,7 +44,7 @@ class UiConfigurationPreferenceDao(
 
     override fun listenForConfigurationByUserId(userId: String): Flow<UiConfigurationEntity?> {
         runBlocking {
-            getConfigurationByUserId("disconnected_user").let {
+            getConfigurationByUserId(userId).let {
                 themeState.value = it
             }
         }

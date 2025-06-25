@@ -77,7 +77,11 @@ class WriteopiaStateManager(
     private val documentRepository: DocumentRepository? = null,
     val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
     private val drawStateModify: (List<DrawStory>, Int) -> (List<DrawStory>) = StepsModifier::modify,
-    private val permanentTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number)
+    private val permanentTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number),
+    private val listTypes: Set<Int> = setOf(
+        StoryTypes.CHECK_ITEM.type.number,
+        StoryTypes.UNORDERED_LIST_ITEM.type.number,
+    )
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     private val selectionBuffer: EventBuffer<Pair<Boolean, Int>> = EventBuffer(coroutineScope)
@@ -123,6 +127,14 @@ class WriteopiaStateManager(
 
                             KeyboardEvent.BOX -> {
                                 toggleHighLightBlock()
+                            }
+
+                            KeyboardEvent.CANCEL -> {
+                                cancelSuggestions()
+                            }
+
+                            KeyboardEvent.ACCEPT_AI -> {
+                                acceptSuggestions()
                             }
 
                             else -> {}
@@ -387,6 +399,29 @@ class WriteopiaStateManager(
         }
     }
 
+    fun cancelSuggestions() {
+        _currentStory.value =
+            writeopiaManager.removeBy(_currentStory.value) { storyStep ->
+                storyStep.tags.contains(TagInfo(Tag.AI_SUGGESTION))
+            }
+    }
+
+    fun acceptSuggestions() {
+        val newStories = getStories().mapValues { (_, storyStep) ->
+            if (storyStep.tags.contains(TagInfo(Tag.AI_SUGGESTION))) {
+                storyStep.copy(
+                    tags = storyStep.tags.filterNot { tagInfo ->
+                        tagInfo.tag == Tag.AI_SUGGESTION
+                    }.toSet()
+                )
+            } else {
+                storyStep
+            }
+        }
+
+        _currentStory.value = _currentStory.value.copy(newStories)
+    }
+
     fun toggleTagForPosition(position: Int, tag: TagInfo, commandInfo: CommandInfo? = null) {
         if (!isEditable) return
         val story = getStory(position)
@@ -466,6 +501,22 @@ class WriteopiaStateManager(
 
         _currentStory.value =
             writeopiaManager.changeStoryType(position, typeInfo, commandInfo, _currentStory.value)
+
+        if (listTypes.contains(typeInfo.storyType.number)) {
+            coroutineScope.launch {
+                val newState = writeopiaManager.generateSuggestionsList(
+                    storyState = { _currentStory.value },
+                    storyType = typeInfo.storyType,
+                    position = position + 1,
+                    context = getCurrentText() ?: "",
+                    userId = getUserId(),
+                )
+
+                if (getCurrentStory()?.type == typeInfo.storyType) {
+                    _currentStory.value = newState
+                }
+            }
+        }
     }
 
     fun removeTags(position: Int) {
@@ -820,11 +871,28 @@ class WriteopiaStateManager(
     /**
      * Adds a story in a position.
      */
-    fun addAtPosition(storyStep: StoryStep, position: Int) {
+    private fun addAtPosition(storyStep: StoryStep, position: Int) {
         if (!isEditable) return
         _currentStory.value = writeopiaManager.addAtPosition(
             _currentStory.value,
             storyStep,
+            position
+        )
+    }
+
+    fun loadingAtPosition(position: Int) {
+        if (StoryTypes.LOADING.type == getStory(position)?.type) return
+
+        addAtPosition(
+            StoryStep(type = StoryTypes.LOADING.type, ephemeral = true),
+            position = position
+        )
+    }
+
+    fun removeAtPosition(position: Int) {
+        if (!isEditable) return
+        _currentStory.value = writeopiaManager.removeAtPosition(
+            _currentStory.value,
             position
         )
     }

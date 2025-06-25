@@ -1,10 +1,10 @@
 package io.writeopia.editor.features.editor.viewmodel
 
 import io.writeopia.OllamaRepository
-import io.writeopia.common.utils.ResultData
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -25,7 +25,7 @@ object PromptService {
         val position =
             writeopiaManager.positionAfterSelection() ?: writeopiaManager.lastPosition()
 
-        val url = ollamaRepository.getConfiguredOllamaUrl(userId)?.trim()
+        val url = ollamaRepository.getConfiguredUrl(userId)?.trim()
 
         if (url == null) {
             writeopiaManager.changeStoryState(
@@ -38,7 +38,7 @@ object PromptService {
                 )
             )
         } else {
-            val model = ollamaRepository.getOllamaSelectedModel("disconnected_user")
+            val model = ollamaRepository.getSelectedModel(userId)
                 ?: return
 
             promptFn(model, text, url).handleStream(writeopiaManager, position)
@@ -65,7 +65,7 @@ object PromptService {
         val position = promptPosition ?: writeopiaManager.getNextPosition()
 
         if (prompt != null && position != null) {
-            val url = ollamaRepository.getConfiguredOllamaUrl(userId)?.trim()
+            val url = ollamaRepository.getConfiguredUrl(userId)?.trim()
 
             if (url == null) {
                 writeopiaManager.changeStoryState(
@@ -78,7 +78,7 @@ object PromptService {
                     )
                 )
             } else {
-                val model = ollamaRepository.getOllamaSelectedModel("disconnected_user")
+                val model = ollamaRepository.getSelectedModel(userId)
                     ?: return
 
                 ollamaRepository.streamReply(model, prompt, url)
@@ -92,37 +92,28 @@ object PromptService {
         position: Int
     ) {
         this.onStart {
-            writeopiaManager.addAtPosition(
-                storyStep = StoryStep(
-                    type = StoryTypes.LOADING.type,
-                    ephemeral = true
+            writeopiaManager.loadingAtPosition(position)
+        }.onCompletion {
+            writeopiaManager.trackState()
+        }.map { result ->
+            when (result) {
+                is ResultData.Complete -> result.data
+                is ResultData.Error -> "Error. Message: ${result.exception?.message}"
+                is ResultData.Loading,
+                is ResultData.Idle,
+                is ResultData.InProgress -> ""
+            }
+        }.collect { resultText ->
+            writeopiaManager.changeStoryState(
+                Action.StoryStateChange(
+                    storyStep = StoryStep(
+                        type = StoryTypes.AI_ANSWER.type,
+                        text = resultText
+                    ),
+                    position = position,
                 ),
-                position = position
+                trackIt = false
             )
         }
-            .onCompletion {
-                writeopiaManager.trackState()
-            }
-            .map { result ->
-                when (result) {
-                    is ResultData.Complete -> result.data
-                    is ResultData.Error -> "Error. Message: ${result.exception?.message}"
-                    is ResultData.Loading,
-                    is ResultData.Idle,
-                    is ResultData.InProgress -> ""
-                }
-            }
-            .collect { resultText ->
-                writeopiaManager.changeStoryState(
-                    Action.StoryStateChange(
-                        storyStep = StoryStep(
-                            type = StoryTypes.AI_ANSWER.type,
-                            text = resultText
-                        ),
-                        position = position,
-                    ),
-                    trackIt = false
-                )
-            }
     }
 }
