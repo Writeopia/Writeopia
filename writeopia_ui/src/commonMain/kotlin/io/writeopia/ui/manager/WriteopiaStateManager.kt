@@ -129,6 +129,14 @@ class WriteopiaStateManager(
                                 toggleHighLightBlock()
                             }
 
+                            KeyboardEvent.CANCEL -> {
+                                cancelSuggestions()
+                            }
+
+                            KeyboardEvent.ACCEPT_AI -> {
+                                acceptSuggestions()
+                            }
+
                             else -> {}
                         }
                     }
@@ -391,6 +399,29 @@ class WriteopiaStateManager(
         }
     }
 
+    fun cancelSuggestions() {
+        _currentStory.value =
+            writeopiaManager.removeBy(_currentStory.value) { storyStep ->
+                storyStep.tags.contains(TagInfo(Tag.AI_SUGGESTION))
+            }
+    }
+
+    fun acceptSuggestions() {
+        val newStories = getStories().mapValues { (_, storyStep) ->
+            if (storyStep.tags.contains(TagInfo(Tag.AI_SUGGESTION))) {
+                storyStep.copy(
+                    tags = storyStep.tags.filterNot { tagInfo ->
+                        tagInfo.tag == Tag.AI_SUGGESTION
+                    }.toSet()
+                )
+            } else {
+                storyStep
+            }
+        }
+
+        _currentStory.value = _currentStory.value.copy(newStories)
+    }
+
     fun toggleTagForPosition(position: Int, tag: TagInfo, commandInfo: CommandInfo? = null) {
         if (!isEditable) return
         val story = getStory(position)
@@ -473,16 +504,17 @@ class WriteopiaStateManager(
 
         if (listTypes.contains(typeInfo.storyType.number)) {
             coroutineScope.launch {
-                val addingPosition = position + 1
-                loadingAtPosition(addingPosition)
-
-                _currentStory.value = writeopiaManager.generateSuggestionsList(
-                    storyState = _currentStory.value,
+                val newState = writeopiaManager.generateSuggestionsList(
+                    storyState = { _currentStory.value },
                     storyType = typeInfo.storyType,
-                    position = addingPosition,
+                    position = position + 1,
                     context = getCurrentText() ?: "",
                     userId = getUserId(),
                 )
+
+                if (getCurrentStory()?.type == typeInfo.storyType) {
+                    _currentStory.value = newState
+                }
             }
         }
     }
@@ -854,6 +886,14 @@ class WriteopiaStateManager(
         addAtPosition(
             StoryStep(type = StoryTypes.LOADING.type, ephemeral = true),
             position = position
+        )
+    }
+
+    fun removeAtPosition(position: Int) {
+        if (!isEditable) return
+        _currentStory.value = writeopiaManager.removeAtPosition(
+            _currentStory.value,
+            position
         )
     }
 

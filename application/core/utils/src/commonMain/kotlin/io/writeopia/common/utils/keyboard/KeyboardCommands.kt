@@ -79,4 +79,8 @@ object KeyboardCommands {
     fun isCancelEvent(keyEvent: KeyEvent) =
         keyEvent.key.keyCode == Key.Escape.keyCode &&
             keyEvent.type == KeyEventType.KeyUp
+
+    fun isAcceptAiEvent(keyEvent: KeyEvent) =
+        keyEvent.key.keyCode == Key.Tab.keyCode &&
+            keyEvent.type == KeyEventType.KeyUp
 }

@@ -19,25 +19,35 @@ class OllamaRepository(
     private val ollamaDao: OllamaDao?
 ) : AiClient {
 
+    private var generatingListItems = false
+
     override suspend fun generateListItems(
         model: String,
         context: String,
         url: String
     ): ResultData<List<String>> {
-        val result = ollamaApi.generateReply(model, "$SUGGESTION_PROMPT $context", url)
+        try {
+            if (generatingListItems) return ResultData.Loading()
 
-        return if (result.done == true && result.response?.isNotEmpty() == true) {
-            println("Result: ${result.response}")
-            result.response
-                .split("\n")
-                .filter { line -> line.trim().startsWith("-") }
-                .filter { line -> line.isNotEmpty() }
-                .let { list ->
-                    println("list: ${list.joinToString()}")
-                    ResultData.Complete(list)
-                }
-        } else {
-            ResultData.Error()
+            generatingListItems = true
+            val result = ollamaApi.generateReply(model, "$SUGGESTION_PROMPT $context", url)
+
+            return if (result.done == true && result.response?.isNotEmpty() == true) {
+                result.response
+                    .split("\n")
+                    .filter { line -> line.trim().startsWith("-") }
+                    .filter { line -> line.isNotEmpty() }
+                    .map { line -> line.substring(1).trim() }
+                    .let { list ->
+                        ResultData.Complete(list)
+                    }
+            } else {
+                ResultData.Error()
+            }
+        } catch (e: Exception) {
+            return ResultData.Error()
+        } finally {
+            generatingListItems = false
         }
     }
 

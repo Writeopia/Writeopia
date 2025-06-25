@@ -21,6 +21,8 @@ import io.writeopia.sdk.utils.iterables.addElementInPosition
 import io.writeopia.sdk.utils.iterables.addElementsInPosition
 import io.writeopia.sdk.utils.iterables.mergeSortedMaps
 import io.writeopia.sdk.utils.iterables.normalizePositions
+import io.writeopia.sdk.utils.iterables.removeBy
+import io.writeopia.sdk.utils.iterables.removeElementInPosition
 
 /**
  * Class dedicated to handle adding, deleting or changing StorySteps
@@ -161,6 +163,16 @@ class ContentHandler(
         newStoryUnit: StoryStep,
         position: Int
     ): Map<Int, StoryStep> = currentStory.addElementInPosition(newStoryUnit, position)
+
+    fun removeContent(
+        currentStory: Map<Int, StoryStep>,
+        position: Int
+    ): Map<Int, StoryStep> = currentStory.removeElementInPosition(position)
+
+    fun removeBy(
+        currentStory: Map<Int, StoryStep>,
+        predicate: (StoryStep) -> Boolean
+    ): Map<Int, StoryStep> = currentStory.removeBy(predicate)
 
     /**
      * Adds a link to a new document inside a document

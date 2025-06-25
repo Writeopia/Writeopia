@@ -16,4 +16,5 @@ enum class KeyboardEvent {
     IDLE,
     UNDO,
     REDO,
+    ACCEPT_AI,
 }
