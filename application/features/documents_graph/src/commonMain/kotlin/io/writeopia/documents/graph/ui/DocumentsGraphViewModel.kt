@@ -8,6 +8,7 @@ import io.writeopia.documents.graph.repository.GraphRepository
 import io.writeopia.forcegraph.model.Graph
 import io.writeopia.forcegraph.Link
 import io.writeopia.forcegraph.Node
+import io.writeopia.sdk.repository.UserRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -22,7 +23,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlin.math.sqrt
 
-class DocumentsGraphViewModel(private val graphRepository: GraphRepository) : ViewModel() {
+class DocumentsGraphViewModel(
+    private val graphRepository: GraphRepository,
+    private val userRepository: UserRepository,
+) : ViewModel() {
 
     private val _selectedOrigin = MutableStateFlow("root")
     private val _selectedNodes = MutableStateFlow(setOf<String>())
@@ -38,7 +42,8 @@ class DocumentsGraphViewModel(private val graphRepository: GraphRepository) : Vi
     @OptIn(ExperimentalCoroutinesApi::class)
     private val graphState: StateFlow<Graph> by lazy {
         _selectedOrigin.map { origin ->
-            val result = graphRepository.loadAllDocumentsAsAdjacencyList("disconnected_user")
+            val result =
+                graphRepository.loadAllDocumentsAsAdjacencyList(userRepository.getUser().id)
 
             val nodes = result.values.flatten()
             val isSmall = nodes.size <= 12
