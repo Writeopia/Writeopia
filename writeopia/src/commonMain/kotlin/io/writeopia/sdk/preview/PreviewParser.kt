@@ -19,7 +19,7 @@ class PreviewParser(
      */
     fun preview(stories: Iterable<StoryStep>, maxSize: Int = 10): List<StoryStep> {
         var acc = 0
-        
+
         val result = stories.asSequence()
             .filter { storyStep -> acceptedTypes.contains(storyStep.type.number) }
             .takeWhile { acc++ < maxSize }
