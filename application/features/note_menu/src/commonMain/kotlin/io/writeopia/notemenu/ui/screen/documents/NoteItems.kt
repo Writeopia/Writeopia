@@ -49,7 +49,6 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -78,10 +77,8 @@ import io.writeopia.ui.drawer.preview.DocumentLinkPreviewDrawer
 import io.writeopia.ui.drawer.preview.HeaderPreviewDrawer
 import io.writeopia.ui.drawer.preview.ImagePreviewDrawer
 import io.writeopia.ui.drawer.preview.TextPreviewDrawer
-import io.writeopia.ui.drawer.preview.TextPreviewDrawerPreview
 import io.writeopia.ui.drawer.preview.UnOrderedListItemPreviewDrawer
 import io.writeopia.ui.model.DrawInfo
-import io.writeopia.ui.utils.previewTextStyle
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 const val DOCUMENT_ITEM_TEST_TAG = "DocumentItem_"
