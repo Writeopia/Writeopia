@@ -23,4 +23,5 @@ data class StoryStepEntity(
     @ColumnInfo(name = "background_color") val backgroundColor: Int?,
     @ColumnInfo(name = "tags") val tags: String,
     @ColumnInfo(name = "spans") val spans: String,
+    @ColumnInfo(name = "link_to_document") val linkToDocument: String? = null
 )

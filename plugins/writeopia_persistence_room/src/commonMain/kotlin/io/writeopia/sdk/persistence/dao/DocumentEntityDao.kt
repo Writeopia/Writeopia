@@ -128,4 +128,7 @@ interface DocumentEntityDao {
 
     @Query("UPDATE $DOCUMENT_ENTITY set user_id = :newUserId WHERE user_id = :oldUserId")
     suspend fun moveDocumentsToNewUser(oldUserId: String, newUserId: String)
+
+    @Query("SELECT title FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.id = :documentId")
+    suspend fun getDocumentTitleById(documentId: String): String?
 }
