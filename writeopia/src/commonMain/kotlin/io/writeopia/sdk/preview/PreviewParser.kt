@@ -24,6 +24,7 @@ class PreviewParser(
             .filter { storyStep -> acceptedTypes.contains(storyStep.type.number) }
             .takeWhile { acc++ < maxSize }
             .toList()
+
         return if (result.size == 2 &&
             result.first().type.number == StoryTypes.TITLE.type.number &&
             (result.first().text ?: "").isEmpty()
@@ -42,4 +43,5 @@ private fun defaultTypes() = setOf(
     StoryTypes.UNORDERED_LIST_ITEM.type.number,
     StoryTypes.IMAGE.type.number,
     StoryTypes.AI_ANSWER.type.number,
+    StoryTypes.DOCUMENT_LINK.type.number
 )
