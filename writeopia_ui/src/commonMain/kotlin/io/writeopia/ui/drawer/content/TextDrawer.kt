@@ -84,9 +84,7 @@ class TextDrawer(
             mutableStateOf(step.spans)
         }
 
-        val isSuggestion = remember {
-            step.tags.contains(TagInfo(Tag.FIRST_AI_SUGGESTION))
-        }
+        val isSuggestion = step.tags.contains(TagInfo(Tag.FIRST_AI_SUGGESTION))
 
         var inputText by remember {
             val text = step.text

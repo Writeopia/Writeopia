@@ -411,7 +411,7 @@ class WriteopiaStateManager(
             if (storyStep.tags.contains(TagInfo(Tag.AI_SUGGESTION))) {
                 storyStep.copy(
                     tags = storyStep.tags.filterNot { tagInfo ->
-                        tagInfo.tag == Tag.AI_SUGGESTION
+                        tagInfo.tag == Tag.AI_SUGGESTION || tagInfo.tag == Tag.FIRST_AI_SUGGESTION
                     }.toSet()
                 )
             } else {
