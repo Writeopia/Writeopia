@@ -508,13 +508,11 @@ class WriteopiaStateManager(
                     storyState = { _currentStory.value },
                     storyType = typeInfo.storyType,
                     position = position + 1,
-                    context = getCurrentText() ?: "",
+                    context = getDocumentText(),
                     userId = getUserId(),
                 )
 
-                if (getCurrentStory()?.type == typeInfo.storyType) {
-                    _currentStory.value = newState
-                }
+                _currentStory.value = newState
             }
         }
     }

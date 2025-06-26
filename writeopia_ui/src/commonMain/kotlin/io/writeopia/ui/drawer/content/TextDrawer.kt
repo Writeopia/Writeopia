@@ -2,8 +2,12 @@ package io.writeopia.ui.drawer.content
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,10 +30,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.story.Tag
+import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.factory.EndOfText
 import io.writeopia.ui.extensions.toTextRange
@@ -77,11 +84,17 @@ class TextDrawer(
             mutableStateOf(step.spans)
         }
 
+        val isSuggestion = remember {
+            step.tags.contains(TagInfo(Tag.FIRST_AI_SUGGESTION))
+        }
+
         var inputText by remember {
+            val text = step.text
+
             mutableStateOf(
                 TextFieldValue(
-                    Spans.createStringWithSpans(step.text, spans, isDarkTheme),
-                    selection = drawInfo.selection?.toTextRange(step.text ?: "")
+                    Spans.createStringWithSpans(text, spans, isDarkTheme),
+                    selection = drawInfo.selection?.toTextRange(text ?: "")
                         ?: TextRange.Zero
                 )
             )
@@ -127,87 +140,96 @@ class TextDrawer(
 
         val coroutineScope = rememberCoroutineScope()
 
-        BasicTextField(
-            modifier = modifier
-                .let { modifierLet ->
-                    if (focusRequester != null) {
-                        modifierLet.focusRequester(focusRequester)
-                    } else {
-                        modifierLet
-                    }
-                }
-                .onPreviewKeyEvent { keyEvent ->
-                    onKeyEvent(
-                        keyEvent,
-                        inputText,
-                        step,
-                        drawInfo.position,
-                        emptyErase,
-                        realPosition,
-                        isInLastLine
-                    )
-                }
-                .onFocusChanged { focusState ->
-                    onFocusChanged(drawInfo.position, focusState)
-                }
-                .testTag("MessageDrawer_${drawInfo.position}")
-                .let { modifierLet ->
-                    if (selectionState) {
-                        modifierLet.clickable { onSelectionLister(drawInfo.position) }
-                    } else {
-                        modifierLet
-                    }
-                },
-            value = inputText,
-            enabled = !selectionState && !drawInfo.selectMode && enabled,
-            onTextLayout = {
-                textLayoutResult = it
-            },
-            onValueChange = { value ->
-                val start = value.selection.start
-                val end = value.selection.end
-                val previousStart = inputText.selection.start
-
-                val sizeDifference = value.text.length - inputText.text.length
-
-                if (abs(sizeDifference) > 0) {
-                    spans = Spans.recalculateSpans(spans, previousStart, sizeDifference)
-                }
-
-                val edit = {
-                    inputText = value.copy(
-                        Spans.createStringWithSpans(
-                            value.text.replace("\n", ""),
-                            spans,
-                            isDarkTheme
-                        )
-                    )
-                }
-
-                onTextEdit(
-                    TextInput(value.text, start, end, spans),
-                    drawInfo.position,
-                    lineBreakByContent,
+        Row(horizontalArrangement = Arrangement.Center) {
+            if (isSuggestion) {
+                BasicTextField(
+                    state = TextFieldState("[Tab - accept; Esc - remove]"),
+                    textStyle = textStyle(step).copy(fontStyle = FontStyle.Normal)
                 )
+            }
 
-                if (start == 0 || end == 0) {
-                    coroutineScope.launch {
-                        // Delay to avoid jumping to previous line too soon when erasing text
-                        delay(70)
+            BasicTextField(
+                modifier = modifier
+                    .let { modifierLet ->
+                        if (focusRequester != null) {
+                            modifierLet.focusRequester(focusRequester)
+                        } else {
+                            modifierLet
+                        }
+                    }
+                    .onPreviewKeyEvent { keyEvent ->
+                        onKeyEvent(
+                            keyEvent,
+                            inputText,
+                            step,
+                            drawInfo.position,
+                            emptyErase,
+                            realPosition,
+                            isInLastLine
+                        )
+                    }
+                    .onFocusChanged { focusState ->
+                        onFocusChanged(drawInfo.position, focusState)
+                    }
+                    .testTag("MessageDrawer_${drawInfo.position}")
+                    .let { modifierLet ->
+                        if (selectionState) {
+                            modifierLet.clickable { onSelectionLister(drawInfo.position) }
+                        } else {
+                            modifierLet
+                        }
+                    },
+                value = inputText,
+                enabled = !selectionState && !drawInfo.selectMode && enabled,
+                onTextLayout = {
+                    textLayoutResult = it
+                },
+                onValueChange = { value ->
+                    val start = value.selection.start
+                    val end = value.selection.end
+                    val previousStart = inputText.selection.start
+
+                    val sizeDifference = value.text.length - inputText.text.length
+
+                    if (abs(sizeDifference) > 0) {
+                        spans = Spans.recalculateSpans(spans, previousStart, sizeDifference)
+                    }
+
+                    val edit = {
+                        inputText = value.copy(
+                            Spans.createStringWithSpans(
+                                value.text.replace("\n", ""),
+                                spans,
+                                isDarkTheme
+                            )
+                        )
+                    }
+
+                    onTextEdit(
+                        TextInput(value.text, start, end, spans),
+                        drawInfo.position,
+                        lineBreakByContent,
+                    )
+
+                    if (start == 0 || end == 0) {
+                        coroutineScope.launch {
+                            // Delay to avoid jumping to previous line too soon when erasing text
+                            delay(70)
+                            edit()
+                        }
+                    } else {
                         edit()
                     }
-                } else {
-                    edit()
-                }
-            },
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Sentences
-            ),
-            textStyle = textStyle(step),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            interactionSource = interactionSource,
-            decorationBox = decorationBox,
-        )
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences
+                ),
+                textStyle = textStyle(step),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                interactionSource = interactionSource,
+                decorationBox = decorationBox,
+            )
+        }
     }
 }
 

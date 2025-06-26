@@ -20,8 +20,8 @@ fun defaultTextStyle(storyStep: StoryStep, fontFamily: FontFamily? = null): Text
         textDecoration = if (storyStep.checked == true) TextDecoration.LineThrough else null,
         color = if (isAiSuggestion) Color.Gray else MaterialTheme.colorScheme.onBackground,
         fontSize = textSizeFromTags(storyStep.tags.map { it.tag }),
-        fontFamily = fontFamily,
-        fontStyle = if (isAiSuggestion) FontStyle.Italic else FontStyle.Normal
+        fontFamily = if (isAiSuggestion) FontFamily.Monospace else fontFamily,
+        fontStyle = FontStyle.Normal
     )
 }
 
