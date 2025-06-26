@@ -1,5 +1,7 @@
 package io.writeopia.sqldelight.dao
 
+import io.writeopia.common.utils.extensions.toBoolean
+import io.writeopia.common.utils.extensions.toLong
 import io.writeopia.models.Workspace
 import io.writeopia.sql.WriteopiaDb
 import kotlinx.datetime.Instant
@@ -15,6 +17,7 @@ class WorkspaceSqlDelightDao(private val database: WriteopiaDb?) {
                 last_synced_at = workspace.lastSync.toEpochMilliseconds(),
                 icon = null,
                 icon_tint = null,
+                selected = workspace.selected.toLong()
             )
     }
 
@@ -28,6 +31,7 @@ class WorkspaceSqlDelightDao(private val database: WriteopiaDb?) {
                     userId = entity.user_id,
                     name = entity.name,
                     lastSync = Instant.fromEpochMilliseconds(entity.last_synced_at),
+                    selected = entity.selected.toBoolean()
                 )
             }
 }
