@@ -412,14 +412,16 @@ class WriteopiaStateManager(
                 storyStep.copy(
                     tags = storyStep.tags.filterNot { tagInfo ->
                         tagInfo.tag == Tag.AI_SUGGESTION || tagInfo.tag == Tag.FIRST_AI_SUGGESTION
-                    }.toSet()
+                    }.toSet(),
+                    ephemeral = false
                 )
             } else {
                 storyStep
             }
         }
 
-        _currentStory.value = _currentStory.value.copy(newStories)
+        _currentStory.value =
+            _currentStory.value.copy(stories = newStories, lastEdit = LastEdit.Whole)
     }
 
     fun toggleTagForPosition(position: Int, tag: TagInfo, commandInfo: CommandInfo? = null) {
