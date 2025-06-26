@@ -3,6 +3,7 @@ package io.writeopia.sdk.persistence.dao.room
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.info
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.link.DocumentLink
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sdk.repository.DocumentRepository
@@ -168,13 +169,17 @@ class RoomDocumentRepository(
         storyEntities.filter { entity -> entity.parentId == null }
             .associateBy { entity -> entity.position }
             .mapValues { (_, entity) ->
+                if (entity.linkToDocument != null) {
+                    val title = documentEntityDao.getDocumentTitleById(entity.linkToDocument)
+                    return@mapValues entity.toModel(documentLink = DocumentLink(entity.linkToDocument, title))
+                }
+
                 if (entity.hasInnerSteps) {
                     val innerSteps = storyUnitEntityDao?.queryInnerSteps(entity.id) ?: emptyList()
-
-                    entity.toModel(innerSteps)
-                } else {
-                    entity.toModel()
+                    return@mapValues entity.toModel(innerSteps)
                 }
+
+                entity.toModel()
             }
 
     private suspend fun setFavorite(ids: Set<String>, isFavorite: Boolean) {

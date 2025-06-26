@@ -1,5 +1,6 @@
 package io.writeopia.sdk.persistence.parse
 
+import io.writeopia.sdk.models.link.DocumentLink
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.Decoration
 import io.writeopia.sdk.models.story.StoryStep
@@ -23,7 +24,8 @@ fun StoryStepEntity.toModel(
     steps: List<StoryStepEntity> = emptyList(),
     nameToType: (String) -> StoryType = { typeName ->
         StoryTypes.fromName(typeName).type
-    }
+    },
+    documentLink: DocumentLink? = null,
 ): StoryStep =
     StoryStep(
         id = id,
@@ -47,7 +49,8 @@ fun StoryStepEntity.toModel(
             .split(",")
             .filter { it.isNotEmpty() }
             .map(SpanInfo::fromString)
-            .toSet()
+            .toSet(),
+        documentLink = documentLink
     )
 
 fun StoryStep.toEntity(position: Int, documentId: String): StoryStepEntity =
@@ -66,5 +69,6 @@ fun StoryStep.toEntity(position: Int, documentId: String): StoryStepEntity =
         hasInnerSteps = this.steps.isNotEmpty(),
         backgroundColor = this.decoration.backgroundColor,
         tags = this.tags.joinToString(separator = ",") { it.tag.label },
-        spans = this.spans.joinToString(separator = ",") { it.toText() }
+        spans = this.spans.joinToString(separator = ",") { it.toText() },
+        linkToDocument = documentLink?.id
     )
