@@ -39,6 +39,7 @@ kotlin {
                 implementation(project(":application:core:forcegraph"))
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:core:utils"))
+                implementation(project(":application:core:auth_core"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:documents"))
 
