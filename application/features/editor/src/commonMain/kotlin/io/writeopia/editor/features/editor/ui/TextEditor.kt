@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontFamily
 import io.writeopia.editor.configuration.ui.DrawConfigFactory
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.model.Font
+import io.writeopia.resources.WrStrings
 import io.writeopia.ui.WriteopiaEditor
 import io.writeopia.ui.drawer.factory.DrawersFactory
 import io.writeopia.ui.model.DrawStory
@@ -70,6 +71,7 @@ internal fun TextEditor(
             defaultBorder = clipShape,
             onHeaderClick = noteEditorViewModel::onHeaderClick,
             editable = isEditable,
+            aiExplanation = WrStrings.aiExplanation(),
             isDarkTheme = isDarkTheme,
             groupsBackgroundColor = Color.Transparent,
             drawConfig = DrawConfigFactory.getDrawConfig(),

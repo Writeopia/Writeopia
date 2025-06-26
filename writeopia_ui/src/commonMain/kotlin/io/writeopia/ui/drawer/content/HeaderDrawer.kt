@@ -197,7 +197,8 @@ fun headerDrawer(
                 emptyErase = EmptyErase.DISABLED,
                 textStyle = { drawConfig.titleStyle(fontFamily) },
                 selectionState = selectionState,
-                onSelectionLister = {}
+                onSelectionLister = {},
+                aiExplanation = ""
             )
         },
         headerClick = headerClick,
@@ -222,7 +223,8 @@ private fun HeaderDrawerStepPreview() {
                     )
                 },
                 selectionState = MutableStateFlow(false),
-                onSelectionLister = {}
+                onSelectionLister = {},
+                aiExplanation = ""
             )
         },
         headerClick = {},
@@ -247,7 +249,8 @@ private fun HeaderDrawerStepPreviewNoColor() {
                     )
                 },
                 selectionState = MutableStateFlow(false),
-                onSelectionLister = {}
+                onSelectionLister = {},
+                aiExplanation = ""
             )
         },
         headerClick = {},

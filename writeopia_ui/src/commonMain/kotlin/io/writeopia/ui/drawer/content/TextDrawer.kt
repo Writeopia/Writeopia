@@ -1,9 +1,9 @@
 package io.writeopia.ui.drawer.content
 
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -60,6 +60,7 @@ import kotlin.math.abs
 class TextDrawer(
     private val modifier: Modifier = Modifier,
     private val isDarkTheme: Boolean,
+    private val aiExplanation: String,
     private val onKeyEvent: (KeyEvent, TextFieldValue, StoryStep, Int, EmptyErase, Int, EndOfText) -> Boolean =
         { _, _, _, _, _, _, _ -> false },
     private val textStyle: @Composable (StoryStep) -> TextStyle = { defaultTextStyle(it) },
@@ -141,7 +142,7 @@ class TextDrawer(
         Row(horizontalArrangement = Arrangement.Center) {
             if (isSuggestion) {
                 BasicTextField(
-                    state = TextFieldState("[Tab - accept; Esc - remove]"),
+                    state = TextFieldState(aiExplanation),
                     textStyle = textStyle(step).copy(fontStyle = FontStyle.Normal)
                 )
             }
@@ -236,8 +237,9 @@ class TextDrawer(
 fun DesktopMessageDrawerPreview() {
     TextDrawer(
         isDarkTheme = true,
+        aiExplanation = "",
         selectionState = MutableStateFlow(false),
-        onSelectionLister = {}
+        onSelectionLister = {},
     ).Text(
         step = StoryStep(text = "Some text", type = StoryTypes.TEXT.type),
         drawInfo = DrawInfo(),

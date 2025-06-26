@@ -52,7 +52,7 @@ object CommonDrawers {
     fun create(
         manager: WriteopiaStateManager,
         marginAtBottom: Dp,
-        defaultBorder: Shape = MaterialTheme.shapes.medium,
+        aiExplanation: String,
         editable: Boolean = true,
         onHeaderClick: () -> Unit = {},
         dragIconWidth: Dp = DRAG_ICON_WIDTH.dp,
@@ -77,6 +77,7 @@ object CommonDrawers {
                 messageDrawer(
                     manager = manager,
                     modifier = modifier,
+                    aiExplanation = aiExplanation,
                     eventListener = eventListener,
                     lineBreakByContent = lineBreakByContent,
                     emptyErase = emptyErase,
@@ -117,6 +118,7 @@ object CommonDrawers {
                     emptyErase = EmptyErase.CHANGE_TYPE,
                     enabled = editable,
                     isDarkTheme = isDarkTheme,
+                    aiExplanation = aiExplanation,
                     onSelectionLister = manager::toggleSelection,
                 )
             }
@@ -288,6 +290,7 @@ object CommonDrawers {
 private fun RowScope.messageDrawer(
     manager: WriteopiaStateManager,
     modifier: Modifier = Modifier,
+    aiExplanation: String,
     textStyle: @Composable (StoryStep) -> TextStyle = { defaultTextStyle(it) },
     lineBreakByContent: Boolean,
     enabled: Boolean,
@@ -309,6 +312,7 @@ private fun RowScope.messageDrawer(
         emptyErase = emptyErase,
         selectionState = manager.selectionState,
         onSelectionLister = onSelectionLister,
-        isDarkTheme = isDarkTheme
+        isDarkTheme = isDarkTheme,
+        aiExplanation = aiExplanation
     )
 }
