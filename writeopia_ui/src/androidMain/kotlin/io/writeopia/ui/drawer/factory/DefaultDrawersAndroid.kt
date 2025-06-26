@@ -30,6 +30,7 @@ object DefaultDrawersAndroid : DrawersFactory {
         manager: WriteopiaStateManager,
         defaultBorder: Shape,
         editable: Boolean,
+        aiExplanation: String,
         isDarkTheme: Boolean,
         groupsBackgroundColor: Color,
         onHeaderClick: () -> Unit,
@@ -42,7 +43,7 @@ object DefaultDrawersAndroid : DrawersFactory {
         val commonDrawers = CommonDrawers.create(
             manager,
             marginAtBottom = 500.dp,
-            defaultBorder,
+            aiExplanation = aiExplanation,
             editable,
             onHeaderClick,
             lineBreakByContent = true,

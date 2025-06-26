@@ -130,7 +130,8 @@ fun CheckItemDrawerStepPreview() {
             TextDrawer(
                 selectionState = MutableStateFlow(false),
                 onSelectionLister = {},
-                isDarkTheme = true
+                isDarkTheme = true,
+                aiExplanation = ""
             )
         }
     ).Step(

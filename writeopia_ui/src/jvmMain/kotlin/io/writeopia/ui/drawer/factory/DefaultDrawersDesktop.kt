@@ -38,6 +38,7 @@ object DefaultDrawersDesktop : DrawersFactory {
         manager: WriteopiaStateManager,
         defaultBorder: Shape,
         editable: Boolean,
+        aiExplanation: String,
         isDarkTheme: Boolean,
         groupsBackgroundColor: Color,
         onHeaderClick: () -> Unit,
@@ -50,7 +51,7 @@ object DefaultDrawersDesktop : DrawersFactory {
         CommonDrawers.create(
             manager,
             30.dp,
-            defaultBorder,
+            aiExplanation,
             editable,
             onHeaderClick,
             dragIconWidth = 16.dp,

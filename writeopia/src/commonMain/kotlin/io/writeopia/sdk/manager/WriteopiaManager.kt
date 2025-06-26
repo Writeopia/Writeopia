@@ -343,18 +343,21 @@ class WriteopiaManager(
 
         return if (suggestionsResult is ResultData.Complete) {
             val suggestions = suggestionsResult.data
-            suggestions.map { suggestion ->
-                StoryStep(text = suggestion, type = storyType)
-            }.fold(storyState()) { state, story ->
-                addAtPosition(
-                    state,
-                    story.copy(
-                        ephemeral = true,
-                        tags = story.tags + TagInfo(Tag.AI_SUGGESTION)
-                    ),
-                    position
-                )
-            }.copy(lastEdit = LastEdit.Whole)
+            suggestions.mapIndexed { i, suggestion ->
+                val tags = if (i == 0) {
+                    setOf(TagInfo(Tag.AI_SUGGESTION), TagInfo(Tag.FIRST_AI_SUGGESTION))
+                } else {
+                    setOf(TagInfo(Tag.AI_SUGGESTION))
+                }
+                StoryStep(text = suggestion, type = storyType, tags = tags)
+            }.reversed()
+                .fold(storyState()) { state, story ->
+                    addAtPosition(
+                        state,
+                        story.copy(ephemeral = true),
+                        position
+                    )
+                }.copy(lastEdit = LastEdit.Whole)
         } else {
             storyState()
         }

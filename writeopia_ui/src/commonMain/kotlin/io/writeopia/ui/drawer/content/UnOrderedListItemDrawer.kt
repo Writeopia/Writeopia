@@ -118,9 +118,10 @@ private fun UnOrderedListItemPreview() {
             TextDrawer(
                 selectionState = MutableStateFlow(false),
                 onSelectionLister = {},
-                isDarkTheme = true
+                isDarkTheme = true,
+                aiExplanation = ""
             )
-        }
+        },
     ).Step(
         StoryStep(type = StoryTypes.UNORDERED_LIST_ITEM.type, text = "Item1"),
         DrawInfo()
