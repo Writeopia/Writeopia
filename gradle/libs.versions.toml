@@ -37,6 +37,7 @@ postgresql = "42.7.3"
 compose-navigation = "2.8.0-alpha12"
 publish = "0.30.0"
 lifecycleViewmodelCompose = "2.8.4"
+purchases-kmp = "1.8.5+13.38.1"
 
 [libraries]
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }
@@ -99,6 +100,10 @@ database-postgresql = { group = "org.postgresql", name = "postgresql", version.r
 compose-navigation = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "compose-navigation" }
 sqldelight-web-driver = { module = "app.cash.sqldelight:web-worker-driver", version.ref = "webWorkerDriver" }
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
+purchases-core = { module = "com.revenuecat.purchases:purchases-kmp-core", version.ref = "purchases-kmp" }
+purchases-ui = { module = "com.revenuecat.purchases:purchases-ui", version.ref = "purchases-kmp" }
+purchases-datetime = { module = "com.revenuecat.purchases:purchases-kmp-datetime", version.ref = "purchases-kmp" }
+purchases-result = { module = "com.revenuecat.purchases:purchases-kmp-result", version.ref = "purchases-kmp" }
 
 [plugins]
 application = { id = "com.android.application", version.ref = "agp" }
