@@ -81,6 +81,7 @@ fun DesktopNoteEditorScreen(
                 .align(Alignment.TopEnd),
             isDarkTheme,
             fontStyleSelected = { noteEditorViewModel.fontFamily },
+            currentModel = noteEditorViewModel.currentModel,
             isEditableState = noteEditorViewModel.isEditable,
             isFavorite = noteEditorViewModel.notFavorite,
             boldClick = noteEditorViewModel::onAddSpanClick,

@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -118,6 +119,10 @@ class NoteEditorKmpViewModel(
                     }
                 }
         }
+
+        viewModelScope.launch {
+            ollamaRepository?.refreshConfiguration(authRepository.getUser().id)
+        }
     }
 
     private var isDarkTheme: Boolean = true
@@ -132,6 +137,15 @@ class NoteEditorKmpViewModel(
 
     private val _showGlobalMenu = MutableStateFlow(false)
     override val showGlobalMenu = _showGlobalMenu.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val currentModel: Flow<String> = authRepository.listenForUser()
+        .flatMapConcat { user ->
+            ollamaRepository?.listenForConfiguration(user.id) ?: MutableStateFlow(null)
+        }
+        .map { config ->
+            config?.selectedModel ?: "No model selected"
+        }
 
     private val _editHeader = MutableStateFlow(false)
     override val editHeader = _editHeader.asStateFlow()

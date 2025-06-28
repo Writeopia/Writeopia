@@ -12,7 +12,11 @@ class OllamaInjection private constructor(
     private val writeopiaDb: WriteopiaDb? = null,
 ) {
 
-    private fun provideOllamaDao(): OllamaDao = OllamaSqlDao(writeopiaDb?.ollamaEntityQueries)
+    var ollamaDaoInstance: OllamaDao? = null
+    private fun provideOllamaDao(): OllamaDao = ollamaDaoInstance ?: run {
+        ollamaDaoInstance = OllamaSqlDao(writeopiaDb?.ollamaEntityQueries)
+        ollamaDaoInstance!!
+    }
 
     private fun provideApi() = OllamaApi(
         client = appConnectionInjection.provideHttpClient(),

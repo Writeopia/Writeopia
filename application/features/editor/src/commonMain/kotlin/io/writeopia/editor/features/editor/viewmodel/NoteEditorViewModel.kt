@@ -9,6 +9,7 @@ import io.writeopia.ui.backstack.BackstackHandler
 import io.writeopia.ui.backstack.BackstackInform
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawState
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 interface NoteEditorViewModel : BackstackInform, BackstackHandler {
@@ -16,6 +17,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     val writeopiaManager: WriteopiaStateManager
 
     val isEditable: StateFlow<Boolean>
+
+    val currentModel: Flow<String>
 
     val showGlobalMenu: StateFlow<Boolean>
 

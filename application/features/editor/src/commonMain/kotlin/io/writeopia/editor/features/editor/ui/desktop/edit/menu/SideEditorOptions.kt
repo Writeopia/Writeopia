@@ -56,12 +56,14 @@ import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.icons.WrSdkIcons
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun SideEditorOptions(
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean,
+    currentModel: Flow<String>,
     fontStyleSelected: () -> StateFlow<Font>,
     isEditableState: StateFlow<Boolean>,
     isFavorite: StateFlow<Boolean>,
@@ -155,6 +157,7 @@ fun SideEditorOptions(
 
                     OptionsType.AI -> {
                         AiOptions(
+                            currentModel = currentModel,
                             askAiBySelection = askAiBySelection,
                             aiSummary = aiSummary,
                             aiActionPoints = aiActionPoints,
@@ -707,6 +710,7 @@ private fun Actions(
 
 @Composable
 private fun AiOptions(
+    currentModel: Flow<String>,
     askAiBySelection: () -> Unit,
     aiSummary: () -> Unit,
     aiActionPoints: () -> Unit,
@@ -771,6 +775,18 @@ private fun AiOptions(
         )
 
         Spacer(modifier = Modifier.height(2.dp))
+
+        val currentModelValue by currentModel.collectAsState("No model")
+
+        Title("AI Model")
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Text(
+            text = currentModelValue,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
     }

@@ -1,6 +1,7 @@
 package io.writeopia
 
 import io.writeopia.api.OllamaApi
+import io.writeopia.model.OllamaConfig
 import io.writeopia.persistence.OllamaDao
 import io.writeopia.requests.ModelsResponse
 import io.writeopia.responses.DownloadModelResponse
@@ -8,6 +9,7 @@ import io.writeopia.sdk.ai.AiClient
 import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 private const val SUGGESTION_PROMPT =
     """
@@ -94,7 +96,7 @@ class OllamaRepository(
     override suspend fun getSelectedModel(userId: String): String? =
         ollamaDao?.getConfiguration(userId)?.selectedModel
 
-    fun listenForConfiguration(id: String) =
+    fun listenForConfiguration(id: String): StateFlow<OllamaConfig?> =
         ollamaDao?.listenForConfiguration(id) ?: MutableStateFlow(null)
 
     suspend fun refreshConfiguration(id: String) {

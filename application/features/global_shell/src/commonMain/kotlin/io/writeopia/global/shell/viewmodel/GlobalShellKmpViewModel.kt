@@ -387,7 +387,9 @@ class GlobalShellKmpViewModel(
 
     override fun selectOllamaModel(model: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            ollamaRepository.saveOllamaSelectedModel(getUserId(), model)
+            val userId = getUserId()
+            ollamaRepository.saveOllamaSelectedModel(userId, model)
+            ollamaRepository.refreshConfiguration(userId)
         }
     }
 
@@ -416,10 +418,13 @@ class GlobalShellKmpViewModel(
                             modelsResult is ResultData.Complete &&
                             modelsResult.data.models.size == 1
                         ) {
+                            val userId = authRepository.getUser().id
+
                             ollamaRepository.saveOllamaSelectedModel(
-                                authRepository.getUser().id,
+                                userId,
                                 modelsResult.data.models.first().model
                             )
+                            ollamaRepository.refreshConfiguration(userId)
                         }
                     }
             }
