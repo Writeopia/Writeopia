@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -44,6 +46,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.collections.inBatches
@@ -56,12 +59,15 @@ import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.icons.WrSdkIcons
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun SideEditorOptions(
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean,
+    currentModel: Flow<String>,
+    models: Flow<List<String>>,
     fontStyleSelected: () -> StateFlow<Font>,
     isEditableState: StateFlow<Boolean>,
     isFavorite: StateFlow<Boolean>,
@@ -86,6 +92,7 @@ fun SideEditorOptions(
     addPage: () -> Unit,
     deleteDocument: () -> Unit,
     toggleFavorite: () -> Unit,
+    selectModel: (String) -> Unit,
 ) {
     var menuType by remember {
         mutableStateOf(OptionsType.NONE)
@@ -155,11 +162,14 @@ fun SideEditorOptions(
 
                     OptionsType.AI -> {
                         AiOptions(
+                            currentModel = currentModel,
+                            models = models,
                             askAiBySelection = askAiBySelection,
                             aiSummary = aiSummary,
                             aiActionPoints = aiActionPoints,
                             aiFaq = aiFaq,
                             aiTags = aiTags,
+                            selectModel = selectModel
                         )
                     }
                 }
@@ -707,6 +717,9 @@ private fun Actions(
 
 @Composable
 private fun AiOptions(
+    currentModel: Flow<String>,
+    models: Flow<List<String>>,
+    selectModel: (String) -> Unit,
     askAiBySelection: () -> Unit,
     aiSummary: () -> Unit,
     aiActionPoints: () -> Unit,
@@ -770,7 +783,50 @@ private fun AiOptions(
             onClick = aiTags
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        val currentModelValue by currentModel.collectAsState(WrStrings.noModelsFound())
+
+        Title(WrStrings.aiModel())
+
+        var showModels by remember {
+            mutableStateOf(false)
+        }
+
         Spacer(modifier = Modifier.height(2.dp))
+
+        Text(
+            text = currentModelValue,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(4.dp).clickable {
+                showModels = !showModels
+            }
+        )
+
+        val modelsValue by models.collectAsState(emptyList())
+
+        DropdownMenu(
+            expanded = showModels,
+            onDismissRequest = { showModels = false },
+            modifier = Modifier.background(MaterialTheme.colorScheme.background),
+            offset = DpOffset(y = 6.dp, x = 6.dp)
+        ) {
+            modelsValue.forEach { model ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = model,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    },
+                    onClick = {
+                        selectModel(model)
+                    }
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
     }

@@ -81,6 +81,8 @@ fun DesktopNoteEditorScreen(
                 .align(Alignment.TopEnd),
             isDarkTheme,
             fontStyleSelected = { noteEditorViewModel.fontFamily },
+            currentModel = noteEditorViewModel.currentModel,
+            models = noteEditorViewModel.models,
             isEditableState = noteEditorViewModel.isEditable,
             isFavorite = noteEditorViewModel.notFavorite,
             boldClick = noteEditorViewModel::onAddSpanClick,
@@ -108,6 +110,7 @@ fun DesktopNoteEditorScreen(
             aiActionPoints = noteEditorViewModel::aiActionPoints,
             aiFaq = noteEditorViewModel::aiFaq,
             aiTags = noteEditorViewModel::aiTags,
+            selectModel = noteEditorViewModel::selectModel,
         )
 
         if (showDeleteConfirmation) {
