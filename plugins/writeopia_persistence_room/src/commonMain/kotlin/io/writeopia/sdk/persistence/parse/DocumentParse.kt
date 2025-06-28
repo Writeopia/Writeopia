@@ -3,7 +3,7 @@ package io.writeopia.sdk.persistence.parse
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 fun DocumentEntity.toModel(content: Map<Int, StoryStep> = emptyMap()) = Document(
     id = id,

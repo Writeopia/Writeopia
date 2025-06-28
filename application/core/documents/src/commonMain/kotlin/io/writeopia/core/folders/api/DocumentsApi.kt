@@ -14,7 +14,7 @@ import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 class DocumentsApi(private val client: HttpClient, private val baseUrl: String) {
 

@@ -11,7 +11,7 @@ import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 class SqlDelightDocumentRepository(
     private val documentSqlDao: DocumentSqlDao

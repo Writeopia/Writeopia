@@ -14,7 +14,7 @@ import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 /**
  * UseCase responsible to perform CRUD operations in the Notes (Documents) of the app taking in to

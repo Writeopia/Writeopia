@@ -4,7 +4,7 @@ import io.writeopia.app.sql.FolderEntity
 import io.writeopia.common.utils.extensions.toBoolean
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 fun FolderEntity.toModel(count: Long) =
     Folder(

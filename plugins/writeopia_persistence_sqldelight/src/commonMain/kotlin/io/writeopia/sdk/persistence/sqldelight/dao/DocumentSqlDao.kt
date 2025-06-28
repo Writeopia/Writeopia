@@ -16,7 +16,7 @@ import io.writeopia.sdk.persistence.sqldelight.toLong
 import io.writeopia.sdk.sql.DocumentEntityQueries
 import io.writeopia.sdk.sql.StoryStepEntityQueries
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 class DocumentSqlDao(
     private val documentQueries: DocumentEntityQueries?,

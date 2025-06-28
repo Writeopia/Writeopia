@@ -19,7 +19,7 @@ import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sql.WriteopiaDbBackend
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 fun Routing.documentsRoute(
     writeopiaDb: WriteopiaDbBackend,

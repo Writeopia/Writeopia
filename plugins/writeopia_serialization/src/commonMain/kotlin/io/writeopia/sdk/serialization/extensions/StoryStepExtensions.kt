@@ -11,7 +11,7 @@ import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.data.FolderApi
 import io.writeopia.sdk.serialization.data.StoryStepApi
 import io.writeopia.sdk.serialization.data.StoryTypeApi
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 fun StoryStep.toApi(position: Int): StoryStepApi =
     StoryStepApi(

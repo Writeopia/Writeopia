@@ -16,7 +16,7 @@ import io.writeopia.sdk.persistence.parse.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 class RoomDocumentRepository(
     private val documentEntityDao: DocumentEntityDao,

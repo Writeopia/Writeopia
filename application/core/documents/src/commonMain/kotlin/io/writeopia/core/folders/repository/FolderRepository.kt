@@ -2,7 +2,7 @@ package io.writeopia.core.folders.repository
 
 import io.writeopia.sdk.models.document.Folder
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 interface FolderRepository {
 

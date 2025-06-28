@@ -6,7 +6,7 @@ import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 class DocumentsSync(
     private val documentRepository: DocumentRepository,

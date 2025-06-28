@@ -6,7 +6,7 @@ import io.writeopia.sqldelight.dao.FolderSqlDelightDao
 import io.writeopia.sqldelight.extensions.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 class FolderRepositorySqlDelight(
     private val folderDao: FolderSqlDelightDao

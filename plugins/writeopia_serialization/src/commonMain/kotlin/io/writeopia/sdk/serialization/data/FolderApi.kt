@@ -1,6 +1,6 @@
 package io.writeopia.sdk.serialization.data
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.serialization.Serializable
 
 @Serializable

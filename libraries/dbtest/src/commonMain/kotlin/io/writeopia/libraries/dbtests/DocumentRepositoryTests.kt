@@ -8,7 +8,7 @@ import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

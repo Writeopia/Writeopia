@@ -10,7 +10,7 @@ import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
 import io.writeopia.sdk.sql.WriteopiaDb
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import java.awt.Menu
 import java.util.Properties
 import kotlin.test.Test

@@ -2,7 +2,7 @@ package io.writeopia.sdk.models.document
 
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 data class Document(
     override val id: String = GenerateId.generate(),

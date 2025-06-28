@@ -2,7 +2,7 @@ package io.writeopia.common.utils.persistence.folder
 
 import io.writeopia.sdk.models.document.Folder
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 fun FolderCommonEntity.toModel(itemCount: Long): Folder {
     return Folder(

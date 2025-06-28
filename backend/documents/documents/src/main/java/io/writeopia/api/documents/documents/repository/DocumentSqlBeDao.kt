@@ -14,7 +14,7 @@ import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sql.DocumentEntityQueries
 import io.writeopia.sql.StoryStepEntityQueries
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 class DocumentSqlBeDao(
     private val documentQueries: DocumentEntityQueries?,

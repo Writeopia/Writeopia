@@ -6,7 +6,7 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.search.DocumentSearch
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 /**
  * DocumentRepository is the repository for using simple CRUD operations in [Document].
