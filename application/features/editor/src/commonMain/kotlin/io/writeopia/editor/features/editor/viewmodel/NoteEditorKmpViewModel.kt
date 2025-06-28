@@ -17,6 +17,8 @@ import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.repository.UiConfigurationRepository
+import io.writeopia.requests.Model
+import io.writeopia.requests.ModelsResponse
 import io.writeopia.sdk.export.DocumentToJson
 import io.writeopia.sdk.export.DocumentToMarkdown
 import io.writeopia.sdk.export.DocumentWriter
@@ -139,13 +141,29 @@ class NoteEditorKmpViewModel(
     override val showGlobalMenu = _showGlobalMenu.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val currentModel: Flow<String> = authRepository.listenForUser()
+    private val aiConfigState = authRepository.listenForUser()
         .flatMapConcat { user ->
             ollamaRepository?.listenForConfiguration(user.id) ?: MutableStateFlow(null)
         }
-        .map { config ->
-            config?.selectedModel ?: "No model selected"
-        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val currentModel: Flow<String> = aiConfigState.map { config ->
+        config?.selectedModel ?: "No model selected"
+    }
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val models: StateFlow<List<String>> = aiConfigState
+        .filterNotNull()
+        .flatMapLatest { config ->
+            ollamaRepository?.listenToModels(config.url)
+                ?: MutableStateFlow(ResultData.Complete(ModelsResponse(emptyList())))
+        }.map {
+            when (it) {
+                is ResultData.Complete -> it.data.models.map { model -> model.model }
+                else -> emptyList()
+            }
+        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _editHeader = MutableStateFlow(false)
     override val editHeader = _editHeader.asStateFlow()
@@ -579,6 +597,17 @@ class NoteEditorKmpViewModel(
                 } ?: files
 
             writeopiaManager.receiveExternalFiles(newFiles, position)
+        }
+    }
+
+    override fun selectModel(model: String) {
+        if (ollamaRepository != null) {
+            viewModelScope.launch {
+                val userId = authRepository.getUser().id
+                
+                ollamaRepository.saveOllamaSelectedModel(userId, model)
+                ollamaRepository.refreshConfiguration(userId)
+            }
         }
     }
 

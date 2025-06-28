@@ -123,4 +123,5 @@
   <string name="choose_your_model">Write your AI model</string>
   <string name="use_offline">Use in offline mode</string>
   <string name="ai_explanation">[Tab - accept; Esc - remove]</string>
+  <string name="ai_model">AI Model</string>
 </resources>

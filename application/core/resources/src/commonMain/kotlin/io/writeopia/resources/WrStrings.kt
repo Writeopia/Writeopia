@@ -8,6 +8,7 @@ import writeopia.application.core.resources.generated.resources.account
 import writeopia.application.core.resources.generated.resources.action_points
 import writeopia.application.core.resources.generated.resources.actions
 import writeopia.application.core.resources.generated.resources.ai_explanation
+import writeopia.application.core.resources.generated.resources.ai_model
 import writeopia.application.core.resources.generated.resources.are_you_sure
 import writeopia.application.core.resources.generated.resources.arrangement
 import writeopia.application.core.resources.generated.resources.ask_ai
@@ -407,4 +408,7 @@ object WrStrings {
 
     @Composable
     fun aiExplanation() = stringResource(Res.string.ai_explanation)
+
+    @Composable
+    fun aiModel() = stringResource(Res.string.ai_model)
 }

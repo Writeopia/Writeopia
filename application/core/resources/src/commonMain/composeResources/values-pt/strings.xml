@@ -117,4 +117,5 @@
   <string name="choose_your_model">Escolhe seu modelo de IA</string>
   <string name="use_offline">User offline</string>
   <string name="ai_explanation">[Tab - aceitar; Esc - remover]</string>
+  <string name="ai_model">Modelo IA</string>
 </resources>

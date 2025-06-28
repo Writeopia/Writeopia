@@ -20,6 +20,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val currentModel: Flow<String>
 
+    val models: Flow<List<String>>
+
     val showGlobalMenu: StateFlow<Boolean>
 
     val editHeader: StateFlow<Boolean>
@@ -119,6 +121,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun receiveExternalFile(files: List<ExternalFile>, position: Int)
 
     fun setTheme(isDarkTheme: Boolean)
+
+    fun selectModel(model: String)
 }
 
 data class ShareDocument(val content: String, val title: String, val type: String)
