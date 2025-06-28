@@ -13,6 +13,7 @@ class OllamaInjection private constructor(
 ) {
 
     var ollamaDaoInstance: OllamaDao? = null
+
     private fun provideOllamaDao(): OllamaDao = ollamaDaoInstance ?: run {
         ollamaDaoInstance = OllamaSqlDao(writeopiaDb?.ollamaEntityQueries)
         ollamaDaoInstance!!

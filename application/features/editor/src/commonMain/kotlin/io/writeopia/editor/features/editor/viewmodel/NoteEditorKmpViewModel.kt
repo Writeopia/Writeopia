@@ -17,7 +17,6 @@ import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.repository.UiConfigurationRepository
-import io.writeopia.requests.Model
 import io.writeopia.requests.ModelsResponse
 import io.writeopia.sdk.export.DocumentToJson
 import io.writeopia.sdk.export.DocumentToMarkdown
@@ -150,7 +149,6 @@ class NoteEditorKmpViewModel(
     override val currentModel: Flow<String> = aiConfigState.map { config ->
         config?.selectedModel ?: "No model selected"
     }
-
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val models: StateFlow<List<String>> = aiConfigState
@@ -604,7 +602,7 @@ class NoteEditorKmpViewModel(
         if (ollamaRepository != null) {
             viewModelScope.launch {
                 val userId = authRepository.getUser().id
-                
+
                 ollamaRepository.saveOllamaSelectedModel(userId, model)
                 ollamaRepository.refreshConfiguration(userId)
             }

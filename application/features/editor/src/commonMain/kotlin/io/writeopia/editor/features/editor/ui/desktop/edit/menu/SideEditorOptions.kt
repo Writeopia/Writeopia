@@ -54,7 +54,6 @@ import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.modifier.clickableWithoutGettingFocus
-import io.writeopia.commonui.IconsPicker
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.span.Span
@@ -813,7 +812,6 @@ private fun AiOptions(
             modifier = Modifier.background(MaterialTheme.colorScheme.background),
             offset = DpOffset(y = 6.dp, x = 6.dp)
         ) {
-
             modelsValue.forEach { model ->
                 DropdownMenuItem(
                     text = {
@@ -822,7 +820,8 @@ private fun AiOptions(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onBackground,
                         )
-                    }, onClick = {
+                    },
+                    onClick = {
                         selectModel(model)
                     }
                 )
