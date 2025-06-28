@@ -78,13 +78,9 @@ ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.re
 ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 ktor-server-websocket = { module = "io.ktor:ktor-server-websockets-jvm" }
-ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm" }
 ktor-server-cio = { module = "io.ktor:ktor-server-cio" }
 ktor-server-tests = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
-#material3-desktop = { module = "org.jetbrains.compose.material3:material3-desktop", version.ref = "material3" }
 platformtools-darkmodedetector = { module = "io.github.kdroidfilter:platformtools.darkmodedetector", version.ref = "platformtools" }
-r2dbc-driver = { module = "app.cash.sqldelight:r2dbc-driver", version.ref = "r2dbcDriver" }
-sql-postgres-socket-factory = { module = "com.google.cloud.sql:postgres-socket-factory", version.ref = "postgresSocketFactory" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
