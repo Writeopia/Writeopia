@@ -32,7 +32,7 @@ google-services = "4.4.2"
 logback-classic = "1.5.18"
 hikaricp = "6.3.0"
 postgresql = "42.7.7"
-compose-navigation = "2.8.0-alpha12"
+compose-navigation = "2.8.0-alpha13"
 publish = "0.30.0"
 lifecycleViewmodelCompose = "2.8.4"
 
