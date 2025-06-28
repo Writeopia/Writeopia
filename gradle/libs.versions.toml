@@ -7,17 +7,15 @@ espressoCore = "3.6.1"
 firebaseAdmin = "9.2.0"
 firebaseAuthProvider = "1.5.0"
 junit = "1.2.1"
-kotlinxCoroutines = "1.10.1"
-kotlinxCoroutinesSwing = "1.10.1"
+kotlinxCoroutines = "1.10.2"
+kotlinxCoroutinesSwing = "1.10.2"
 kotlinxDatetime = "0.6.0"
 kotlinxSerializationJson = "1.8.0"
 ktor = "3.0.3"
-ktlint = "12.1.2"
+ktlint = "12.3.0"
 ktx = "1.16.0"
 material = "1.12.0"
 platformtools = "0.2.9"
-postgresSocketFactory = "1.15.1"
-r2dbcDriver = "2.0.2"
 room = "2.7.1"
 agp = "8.11.0"
 kotlin = "2.1.10"
@@ -32,8 +30,8 @@ dokka = "1.9.20"
 firebase = "33.11.0"
 google-services = "4.4.2"
 logback-classic = "1.5.0"
-hikaricp = "5.1.0"
-postgresql = "42.7.3"
+hikaricp = "6.3.0"
+postgresql = "42.7.7"
 compose-navigation = "2.8.0-alpha12"
 publish = "0.30.0"
 lifecycleViewmodelCompose = "2.8.4"
@@ -78,13 +76,9 @@ ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.re
 ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 ktor-server-websocket = { module = "io.ktor:ktor-server-websockets-jvm" }
-ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm" }
 ktor-server-cio = { module = "io.ktor:ktor-server-cio" }
 ktor-server-tests = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
-#material3-desktop = { module = "org.jetbrains.compose.material3:material3-desktop", version.ref = "material3" }
 platformtools-darkmodedetector = { module = "io.github.kdroidfilter:platformtools.darkmodedetector", version.ref = "platformtools" }
-r2dbc-driver = { module = "app.cash.sqldelight:r2dbc-driver", version.ref = "r2dbcDriver" }
-sql-postgres-socket-factory = { module = "com.google.cloud.sql:postgres-socket-factory", version.ref = "postgresSocketFactory" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
