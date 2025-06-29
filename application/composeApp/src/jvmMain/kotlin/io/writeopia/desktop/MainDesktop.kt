@@ -43,6 +43,7 @@ import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
+import io.writeopia.common.utils.ALLOW_BACKEND
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -235,7 +236,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                         ) {
                             NavHost(
                                 navController = navigationController,
-                                startDestination = Destinations.START_APP.id
+                                startDestination = if (ALLOW_BACKEND) {
+                                    Destinations.START_APP.id
+                                } else {
+                                    Destinations.MAIN_APP.id
+                                }
                             ) {
                                 startScreen(navigationController, authInjection, colorTheme)
 

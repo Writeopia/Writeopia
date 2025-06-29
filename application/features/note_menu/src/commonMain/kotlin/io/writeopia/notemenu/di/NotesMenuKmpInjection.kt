@@ -33,7 +33,7 @@ class NotesMenuKmpInjection private constructor(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val connectionInjector: WriteopiaConnectionInjector =
-        WriteopiaConnectionInjector.singleton()
+        WriteopiaConnectionInjector.singleton(),
 ) : NotesMenuInjection {
 
     private fun provideDocumentRepository(): DocumentRepository =

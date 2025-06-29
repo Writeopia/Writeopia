@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import io.writeopia.common.utils.ALLOW_BACKEND
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 
@@ -35,28 +36,30 @@ fun SettingsPanel(
     modifier: Modifier = Modifier,
 ) {
     var pageState by remember {
-        mutableStateOf(SettingsPage.ACCOUNT)
+        mutableStateOf(if (ALLOW_BACKEND) SettingsPage.ACCOUNT else SettingsPage.APPEARANCE)
     }
 
     Row(modifier = modifier) {
         Column(modifier = Modifier.width(180.dp).fillMaxHeight()) {
-            Text(
-                WrStrings.account(),
-                modifier = Modifier.fillMaxWidth()
-                    .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(
-                        if (pageState == SettingsPage.ACCOUNT) {
-                            WriteopiaTheme.colorScheme.highlight
-                        } else {
-                            Color.Unspecified
-                        }
-                    )
-                    .clickable {
-                        pageState = SettingsPage.ACCOUNT
-                    }.padding(vertical = 4.dp, horizontal = 12.dp),
-                style = MaterialTheme.typography.bodyMedium
-            )
+            if (ALLOW_BACKEND) {
+                Text(
+                    WrStrings.account(),
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(
+                            if (pageState == SettingsPage.ACCOUNT) {
+                                WriteopiaTheme.colorScheme.highlight
+                            } else {
+                                Color.Unspecified
+                            }
+                        )
+                        .clickable {
+                            pageState = SettingsPage.ACCOUNT
+                        }.padding(vertical = 4.dp, horizontal = 12.dp),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
 
             Text(
                 WrStrings.appearance(),
