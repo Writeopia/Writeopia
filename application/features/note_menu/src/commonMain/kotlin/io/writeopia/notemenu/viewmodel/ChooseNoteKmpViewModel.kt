@@ -30,6 +30,7 @@ import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.preview.PreviewParser
@@ -436,7 +437,12 @@ internal class ChooseNoteKmpViewModel(
     override fun syncFolderWithCloud() {
         viewModelScope.launch(Dispatchers.Default) {
             // Refresh happens inside syncFolder
-            documentsSync.syncFolder(notesNavigation.id, authRepository.getUser().id)
+            if (authRepository.isLoggedIn() && authRepository.getUser().tier == Tier.PREMIUM) {
+                documentsSync.syncFolder(
+                    notesNavigation.id,
+                    authRepository.getUser().id
+                )
+            }
         }
     }
 
