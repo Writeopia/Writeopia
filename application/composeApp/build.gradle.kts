@@ -143,12 +143,12 @@ compose.desktop {
             }
 
             linux {
-                packageVersion = "0.43.0"
+                packageVersion = "0.44.0"
                 iconFile.set(iconsRoot.resolve("icon-linux.png"))
             }
 
             windows {
-                packageVersion = "0.43.0"
+                packageVersion = "0.44.0"
                 iconFile.set(iconsRoot.resolve("icon-windows.ico"))
             }
         }
@@ -174,8 +174,8 @@ android {
         applicationId = "io.writeopia"
         minSdk = 24
         targetSdk = 35
-        versionCode = 34
-        versionName = "0.21.0"
+        versionCode = 35
+        versionName = "0.22.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
