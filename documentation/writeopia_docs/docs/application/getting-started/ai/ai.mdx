@@ -1,6 +1,7 @@
 import ReactPlayer from 'react-player'
 import ai_question from '../../../../static/vid/ai_question.mov'
 
+
 # AI commands
 
 ## Overview
@@ -13,21 +14,45 @@ Writeopia integrates AI to enhance the writing experience by providing intellige
 
 ## Using AI in Writeopia
 ### Instaling Ollama
-In order to provide local AI features, Writeopia uses [Ollama](https://ollama.com/). 
+In order to provide local AI features, Writeopia uses [Ollama](https://ollama.com/). Please go to Ollama website and:
 
 - Install Ollama at ollama.com
-- Start Ollama.
+- Start Ollama in your computer. 
+
+Starting Ollama is necessary for Writeopia comunicate with it for the AI features. 
+
+### Configuring Writeopia for Ollama.
+Writeopia can use many different LLM models. You can choose which one you prefer. Bigger models will provide better results, but they are also heavier to use for your computer. 
+You should experiment with the models and decides which one is the best for you. You can search for many at: [https://ollama.com/search](https://ollama.com/search). 
+
+If you are unsure about the model, no problem. We recommend that you start with `gemma3:4b`. 
+
+You can follow this video to install it: 
+
+<ReactPlayer 
+    playing={false} 
+    controls url="https://storage.googleapis.com/writeopia-resources/docusaurus/download_model.mov" 
+    width="100%"       
+    height="600px" />
 
 ### Selecting an AI Agent
-Navigate to the AI settings and select an agent that best suits your writing needs. You should:
- 
+If you download more models. You will be able to select different models are use them as you prefer. 
 
-So in Writeopia we can download models and select them.
+<ReactPlayer 
+    playing={false} 
+    controls url="https://storage.googleapis.com/writeopia-resources/docusaurus/select_model.mov" 
+    width="100%"       
+    height="600px" />
 
 ### Ask AI
 To ask AI you can move the cursor to the line that you would like to make a question of select all the lines that you would like to include in the query.
 
-<ReactPlayer playing={false} controls url={ai_question} />
+<ReactPlayer 
+    playing={false} 
+    controls 
+    url={ai_question}
+    width="100%"       
+    height="600px" />
 
 ## Future Enhancements
 We plan to add:
