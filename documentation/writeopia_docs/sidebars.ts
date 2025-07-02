@@ -42,15 +42,21 @@ const sidebars : SidebarsConfig = {
       id: 'application/overview',
     },
     {
-      type: 'doc',
-      label: 'AI Commands',
-      id: 'application/ai/ai',
-    },
-    {
-      type: 'doc',
-      label: 'Sync',
-      id: 'application/sync-workspace/sync-workspace',
-    },
+      type: 'category',
+      label: 'Getting started',
+      items: [
+        {
+          type: 'doc',
+          label: 'AI Commands',
+          id: 'application/getting-started/ai/ai',
+        },
+        {
+          type: 'doc',
+          label: 'Sync',
+          id: 'application/getting-started/sync-workspace/sync-workspace',
+        },
+      ],
+    },      
     {
       type: 'doc',
       label: 'Text Commands',
