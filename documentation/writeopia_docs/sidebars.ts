@@ -56,25 +56,53 @@ const sidebars : SidebarsConfig = {
           id: 'application/getting-started/sync-workspace/sync-workspace',
         },
       ],
-    },      
-    {
-      type: 'doc',
-      label: 'Text Commands',
-      id: 'application/commands/commands',
-    },
-    {
-      type: 'doc',
-      id: 'application/ui-commands/ui-commands',
-    },
+    }, 
     {
       type: 'doc',
       label: 'Using AI',
       id: 'application/ai-commands/ai-commands',
-    },
+    },   
     {
-      type: 'doc',
-      id: 'application/drag-and-drop/drag-and-drop',
-    }
+      type: 'category',
+      label: 'Writting',
+      items: [
+        {
+          type: 'doc',
+          label: 'Text Commands',
+          id: 'application/commands/commands',
+        },
+        {
+          type: 'doc',
+          id: 'application/ui-commands/ui-commands',
+        },
+        {
+          type: 'doc',
+          id: 'application/styling/styling',
+        }
+      ]
+    },  
+    {
+      type: 'category',
+      label: 'Documents',
+      items: [
+        {
+          type: 'doc',
+          id: 'application/doc-commands/doc-commands',
+        },
+        {
+          type: 'doc',
+          id: 'application/move-documents/move-documents',
+        },
+        {
+          type: 'doc',
+          id: 'application/importing/importing',
+        },
+        {
+          type: 'doc',
+          id: 'application/exporting/exporting',
+        }
+      ]
+    },        
   ],
 
   localDevSidebar: [
