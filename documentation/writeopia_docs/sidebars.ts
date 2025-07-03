@@ -68,6 +68,11 @@ const sidebars : SidebarsConfig = {
     },
     {
       type: 'doc',
+      label: 'Using AI',
+      id: 'application/ai-commands/ai-commands',
+    },
+    {
+      type: 'doc',
       id: 'application/drag-and-drop/drag-and-drop',
     }
   ],
