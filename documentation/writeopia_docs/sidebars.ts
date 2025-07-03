@@ -42,28 +42,67 @@ const sidebars : SidebarsConfig = {
       id: 'application/overview',
     },
     {
-      type: 'doc',
-      label: 'AI Commands',
-      id: 'application/ai/ai',
-    },
+      type: 'category',
+      label: 'Getting started',
+      items: [
+        {
+          type: 'doc',
+          label: 'AI Commands',
+          id: 'application/getting-started/ai/ai',
+        },
+        {
+          type: 'doc',
+          label: 'Sync',
+          id: 'application/getting-started/sync-workspace/sync-workspace',
+        },
+      ],
+    }, 
     {
       type: 'doc',
-      label: 'Sync',
-      id: 'application/sync-workspace/sync-workspace',
-    },
+      label: 'Using AI',
+      id: 'application/ai-commands/ai-commands',
+    },   
     {
-      type: 'doc',
-      label: 'Text Commands',
-      id: 'application/commands/commands',
-    },
+      type: 'category',
+      label: 'Writting',
+      items: [
+        {
+          type: 'doc',
+          label: 'Text Commands',
+          id: 'application/commands/commands',
+        },
+        {
+          type: 'doc',
+          id: 'application/ui-commands/ui-commands',
+        },
+        {
+          type: 'doc',
+          id: 'application/styling/styling',
+        }
+      ]
+    },  
     {
-      type: 'doc',
-      id: 'application/ui-commands/ui-commands',
-    },
-    {
-      type: 'doc',
-      id: 'application/drag-and-drop/drag-and-drop',
-    }
+      type: 'category',
+      label: 'Documents',
+      items: [
+        {
+          type: 'doc',
+          id: 'application/doc-commands/doc-commands',
+        },
+        {
+          type: 'doc',
+          id: 'application/move-documents/move-documents',
+        },
+        {
+          type: 'doc',
+          id: 'application/importing/importing',
+        },
+        {
+          type: 'doc',
+          id: 'application/exporting/exporting',
+        }
+      ]
+    },        
   ],
 
   localDevSidebar: [

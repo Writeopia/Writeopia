@@ -1,8 +1,28 @@
+import ReactPlayer from 'react-player'
+
 # Sync
 You can sync your files locally by selecting a folder on your computer. To do this, go to Settings > Directory, choose your local folder.
+
+<ReactPlayer 
+    playing={false} 
+    controls url="https://storage.googleapis.com/writeopia-resources/docusaurus/configure_workspace.mov" 
+    width="100%"       
+    height="600px" />
 
 ## Saving documents
 You can manually save your workspace locally by clicking the save icon. Your documents will be stored on your computer. If a saved document has a newer last-updated date, it won’t be overwritten, as the latest version always takes precedence in Writeopia.
 
+<ReactPlayer 
+    playing={false} 
+    controls url="https://storage.googleapis.com/writeopia-resources/docusaurus/save_files_locally.mov" 
+    width="100%"       
+    height="600px" />
+
 ## Syncing documents
 Clicking the sync icon (a circular arrow symbol) will synchronize all files. Documents on the computer will be imported, while those in Writeopia will be saved locally. If a document exists in both locations, the newer version will take precedence.
+
+<ReactPlayer 
+    playing={false} 
+    controls url="https://storage.googleapis.com/writeopia-resources/docusaurus/sync_files_locally.mov" 
+    width="100%"       
+    height="600px" />

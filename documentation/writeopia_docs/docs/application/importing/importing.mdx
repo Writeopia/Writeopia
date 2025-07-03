@@ -2,22 +2,35 @@ import ReactPlayer from 'react-player'
 import drag_note from '../../../static/vid/drag_note.mov'
 import drag_image from '../../../static/vid/drag_image.mov'
 
-# Drag and Drop
+# Importing
+
+There are ways to import information to Writeopia. 
+
+## Drag and Drop 
 
 You can drag and drop your files into Writeopia to create notes.
 
-
-## Json Notes
+### Json Notes
 You can drop your notes to import them. The json must be the format of the notes of Writeopia.
 
 <ReactPlayer playing={false} controls url={drag_note} />
 <br/>
 
-## Images
+### Images
 You can also import images to create an image note. Simply drag your images into Writeopia to document them.
 
 <ReactPlayer playing={false} controls url={drag_image} />
 <br/>
 
-## Markdown
-Support for markdown is in development and will be added in the future.
+### Markdown
+You can also drag and drop markdown files. 
+
+## File picker
+
+<ReactPlayer 
+    playing={false} 
+    controls url="https://storage.googleapis.com/writeopia-resources/docusaurus/import_document.mov" 
+    width="100%"       
+    height="600px" />
+
+
