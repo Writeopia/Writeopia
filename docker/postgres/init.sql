@@ -4,7 +4,7 @@ CREATE TABLE document_entity (
   created_at BIGINT NOT NULL,
   last_updated_at BIGINT NOT NULL,
   last_synced BIGINT NOT NULL,
-  user_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
   favorite BOOLEAN NOT NULL,
   parent_document_id TEXT NOT NULL,
   icon TEXT,
@@ -47,4 +47,12 @@ CREATE TABLE user_entity (
 CREATE TABLE company_entity (
   domain TEXT PRIMARY KEY,
   name TEXT NOT NULL
+);
+
+CREATE TABLE workspaceEntity (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  icon TEXT,
+  icon_tint INTEGER,
 );

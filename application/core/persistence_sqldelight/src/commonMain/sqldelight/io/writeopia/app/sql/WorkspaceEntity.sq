@@ -18,5 +18,5 @@ insert:
 INSERT INTO workspaceEntity(id, user_id, name, last_synced_at, icon, icon_tint, selected)
 VALUES (?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
-UPDATE SET id=excluded.id, user_id=excluded.user_id, last_synced_at=excluded.last_synced_at, icon=excluded.icon,
+UPDATE SET id=excluded.id, user_id=excluded.user_id, name=excluded.name, last_synced_at=excluded.last_synced_at, icon=excluded.icon,
 icon_tint=excluded.icon_tint, selected=excluded.selected;
