@@ -1,0 +1,77 @@
+# Change Text Programatically
+It is possible to change the text of the editor programatically. You can use this to add a lot of functionality to the editor and expand it. 
+
+To display content generate by AI, you can use `WriteopiaStateManager.changeStoryState`, like the following code: 
+
+```kotlin
+private fun streamText(): Flow<String> =
+    flow {
+        val stringBuilder = StringBuilder()
+
+        listOf("You", "can", "generate", "text", "and", "stream", "it", "to", "the", "user")
+            .forEach { word ->
+                stringBuilder.append("$word ")
+                emit(stringBuilder.toString())
+                delay(50)
+            }
+    }
+
+@Composable
+fun Editor(modifier: Modifier = Modifier) {
+    val stateManager = remember {
+        WriteopiaStateManager.create(
+            WriteopiaManager(),
+            dispatcher = Dispatchers.IO,
+        ).also {
+            it.newDocument("documentId")
+        }
+    }
+
+    val drawState by stateManager.toDraw.collectAsState(DrawState())
+
+    Box {
+        WriteopiaEditor(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(horizontal = 6.dp),
+            storyState = drawState,
+            drawers = DefaultDrawersAndroid.create(manager = stateManager)
+        )
+
+        val coroutine = rememberCoroutineScope()
+
+        Text(
+            text = "Generate",
+            fontSize = 20.sp,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 50.dp)
+                .clickable {
+                    coroutine.launch {
+                        stateManager.getNextPosition()?.let { position ->
+                            stateManager.loadingAtPosition(position)
+
+                            delay(1000)
+
+                            streamText()
+                                .onEach { text ->
+                                    stateManager.changeStoryState(
+                                        stateChange = Action.StoryStateChange(
+                                            storyStep = StoryStep(
+                                                type = StoryTypes.AI_ANSWER.type,
+                                                text = text
+                                            ),
+                                            position = position,
+                                        ),
+                                        trackIt = false
+                                    )
+                                }
+                                .launchIn(this)
+                        }
+                    }
+                }
+                .padding(10.dp)
+        )
+    }
+}
+``` 

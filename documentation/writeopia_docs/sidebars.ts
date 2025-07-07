@@ -9,7 +9,7 @@ const sidebars : SidebarsConfig = {
     {
       type: 'category',
       label: 'Getting started',
-      items: ['sdk/tutorial-basics/basics', 'sdk/tutorial-basics/persistence'],
+      items: ['sdk/tutorial-basics/basics', 'sdk/tutorial-basics/persistence', 'sdk/tutorial-basics/change-text-programatically'],
     },
     {
       type: 'category',
