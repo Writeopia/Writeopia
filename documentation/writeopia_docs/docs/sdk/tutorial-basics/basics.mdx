@@ -14,57 +14,92 @@ implementation("io.writeopia:writeopia-ui:[version]")
 
 Check releases for [latest](https://github.com/leandroBorgesFerreira/writeopia/releases) version.
 
-## Configuration
-
-Before displaying the content on the screen. It is necessary to configure `WriteopiaManager` which controls the state of the content, the `Drawer`s which are the classes responsible for each component of the edit and `WriteopiaEditor` which is the Composable responsible for drawing the whole editor on the screen.
-
-## WriteopiaManager
-
-The class `WriteopiaManager` accepts many parameters, which will be covered in a different section, but you can simply call the constructor to have the default behaviour:
-
-```kotlin
-@Composable
-fun WriteopiaSample() {
-  WriteopiaManager()
-}
-```
-
-## Drawers
-
-Each part of the text edition is drawn by the `WriteopiaDrawer`. This interface has the logic to draw one type of information from the text. There are many drawers already implemented and available in the `DefaultDrawers` factory. Provide the `WriteopiaManager` for the default behaviour:
-
-```kotlin
-DefaultDrawers.create(
-  manager = noteEditorViewModel.WriteopiaManager 
-)
-```
 
 ## Display content
 
-The `Composable` responsible for drawing the text editor is `WriteopiaEditor`. It needs at least a map with Drawers, the`WriteopiaManager` and a `DrawState` to draw.
+The `Composable` responsible for drawing the text editor is `WriteopiaEditor`. It needs at least a map with Drawers, the`WriteopiaManager` and a `DrawState` to draw. 
+
+It is necessary to initialize the WriteopiaStateManager, create the drawers of content and pass it to the WriteopiaEditor.
+
+```kotlin
+val stateManager = remember {
+    WriteopiaStateManager.create(
+        WriteopiaManager(),
+        dispatcher = Dispatchers.IO,
+    ).also {
+        it.newDocument("documentId")
+    }
+}
+
+val drawState by stateManager.toDraw.collectAsState(DrawState())
+
+WriteopiaEditor(
+    modifier = modifier.fillMaxSize(),
+    storyState = drawState,
+    drawers = DefaultDrawersAndroid.create(manager = stateManager)
+)
+```
+
+## Full sample
+
+You can create a simple editor following the code:
 
 ```kotlin
 @Composable
-fun WriteopiaSample() {
-  val drawState = DrawState(
-    stories = mapOf(
-      0 to DrawStory(
-        StoryStep(type = "message", text = "Some text"),
-        isSelected = false
-      ),
-    )
-  )
-  
-  WriteopiaEditor(
-    modifier = Modifier.fillMaxWidth().weight(1F),
-    storyState = drawState,
-    drawers = DefaultDrawers.create(
-      manager = WriteopiaManager()
-    )
-  )
+fun Editor(modifier: Modifier = Modifier) {
+    val stateManager = remember {
+        WriteopiaStateManager.create(
+            WriteopiaManager(),
+            dispatcher = Dispatchers.IO,
+        ).also {
+            it.newDocument("documentId")
+        }
+    }
+
+    val drawState by stateManager.toDraw.collectAsState(DrawState())
+
+    Box {
+        WriteopiaEditor(
+            modifier = modifier.fillMaxSize(),
+            storyState = drawState,
+            drawers = DefaultDrawersAndroid.create(manager = stateManager)
+        )
+
+        Row(modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .padding(bottom = 50.dp)) {
+            Text(
+                "B",
+                fontSize = 20.sp,
+                modifier = Modifier.clickable {
+                    stateManager.toggleSpan(Span.BOLD)
+                }.padding(10.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                "I",
+                fontSize = 20.sp,
+                modifier = Modifier.clickable {
+                    stateManager.toggleSpan(Span.ITALIC)
+                }.padding(10.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                "U",
+                fontSize = 20.sp,
+                modifier = Modifier.clickable {
+                    stateManager.toggleSpan(Span.UNDERLINE)
+                }.padding(10.dp)
+            )
+        }
+    }
 }
 ```
 
-The above code should display a simple message on the screen and you should be able to interact with the text editor.
+The above code should display a simple message on the screen and you should be able to interact with the text editor. 
 
 ![sample](../../../static/img/basics_sample.png)
