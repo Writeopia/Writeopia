@@ -18,7 +18,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontFamily
@@ -36,11 +35,9 @@ object DefaultDrawersDesktop : DrawersFactory {
     @Composable
     override fun create(
         manager: WriteopiaStateManager,
-        defaultBorder: Shape,
         editable: Boolean,
         aiExplanation: String,
         isDarkTheme: Boolean,
-        groupsBackgroundColor: Color,
         onHeaderClick: () -> Unit,
         drawConfig: DrawConfig,
         fontFamily: FontFamily?,
