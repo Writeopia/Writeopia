@@ -3,7 +3,6 @@ package io.writeopia.editor.features.editor.ui
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -11,7 +10,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import io.writeopia.editor.configuration.ui.DrawConfigFactory
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
@@ -57,8 +55,6 @@ internal fun TextEditor(
             }
         }
     }
-
-    val clipShape = MaterialTheme.shapes.medium
     val isEditable by noteEditorViewModel.isEditable.collectAsState()
 
     WriteopiaEditor(
@@ -68,12 +64,10 @@ internal fun TextEditor(
         keyFn = keyFn,
         drawers = drawersFactory.create(
             noteEditorViewModel.writeopiaManager,
-            defaultBorder = clipShape,
             onHeaderClick = noteEditorViewModel::onHeaderClick,
             editable = isEditable,
             aiExplanation = WrStrings.aiExplanation(),
             isDarkTheme = isDarkTheme,
-            groupsBackgroundColor = Color.Transparent,
             drawConfig = DrawConfigFactory.getDrawConfig(),
             fontFamily = fontFamily,
             generateSection = noteEditorViewModel::aiSection,

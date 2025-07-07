@@ -15,7 +15,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontFamily
@@ -27,21 +26,15 @@ import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
 
-private const val LARGE_START_PADDING = 26
-private const val MEDIUM_START_PADDING = 12
-private const val SMALL_START_PADDING = 4
-
 object DefaultDrawersJs : DrawersFactory {
 
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     override fun create(
         manager: WriteopiaStateManager,
-        defaultBorder: Shape,
         editable: Boolean,
         aiExplanation: String,
         isDarkTheme: Boolean,
-        groupsBackgroundColor: Color,
         onHeaderClick: () -> Unit,
         drawConfig: DrawConfig,
         fontFamily: FontFamily?,

@@ -9,8 +9,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -28,11 +26,9 @@ object DefaultDrawersAndroid : DrawersFactory {
     @Composable
     override fun create(
         manager: WriteopiaStateManager,
-        defaultBorder: Shape,
         editable: Boolean,
         aiExplanation: String,
         isDarkTheme: Boolean,
-        groupsBackgroundColor: Color,
         onHeaderClick: () -> Unit,
         drawConfig: DrawConfig,
         fontFamily: FontFamily?,
