@@ -1284,7 +1284,7 @@ class WriteopiaStateManager(
                 },
             coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext),
             backStackManager: SnapshotBackstackManager = SnapshotBackstackManager(),
-            userRepository: UserRepository,
+            userRepository: UserRepository? = null,
         ) = WriteopiaStateManager(
             stepsNormalizer,
             dispatcher,
