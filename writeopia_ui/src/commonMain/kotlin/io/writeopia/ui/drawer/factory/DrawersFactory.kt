@@ -1,8 +1,6 @@
 package io.writeopia.ui.drawer.factory
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontFamily
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.ui.drawer.StoryStepDrawer
