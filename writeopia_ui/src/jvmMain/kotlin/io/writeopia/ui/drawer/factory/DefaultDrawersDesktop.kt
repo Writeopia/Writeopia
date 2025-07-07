@@ -36,11 +36,9 @@ object DefaultDrawersDesktop : DrawersFactory {
     @Composable
     override fun create(
         manager: WriteopiaStateManager,
-        defaultBorder: Shape,
         editable: Boolean,
         aiExplanation: String,
         isDarkTheme: Boolean,
-        groupsBackgroundColor: Color,
         onHeaderClick: () -> Unit,
         drawConfig: DrawConfig,
         fontFamily: FontFamily?,

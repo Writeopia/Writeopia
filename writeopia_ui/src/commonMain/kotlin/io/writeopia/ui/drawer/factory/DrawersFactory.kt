@@ -14,16 +14,14 @@ interface DrawersFactory {
     @Composable
     fun create(
         manager: WriteopiaStateManager,
-        defaultBorder: Shape,
-        editable: Boolean,
-        aiExplanation: String,
-        isDarkTheme: Boolean,
-        groupsBackgroundColor: Color,
-        onHeaderClick: () -> Unit,
-        drawConfig: DrawConfig,
-        fontFamily: FontFamily?,
-        generateSection: (Int) -> Unit,
-        receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
-        onDocumentLinkClick: (String) -> Unit,
+        editable: Boolean = true,
+        aiExplanation: String = "AI Generated",
+        isDarkTheme: Boolean = false,
+        onHeaderClick: () -> Unit = {},
+        drawConfig: DrawConfig = DrawConfig(),
+        fontFamily: FontFamily? = null,
+        generateSection: (Int) -> Unit = {},
+        receiveExternalFile: (List<ExternalFile>, Int) -> Unit = { _, _ -> },
+        onDocumentLinkClick: (String) -> Unit = {},
     ): Map<Int, StoryStepDrawer>
 }
