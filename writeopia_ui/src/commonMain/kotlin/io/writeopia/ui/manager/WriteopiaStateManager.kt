@@ -22,6 +22,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.repository.UserRepository
@@ -40,6 +41,7 @@ import io.writeopia.ui.model.TextInput
 import io.writeopia.ui.modifiers.StepsModifier
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -70,7 +72,7 @@ class WriteopiaStateManager(
     private val dispatcher: CoroutineDispatcher,
     private val coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext),
     private val backStackManager: SnapshotBackstackManager,
-    private val userRepository: UserRepository,
+    private val userRepository: UserRepository?,
     private val writeopiaManager: WriteopiaManager,
     val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
@@ -1061,7 +1063,8 @@ class WriteopiaStateManager(
         }
     }
 
-    private suspend fun getUserId(): String = userRepository.getUser().id
+    private suspend fun getUserId(): String =
+        userRepository?.getUser()?.id ?: WriteopiaUser.disconnectedUser().id
 
     /**
      * Moves the focus to the next available [StoryStep] if it can't find a step to focus, it
@@ -1271,7 +1274,7 @@ class WriteopiaStateManager(
     companion object {
         fun create(
             writeopiaManager: WriteopiaManager,
-            dispatcher: CoroutineDispatcher,
+            dispatcher: CoroutineDispatcher = Dispatchers.Unconfined,
             documentRepository: DocumentRepository? = null,
             selectionState: StateFlow<Boolean> = MutableStateFlow(false),
             keyboardEventFlow: Flow<KeyboardEvent?> = MutableStateFlow(null),
