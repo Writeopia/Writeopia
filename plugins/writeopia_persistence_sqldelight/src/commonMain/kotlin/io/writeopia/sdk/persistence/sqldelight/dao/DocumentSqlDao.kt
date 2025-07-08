@@ -34,7 +34,7 @@ class DocumentSqlDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                    userId = entity.user_id,
+                    workspaceId = entity.user_id,
                     favorite = entity.favorite == 1L,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
@@ -52,7 +52,7 @@ class DocumentSqlDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                    userId = entity.user_id,
+                    workspaceId = entity.user_id,
                     favorite = entity.favorite == 1L,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
@@ -76,7 +76,7 @@ class DocumentSqlDao(
             created_at = document.createdAt.toEpochMilliseconds(),
             last_updated_at = document.lastUpdatedAt.toEpochMilliseconds(),
             last_synced_at = document.lastSyncedAt?.toEpochMilliseconds(),
-            user_id = document.userId,
+            user_id = document.workspaceId,
             favorite = document.favorite.toLong(),
             parent_document_id = document.parentId,
             icon = document.icon?.label,
@@ -122,7 +122,7 @@ class DocumentSqlDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                    userId = entity.user_id,
+                    workspaceId = entity.user_id,
                     favorite = entity.favorite == 1L,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let {
@@ -187,7 +187,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -254,7 +254,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -327,7 +327,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -400,7 +400,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -472,7 +472,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -550,7 +550,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -618,7 +618,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -686,7 +686,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.user_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
