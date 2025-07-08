@@ -11,7 +11,6 @@ import io.writeopia.sdk.sql.WriteopiaDb
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import java.awt.Menu
 import java.util.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -58,7 +57,7 @@ class SqlDelightDocumentRepositoryTest {
                 createdAt = instant,
                 lastUpdatedAt = instant,
                 lastSyncedAt = null,
-                userId = userId,
+                workspaceId = userId,
                 parentId = "",
                 content = bigContent
             )
@@ -88,7 +87,7 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = userId,
             parentId = "",
             icon = MenuItem.Icon(icon, tint)
         )
@@ -113,7 +112,7 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = userId,
             parentId = "",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true
@@ -138,7 +137,7 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = Instant.DISTANT_PAST,
-            userId = userId,
+            workspaceId = userId,
             parentId = "root",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true
@@ -165,7 +164,7 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = userId,
             parentId = "root",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true

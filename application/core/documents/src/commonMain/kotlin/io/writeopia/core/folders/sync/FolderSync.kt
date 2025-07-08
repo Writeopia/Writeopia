@@ -30,7 +30,7 @@ class FolderSync(
                 createdAt = Instant.DISTANT_PAST,
                 lastUpdatedAt = Instant.DISTANT_PAST,
                 itemCount = 0,
-                userId = userId,
+                workspaceId = userId,
             )
 
             folderRepository.createFolder(folder)

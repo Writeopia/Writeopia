@@ -9,7 +9,7 @@ import kotlinx.datetime.Instant
 class WorkspaceSqlDelightDao(private val database: WriteopiaDb?) {
 
     suspend fun insert(workspace: Workspace) {
-        database?.workspaceEntityQueries
+        database?.workspace_entityQueries
             ?.insert(
                 id = workspace.id,
                 user_id = workspace.userId,
@@ -22,7 +22,7 @@ class WorkspaceSqlDelightDao(private val database: WriteopiaDb?) {
     }
 
     suspend fun getById(id: String): Workspace? =
-        database?.workspaceEntityQueries
+        database?.workspace_entityQueries
             ?.getWorkspaceById(id)
             ?.executeAsOneOrNull()
             ?.let { entity ->

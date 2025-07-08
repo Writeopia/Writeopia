@@ -62,5 +62,5 @@ fun DocumentInfo.document(userId: String): Document = Document(
     icon = this.icon,
     isLocked = this.isLocked,
     favorite = this.isFavorite,
-    userId = userId
+    workspaceId = userId
 )
