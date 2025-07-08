@@ -2,6 +2,7 @@ package io.writeopia.auth.core.manager
 
 import io.writeopia.auth.core.utils.toModel
 import io.writeopia.common.utils.extensions.toLong
+import io.writeopia.sdk.models.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sql.WriteopiaDb
@@ -58,5 +59,22 @@ internal class SqlDelightAuthRepository(
     override suspend fun useOffline() {
         val user = getUser()
         saveUser(user.copy(id = WriteopiaUser.OFFLINE), true)
+    }
+
+    override suspend fun getWorkspace(): Workspace {
+        writeopiaDb?.workspaceEntityQueries?.getWorkspaceById()
+    }
+
+    override suspend fun saveWorkspace(workspace: Workspace) {
+        writeopiaDb?.workspaceEntityQueries
+            ?.insert(
+                id = workspace.id,
+                user_id = workspace.userId,
+                name = workspace.name,
+                last_synced_at = workspace.lastSync.toEpochMilliseconds(),
+                icon = null,
+                icon_tint = null,
+                selected = workspace.selected.toLong(),
+            )
     }
 }
