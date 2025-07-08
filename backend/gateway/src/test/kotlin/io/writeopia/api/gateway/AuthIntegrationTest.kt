@@ -262,7 +262,7 @@ class AuthIntegrationTest {
             )
         }
 
-        assertEquals(response.status, HttpStatusCode.Created)
+        assertEquals(HttpStatusCode.Created, response.status)
         assertNotNull(response.body<AuthResponse>().workspace)
     }
 }
