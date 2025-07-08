@@ -243,7 +243,7 @@ class AuthIntegrationTest {
     }
 
     @Test
-    fun `when registering,it should returning a workspace`() = testApplication {
+    fun `when registering, it should return a workspace`() = testApplication {
         application {
             module(db, debugMode = true, adminKey = "somekey")
         }
@@ -263,6 +263,38 @@ class AuthIntegrationTest {
         }
 
         assertEquals(HttpStatusCode.Created, response.status)
+        assertNotNull(response.body<AuthResponse>().workspace)
+    }
+
+    @Test
+    fun `when login in, it should return a workspace`() = testApplication {
+        application {
+            module(db, debugMode = true, adminKey = "somekey")
+        }
+
+        val client = defaultClient()
+
+        val response = client.post("/api/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    name = "Name",
+                    email = "email@gmail.com",
+                    password = "lasjbdalsdq08w9y&",
+                    company = ""
+                )
+            )
+        }
+
+        assertEquals(HttpStatusCode.Created, response.status)
+        assertNotNull(response.body<AuthResponse>().workspace)
+
+        val response1 = client.post("api/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest("email@gmail.com", "lasjbdalsdq08w9y&"))
+        }
+
+        assertEquals(HttpStatusCode.OK, response1.status)
         assertNotNull(response.body<AuthResponse>().workspace)
     }
 }
