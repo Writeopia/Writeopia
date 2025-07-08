@@ -25,6 +25,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class AuthIntegrationTest {
 
@@ -241,4 +242,27 @@ class AuthIntegrationTest {
         assertEquals(response.status, HttpStatusCode.OK)
     }
 
+    @Test
+    fun `when registering,it should returning a workspace`() = testApplication {
+        application {
+            module(db, debugMode = true, adminKey = "somekey")
+        }
+
+        val client = defaultClient()
+
+        val response = client.post("/api/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    name = "Name",
+                    email = "email@gmail.com",
+                    password = "lasjbdalsdq08w9y&",
+                    company = ""
+                )
+            )
+        }
+
+        assertEquals(response.status, HttpStatusCode.Created)
+        assertNotNull(response.body<AuthResponse>().workspace)
+    }
 }
