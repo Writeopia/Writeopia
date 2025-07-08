@@ -60,7 +60,7 @@ class NotesUseCaseIntegrationTest {
                 title = "Document1",
                 createdAt = now,
                 lastUpdatedAt = now,
-                userId = DISCONNECTED_USER_ID,
+                workspaceId = DISCONNECTED_USER_ID,
                 parentId = "root"
             )
         )
@@ -80,7 +80,7 @@ class NotesUseCaseIntegrationTest {
                 title = "Document1",
                 createdAt = now,
                 lastUpdatedAt = now,
-                userId = DISCONNECTED_USER_ID,
+                workspaceId = DISCONNECTED_USER_ID,
                 parentId = "root"
             )
         )
@@ -118,7 +118,7 @@ class NotesUseCaseIntegrationTest {
                 title = "Document1",
                 createdAt = now,
                 lastUpdatedAt = now,
-                userId = DISCONNECTED_USER_ID,
+                workspaceId = DISCONNECTED_USER_ID,
                 parentId = "root"
             )
         )
