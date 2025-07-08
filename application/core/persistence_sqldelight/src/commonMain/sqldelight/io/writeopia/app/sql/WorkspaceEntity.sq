@@ -14,6 +14,12 @@ FROM workspace_entity
 WHERE id = ?
 LIMIT 1;
 
+selectCurrentWorkspace:
+SELECT *
+FROM workspace_entity
+WHERE selected = 1
+LIMIT 1;
+
 insert:
 INSERT INTO workspace_entity(id, user_id, name, last_synced_at, icon, icon_tint, selected)
 VALUES (?, ?, ?, ?, ?, ?, ?)
