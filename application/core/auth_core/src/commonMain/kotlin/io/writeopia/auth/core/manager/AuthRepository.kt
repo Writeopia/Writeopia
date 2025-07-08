@@ -1,5 +1,6 @@
 package io.writeopia.auth.core.manager
 
+import io.writeopia.sdk.models.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.UserRepository
@@ -23,4 +24,8 @@ interface AuthRepository : UserRepository {
     suspend fun getAuthToken(): String?
 
     suspend fun useOffline()
+
+    suspend fun getWorkspace(): Workspace
+
+    suspend fun saveWorkspace(workspace: Workspace)
 }
