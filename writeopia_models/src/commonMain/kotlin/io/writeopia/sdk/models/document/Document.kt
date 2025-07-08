@@ -11,7 +11,7 @@ data class Document(
     override val createdAt: Instant,
     override val lastUpdatedAt: Instant,
     val lastSyncedAt: Instant?,
-    override val userId: String,
+    override val workspaceId: String,
     override val parentId: String,
     override val favorite: Boolean = false,
     override val icon: MenuItem.Icon? = null,
