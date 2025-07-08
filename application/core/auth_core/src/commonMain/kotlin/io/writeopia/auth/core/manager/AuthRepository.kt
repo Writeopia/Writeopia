@@ -25,7 +25,7 @@ interface AuthRepository : UserRepository {
 
     suspend fun useOffline()
 
-    suspend fun getWorkspace(): Workspace
+    suspend fun getWorkspace(): Workspace?
 
     suspend fun saveWorkspace(workspace: Workspace)
 }
