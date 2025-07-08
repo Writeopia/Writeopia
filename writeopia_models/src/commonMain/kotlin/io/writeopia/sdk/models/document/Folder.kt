@@ -10,7 +10,7 @@ data class Folder(
     override val title: String,
     override val createdAt: Instant,
     override val lastUpdatedAt: Instant,
-    override val userId: String,
+    override val workspaceId: String,
     override val favorite: Boolean = false,
     override val icon: MenuItem.Icon? = null,
     val itemCount: Long,
@@ -30,7 +30,7 @@ data class Folder(
                 createdAt = now,
                 lastUpdatedAt = now,
                 itemCount = 0,
-                userId = userId,
+                workspaceId = userId,
             )
         }
     }
