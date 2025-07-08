@@ -11,7 +11,7 @@ fun FolderCommonEntity.toModel(itemCount: Long): Folder {
         title = title,
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
-        userId = userId,
+        workspaceId = userId,
         favorite = favorite,
         // Assuming itemCount is not stored in the entity
         itemCount = itemCount,
@@ -25,7 +25,7 @@ fun Folder.toRoomEntity(): FolderCommonEntity {
         title = title,
         createdAt = createdAt.toEpochMilliseconds(),
         lastUpdatedAt = lastUpdatedAt.toEpochMilliseconds(),
-        userId = userId,
+        userId = workspaceId,
         favorite = favorite
     )
 }

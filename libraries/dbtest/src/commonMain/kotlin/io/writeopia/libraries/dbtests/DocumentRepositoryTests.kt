@@ -33,7 +33,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "userId",
             parentId = "root",
             isLocked = false,
         )
@@ -55,7 +55,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "userId",
             parentId = "root",
             isLocked = false
         )
@@ -77,7 +77,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "userId",
             parentId = "root",
             isLocked = false
         )
@@ -99,7 +99,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "userId",
             parentId = "root",
             isLocked = false
         )
@@ -122,7 +122,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "userId",
             parentId = "root",
             isLocked = false
         )
@@ -144,7 +144,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userIdasd",
+            workspaceId = "userIdasd",
             favorite = false,
             parentId = "parentId",
             isLocked = false
@@ -172,7 +172,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = Clock.System.now(),
             lastUpdatedAt = Clock.System.now(),
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "userId",
             parentId = "parentId",
             isLocked = false
         )

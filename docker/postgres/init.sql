@@ -49,10 +49,10 @@ CREATE TABLE company_entity (
   name TEXT NOT NULL
 );
 
-CREATE TABLE workspaceEntity (
+CREATE TABLE workspace_entity (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   name TEXT NOT NULL,
   icon TEXT,
-  icon_tint INTEGER,
+  icon_tint INTEGER
 );

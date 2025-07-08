@@ -95,7 +95,7 @@ class WriteopiaStateManagerTest {
                 loadDocument(
                     Document(
                         content = input,
-                        userId = "",
+                        workspaceId = "",
                         createdAt = now,
                         lastUpdatedAt = now,
                         parentId = "root",
@@ -140,7 +140,7 @@ class WriteopiaStateManagerTest {
                 loadDocument(
                     Document(
                         content = input,
-                        userId = "",
+                        workspaceId = "",
                         createdAt = now,
                         lastUpdatedAt = now,
                         parentId = "root",
@@ -178,7 +178,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = imagesInLineRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -232,7 +232,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = imagesInLineRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -278,7 +278,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = imagesInLineRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -360,7 +360,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = imageGroupRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -407,7 +407,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = imageGroupRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -457,7 +457,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = imageGroupRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -522,7 +522,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = simpleMessagesRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -565,7 +565,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = simpleMessagesRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -602,7 +602,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = imageGroupRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -657,7 +657,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = messagesRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -696,7 +696,7 @@ class WriteopiaStateManagerTest {
             storyManager.loadDocument(
                 Document(
                     content = singleMessageRepoLineBreak.history(),
-                    userId = "",
+                    workspaceId = "",
                     createdAt = now,
                     lastUpdatedAt = now,
                     parentId = "root",
@@ -730,7 +730,7 @@ class WriteopiaStateManagerTest {
             storyManager.loadDocument(
                 Document(
                     content = singleMessageRepoLineBreak.history(),
-                    userId = "",
+                    workspaceId = "",
                     createdAt = now,
                     lastUpdatedAt = now,
                     parentId = "root",
@@ -774,7 +774,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = complexMessagesRepository.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -860,7 +860,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = input,
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -891,7 +891,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = input,
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -941,7 +941,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = complexMessagesRepository.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -970,7 +970,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = messagesRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -1028,7 +1028,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = messagesRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -1090,7 +1090,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = imagesInLineRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -1121,7 +1121,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = messagesRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
@@ -1155,7 +1155,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = messagesRepo.history(),
-                userId = "",
+                workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",

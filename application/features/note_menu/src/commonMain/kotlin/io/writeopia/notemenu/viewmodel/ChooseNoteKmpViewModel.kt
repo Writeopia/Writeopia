@@ -462,7 +462,7 @@ internal class ChooseNoteKmpViewModel(
                     id = GenerateId.generate(),
                     lastUpdatedAt = now,
                     createdAt = now,
-                    userId = getUserId(),
+                    workspaceId = getUserId(),
                     favorite = false
                 )
             }
@@ -489,7 +489,7 @@ internal class ChooseNoteKmpViewModel(
                     id = GenerateId.generate(),
                     lastUpdatedAt = now,
                     createdAt = now,
-                    userId = getUserId(),
+                    workspaceId = getUserId(),
                     favorite = false
                 )
             }
@@ -515,7 +515,7 @@ internal class ChooseNoteKmpViewModel(
                     id = GenerateId.generate(),
                     lastUpdatedAt = now,
                     createdAt = now,
-                    userId = getUserId(),
+                    workspaceId = getUserId(),
                     lastSyncedAt = null,
                     favorite = false,
                     title = "",

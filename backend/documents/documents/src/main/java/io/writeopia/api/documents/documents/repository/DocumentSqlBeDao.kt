@@ -31,7 +31,7 @@ class DocumentSqlBeDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
-                    userId = entity.user_id,
+                    workspaceId = entity.workspace_id,
                     favorite = entity.favorite,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
@@ -49,7 +49,7 @@ class DocumentSqlBeDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
-                    userId = entity.user_id,
+                    workspaceId = entity.workspace_id,
                     favorite = entity.favorite,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
@@ -58,7 +58,7 @@ class DocumentSqlBeDao(
             } ?: emptyList()
 
     fun insertDocumentWithContent(document: Document) {
-        val result = documentQueries?.selectById(document.id, document.userId)?.executeAsOneOrNull()
+        val result = documentQueries?.selectById(document.id, document.workspaceId)?.executeAsOneOrNull()
 
         if (result != null) {
             storyStepQueries?.deleteByDocumentId(document.id)
@@ -78,7 +78,7 @@ class DocumentSqlBeDao(
             created_at = document.createdAt.toEpochMilliseconds(),
             last_updated_at = document.lastUpdatedAt.toEpochMilliseconds(),
             last_synced = document.lastUpdatedAt.toEpochMilliseconds(),
-            user_id = document.userId,
+            workspace_id = document.workspaceId,
             favorite = document.favorite,
             parent_document_id = document.parentId,
             icon = document.icon?.label,
@@ -123,7 +123,7 @@ class DocumentSqlBeDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
-                    userId = entity.user_id,
+                    workspaceId = entity.workspace_id,
                     favorite = entity.favorite,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let {
@@ -188,7 +188,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -254,7 +254,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -326,7 +326,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -398,7 +398,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -469,7 +469,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -547,7 +547,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -614,7 +614,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
