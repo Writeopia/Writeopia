@@ -1,4 +1,4 @@
-package io.writeopia.models
+package io.writeopia.sdk.models
 
 import kotlinx.datetime.Instant
 

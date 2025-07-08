@@ -53,7 +53,17 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
                 if (isVerified) {
                     val token = JwtConfig.generateToken(user.id)
-                    call.respond(HttpStatusCode.OK, AuthResponse(token, user.toApi()))
+
+                    val workspace = AuthService.getWorkspaceForUser(
+                        writeopiaDb,
+                        user.id,
+                        user.name
+                    )
+
+                    call.respond(
+                        HttpStatusCode.OK,
+                        AuthResponse(token, user.toApi(), workspace.toApi())
+                    )
                 } else {
                     call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
                 }
@@ -72,9 +82,19 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             val user = writeopiaDb.getUserByEmail(request.email)
 
             if (user == null) {
+                // Get workspace
                 val wUser = AuthService.createUser(writeopiaDb, request, enabled = debugMode)
 
-                call.respond(HttpStatusCode.Created, AuthResponse(null, wUser.toApi()))
+                val workspace = AuthService.getWorkspaceForUser(
+                    writeopiaDb,
+                    wUser.id,
+                    wUser.name
+                )
+
+                call.respond(
+                    HttpStatusCode.Created,
+                    AuthResponse(null, wUser.toApi(), workspace.toApi()),
+                )
             } else {
                 logger.info("register request - user already exists")
                 call.respond(HttpStatusCode.Conflict, "Not Created")
@@ -141,28 +161,3 @@ fun RoutingContext.getUserId(): String? {
     val principal = call.principal<JWTPrincipal>()
     return principal?.payload?.getClaim("userId")?.asString()
 }
-
-//suspend fun ApplicationCall.withAuth(
-//    byPass: Boolean = false,
-//    func: suspend () -> Unit
-//) {
-//    if (byPass) return func()
-//
-//    val token = request.headers.run {
-//        this["X-Forwarded-Authorization"] ?: this["Authorization"]
-//    }
-//
-//    val idToken = token?.replace("Bearer ", "")
-//        ?: return unAuthorized("The token was not correctly parsed")
-//
-//    return try {
-//        FirebaseAuth.getInstance().verifyIdToken(idToken)
-//        func()
-//    } catch (e: FirebaseAuthException) {
-//        application.log.info("Unauthorized: ${e.message}")
-//        unAuthorized(e.message ?: "Auth failed")
-//    }
-//}
-//
-//private suspend fun ApplicationCall.unAuthorized(message: String = "Auth failed") =
-//    respond(HttpStatusCode.Unauthorized, message)

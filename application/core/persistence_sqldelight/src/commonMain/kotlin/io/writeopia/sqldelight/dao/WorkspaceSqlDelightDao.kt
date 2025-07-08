@@ -2,7 +2,7 @@ package io.writeopia.sqldelight.dao
 
 import io.writeopia.common.utils.extensions.toBoolean
 import io.writeopia.common.utils.extensions.toLong
-import io.writeopia.models.Workspace
+import io.writeopia.sdk.models.Workspace
 import io.writeopia.sql.WriteopiaDb
 import kotlinx.datetime.Instant
 
