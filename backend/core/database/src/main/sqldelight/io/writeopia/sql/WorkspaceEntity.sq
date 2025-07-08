@@ -3,7 +3,7 @@ CREATE TABLE workspaceEntity (
   user_id TEXT NOT NULL,
   name TEXT NOT NULL,
   icon TEXT,
-  icon_tint INTEGER,
+  icon_tint INTEGER
 );
 
 getWorkspaceById:
@@ -12,9 +12,15 @@ FROM workspaceEntity
 WHERE id = ?
 LIMIT 1;
 
+getWorkspacesByUserId:
+SELECT *
+FROM workspaceEntity
+WHERE user_id = ?
+LIMIT 1;
+
 insert:
 INSERT INTO workspaceEntity(id, user_id, name, icon, icon_tint)
-VALUES (?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, user_id=excluded.user_id, name=excluded.name, icon=excluded.icon,
 icon_tint=excluded.icon_tint;
