@@ -83,4 +83,35 @@ jobs:
         with:
           name: Writeopia-macos
           path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg
-
+  notarize_mac_os_intel:
+    name: Notarize Mac OS app
+    runs-on: macos-13
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          architecture: 'x64'
+      - name: import certs
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
+          p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
+      - name: Generate signed mac app
+        run: ./gradlew packageReleaseDmg --no-daemon
+        env:
+          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
+      - name: Notarize
+        run: xcrun notarytool submit application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg --wait --apple-id $APPLE_ID_NOTARIZATION --password $NOTARIZATION_PASSWORD --team-id $APPSTORE_TEAM_ID
+        env:
+          APPLE_ID_NOTARIZATION: ${{ secrets.APPLE_ID_NOTARIZATION }}
+          APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
+          NOTARIZATION_PASSWORD: ${{ secrets.NOTARIZATION_PASSWORD }}
+      - name: Upload App
+        uses: actions/upload-artifact@v4
+        with:
+          name: Writeopia-macos
+          path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg
