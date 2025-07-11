@@ -84,7 +84,7 @@ jobs:
           name: Writeopia-macos
           path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg
   notarize_mac_os_intel:
-    name: Notarize Mac OS app
+    name: Notarize Mac OS app - Intel
     runs-on: macos-13
     steps:
       - name: Check out code
@@ -113,5 +113,5 @@ jobs:
       - name: Upload App
         uses: actions/upload-artifact@v4
         with:
-          name: Writeopia-macos
+          name: Writeopia-macos-intel
           path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg
