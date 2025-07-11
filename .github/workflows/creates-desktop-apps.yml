@@ -92,9 +92,9 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
-          architecture: 'x86'
+          architecture: 'x64'
       - name: import certs
         uses: apple-actions/import-codesign-certs@v3
         with:
