@@ -4,7 +4,7 @@ CREATE TABLE document_entity (
   created_at BIGINT NOT NULL,
   last_updated_at BIGINT NOT NULL,
   last_synced BIGINT NOT NULL,
-  user_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
   favorite BOOLEAN NOT NULL,
   parent_document_id TEXT NOT NULL,
   icon TEXT,
@@ -40,7 +40,7 @@ ORDER BY last_synced;
 selectById:
 SELECT *
 FROM document_entity
-WHERE document_entity.id = ? AND user_id = ? AND deleted = FALSE
+WHERE document_entity.id = ? AND workspace_id = ? AND deleted = FALSE
 LIMIT 1;
 
 selectWithContent:
@@ -61,28 +61,28 @@ selectWithContentByUserId:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.user_id = ? AND deleted = FALSE
+WHERE document_entity.workspace_id = ? AND deleted = FALSE
 ORDER BY position;
 
 selectFavoritesWithContentByUserId:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.user_id = ? AND document_entity.favorite = 1 AND deleted = FALSE
+WHERE document_entity.workspace_id = ? AND document_entity.favorite = 1 AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentByUserIdAfterTime:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.user_id = ? AND last_synced > ? AND deleted = FALSE
+WHERE document_entity.workspace_id = ? AND last_synced > ? AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentByFolderIdAfterTime:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.parent_document_id = ? AND last_synced > ? AND user_id = ? AND deleted = FALSE
+WHERE document_entity.parent_document_id = ? AND last_synced > ? AND workspace_id = ? AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentById:
@@ -105,11 +105,11 @@ FROM document_entity
 WHERE document_entity.parent_document_id = ? AND deleted = FALSE;
 
 insert:
-INSERT INTO document_entity(id, title, created_at, last_updated_at, last_synced, user_id, favorite, parent_document_id, icon, icon_tint, is_locked, company_id, deleted)
+INSERT INTO document_entity(id, title, created_at, last_updated_at, last_synced, workspace_id, favorite, parent_document_id, icon, icon_tint, is_locked, company_id, deleted)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at, last_updated_at=excluded.last_updated_at,
-last_synced=excluded.last_synced, user_id=excluded.user_id, favorite=excluded.favorite,
+last_synced=excluded.last_synced, workspace_id=excluded.workspace_id, favorite=excluded.favorite,
 parent_document_id=excluded.parent_document_id, icon=excluded.icon, icon_tint=excluded.icon_tint,
 is_locked=excluded.is_locked, company_id=excluded.company_id, deleted=excluded.deleted;
 
@@ -132,7 +132,7 @@ UPDATE document_entity
 SET
     deleted = TRUE,
     last_updated_at = ?
-WHERE user_id = ?;
+WHERE workspace_id = ?;
 
 deleteByFolderId:
 UPDATE document_entity
