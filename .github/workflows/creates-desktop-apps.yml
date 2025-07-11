@@ -94,7 +94,7 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
-          architecture: 'x64'
+          architecture: 'x86'
       - name: import certs
         uses: apple-actions/import-codesign-certs@v3
         with:
