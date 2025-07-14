@@ -8,4 +8,4 @@ actual fun handleImageDrop(
     receiveFiles: (List<ExternalFile>) -> Unit
 ): Boolean = false
 
-fun shouldAcceptImageDrop(event: DragAndDropEvent): Boolean = false
+actual fun shouldAcceptImageDrop(event: DragAndDropEvent): Boolean = false

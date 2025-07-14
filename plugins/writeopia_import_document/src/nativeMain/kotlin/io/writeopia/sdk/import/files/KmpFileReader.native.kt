@@ -20,7 +20,8 @@ actual object KmpFileReader {
 
     actual inline fun <reified T> readDirectory(
         directoryPath: String,
-        json: Json
+        json: Json,
+        crossinline predicate: (String) -> Boolean
     ): Flow<T> {
         TODO("Not yet implemented")
     }
