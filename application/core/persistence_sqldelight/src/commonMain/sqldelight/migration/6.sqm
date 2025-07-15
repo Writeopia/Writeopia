@@ -1,3 +1,5 @@
+ALTER TABLE documentEntity RENAME COLUMN user_id TO workspace_id;
+
 CREATE VIRTUAL TABLE IF NOT EXISTS storyStepEntityFts USING fts4(
   text TEXT,
   id TEXT,
