@@ -4,7 +4,7 @@ import io.writeopia.sdk.models.document.Document
 
 interface DocumentSearch {
 
-    suspend fun search(query: String, userId: String, companyId: String?): List<Document>
+    suspend fun search(query: String, workspaceId: String, companyId: String?): List<Document>
 
-    suspend fun getLastUpdatedAt(userId: String): List<Document>
+    suspend fun getLastUpdatedAt(workspaceId: String): List<Document>
 }

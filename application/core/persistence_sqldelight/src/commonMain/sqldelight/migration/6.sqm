@@ -1,0 +1,1 @@
+ALTER TABLE documentEntity RENAME COLUMN user_id TO workspace_id;
