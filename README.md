@@ -74,4 +74,6 @@ To start the android app use Android Studio.
 # SDK
 The SDK allows you to create a text editor an use it instead of a simple `TextField`. You can use this library to create a better story editing experience within apps, such as social media (posts), travel logs, blog apps (like Medium), and chats (like Slack). By using this library, you can provide a great experience for editing text with media.
 
+The SDK is under MIT license you can freely use it. 
+
 You can more in the [SDK documentation](https://docs.writeopia.io/docs/sdk/overview)
