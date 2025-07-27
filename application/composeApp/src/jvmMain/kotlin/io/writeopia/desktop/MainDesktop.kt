@@ -169,6 +169,10 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 sendEvent(KeyboardEvent.REDO)
                 false
             }
+            KeyboardCommands.isEquationEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.EQUATION)
+                false
+            }
 
             else -> false
         }

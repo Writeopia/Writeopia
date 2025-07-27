@@ -17,4 +17,5 @@ enum class KeyboardEvent {
     UNDO,
     REDO,
     ACCEPT_AI,
+    EQUATION,
 }

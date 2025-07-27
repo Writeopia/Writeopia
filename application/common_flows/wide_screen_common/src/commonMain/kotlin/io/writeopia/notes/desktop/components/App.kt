@@ -27,6 +27,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import coil3.compose.AsyncImage
 import io.writeopia.account.ui.SettingsDialog
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
@@ -311,6 +312,13 @@ fun DesktopApp(
                     }
                 }
             }
+
+            AsyncImage(
+                model = "https://latex.codecogs.com/png.latex?\\Large&space;x=\\frac{-b\\pm\\sqrt{b^2-4ac}}{2a}",
+                contentDescription = null,
+                onError = {
+                    println("Error: ${it.result.throwable.message}")
+                })
         }
     }
 }
