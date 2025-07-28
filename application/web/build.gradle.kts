@@ -6,6 +6,10 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(21)
+
+    jvmToolchain(21)
+
     js(IR) {
         browser()
         binaries.executable()

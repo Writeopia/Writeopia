@@ -51,6 +51,8 @@ mavenPublishing {
 }
 
 kotlin {
+    jvmToolchain(21)
+
     jvm {}
 
     js(IR) {
