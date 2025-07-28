@@ -11,6 +11,7 @@ import io.writeopia.ui.icons.all.Files
 import io.writeopia.ui.icons.all.Link
 import io.writeopia.ui.icons.all.SquareCheck
 import io.writeopia.ui.icons.all.WandSparkles
+import io.writeopia.ui.icons.all.pencil
 
 object WrSdkIcons {
 
@@ -33,4 +34,6 @@ object WrSdkIcons {
     val ai = WandSparkles
 
     val linkPage: ImageVector = Link
+
+    val edit: ImageVector = pencil
 }

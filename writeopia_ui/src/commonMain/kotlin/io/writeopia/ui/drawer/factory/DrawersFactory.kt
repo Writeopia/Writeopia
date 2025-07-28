@@ -21,5 +21,6 @@ interface DrawersFactory {
         generateSection: (Int) -> Unit = {},
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit = { _, _ -> },
         onDocumentLinkClick: (String) -> Unit = {},
+        equationToImageUrl: String? = null
     ): Map<Int, StoryStepDrawer>
 }

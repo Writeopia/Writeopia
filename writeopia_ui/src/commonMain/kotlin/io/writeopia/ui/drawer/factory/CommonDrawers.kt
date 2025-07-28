@@ -65,6 +65,7 @@ object CommonDrawers {
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit = { _, _ -> },
         headerEndContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
         onDocumentLinkClick: (String) -> Unit,
+        equationToImageUrl: String? = null
     ): Map<Int, StoryStepDrawer> {
         val commonTextModifier = Modifier.padding(
             start = drawConfig.codeBlockStartPadding.dp,
@@ -247,6 +248,7 @@ object CommonDrawers {
         val loadingDrawer = LoadingDrawer()
 
         val equationsDrawer = EquationDrawer(
+            equationToImageUrl = equationToImageUrl ?: "",
             customBackgroundColor = MaterialTheme.colorScheme.surfaceVariant,
             dragIconWidth = dragIconWidth,
             config = drawConfig,
@@ -257,6 +259,7 @@ object CommonDrawers {
             onDragStart = manager::onDragStart,
             onDragStop = manager::onDragStop,
             moveRequest = manager::moveRequest,
+            onEditClick = manager::onEquationEdition
         )
 
         return buildMap {

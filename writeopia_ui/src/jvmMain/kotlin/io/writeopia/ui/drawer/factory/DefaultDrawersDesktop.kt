@@ -44,6 +44,7 @@ object DefaultDrawersDesktop : DrawersFactory {
         generateSection: (Int) -> Unit,
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
+        equationToImageUrl: String?
     ): Map<Int, StoryStepDrawer> =
         CommonDrawers.create(
             manager,
@@ -62,6 +63,7 @@ object DefaultDrawersDesktop : DrawersFactory {
             fontFamily = fontFamily,
             onDocumentLinkClick = onDocumentLinkClick,
             receiveExternalFile = receiveExternalFile,
+            equationToImageUrl = equationToImageUrl,
             headerEndContent = { storyStep, drawInfo, isHovered ->
                 val isTitle = storyStep.tags.any { it.tag.isTitle() }
                 val isCollapsed by lazy { storyStep.tags.any { it.tag == Tag.COLLAPSED } }

@@ -1,19 +1,30 @@
 package io.writeopia.ui.drawer.content
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -30,10 +41,12 @@ import io.writeopia.ui.draganddrop.target.InBounds
 import io.writeopia.ui.draganddrop.target.external.externalImageDropTarget
 import io.writeopia.ui.draganddrop.target.external.shouldAcceptImageDrop
 import io.writeopia.ui.drawer.StoryStepDrawer
+import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
 
 class EquationDrawer(
+    private val equationToImageUrl: String,
     private val customBackgroundColor: Color,
     private val config: DrawConfig,
     private val dragIconWidth: Dp,
@@ -44,6 +57,7 @@ class EquationDrawer(
     private val moveRequest: (Action.Move) -> Unit,
     private val onSelected: (Boolean, Int) -> Unit,
     private val receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
+    private val onEditClick: (Int) -> Unit
 ) : StoryStepDrawer {
 
     @Composable
@@ -118,14 +132,38 @@ class EquationDrawer(
                         }
                     ) {
                         Box(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                            AsyncImage(
-                                modifier = Modifier.background(Color.White)
-                                    .padding(6.dp)
-                                    .align(Alignment.Center),
-                                model = "https://latex.codecogs.com/png.latex?\\Large&space;x=${step.text}",
-                                contentDescription = null,
-                                onError = { println("Error: ${it.result.throwable.message}") }
-                            )
+                            Row(
+                                modifier = Modifier.align(Alignment.Center),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AsyncImage(
+                                    modifier = Modifier.background(Color.White)
+                                        .padding(6.dp),
+                                    model = "${equationToImageUrl}${step.text}",
+                                    contentDescription = null,
+                                    onError = { println("Error: ${it.result.throwable.message}") }
+                                )
+
+                                Spacer(modifier = Modifier.width(6.dp))
+
+                                Crossfade(
+                                    targetState = isHovered,
+                                    label = "iconCrossFade",
+                                    animationSpec = tween(durationMillis = 200)
+                                ) { show ->
+                                    if (show) {
+                                        Icon(
+                                            WrSdkIcons.edit,
+                                            contentDescription = "Pencil",
+                                            tint = MaterialTheme.colorScheme.onBackground,
+                                            modifier = Modifier.size(32.dp)
+                                                .clip(CircleShape)
+                                                .clickable { onEditClick(drawInfo.position) }
+                                                .padding(8.dp)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

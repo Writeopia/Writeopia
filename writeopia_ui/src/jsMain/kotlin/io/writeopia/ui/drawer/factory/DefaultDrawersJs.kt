@@ -41,6 +41,7 @@ object DefaultDrawersJs : DrawersFactory {
         generateSection: (Int) -> Unit,
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
+        equationToImageUrl: String?
     ): Map<Int, StoryStepDrawer> =
         CommonDrawers.create(
             manager,

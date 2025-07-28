@@ -365,6 +365,18 @@ class WriteopiaStateManager(
         clearSelection()
     }
 
+    fun onEquationEdition(position: Int) {
+        getStory(position)?.let { storyStep ->
+            changeStoryState(
+                stateChange = Action.StoryStateChange(
+                    storyStep.copy(type = StoryTypes.TEXT.type),
+                    position
+                )
+            )
+        }
+
+    }
+
     /**
      * At the moment it is only possible to check items not inside groups. Todo: Fix it!
      *
