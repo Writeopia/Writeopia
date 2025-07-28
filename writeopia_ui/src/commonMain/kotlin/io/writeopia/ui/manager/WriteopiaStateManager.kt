@@ -374,7 +374,6 @@ class WriteopiaStateManager(
                 )
             )
         }
-
     }
 
     /**

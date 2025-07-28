@@ -53,4 +53,3 @@ internal val pencil: ImageVector
     }
 
 private var _pencil: ImageVector? = null
-
