@@ -73,6 +73,7 @@ internal fun TextEditor(
             generateSection = noteEditorViewModel::aiSection,
             receiveExternalFile = noteEditorViewModel::receiveExternalFile,
             onDocumentLinkClick = onDocumentLinkClick,
+            equationToImageUrl = "https://latex.codecogs.com/png.latex?\\Large&space;x="
         ),
         storyState = storyState,
     )

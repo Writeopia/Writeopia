@@ -25,6 +25,7 @@ import io.writeopia.ui.drawer.content.AddButtonDrawer
 import io.writeopia.ui.drawer.content.AiAnswerDrawer
 import io.writeopia.ui.drawer.content.DividerDrawer
 import io.writeopia.ui.drawer.content.DocumentLinkDrawer
+import io.writeopia.ui.drawer.content.EquationDrawer
 import io.writeopia.ui.drawer.content.ImageDrawer
 import io.writeopia.ui.drawer.content.LastEmptySpace
 import io.writeopia.ui.drawer.content.LoadingDrawer
@@ -64,6 +65,7 @@ object CommonDrawers {
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit = { _, _ -> },
         headerEndContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
         onDocumentLinkClick: (String) -> Unit,
+        equationToImageUrl: String? = null
     ): Map<Int, StoryStepDrawer> {
         val commonTextModifier = Modifier.padding(
             start = drawConfig.codeBlockStartPadding.dp,
@@ -245,6 +247,21 @@ object CommonDrawers {
 
         val loadingDrawer = LoadingDrawer()
 
+        val equationsDrawer = EquationDrawer(
+            equationToImageUrl = equationToImageUrl ?: "",
+            customBackgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+            dragIconWidth = dragIconWidth,
+            config = drawConfig,
+            enabled = true,
+            receiveExternalFile = receiveExternalFile,
+            onSelected = manager::onSelected,
+            onDragHover = manager::onDragHover,
+            onDragStart = manager::onDragStart,
+            onDragStop = manager::onDragStop,
+            moveRequest = manager::moveRequest,
+            onEditClick = manager::onEquationEdition
+        )
+
         return buildMap {
             put(StoryTypes.TEXT.type.number, swipeTextDrawer)
             put(StoryTypes.ADD_BUTTON.type.number, AddButtonDrawer())
@@ -281,6 +298,7 @@ object CommonDrawers {
             put(StoryTypes.LOADING.type.number, loadingDrawer)
             put(StoryTypes.DOCUMENT_LINK.type.number, documentLinkDrawer)
             put(StoryTypes.DIVIDER.type.number, dividerDrawer)
+            put(StoryTypes.EQUATION.type.number, equationsDrawer)
         }
     }
 }

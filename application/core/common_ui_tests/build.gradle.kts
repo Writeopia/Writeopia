@@ -8,6 +8,8 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(21)
+
     jvm {}
     sourceSets {
         val commonMain by getting {

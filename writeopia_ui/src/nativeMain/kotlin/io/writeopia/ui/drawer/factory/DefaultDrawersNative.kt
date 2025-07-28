@@ -8,12 +8,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.models.files.ExternalFile
-import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.icons.WrSdkIcons
@@ -34,6 +31,7 @@ object DefaultDrawersNative : DrawersFactory {
         generateSection: (Int) -> Unit,
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
+        equationToImageUrl: String?
     ): Map<Int, StoryStepDrawer> {
         val commonDrawers = CommonDrawers.create(
             manager,
@@ -50,6 +48,7 @@ object DefaultDrawersNative : DrawersFactory {
                 isEmptyErase = { _, _ -> false }
             ),
             fontFamily = fontFamily,
+            equationToImageUrl = equationToImageUrl,
             headerEndContent = { storyStep, drawInfo, _ ->
                 val isTitle = storyStep.tags.any { it.tag.isTitle() }
                 val isCollapsed by lazy { storyStep.tags.any { it.tag == Tag.COLLAPSED } }

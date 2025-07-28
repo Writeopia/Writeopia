@@ -139,6 +139,25 @@ class WriteopiaStateManager(
                                 acceptSuggestions()
                             }
 
+                            KeyboardEvent.EQUATION -> {
+                                // Add method that changes based on type and changes either the current
+                                // position or the selected ones
+                                getCurrentStory()?.let { story ->
+                                    val position = currentPosition()
+
+                                    if (position != null) {
+                                        changeStoryState(
+                                            Action.StoryStateChange(
+                                                storyStep = story.copy(
+                                                    type = StoryTypes.EQUATION.type
+                                                ),
+                                                position
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+
                             else -> {}
                         }
                     }
@@ -344,6 +363,17 @@ class WriteopiaStateManager(
         }
 
         clearSelection()
+    }
+
+    fun onEquationEdition(position: Int) {
+        getStory(position)?.let { storyStep ->
+            changeStoryState(
+                stateChange = Action.StoryStateChange(
+                    storyStep.copy(type = StoryTypes.TEXT.type),
+                    position
+                )
+            )
+        }
     }
 
     /**
@@ -1221,7 +1251,7 @@ class WriteopiaStateManager(
         if (lastStateChange == stateChange) return
         lastStateChange = stateChange
 
-        writeopiaManager.changeStoryState(stateChange, _currentStory.value)?.let { state ->
+        writeopiaManager.changeStoryState(stateChange, _currentStory.value).let { state ->
             if (trackIt) {
                 backStackManager.addState(_currentStory.value)
             }

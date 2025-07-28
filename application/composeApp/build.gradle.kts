@@ -10,6 +10,8 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(21)
+
     jvm {}
 
     androidTarget()
@@ -66,6 +68,7 @@ kotlin {
 
                 implementation(libs.compose.navigation)
                 implementation(libs.platformtools.darkmodedetector)
+                implementation(libs.coil.compose)
             }
         }
 

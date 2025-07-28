@@ -14,6 +14,7 @@ import kotlinx.datetime.Instant
  * those need to be passed as parameters.
  */
 interface DocumentRepository : DocumentUpdate, DocumentSearch {
+    // Change userId for workspace ID in this class.
 
     suspend fun loadDocumentsForFolder(folderId: String): List<Document>
 

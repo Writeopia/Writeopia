@@ -83,4 +83,8 @@ object KeyboardCommands {
     fun isAcceptAiEvent(keyEvent: KeyEvent) =
         keyEvent.key.keyCode == Key.Tab.keyCode &&
             keyEvent.type == KeyEventType.KeyUp
+
+    fun isEquationEvent(keyEvent: KeyEvent) =
+        keyEvent.key.keyCode == Key.E.keyCode &&
+            keyEvent.type == KeyEventType.KeyUp
 }
