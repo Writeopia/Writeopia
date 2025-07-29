@@ -46,6 +46,7 @@ import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
 
 class EquationDrawer(
+    private val showEditAlways: Boolean,
     private val equationToImageUrl: String,
     private val customBackgroundColor: Color,
     private val config: DrawConfig,
@@ -57,7 +58,7 @@ class EquationDrawer(
     private val moveRequest: (Action.Move) -> Unit,
     private val onSelected: (Boolean, Int) -> Unit,
     private val receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
-    private val onEditClick: (Int) -> Unit
+    private val onEditClick: (Int) -> Unit,
 ) : StoryStepDrawer {
 
     @Composable
@@ -147,7 +148,7 @@ class EquationDrawer(
                                 Spacer(modifier = Modifier.width(6.dp))
 
                                 Crossfade(
-                                    targetState = isHovered,
+                                    targetState = isHovered || showEditAlways,
                                     label = "iconCrossFade",
                                     animationSpec = tween(durationMillis = 200)
                                 ) { show ->

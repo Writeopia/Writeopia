@@ -248,6 +248,7 @@ object CommonDrawers {
         val loadingDrawer = LoadingDrawer()
 
         val equationsDrawer = EquationDrawer(
+            showEditAlways = !isDesktop,
             equationToImageUrl = equationToImageUrl ?: "",
             customBackgroundColor = MaterialTheme.colorScheme.surfaceVariant,
             dragIconWidth = dragIconWidth,
