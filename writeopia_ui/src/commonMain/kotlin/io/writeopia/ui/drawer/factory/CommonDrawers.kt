@@ -223,6 +223,7 @@ object CommonDrawers {
             drawConfig = drawConfig,
             fontFamily = fontFamily,
             isDarkTheme = isDarkTheme,
+            forceEditorButtonAppear = !isDesktop
         )
 
         val imageDrawer = ImageDrawer(
