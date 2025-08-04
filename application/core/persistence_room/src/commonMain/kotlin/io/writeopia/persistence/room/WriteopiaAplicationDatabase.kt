@@ -10,11 +10,13 @@ import io.writeopia.persistence.room.data.daos.NotesConfigurationRoomDao
 import io.writeopia.persistence.room.data.daos.TokenDao
 import io.writeopia.persistence.room.data.daos.UiConfigurationRoomDao
 import io.writeopia.persistence.room.data.daos.UserDao
+import io.writeopia.persistence.room.data.daos.WorkspaceDao
 import io.writeopia.persistence.room.data.entities.FolderEntity
 import io.writeopia.persistence.room.data.entities.NotesConfigurationEntity
 import io.writeopia.persistence.room.data.entities.TokenEntity
 import io.writeopia.persistence.room.data.entities.UiConfigurationRoomEntity
 import io.writeopia.persistence.room.data.entities.UserEntity
+import io.writeopia.persistence.room.data.entities.WorkspaceEntity
 import io.writeopia.sdk.persistence.converter.IdListConverter
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
 import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
@@ -35,7 +37,8 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         FolderEntity::class,
         UiConfigurationRoomEntity::class,
         UserEntity::class,
-        TokenEntity::class
+        TokenEntity::class,
+        WorkspaceEntity::class
     ],
     version = 24,
     exportSchema = false
@@ -57,6 +60,8 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
     abstract fun uiConfigDao(): UiConfigurationRoomDao
 
     abstract fun tokenDao(): TokenDao
+
+    abstract fun workspaceDao(): WorkspaceDao
 
     companion object {
         private var instance: WriteopiaApplicationDatabase? = null
