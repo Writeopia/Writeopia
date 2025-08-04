@@ -4,6 +4,7 @@ import io.writeopia.common.utils.persistence.daos.FolderCommonDao
 import io.writeopia.common.utils.persistence.daos.NotesConfigurationCommonDao
 import io.writeopia.common.utils.persistence.daos.TokenCommonDao
 import io.writeopia.common.utils.persistence.daos.UserCommonDao
+import io.writeopia.common.utils.persistence.daos.WorkspaceCommonDao
 import io.writeopia.common.utils.persistence.di.AppDaosInjection
 import io.writeopia.persistence.room.WriteopiaApplicationDatabase
 import io.writeopia.persistence.room.data.daos.FolderDaoDelegator
@@ -11,6 +12,7 @@ import io.writeopia.persistence.room.data.daos.NotesConfigurationRoomDaoDelegato
 import io.writeopia.persistence.room.data.daos.TokenDaoDelegator
 import io.writeopia.persistence.room.data.daos.UserDao
 import io.writeopia.persistence.room.data.daos.UserDaoDelegator
+import io.writeopia.persistence.room.data.daos.WorkspaceDaoDelegator
 
 class AppRoomDaosInjection private constructor(
     private val database: WriteopiaApplicationDatabase
@@ -24,6 +26,9 @@ class AppRoomDaosInjection private constructor(
     override fun provideUserDao(): UserCommonDao = UserDaoDelegator(database.userDao())
 
     override fun provideTokenDao(): TokenCommonDao = TokenDaoDelegator(database.tokenDao())
+
+    override fun provideWorkspaceDao(): WorkspaceCommonDao =
+        WorkspaceDaoDelegator(database.workspaceDao())
 
     companion object {
         private var instance: AppRoomDaosInjection? = null

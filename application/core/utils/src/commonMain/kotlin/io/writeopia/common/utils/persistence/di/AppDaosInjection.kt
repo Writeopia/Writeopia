@@ -4,6 +4,7 @@ import io.writeopia.common.utils.persistence.daos.FolderCommonDao
 import io.writeopia.common.utils.persistence.daos.NotesConfigurationCommonDao
 import io.writeopia.common.utils.persistence.daos.TokenCommonDao
 import io.writeopia.common.utils.persistence.daos.UserCommonDao
+import io.writeopia.common.utils.persistence.daos.WorkspaceCommonDao
 
 interface AppDaosInjection {
     fun provideConfigurationDao(): NotesConfigurationCommonDao
@@ -13,4 +14,7 @@ interface AppDaosInjection {
     fun provideUserDao(): UserCommonDao
 
     fun provideTokenDao(): TokenCommonDao
+
+    fun provideWorkspaceDao(): WorkspaceCommonDao
+
 }
