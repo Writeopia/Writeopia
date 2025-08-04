@@ -16,5 +16,4 @@ interface AppDaosInjection {
     fun provideTokenDao(): TokenCommonDao
 
     fun provideWorkspaceDao(): WorkspaceCommonDao
-
 }
