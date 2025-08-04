@@ -43,6 +43,7 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.drawer.factory.EndOfText
+import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
@@ -60,6 +61,7 @@ import writeopia.writeopia_ui.generated.resources.title
  */
 class HeaderDrawer(
     private val modifier: Modifier = Modifier,
+    private val forceEditorButtonAppear: Boolean = false,
     private val headerClick: () -> Unit = {},
     private val textDrawer: () -> SimpleTextDrawer,
 //    private val multipleSelection: (Int) -> Unit,
@@ -145,14 +147,14 @@ class HeaderDrawer(
             }
 
             AnimatedVisibility(
-                isHovered,
+                isHovered || forceEditorButtonAppear,
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier
                     .padding(6.dp)
                     .align(Alignment.TopEnd),
             ) {
-                Text(
+                Icon(
                     modifier = Modifier
                         .padding(6.dp)
                         .clip(MaterialTheme.shapes.medium)
@@ -161,11 +163,11 @@ class HeaderDrawer(
                             MaterialTheme.colorScheme.surfaceVariant,
                             MaterialTheme.shapes.medium
                         )
-                        .padding(6.dp),
-                    text = "Edit header",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold
+                        .padding(8.dp)
+                        .size(16.dp),
+                    imageVector = WrSdkIcons.edit,
+                    contentDescription = "Edit header",
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         }
@@ -182,7 +184,8 @@ fun headerDrawer(
     drawConfig: DrawConfig,
     enabled: Boolean = true,
     isDarkTheme: Boolean,
-    fontFamily: FontFamily? = null
+    fontFamily: FontFamily? = null,
+    forceEditorButtonAppear: Boolean = false,
 ): StoryStepDrawer =
     HeaderDrawer(
         modifier = modifier,
@@ -198,10 +201,11 @@ fun headerDrawer(
                 textStyle = { drawConfig.titleStyle(fontFamily) },
                 selectionState = selectionState,
                 onSelectionLister = {},
-                aiExplanation = ""
+                aiExplanation = "",
             )
         },
         headerClick = headerClick,
+        forceEditorButtonAppear = forceEditorButtonAppear,
         placeHolderStyle = { drawConfig.titlePlaceHolderStyle(fontFamily) }
     )
 
