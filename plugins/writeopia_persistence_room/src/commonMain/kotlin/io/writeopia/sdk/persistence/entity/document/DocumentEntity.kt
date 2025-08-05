@@ -12,7 +12,7 @@ import io.writeopia.sdk.models.LAST_SYNCED_AT
 import io.writeopia.sdk.models.LAST_UPDATED_AT
 import io.writeopia.sdk.models.PARENT_ID
 import io.writeopia.sdk.models.TITLE
-import io.writeopia.sdk.models.USER_ID
+import io.writeopia.sdk.models.WORKSPACE_ID
 import kotlinx.datetime.Clock
 
 @Entity(tableName = DOCUMENT_ENTITY)
@@ -22,14 +22,14 @@ data class DocumentEntity(
     @ColumnInfo(CREATED_AT) val createdAt: Long,
     @ColumnInfo(LAST_UPDATED_AT) val lastUpdatedAt: Long,
     @ColumnInfo(LAST_SYNCED_AT) val lastSyncedAt: Long? = null,
-    @ColumnInfo(USER_ID) val userId: String,
+    @ColumnInfo(WORKSPACE_ID) val workspaceId: String,
     @ColumnInfo(FAVORITE) val favorite: Boolean,
     @ColumnInfo(PARENT_ID) val parentId: String,
     @ColumnInfo(ICON) val icon: String? = null,
     @ColumnInfo(IS_LOCKED) val isLocked: Boolean,
 ) {
     companion object {
-        fun createById(id: String, userId: String, parentId: String): DocumentEntity {
+        fun createById(id: String, workspaceId: String, parentId: String): DocumentEntity {
             val now = Clock.System.now().toEpochMilliseconds()
             return DocumentEntity(
                 id,
@@ -37,7 +37,7 @@ data class DocumentEntity(
                 now,
                 now,
                 null,
-                userId,
+                workspaceId,
                 favorite = false,
                 parentId = parentId,
                 isLocked = false
