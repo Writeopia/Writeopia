@@ -26,10 +26,7 @@ class DocumentConflictHandler(
         // Todo: Implement!! Save external documents and remove localDocuments. A more complex
         // handling of conflicts can be implemented in the future.
         externalDocuments.forEach { document ->
-            documentRepository.saveDocument(
-                document.copy(lastSyncedAt = now),
-                authRepository.getUser().id
-            )
+            documentRepository.saveDocument(document.copy(lastSyncedAt = now))
         }
 
         return (localDocuments.toSet() - externalDocuments.toSet()).toList()

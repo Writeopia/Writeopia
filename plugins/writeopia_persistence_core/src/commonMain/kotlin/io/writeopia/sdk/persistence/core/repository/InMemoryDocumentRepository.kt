@@ -19,16 +19,16 @@ class InMemoryDocumentRepository : DocumentRepository {
         }
     }
 
-    override suspend fun loadDocumentsForUser(folderId: String): List<Document> =
+    override suspend fun loadDocumentsWorkspace(folderId: String): List<Document> =
         documentsMap.values.toList()
 
     override suspend fun loadDocumentsForFolder(folderId: String): List<Document> =
         documentsMap.values.toList()
 
-    override suspend fun loadFavDocumentsForUser(orderBy: String, userId: String): List<Document> =
+    override suspend fun loadFavDocumentsForWorkspace(orderBy: String, userId: String): List<Document> =
         documentsMap.values.filter { document -> document.favorite }
 
-    override suspend fun loadDocumentsForUserAfterTime(
+    override suspend fun loadDocumentsForWorkspace(
         orderBy: String,
         userId: String,
         instant: Instant
@@ -58,11 +58,11 @@ class InMemoryDocumentRepository : DocumentRepository {
         return documentsMap.filter { (key, _) -> idSet.contains(key) }.values.toList()
     }
 
-    override suspend fun saveDocument(document: Document, userId: String) {
+    override suspend fun saveDocument(document: Document) {
         documentsMap["root"] = document
     }
 
-    override suspend fun saveDocumentMetadata(document: Document, userId: String) {
+    override suspend fun saveDocumentMetadata(document: Document) {
         documentsMap["root"]?.let { currentDocument ->
             documentsMap["root"] = currentDocument.copy(title = document.title)
         }
@@ -83,11 +83,11 @@ class InMemoryDocumentRepository : DocumentRepository {
         ids.forEach(documentsMap::remove)
     }
 
-    override suspend fun deleteByUserId(userId: String) {
+    override suspend fun deleteByWorkspace(userId: String) {
         documentsMap.clear()
     }
 
-    override suspend fun moveDocumentsToNewUser(oldUserId: String, newUserId: String) {
+    override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
     }
 
     override suspend fun updateStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
@@ -132,4 +132,6 @@ class InMemoryDocumentRepository : DocumentRepository {
 
     override suspend fun loadDocumentsByParentId(parentId: String): List<Document> =
         documentsMap.values.toList()
+
+
 }
