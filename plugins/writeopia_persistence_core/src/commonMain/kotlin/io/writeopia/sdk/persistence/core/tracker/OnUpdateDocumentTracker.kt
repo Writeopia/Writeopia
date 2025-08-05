@@ -55,8 +55,7 @@ class OnUpdateDocumentTracker(
                             parentId = documentInfo.parentId,
                             icon = documentInfo.icon,
                             isLocked = documentInfo.isLocked,
-                        ),
-                        userId = documentInfo.userId
+                        )
                     )
                 }
 
@@ -84,7 +83,7 @@ class OnUpdateDocumentTracker(
                         isLocked = documentInfo.isLocked
                     )
 
-                    documentUpdate.saveDocument(document, documentInfo.userId)
+                    documentUpdate.saveDocument(document)
                 }
 
                 is LastEdit.InfoEdition -> {
@@ -107,7 +106,6 @@ class OnUpdateDocumentTracker(
                             icon = documentInfo.icon,
                             isLocked = documentInfo.isLocked
                         ),
-                        userId = documentInfo.userId
                     )
 
                     if (!lastEdit.storyStep.ephemeral) {
@@ -139,8 +137,7 @@ class OnUpdateDocumentTracker(
                             icon = documentInfo.icon,
                             isLocked = documentInfo.isLocked,
                             favorite = documentInfo.isFavorite
-                        ),
-                        userId = documentInfo.userId
+                        )
                     )
                 }
             }
