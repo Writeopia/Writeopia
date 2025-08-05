@@ -27,7 +27,7 @@ interface DocumentEntityDao {
     @Delete
     suspend fun deleteDocuments(vararg documents: DocumentEntity)
 
-    @Query("DELETE FROM $DOCUMENT_ENTITY WHERE user_id = :userId")
+    @Query("DELETE FROM $DOCUMENT_ENTITY WHERE workspace_id = :userId")
     suspend fun deleteDocumentsByUserId(userId: String)
 
     @Query("SELECT * FROM $DOCUMENT_ENTITY ORDER BY $DOCUMENT_ENTITY.last_updated_at LIMIT 10")
@@ -84,7 +84,7 @@ interface DocumentEntityDao {
     @Query(
         "SELECT * FROM $DOCUMENT_ENTITY " +
             "LEFT JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
-            "WHERE user_id = :userId " +
+            "WHERE workspace_id = :userId " +
             "ORDER BY " +
 //                "CASE WHEN :orderBy = \'$TITLE\' THEN $DOCUMENT_ENTITY.title END COLLATE NOCASE ASC, " +
 //                "CASE WHEN :orderBy = \'$CREATED_AT\' THEN $DOCUMENT_ENTITY.created_at END DESC, " +
@@ -98,7 +98,7 @@ interface DocumentEntityDao {
     @Query(
         "SELECT * FROM $DOCUMENT_ENTITY " +
             "LEFT JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
-            "WHERE user_id = :userId " +
+            "WHERE workspace_id = :userId " +
             "ORDER BY " +
 //                "CASE WHEN :orderBy = \'$TITLE\' THEN $DOCUMENT_ENTITY.title END COLLATE NOCASE ASC, " +
 //                "CASE WHEN :orderBy = \'$CREATED_AT\' THEN $DOCUMENT_ENTITY.created_at END DESC, " +
@@ -126,7 +126,7 @@ interface DocumentEntityDao {
     @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.id = :id")
     fun listenForDocumentById(id: String): Flow<DocumentEntity?>
 
-    @Query("UPDATE $DOCUMENT_ENTITY set user_id = :newUserId WHERE user_id = :oldUserId")
+    @Query("UPDATE $DOCUMENT_ENTITY set workspace_id = :newUserId WHERE workspace_id = :oldUserId")
     suspend fun moveDocumentsToNewUser(oldUserId: String, newUserId: String)
 
     @Query("SELECT title FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.id = :documentId")
