@@ -1075,7 +1075,7 @@ class WriteopiaStateManager(
         val newDocument =
             documentInfo.document(getUserId()).copy(content = stories, title = text)
 
-        documentRepository.saveDocument(newDocument, userId)
+        documentRepository.saveDocument(newDocument)
         documentRepository.refreshDocuments()
 
         _currentStory.value = writeopiaManager.addDocumentLink(
