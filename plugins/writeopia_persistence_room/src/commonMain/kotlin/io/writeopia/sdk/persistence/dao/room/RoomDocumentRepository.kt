@@ -29,16 +29,23 @@ class RoomDocumentRepository(
     override suspend fun loadDocumentsForFolder(folderId: String): List<Document> =
         documentEntityDao.loadDocumentsByParentId(folderId).map { it.toModel() }
 
-    override suspend fun loadFavDocumentsForWorkspace(orderBy: String, userId: String): List<Document> =
+    override suspend fun loadFavDocumentsForWorkspace(
+        orderBy: String,
+        workspaceId: String
+    ): List<Document> =
         emptyList()
 
     override suspend fun deleteDocumentByFolder(folderId: String) {
     }
 
-    override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
+    override suspend fun search(
+        query: String,
+        workspaceId: String,
+        companyId: String?
+    ): List<Document> =
         documentEntityDao.search(query).map { it.toModel() }
 
-    override suspend fun getLastUpdatedAt(userId: String): List<Document> =
+    override suspend fun getLastUpdatedAt(workspaceId: String): List<Document> =
         documentEntityDao.selectByLastUpdated().map { it.toModel() }
 
     override suspend fun listenForDocumentsByParentId(
@@ -57,8 +64,8 @@ class RoomDocumentRepository(
             entity?.toModel()?.info()
         }
 
-    override suspend fun loadDocumentsWorkspace(userId: String): List<Document> =
-        documentEntityDao.loadDocumentsWithContentForUser(userId)
+    override suspend fun loadDocumentsWorkspace(workspaceId: String): List<Document> =
+        documentEntityDao.loadDocumentsWithContentForUser(workspaceId)
             .map { (documentEntity, storyEntity) ->
                 val content = loadInnerSteps(storyEntity)
                 documentEntity.toModel(content)
@@ -171,7 +178,12 @@ class RoomDocumentRepository(
             .mapValues { (_, entity) ->
                 if (entity.linkToDocument != null) {
                     val title = documentEntityDao.getDocumentTitleById(entity.linkToDocument)
-                    return@mapValues entity.toModel(documentLink = DocumentLink(entity.linkToDocument, title))
+                    return@mapValues entity.toModel(
+                        documentLink = DocumentLink(
+                            entity.linkToDocument,
+                            title
+                        )
+                    )
                 }
 
                 if (entity.hasInnerSteps) {
