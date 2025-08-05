@@ -549,8 +549,12 @@ internal class ChooseNoteKmpViewModel(
         val userId = getUserId()
 
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
-            notesUseCase.loadDocumentsForUserAfterTimeFromDb(userId, lastUpdated)
-        } ?: notesUseCase.loadDocumentsForUserFromDb(userId)
+            notesUseCase.loadDocumentsForWorkspaceAfterTimeFromDb(
+                authRepository.getWorkspace().id,
+                userId,
+                lastUpdated
+            )
+        } ?: notesUseCase.loadDocumentsForWorkspaceFromDb(userId)
 
         val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
             notesUseCase.loadFolderForUserAfterTime(userId, lastUpdated)
@@ -579,9 +583,13 @@ internal class ChooseNoteKmpViewModel(
         val userId = getUserId()
 
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
-            notesUseCase.loadDocumentsForUserAfterTimeFromDb(userId, lastUpdated)
+            notesUseCase.loadDocumentsForWorkspaceAfterTimeFromDb(
+                authRepository.getWorkspace().id,
+                userId,
+                lastUpdated
+            )
         } ?: run {
-            notesUseCase.loadDocumentsForUserFromDb(userId)
+            notesUseCase.loadDocumentsForWorkspaceFromDb(userId)
         }
 
         val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
@@ -601,7 +609,7 @@ internal class ChooseNoteKmpViewModel(
 
     private fun directoryFilesAs(path: String, documentWriter: DocumentWriter) {
         viewModelScope.launch(Dispatchers.Default) {
-            val data = notesUseCase.loadDocumentsForUserFromDb(getUserId())
+            val data = notesUseCase.loadDocumentsForWorkspaceFromDb(getUserId())
             documentWriter.writeDocuments(data, path, usePath = true)
         }
     }
