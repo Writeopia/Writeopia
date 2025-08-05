@@ -66,7 +66,7 @@ class NotesUseCaseIntegrationTest {
         )
 
         assertTrue {
-            notesUseCase.loadDocumentsForUserFromDb(DISCONNECTED_USER_ID).isNotEmpty()
+            notesUseCase.loadDocumentsForWorkspaceFromDb(DISCONNECTED_USER_ID).isNotEmpty()
         }
     }
 

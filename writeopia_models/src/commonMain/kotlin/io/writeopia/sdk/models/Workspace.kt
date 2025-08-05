@@ -8,4 +8,14 @@ data class Workspace(
     val name: String,
     val lastSync: Instant,
     val selected: Boolean
-)
+) {
+    companion object {
+        fun disconnectedWorkspace() = Workspace(
+            id = "disconnected_workspace",
+            userId = "disconnected_user",
+            name = "",
+            lastSync = Instant.DISTANT_PAST,
+            selected = true
+        )
+    }
+}

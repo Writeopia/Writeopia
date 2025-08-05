@@ -39,7 +39,8 @@ class RoomAuthRepository(
         saveUser(WriteopiaUser.disconnectedUser().copy(id = WriteopiaUser.OFFLINE), true)
     }
 
-    override suspend fun getWorkspace(): Workspace? = workspaceCommonDao.selectCurrentWorkspace()
+    override suspend fun getWorkspace(): Workspace =
+        workspaceCommonDao.selectCurrentWorkspace() ?: Workspace.disconnectedWorkspace()
 
     override suspend fun saveWorkspace(workspace: Workspace) {
         workspaceCommonDao.insertWorkspace(workspace, true)
