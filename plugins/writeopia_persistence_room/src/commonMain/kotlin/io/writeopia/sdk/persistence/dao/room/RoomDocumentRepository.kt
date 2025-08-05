@@ -107,8 +107,8 @@ class RoomDocumentRepository(
                 documentEntity.toModel(content)
             }
 
-    override suspend fun saveDocument(document: Document, userId: String) {
-        saveDocumentMetadata(document, userId)
+    override suspend fun saveDocument(document: Document) {
+        saveDocumentMetadata(document)
 
         document.content.toEntity(document.id).let { data ->
             storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
@@ -116,7 +116,7 @@ class RoomDocumentRepository(
         }
     }
 
-    override suspend fun saveDocumentMetadata(document: Document, userId: String) {
+    override suspend fun saveDocumentMetadata(document: Document) {
         documentEntityDao.insertDocuments(document.toEntity())
     }
 
