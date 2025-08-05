@@ -29,7 +29,7 @@ class RoomDocumentRepository(
     override suspend fun loadDocumentsForFolder(folderId: String): List<Document> =
         documentEntityDao.loadDocumentsByParentId(folderId).map { it.toModel() }
 
-    override suspend fun loadFavDocumentsForUser(orderBy: String, userId: String): List<Document> =
+    override suspend fun loadFavDocumentsForWorkspace(orderBy: String, userId: String): List<Document> =
         emptyList()
 
     override suspend fun deleteDocumentByFolder(folderId: String) {
@@ -57,14 +57,14 @@ class RoomDocumentRepository(
             entity?.toModel()?.info()
         }
 
-    override suspend fun loadDocumentsForUser(userId: String): List<Document> =
+    override suspend fun loadDocumentsWorkspace(userId: String): List<Document> =
         documentEntityDao.loadDocumentsWithContentForUser(userId)
             .map { (documentEntity, storyEntity) ->
                 val content = loadInnerSteps(storyEntity)
                 documentEntity.toModel(content)
             }
 
-    override suspend fun loadDocumentsForUserAfterTime(
+    override suspend fun loadDocumentsForWorkspace(
         orderBy: String,
         userId: String,
         instant: Instant
@@ -146,11 +146,11 @@ class RoomDocumentRepository(
         storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(position, documentId))
     }
 
-    override suspend fun deleteByUserId(userId: String) {
+    override suspend fun deleteByWorkspace(userId: String) {
         documentEntityDao.deleteDocumentsByUserId(userId)
     }
 
-    override suspend fun moveDocumentsToNewUser(oldUserId: String, newUserId: String) {
+    override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
         documentEntityDao.moveDocumentsToNewUser(oldUserId, newUserId)
     }
 

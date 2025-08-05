@@ -70,7 +70,7 @@ class FolderSync(
             // If everything ran accordingly, update the sync time of the folder.
             documentsNotSent.forEach { document ->
                 val newDocument = document.copy(lastSyncedAt = now)
-                documentRepository.saveDocumentMetadata(newDocument, userId)
+                documentRepository.saveDocumentMetadata(newDocument)
             }
 
             documentRepository.refreshDocuments()

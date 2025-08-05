@@ -46,10 +46,7 @@ class NotesUseCase private constructor(
         documentRepository.loadDocumentById(id)
             ?.let(documentChange)
             ?.let { newDocument ->
-                documentRepository.saveDocumentMetadata(
-                    newDocument,
-                    authRepository.getUser().id
-                )
+                documentRepository.saveDocumentMetadata(newDocument)
             }?.also { documentRepository.refreshDocuments() }
     }
 
@@ -76,12 +73,12 @@ class NotesUseCase private constructor(
     }
 
     suspend fun loadDocumentsForUserFromDb(userId: String): List<Document> =
-        documentRepository.loadDocumentsForUser(userId)
+        documentRepository.loadDocumentsWorkspace(userId)
 
     suspend fun loadDocumentsForUserAfterTimeFromDb(userId: String, time: Instant): List<Document> =
         notesConfig.getOrderPreference(userId)
             .let { orderBy ->
-                documentRepository.loadDocumentsForUserAfterTime(
+                documentRepository.loadDocumentsForWorkspace(
                     orderBy,
                     userId,
                     time
@@ -148,7 +145,7 @@ class NotesUseCase private constructor(
     }
 
     suspend fun saveDocumentDb(document: Document) {
-        documentRepository.saveDocument(document, authRepository.getUser().id)
+        documentRepository.saveDocument(document)
         documentRepository.refreshDocuments()
     }
 
@@ -186,7 +183,7 @@ class NotesUseCase private constructor(
         }.map { document ->
             document.duplicateWithNewIds()
         }.forEach { document ->
-            documentRepository.saveDocument(document, authRepository.getUser().id)
+            documentRepository.saveDocument(document)
         }
 
         documentRepository.refreshDocuments()
@@ -237,7 +234,7 @@ class NotesUseCase private constructor(
                         parentId = newFolder.id
                     )
                 }.forEach { document ->
-                    documentRepository.saveDocument(document, authRepository.getUser().id)
+                    documentRepository.saveDocument(document)
                 }
 
             newFolder
