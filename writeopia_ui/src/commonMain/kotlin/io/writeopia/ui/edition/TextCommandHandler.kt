@@ -181,9 +181,8 @@ class Trie {
 
     fun insert(word: String) {
         var node = root
-        for (char in word) {
-            node = node.children.getOrPut(char) { TrieNode() }
-        }
+
+        word.forEach { char -> node = node.children.getOrPut(char, ::TrieNode) }
         node.isEndOfWord = true
     }
 
@@ -192,15 +191,10 @@ class Trie {
         return node?.isEndOfWord == true
     }
 
-    fun startsWith(prefix: String): Boolean {
-        return findNode(prefix) != null
-    }
-
     private fun findNode(prefix: String): TrieNode? {
         var node = root
-        for (char in prefix) {
-            node = node.children[char] ?: return null
-        }
+
+        prefix.forEach { char -> node = node.children[char] ?: return null }
         return node
     }
 }
