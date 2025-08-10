@@ -11,7 +11,6 @@ import io.writeopia.sdk.sql.WriteopiaDb
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import java.awt.Menu
 import java.util.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -58,18 +57,18 @@ class SqlDelightDocumentRepositoryTest {
                 createdAt = instant,
                 lastUpdatedAt = instant,
                 lastSyncedAt = null,
-                userId = userId,
+                workspaceId = userId,
                 parentId = "",
                 content = bigContent
             )
 
-            documentRepository.saveDocument(document, "userId")
+            documentRepository.saveDocument(document)
             val result = documentRepository.loadDocumentById(document.id)
 
             assertEquals(result, document)
 
             val newDocument = document.copy(content = smallContent)
-            documentRepository.saveDocument(newDocument, userId)
+            documentRepository.saveDocument(newDocument)
             val result1 = documentRepository.loadDocumentById(newDocument.id)
 
             assertEquals(result1?.content, smallContent)
@@ -88,12 +87,12 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = userId,
             parentId = "",
             icon = MenuItem.Icon(icon, tint)
         )
 
-        documentRepository.saveDocument(document, "userId")
+        documentRepository.saveDocument(document)
 
         val newDocument = documentRepository.loadDocumentById(documentId)
         assertEquals(newDocument?.icon?.label, icon)
@@ -113,13 +112,13 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = userId,
             parentId = "",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true
         )
 
-        documentRepository.saveDocument(document, userId)
+        documentRepository.saveDocument(document)
 
         val newDocument = documentRepository.loadDocumentById(documentId)
         assertTrue { newDocument!!.isLocked }
@@ -138,13 +137,13 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = Instant.DISTANT_PAST,
-            userId = userId,
+            workspaceId = userId,
             parentId = "root",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true
         )
 
-        documentRepository.saveDocument(document, "userId")
+        documentRepository.saveDocument(document)
 
         val newDocument = documentRepository.loadOutdatedDocuments("root")
 
@@ -165,13 +164,13 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = userId,
             parentId = "root",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true
         )
 
-        documentRepository.saveDocument(document, "userId")
+        documentRepository.saveDocument(document)
 
         val newDocument = documentRepository.loadOutdatedDocuments("root")
 

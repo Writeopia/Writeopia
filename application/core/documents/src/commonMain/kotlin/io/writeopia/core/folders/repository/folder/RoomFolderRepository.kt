@@ -1,4 +1,4 @@
-package io.writeopia.core.folders.repository
+package io.writeopia.core.folders.repository.folder
 
 import io.writeopia.common.utils.persistence.daos.FolderCommonDao
 import io.writeopia.sdk.models.document.Folder
@@ -27,14 +27,14 @@ class RoomFolderRepository(
         }
     }
 
-    override suspend fun getFoldersForUserAfterTime(
+    override suspend fun getFoldersForWorkspaceAfterTime(
         userId: String,
         instant: Instant
     ): List<Folder> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getFoldersForUser(userId: String): List<Folder> {
+    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> {
         TODO("Not yet implemented")
     }
 
