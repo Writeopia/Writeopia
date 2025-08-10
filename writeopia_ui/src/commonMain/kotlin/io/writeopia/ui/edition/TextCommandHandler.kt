@@ -24,7 +24,7 @@ class TextCommandHandler(
     }
 
     fun handleCommand(text: String, step: StoryStep, position: Int): Boolean {
-        if (excludeTypes.contains(step.type.number)) return false
+        if (excludeTypes.contains(step.type.number) || text.lastOrNull() != ' ') return false
 
         val textArray = text.split(" ")
         if (textArray.isEmpty()) return false
@@ -172,7 +172,6 @@ class TextCommandHandler(
 }
 
 class Trie {
-
     private class TrieNode {
         val children: MutableMap<Char, TrieNode> = mutableMapOf()
         var isEndOfWord: Boolean = false
