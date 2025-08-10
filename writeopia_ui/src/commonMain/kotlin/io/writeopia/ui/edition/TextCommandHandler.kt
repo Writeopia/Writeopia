@@ -14,25 +14,30 @@ import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.ui.manager.WriteopiaStateManager
 
 class TextCommandHandler(
-    private val commandsMap: Map<Command, (StoryStep, Int) -> Unit>,
-    private val excludeTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number)
+    private val commandsMap: Map<String, (StoryStep, Int) -> Unit>,
+    private val excludeTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number),
+    private val trie: Trie = Trie()
 ) {
+
+    init {
+        commandsMap.keys.forEach { trie.insert(it) }
+    }
 
     fun handleCommand(text: String, step: StoryStep, position: Int): Boolean {
         if (excludeTypes.contains(step.type.number)) return false
 
-        // Todo(Leandro): Using a reverse index would improve the speed a lot.
-        val command: Command = commandsMap.keys
-            .firstOrNull { command ->
-                when (command.whereToFind) {
-                    WhereToFind.START -> text.startsWith(command.commandText)
-                    WhereToFind.ANYWHERE -> text.contains(command.commandText)
-                }
-            } ?: return false
+        val textArray = text.split(" ")
+        if (textArray.isEmpty()) return false
 
-        commandsMap[command]!!.invoke(step.copy(text = text), position)
+        val command = textArray[0]
+        val hasCommand = trie.search(command)
 
-        return true
+        return if (hasCommand) {
+            commandsMap[command]!!.invoke(step.copy(text = text), position)
+            true
+        } else {
+            false
+        }
     }
 
     companion object {
@@ -41,7 +46,7 @@ class TextCommandHandler(
         fun defaultCommands(manager: WriteopiaStateManager): TextCommandHandler {
             return TextCommandHandler(
                 mapOf(
-                    CommandFactory.checkItem() to { _, position ->
+                    CommandFactory.checkItem().commandText to { _, position ->
                         manager.changeStoryType(
                             position,
                             TypeInfo(StoryTypes.CHECK_ITEM.type),
@@ -51,7 +56,7 @@ class TextCommandHandler(
                             )
                         )
                     },
-                    CommandFactory.checkItem2() to { _, position ->
+                    CommandFactory.checkItem2().commandText to { _, position ->
                         manager.changeStoryType(
                             position,
                             TypeInfo(StoryTypes.CHECK_ITEM.type),
@@ -61,14 +66,14 @@ class TextCommandHandler(
                             )
                         )
                     },
-                    CommandFactory.box() to { _, position ->
+                    CommandFactory.box().commandText to { _, position ->
                         manager.toggleTagForPosition(
                             position,
                             TagInfo(Tag.HIGH_LIGHT_BLOCK),
                             CommandInfo(CommandFactory.box(), CommandTrigger.WRITTEN)
                         )
                     },
-                    CommandFactory.unOrderedList() to { _, position ->
+                    CommandFactory.unOrderedList().commandText to { _, position ->
                         manager.changeStoryType(
                             position,
                             TypeInfo(StoryTypes.UNORDERED_LIST_ITEM.type),
@@ -78,7 +83,7 @@ class TextCommandHandler(
                             )
                         )
                     },
-                    CommandFactory.h1() to { _, position ->
+                    CommandFactory.h1().commandText to { _, position ->
                         manager.changeStoryType(
                             position,
                             TypeInfo(
@@ -92,7 +97,7 @@ class TextCommandHandler(
                             )
                         )
                     },
-                    CommandFactory.h2() to { _, position ->
+                    CommandFactory.h2().commandText to { _, position ->
                         manager.changeStoryType(
                             position,
                             TypeInfo(
@@ -106,7 +111,7 @@ class TextCommandHandler(
                             )
                         )
                     },
-                    CommandFactory.h3() to { _, position ->
+                    CommandFactory.h3().commandText to { _, position ->
                         manager.changeStoryType(
                             position,
                             TypeInfo(
@@ -120,7 +125,7 @@ class TextCommandHandler(
                             )
                         )
                     },
-                    CommandFactory.h4() to { _, position ->
+                    CommandFactory.h4().commandText to { _, position ->
                         manager.changeStoryType(
                             position,
                             TypeInfo(
@@ -134,7 +139,7 @@ class TextCommandHandler(
                             )
                         )
                     },
-                    CommandFactory.codeBlock() to { _, position ->
+                    CommandFactory.codeBlock().commandText to { _, position ->
                         manager.changeStoryType(
                             position,
                             TypeInfo(
@@ -147,7 +152,7 @@ class TextCommandHandler(
                             )
                         )
                     },
-                    CommandFactory.divider() to { _, position ->
+                    CommandFactory.divider().commandText to { _, position ->
                         manager.changeStoryType(
                             position,
                             TypeInfo(
@@ -163,5 +168,40 @@ class TextCommandHandler(
                 )
             )
         }
+    }
+}
+
+class Trie {
+
+    private class TrieNode {
+        val children: MutableMap<Char, TrieNode> = mutableMapOf()
+        var isEndOfWord: Boolean = false
+    }
+
+    private val root = TrieNode()
+
+    fun insert(word: String) {
+        var node = root
+        for (char in word) {
+            node = node.children.getOrPut(char) { TrieNode() }
+        }
+        node.isEndOfWord = true
+    }
+
+    fun search(word: String): Boolean {
+        val node = findNode(word)
+        return node?.isEndOfWord == true
+    }
+
+    fun startsWith(prefix: String): Boolean {
+        return findNode(prefix) != null
+    }
+
+    private fun findNode(prefix: String): TrieNode? {
+        var node = root
+        for (char in prefix) {
+            node = node.children[char] ?: return null
+        }
+        return node
     }
 }
