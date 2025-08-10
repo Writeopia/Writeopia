@@ -75,8 +75,6 @@ class FolderSync(
 
             documentRepository.refreshDocuments()
             folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
-        } else {
-            return
         }
     }
 }
