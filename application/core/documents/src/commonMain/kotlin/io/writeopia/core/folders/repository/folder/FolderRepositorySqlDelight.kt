@@ -15,7 +15,7 @@ class FolderRepositorySqlDelight(
     override suspend fun getFolderById(id: String): Folder? =
         folderDao.getFolderById(id)?.toModel(0)
 
-    override suspend fun getFoldersForUserAfterTime(
+    override suspend fun getFoldersForWorkspaceAfterTime(
         userId: String,
         instant: Instant
     ): List<Folder> {
@@ -25,8 +25,8 @@ class FolderRepositorySqlDelight(
         )
     }
 
-    override suspend fun getFoldersForUser(userId: String): List<Folder> =
-        folderDao.selectByUserId(userId)
+    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> =
+        folderDao.selectByUserId(workspaceId)
 
     override suspend fun createFolder(folder: Folder) {
         folderDao.createFolder(folder.toEntity())
