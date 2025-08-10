@@ -10,9 +10,9 @@ interface FolderRepository {
 
     suspend fun getFolderByParentId(parentId: String): List<Folder>
 
-    suspend fun getFoldersForUserAfterTime(userId: String, instant: Instant): List<Folder>
+    suspend fun getFoldersForWorkspaceAfterTime(workspaceId: String, instant: Instant): List<Folder>
 
-    suspend fun getFoldersForUser(userId: String): List<Folder>
+    suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder>
 
     suspend fun createFolder(folder: Folder)
 
@@ -35,4 +35,6 @@ interface FolderRepository {
     suspend fun listenForFoldersByParentId(parentId: String): Flow<Map<String, List<Folder>>>
 
     suspend fun stopListeningForFoldersByParentId(parentId: String)
+
+    suspend fun localOutDatedFolders(workspaceId: String): List<Folder>
 }

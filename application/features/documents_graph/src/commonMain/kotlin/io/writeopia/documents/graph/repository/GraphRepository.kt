@@ -11,7 +11,7 @@ class GraphRepository(
 ) {
 
     suspend fun loadAllDocumentsAsAdjacencyList(userId: String): Map<ItemData, List<ItemData>> {
-        val folders = folderRepository.getFoldersForUser(userId)
+        val folders = folderRepository.getFoldersForWorkspace(userId)
         val documents = documentRepository.loadDocumentsWorkspace(userId)
 
         val root = ItemData(id = "root", title = "", parentId = "", isFolder = true)

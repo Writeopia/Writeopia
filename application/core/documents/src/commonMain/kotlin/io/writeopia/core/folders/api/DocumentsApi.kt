@@ -9,6 +9,8 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -34,7 +36,14 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         }
     }
 
-    suspend fun sendDocuments(documents: List<Document>): ResultData<Unit> {
+    suspend fun getWorkspaceNewData(
+        workspaceId: String,
+        lastSync: Instant
+    ): ResultData<Pair<List<Document>, List<Folder>>> {
+
+    }
+
+    suspend fun sendDocuments(documents: List<MenuItem>): ResultData<Unit> {
         val response = client.post("$baseUrl/api/document") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(documents.map { it.toApi() }))
