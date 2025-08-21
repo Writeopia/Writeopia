@@ -90,6 +90,7 @@ class OnUpdateDocumentTracker(
                     )
 
                     documentUpdate.saveDocument(document, documentInfo.userId)
+                    onDocumentUpdate(document)
                 }
 
                 is LastEdit.InfoEdition -> {

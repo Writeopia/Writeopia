@@ -22,6 +22,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +30,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
@@ -95,10 +98,13 @@ fun DesktopNoteEditorScreen(
             exit = fadeOut(animationSpec = tween(durationMillis = 150))
         ) {
             Box(modifier = Modifier.padding(6.dp)) {
+                val focusRequester = remember { FocusRequester() }
+
                 BasicTextField(
                     value = textState,
                     onValueChange = noteEditorViewModel::searchInDocument,
                     modifier = Modifier.defaultMinSize(minWidth = 160.dp)
+                        .focusRequester(focusRequester)
                         .padding(12.dp)
                         .background(WriteopiaTheme.colorScheme.cardBg, shape)
                         .border(1.dp, MaterialTheme.colorScheme.outline, shape)
@@ -124,6 +130,10 @@ fun DesktopNoteEditorScreen(
                             noteEditorViewModel.hideSearch()
                         }
                 )
+
+                LaunchedEffect(key1 = Unit) {
+                    focusRequester.requestFocus()
+                }
             }
         }
 

@@ -357,6 +357,16 @@ class NoteEditorKmpViewModel(
                         documentRepository,
                         onStoryStepUpdate = { storyStep, position ->
                             inDocumentSearchRepository.insertForFts(storyStep, documentId, position)
+                        },
+                        onDocumentUpdate = { document ->
+                            document.content
+                                .forEach { (position, storyStep) ->
+                                    inDocumentSearchRepository.insertForFts(
+                                        storyStep,
+                                        documentId,
+                                        position
+                                    )
+                                }
                         }
                     )
                 )
