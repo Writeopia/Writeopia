@@ -89,7 +89,7 @@ fun DesktopNoteEditorScreen(
         }
 
         val textState by noteEditorViewModel.searchText.collectAsState()
-        val showSearch by noteEditorViewModel.showSearch.collectAsState()
+        val showSearch by noteEditorViewModel.showSearchState.collectAsState()
         val shape = MaterialTheme.shapes.medium
 
         AnimatedVisibility(

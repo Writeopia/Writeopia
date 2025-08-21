@@ -46,7 +46,7 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val notFavorite: StateFlow<Boolean>
 
-    val showSearch: StateFlow<Boolean>
+    val showSearchState: StateFlow<Boolean>
 
     val searchText: StateFlow<String>
 

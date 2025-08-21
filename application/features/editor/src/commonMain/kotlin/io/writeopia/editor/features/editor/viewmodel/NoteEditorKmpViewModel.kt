@@ -138,7 +138,7 @@ class NoteEditorKmpViewModel(
     private val _showSearch = MutableStateFlow(false)
     private val _searchText = MutableStateFlow("")
 
-    override val showSearch: StateFlow<Boolean> = _showSearch.asStateFlow()
+    override val showSearchState: StateFlow<Boolean> = _showSearch.asStateFlow()
     override val searchText: StateFlow<String> = _searchText.asStateFlow()
 
     private val findsOfSearch: Flow<Set<Int>> =
