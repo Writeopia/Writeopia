@@ -141,6 +141,15 @@ class NoteEditorKmpViewModel(
     override val showSearch: StateFlow<Boolean> = _showSearch.asStateFlow()
     override val searchText: StateFlow<String> = _searchText.asStateFlow()
 
+    private val findsOfSearch: Flow<List<Int>> =
+        combine(writeopiaManager.documentInfo, searchText) { info, query ->
+            info.id to query
+        }.map { (documentId, query) ->
+            inDocumentSearchRepository.searchInDocument(query, documentId).also {
+                println("found: ${it.joinToString()}")
+            }
+        }
+
     /**
      * This property defines if the document should be edited (you can write in it, for example)
      */
@@ -229,7 +238,11 @@ class NoteEditorKmpViewModel(
             documentRepository.listenForDocumentInfoById(it)
         }
 
-        writeopiaManager.toDraw.flatMapLatest { drawState ->
+        val toDraw = combine(writeopiaManager.toDraw, findsOfSearch) { drawState, finds ->
+            drawState
+        }
+
+        toDraw.flatMapLatest { drawState ->
             infoFlow.map { info ->
                 drawState to info
             }
@@ -341,7 +354,10 @@ class NoteEditorKmpViewModel(
                 writeopiaManager.loadDocument(document)
                 writeopiaManager.saveOnStoryChanges(
                     OnUpdateDocumentTracker(
-                        documentRepository
+                        documentRepository,
+                        onStoryStepUpdate = { storyStep, position ->
+                            inDocumentSearchRepository.insertForFts(storyStep, documentId, position)
+                        }
                     )
                 )
             }

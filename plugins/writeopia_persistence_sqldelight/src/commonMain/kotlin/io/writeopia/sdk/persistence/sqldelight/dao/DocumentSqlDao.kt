@@ -21,6 +21,7 @@ import kotlinx.datetime.Instant
 class DocumentSqlDao(
     private val documentQueries: DocumentEntityQueries?,
     private val storyStepQueries: StoryStepEntityQueries?,
+
 ) : DocumentSearch {
 
     override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
