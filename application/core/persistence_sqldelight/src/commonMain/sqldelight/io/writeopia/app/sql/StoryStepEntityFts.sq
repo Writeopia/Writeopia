@@ -1,0 +1,25 @@
+CREATE VIRTUAL TABLE storyStepEntityFts USING fts5(
+  text TEXT,
+  id TEXT,
+  document_id TEXT UNINDEXED,
+  position INTEGER UNINDEXED
+);
+
+CREATE TRIGGER storyStepEntity_ai AFTER INSERT ON storyStepEntity
+BEGIN
+  INSERT INTO storyStepEntityFts(text, id, document_id, position)
+  VALUES (new.text, new.id, new.document_id, new.position)
+  ON CONFLICT(id) DO UPDATE SET
+    text = new.text,
+    document_id = new.document_id,
+    position = new.position;
+END;
+CREATE TRIGGER storyStepEntity_ad AFTER DELETE ON storyStepEntity
+BEGIN
+  DELETE FROM storyStepEntityFts WHERE id = old.id;
+END;
+
+searchFts:
+SELECT position, document_id
+FROM storyStepEntityFts
+WHERE storyStepEntityFts MATCH ?;

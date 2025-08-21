@@ -106,7 +106,6 @@ fun DesktopNoteEditorScreen(
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall.copy(
                         color = MaterialTheme.colorScheme.onBackground
-
                     ),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.onBackground),
                 )
