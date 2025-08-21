@@ -105,6 +105,7 @@ class NoteEditorKmpViewModel(
 
                         KeyboardEvent.CANCEL -> {
                             writeopiaManager.clearSelection()
+                            hideSearch()
                             aiJob?.cancel()
                         }
 
@@ -114,6 +115,10 @@ class NoteEditorKmpViewModel(
 
                         KeyboardEvent.REDO -> {
                             writeopiaManager.redo()
+                        }
+
+                        KeyboardEvent.SEARCH -> {
+                            showSearch()
                         }
 
                         else -> {}
@@ -127,6 +132,12 @@ class NoteEditorKmpViewModel(
     }
 
     private var isDarkTheme: Boolean = true
+
+    private val _showSearch = MutableStateFlow(false)
+    private val _searchText = MutableStateFlow("")
+
+    override val showSearch: StateFlow<Boolean> = _showSearch.asStateFlow()
+    override val searchText: StateFlow<String> = _searchText.asStateFlow()
 
     /**
      * This property defines if the document should be edited (you can write in it, for example)
@@ -607,6 +618,22 @@ class NoteEditorKmpViewModel(
                 ollamaRepository.refreshConfiguration(userId)
             }
         }
+    }
+
+    override fun showSearch() {
+        _showSearch.value = true
+    }
+
+    override fun hideSearch() {
+        viewModelScope.launch {
+            _showSearch.value = false
+            delay(100)
+            _searchText.value = ""
+        }
+    }
+
+    override fun searchInDocument(query: String) {
+        _searchText.value = query
     }
 
     private fun documentPrompt(promptFn: (String, String, String) -> Flow<ResultData<String>>) {
