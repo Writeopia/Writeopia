@@ -5,7 +5,7 @@ import io.writeopia.sqldelight.dao.StoryStepFtsSqlDelightDao
 
 class InDocumentSearchRepository(private val storyStepFtsSqlDelightDao: StoryStepFtsSqlDelightDao) {
 
-    fun searchInDocument(query: String, documentId: String): List<Int> {
+    fun searchInDocument(query: String, documentId: String): Set<Int> {
         return storyStepFtsSqlDelightDao.searchInDocument(query, documentId)
     }
 

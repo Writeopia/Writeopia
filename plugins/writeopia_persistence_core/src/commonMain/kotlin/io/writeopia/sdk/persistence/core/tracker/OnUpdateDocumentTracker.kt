@@ -39,6 +39,8 @@ class OnUpdateDocumentTracker(
                         documentId = documentInfo.id,
                     )
 
+                    onStoryStepUpdate(lastEdit.storyStep, lastEdit.position)
+
                     val stories = storyState.stories
                     val titleFromContent = stories.values
                         .firstOrNull { storyStep ->
@@ -119,6 +121,8 @@ class OnUpdateDocumentTracker(
                             position = lastEdit.position,
                             documentId = documentInfo.id
                         )
+
+                        onStoryStepUpdate(lastEdit.storyStep, lastEdit.position)
                     }
                 }
 

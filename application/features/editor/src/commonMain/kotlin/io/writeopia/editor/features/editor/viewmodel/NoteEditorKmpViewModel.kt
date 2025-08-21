@@ -141,7 +141,7 @@ class NoteEditorKmpViewModel(
     override val showSearch: StateFlow<Boolean> = _showSearch.asStateFlow()
     override val searchText: StateFlow<String> = _searchText.asStateFlow()
 
-    private val findsOfSearch: Flow<List<Int>> =
+    private val findsOfSearch: Flow<Set<Int>> =
         combine(writeopiaManager.documentInfo, searchText) { info, query ->
             info.id to query
         }.map { (documentId, query) ->
