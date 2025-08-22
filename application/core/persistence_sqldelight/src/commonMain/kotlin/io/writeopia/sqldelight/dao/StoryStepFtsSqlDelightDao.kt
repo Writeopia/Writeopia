@@ -19,7 +19,6 @@ class StoryStepFtsSqlDelightDao(writeopiaDb: WriteopiaDb?) {
             ?: emptySet()
 
     suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: Int) {
-        println("inserting for fts")
         storyStepEntityQueries?.insertFts(
             text = storyStep.text,
             id = storyStep.id,

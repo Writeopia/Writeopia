@@ -235,15 +235,15 @@ class NoteEditorKmpViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val toDrawWithDecoration: StateFlow<DrawState> by lazy {
-        val infoFlow = documentId.flatMapLatest {
-            documentRepository.listenForDocumentInfoById(it)
-        }
+        val infoFlow = documentId.flatMapLatest(documentRepository::listenForDocumentInfoById)
 
         val toDraw = combine(
             writeopiaManager.toDraw,
             findsOfSearch,
-            searchText
-        ) { drawState, finds, query ->
+            searchText,
+            _showSearch
+        ) { drawState, finds, query, showSearch ->
+            if (finds.isEmpty() && showSearch) return@combine drawState.copy(focus = null)
             if (finds.isEmpty()) return@combine drawState
 
             val mutableStories = drawState.stories.toMutableList()
@@ -267,7 +267,7 @@ class NoteEditorKmpViewModel(
                     )
             }
 
-            drawState.copy(stories = mutableStories)
+            drawState.copy(stories = mutableStories, focus = null)
         }
 
         toDraw.flatMapLatest { drawState ->
