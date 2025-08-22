@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
@@ -123,12 +124,12 @@ fun DesktopNoteEditorScreen(
                     modifier = Modifier
                         .padding(4.dp)
                         .size(20.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = noteEditorViewModel::hideSearch)
                         .background(WriteopiaTheme.colorScheme.cardBg, CircleShape)
                         .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
                         .padding(4.dp)
-                        .clickable {
-                            noteEditorViewModel.hideSearch()
-                        }
+
                 )
 
                 LaunchedEffect(key1 = Unit) {

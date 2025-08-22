@@ -14,6 +14,7 @@ import io.writeopia.commonui.extensions.toFolderUi
 import io.writeopia.core.folders.repository.FolderRepository
 import io.writeopia.core.folders.repository.InDocumentSearchRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
+import io.writeopia.editor.features.search.FindInText
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
@@ -26,7 +27,9 @@ import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.files.ExternalFile
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
@@ -145,9 +148,7 @@ class NoteEditorKmpViewModel(
         combine(writeopiaManager.documentInfo, searchText) { info, query ->
             info.id to query
         }.map { (documentId, query) ->
-            inDocumentSearchRepository.searchInDocument(query, documentId).also {
-                println("found: ${it.joinToString()}")
-            }
+            inDocumentSearchRepository.searchInDocument(query, documentId)
         }
 
     /**
@@ -238,14 +239,39 @@ class NoteEditorKmpViewModel(
             documentRepository.listenForDocumentInfoById(it)
         }
 
-        val toDraw = combine(writeopiaManager.toDraw, findsOfSearch) { drawState, finds ->
-            drawState
+        val toDraw = combine(
+            writeopiaManager.toDraw,
+            findsOfSearch,
+            searchText
+        ) { drawState, finds, query ->
+            if (finds.isEmpty()) return@combine drawState
+
+            val mutableStories = drawState.stories.toMutableList()
+
+            finds.forEach { position ->
+                val realPosition = minOf(position * 2, mutableStories.lastIndex)
+                val toDraw = mutableStories[realPosition]
+                val story = toDraw.storyStep
+
+                val findSpans = FindInText.findInText(story.text ?: "", query)
+                    .map { (start, end) ->
+                        SpanInfo.create(start, end, Span.HIGHLIGHT_YELLOW)
+                    }
+
+                mutableStories[realPosition] =
+                    toDraw.copy(
+                        storyStep = story.copy(
+                            spans = story.spans + findSpans,
+                            localId = GenerateId.generate()
+                        )
+                    )
+            }
+
+            drawState.copy(stories = mutableStories)
         }
 
         toDraw.flatMapLatest { drawState ->
-            infoFlow.map { info ->
-                drawState to info
-            }
+            infoFlow.map { info -> drawState to info }
         }.map { (drawState, info) ->
             val imageVector = info?.icon
                 ?.label
