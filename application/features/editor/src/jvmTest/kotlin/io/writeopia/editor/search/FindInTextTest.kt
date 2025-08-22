@@ -1,5 +1,6 @@
-package io.writeopia.editor.features.search
+package io.writeopia.editor.search
 
+import io.writeopia.editor.features.search.FindInText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
