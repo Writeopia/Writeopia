@@ -129,7 +129,6 @@ fun DesktopNoteEditorScreen(
                         .background(WriteopiaTheme.colorScheme.cardBg, CircleShape)
                         .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
                         .padding(4.dp)
-
                 )
 
                 LaunchedEffect(key1 = Unit) {
