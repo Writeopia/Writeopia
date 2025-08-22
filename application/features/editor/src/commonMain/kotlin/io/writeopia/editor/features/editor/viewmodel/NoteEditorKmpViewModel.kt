@@ -12,7 +12,9 @@ import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toFolderUi
 import io.writeopia.core.folders.repository.FolderRepository
+import io.writeopia.core.folders.repository.InDocumentSearchRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
+import io.writeopia.editor.features.search.FindInText
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
@@ -25,7 +27,9 @@ import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.files.ExternalFile
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
@@ -75,6 +79,7 @@ class NoteEditorKmpViewModel(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val copyManager: CopyManager,
     private val authRepository: AuthRepository,
+    private val inDocumentSearchRepository: InDocumentSearchRepository
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -105,6 +110,7 @@ class NoteEditorKmpViewModel(
 
                         KeyboardEvent.CANCEL -> {
                             writeopiaManager.clearSelection()
+                            hideSearch()
                             aiJob?.cancel()
                         }
 
@@ -114,6 +120,10 @@ class NoteEditorKmpViewModel(
 
                         KeyboardEvent.REDO -> {
                             writeopiaManager.redo()
+                        }
+
+                        KeyboardEvent.SEARCH -> {
+                            showSearch()
                         }
 
                         else -> {}
@@ -127,6 +137,19 @@ class NoteEditorKmpViewModel(
     }
 
     private var isDarkTheme: Boolean = true
+
+    private val _showSearch = MutableStateFlow(false)
+    private val _searchText = MutableStateFlow("")
+
+    override val showSearchState: StateFlow<Boolean> = _showSearch.asStateFlow()
+    override val searchText: StateFlow<String> = _searchText.asStateFlow()
+
+    private val findsOfSearch: Flow<Set<Int>> =
+        combine(writeopiaManager.documentInfo, searchText) { info, query ->
+            info.id to query
+        }.map { (documentId, query) ->
+            inDocumentSearchRepository.searchInDocument(query, documentId)
+        }
 
     /**
      * This property defines if the document should be edited (you can write in it, for example)
@@ -212,14 +235,43 @@ class NoteEditorKmpViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val toDrawWithDecoration: StateFlow<DrawState> by lazy {
-        val infoFlow = documentId.flatMapLatest {
-            documentRepository.listenForDocumentInfoById(it)
+        val infoFlow = documentId.flatMapLatest(documentRepository::listenForDocumentInfoById)
+
+        val toDraw = combine(
+            writeopiaManager.toDraw,
+            findsOfSearch,
+            searchText,
+            _showSearch
+        ) { drawState, finds, query, showSearch ->
+            if (finds.isEmpty() && showSearch) return@combine drawState.copy(focus = null)
+            if (finds.isEmpty()) return@combine drawState
+
+            val mutableStories = drawState.stories.toMutableList()
+
+            finds.forEach { position ->
+                val realPosition = minOf(position * 2, mutableStories.lastIndex)
+                val toDraw = mutableStories[realPosition]
+                val story = toDraw.storyStep
+
+                val findSpans = FindInText.findInText(story.text ?: "", query)
+                    .map { (start, end) ->
+                        SpanInfo.create(start, end, Span.HIGHLIGHT_YELLOW)
+                    }
+
+                mutableStories[realPosition] =
+                    toDraw.copy(
+                        storyStep = story.copy(
+                            spans = story.spans + findSpans,
+                            localId = GenerateId.generate()
+                        )
+                    )
+            }
+
+            drawState.copy(stories = mutableStories, focus = null)
         }
 
-        writeopiaManager.toDraw.flatMapLatest { drawState ->
-            infoFlow.map { info ->
-                drawState to info
-            }
+        toDraw.flatMapLatest { drawState ->
+            infoFlow.map { info -> drawState to info }
         }.map { (drawState, info) ->
             val imageVector = info?.icon
                 ?.label
@@ -328,7 +380,20 @@ class NoteEditorKmpViewModel(
                 writeopiaManager.loadDocument(document)
                 writeopiaManager.saveOnStoryChanges(
                     OnUpdateDocumentTracker(
-                        documentRepository
+                        documentRepository,
+                        onStoryStepUpdate = { storyStep, position ->
+                            inDocumentSearchRepository.insertForFts(storyStep, documentId, position)
+                        },
+                        onDocumentUpdate = { document ->
+                            document.content
+                                .forEach { (position, storyStep) ->
+                                    inDocumentSearchRepository.insertForFts(
+                                        storyStep,
+                                        documentId,
+                                        position
+                                    )
+                                }
+                        }
                     )
                 )
             }
@@ -607,6 +672,22 @@ class NoteEditorKmpViewModel(
                 ollamaRepository.refreshConfiguration(userId)
             }
         }
+    }
+
+    override fun showSearch() {
+        _showSearch.value = true
+    }
+
+    override fun hideSearch() {
+        viewModelScope.launch {
+            _showSearch.value = false
+            delay(100)
+            _searchText.value = ""
+        }
+    }
+
+    override fun searchInDocument(query: String) {
+        _searchText.value = query
     }
 
     private fun documentPrompt(promptFn: (String, String, String) -> Flow<ResultData<String>>) {

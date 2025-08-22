@@ -9,6 +9,7 @@ import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
@@ -16,7 +17,9 @@ import kotlinx.datetime.Clock
 
 class OnUpdateDocumentTracker(
     private val documentUpdate: DocumentUpdate,
-    private val documentFilter: DocumentFilter = DocumentFilterObject
+    private val documentFilter: DocumentFilter = DocumentFilterObject,
+    private val onStoryStepUpdate: suspend (StoryStep, Int) -> Unit = { _, _ -> },
+    private val onDocumentUpdate: suspend (Document) -> Unit = {}
 ) : DocumentTracker {
 
     override suspend fun saveOnStoryChanges(
@@ -35,6 +38,8 @@ class OnUpdateDocumentTracker(
                         position = lastEdit.position,
                         documentId = documentInfo.id,
                     )
+
+                    onStoryStepUpdate(lastEdit.storyStep, lastEdit.position)
 
                     val stories = storyState.stories
                     val titleFromContent = stories.values
@@ -85,6 +90,7 @@ class OnUpdateDocumentTracker(
                     )
 
                     documentUpdate.saveDocument(document, documentInfo.userId)
+                    onDocumentUpdate(document)
                 }
 
                 is LastEdit.InfoEdition -> {
@@ -116,6 +122,8 @@ class OnUpdateDocumentTracker(
                             position = lastEdit.position,
                             documentId = documentInfo.id
                         )
+
+                        onStoryStepUpdate(lastEdit.storyStep, lastEdit.position)
                     }
                 }
 

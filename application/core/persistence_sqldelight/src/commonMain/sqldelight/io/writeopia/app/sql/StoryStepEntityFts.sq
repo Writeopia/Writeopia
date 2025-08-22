@@ -1,0 +1,15 @@
+CREATE VIRTUAL TABLE storyStepEntityFts USING fts4(
+  text TEXT,
+  id TEXT,
+  document_id TEXT UNINDEXED,
+  position INTEGER UNINDEXED
+);
+
+searchFts:
+SELECT position, document_id
+FROM storyStepEntityFts
+WHERE storyStepEntityFts MATCH :query || '*';
+
+insertFts:
+INSERT INTO storyStepEntityFts(text, id, document_id, position)
+VALUES (?, ?, ?, ?);

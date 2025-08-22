@@ -34,6 +34,11 @@ object KeyboardCommands {
             keyEvent.key.keyCode == Key.B.keyCode &&
             keyEvent.type == KeyEventType.KeyUp
 
+    fun isSearchEvent(keyEvent: KeyEvent) =
+        keyEvent.isCommandTrigger() &&
+            keyEvent.key.keyCode == Key.F.keyCode &&
+            keyEvent.type == KeyEventType.KeyUp
+
     fun isItalicEvent(keyEvent: KeyEvent) =
         keyEvent.isCommandTrigger() &&
             keyEvent.key.keyCode == Key.I.keyCode &&
@@ -85,6 +90,7 @@ object KeyboardCommands {
             keyEvent.type == KeyEventType.KeyUp
 
     fun isEquationEvent(keyEvent: KeyEvent) =
-        keyEvent.key.keyCode == Key.E.keyCode &&
+        keyEvent.isCommandTrigger() &&
+            keyEvent.key.keyCode == Key.E.keyCode &&
             keyEvent.type == KeyEventType.KeyUp
 }

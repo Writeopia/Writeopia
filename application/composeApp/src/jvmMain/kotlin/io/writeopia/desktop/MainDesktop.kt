@@ -174,6 +174,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 false
             }
 
+            KeyboardCommands.isSearchEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.SEARCH)
+                false
+            }
+
             else -> false
         }
     }
