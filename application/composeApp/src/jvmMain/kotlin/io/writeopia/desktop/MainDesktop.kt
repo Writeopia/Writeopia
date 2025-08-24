@@ -152,7 +152,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
             KeyboardCommands.isCancelEvent(keyEvent) -> {
                 sendEvent(KeyboardEvent.CANCEL)
-                false
+                true
             }
 
             KeyboardCommands.isAcceptAiEvent(keyEvent) -> {
@@ -200,9 +200,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
         onCloseRequest = onCloseRequest,
         title = "",
         state = windowState,
-        onPreviewKeyEvent = { keyEvent ->
-            handleKeyboardEvent(keyEvent)
-        },
+        onPreviewKeyEvent = handleKeyboardEvent,
         icon = CommonImages.logo()
     ) {
         //  Synchronize the topbar on Windows OS with the System Theme
