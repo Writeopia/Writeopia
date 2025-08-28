@@ -1,6 +1,7 @@
 package io.writeopia.core.folders.di
 
 import io.writeopia.core.folders.repository.InDocumentSearchRepository
+import io.writeopia.core.folders.repository.InDocumentSearchSqlRepository
 import io.writeopia.sql.WriteopiaDb
 import io.writeopia.sqldelight.dao.StoryStepFtsSqlDelightDao
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
@@ -8,13 +9,13 @@ import io.writeopia.sqldelight.di.WriteopiaDbInjector
 actual class InDocumentSearchInjection private constructor(
     private val writeopiaDb: WriteopiaDb?
 ) {
-    private var inDocumentSearchRepository: InDocumentSearchRepository? = null
+    private var inDocumentSearchRepository: InDocumentSearchSqlRepository? = null
 
     private fun provideFtsSearchDao(): StoryStepFtsSqlDelightDao =
         StoryStepFtsSqlDelightDao(writeopiaDb)
 
     actual fun provideInDocumentSearchRepo(): InDocumentSearchRepository =
-        inDocumentSearchRepository ?: InDocumentSearchRepository(
+        inDocumentSearchRepository ?: InDocumentSearchSqlRepository(
             provideFtsSearchDao()
         ).also {
             inDocumentSearchRepository = it
