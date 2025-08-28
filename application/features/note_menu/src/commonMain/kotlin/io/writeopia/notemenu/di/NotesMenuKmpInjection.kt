@@ -71,7 +71,8 @@ class NotesMenuKmpInjection private constructor(
             documentRepository = documentRepository,
             documentsApi = provideDocumentsApi(),
             documentConflictHandler = DocumentConflictHandler(
-                documentRepository,
+                documentRepository = documentRepository,
+                folderRepository = provideFolderRepository(),
                 authCoreInjection.provideAuthRepository()
             ),
             folderRepository = provideFolderRepository()
