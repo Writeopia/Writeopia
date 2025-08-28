@@ -6,6 +6,7 @@ import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.DocumentRepository
+import kotlinx.datetime.Clock
 
 //Todo: Implement sync for workspace
 class WorkspaceSync(
@@ -36,11 +37,25 @@ class WorkspaceSync(
             localOutdatedDocs,
             newDocuments,
         )
-        
-        val documentsNotSent = documentConflictHandler.handleConflict(
-            localOutdatedDocs,
-            newDocuments,
+
+        val foldersNotSent = documentConflictHandler.handleConflictForFolders(
+            localFolders = localOutdatedFolders,
+            externalFolders = newFolders,
         )
 
+        val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent)
+        val resultSendFolders = documentsApi.sendFolders(foldersNotSent)
+
+        if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
+            val now = Clock.System.now()
+            // If everything ran accordingly, update the sync time of the folder.
+            documentsNotSent.forEach { document ->
+                val newDocument = document.copy(lastSyncedAt = now)
+                documentRepository.saveDocumentMetadata(newDocument)
+            }
+
+            documentRepository.refreshDocuments()
+            folderRepository.refreshFolders()
+        }
     }
 }
