@@ -1,15 +1,10 @@
 package io.writeopia.core.folders.repository
 
 import io.writeopia.sdk.models.story.StoryStep
-import io.writeopia.sqldelight.dao.StoryStepFtsSqlDelightDao
 
-class InDocumentSearchRepository(private val storyStepFtsSqlDelightDao: StoryStepFtsSqlDelightDao) {
+interface InDocumentSearchRepository {
 
-    fun searchInDocument(query: String, documentId: String): Set<Int> {
-        return storyStepFtsSqlDelightDao.searchInDocument(query, documentId)
-    }
+    fun searchInDocument(query: String, documentId: String): Set<Int>
 
-    suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: Int) {
-        storyStepFtsSqlDelightDao.insertForFts(storyStep, documentId, position)
-    }
+    suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: Int)
 }
