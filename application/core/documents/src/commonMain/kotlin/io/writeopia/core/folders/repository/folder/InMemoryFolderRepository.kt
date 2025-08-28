@@ -78,4 +78,8 @@ class InMemoryFolderRepository : FolderRepository {
 
     override suspend fun stopListeningForFoldersByParentId(parentId: String) {
     }
+
+    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> {
+        TODO("Not yet implemented")
+    }
 }

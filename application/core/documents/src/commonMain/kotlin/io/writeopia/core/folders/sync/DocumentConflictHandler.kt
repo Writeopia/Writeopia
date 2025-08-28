@@ -3,6 +3,7 @@ package io.writeopia.core.folders.sync
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
 
@@ -32,5 +33,19 @@ class DocumentConflictHandler(
         }
 
         return (localDocuments.toSet() - externalDocuments.toSet()).toList()
+    }
+
+    //Todo: Create a conflict handler for folders.
+    suspend fun handleConflictForFolders(
+        localFolders: List<Folder>,
+        externalFolders: List<Folder>,
+    ): List<Folder> {
+        val now = Clock.System.now()
+
+        externalFolders.forEach { folder ->
+            folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
+        }
+
+        return (localFolders.toSet() - externalFolders.toSet()).toList()
     }
 }

@@ -97,6 +97,10 @@ class RoomFolderRepository(
         SelectedIds.ids.remove(parentId)
     }
 
+    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun search(query: String): List<Folder> =
         folderRoomDao.search(query)
 
