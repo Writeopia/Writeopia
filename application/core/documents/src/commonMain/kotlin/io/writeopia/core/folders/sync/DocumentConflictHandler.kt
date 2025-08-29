@@ -35,7 +35,6 @@ class DocumentConflictHandler(
         return (localDocuments.toSet() - externalDocuments.toSet()).toList()
     }
 
-    //Todo: Create a conflict handler for folders.
     suspend fun handleConflictForFolders(
         localFolders: List<Folder>,
         externalFolders: List<Folder>,
