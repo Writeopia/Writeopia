@@ -30,6 +30,8 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
 
     suspend fun loadOutdatedDocuments(folderId: String): List<Document>
 
+    suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document>
+
     suspend fun loadDocumentById(id: String): Document?
 
     suspend fun loadDocumentByIds(ids: List<String>): List<Document>

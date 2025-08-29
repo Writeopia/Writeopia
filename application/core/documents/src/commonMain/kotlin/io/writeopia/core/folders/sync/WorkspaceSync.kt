@@ -8,7 +8,7 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
 
-//Todo: Implement sync for workspace
+// Todo: Implement sync for workspace
 class WorkspaceSync(
     private val folderRepository: FolderRepository,
     private val documentRepository: DocumentRepository,
@@ -20,17 +20,10 @@ class WorkspaceSync(
     suspend fun syncWorkspace(workspaceId: String) {
         val workspace = authRepository.getWorkspace()
 
-        val folders = folderRepository.getFoldersForWorkspace(workspaceId)
-        val documents = documentRepository.loadDocumentsForWorkspace(
-            orderBy = OrderBy.NAME.type,
-            workspaceId = workspaceId,
-            instant = workspace.lastSync
-        )
-
         val response = documentsApi.getWorkspaceNewData(workspaceId, workspace.lastSync)
         val (newDocuments, newFolders) = if (response is ResultData.Complete) response.data else return
 
-        val localOutdatedDocs = documentRepository.loadOutdatedDocuments(workspaceId)
+        val localOutdatedDocs = documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
         val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
 
         val documentsNotSent = documentConflictHandler.handleConflict(

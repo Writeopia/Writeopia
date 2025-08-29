@@ -10,7 +10,6 @@ import io.ktor.http.isSuccess
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
-import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
