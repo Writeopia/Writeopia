@@ -19,14 +19,14 @@ class SqlDelightDocumentRepository(
 
     private val _documentByParentState = MutableStateFlow<Map<String, List<Document>>>(emptyMap())
 
-    override suspend fun loadDocumentsForUser(userId: String): List<Document> =
-        documentSqlDao.loadDocumentsWithContentByUserId(OrderBy.NAME.type, userId)
+    override suspend fun loadDocumentsWorkspace(workspaceId: String): List<Document> =
+        documentSqlDao.loadDocumentsWithContentByWorkspaceId(OrderBy.NAME.type, workspaceId)
 
     override suspend fun loadDocumentsForFolder(folderId: String): List<Document> =
         documentSqlDao.loadDocumentByParentId(folderId)
 
-    override suspend fun loadFavDocumentsForUser(orderBy: String, userId: String): List<Document> =
-        documentSqlDao.loadFavDocumentsWithContentByUserId(orderBy, userId)
+    override suspend fun loadFavDocumentsForWorkspace(orderBy: String, workspaceId: String): List<Document> =
+        documentSqlDao.loadFavDocumentsWithContentByUserId(orderBy, workspaceId)
 
     override suspend fun loadDocumentsByParentId(parentId: String): List<Document> =
         documentSqlDao.loadDocumentByParentId(parentId)
@@ -60,13 +60,13 @@ class SqlDelightDocumentRepository(
         refreshDocuments()
     }
 
-    override suspend fun loadDocumentsForUserAfterTime(
+    override suspend fun loadDocumentsForWorkspace(
         orderBy: String,
-        userId: String,
+        workspaceId: String,
         instant: Instant
     ): List<Document> {
         return documentSqlDao.loadDocumentsWithContentByUserIdAfterTime(
-            userId,
+            workspaceId,
             instant.toEpochMilliseconds()
         )
     }
@@ -88,14 +88,14 @@ class SqlDelightDocumentRepository(
     ): List<Document> =
         documentSqlDao.loadDocumentWithContentByIds(ids)
 
-    override suspend fun saveDocument(document: Document, userId: String) {
+    override suspend fun saveDocument(document: Document) {
         // Todo: Add company later
-        documentSqlDao.insertDocumentWithContent(document, userId, null)
+        documentSqlDao.insertDocumentWithContent(document, companyId = null)
         refreshDocuments()
     }
 
-    override suspend fun saveDocumentMetadata(document: Document, userId: String) {
-        documentSqlDao.insertDocument(document, userId, null)
+    override suspend fun saveDocumentMetadata(document: Document) {
+        documentSqlDao.insertDocument(document, null)
 
         refreshDocuments()
     }
@@ -120,8 +120,8 @@ class SqlDelightDocumentRepository(
         documentSqlDao.deleteDocumentsByFolderId(folderId)
     }
 
-    override suspend fun deleteByUserId(userId: String) {
-        documentSqlDao.deleteDocumentsByUserId(userId)
+    override suspend fun deleteByWorkspace(workspaceId: String) {
+        documentSqlDao.deleteDocumentsByUserId(workspaceId)
     }
 
     override suspend fun favoriteDocumentByIds(ids: Set<String>) {
@@ -140,7 +140,7 @@ class SqlDelightDocumentRepository(
         refreshDocuments()
     }
 
-    override suspend fun moveDocumentsToNewUser(oldUserId: String, newUserId: String) {
+    override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
         TODO("Not yet implemented")
     }
 

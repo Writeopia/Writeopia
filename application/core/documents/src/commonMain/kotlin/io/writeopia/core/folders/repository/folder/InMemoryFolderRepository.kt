@@ -1,4 +1,4 @@
-package io.writeopia.core.folders.repository
+package io.writeopia.core.folders.repository.folder
 
 import io.writeopia.sdk.models.document.Folder
 import kotlinx.coroutines.flow.Flow
@@ -22,14 +22,14 @@ class InMemoryFolderRepository : FolderRepository {
         refreshState()
     }
 
-    override suspend fun getFoldersForUserAfterTime(
+    override suspend fun getFoldersForWorkspaceAfterTime(
         userId: String,
         instant: Instant
     ): List<Folder> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getFoldersForUser(userId: String): List<Folder> {
+    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> {
         TODO("Not yet implemented")
     }
 
@@ -77,5 +77,9 @@ class InMemoryFolderRepository : FolderRepository {
     }
 
     override suspend fun stopListeningForFoldersByParentId(parentId: String) {
+    }
+
+    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> {
+        TODO("Not yet implemented")
     }
 }

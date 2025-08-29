@@ -56,12 +56,11 @@ class OnUpdateDocumentTracker(
                             createdAt = documentInfo.createdAt,
                             lastUpdatedAt = Clock.System.now(),
                             lastSyncedAt = documentInfo.lastSyncedAt,
-                            userId = userId,
+                            workspaceId = userId,
                             parentId = documentInfo.parentId,
                             icon = documentInfo.icon,
                             isLocked = documentInfo.isLocked,
-                        ),
-                        userId = documentInfo.userId
+                        )
                     )
                 }
 
@@ -83,13 +82,13 @@ class OnUpdateDocumentTracker(
                         createdAt = documentInfo.createdAt,
                         lastUpdatedAt = Clock.System.now(),
                         lastSyncedAt = documentInfo.lastSyncedAt,
-                        userId = userId,
+                        workspaceId = userId,
                         parentId = documentInfo.parentId,
                         icon = documentInfo.icon,
                         isLocked = documentInfo.isLocked
                     )
 
-                    documentUpdate.saveDocument(document, documentInfo.userId)
+                    documentUpdate.saveDocument(document)
                     onDocumentUpdate(document)
                 }
 
@@ -108,12 +107,11 @@ class OnUpdateDocumentTracker(
                             createdAt = documentInfo.createdAt,
                             lastUpdatedAt = Clock.System.now(),
                             lastSyncedAt = documentInfo.lastSyncedAt,
-                            userId = userId,
+                            workspaceId = userId,
                             parentId = documentInfo.parentId,
                             icon = documentInfo.icon,
                             isLocked = documentInfo.isLocked
                         ),
-                        userId = documentInfo.userId
                     )
 
                     if (!lastEdit.storyStep.ephemeral) {
@@ -142,13 +140,12 @@ class OnUpdateDocumentTracker(
                             createdAt = documentInfo.createdAt,
                             lastUpdatedAt = Clock.System.now(),
                             lastSyncedAt = documentInfo.lastSyncedAt,
-                            userId = userId,
+                            workspaceId = userId,
                             parentId = documentInfo.parentId,
                             icon = documentInfo.icon,
                             isLocked = documentInfo.isLocked,
                             favorite = documentInfo.isFavorite
-                        ),
-                        userId = documentInfo.userId
+                        )
                     )
                 }
             }

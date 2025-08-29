@@ -11,8 +11,8 @@ import io.writeopia.sdk.models.utils.map
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.core.folders.repository.NotesUseCase
-import io.writeopia.core.folders.sync.DocumentsSync
+import io.writeopia.core.folders.repository.folder.NotesUseCase
+import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.onboarding.OnboardingState
@@ -59,7 +59,7 @@ internal class ChooseNoteKmpViewModel(
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
-    private val documentsSync: DocumentsSync,
+    private val folderSync: FolderSync,
     private val folderController: FolderStateController = FolderStateController(
         notesUseCase,
         authRepository
@@ -438,7 +438,7 @@ internal class ChooseNoteKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             // Refresh happens inside syncFolder
             if (authRepository.isLoggedIn() && authRepository.getUser().tier == Tier.PREMIUM) {
-                documentsSync.syncFolder(
+                folderSync.syncFolder(
                     notesNavigation.id,
                     authRepository.getUser().id
                 )
@@ -462,7 +462,7 @@ internal class ChooseNoteKmpViewModel(
                     id = GenerateId.generate(),
                     lastUpdatedAt = now,
                     createdAt = now,
-                    userId = getUserId(),
+                    workspaceId = getUserId(),
                     favorite = false
                 )
             }
@@ -489,7 +489,7 @@ internal class ChooseNoteKmpViewModel(
                     id = GenerateId.generate(),
                     lastUpdatedAt = now,
                     createdAt = now,
-                    userId = getUserId(),
+                    workspaceId = getUserId(),
                     favorite = false
                 )
             }
@@ -515,7 +515,7 @@ internal class ChooseNoteKmpViewModel(
                     id = GenerateId.generate(),
                     lastUpdatedAt = now,
                     createdAt = now,
-                    userId = getUserId(),
+                    workspaceId = getUserId(),
                     lastSyncedAt = null,
                     favorite = false,
                     title = "",
@@ -549,8 +549,12 @@ internal class ChooseNoteKmpViewModel(
         val userId = getUserId()
 
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
-            notesUseCase.loadDocumentsForUserAfterTimeFromDb(userId, lastUpdated)
-        } ?: notesUseCase.loadDocumentsForUserFromDb(userId)
+            notesUseCase.loadDocumentsForWorkspaceAfterTimeFromDb(
+                authRepository.getWorkspace().id,
+                userId,
+                lastUpdated
+            )
+        } ?: notesUseCase.loadDocumentsForWorkspaceFromDb(userId)
 
         val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
             notesUseCase.loadFolderForUserAfterTime(userId, lastUpdated)
@@ -579,9 +583,13 @@ internal class ChooseNoteKmpViewModel(
         val userId = getUserId()
 
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
-            notesUseCase.loadDocumentsForUserAfterTimeFromDb(userId, lastUpdated)
+            notesUseCase.loadDocumentsForWorkspaceAfterTimeFromDb(
+                authRepository.getWorkspace().id,
+                userId,
+                lastUpdated
+            )
         } ?: run {
-            notesUseCase.loadDocumentsForUserFromDb(userId)
+            notesUseCase.loadDocumentsForWorkspaceFromDb(userId)
         }
 
         val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
@@ -601,7 +609,7 @@ internal class ChooseNoteKmpViewModel(
 
     private fun directoryFilesAs(path: String, documentWriter: DocumentWriter) {
         viewModelScope.launch(Dispatchers.Default) {
-            val data = notesUseCase.loadDocumentsForUserFromDb(getUserId())
+            val data = notesUseCase.loadDocumentsForWorkspaceFromDb(getUserId())
             documentWriter.writeDocuments(data, path, usePath = true)
         }
     }

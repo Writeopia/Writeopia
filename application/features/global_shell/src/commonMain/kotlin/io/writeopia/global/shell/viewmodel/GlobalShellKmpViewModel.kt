@@ -18,7 +18,7 @@ import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration

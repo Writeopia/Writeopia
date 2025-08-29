@@ -1,4 +1,4 @@
-package io.writeopia.core.folders.repository
+package io.writeopia.core.folders.repository.folder
 
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.NotesNavigation
@@ -46,10 +46,7 @@ class NotesUseCase private constructor(
         documentRepository.loadDocumentById(id)
             ?.let(documentChange)
             ?.let { newDocument ->
-                documentRepository.saveDocumentMetadata(
-                    newDocument,
-                    authRepository.getUser().id
-                )
+                documentRepository.saveDocumentMetadata(newDocument)
             }?.also { documentRepository.refreshDocuments() }
     }
 
@@ -75,24 +72,28 @@ class NotesUseCase private constructor(
         folderRepository.refreshFolders()
     }
 
-    suspend fun loadDocumentsForUserFromDb(userId: String): List<Document> =
-        documentRepository.loadDocumentsForUser(userId)
+    suspend fun loadDocumentsForWorkspaceFromDb(workspaceId: String): List<Document> =
+        documentRepository.loadDocumentsWorkspace(workspaceId)
 
-    suspend fun loadDocumentsForUserAfterTimeFromDb(userId: String, time: Instant): List<Document> =
+    suspend fun loadDocumentsForWorkspaceAfterTimeFromDb(
+        workspaceId: String,
+        userId: String,
+        time: Instant
+    ): List<Document> =
         notesConfig.getOrderPreference(userId)
             .let { orderBy ->
-                documentRepository.loadDocumentsForUserAfterTime(
+                documentRepository.loadDocumentsForWorkspace(
                     orderBy,
-                    userId,
+                    workspaceId,
                     time
                 )
             }
 
     suspend fun loadFolderForUserAfterTime(userId: String, time: Instant): List<Folder> =
-        folderRepository.getFoldersForUserAfterTime(userId, time)
+        folderRepository.getFoldersForWorkspaceAfterTime(userId, time)
 
     suspend fun loadFoldersForUser(userId: String): List<Folder> =
-        folderRepository.getFoldersForUser(userId)
+        folderRepository.getFoldersForWorkspace(userId)
 
     private suspend fun loadDocumentsByIds(ids: Iterable<String>): List<MenuItem> {
         val folders = ids.mapNotNull { id -> folderRepository.getFolderById(id) }
@@ -148,7 +149,7 @@ class NotesUseCase private constructor(
     }
 
     suspend fun saveDocumentDb(document: Document) {
-        documentRepository.saveDocument(document, authRepository.getUser().id)
+        documentRepository.saveDocument(document)
         documentRepository.refreshDocuments()
     }
 
@@ -186,7 +187,7 @@ class NotesUseCase private constructor(
         }.map { document ->
             document.duplicateWithNewIds()
         }.forEach { document ->
-            documentRepository.saveDocument(document, authRepository.getUser().id)
+            documentRepository.saveDocument(document)
         }
 
         documentRepository.refreshDocuments()
@@ -237,7 +238,7 @@ class NotesUseCase private constructor(
                         parentId = newFolder.id
                     )
                 }.forEach { document ->
-                    documentRepository.saveDocument(document, authRepository.getUser().id)
+                    documentRepository.saveDocument(document)
                 }
 
             newFolder
