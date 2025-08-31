@@ -25,7 +25,10 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun loadDocumentsForFolder(folderId: String): List<Document> =
         documentsMap.values.toList()
 
-    override suspend fun loadFavDocumentsForWorkspace(orderBy: String, userId: String): List<Document> =
+    override suspend fun loadFavDocumentsForWorkspace(
+        orderBy: String,
+        userId: String
+    ): List<Document> =
         documentsMap.values.filter { document -> document.favorite }
 
     override suspend fun loadDocumentsForWorkspace(
@@ -129,6 +132,9 @@ class InMemoryDocumentRepository : DocumentRepository {
     }
 
     override suspend fun loadOutdatedDocuments(folderId: String): List<Document> = emptyList()
+
+    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
+        emptyList()
 
     override suspend fun loadDocumentsByParentId(parentId: String): List<Document> =
         documentsMap.values.toList()
