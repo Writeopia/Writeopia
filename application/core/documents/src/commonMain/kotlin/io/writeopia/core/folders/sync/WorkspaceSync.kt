@@ -15,38 +15,49 @@ class WorkspaceSync(
     private val documentConflictHandler: DocumentConflictHandler,
 ) {
 
-    suspend fun syncWorkspace(workspaceId: String) {
-        val workspace = authRepository.getWorkspace()
+    suspend fun syncWorkspace(workspaceId: String): ResultData<Unit> {
+        try {
+            val workspace = authRepository.getWorkspace()
 
-        val response = documentsApi.getWorkspaceNewData(workspaceId, workspace.lastSync)
-        val (newDocuments, newFolders) = if (response is ResultData.Complete) response.data else return
-
-        val localOutdatedDocs = documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
-        val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
-
-        val documentsNotSent = documentConflictHandler.handleConflict(
-            localOutdatedDocs,
-            newDocuments,
-        )
-
-        val foldersNotSent = documentConflictHandler.handleConflictForFolders(
-            localFolders = localOutdatedFolders,
-            externalFolders = newFolders,
-        )
-
-        val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent)
-        val resultSendFolders = documentsApi.sendFolders(foldersNotSent)
-
-        if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
-            val now = Clock.System.now()
-            // If everything ran accordingly, update the sync time of the folder.
-            documentsNotSent.forEach { document ->
-                val newDocument = document.copy(lastSyncedAt = now)
-                documentRepository.saveDocumentMetadata(newDocument)
+            val response = documentsApi.getWorkspaceNewData(workspaceId, workspace.lastSync)
+            val (newDocuments, newFolders) = if (response is ResultData.Complete) {
+                response.data
+            } else {
+                return ResultData.Complete(Unit)
             }
 
-            documentRepository.refreshDocuments()
-            folderRepository.refreshFolders()
+            val localOutdatedDocs =
+                documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
+            val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
+
+            val documentsNotSent = documentConflictHandler.handleConflict(
+                localOutdatedDocs,
+                newDocuments,
+            )
+
+            val foldersNotSent = documentConflictHandler.handleConflictForFolders(
+                localFolders = localOutdatedFolders,
+                externalFolders = newFolders,
+            )
+
+            val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent)
+            val resultSendFolders = documentsApi.sendFolders(foldersNotSent)
+
+            if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
+                val now = Clock.System.now()
+                // If everything ran accordingly, update the sync time of the folder.
+                documentsNotSent.forEach { document ->
+                    val newDocument = document.copy(lastSyncedAt = now)
+                    documentRepository.saveDocumentMetadata(newDocument)
+                }
+
+                documentRepository.refreshDocuments()
+                folderRepository.refreshFolders()
+            }
+
+            return ResultData.Complete(Unit)
+        } catch (e: Exception) {
+            return ResultData.Error(e)
         }
     }
 }

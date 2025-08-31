@@ -49,7 +49,8 @@ fun AccountMenuScreen(
             ollamaModelChange = {},
             ollamaModelsRetry = {},
             downloadModel = {},
-            deleteModel = {}
+            deleteModel = {},
+            syncWorkspace = {}
         )
     }
 }
