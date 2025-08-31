@@ -3,12 +3,10 @@ package io.writeopia.core.folders.sync
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.FolderRepository
-import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
 
-// Todo: Implement sync for workspace
 class WorkspaceSync(
     private val folderRepository: FolderRepository,
     private val documentRepository: DocumentRepository,

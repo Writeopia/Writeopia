@@ -74,6 +74,9 @@ class SqlDelightDocumentRepository(
     override suspend fun loadOutdatedDocuments(folderId: String): List<Document> =
         documentSqlDao.loadOutdatedDocumentByParentId(folderId)
 
+    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
+        documentSqlDao.loadOutdatedDocumentByWorkspaceId(workspaceId)
+
     override suspend fun loadDocumentById(id: String): Document? =
         documentSqlDao.loadDocumentWithContentById(id)
 
