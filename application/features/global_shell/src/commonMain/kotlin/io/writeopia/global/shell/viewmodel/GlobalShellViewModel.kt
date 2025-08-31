@@ -33,6 +33,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     val showDeleteConfirmation: StateFlow<Boolean>
 
+    val lastWorkspaceSync: StateFlow<String>
+
     override val ollamaSelectedModelState: StateFlow<String>
 
     override val ollamaUrl: StateFlow<String>
@@ -66,6 +68,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
     fun dismissDeleteConfirm()
 
     fun showDeleteConfirm()
+
+    fun syncWorkspace()
 
     fun deleteAccount(sideEffect: () -> Unit)
 

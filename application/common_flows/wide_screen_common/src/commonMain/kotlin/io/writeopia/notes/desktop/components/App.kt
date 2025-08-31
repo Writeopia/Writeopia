@@ -242,7 +242,8 @@ fun DesktopApp(
                                         globalShellViewModel.deleteAccount(
                                             sideEffect = navigateToRegister
                                         )
-                                    }
+                                    },
+                                    syncWorkspace = globalShellViewModel::syncWorkspace
                                 )
                             }
 
