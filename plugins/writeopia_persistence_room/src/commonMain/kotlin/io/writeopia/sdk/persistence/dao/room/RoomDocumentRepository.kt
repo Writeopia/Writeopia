@@ -215,4 +215,7 @@ class RoomDocumentRepository(
             )
             entity.toModel(content = content)
         }
+
+    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
+        emptyList()
 }
