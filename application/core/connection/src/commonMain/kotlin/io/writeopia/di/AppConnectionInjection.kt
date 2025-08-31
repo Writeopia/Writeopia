@@ -22,6 +22,8 @@ class AppConnectionInjection private constructor(
     },
     private val apiLogger: Logger = Logger.DEFAULT
 ) {
+    private var httpClient: HttpClient? = null
+
     private var _tokenJwt: String? = null
     private fun token() = _tokenJwt
 
@@ -31,8 +33,11 @@ class AppConnectionInjection private constructor(
 
     fun provideJson() = json
 
-    fun provideHttpClient(): HttpClient =
-        ApiInjectorDefaults.httpClient(json, apiLogger, token() ?: "")
+    fun provideHttpClient(): HttpClient = httpClient ?:
+    ApiInjectorDefaults.httpClient(json, apiLogger, token() ?: "").also {
+        httpClient = it
+    }
+
 
     companion object {
         private var instance: AppConnectionInjection? = null

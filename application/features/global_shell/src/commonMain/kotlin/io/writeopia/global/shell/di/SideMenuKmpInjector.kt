@@ -7,6 +7,7 @@ import io.writeopia.controller.OllamaConfigController
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.configuration.repository.ConfigurationRepository
+import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.di.OllamaConfigInjector
@@ -15,15 +16,23 @@ import io.writeopia.global.shell.viewmodel.GlobalShellKmpViewModel
 import io.writeopia.global.shell.viewmodel.GlobalShellViewModel
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.core.folders.repository.folder.NotesUseCase
+import io.writeopia.core.folders.sync.DocumentConflictHandler
+import io.writeopia.core.folders.sync.WorkspaceSync
+import io.writeopia.di.AppConnectionInjection
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 
 class SideMenuKmpInjector(
-    private val appConfigurationInjector: AppConfigurationInjector = AppConfigurationInjector.singleton(),
+    private val appConfigurationInjector: AppConfigurationInjector =
+        AppConfigurationInjector.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
     private val repositoryInjection: RepositoryInjector = SqlDelightDaoInjector.singleton(),
     private val ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
+    private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
+    private val connectionInjector: WriteopiaConnectionInjector =
+        WriteopiaConnectionInjector.singleton(),
 ) : SideMenuInjector, OllamaConfigInjector {
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
@@ -42,6 +51,24 @@ class SideMenuKmpInjector(
         )
     }
 
+    private fun provideWorkspaceSync(): WorkspaceSync {
+        val documentRepo = repositoryInjection.provideDocumentRepository()
+        return WorkspaceSync(
+            folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
+            documentRepository = documentRepo,
+            authRepository = authCoreInjection.provideAuthRepository(),
+            documentsApi = DocumentsApi(
+                appConnectionInjection.provideHttpClient(),
+                connectionInjector.baseUrl()
+            ),
+            documentConflictHandler = DocumentConflictHandler(
+                documentRepository = documentRepo,
+                folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
+                authCoreInjection.provideAuthRepository()
+            ),
+        )
+    }
+
     @Composable
     override fun provideSideMenuViewModel(): GlobalShellViewModel =
         viewModel {
@@ -54,7 +81,8 @@ class SideMenuKmpInjector(
                 workspaceConfigRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
                 ollamaRepository = ollamaInjection.provideRepository(),
                 configRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
-                authApi = authCoreInjection.provideAuthApi()
+                authApi = authCoreInjection.provideAuthApi(),
+                workspaceSync = provideWorkspaceSync()
             )
         }
 

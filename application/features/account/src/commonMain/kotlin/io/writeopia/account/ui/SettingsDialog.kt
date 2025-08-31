@@ -96,6 +96,7 @@ fun SettingsDialog(
     showDeleteConfirm: () -> Unit,
     dismissDeleteConfirm: () -> Unit,
     deleteAccount: () -> Unit,
+    syncWorkspace: () -> Unit,
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -134,7 +135,8 @@ fun SettingsDialog(
                     WorkspaceSection(
                         workplacePathState = workplacePathState,
                         showPath = true,
-                        selectWorkplacePath = selectWorkplacePath
+                        selectWorkplacePath = selectWorkplacePath,
+                        syncWorkspace = syncWorkspace
                     )
                 },
                 aiScreen = {
@@ -172,6 +174,7 @@ fun SettingsScreen(
     ollamaModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    syncWorkspace: () -> Unit,
 ) {
     ColorThemeOptions(
         selectedThemePosition = selectedThemePosition,
@@ -180,7 +183,7 @@ fun SettingsScreen(
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    WorkspaceSection(workplacePathState, showPath, selectWorkplacePath)
+    WorkspaceSection(workplacePathState, showPath, selectWorkplacePath, syncWorkspace)
 
     Spacer(modifier = Modifier.height(20.dp))
 
@@ -354,8 +357,10 @@ private fun WorkspaceSection(
     workplacePathState: StateFlow<String>,
     showPath: Boolean = true,
     selectWorkplacePath: (String) -> Unit,
+    syncWorkspace: () -> Unit,
 ) {
     Column {
+        val textShape = MaterialTheme.shapes.medium
         val titleStyle = MaterialTheme.typography.titleLarge
         val titleColor = MaterialTheme.colorScheme.onBackground
 
@@ -389,6 +394,17 @@ private fun WorkspaceSection(
                     .fillMaxWidth()
             )
         }
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        Text(text = "Sync", style = titleStyle, color = titleColor)
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        CommonButton(
+            text = "Sync workspace",
+            clickListener = syncWorkspace
+        )
 
         if (showEditPathDialog) {
             WorkspaceConfigurationDialog(
