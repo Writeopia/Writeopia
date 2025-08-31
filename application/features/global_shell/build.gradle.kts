@@ -64,6 +64,7 @@ kotlin {
                 implementation(libs.compose.navigation)
                 implementation(compose.components.uiToolingPreview)
                 implementation(libs.lifecycle.viewmodel.compose)
+                implementation(libs.ktor.client.core)
             }
         }
 

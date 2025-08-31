@@ -19,6 +19,7 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
+import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
@@ -54,6 +55,11 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.DateTimeComponents
+import kotlinx.datetime.format.DateTimeFormat
+import kotlinx.datetime.format.DateTimeFormatBuilder
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
 
@@ -71,6 +77,7 @@ class GlobalShellKmpViewModel(
     private val ollamaRepository: OllamaRepository,
     private val configRepository: ConfigurationRepository,
     private val json: Json = writeopiaJson,
+    private val workspaceSync: WorkspaceSync,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     init {
@@ -121,6 +128,9 @@ class GlobalShellKmpViewModel(
     private val _retryModels = MutableStateFlow(0)
 
     private val _loginStateTrigger = MutableStateFlow(GenerateId.generate())
+
+    private val _lastWorkspaceSync = MutableStateFlow("")
+    override val lastWorkspaceSync: StateFlow<String> = _lastWorkspaceSync.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val _ollamaConfigState = authRepository.listenForUser().flatMapLatest { user ->
@@ -482,6 +492,23 @@ class GlobalShellKmpViewModel(
 
     override fun showDeleteConfirm() {
         _showDeleteConfirmation.value = true
+    }
+
+    override fun syncWorkspace() {
+        viewModelScope.launch {
+            val workspaceId = authRepository.getWorkspace().id
+            val result = workspaceSync.syncWorkspace(workspaceId)
+
+            if (result is ResultData.Complete) {
+                _lastWorkspaceSync.value = Clock.System
+                    .now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .toString()
+
+            } else {
+                _lastWorkspaceSync.value = "Error"
+            }
+        }
     }
 
     private suspend fun getUserId(): String =
