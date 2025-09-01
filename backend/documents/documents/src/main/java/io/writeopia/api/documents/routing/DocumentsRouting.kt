@@ -20,6 +20,7 @@ import io.writeopia.connection.map
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
@@ -153,6 +154,61 @@ fun Routing.documentsRoute(
                     message = "${e.message}"
                 )
             }
+        }
+    }
+
+    get("/api/folder/{id}") {
+        val id = call.pathParameters["id"]!!
+        val userId = getUserId()
+
+        val folder = DocumentsService.getFolderById(id, userId ?: "", writeopiaDb)
+
+        if (folder != null) {
+            call.respond(
+                status = HttpStatusCode.OK,
+                message = folder.toApi()
+            )
+        } else {
+            call.respond(
+                status = HttpStatusCode.NotFound,
+                message = "No lead with id: $id"
+            )
+        }
+    }
+
+    post<SendFoldersRequest>("/api/folder") { request ->
+        try {
+            val folderList = request.folders
+
+            if (folderList.isNotEmpty()) {
+                val addedToHub = DocumentsService.receiveFolders(
+                    folderList.map { folder -> folder.toModel() },
+                    writeopiaDb,
+                )
+
+                if (addedToHub) {
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = "Accepted"
+                    )
+                } else {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "It was not possible to add documents to AI HUB"
+                    )
+                }
+            } else {
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = "Empty documents"
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respond(
+                status = HttpStatusCode.InternalServerError,
+                message = "${e.message}"
+            )
         }
     }
 
