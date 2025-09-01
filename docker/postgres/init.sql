@@ -56,3 +56,17 @@ CREATE TABLE workspace_entity (
   icon TEXT,
   icon_tint INTEGER
 );
+
+CREATE TABLE folder_entity (
+  id TEXT PRIMARY KEY,
+  parent_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  last_updated_at BIGINT NOT NULL,
+  last_synced_at BIGINT,
+  favorite BOOLEAN NOT NULL,
+  icon TEXT,
+  icon_tint INTEGER
+);
+

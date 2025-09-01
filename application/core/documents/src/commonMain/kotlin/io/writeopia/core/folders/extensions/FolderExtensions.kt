@@ -7,7 +7,7 @@ import io.writeopia.sdk.models.document.Folder
 fun Folder.toEntity() = FolderEntity(
     id = id,
     parent_id = parentId,
-    user_id = workspaceId,
+    workspace_id = workspaceId,
     title = title,
     created_at = createdAt.toEpochMilliseconds(),
     last_updated_at = lastUpdatedAt.toEpochMilliseconds(),

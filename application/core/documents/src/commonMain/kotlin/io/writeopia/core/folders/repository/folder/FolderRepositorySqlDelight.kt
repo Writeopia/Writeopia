@@ -16,17 +16,17 @@ class FolderRepositorySqlDelight(
         folderDao.getFolderById(id)?.toModel(0)
 
     override suspend fun getFoldersForWorkspaceAfterTime(
-        userId: String,
+        workspaceId: String,
         instant: Instant
     ): List<Folder> {
         return folderDao.selectByUserIdAfterTime(
-            userId,
+            workspaceId,
             instant.toEpochMilliseconds()
         )
     }
 
     override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> =
-        folderDao.selectByUserId(workspaceId)
+        folderDao.selectByWorkspaceId(workspaceId)
 
     override suspend fun createFolder(folder: Folder) {
         folderDao.createFolder(folder.toEntity())

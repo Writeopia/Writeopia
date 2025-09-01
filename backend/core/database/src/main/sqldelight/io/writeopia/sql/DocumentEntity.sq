@@ -50,6 +50,7 @@ LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE deleted = FALSE
 ORDER BY position;
 
+
 selectWithContentByIds:
 SELECT *
 FROM document_entity
@@ -83,6 +84,13 @@ SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.parent_document_id = ? AND last_synced > ? AND workspace_id = ? AND deleted = FALSE
+ORDER BY position;
+
+selectWithContentByWorkspaceIdAfterTime:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE last_synced > ? AND workspace_id = ? AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentById:
