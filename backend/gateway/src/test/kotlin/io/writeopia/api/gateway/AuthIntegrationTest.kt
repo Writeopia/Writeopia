@@ -56,7 +56,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    company = ""
+                    workspace = ""
                 )
             )
         }
@@ -79,7 +79,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    company = ""
+                    workspace = ""
                 )
             )
         }
@@ -91,7 +91,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    company = ""
+                    workspace = ""
                 )
             )
         }
@@ -116,7 +116,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = password,
-                    company = ""
+                    workspace = ""
                 )
             )
         }
@@ -172,7 +172,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = password,
-                    company = ""
+                    workspace = ""
                 )
             )
         }
@@ -257,7 +257,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    company = ""
+                    workspace = ""
                 )
             )
         }
@@ -281,7 +281,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    company = ""
+                    workspace = ""
                 )
             )
         }

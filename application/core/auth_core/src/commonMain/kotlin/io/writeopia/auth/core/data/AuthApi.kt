@@ -36,17 +36,18 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
     suspend fun register(
         name: String,
         email: String,
-        company: String,
+        workspace: String,
         password: String
     ): ResultData<AuthResponse> {
         return try {
             val response = client.post("$baseUrl/api/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest(name, email, company, password))
+                setBody(RegisterRequest(name, email, workspace, password))
             }.body<AuthResponse>()
 
             ResultData.Complete(response)
         } catch (e: Exception) {
+            e.printStackTrace()
             ResultData.Error(e)
         }
     }

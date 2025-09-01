@@ -222,7 +222,10 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     val database = databaseState.writeopiaDb
 
                     WriteopiaDbInjector.initialize(database)
-                    WriteopiaConnectionInjector.setBaseUrl("https://writeopia.dev")
+                    WriteopiaConnectionInjector.setBaseUrl(
+//                        "https://writeopia.dev"
+                        "http://localhost:8080"
+                    )
 
                     val authInjection = AuthInjection()
 

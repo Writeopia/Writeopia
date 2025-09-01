@@ -189,7 +189,7 @@ private fun BoxScope.RegisterContent(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
             placeholder = {
-                Text(WrStrings.company())
+                Text(WrStrings.workspaceName())
             },
         )
 
