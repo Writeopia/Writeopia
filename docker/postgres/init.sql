@@ -41,7 +41,7 @@ CREATE TABLE user_entity (
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
   enabled BOOLEAN NOT NULL,
-  company TEXT NOT NULL
+  workspace TEXT NOT NULL
 );
 
 CREATE TABLE company_entity (

@@ -21,8 +21,8 @@ internal class RegisterViewModel(
     private val _name = MutableStateFlow("")
     val name = _name.asStateFlow()
 
-    private val _company = MutableStateFlow("")
-    val company = _company.asStateFlow()
+    private val _workspace = MutableStateFlow("")
+    val company = _workspace.asStateFlow()
 
     private val _email = MutableStateFlow("")
     val email = _email.asStateFlow()
@@ -37,8 +37,8 @@ internal class RegisterViewModel(
         _name.value = name
     }
 
-    fun companyChanged(company: String) {
-        _company.value = company
+    fun workspaceChanged(company: String) {
+        _workspace.value = company
     }
 
     fun emailChanged(email: String) {
@@ -57,7 +57,7 @@ internal class RegisterViewModel(
                 val result = authApi.register(
                     name = _name.value,
                     email = _email.value,
-                    company = _company.value,
+                    workspace = _workspace.value,
                     password = _password.value
                 )
 
