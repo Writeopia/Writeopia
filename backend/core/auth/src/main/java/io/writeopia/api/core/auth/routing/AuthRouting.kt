@@ -80,7 +80,11 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             println("register request received")
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
-            val user = writeopiaDb.getUserByEmail(request.email)
+            val user = if (debugMode) {
+                writeopiaDb.getUserByEmail(request.email)
+            } else {
+                writeopiaDb.getEnabledUserByEmail(request.email)
+            }
 
             if (user == null) {
                 // Get workspace
