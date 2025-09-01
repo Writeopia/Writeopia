@@ -21,14 +21,14 @@ suspend fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
     }
 }
 
-suspend fun WriteopiaDbBackend.folderDiff(
+suspend fun WriteopiaDbBackend.documentsDiffByFolder(
     folderId: String,
-    userId: String,
+    workspaceId: String,
     lastSync: Long
 ): List<Document> =
-    getDocumentDaoFn().loadDocumentsWithContentFolderIdAfterTime(folderId, userId, lastSync)
+    getDocumentDaoFn().loadDocumentsWithContentFolderIdAfterTime(folderId, workspaceId, lastSync)
 
-suspend fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
+fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
     getDocumentDaoFn().loadDocumentByParentId(parentId)
 
 suspend fun WriteopiaDbBackend.getDocumentById(id: String = "test", userId: String): Document? =

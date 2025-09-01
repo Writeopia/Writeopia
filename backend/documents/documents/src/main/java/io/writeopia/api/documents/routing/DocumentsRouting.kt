@@ -9,8 +9,8 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.writeopia.api.core.auth.routing.getUserId
 import io.writeopia.api.documents.documents.DocumentsService
+import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
-import io.writeopia.api.documents.documents.repository.folderDiff
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
 import io.writeopia.connection.ResultData
@@ -151,22 +151,22 @@ fun Routing.documentsRoute(
     authenticate("auth-jwt", optional = debug) {
         post<FolderDiffRequest>("/api/document/folder/diff") { folderDiff ->
             try {
-                println("loading diff")
+                println("loading folder diff")
                 println("user id: ${getUserId()}")
                 println("last sync: ${Instant.fromEpochMilliseconds(folderDiff.lastFolderSync)}")
 
-                val documents =
-                    writeopiaDb.folderDiff(
+                val folders =
+                    writeopiaDb.documentsDiffByFolder(
                         folderDiff.folderId,
-                        getUserId() ?: "",
+                        folderDiff.workspaceId,
                         folderDiff.lastFolderSync
                     )
 
-                println("returning ${documents.count()} documents")
+                println("returning ${folders.count()} folders")
 
                 call.respond(
                     status = HttpStatusCode.OK,
-                    message = documents.map { document -> document.toApi() }
+                    message = folders.map { document -> document.toApi() }
                 )
             } catch (e: Exception) {
                 call.respond(
@@ -179,6 +179,11 @@ fun Routing.documentsRoute(
 
     authenticate("auth-jwt", optional = debug) {
         post<WorkspaceDiffRequest>("/api/workspace/diff") { workspaceDiff ->
+            println("loading workspace diff")
+            println("user id: ${getUserId()}")
+            println("last sync: ${Instant.fromEpochMilliseconds(workspaceDiff.lastSync)}")
+
+
         }
     }
 }
