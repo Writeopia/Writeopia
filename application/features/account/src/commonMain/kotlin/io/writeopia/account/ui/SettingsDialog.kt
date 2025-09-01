@@ -421,7 +421,7 @@ private fun WorkspaceSection(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "Error syncing workspace",
+                text = lastSync,
                 style = MaterialTheme.typography.bodyMedium,
                 color = titleColor
             )
