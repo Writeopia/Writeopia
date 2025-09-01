@@ -618,5 +618,6 @@ internal class ChooseNoteKmpViewModel(
     }
 
     private suspend fun getUserId(): String = authRepository.getUser().id
+
     private suspend fun getWorkspaceId(): String = authRepository.getWorkspace().id
 }
