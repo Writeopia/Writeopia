@@ -13,5 +13,5 @@ interface MenuItem : Traversable {
     val icon: Icon?
     override val parentId: String
 
-    data class Icon(val label: String, val tint: Int?)
+    data class Icon(val label: String, val tint: Long?)
 }

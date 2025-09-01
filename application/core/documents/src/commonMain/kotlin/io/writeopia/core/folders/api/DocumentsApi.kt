@@ -43,7 +43,8 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         lastSync: Instant
     ): ResultData<Pair<List<Document>, List<Folder>>> {
-        val response = client.post("$baseUrl/api/document/workspace/diff") {
+        println("getting workspace new data: $baseUrl/api/workspace/diff")
+        val response = client.post("$baseUrl/api/workspace/diff") {
             contentType(ContentType.Application.Json)
             setBody(WorkspaceDiffRequest(workspaceId, lastSync.toEpochMilliseconds()))
         }
@@ -55,6 +56,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
 
             ResultData.Complete(documents to folders)
         } else {
+            println("response error: $response")
             ResultData.Error()
         }
     }
@@ -68,6 +70,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         return if (response.status.isSuccess()) {
             ResultData.Complete(Unit)
         } else {
+            println("error sending documents: $response")
             ResultData.Error()
         }
     }
@@ -79,6 +82,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         }
 
         return if (response.status.isSuccess()) {
+            println("error sending folders: $response")
             ResultData.Complete(Unit)
         } else {
             ResultData.Error()

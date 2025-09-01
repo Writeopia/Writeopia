@@ -21,14 +21,18 @@ class WorkspaceSync(
 
             val response = documentsApi.getWorkspaceNewData(workspaceId, workspace.lastSync)
             val (newDocuments, newFolders) = if (response is ResultData.Complete) {
+                println("Received response from API")
                 response.data
             } else {
+                println("Error syncing workspace")
                 return ResultData.Error()
             }
 
             val localOutdatedDocs =
                 documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
             val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
+
+            println("handling conflicts")
 
             val documentsNotSent = documentConflictHandler.handleConflict(
                 localOutdatedDocs,
@@ -40,10 +44,13 @@ class WorkspaceSync(
                 externalFolders = newFolders,
             )
 
+            println("sending documents")
             val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent)
+            println("sending folders")
             val resultSendFolders = documentsApi.sendFolders(foldersNotSent)
 
             if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
+                println("documents sent")
                 val now = Clock.System.now()
                 // If everything ran accordingly, update the sync time of the folder.
                 documentsNotSent.forEach { document ->
@@ -53,10 +60,14 @@ class WorkspaceSync(
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()
-            }
 
-            return ResultData.Complete(Unit)
+                return ResultData.Complete(Unit)
+            } else {
+                println("documents NOT sent")
+                return ResultData.Error()
+            }
         } catch (e: Exception) {
+            e.printStackTrace()
             return ResultData.Error(e)
         }
     }
