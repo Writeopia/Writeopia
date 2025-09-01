@@ -501,9 +501,11 @@ class GlobalShellKmpViewModel(
                     .now()
                     .toLocalDateTime(TimeZone.currentSystemDefault())
                     .toString()
+
                 "Last sync: $lastSync"
             } else {
-                "Error"
+                println("result error: $result")
+                "Error in sync"
             }
         }
     }
