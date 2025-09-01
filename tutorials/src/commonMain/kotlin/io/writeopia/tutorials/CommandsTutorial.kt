@@ -5,7 +5,7 @@ internal fun commandsTutorial() =
 {
     "id": "DDE16YFyYN",
     "title": "Using Commands",
-    "userId": "disconnected_user",
+    "workspaceId": "disconnected_user",
     "content": [
         {
             "id": "K1PlDcHZpy",
