@@ -62,7 +62,8 @@ class DocumentSqlBeDao(
             } ?: emptyList()
 
     fun insertDocumentWithContent(document: Document) {
-        val result = documentQueries?.selectById(document.id, document.workspaceId)?.executeAsOneOrNull()
+        val result =
+            documentQueries?.selectById(document.id, document.workspaceId)?.executeAsOneOrNull()
 
         if (result != null) {
             storyStepQueries?.deleteByDocumentId(document.id)
@@ -116,6 +117,21 @@ class DocumentSqlBeDao(
         }
     }
 
+    fun insertFolder(folder: Folder) {
+        foldersQueries?.insert(
+            id = folder.id,
+            parent_id = folder.parentId,
+            workspace_id = folder.workspaceId,
+            title = folder.title,
+            created_at = folder.lastUpdatedAt.toEpochMilliseconds().toInt(),
+            last_updated_at = folder.lastUpdatedAt.toEpochMilliseconds(),
+            last_synced_at = folder.lastSyncedAt?.toEpochMilliseconds(),
+            favorite = folder.favorite,
+            icon = folder.icon?.label,
+            icon_tint = folder.icon?.tint
+        )
+    }
+
     fun loadDocumentById(id: String, userId: String): Document? =
         documentQueries?.selectById(id, userId)
             ?.executeAsOneOrNull()
@@ -139,6 +155,11 @@ class DocumentSqlBeDao(
                     isLocked = entity.is_locked
                 )
             }
+
+    fun loadFolderById(id: String): Folder? =
+        foldersQueries?.selectFolderById(id)
+            ?.executeAsOneOrNull()
+            ?.toModel(0)
 
     fun loadDocumentWithContentByIds(id: List<String>): List<Document> =
         documentQueries?.selectWithContentByIds(id)
@@ -746,7 +767,7 @@ fun Folder_entity.toModel(count: Long) =
         parentId = this.parent_id,
         title = title,
         createdAt = Instant.fromEpochMilliseconds(created_at.toLong()),
-        lastUpdatedAt = Instant.fromEpochMilliseconds(last_updated_at),
+        lastUpdatedAt = Instant.fromEpochMilliseconds(last_updated_at ?: 0),
         workspaceId = workspace_id,
         itemCount = count,
         favorite = favorite,

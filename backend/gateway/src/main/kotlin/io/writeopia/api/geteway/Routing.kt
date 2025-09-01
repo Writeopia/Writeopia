@@ -13,7 +13,7 @@ import io.writeopia.sql.WriteopiaDbBackend
 fun Application.configureRouting(
     writeopiaDb: WriteopiaDbBackend?,
     useAi: Boolean,
-    debugMode: Boolean = false,
+    debugMode: Boolean = true,
     adminKey: String?
 ) {
     routing {
