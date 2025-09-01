@@ -8,7 +8,7 @@ CREATE TABLE folder_entity (
   last_synced_at BIGINT,
   favorite BOOLEAN NOT NULL,
   icon TEXT,
-  icon_tint BIGINT
+  icon_tint INTEGER
 );
 
 query:
