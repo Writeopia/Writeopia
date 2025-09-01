@@ -14,10 +14,14 @@ import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.data.DocumentApi
+import io.writeopia.sdk.serialization.data.FolderApi
+import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffResponse
+import kotlinx.datetime.Clock
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Instant
 
 class ApplicationTest {
 
@@ -61,6 +65,44 @@ class ApplicationTest {
         )
 
         documentApiList.forEach { documentApi ->
+            db.deleteDocumentById(documentApi.id)
+        }
+    }
+
+    @Test
+    fun `it should be possible to save and query folder by id`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+
+        val folderApiList = listOf(
+            FolderApi(
+                id = "testiaskkakakaka",
+                title = "Test Note",
+                parentId = "parentIdddd",
+                createdAt = Clock.System.now(),
+                lastUpdatedAt = Clock.System.now(),
+                workspaceId = "",
+                itemCount = 0L,
+            )
+        )
+
+        val response = client.post("/api/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(folderApiList))
+        }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val response1 = client.get("/api/folder/${folderApiList.first().id}")
+        val actual = response1.body<FolderApi>()
+
+        assertEquals(HttpStatusCode.OK, response1.status)
+        assertEquals(folderApiList.first().id, actual.id)
+
+        folderApiList.forEach { documentApi ->
             db.deleteDocumentById(documentApi.id)
         }
     }
