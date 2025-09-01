@@ -548,18 +548,19 @@ internal class ChooseNoteKmpViewModel(
         _syncInProgress.value = SyncState.LoadingSync
 
         val userId = getUserId()
+        val workspaceId = getWorkspaceId()
 
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
             notesUseCase.loadDocumentsForWorkspaceAfterTimeFromDb(
-                authRepository.getWorkspace().id,
+                workspaceId,
                 userId,
                 lastUpdated
             )
-        } ?: notesUseCase.loadDocumentsForWorkspaceFromDb(userId)
+        } ?: notesUseCase.loadDocumentsForWorkspaceFromDb(workspaceId)
 
         val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
-            notesUseCase.loadFolderForUserAfterTime(userId, lastUpdated)
-        } ?: notesUseCase.loadFoldersForUser(userId)
+            notesUseCase.loadFolderForUserAfterTime(workspaceId, lastUpdated)
+        } ?: notesUseCase.loadFoldersForWorkspace(workspaceId)
 
         documentToJson.writeDocuments(
             documents = currentFolders + currentNotes,
@@ -582,10 +583,11 @@ internal class ChooseNoteKmpViewModel(
         _syncInProgress.value = SyncState.LoadingWrite
 
         val userId = getUserId()
+        val workspaceId = getWorkspaceId()
 
         val currentNotes = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
             notesUseCase.loadDocumentsForWorkspaceAfterTimeFromDb(
-                authRepository.getWorkspace().id,
+                workspaceId,
                 userId,
                 lastUpdated
             )
@@ -594,8 +596,8 @@ internal class ChooseNoteKmpViewModel(
         }
 
         val currentFolders = writeopiaJsonParser.lastUpdatesById(path)?.let { lastUpdated ->
-            notesUseCase.loadFolderForUserAfterTime(userId, lastUpdated)
-        } ?: notesUseCase.loadFoldersForUser(userId)
+            notesUseCase.loadFolderForUserAfterTime(workspaceId, lastUpdated)
+        } ?: notesUseCase.loadFoldersForWorkspace(workspaceId)
 
         documentToJson.writeDocuments(
             documents = currentFolders + currentNotes,
@@ -610,10 +612,11 @@ internal class ChooseNoteKmpViewModel(
 
     private fun directoryFilesAs(path: String, documentWriter: DocumentWriter) {
         viewModelScope.launch(Dispatchers.Default) {
-            val data = notesUseCase.loadDocumentsForWorkspaceFromDb(getUserId())
+            val data = notesUseCase.loadDocumentsForWorkspaceFromDb(getWorkspaceId())
             documentWriter.writeDocuments(data, path, usePath = true)
         }
     }
 
     private suspend fun getUserId(): String = authRepository.getUser().id
+    private suspend fun getWorkspaceId(): String = authRepository.getWorkspace().id
 }

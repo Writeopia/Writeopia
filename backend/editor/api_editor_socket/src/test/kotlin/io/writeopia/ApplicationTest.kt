@@ -55,7 +55,7 @@ class ApplicationTest {
 
         client.post("/api/document") {
             contentType(ContentType.Application.Json.withParameter("charset", "utf-8"))
-            setBody(DocumentApi(id = id, userId = "userId"))
+            setBody(DocumentApi(id = id, workspaceId = "userId"))
         }.run {
             assertEquals(HttpStatusCode.Accepted, status)
         }

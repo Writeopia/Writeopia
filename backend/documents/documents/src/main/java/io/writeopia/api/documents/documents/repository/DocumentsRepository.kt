@@ -1,6 +1,7 @@
 package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sql.WriteopiaDbBackend
 
 private var documentSqlDao: DocumentSqlBeDao? = null
@@ -10,6 +11,7 @@ private fun WriteopiaDbBackend.getDocumentDaoFn(): DocumentSqlBeDao =
         DocumentSqlBeDao(
             documentEntityQueries,
             storyStepEntityQueries,
+            folderEntityQueries
         ).also {
             documentSqlDao = it
         }
@@ -27,6 +29,16 @@ suspend fun WriteopiaDbBackend.documentsDiffByFolder(
     lastSync: Long
 ): List<Document> =
     getDocumentDaoFn().loadDocumentsWithContentFolderIdAfterTime(folderId, workspaceId, lastSync)
+
+suspend fun WriteopiaDbBackend.documentsDiffByWorkspace(
+    workspaceId: String,
+    lastSync: Long
+): List<Document> =
+    getDocumentDaoFn().loadDocumentsWithContentByWorkspaceIdAfterTime(workspaceId, lastSync)
+
+suspend fun WriteopiaDbBackend.allFoldersByWorkspaceId(workspaceId: String): List<Folder> {
+    return getDocumentDaoFn().loadAllFoldersByWorkspaceId(workspaceId)
+}
 
 fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
     getDocumentDaoFn().loadDocumentByParentId(parentId)
