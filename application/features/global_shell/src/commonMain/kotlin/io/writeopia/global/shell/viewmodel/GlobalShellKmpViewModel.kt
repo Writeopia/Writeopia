@@ -13,7 +13,6 @@ import io.writeopia.common.utils.collections.traverse
 import io.writeopia.common.utils.download.DownloadParser
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.IconChange
-import io.writeopia.sdk.models.utils.map
 import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
@@ -34,6 +33,7 @@ import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -56,9 +56,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.format.DateTimeComponents
-import kotlinx.datetime.format.DateTimeFormat
-import kotlinx.datetime.format.DateTimeFormatBuilder
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
@@ -500,10 +497,11 @@ class GlobalShellKmpViewModel(
             val result = workspaceSync.syncWorkspace(workspaceId)
 
             if (result is ResultData.Complete) {
-                _lastWorkspaceSync.value = Clock.System
+                val lastSync = Clock.System
                     .now()
                     .toLocalDateTime(TimeZone.currentSystemDefault())
                     .toString()
+                _lastWorkspaceSync.value = "Last sync: $lastSync"
 
             } else {
                 _lastWorkspaceSync.value = "Error"

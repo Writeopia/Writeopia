@@ -23,7 +23,7 @@ class WorkspaceSync(
             val (newDocuments, newFolders) = if (response is ResultData.Complete) {
                 response.data
             } else {
-                return ResultData.Complete(Unit)
+                return ResultData.Error()
             }
 
             val localOutdatedDocs =
