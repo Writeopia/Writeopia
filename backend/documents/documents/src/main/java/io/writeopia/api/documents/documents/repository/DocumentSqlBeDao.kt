@@ -415,10 +415,10 @@ class DocumentSqlBeDao(
 
     fun loadDocumentsWithContentFolderIdAfterTime(
         folderId: String,
-        userId: String,
+        workspaceId: String,
         time: Long
     ): List<Document> {
-        return documentQueries?.selectWithContentByFolderIdAfterTime(folderId, time, userId)
+        return documentQueries?.selectWithContentByFolderIdAfterTime(folderId, time, workspaceId)
             ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
