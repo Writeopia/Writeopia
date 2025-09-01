@@ -75,9 +75,8 @@ class FolderRepositorySqlDelight(
         folderDao.removeListening(parentId)
     }
 
-    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> {
-        TODO("Not yet implemented")
-    }
+    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =
+        getFoldersForWorkspace(workspaceId)
 
     override suspend fun deleteFolderById(folderId: String) {
         folderDao.deleteFolder(folderId)

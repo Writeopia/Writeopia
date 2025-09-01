@@ -8,7 +8,7 @@ CREATE TABLE document_entity (
   favorite BOOLEAN NOT NULL,
   parent_document_id TEXT NOT NULL,
   icon TEXT,
-  icon_tint INTEGER,
+  icon_tint BIGINT,
   is_locked BOOLEAN NOT NULL,
   company_id TEXT NULL,
   deleted BOOLEAN NOT NULL

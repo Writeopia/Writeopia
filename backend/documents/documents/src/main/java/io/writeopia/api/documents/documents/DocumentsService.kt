@@ -7,12 +7,15 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.getDocumentById
+import io.writeopia.api.documents.documents.repository.getFolderById
 import io.writeopia.api.documents.documents.repository.saveDocument
+import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.search.SearchDocument
 import io.writeopia.connection.ResultData
 import io.writeopia.connection.Urls
 import io.writeopia.connection.wrWebClient
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sql.WriteopiaDbBackend
 
@@ -30,6 +33,15 @@ object DocumentsService {
         return if (useAi) sendToAiHub(documents) else true
     }
 
+    suspend fun receiveFolders(
+        folders: List<Folder>,
+        writeopiaDb: WriteopiaDbBackend,
+    ): Boolean {
+        folders.forEach { folder -> writeopiaDb.saveFolder(folder) }
+
+        return true
+    }
+
     suspend fun search(
         query: String,
         userId: String,
@@ -41,8 +53,13 @@ object DocumentsService {
         id: String,
         userId: String,
         writeopiaDb: WriteopiaDbBackend
-    ): Document? =
-        writeopiaDb.getDocumentById(id, userId)
+    ): Document? = writeopiaDb.getDocumentById(id, userId)
+
+    suspend fun getFolderById(
+        id: String,
+        userId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Folder? = writeopiaDb.getFolderById(id, userId)
 
     private suspend fun sendToAiHub(documents: List<Document>) =
         wrWebClient.post("${Urls.AI_HUB}/documents/") {
