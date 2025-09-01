@@ -82,9 +82,9 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         }
 
         return if (response.status.isSuccess()) {
-            println("error sending folders: $response")
             ResultData.Complete(Unit)
         } else {
+            println("error sending folders: $response")
             ResultData.Error()
         }
     }
