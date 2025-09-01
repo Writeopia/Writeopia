@@ -20,7 +20,7 @@ class FolderSync(
      * This logic is atomic. If it fails, the whole process must be tried again in a future time.
      * The sync time of the folder will only be updated with everything works correctly.
      */
-    suspend fun syncFolder(folderId: String, userId: String) {
+    suspend fun syncFolder(folderId: String, workspaceId: String, userId: String) {
 //        println("folderId: $folderId")
         val folder: Folder = folderRepository.getFolderById(folderId) ?: run {
             val folder = Folder(
@@ -43,6 +43,7 @@ class FolderSync(
         // First, receive the documents for the backend.
         val response = documentsApi.getFolderNewDocuments(
             folderId,
+            workspaceId,
             lastSync ?: Instant.DISTANT_PAST
         )
         val newDocuments = if (response is ResultData.Complete) response.data else return

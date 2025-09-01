@@ -440,6 +440,7 @@ internal class ChooseNoteKmpViewModel(
             if (authRepository.isLoggedIn() && authRepository.getUser().tier == Tier.PREMIUM) {
                 folderSync.syncFolder(
                     notesNavigation.id,
+                    authRepository.getWorkspace().id,
                     authRepository.getUser().id
                 )
             }
