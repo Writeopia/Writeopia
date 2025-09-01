@@ -5,7 +5,7 @@ internal fun aiTutorial() =
 {
     "id": "bkb3kwIrpf",
     "title": "Using AI",
-    "userId": "disconnected_user",
+    "workspaceId": "disconnected_user",
     "content": [
         {
             "id": "lCRHVL4rV3",
