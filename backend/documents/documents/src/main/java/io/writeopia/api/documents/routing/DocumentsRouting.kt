@@ -18,6 +18,7 @@ import io.writeopia.connection.map
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.datetime.Instant
 
@@ -173,6 +174,11 @@ fun Routing.documentsRoute(
                     message = "${e.message}"
                 )
             }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<WorkspaceDiffRequest>("/api/workspace/diff") { workspaceDiff ->
         }
     }
 }
