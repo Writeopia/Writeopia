@@ -30,7 +30,7 @@ actual object MarkdownToDocument {
                 DocumentApi(
                     id = GenerateId.generate(),
                     title = title ?: "",
-                    userId = userId,
+                    workspaceId = userId,
                     parentId = parentId,
                     isLocked = false,
                     content = content,

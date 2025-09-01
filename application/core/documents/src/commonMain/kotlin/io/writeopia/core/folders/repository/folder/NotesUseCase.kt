@@ -89,11 +89,11 @@ class NotesUseCase private constructor(
                 )
             }
 
-    suspend fun loadFolderForUserAfterTime(userId: String, time: Instant): List<Folder> =
-        folderRepository.getFoldersForWorkspaceAfterTime(userId, time)
+    suspend fun loadFolderForUserAfterTime(workspace: String, time: Instant): List<Folder> =
+        folderRepository.getFoldersForWorkspaceAfterTime(workspace, time)
 
-    suspend fun loadFoldersForUser(userId: String): List<Folder> =
-        folderRepository.getFoldersForWorkspace(userId)
+    suspend fun loadFoldersForWorkspace(workspaceId: String): List<Folder> =
+        folderRepository.getFoldersForWorkspace(workspaceId)
 
     private suspend fun loadDocumentsByIds(ids: Iterable<String>): List<MenuItem> {
         val folders = ids.mapNotNull { id -> folderRepository.getFolderById(id) }
