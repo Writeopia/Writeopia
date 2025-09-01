@@ -60,13 +60,13 @@ object AuthService {
         registerRequest: RegisterRequest,
         enabled: Boolean
     ): WriteopiaUser {
-        val (name, email, companyDomain, password) = registerRequest
+        val (name, email, workspace, password) = registerRequest
 
-        if (companyDomain.isNotEmpty()) {
-            val company = writeopiaDb.getCompanyByDomain(companyDomain)
+        if (workspace.isNotEmpty()) {
+            val company = writeopiaDb.getCompanyByDomain(workspace)
 
             if (company == null) {
-                writeopiaDb.insertCompany(companyDomain)
+                writeopiaDb.insertCompany(workspace)
             }
         }
 
@@ -81,7 +81,7 @@ object AuthService {
             email = email,
             password = hash,
             salt = salt.toBase64(),
-            companyDomain = companyDomain,
+            workspace = workspace,
             enabled = enabled
         )
 

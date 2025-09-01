@@ -77,6 +77,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
     post("/api/register") {
         try {
+            println("register request received")
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
             val user = writeopiaDb.getUserByEmail(request.email)
@@ -100,6 +101,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 call.respond(HttpStatusCode.Conflict, "Not Created")
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             logger.info("register request error message: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, "Unknown error")
         }

@@ -89,7 +89,7 @@ fun NavGraphBuilder.authNavigation(
                     passwordState = registerViewModel.password,
                     registerState = registerViewModel.register,
                     nameChanged = registerViewModel::nameChanged,
-                    companyChanged = registerViewModel::companyChanged,
+                    companyChanged = registerViewModel::workspaceChanged,
                     emailChanged = registerViewModel::emailChanged,
                     passwordChanged = registerViewModel::passwordChanged,
                     onRegisterRequest = registerViewModel::onRegister,
