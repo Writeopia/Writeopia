@@ -13,7 +13,7 @@ fun FolderEntity.toModel(count: Long) =
         title = title,
         createdAt = Instant.fromEpochMilliseconds(created_at),
         lastUpdatedAt = Instant.fromEpochMilliseconds(last_updated_at),
-        workspaceId = user_id,
+        workspaceId = workspace_id,
         itemCount = count,
         favorite = favorite.toBoolean(),
         icon = if (this.icon != null && this.icon_tint != null) MenuItem.Icon(
