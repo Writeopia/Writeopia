@@ -496,15 +496,14 @@ class GlobalShellKmpViewModel(
             val workspaceId = authRepository.getWorkspace().id
             val result = workspaceSync.syncWorkspace(workspaceId)
 
-            if (result is ResultData.Complete) {
+            _lastWorkspaceSync.value = if (result is ResultData.Complete) {
                 val lastSync = Clock.System
                     .now()
                     .toLocalDateTime(TimeZone.currentSystemDefault())
                     .toString()
-                _lastWorkspaceSync.value = "Last sync: $lastSync"
-
+                "Last sync: $lastSync"
             } else {
-                _lastWorkspaceSync.value = "Error"
+                "Error"
             }
         }
     }
