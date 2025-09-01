@@ -16,6 +16,8 @@ import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
+import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
+import io.writeopia.sdk.serialization.request.WorkspaceDiffResponse
 import kotlinx.datetime.Instant
 
 class DocumentsApi(private val client: HttpClient, private val baseUrl: String) {
@@ -40,7 +42,20 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         lastSync: Instant
     ): ResultData<Pair<List<Document>, List<Folder>>> {
-        return ResultData.Idle()
+        val response = client.post("$baseUrl/api/document/workspace/diff") {
+            contentType(ContentType.Application.Json)
+            setBody(WorkspaceDiffRequest(workspaceId, lastSync.toEpochMilliseconds()))
+        }
+
+        return if (response.status.isSuccess()) {
+            val (foldersApi, documentsApi) = response.body<WorkspaceDiffResponse>()
+            val documents = documentsApi.map { it.toModel() }
+            val folders = foldersApi.map { it.toModel() }
+
+            ResultData.Complete(documents to folders)
+        } else {
+            ResultData.Error()
+        }
     }
 
     suspend fun sendDocuments(documents: List<Document>): ResultData<Unit> {
