@@ -24,11 +24,12 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
 
     suspend fun getFolderNewDocuments(
         folderId: String,
+        workspaceId: String,
         lastSync: Instant
     ): ResultData<List<Document>> {
         val response = client.post("$baseUrl/api/document/folder/diff") {
             contentType(ContentType.Application.Json)
-            setBody(FolderDiffRequest(folderId, lastSync.toEpochMilliseconds()))
+            setBody(FolderDiffRequest(folderId, workspaceId, lastSync.toEpochMilliseconds()))
         }
 
         return if (response.status.isSuccess()) {
