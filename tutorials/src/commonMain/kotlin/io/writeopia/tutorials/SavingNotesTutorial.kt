@@ -5,7 +5,7 @@ internal fun savingNotesTutorial() =
 {
     "id": "EnxRIMrTMA",
     "title": "Saving Notes",
-    "userId": "disconnected_user",
+    "workspaceId": "disconnected_user",
     "content": [
         {
             "id": "OiNhn5k3UO",
