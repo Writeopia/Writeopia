@@ -420,7 +420,11 @@ private fun WorkspaceSection(
         if (lastSync.isNotEmpty()) {
             Spacer(modifier = Modifier.height(6.dp))
 
-            Text(lastSync, style = MaterialTheme.typography.bodyMedium, color = titleColor)
+            Text(
+                text = "Error syncing workspace",
+                style = MaterialTheme.typography.bodyMedium,
+                color = titleColor
+            )
         }
 
         if (showEditPathDialog) {
