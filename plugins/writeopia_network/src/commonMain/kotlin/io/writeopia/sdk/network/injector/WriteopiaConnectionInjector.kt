@@ -7,6 +7,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import io.writeopia.sdk.network.notes.NotesApi
 import io.writeopia.sdk.network.websocket.MockWebsocketEditionManager
@@ -69,7 +70,7 @@ private object ApiInjectorDefaults {
         install(Logging) {
             logger = apiLogger
             level = LogLevel.ALL
-//                sanitizeHeader { header -> header == HttpHeaders.Authorization }
+            sanitizeHeader { header -> header == HttpHeaders.Authorization }
         }
 
 //        install(Auth) {
