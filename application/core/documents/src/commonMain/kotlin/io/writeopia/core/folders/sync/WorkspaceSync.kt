@@ -17,9 +17,14 @@ class WorkspaceSync(
 
     suspend fun syncWorkspace(workspaceId: String): ResultData<Unit> {
         try {
+            val authToken = authRepository.getAuthToken() ?: return ResultData.Error(null)
             val workspace = authRepository.getWorkspace()
 
-            val response = documentsApi.getWorkspaceNewData(workspaceId, workspace.lastSync)
+            val response = documentsApi.getWorkspaceNewData(
+                workspaceId,
+                workspace.lastSync,
+                authToken
+            )
             val (newDocuments, newFolders) = if (response is ResultData.Complete) {
                 println("Received response from API")
                 response.data
@@ -45,9 +50,9 @@ class WorkspaceSync(
             )
 
             println("sending documents")
-            val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent)
+            val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent, authToken)
             println("sending folders")
-            val resultSendFolders = documentsApi.sendFolders(foldersNotSent)
+            val resultSendFolders = documentsApi.sendFolders(foldersNotSent, authToken)
 
             if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
                 println("documents sent")
