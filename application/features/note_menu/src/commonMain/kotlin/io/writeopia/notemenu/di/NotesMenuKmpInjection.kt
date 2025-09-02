@@ -75,7 +75,8 @@ class NotesMenuKmpInjection private constructor(
                 folderRepository = provideFolderRepository(),
                 authCoreInjection.provideAuthRepository()
             ),
-            folderRepository = provideFolderRepository()
+            folderRepository = provideFolderRepository(),
+            authRepository = authCoreInjection.provideAuthRepository()
         )
     }
 
