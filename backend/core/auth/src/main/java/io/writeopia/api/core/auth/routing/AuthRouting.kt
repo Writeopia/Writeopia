@@ -77,7 +77,6 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
     post("/api/register") {
         try {
-            println("register request received")
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
             val user = if (debugMode) {
