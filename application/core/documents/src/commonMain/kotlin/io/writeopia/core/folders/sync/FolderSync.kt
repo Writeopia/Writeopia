@@ -1,5 +1,6 @@
 package io.writeopia.core.folders.sync
 
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Folder
@@ -12,7 +13,8 @@ class FolderSync(
     private val documentRepository: DocumentRepository,
     private val documentsApi: DocumentsApi,
     private val documentConflictHandler: DocumentConflictHandler,
-    private val folderRepository: FolderRepository
+    private val folderRepository: FolderRepository,
+    private val authRepository: AuthRepository
 ) {
     /**
      * Sync the folder with the backend end. The lastSync should be data fetched from the backend.
@@ -21,6 +23,8 @@ class FolderSync(
      * The sync time of the folder will only be updated with everything works correctly.
      */
     suspend fun syncFolder(folderId: String, workspaceId: String, userId: String) {
+        val authToken = authRepository.getAuthToken() ?: return
+
 //        println("folderId: $folderId")
         val folder: Folder = folderRepository.getFolderById(folderId) ?: run {
             val folder = Folder(
@@ -44,7 +48,8 @@ class FolderSync(
         val response = documentsApi.getFolderNewDocuments(
             folderId,
             workspaceId,
-            lastSync ?: Instant.DISTANT_PAST
+            lastSync ?: Instant.DISTANT_PAST,
+            authToken
         )
         val newDocuments = if (response is ResultData.Complete) response.data else return
 //        println("Sync. received ${newDocuments.size} new documents")
@@ -64,7 +69,7 @@ class FolderSync(
 //        println("Documents sent: ${documentsNotSent.joinToString(separator = "\n\n")}")
 
         // Send documents to backend
-        val resultSend = documentsApi.sendDocuments(documentsNotSent)
+        val resultSend = documentsApi.sendDocuments(documentsNotSent, authToken)
 
         if (resultSend is ResultData.Complete) {
             val now = Clock.System.now()
