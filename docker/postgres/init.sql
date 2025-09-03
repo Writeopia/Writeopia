@@ -70,3 +70,8 @@ CREATE TABLE folder_entity (
   icon_tint INTEGER
 );
 
+CREATE TABLE workspace_to_user (
+    workspace_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    role TEXT NOT NULL
+);
