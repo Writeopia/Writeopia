@@ -494,6 +494,7 @@ class GlobalShellKmpViewModel(
     override fun syncWorkspace() {
         viewModelScope.launch {
             val workspaceId = authRepository.getWorkspace().id
+            println("syncing workspace: $workspaceId")
             val result = workspaceSync.syncWorkspace(workspaceId)
 
             _lastWorkspaceSync.value = if (result is ResultData.Complete) {
