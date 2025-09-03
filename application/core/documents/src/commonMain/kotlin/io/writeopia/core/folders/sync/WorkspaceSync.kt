@@ -37,7 +37,7 @@ class WorkspaceSync(
                 documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
             val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
 
-            println("handling conflicts")
+            println("local outdated docs: ${localOutdatedFolders.size}")
 
             val documentsNotSent = documentConflictHandler.handleConflict(
                 localOutdatedDocs,
