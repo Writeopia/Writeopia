@@ -29,6 +29,8 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
 
             ResultData.Complete(response)
         } catch (e: Exception) {
+            println("login error: ${e.message}")
+            e.printStackTrace()
             ResultData.Error(e)
         }
     }
