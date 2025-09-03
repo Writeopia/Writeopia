@@ -8,13 +8,16 @@ import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.writeopia.api.core.auth.WorkspaceService
+import io.writeopia.api.core.auth.models.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.repository.disableUserByEmail
 import io.writeopia.api.core.auth.repository.enableUserByEmail
+import io.writeopia.api.core.auth.repository.getUserByEmail
+import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
-import org.jetbrains.annotations.Debug
 
 fun Route.adminProtectedRoute(
     apiKey: String?,
@@ -43,6 +46,30 @@ fun Route.adminProtectedRoute(
             adminUserFn(apiKey, providedKey, debugMode) {
                 val workspaces = writeopiaDb.listWorkspaces().map { it.toApi() }
                 call.respond(HttpStatusCode.OK, workspaces)
+            }
+        }
+
+        get("user/workspace/{userEmail}") {
+            val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
+            adminUserFn(apiKey, providedKey, debugMode) {
+                val userEmail = call.pathParameters["userId"]
+                    ?: throw IllegalArgumentException("User email is required")
+
+                val workspaces = WorkspaceService.getWorkspacesByUserEmail(userEmail, writeopiaDb)
+
+                if (workspaces.isNotEmpty()) {
+                    call.respond(HttpStatusCode.OK, workspaces)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "No workspaces found for user")
+                }
+            }
+        }
+
+        post<AddUserToWorkspaceRequest>("workspace/add-user") { request ->
+            val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
+            adminUserFn(apiKey, providedKey, debugMode) {
+                writeopiaDb.addUserToWorkspace(request.email, request.workspaceId)
+                call.respond(HttpStatusCode.OK, "User added to workspace")
             }
         }
     }

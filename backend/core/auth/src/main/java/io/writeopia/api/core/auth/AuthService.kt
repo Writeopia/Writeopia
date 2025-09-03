@@ -4,8 +4,10 @@ import io.writeopia.api.core.auth.hash.HashUtils
 import io.writeopia.api.core.auth.hash.toBase64
 import io.writeopia.api.core.auth.models.WriteopiaBeUser
 import io.writeopia.api.core.auth.repository.getCompanyByDomain
+import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertCompany
 import io.writeopia.api.core.auth.repository.insertUser
+import io.writeopia.api.core.auth.repository.insertWorkspace
 import io.writeopia.sdk.models.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
@@ -19,21 +21,10 @@ object AuthService {
         userId: String,
         userName: String
     ): Workspace {
-        val workspace = writeopiaDb.workspaceEntityQueries
-            .getWorkspacesByUserId(userId)
-            .executeAsOneOrNull()
-            ?.let { entity ->
-                Workspace(
-                    id = entity.id,
-                    userId = entity.user_id,
-                    name = entity.name,
-                    lastSync = Clock.System.now(),
-                    selected = false
-                )
-            }
+        val workspaces = writeopiaDb.getWorkspacesByUserId(userId)
 
-        return if (workspace != null) {
-            workspace
+        return if (workspaces.isNotEmpty()) {
+            workspaces.first()
         } else {
             val workspace = Workspace(
                 id = UUID.randomUUID().toString(),
@@ -43,13 +34,7 @@ object AuthService {
                 selected = false
             )
 
-            writeopiaDb.workspaceEntityQueries.insert(
-                id = workspace.id,
-                user_id = workspace.userId,
-                name = workspace.name,
-                icon = null,
-                icon_tint = null
-            )
+            writeopiaDb.insertWorkspace(workspace)
 
             workspace
         }

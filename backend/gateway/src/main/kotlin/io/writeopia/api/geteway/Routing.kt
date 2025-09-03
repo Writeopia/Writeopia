@@ -19,6 +19,7 @@ fun Application.configureRouting(
     routing {
         if (writeopiaDb != null) {
             documentsRoute(writeopiaDb, useAi, debugMode)
+
             authRoute(writeopiaDb, debugMode)
 
             if (adminKey != null || debugMode) {

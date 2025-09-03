@@ -1,6 +1,5 @@
 CREATE TABLE workspace_entity (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
   name TEXT NOT NULL,
   icon TEXT,
   icon_tint INTEGER
@@ -19,12 +18,13 @@ LIMIT 1;
 getWorkspacesByUserId:
 SELECT *
 FROM workspace_entity
-WHERE user_id = ?
-LIMIT 1;
+JOIN workspace_to_user ON workspace_entity.id = workspace_to_user.workspace_id
+JOIN user_entity ON user_entity.id = workspace_to_user.user_id
+WHERE user_id = ?;
 
 insert:
-INSERT INTO workspace_entity(id, user_id, name, icon, icon_tint)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO workspace_entity(id, name, icon, icon_tint)
+VALUES (?, ?, ?, ?)
 ON CONFLICT(id) DO
-UPDATE SET id=excluded.id, user_id=excluded.user_id, name=excluded.name, icon=excluded.icon,
+UPDATE SET id=excluded.id, name=excluded.name, icon=excluded.icon,
 icon_tint=excluded.icon_tint;
