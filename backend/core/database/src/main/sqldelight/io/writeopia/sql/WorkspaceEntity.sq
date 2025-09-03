@@ -6,6 +6,10 @@ CREATE TABLE workspace_entity (
   icon_tint INTEGER
 );
 
+getWorkspaces:
+SELECT *
+FROM workspace_entity;
+
 getWorkspaceById:
 SELECT *
 FROM workspace_entity

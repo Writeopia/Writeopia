@@ -13,7 +13,7 @@ import io.writeopia.sql.WriteopiaDbBackend
 fun Application.configureRouting(
     writeopiaDb: WriteopiaDbBackend?,
     useAi: Boolean,
-    debugMode: Boolean = true,
+    debugMode: Boolean = false,
     adminKey: String?
 ) {
     routing {
@@ -21,9 +21,9 @@ fun Application.configureRouting(
             documentsRoute(writeopiaDb, useAi, debugMode)
             authRoute(writeopiaDb, debugMode)
 
-            if (adminKey != null) {
+            if (adminKey != null || debugMode) {
                 logger.info("Admin routes are enabled.")
-                adminProtectedRoute(adminKey, writeopiaDb)
+                adminProtectedRoute(adminKey, writeopiaDb, debugMode)
             } else {
                 logger.info("Admin key is null. Admin routes are disabled.")
             }
