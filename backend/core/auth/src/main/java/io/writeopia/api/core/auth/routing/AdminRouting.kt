@@ -13,8 +13,6 @@ import io.writeopia.api.core.auth.models.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.repository.disableUserByEmail
 import io.writeopia.api.core.auth.repository.enableUserByEmail
-import io.writeopia.api.core.auth.repository.getUserByEmail
-import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
@@ -49,7 +47,7 @@ fun Route.adminProtectedRoute(
             }
         }
 
-        get("user/workspace/{userEmail}") {
+        get("workspace/user/{userEmail}") {
             val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
             adminUserFn(apiKey, providedKey, debugMode) {
                 val userEmail = call.pathParameters["userId"]
@@ -65,11 +63,23 @@ fun Route.adminProtectedRoute(
             }
         }
 
-        post<AddUserToWorkspaceRequest>("workspace/add-user") { request ->
+        post<AddUserToWorkspaceRequest>("workspace/user") { request ->
             val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
+
             adminUserFn(apiKey, providedKey, debugMode) {
-                writeopiaDb.addUserToWorkspace(request.email, request.workspaceId)
-                call.respond(HttpStatusCode.OK, "User added to workspace")
+                val (userEmail, workspaceId, role) = request
+                val result = WorkspaceService.addUserToWorkspace(
+                    userEmail,
+                    workspaceId,
+                    role,
+                    writeopiaDb
+                )
+
+                if (result) {
+                    call.respond(HttpStatusCode.OK, "User added to workspace")
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Not added")
+                }
             }
         }
     }
