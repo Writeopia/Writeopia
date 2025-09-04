@@ -7,6 +7,7 @@ import io.writeopia.api.core.auth.repository.getCompanyByDomain
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertCompany
 import io.writeopia.api.core.auth.repository.insertUser
+import io.writeopia.api.core.auth.repository.insertUserInWorkspace
 import io.writeopia.api.core.auth.repository.insertWorkspace
 import io.writeopia.sdk.models.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
@@ -35,6 +36,7 @@ object AuthService {
             )
 
             writeopiaDb.insertWorkspace(workspace)
+            writeopiaDb.insertUserInWorkspace(workspaceId = workspace.id, userId = userId, role = "ADMIN")
 
             workspace
         }
@@ -46,14 +48,6 @@ object AuthService {
         enabled: Boolean
     ): WriteopiaUser {
         val (name, email, workspace, password) = registerRequest
-
-        if (workspace.isNotEmpty()) {
-            val company = writeopiaDb.getCompanyByDomain(workspace)
-
-            if (company == null) {
-                writeopiaDb.insertCompany(workspace)
-            }
-        }
 
         val id = UUID.randomUUID().toString()
 

@@ -42,11 +42,12 @@ fun WriteopiaDbBackend.insertWorkspace(workspace: Workspace) {
     )
 }
 
-fun WriteopiaDbBackend.insertUserInWorkspace(workspace: Workspace) {
-//    this.workspaceEntityQueries.insertUser(
-//        workspace_id = workspace.id,
-//        user_id = workspace.userId
-//    )
+fun WriteopiaDbBackend.insertUserInWorkspace(workspaceId: String, userId: String, role: String) {
+    this.workspaceToUserQueries.insertWorkspaceToUser(
+        workspace_id = workspaceId,
+        user_id = userId,
+        role = role
+    )
 }
 
 fun WriteopiaDbBackend.getWorkspacesByUserId(userId: String): List<Workspace> =
@@ -55,9 +56,9 @@ fun WriteopiaDbBackend.getWorkspacesByUserId(userId: String): List<Workspace> =
         .executeAsList()
         .map { entity ->
             Workspace(
-                id = entity.id,
+                id = entity.workspace_id,
                 userId = entity.user_id,
-                name = entity.name,
+                name = entity.workspace_name,
                 lastSync = Clock.System.now(),
                 selected = false
             )
