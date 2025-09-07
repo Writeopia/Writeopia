@@ -12,11 +12,14 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ktor.server.testing.testApplication
+import io.writeopia.api.core.auth.models.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
+import io.writeopia.sdk.models.Workspace
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
@@ -26,6 +29,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class AuthIntegrationTest {
 
@@ -297,4 +301,63 @@ class AuthIntegrationTest {
         assertEquals(HttpStatusCode.OK, response1.status)
         assertNotNull(response.body<AuthResponse>().workspace)
     }
+
+    @Test
+    fun `it should be possible to add a user to a workspace`() = testApplication {
+        //Todo: Create a test to add a user to a workspace
+
+        application {
+            module(db, debugMode = true, adminKey = "somekey")
+        }
+
+        val client = defaultClient()
+
+        val response1 = client.post("/api/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    name = "User1",
+                    email = "email@gmail.com",
+                    password = "lasjbdalsdq08w9y&",
+                    workspace = "Workspace1"
+                )
+            )
+        }
+
+        assertEquals(HttpStatusCode.Created, response1.status)
+
+        val response2 = client.post("/api/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    name = "User2",
+                    email = "email2@gmail.com",
+                    password = "lasjbdalsdq08w9y&",
+                    workspace = "Workspace2"
+                )
+            )
+        }
+
+        assertTrue { response2.status.isSuccess() }
+
+        val getWorkspaceResponse = client.get("/admin/workspace/{email@gmail.com}") {
+            contentType(ContentType.Application.Json)
+        }
+
+        val workspaceOfUser1 = getWorkspaceResponse.body<List<Workspace>>().first()
+
+        val addUserToWorkspace = client.post("/admin/workspace/user") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                AddUserToWorkspaceRequest(
+                    email = "email2@gmail.com",
+                    workspaceId = workspaceOfUser1.id,
+                    role = "user"
+                )
+            )
+        }
+
+        // Todo: Finish. Check that User2 is in the Workspace1
+    }
+
 }
