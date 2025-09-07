@@ -47,7 +47,7 @@ fun Route.adminProtectedRoute(
             }
         }
 
-        get("workspace/user/{userEmail}") {
+        get("/workspace/user/{userEmail}") {
             val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
             adminUserFn(apiKey, providedKey, debugMode) {
                 val userEmail = call.pathParameters["userId"]
