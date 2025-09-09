@@ -170,29 +170,43 @@ class TextCommandHandler(
 }
 
 class Trie {
-    private class TrieNode {
-        val children: MutableMap<Char, TrieNode> = mutableMapOf()
-        var isEndOfWord: Boolean = false
-    }
 
     private val root = TrieNode()
 
     fun insert(word: String) {
-        var node = root
+        var current = root
 
-        word.forEach { char -> node = node.children.getOrPut(char, ::TrieNode) }
-        node.isEndOfWord = true
+        word.forEach { ch ->
+            if (current.children.contains(ch)) {
+                current = current.children[ch]!!
+            } else {
+                current.children[ch] = TrieNode()
+                current = current.children[ch]!!
+            }
+        }
+
+        current.isEnd = true
     }
 
     fun search(word: String): Boolean {
         val node = findNode(word)
-        return node?.isEndOfWord == true
+        return node?.isEnd == true
     }
 
     private fun findNode(prefix: String): TrieNode? {
-        var node = root
+        var current: TrieNode? = root
 
-        prefix.forEach { char -> node = node.children[char] ?: return null }
-        return node
+        prefix.asSequence()
+            .takeWhile { current != null }
+            .forEach { ch ->
+                current = current!!.children[ch]
+            }
+
+        return current
     }
+
+    private class TrieNode(
+        val children: MutableMap<Char, TrieNode> = mutableMapOf(),
+        var isEnd: Boolean = false,
+    )
 }
