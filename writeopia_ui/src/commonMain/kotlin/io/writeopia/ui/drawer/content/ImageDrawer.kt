@@ -100,7 +100,7 @@ class ImageDrawer(
                     }
                 ) {
                     DragCardTarget(
-                        modifier = Modifier.clip(MaterialTheme.shapes.large),
+                        modifier = Modifier.clip(MaterialTheme.shapes.large).align(Alignment.Center),
                         position = drawInfo.position,
                         dataToDrop = dropInfo,
                         iconTintOnHover = MaterialTheme.colorScheme.onBackground,
