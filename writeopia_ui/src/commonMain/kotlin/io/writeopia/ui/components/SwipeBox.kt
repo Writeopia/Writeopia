@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.absoluteValue
@@ -53,6 +54,7 @@ fun SwipeBox(
     defaultColor: Color = MaterialTheme.colorScheme.background,
     activeColor: Color,
     activeBorderColor: Color = MaterialTheme.colorScheme.primary,
+    borderWidth: Dp = 1.dp,
     cornersShape: Shape = MaterialTheme.shapes.medium,
     swipeListener: (Boolean) -> Unit,
     content: @Composable BoxScope.() -> Unit
@@ -103,7 +105,7 @@ fun SwipeBox(
                 shape = cornersShape
             )
             .border(
-                width = 1.dp,
+                width = borderWidth,
                 color = colorBorderAnimated,
                 shape = cornersShape
             )

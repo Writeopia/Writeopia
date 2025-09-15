@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
@@ -88,10 +89,11 @@ class ImageDrawer(
                 val focusRequester = remember { FocusRequester() }
 
                 SwipeBox(
-                    modifier = Modifier.hoverable(interactionSource),
+                    modifier = Modifier.hoverable(interactionSource).fillMaxWidth(),
                     defaultColor = MaterialTheme.colorScheme.surfaceVariant,
                     activeColor = config.selectedColor(),
                     activeBorderColor = config.selectedBorderColor(),
+                    borderWidth = 3.dp,
                     isOnEditState = drawInfo.selectMode,
                     swipeListener = { isSelected ->
                         onSelected(isSelected, drawInfo.position)
@@ -128,9 +130,11 @@ class ImageDrawer(
                                         .build(),
                                     contentScale = ContentScale.Crop,
                                     contentDescription = "",
-                                    modifier = Modifier.clip(
-                                        shape = RoundedCornerShape(size = 12.dp)
-                                    ),
+                                    modifier = Modifier
+                                        .defaultMinSize(minHeight = 300.dp)
+                                        .clip(
+                                            shape = RoundedCornerShape(size = 12.dp)
+                                        ),
                                     loading = {
                                         CircularProgressIndicator()
                                     }
