@@ -65,6 +65,7 @@ object DefaultDrawersDesktop : DrawersFactory {
             receiveExternalFile = receiveExternalFile,
             equationToImageUrl = equationToImageUrl,
             headerEndContent = { storyStep, drawInfo, isHovered ->
+                // Todo: This code needs to be fixed!
                 val isTitle = storyStep.tags.any { it.tag.isTitle() }
                 val isCollapsed by lazy { storyStep.tags.any { it.tag == Tag.COLLAPSED } }
                 if (isTitle && isHovered || isCollapsed) {
