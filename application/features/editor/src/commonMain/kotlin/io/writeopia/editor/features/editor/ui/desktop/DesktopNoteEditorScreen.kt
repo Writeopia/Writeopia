@@ -257,7 +257,17 @@ private fun SelectedTextBar(
     val hasSelection by noteEditorViewModel.hasSelectedLines.collectAsState()
 
     if (hasSelection) {
-        EditionScreen(modifier = modifier)
+        EditionScreen(
+            modifier = modifier,
+            onSpanClick = noteEditorViewModel::onAddSpanClick,
+            checkboxClick = noteEditorViewModel::onAddCheckListClick,
+            listItemClick = noteEditorViewModel::onAddListItemClick,
+            onDelete = noteEditorViewModel::deleteSelection,
+            onCopy = noteEditorViewModel::copySelection,
+            onCut = noteEditorViewModel::cutSelection,
+            onAddPage = noteEditorViewModel::addPage,
+            onClose = noteEditorViewModel::clearSelections
+        )
     }
 }
 
