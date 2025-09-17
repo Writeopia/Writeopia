@@ -1,12 +1,26 @@
 package io.writeopia.ui.drawer.content
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkOut
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -17,7 +31,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
@@ -32,10 +48,15 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
+import io.writeopia.ui.components.EditionScreen
 import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.factory.EndOfText
 import io.writeopia.ui.extensions.toTextRange
@@ -106,6 +127,15 @@ class TextDrawer(
                 textLayoutResult?.getLineForOffset(inputText.selection.end)
             }
         }
+
+        val selection by remember {
+            derivedStateOf {
+                inputText.selection
+            }
+        }
+
+        val hasSelection = selection.start != selection.end
+
         val realPosition by remember {
             derivedStateOf {
                 val lineStart = textLayoutResult?.multiParagraph?.getLineStart(cursorLine ?: 0)
@@ -138,95 +168,114 @@ class TextDrawer(
 
         val coroutineScope = rememberCoroutineScope()
 
-        Row(horizontalArrangement = Arrangement.Center) {
-            if (isSuggestion) {
+        Box {
+            Row(horizontalArrangement = Arrangement.Center) {
+                if (isSuggestion) {
+                    BasicTextField(
+                        state = TextFieldState(aiExplanation),
+                        textStyle = textStyle(step).copy(fontStyle = FontStyle.Normal)
+                    )
+                }
+
                 BasicTextField(
-                    state = TextFieldState(aiExplanation),
-                    textStyle = textStyle(step).copy(fontStyle = FontStyle.Normal)
+                    modifier = modifier
+                        .let { modifierLet ->
+                            if (focusRequester != null) {
+                                modifierLet.focusRequester(focusRequester)
+                            } else {
+                                modifierLet
+                            }
+                        }
+                        .onPreviewKeyEvent { keyEvent ->
+                            onKeyEvent(
+                                keyEvent,
+                                inputText,
+                                step,
+                                drawInfo.position,
+                                emptyErase,
+                                realPosition,
+                                isInLastLine
+                            )
+                        }
+                        .onFocusChanged { focusState ->
+                            onFocusChanged(drawInfo.position, focusState)
+                        }
+                        .testTag("MessageDrawer_${drawInfo.position}")
+                        .let { modifierLet ->
+                            if (selectionState) {
+                                modifierLet.clickable { onSelectionLister(drawInfo.position) }
+                            } else {
+                                modifierLet
+                            }
+                        },
+                    value = inputText,
+                    enabled = !selectionState && !drawInfo.selectMode && enabled,
+                    onTextLayout = {
+                        textLayoutResult = it
+                    },
+                    onValueChange = { value ->
+                        val start = value.selection.start
+                        val end = value.selection.end
+                        val previousStart = inputText.selection.start
+
+                        val sizeDifference = value.text.length - inputText.text.length
+
+                        if (abs(sizeDifference) > 0) {
+                            spans = Spans.recalculateSpans(spans, previousStart, sizeDifference)
+                        }
+
+                        val edit = {
+                            inputText = value.copy(
+                                Spans.createStringWithSpans(
+                                    value.text.replace("\n", ""),
+                                    spans,
+                                    isDarkTheme
+                                )
+                            )
+                        }
+
+                        onTextEdit(
+                            TextInput(value.text, start, end, spans),
+                            drawInfo.position,
+                            lineBreakByContent,
+                        )
+
+                        if (start == 0 || end == 0) {
+                            coroutineScope.launch {
+                                // Delay to avoid jumping to previous line too soon when erasing text
+                                delay(70)
+                                edit()
+                            }
+                        } else {
+                            edit()
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences
+                    ),
+                    textStyle = textStyle(step),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    interactionSource = interactionSource,
+                    decorationBox = decorationBox,
                 )
             }
 
-            BasicTextField(
-                modifier = modifier
-                    .let { modifierLet ->
-                        if (focusRequester != null) {
-                            modifierLet.focusRequester(focusRequester)
-                        } else {
-                            modifierLet
-                        }
-                    }
-                    .onPreviewKeyEvent { keyEvent ->
-                        onKeyEvent(
-                            keyEvent,
-                            inputText,
-                            step,
-                            drawInfo.position,
-                            emptyErase,
-                            realPosition,
-                            isInLastLine
-                        )
-                    }
-                    .onFocusChanged { focusState ->
-                        onFocusChanged(drawInfo.position, focusState)
-                    }
-                    .testTag("MessageDrawer_${drawInfo.position}")
-                    .let { modifierLet ->
-                        if (selectionState) {
-                            modifierLet.clickable { onSelectionLister(drawInfo.position) }
-                        } else {
-                            modifierLet
-                        }
-                    },
-                value = inputText,
-                enabled = !selectionState && !drawInfo.selectMode && enabled,
-                onTextLayout = {
-                    textLayoutResult = it
-                },
-                onValueChange = { value ->
-                    val start = value.selection.start
-                    val end = value.selection.end
-                    val previousStart = inputText.selection.start
 
-                    val sizeDifference = value.text.length - inputText.text.length
-
-                    if (abs(sizeDifference) > 0) {
-                        spans = Spans.recalculateSpans(spans, previousStart, sizeDifference)
-                    }
-
-                    val edit = {
-                        inputText = value.copy(
-                            Spans.createStringWithSpans(
-                                value.text.replace("\n", ""),
-                                spans,
-                                isDarkTheme
-                            )
-                        )
-                    }
-
-                    onTextEdit(
-                        TextInput(value.text, start, end, spans),
-                        drawInfo.position,
-                        lineBreakByContent,
+            Popup(offset = IntOffset(0, -70)) {
+                AnimatedVisibility(
+                    visible = hasSelection,
+                    enter = fadeIn(animationSpec = tween(durationMillis = 150)),
+                    exit = fadeOut(animationSpec = tween(durationMillis = 150))
+                ) {
+                    EditionScreen(
+                        modifier = Modifier
+                            .padding(bottom = 20.dp)
+                            .clip(MaterialTheme.shapes.large)
+                            .background(MaterialTheme.colorScheme.primary)
                     )
+                }
 
-                    if (start == 0 || end == 0) {
-                        coroutineScope.launch {
-                            // Delay to avoid jumping to previous line too soon when erasing text
-                            delay(70)
-                            edit()
-                        }
-                    } else {
-                        edit()
-                    }
-                },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences
-                ),
-                textStyle = textStyle(step),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                interactionSource = interactionSource,
-                decorationBox = decorationBox,
-            )
+            }
         }
     }
 }

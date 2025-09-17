@@ -184,14 +184,6 @@ fun DesktopNoteEditorScreen(
             selectModel = noteEditorViewModel::selectModel,
         )
 
-        SelectedTextBar(
-            noteEditorViewModel,
-            modifier = Modifier.align(Alignment.BottomCenter)
-                .padding(bottom = 60.dp, start = 16.dp, end = 16.dp)
-                .clip(MaterialTheme.shapes.large)
-                .background(MaterialTheme.colorScheme.primary)
-        )
-
         if (showDeleteConfirmation) {
             DeleteConfirmationDialog(
                 onConfirmation = {
@@ -248,26 +240,3 @@ fun DesktopNoteEditorScreen(
         }
     }
 }
-
-@Composable
-private fun SelectedTextBar(
-    noteEditorViewModel: NoteEditorViewModel,
-    modifier: Modifier = Modifier
-) {
-    val hasSelection by noteEditorViewModel.hasSelectedLines.collectAsState()
-
-    if (hasSelection) {
-        EditionScreen(
-            modifier = modifier,
-            onSpanClick = noteEditorViewModel::onAddSpanClick,
-            checkboxClick = noteEditorViewModel::onAddCheckListClick,
-            listItemClick = noteEditorViewModel::onAddListItemClick,
-            onDelete = noteEditorViewModel::deleteSelection,
-            onCopy = noteEditorViewModel::copySelection,
-            onCut = noteEditorViewModel::cutSelection,
-            onAddPage = noteEditorViewModel::addPage,
-            onClose = noteEditorViewModel::clearSelections
-        )
-    }
-}
-
