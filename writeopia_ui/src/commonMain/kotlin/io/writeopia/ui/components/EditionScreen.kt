@@ -51,7 +51,6 @@ fun EditionScreen(
 
         Row(
             modifier = Modifier
-                .weight(1f)
                 .horizontalScroll(rememberScrollState()),
             verticalAlignment = Alignment.CenterVertically
         ) {

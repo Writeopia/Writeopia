@@ -1,17 +1,25 @@
 package io.writeopia.editor.features.editor.ui.desktop
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandIn
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -41,6 +49,7 @@ import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOption
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.theme.WriteopiaTheme
+import io.writeopia.ui.components.EditionScreen
 import io.writeopia.ui.drawer.factory.DrawersFactory
 
 @Composable
@@ -175,6 +184,14 @@ fun DesktopNoteEditorScreen(
             selectModel = noteEditorViewModel::selectModel,
         )
 
+        SelectedTextBar(
+            noteEditorViewModel,
+            modifier = Modifier.align(Alignment.BottomCenter)
+                .padding(bottom = 60.dp, start = 16.dp, end = 16.dp)
+                .clip(MaterialTheme.shapes.large)
+                .background(MaterialTheme.colorScheme.primary)
+        )
+
         if (showDeleteConfirmation) {
             DeleteConfirmationDialog(
                 onConfirmation = {
@@ -231,3 +248,16 @@ fun DesktopNoteEditorScreen(
         }
     }
 }
+
+@Composable
+private fun SelectedTextBar(
+    noteEditorViewModel: NoteEditorViewModel,
+    modifier: Modifier = Modifier
+) {
+    val hasSelection by noteEditorViewModel.hasSelectedLines.collectAsState()
+
+    if (hasSelection) {
+        EditionScreen(modifier = modifier)
+    }
+}
+
