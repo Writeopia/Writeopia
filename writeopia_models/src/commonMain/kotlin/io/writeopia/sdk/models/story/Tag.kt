@@ -29,8 +29,8 @@ enum class Tag(val label: String) {
     }
 
     fun isErasable() = when (this) {
-        H1, H2, H3, H4, HIDDEN_HX, COLLAPSED, AI_SUGGESTION, FIRST_AI_SUGGESTION -> false
-        HIGH_LIGHT_BLOCK -> true
+        HIDDEN_HX, COLLAPSED, AI_SUGGESTION, FIRST_AI_SUGGESTION -> false
+        H1, H2, H3, H4, HIGH_LIGHT_BLOCK -> true
     }
 
     fun mustCarryOver() = when (this) {
