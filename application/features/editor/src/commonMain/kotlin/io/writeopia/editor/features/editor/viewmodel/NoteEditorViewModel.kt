@@ -50,6 +50,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val searchText: StateFlow<String>
 
+    val hasSelectedLines: StateFlow<Boolean>
+
     fun showSearch()
 
     fun hideSearch()
