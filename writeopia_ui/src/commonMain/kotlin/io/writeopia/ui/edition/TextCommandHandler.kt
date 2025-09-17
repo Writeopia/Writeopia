@@ -22,7 +22,7 @@ class TextCommandHandler(
     }
 
     fun handleCommand(text: String, step: StoryStep, position: Int): Boolean {
-        if (excludeTypes.contains(step.type.number) || text.lastOrNull() != ' ') return false
+        if (excludeTypes.contains(step.type.number) || !text.contains(' ')) return false
 
         val textArray = text.split(" ")
         if (textArray.isEmpty()) return false
