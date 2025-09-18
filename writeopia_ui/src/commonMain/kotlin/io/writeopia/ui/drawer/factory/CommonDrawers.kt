@@ -65,7 +65,8 @@ object CommonDrawers {
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit = { _, _ -> },
         headerEndContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
         onDocumentLinkClick: (String) -> Unit,
-        equationToImageUrl: String? = null
+        equationToImageUrl: String? = null,
+        textToolbox: @Composable (Boolean) -> Unit = {}
     ): Map<Int, StoryStepDrawer> {
         val commonTextModifier = Modifier.padding(
             start = drawConfig.codeBlockStartPadding.dp,
@@ -85,7 +86,8 @@ object CommonDrawers {
                     enabled = editable,
                     isDarkTheme = isDarkTheme,
                     onSelectionLister = manager::toggleSelection,
-                    textStyle = { defaultTextStyle(it, fontFamily) }
+                    textStyle = { defaultTextStyle(it, fontFamily) },
+                    textToolbox = textToolbox
                 )
             }
 
@@ -121,6 +123,7 @@ object CommonDrawers {
                     isDarkTheme = isDarkTheme,
                     aiExplanation = aiExplanation,
                     onSelectionLister = manager::toggleSelection,
+                    textToolbox = textToolbox
                 )
             }
         )
@@ -316,7 +319,8 @@ private fun RowScope.messageDrawer(
     isDarkTheme: Boolean,
     emptyErase: EmptyErase,
     eventListener: (KeyEvent, TextFieldValue, StoryStep, Int, EmptyErase, Int, EndOfText) -> Boolean,
-    onSelectionLister: (Int) -> Unit
+    onSelectionLister: (Int) -> Unit,
+    textToolbox: @Composable (Boolean) -> Unit
 ): TextDrawer {
     return TextDrawer(
         modifier = modifier.weight(1F),
@@ -332,6 +336,7 @@ private fun RowScope.messageDrawer(
         selectionState = manager.selectionState,
         onSelectionLister = onSelectionLister,
         isDarkTheme = isDarkTheme,
-        aiExplanation = aiExplanation
+        aiExplanation = aiExplanation,
+        textToolbox = textToolbox
     )
 }

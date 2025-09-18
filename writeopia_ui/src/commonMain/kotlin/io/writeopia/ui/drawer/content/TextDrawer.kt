@@ -1,26 +1,13 @@
 package io.writeopia.ui.drawer.content
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandIn
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkOut
-import androidx.compose.animation.slideIn
-import androidx.compose.animation.slideOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,9 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
@@ -48,15 +33,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
-import io.writeopia.ui.components.EditionScreen
 import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.factory.EndOfText
 import io.writeopia.ui.extensions.toTextRange
@@ -91,6 +71,7 @@ class TextDrawer(
     override var onFocusChanged: (Int, FocusState) -> Unit = { _, _ -> },
     private val selectionState: StateFlow<Boolean>,
     private val onSelectionLister: (Int) -> Unit,
+    private val textToolbox: @Composable (Boolean) -> Unit = {}
 ) : SimpleTextDrawer {
 
     @Composable
@@ -260,22 +241,21 @@ class TextDrawer(
                 )
             }
 
-
-            Popup(offset = IntOffset(0, -70)) {
-                AnimatedVisibility(
-                    visible = hasSelection,
-                    enter = fadeIn(animationSpec = tween(durationMillis = 150)),
-                    exit = fadeOut(animationSpec = tween(durationMillis = 150))
-                ) {
-                    EditionScreen(
-                        modifier = Modifier
-                            .padding(bottom = 20.dp)
-                            .clip(MaterialTheme.shapes.large)
-                            .background(MaterialTheme.colorScheme.primary)
-                    )
-                }
-
-            }
+            textToolbox(hasSelection)
+//            Popup(offset = IntOffset(0, -70)) {
+//                AnimatedVisibility(
+//                    visible = hasSelection,
+//                    enter = fadeIn(animationSpec = tween(durationMillis = 150)),
+//                    exit = fadeOut(animationSpec = tween(durationMillis = 150))
+//                ) {
+//                    EditionScreen(
+//                        modifier = Modifier
+//                            .padding(bottom = 20.dp)
+//                            .clip(MaterialTheme.shapes.large)
+//                            .background(MaterialTheme.colorScheme.primary)
+//                    )
+//                }
+//            }
         }
     }
 }
