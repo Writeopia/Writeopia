@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -207,6 +208,11 @@ class WriteopiaStateManager(
     private var sharedEditionManager: SharedEditionManager? = null
 
     val currentStory: StateFlow<StoryState> = _currentStory.asStateFlow()
+
+    val textSelectionState: Flow<Selection> =
+        _currentStory.map { storyState ->
+            storyState.selection
+        }
 
     val currentDocument: StateFlow<Document?> =
         combine(_documentInfo, _currentStory) { info, state ->

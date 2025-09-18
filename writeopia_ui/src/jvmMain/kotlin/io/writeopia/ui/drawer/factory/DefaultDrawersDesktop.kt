@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.ui.drawer.StoryStepDrawer
+import io.writeopia.ui.drawer.TextToolbox
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
@@ -45,8 +46,15 @@ object DefaultDrawersDesktop : DrawersFactory {
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
         equationToImageUrl: String?
-    ): Map<Int, StoryStepDrawer> =
-        CommonDrawers.create(
+    ): Map<Int, StoryStepDrawer> {
+        val textToolbox: @Composable (Boolean) -> Unit = @Composable { hasSelection ->
+            TextToolbox(
+                hasSelection = hasSelection,
+                onSpanClick = manager::toggleSpan,
+            )
+        }
+
+        return CommonDrawers.create(
             manager,
             30.dp,
             aiExplanation,
@@ -57,13 +65,12 @@ object DefaultDrawersDesktop : DrawersFactory {
             isDesktop = true,
             isDarkTheme = isDarkTheme,
             drawConfig = drawConfig,
-            eventListener = KeyEventListenerFactory.desktop(
-                manager = manager,
-            ),
+            eventListener = KeyEventListenerFactory.desktop(manager = manager),
             fontFamily = fontFamily,
             onDocumentLinkClick = onDocumentLinkClick,
             receiveExternalFile = receiveExternalFile,
             equationToImageUrl = equationToImageUrl,
+            textToolbox = textToolbox,
             headerEndContent = { storyStep, drawInfo, isHovered ->
                 val isTitle = storyStep.tags.any { it.tag.isTitle() }
                 val isCollapsed by lazy { storyStep.tags.any { it.tag == Tag.COLLAPSED } }
@@ -121,4 +128,5 @@ object DefaultDrawersDesktop : DrawersFactory {
                 }
             }
         )
+    }
 }

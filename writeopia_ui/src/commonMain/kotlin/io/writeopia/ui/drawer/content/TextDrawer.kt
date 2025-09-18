@@ -3,6 +3,7 @@ package io.writeopia.ui.drawer.content
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -70,6 +71,7 @@ class TextDrawer(
     override var onFocusChanged: (Int, FocusState) -> Unit = { _, _ -> },
     private val selectionState: StateFlow<Boolean>,
     private val onSelectionLister: (Int) -> Unit,
+    private val textToolbox: @Composable (Boolean) -> Unit = {}
 ) : SimpleTextDrawer {
 
     @Composable
@@ -106,6 +108,15 @@ class TextDrawer(
                 textLayoutResult?.getLineForOffset(inputText.selection.end)
             }
         }
+
+        val selection by remember {
+            derivedStateOf {
+                inputText.selection
+            }
+        }
+
+        val hasSelection = selection.start != selection.end
+
         val realPosition by remember {
             derivedStateOf {
                 val lineStart = textLayoutResult?.multiParagraph?.getLineStart(cursorLine ?: 0)
@@ -138,95 +149,113 @@ class TextDrawer(
 
         val coroutineScope = rememberCoroutineScope()
 
-        Row(horizontalArrangement = Arrangement.Center) {
-            if (isSuggestion) {
+        Box {
+            Row(horizontalArrangement = Arrangement.Center) {
+                if (isSuggestion) {
+                    BasicTextField(
+                        state = TextFieldState(aiExplanation),
+                        textStyle = textStyle(step).copy(fontStyle = FontStyle.Normal)
+                    )
+                }
+
                 BasicTextField(
-                    state = TextFieldState(aiExplanation),
-                    textStyle = textStyle(step).copy(fontStyle = FontStyle.Normal)
+                    modifier = modifier
+                        .let { modifierLet ->
+                            if (focusRequester != null) {
+                                modifierLet.focusRequester(focusRequester)
+                            } else {
+                                modifierLet
+                            }
+                        }
+                        .onPreviewKeyEvent { keyEvent ->
+                            onKeyEvent(
+                                keyEvent,
+                                inputText,
+                                step,
+                                drawInfo.position,
+                                emptyErase,
+                                realPosition,
+                                isInLastLine
+                            )
+                        }
+                        .onFocusChanged { focusState ->
+                            onFocusChanged(drawInfo.position, focusState)
+                        }
+                        .testTag("MessageDrawer_${drawInfo.position}")
+                        .let { modifierLet ->
+                            if (selectionState) {
+                                modifierLet.clickable { onSelectionLister(drawInfo.position) }
+                            } else {
+                                modifierLet
+                            }
+                        },
+                    value = inputText,
+                    enabled = !selectionState && !drawInfo.selectMode && enabled,
+                    onTextLayout = {
+                        textLayoutResult = it
+                    },
+                    onValueChange = { value ->
+                        val start = value.selection.start
+                        val end = value.selection.end
+                        val previousStart = inputText.selection.start
+
+                        val sizeDifference = value.text.length - inputText.text.length
+
+                        if (abs(sizeDifference) > 0) {
+                            spans = Spans.recalculateSpans(spans, previousStart, sizeDifference)
+                        }
+
+                        val edit = {
+                            inputText = value.copy(
+                                Spans.createStringWithSpans(
+                                    value.text.replace("\n", ""),
+                                    spans,
+                                    isDarkTheme
+                                )
+                            )
+                        }
+
+                        onTextEdit(
+                            TextInput(value.text, start, end, spans),
+                            drawInfo.position,
+                            lineBreakByContent,
+                        )
+
+                        if (start == 0 || end == 0) {
+                            coroutineScope.launch {
+                                // Delay to avoid jumping to previous line too soon when erasing text
+                                delay(70)
+                                edit()
+                            }
+                        } else {
+                            edit()
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences
+                    ),
+                    textStyle = textStyle(step),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    interactionSource = interactionSource,
+                    decorationBox = decorationBox,
                 )
             }
 
-            BasicTextField(
-                modifier = modifier
-                    .let { modifierLet ->
-                        if (focusRequester != null) {
-                            modifierLet.focusRequester(focusRequester)
-                        } else {
-                            modifierLet
-                        }
-                    }
-                    .onPreviewKeyEvent { keyEvent ->
-                        onKeyEvent(
-                            keyEvent,
-                            inputText,
-                            step,
-                            drawInfo.position,
-                            emptyErase,
-                            realPosition,
-                            isInLastLine
-                        )
-                    }
-                    .onFocusChanged { focusState ->
-                        onFocusChanged(drawInfo.position, focusState)
-                    }
-                    .testTag("MessageDrawer_${drawInfo.position}")
-                    .let { modifierLet ->
-                        if (selectionState) {
-                            modifierLet.clickable { onSelectionLister(drawInfo.position) }
-                        } else {
-                            modifierLet
-                        }
-                    },
-                value = inputText,
-                enabled = !selectionState && !drawInfo.selectMode && enabled,
-                onTextLayout = {
-                    textLayoutResult = it
-                },
-                onValueChange = { value ->
-                    val start = value.selection.start
-                    val end = value.selection.end
-                    val previousStart = inputText.selection.start
-
-                    val sizeDifference = value.text.length - inputText.text.length
-
-                    if (abs(sizeDifference) > 0) {
-                        spans = Spans.recalculateSpans(spans, previousStart, sizeDifference)
-                    }
-
-                    val edit = {
-                        inputText = value.copy(
-                            Spans.createStringWithSpans(
-                                value.text.replace("\n", ""),
-                                spans,
-                                isDarkTheme
-                            )
-                        )
-                    }
-
-                    onTextEdit(
-                        TextInput(value.text, start, end, spans),
-                        drawInfo.position,
-                        lineBreakByContent,
-                    )
-
-                    if (start == 0 || end == 0) {
-                        coroutineScope.launch {
-                            // Delay to avoid jumping to previous line too soon when erasing text
-                            delay(70)
-                            edit()
-                        }
-                    } else {
-                        edit()
-                    }
-                },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences
-                ),
-                textStyle = textStyle(step),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                interactionSource = interactionSource,
-                decorationBox = decorationBox,
-            )
+            textToolbox(hasSelection)
+//            Popup(offset = IntOffset(0, -70)) {
+//                AnimatedVisibility(
+//                    visible = hasSelection,
+//                    enter = fadeIn(animationSpec = tween(durationMillis = 150)),
+//                    exit = fadeOut(animationSpec = tween(durationMillis = 150))
+//                ) {
+//                    EditionScreen(
+//                        modifier = Modifier
+//                            .padding(bottom = 20.dp)
+//                            .clip(MaterialTheme.shapes.large)
+//                            .background(MaterialTheme.colorScheme.primary)
+//                    )
+//                }
+//            }
         }
     }
 }

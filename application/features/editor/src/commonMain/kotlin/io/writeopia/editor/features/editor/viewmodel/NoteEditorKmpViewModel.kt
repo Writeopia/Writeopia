@@ -144,6 +144,21 @@ class NoteEditorKmpViewModel(
     override val showSearchState: StateFlow<Boolean> = _showSearch.asStateFlow()
     override val searchText: StateFlow<String> = _searchText.asStateFlow()
 
+    private val hasLinesSelection = writeopiaManager.onEditPositions
+        .map { it.isNotEmpty() }
+
+    override val hasSelectedLines: StateFlow<Boolean> =
+        combine(
+            hasLinesSelection,
+            writeopiaManager.textSelectionState
+        ) { hasLines, selection ->
+            val hasTextSelection = selection.start != selection.end
+
+            hasLines || hasTextSelection
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), false)
+
+//    val selectionOfText = writeopiaManager.
+
     private val findsOfSearch: Flow<Set<Int>> =
         combine(writeopiaManager.documentInfo, searchText) { info, query ->
             info.id to query
@@ -157,7 +172,7 @@ class NoteEditorKmpViewModel(
     override val isEditable: StateFlow<Boolean> = writeopiaManager
         .documentInfo
         .map { info -> !info.isLocked }
-        .stateIn(viewModelScope, started = SharingStarted.Lazily, initialValue = false)
+        .stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(), initialValue = false)
 
     private val _showGlobalMenu = MutableStateFlow(false)
     override val showGlobalMenu = _showGlobalMenu.asStateFlow()
@@ -192,7 +207,7 @@ class NoteEditorKmpViewModel(
     override val currentTitle by lazy {
         writeopiaManager.currentDocument.filterNotNull().map { document ->
             document.title
-        }.stateIn(viewModelScope, started = SharingStarted.Lazily, initialValue = "")
+        }.stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(), initialValue = "")
     }
 
     private val _shouldGoToNextScreen = MutableStateFlow(false)
@@ -207,7 +222,7 @@ class NoteEditorKmpViewModel(
 
                 else -> EditState.TEXT
             }
-        }.stateIn(viewModelScope, started = SharingStarted.Lazily, initialValue = EditState.TEXT)
+        }.stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(), initialValue = EditState.TEXT)
     }
 
     private val story: StateFlow<StoryState> = writeopiaManager.currentStory
@@ -229,7 +244,7 @@ class NoteEditorKmpViewModel(
     override val notFavorite: StateFlow<Boolean> = writeopiaManager
         .documentInfo
         .map { info -> !info.isFavorite }
-        .stateIn(viewModelScope, started = SharingStarted.Lazily, initialValue = false)
+        .stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(), initialValue = false)
 
     private var aiJob: Job? = null
 

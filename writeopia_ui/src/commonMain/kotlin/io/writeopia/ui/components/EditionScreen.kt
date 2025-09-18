@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.ui.icons.WrSdkIcons
@@ -32,6 +33,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 fun EditionScreen(
     modifier: Modifier = Modifier,
+    iconSize: Dp = 36.dp,
     onSpanClick: (Span) -> Unit = {},
     checkboxClick: () -> Unit = {},
     listItemClick: () -> Unit = {},
@@ -43,15 +45,13 @@ fun EditionScreen(
 ) {
     val iconPadding = PaddingValues(vertical = 4.dp)
     val clipShape = MaterialTheme.shapes.medium
-    val iconSize = 36.dp
     val spaceWidth = 8.dp
 
-    Row(modifier = modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         val tint = MaterialTheme.colorScheme.onPrimary
 
         Row(
             modifier = Modifier
-                .weight(1f)
                 .horizontalScroll(rememberScrollState()),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -133,7 +133,7 @@ fun EditionScreen(
                 modifier = Modifier
                     .clip(clipShape)
                     .clickable(onClick = onCopy)
-                    .size(32.dp)
+                    .size(iconSize)
                     .padding(iconPadding),
                 imageVector = WrSdkIcons.copy,
                 contentDescription = "Copy",
@@ -146,7 +146,7 @@ fun EditionScreen(
                 modifier = Modifier
                     .clip(clipShape)
                     .clickable(onClick = onCut)
-                    .size(32.dp)
+                    .size(iconSize)
                     .padding(iconPadding),
                 imageVector = Icons.Default.ContentCut,
                 contentDescription = "Cut",
@@ -192,6 +192,110 @@ fun EditionScreen(
 //            contentDescription = stringResource(R.string.delete),
             tint = tint
         )
+    }
+}
+
+@Composable
+fun EditionScreenForText(
+    modifier: Modifier = Modifier,
+    iconSize: Dp = 36.dp,
+    onSpanClick: (Span) -> Unit = {},
+) {
+    val iconPadding = PaddingValues(vertical = 4.dp)
+    val clipShape = MaterialTheme.shapes.medium
+    val spaceWidth = 8.dp
+
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        val tint = MaterialTheme.colorScheme.onPrimary
+
+        Row(
+            modifier = Modifier
+                .horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable {
+                        onSpanClick(Span.BOLD)
+                    }
+                    .size(iconSize)
+                    .padding(iconPadding),
+                imageVector = Icons.Outlined.FormatBold,
+                contentDescription = "BOLD",
+//            contentDescription = stringResource(R.string.delete),
+                tint = tint
+            )
+
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable {
+                        onSpanClick(Span.ITALIC)
+                    }
+                    .size(iconSize)
+                    .padding(iconPadding),
+                imageVector = Icons.Outlined.FormatItalic,
+                contentDescription = "ITALIC",
+//            contentDescription = stringResource(R.string.delete),
+                tint = tint
+            )
+
+            Spacer(modifier = Modifier.width(spaceWidth))
+
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable {
+                        onSpanClick(Span.UNDERLINE)
+                    }
+                    .size(iconSize)
+                    .padding(iconPadding),
+                imageVector = Icons.Outlined.FormatUnderlined,
+                contentDescription = "UNDERLINE",
+//            contentDescription = stringResource(R.string.delete),
+                tint = tint
+            )
+
+//            Spacer(modifier = Modifier.width(spaceWidth))
+//
+//            Icon(
+//                modifier = Modifier
+//                    .clip(clipShape)
+//                    .clickable(onClick = onCopy)
+//                    .size(iconSize)
+//                    .padding(iconPadding),
+//                imageVector = WrSdkIcons.copy,
+//                contentDescription = "Copy",
+//                tint = tint
+//            )
+//
+//            Spacer(modifier = Modifier.width(spaceWidth))
+//
+//            Icon(
+//                modifier = Modifier
+//                    .clip(clipShape)
+//                    .clickable(onClick = onCut)
+//                    .size(iconSize)
+//                    .padding(iconPadding),
+//                imageVector = Icons.Default.ContentCut,
+//                contentDescription = "Cut",
+//                tint = tint
+//            )
+
+//            Spacer(modifier = Modifier.width(spaceWidth))
+//
+//            Icon(
+//                modifier = Modifier
+//                    .clip(clipShape)
+//                    .clickable(onClick = onAddPage)
+//                    .size(iconSize)
+//                    .padding(iconPadding),
+//                imageVector = WrSdkIcons.linkPage,
+//                contentDescription = "Link to page",
+//                tint = tint
+//            )
+        }
     }
 }
 
