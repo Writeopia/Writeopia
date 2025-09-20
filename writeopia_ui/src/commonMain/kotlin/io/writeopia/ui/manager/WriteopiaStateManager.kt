@@ -1047,7 +1047,7 @@ class WriteopiaStateManager(
         val newDocument =
             documentInfo.document(getUserId()).copy(content = stories, title = text)
 
-        documentRepository.saveDocument(newDocument, userId)
+        documentRepository.saveDocument(newDocument)
         documentRepository.refreshDocuments()
 
         _currentStory.value = writeopiaManager.addDocumentLink(
@@ -1298,7 +1298,7 @@ class WriteopiaStateManager(
             createdAt = info.createdAt,
             lastUpdatedAt = info.lastUpdatedAt,
             lastSyncedAt = info.lastSyncedAt,
-            userId = localUserId ?: "disconnected_user",
+            workspaceId = localUserId ?: "disconnected_user",
             parentId = info.parentId,
             isLocked = info.isLocked,
             icon = info.icon

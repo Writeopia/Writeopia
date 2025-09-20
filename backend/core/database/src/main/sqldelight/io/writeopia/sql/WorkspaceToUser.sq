@@ -1,0 +1,11 @@
+CREATE TABLE workspace_to_user (
+    workspace_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    PRIMARY KEY(workspace_id, user_id)
+);
+
+insertWorkspaceToUser:
+INSERT INTO workspace_to_user(workspace_id, user_id, role)
+VALUES (?, ?, ?)
+ON CONFLICT(workspace_id, user_id) DO UPDATE SET role = excluded.role;

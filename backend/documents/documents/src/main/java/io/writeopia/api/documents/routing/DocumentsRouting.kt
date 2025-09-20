@@ -9,8 +9,10 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.writeopia.api.core.auth.routing.getUserId
 import io.writeopia.api.documents.documents.DocumentsService
+import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
+import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
+import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
-import io.writeopia.api.documents.documents.repository.folderDiff
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
 import io.writeopia.connection.ResultData
@@ -18,7 +20,11 @@ import io.writeopia.connection.map
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.sdk.serialization.json.SendFoldersRequest
+import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
+import io.writeopia.sdk.serialization.request.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 fun Routing.documentsRoute(
@@ -116,7 +122,11 @@ fun Routing.documentsRoute(
             try {
                 if (documentList.isNotEmpty()) {
                     val addedToHub = DocumentsService.receiveDocuments(
-                        documentList.map { it.toModel() },
+                        documentList.map { document ->
+                            document
+                                .toModel()
+                                .copy(lastSyncedAt = Clock.System.now())
+                        },
                         writeopiaDb,
                         useAi
                     )
@@ -147,17 +157,72 @@ fun Routing.documentsRoute(
         }
     }
 
+    get("/api/folder/{id}") {
+        val id = call.pathParameters["id"]!!
+        val userId = getUserId()
+
+        val folder = DocumentsService.getFolderById(id, userId ?: "", writeopiaDb)
+
+        if (folder != null) {
+            call.respond(
+                status = HttpStatusCode.OK,
+                message = folder.toApi()
+            )
+        } else {
+            call.respond(
+                status = HttpStatusCode.NotFound,
+                message = "No lead with id: $id"
+            )
+        }
+    }
+
+    post<SendFoldersRequest>("/api/folder") { request ->
+        try {
+            val folderList = request.folders
+
+            if (folderList.isNotEmpty()) {
+                val addedToHub = DocumentsService.receiveFolders(
+                    folderList.map { folder -> folder.toModel() },
+                    writeopiaDb,
+                )
+
+                if (addedToHub) {
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = "Accepted"
+                    )
+                } else {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "It was not possible to add documents to AI HUB"
+                    )
+                }
+            } else {
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = "Empty documents"
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respond(
+                status = HttpStatusCode.InternalServerError,
+                message = "${e.message}"
+            )
+        }
+    }
+
     authenticate("auth-jwt", optional = debug) {
         post<FolderDiffRequest>("/api/document/folder/diff") { folderDiff ->
             try {
-                println("loading diff")
+                println("loading folder diff")
                 println("user id: ${getUserId()}")
                 println("last sync: ${Instant.fromEpochMilliseconds(folderDiff.lastFolderSync)}")
 
                 val documents =
-                    writeopiaDb.folderDiff(
+                    writeopiaDb.documentsDiffByFolder(
                         folderDiff.folderId,
-                        getUserId() ?: "",
+                        folderDiff.workspaceId,
                         folderDiff.lastFolderSync
                     )
 
@@ -166,6 +231,37 @@ fun Routing.documentsRoute(
                 call.respond(
                     status = HttpStatusCode.OK,
                     message = documents.map { document -> document.toApi() }
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<WorkspaceDiffRequest>("/api/workspace/diff") { workspaceDiff ->
+            try {
+                println("loading workspace diff")
+                println("user id: ${getUserId()}")
+                println("last sync: ${Instant.fromEpochMilliseconds(workspaceDiff.lastSync)}")
+
+                val documents = writeopiaDb.documentsDiffByWorkspace(
+                    workspaceDiff.workspaceId,
+                    workspaceDiff.lastSync
+                )
+                val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceDiff.workspaceId)
+
+                println("returning ${documents.count()} documents and ${folders.count()} folders")
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = WorkspaceDiffResponse(
+                        folders.map { it.toApi() },
+                        documents.map { it.toApi() }
+                    )
                 )
             } catch (e: Exception) {
                 call.respond(

@@ -13,12 +13,12 @@ import io.writeopia.common.utils.collections.traverse
 import io.writeopia.common.utils.download.DownloadParser
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.IconChange
-import io.writeopia.sdk.models.utils.map
 import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.core.folders.repository.folder.NotesUseCase
+import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
@@ -33,6 +33,7 @@ import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -54,6 +55,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
 
@@ -71,6 +74,7 @@ class GlobalShellKmpViewModel(
     private val ollamaRepository: OllamaRepository,
     private val configRepository: ConfigurationRepository,
     private val json: Json = writeopiaJson,
+    private val workspaceSync: WorkspaceSync,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     init {
@@ -121,6 +125,9 @@ class GlobalShellKmpViewModel(
     private val _retryModels = MutableStateFlow(0)
 
     private val _loginStateTrigger = MutableStateFlow(GenerateId.generate())
+
+    private val _lastWorkspaceSync = MutableStateFlow("")
+    override val lastWorkspaceSync: StateFlow<String> = _lastWorkspaceSync.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val _ollamaConfigState = authRepository.listenForUser().flatMapLatest { user ->
@@ -482,6 +489,26 @@ class GlobalShellKmpViewModel(
 
     override fun showDeleteConfirm() {
         _showDeleteConfirmation.value = true
+    }
+
+    override fun syncWorkspace() {
+        viewModelScope.launch {
+            val workspaceId = authRepository.getWorkspace().id
+            println("syncing workspace: $workspaceId")
+            val result = workspaceSync.syncWorkspace(workspaceId)
+
+            _lastWorkspaceSync.value = if (result is ResultData.Complete) {
+                val lastSync = Clock.System
+                    .now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .toString()
+
+                "Last sync: $lastSync"
+            } else {
+                println("result error: $result")
+                "Error in sync"
+            }
+        }
     }
 
     private suspend fun getUserId(): String =

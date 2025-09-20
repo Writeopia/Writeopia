@@ -23,6 +23,7 @@ fun Application.module(
     debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false,
     adminKey: String? = System.getenv("ADMIN_KEY")
 ) {
+    println("debug: $debugMode")
     installAuth()
     configureRouting(writeopiaDb, useAi, debugMode = debugMode, adminKey = adminKey)
     configureSerialization()

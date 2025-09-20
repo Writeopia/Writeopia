@@ -19,11 +19,12 @@ fun Application.configureRouting(
     routing {
         if (writeopiaDb != null) {
             documentsRoute(writeopiaDb, useAi, debugMode)
+
             authRoute(writeopiaDb, debugMode)
 
-            if (adminKey != null) {
+            if (adminKey != null || debugMode) {
                 logger.info("Admin routes are enabled.")
-                adminProtectedRoute(adminKey, writeopiaDb)
+                adminProtectedRoute(adminKey, writeopiaDb, debugMode)
             } else {
                 logger.info("Admin key is null. Admin routes are disabled.")
             }
