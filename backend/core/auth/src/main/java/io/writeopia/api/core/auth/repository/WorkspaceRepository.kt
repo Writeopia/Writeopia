@@ -14,7 +14,8 @@ internal fun WriteopiaDbBackend.listWorkspaces(): List<Workspace> {
                 userId = "",
                 name = entity.name,
                 lastSync = Instant.DISTANT_PAST,
-                selected = false
+                selected = false,
+                role = ""
             )
         }
 }
@@ -28,7 +29,8 @@ internal fun WriteopiaDbBackend.getWorkspaceByUserId(id: String): Workspace? {
                 userId = "",
                 name = entity.name,
                 lastSync = Instant.DISTANT_PAST,
-                selected = false
+                selected = false,
+                role = ""
             )
         }
 }

@@ -46,7 +46,7 @@ object WorkspaceService {
         } ?: false
     }
 
-    fun removeUserFromWorkspaceSecure(
+    suspend fun removeUserFromWorkspaceSecure(
         workspaceOwnerId: String,
         userId: String,
         workspaceId: String,
@@ -55,6 +55,25 @@ object WorkspaceService {
         val ownerWorkspaces = writeopiaDb.getWorkspacesByUserId(workspaceOwnerId)
         if (!ownerWorkspaces.any { it.id == workspaceId }) return false
 
+        return removeUserFromWorkspace(userId, workspaceId, writeopiaDb)
+    }
+
+    suspend fun removeUserFromWorkspace(
+        userId: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Boolean {
         writeopiaDb.removeUserFromWorkspace(workspaceId, userId)
+        return true
+    }
+
+    suspend fun removeUserFromWorkspaceByEmail(
+        userEmail: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Boolean {
+        val user = writeopiaDb.getUserByEmail(userEmail) ?: return false
+        writeopiaDb.removeUserFromWorkspace(workspaceId, user.id)
+        return true
     }
 }
