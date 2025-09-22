@@ -9,7 +9,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.writeopia.api.core.auth.WorkspaceService
-import io.writeopia.api.core.auth.dto.WorkspacesResponse
 import io.writeopia.api.core.auth.models.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.repository.disableUserByEmail
@@ -70,7 +69,7 @@ fun Route.adminProtectedRoute(
 
             adminUserFn(apiKey, providedKey, debugMode) {
                 val (userEmail, workspaceId, role) = request
-                val result = WorkspaceService.addUserToWorkspace(
+                val result = WorkspaceService.addUserToWorkspaceAdmin(
                     userEmail,
                     workspaceId,
                     role,
