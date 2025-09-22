@@ -32,7 +32,8 @@ object AuthService {
                 userId = userId,
                 "$userName Workspace",
                 lastSync = Clock.System.now(),
-                selected = false
+                selected = false,
+                role = "ADMIN"
             )
 
             writeopiaDb.insertWorkspace(workspace)

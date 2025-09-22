@@ -5,6 +5,7 @@ import io.ktor.server.request.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
@@ -74,6 +75,56 @@ fun Route.adminProtectedRoute(
                     workspaceId,
                     role,
                     writeopiaDb
+                )
+
+                if (result) {
+                    call.respond(HttpStatusCode.OK, "User added to workspace")
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Not added")
+                }
+            }
+        }
+
+        delete("/api/workspace/{workspaceId}/user/{userId}") {
+            val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
+
+            adminUserFn(apiKey, providedKey, debugMode) {
+                val workspaceId = call.parameters["workspaceId"] ?: ""
+                val userToDelete = call.parameters["userId"] ?: ""
+
+                if (workspaceId.isEmpty() || userToDelete.isEmpty()) {
+                    call.respond(HttpStatusCode.BadRequest, "Invalid request")
+                }
+
+                val result = WorkspaceService.removeUserFromWorkspace(
+                    userId = userToDelete,
+                    workspaceId = workspaceId,
+                    writeopiaDb = writeopiaDb
+                )
+
+                if (result) {
+                    call.respond(HttpStatusCode.OK, "User added to workspace")
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Not added")
+                }
+            }
+        }
+
+        delete("/api/workspace/{workspaceId}/user/email/{email}") {
+            val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
+
+            adminUserFn(apiKey, providedKey, debugMode) {
+                val workspaceId = call.parameters["workspaceId"] ?: ""
+                val emailToDelete = call.parameters["email"] ?: ""
+
+                if (workspaceId.isEmpty() || emailToDelete.isEmpty()) {
+                    call.respond(HttpStatusCode.BadRequest, "Invalid request")
+                }
+
+                val result = WorkspaceService.removeUserFromWorkspaceByEmail(
+                    userEmail = emailToDelete,
+                    workspaceId = workspaceId,
+                    writeopiaDb = writeopiaDb
                 )
 
                 if (result) {

@@ -369,5 +369,88 @@ class AuthIntegrationTest {
 
         val workspaceOfUser2 = getWorkspaceResponse2.body<List<WorkspaceApi>>()
         assertEquals(2, workspaceOfUser2.size)
+        assertTrue { workspaceOfUser2.any { it.id == workspaceOfUser1.id } }
+    }
+
+    @Test
+    fun `it should be possible to remove a user to a workspace`() = testApplication {
+        application {
+            module(db, debugMode = true, adminKey = "somekey")
+        }
+
+        val client = defaultClient()
+
+        val email1 = Random.nextInt().toString()
+
+        val response1 = client.post("/api/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    name = Random.nextInt().toString(),
+                    email = email1,
+                    password = "lasjbdalsdq08w9y&",
+                    workspace = Random.nextInt().toString()
+                )
+            )
+        }
+
+        assertTrue { response1.status.isSuccess() }
+
+        val email2 = Random.nextInt().toString()
+
+        val response2 = client.post("/api/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    name = Random.nextInt().toString(),
+                    email = email2,
+                    password = "lasjbdalsdq08w9y&",
+                    workspace = Random.nextInt().toString()
+                )
+            )
+        }
+
+        assertTrue { response2.status.isSuccess() }
+
+        val getWorkspaceResponse = client.get("/admin/workspace/user/$email1") {
+            contentType(ContentType.Application.Json)
+        }
+
+        val workspaceOfUser1 = getWorkspaceResponse.body<List<WorkspaceApi>>().first()
+
+        val addUserToWorkspace = client.post("/admin/workspace/user") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                AddUserToWorkspaceRequest(
+                    email = email2,
+                    workspaceId = workspaceOfUser1.id,
+                    role = "user"
+                )
+            )
+        }
+
+        assertTrue(addUserToWorkspace.status.isSuccess())
+
+        val getWorkspaceResponse2 = client.get("/admin/workspace/user/$email2") {
+            contentType(ContentType.Application.Json)
+        }
+
+        val workspaceOfUser2 = getWorkspaceResponse2.body<List<WorkspaceApi>>()
+        assertEquals(2, workspaceOfUser2.size)
+        assertTrue { workspaceOfUser2.any { it.id == workspaceOfUser1.id } }
+
+        val deleteResponse =
+            client.delete(
+                "/admin/api/workspace/${workspaceOfUser1.id}/user/email/$email2"
+            )
+
+        assertTrue(deleteResponse.status.isSuccess())
+
+        val getWorkspaceResponse3 = client.get("/admin/workspace/user/$email2") {
+            contentType(ContentType.Application.Json)
+        }
+
+        val workspaceOfUser3 = getWorkspaceResponse3.body<List<WorkspaceApi>>()
+        assertEquals(1, workspaceOfUser3.size)
     }
 }
