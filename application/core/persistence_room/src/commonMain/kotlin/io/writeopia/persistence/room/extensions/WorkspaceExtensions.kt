@@ -1,7 +1,7 @@
 package io.writeopia.persistence.room.extensions
 
 import io.writeopia.persistence.room.data.entities.WorkspaceEntity
-import io.writeopia.sdk.models.Workspace
+import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.datetime.Instant
 import kotlin.time.ExperimentalTime
 
@@ -11,7 +11,8 @@ fun WorkspaceEntity.toDomain(): Workspace = Workspace(
     userId = userId,
     name = name,
     lastSync = Instant.fromEpochMilliseconds(lastSyncedAt),
-    selected = selected
+    selected = selected,
+    role = ""
 )
 
 fun Workspace.toEntity(selected: Boolean): WorkspaceEntity = WorkspaceEntity(
