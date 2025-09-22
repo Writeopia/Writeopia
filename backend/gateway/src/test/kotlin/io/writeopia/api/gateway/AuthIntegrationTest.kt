@@ -20,10 +20,12 @@ import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
 import io.writeopia.sdk.models.Workspace
+import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
+import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -312,52 +314,65 @@ class AuthIntegrationTest {
 
         val client = defaultClient()
 
+        val email1 = Random.nextInt().toString()
+
         val response1 = client.post("/api/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
-                    name = "User1",
-                    email = "email@gmail.com",
+                    name = Random.nextInt().toString(),
+                    email = email1,
                     password = "lasjbdalsdq08w9y&",
-                    workspace = "Workspace1"
+                    workspace = Random.nextInt().toString()
                 )
             )
         }
 
-        assertEquals(HttpStatusCode.Created, response1.status)
+        assertTrue { response1.status.isSuccess() }
+
+        val email2 = Random.nextInt().toString()
 
         val response2 = client.post("/api/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
-                    name = "User2",
-                    email = "email2@gmail.com",
+                    name = Random.nextInt().toString(),
+                    email = email2,
                     password = "lasjbdalsdq08w9y&",
-                    workspace = "Workspace2"
+                    workspace = Random.nextInt().toString()
                 )
             )
         }
 
         assertTrue { response2.status.isSuccess() }
 
-        val getWorkspaceResponse = client.get("/admin/workspace/{email@gmail.com}") {
+        val getWorkspaceResponse = client.get("/admin/workspace/user/$email1") {
             contentType(ContentType.Application.Json)
         }
 
-        val workspaceOfUser1 = getWorkspaceResponse.body<List<Workspace>>().first()
+        val workspaceOfUser1 = getWorkspaceResponse.body<List<WorkspaceApi>>().first()
 
         val addUserToWorkspace = client.post("/admin/workspace/user") {
             contentType(ContentType.Application.Json)
             setBody(
                 AddUserToWorkspaceRequest(
-                    email = "email2@gmail.com",
+                    email = email2,
                     workspaceId = workspaceOfUser1.id,
                     role = "user"
                 )
             )
         }
 
-        // Todo: Finish. Check that User2 is in the Workspace1
+
+        assertTrue(addUserToWorkspace.status.isSuccess())
+
+        val getWorkspaceResponse2 = client.get("/admin/workspace/user/$email2") {
+            contentType(ContentType.Application.Json)
+        }
+
+        val workspaceOfUser2 = getWorkspaceResponse2.body<List<WorkspaceApi>>()
+
+        assertEquals(2, workspaceOfUser2.size)
     }
 
 }
