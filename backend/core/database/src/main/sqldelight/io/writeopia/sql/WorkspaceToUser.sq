@@ -9,3 +9,8 @@ insertWorkspaceToUser:
 INSERT INTO workspace_to_user(workspace_id, user_id, role)
 VALUES (?, ?, ?)
 ON CONFLICT(workspace_id, user_id) DO UPDATE SET role = excluded.role;
+
+removeUserFromWorkspace:
+DELETE FROM workspace_to_user
+WHERE workspace_id = ? AND user_id = ?;
+

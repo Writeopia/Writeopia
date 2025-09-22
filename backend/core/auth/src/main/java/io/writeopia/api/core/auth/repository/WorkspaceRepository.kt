@@ -1,11 +1,11 @@
 package io.writeopia.api.core.auth.repository
 
-import io.writeopia.sdk.models.Workspace
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
-fun WriteopiaDbBackend.listWorkspaces(): List<Workspace> {
+internal fun WriteopiaDbBackend.listWorkspaces(): List<Workspace> {
     return this.workspaceEntityQueries.getWorkspaces()
         .executeAsList()
         .map { entity ->
@@ -19,7 +19,7 @@ fun WriteopiaDbBackend.listWorkspaces(): List<Workspace> {
         }
 }
 
-fun WriteopiaDbBackend.getWorkspaceByUserId(id: String): Workspace? {
+internal fun WriteopiaDbBackend.getWorkspaceByUserId(id: String): Workspace? {
     return this.workspaceEntityQueries.getWorkspaceById(id)
         .executeAsOneOrNull()
         ?.let { entity ->
@@ -33,7 +33,7 @@ fun WriteopiaDbBackend.getWorkspaceByUserId(id: String): Workspace? {
         }
 }
 
-fun WriteopiaDbBackend.insertWorkspace(workspace: Workspace) {
+internal fun WriteopiaDbBackend.insertWorkspace(workspace: Workspace) {
     this.workspaceEntityQueries.insert(
         id = workspace.id,
         name = workspace.name,
@@ -42,7 +42,11 @@ fun WriteopiaDbBackend.insertWorkspace(workspace: Workspace) {
     )
 }
 
-fun WriteopiaDbBackend.insertUserInWorkspace(workspaceId: String, userId: String, role: String) {
+internal fun WriteopiaDbBackend.insertUserInWorkspace(
+    workspaceId: String,
+    userId: String,
+    role: String
+) {
     this.workspaceToUserQueries.insertWorkspaceToUser(
         workspace_id = workspaceId,
         user_id = userId,
@@ -50,7 +54,7 @@ fun WriteopiaDbBackend.insertUserInWorkspace(workspaceId: String, userId: String
     )
 }
 
-fun WriteopiaDbBackend.getWorkspacesByUserId(userId: String): List<Workspace> =
+internal fun WriteopiaDbBackend.getWorkspacesByUserId(userId: String): List<Workspace> =
     this.workspaceEntityQueries
         .getWorkspacesByUserId(userId)
         .executeAsList()
@@ -60,6 +64,11 @@ fun WriteopiaDbBackend.getWorkspacesByUserId(userId: String): List<Workspace> =
                 userId = entity.user_id,
                 name = entity.workspace_name,
                 lastSync = Clock.System.now(),
-                selected = false
+                selected = false,
+                role = entity.user_role
             )
         }
+
+internal suspend fun WriteopiaDbBackend.removeUserFromWorkspace(workspaceId: String, userId: String) {
+    this.workspaceToUserQueries.removeUserFromWorkspace(workspaceId, userId)
+}
