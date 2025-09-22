@@ -1,6 +1,7 @@
 package io.writeopia.api.core.auth
 
 import io.writeopia.api.core.auth.repository.getUserByEmail
+import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertUserInWorkspace
 import io.writeopia.sdk.models.Workspace
@@ -17,7 +18,7 @@ object WorkspaceService {
             ?.let(writeopiaDb::getWorkspacesByUserId)
             ?: emptyList()
 
-    fun addUserToWorkspace(
+    fun addUserToWorkspaceAdmin(
         userEmail: String,
         workspaceId: String,
         role: String,
@@ -27,4 +28,20 @@ object WorkspaceService {
             writeopiaDb.insertUserInWorkspace(workspaceId, userId, role)
             true
         } ?: false
+
+    fun addUserToWorkspaceSecure(
+        workspaceOwnerId: String,
+        userEmail: String,
+        workspaceId: String,
+        role: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Boolean {
+        val ownerWorkspaces = writeopiaDb.getWorkspacesByUserId(workspaceOwnerId)
+        if (!ownerWorkspaces.any { it.id == workspaceId }) return false
+
+        return writeopiaDb.getUserById(userEmail)?.id?.let { userId ->
+            writeopiaDb.insertUserInWorkspace(workspaceId, userId, role)
+            true
+        } ?: false
+    }
 }
