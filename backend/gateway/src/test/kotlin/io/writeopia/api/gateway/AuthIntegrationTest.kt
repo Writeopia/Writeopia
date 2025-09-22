@@ -19,7 +19,7 @@ import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
-import io.writeopia.sdk.models.Workspace
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
@@ -147,7 +147,7 @@ class AuthIntegrationTest {
     }
 
     @Test
-    fun `it should be possible to delete your account, if don't have the right token`() =
+    fun `it should be NOT possible to delete your account, if don't have the right token`() =
         testApplication {
             application {
                 module(db, debugMode = true)
@@ -213,7 +213,7 @@ class AuthIntegrationTest {
     @Test
     fun `it should be possible enable a user`() = testApplication {
         application {
-            module(db, debugMode = true, adminKey = "somekey")
+            module(db, debugMode = false, adminKey = "somekey")
         }
 
         val client = defaultClient()
@@ -306,8 +306,6 @@ class AuthIntegrationTest {
 
     @Test
     fun `it should be possible to add a user to a workspace`() = testApplication {
-        //Todo: Create a test to add a user to a workspace
-
         application {
             module(db, debugMode = true, adminKey = "somekey")
         }
@@ -363,7 +361,6 @@ class AuthIntegrationTest {
             )
         }
 
-
         assertTrue(addUserToWorkspace.status.isSuccess())
 
         val getWorkspaceResponse2 = client.get("/admin/workspace/user/$email2") {
@@ -371,8 +368,6 @@ class AuthIntegrationTest {
         }
 
         val workspaceOfUser2 = getWorkspaceResponse2.body<List<WorkspaceApi>>()
-
         assertEquals(2, workspaceOfUser2.size)
     }
-
 }

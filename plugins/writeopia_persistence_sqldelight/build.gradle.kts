@@ -103,7 +103,7 @@ sqldelight {
     databases {
         create("WriteopiaDb") {
             packageName.set("io.writeopia.sdk.sql")
-            dialect("app.cash.sqldelight:sqlite-3-30-dialect:2.1.0")
+            dialect(libs.sqldelight.dialect.sqlite)
             generateAsync.set(true)
         }
     }

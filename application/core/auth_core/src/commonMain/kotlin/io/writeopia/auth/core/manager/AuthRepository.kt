@@ -1,6 +1,6 @@
 package io.writeopia.auth.core.manager
 
-import io.writeopia.sdk.models.Workspace
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.UserRepository

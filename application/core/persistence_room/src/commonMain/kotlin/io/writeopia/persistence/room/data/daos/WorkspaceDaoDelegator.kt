@@ -3,7 +3,7 @@ package io.writeopia.persistence.room.data.daos
 import io.writeopia.common.utils.persistence.daos.WorkspaceCommonDao
 import io.writeopia.persistence.room.extensions.toDomain
 import io.writeopia.persistence.room.extensions.toEntity
-import io.writeopia.sdk.models.Workspace
+import io.writeopia.sdk.models.workspace.Workspace
 
 class WorkspaceDaoDelegator(private val workspaceDao: WorkspaceDao): WorkspaceCommonDao {
 
