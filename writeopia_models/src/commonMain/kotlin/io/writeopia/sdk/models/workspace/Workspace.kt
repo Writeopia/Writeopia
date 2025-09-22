@@ -1,4 +1,4 @@
-package io.writeopia.sdk.models
+package io.writeopia.sdk.models.workspace
 
 import kotlinx.datetime.Instant
 
@@ -7,15 +7,17 @@ data class Workspace(
     val userId: String,
     val name: String,
     val lastSync: Instant,
-    val selected: Boolean
+    val selected: Boolean,
+    val role: String
 ) {
     companion object {
         fun disconnectedWorkspace() = Workspace(
             id = "disconnected_workspace",
             userId = "disconnected_user",
             name = "",
-            lastSync = Instant.DISTANT_PAST,
-            selected = true
+            lastSync = Instant.Companion.DISTANT_PAST,
+            selected = true,
+            role = Role.ADMIN.value
         )
     }
 }

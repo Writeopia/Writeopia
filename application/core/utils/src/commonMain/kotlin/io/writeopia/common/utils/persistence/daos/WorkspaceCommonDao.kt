@@ -1,6 +1,6 @@
 package io.writeopia.common.utils.persistence.daos
 
-import io.writeopia.sdk.models.Workspace
+import io.writeopia.sdk.models.workspace.Workspace
 
 interface WorkspaceCommonDao {
 

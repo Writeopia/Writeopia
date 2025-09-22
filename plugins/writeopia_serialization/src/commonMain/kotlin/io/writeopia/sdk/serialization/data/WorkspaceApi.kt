@@ -1,6 +1,7 @@
 package io.writeopia.sdk.serialization.data
 
-import io.writeopia.sdk.models.Workspace
+import io.writeopia.sdk.models.workspace.Role
+import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 
@@ -9,9 +10,18 @@ data class WorkspaceApi(
     val id: String,
     val userId: String,
     val name: String,
+    val role: String,
 )
 
 fun WorkspaceApi.toModel() =
-    Workspace(this.id, this.userId, this.name, lastSync = Clock.System.now(), selected = false)
+    Workspace(
+        this.id,
+        this.userId,
+        this.name,
+        lastSync = Clock.System.now(),
+        selected = false,
+        role = role
+    )
 
-fun Workspace.toApi() = WorkspaceApi(this.id, this.userId, this.name)
+fun Workspace.toApi() =
+    WorkspaceApi(id = this.id, userId = this.userId, name = this.name, role = role)

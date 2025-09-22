@@ -84,6 +84,8 @@ room-paging = { group = "androidx.room", name = "room-paging", version.ref = "ro
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 sqldelight-jvm = { group = "app.cash.sqldelight", name = "sqlite-driver", version.ref = "sqldelight" }
+sqldelight-dialect-postgres = { group = "app.cash.sqldelight", name = "postgresql-dialect", version.ref = "sqldelight" }
+sqldelight-dialect-sqlite = { group = "app.cash.sqldelight", name = "sqlite-3-30-dialect", version.ref = "sqldelight" }
 sqldelight-native = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
 sqldelight-jdbc-driver = { group = "app.cash.sqldelight", name = "jdbc-driver", version.ref = "sqldelight" }
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
