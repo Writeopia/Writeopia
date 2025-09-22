@@ -4,7 +4,8 @@ import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertUserInWorkspace
-import io.writeopia.sdk.models.Workspace
+import io.writeopia.api.core.auth.repository.removeUserFromWorkspace
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sql.WriteopiaDbBackend
 
 object WorkspaceService {
@@ -43,5 +44,17 @@ object WorkspaceService {
             writeopiaDb.insertUserInWorkspace(workspaceId, userId, role)
             true
         } ?: false
+    }
+
+    fun removeUserFromWorkspaceSecure(
+        workspaceOwnerId: String,
+        userId: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Boolean {
+        val ownerWorkspaces = writeopiaDb.getWorkspacesByUserId(workspaceOwnerId)
+        if (!ownerWorkspaces.any { it.id == workspaceId }) return false
+
+        writeopiaDb.removeUserFromWorkspace(workspaceId, userId)
     }
 }
