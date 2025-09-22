@@ -15,7 +15,9 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.AuthService
 import io.writeopia.api.core.auth.JwtConfig
+import io.writeopia.api.core.auth.WorkspaceService
 import io.writeopia.api.core.auth.hash.HashUtils
+import io.writeopia.api.core.auth.models.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.deleteUserById
 import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
@@ -107,6 +109,27 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             e.printStackTrace()
             logger.info("register request error message: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, "Unknown error")
+        }
+    }
+
+    authenticate("auth-jwt", optional = debugMode) {
+        post<AddUserToWorkspaceRequest>("/api/workspace/user") { request ->
+            val userId = getUserId() ?: ""
+
+            val (userEmail, workspaceId, role) = request
+            val result = WorkspaceService.addUserToWorkspaceSecure(
+                workspaceOwnerId = userId,
+                userEmail,
+                workspaceId,
+                role,
+                writeopiaDb
+            )
+
+            if (result) {
+                call.respond(HttpStatusCode.OK, "User added to workspace")
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Not added")
+            }
         }
     }
 
