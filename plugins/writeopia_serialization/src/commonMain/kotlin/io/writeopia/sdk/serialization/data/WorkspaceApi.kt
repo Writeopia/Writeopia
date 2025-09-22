@@ -1,6 +1,5 @@
 package io.writeopia.sdk.serialization.data
 
-import io.writeopia.sdk.models.workspace.Role
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
