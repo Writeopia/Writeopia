@@ -9,6 +9,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.writeopia.api.core.auth.WorkspaceService
+import io.writeopia.api.core.auth.dto.WorkspacesResponse
 import io.writeopia.api.core.auth.models.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.repository.disableUserByEmail
@@ -50,10 +51,11 @@ fun Route.adminProtectedRoute(
         get("/workspace/user/{userEmail}") {
             val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
             adminUserFn(apiKey, providedKey, debugMode) {
-                val userEmail = call.pathParameters["userId"]
+                val userEmail = call.pathParameters["userEmail"]
                     ?: throw IllegalArgumentException("User email is required")
 
                 val workspaces = WorkspaceService.getWorkspacesByUserEmail(userEmail, writeopiaDb)
+                    .map { it.toApi() }
 
                 if (workspaces.isNotEmpty()) {
                     call.respond(HttpStatusCode.OK, workspaces)
