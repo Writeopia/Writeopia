@@ -36,7 +36,7 @@ class RoomAuthRepository(
     override suspend fun getAuthToken(): String? = tokenCommonDao.getTokenByUserId(getUser().id)
 
     override suspend fun useOffline() {
-        saveUser(WriteopiaUser.disconnectedUser().copy(id = WriteopiaUser.OFFLINE), true)
+        saveUser(WriteopiaUser.disconnectedUser().copy(id = WriteopiaUser.DISCONNECTED), true)
     }
 
     override suspend fun getWorkspace(): Workspace =
