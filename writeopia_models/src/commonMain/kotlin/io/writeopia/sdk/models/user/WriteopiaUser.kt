@@ -10,8 +10,6 @@ data class WriteopiaUser(
     companion object {
         const val DISCONNECTED = "disconnected_user"
 
-        const val OFFLINE = "offline"
-
         fun disconnectedUser(): WriteopiaUser = WriteopiaUser(id = "disconnected_user", "", "", "")
     }
 }

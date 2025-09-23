@@ -60,7 +60,7 @@ internal class SqlDelightAuthRepository(
 
     override suspend fun useOffline() {
         val user = getUser()
-        saveUser(user.copy(id = WriteopiaUser.OFFLINE), true)
+        saveUser(user.copy(id = WriteopiaUser.DISCONNECTED), true)
     }
 
     override suspend fun getWorkspace(): Workspace =
