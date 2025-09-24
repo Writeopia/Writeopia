@@ -1,4 +1,4 @@
-package io.writeopia.api.core.auth
+package io.writeopia.api.core.auth.service
 
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserById
