@@ -1,11 +1,9 @@
-package io.writeopia.api.core.auth
+package io.writeopia.api.core.auth.service
 
 import io.writeopia.api.core.auth.hash.HashUtils
 import io.writeopia.api.core.auth.hash.toBase64
 import io.writeopia.api.core.auth.models.WriteopiaBeUser
-import io.writeopia.api.core.auth.repository.getCompanyByDomain
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
-import io.writeopia.api.core.auth.repository.insertCompany
 import io.writeopia.api.core.auth.repository.insertUser
 import io.writeopia.api.core.auth.repository.insertUserInWorkspace
 import io.writeopia.api.core.auth.repository.insertWorkspace

@@ -3,7 +3,7 @@ package io.writeopia.api.geteway
 import io.ktor.server.application.Application
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
-import io.writeopia.api.core.auth.installAuth
+import io.writeopia.api.core.auth.utils.installAuth
 import io.writeopia.plugins.configureEditorSockets
 import io.writeopia.sql.WriteopiaDbBackend
 

@@ -21,9 +21,8 @@ import io.writeopia.sdk.serialization.request.WorkspaceDiffResponse
 import kotlinx.datetime.Clock
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.time.Instant
 
-class ApplicationTest {
+class DocumentationIntegrationTests {
 
     private val db = configurePersistence()
 
@@ -48,14 +47,14 @@ class ApplicationTest {
             )
         )
 
-        val response = client.post("/api/document") {
+        val response = client.post("/api/workspace/someSpace/document") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(documentApiList))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("/api/document/${documentApiList.first().id}")
+        val response1 = client.get("/apiworkspace/someSpace/document/${documentApiList.first().id}")
         val actual = response1.body<DocumentApi>().copy(lastSyncedAt = 0L)
 
         assertEquals(HttpStatusCode.OK, response1.status)
@@ -89,14 +88,14 @@ class ApplicationTest {
             )
         )
 
-        val response = client.post("/api/folder") {
+        val response = client.post("/api/workspace/someSpace/folder") {
             contentType(ContentType.Application.Json)
             setBody(SendFoldersRequest(folderApiList))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("/api/folder/${folderApiList.first().id}")
+        val response1 = client.get("/api/workspace/someSpace/folder/${folderApiList.first().id}")
         val actual = response1.body<FolderApi>()
 
         assertEquals(HttpStatusCode.OK, response1.status)
@@ -128,7 +127,7 @@ class ApplicationTest {
             )
         )
 
-        val response = client.post("/api/document") {
+        val response = client.post("/api/workspace/{workspaceId}/document") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(documentApiList))
         }
@@ -136,7 +135,7 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, response.status)
 
         val response1 = client.get(
-            "/api/document/parent/${documentApiList.first().parentId}"
+            "/api/workspace/{workspaceId}/parent/${documentApiList.first().parentId}"
         )
 
         assertEquals(HttpStatusCode.OK, response1.status)
@@ -165,14 +164,14 @@ class ApplicationTest {
             lastUpdatedAt = 2000L
         )
 
-        val response = client.post("/api/document") {
+        val response = client.post("/api/workspace/someSpace/document") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(listOf(documentApi)))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("/api/document/parent/${documentApi.parentId}")
+        val response1 = client.get("/api/workspace/someSpace/document/parent/${documentApi.parentId}")
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(
@@ -204,14 +203,14 @@ class ApplicationTest {
 
         val documentApi2 = documentApi.copy(id = "testias2", lastUpdatedAt = 4000L)
 
-        val response = client.post("/api/document") {
+        val response = client.post("/api/workspace/someSpace/document") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(listOf(documentApi)))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.post("/api/document") {
+        val response1 = client.post("/api/workspace/someSpace/document") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(listOf(documentApi2)))
         }
@@ -224,7 +223,7 @@ class ApplicationTest {
             lastFolderSync = 3000L
         )
 
-        val response2 = client.post("/api/document/folder/diff") {
+        val response2 = client.post("/api/workspace/someSpace/document/folder/diff") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }
@@ -257,14 +256,14 @@ class ApplicationTest {
 
         val documentApi2 = documentApi.copy(id = "testias2", lastUpdatedAt = 4000L)
 
-        val response = client.post("/api/document") {
+        val response = client.post("/api/workspace/someSpace/document") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(listOf(documentApi)))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.post("/api/document") {
+        val response1 = client.post("/api/workspace/someSpace/document") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(listOf(documentApi2)))
         }
@@ -276,7 +275,7 @@ class ApplicationTest {
             lastSync = 0
         )
 
-        val response2 = client.post("/api/workspace/diff") {
+        val response2 = client.post("/api/workspace/someSpace/diff") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }

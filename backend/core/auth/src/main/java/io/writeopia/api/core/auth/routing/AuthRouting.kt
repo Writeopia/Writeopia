@@ -13,9 +13,9 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
-import io.writeopia.api.core.auth.AuthService
-import io.writeopia.api.core.auth.JwtConfig
-import io.writeopia.api.core.auth.WorkspaceService
+import io.writeopia.api.core.auth.service.AuthService
+import io.writeopia.api.core.auth.utils.JwtConfig
+import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.hash.HashUtils
 import io.writeopia.api.core.auth.models.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.toApi
