@@ -55,7 +55,6 @@ import io.writeopia.common.utils.collections.inBatches
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
-import io.writeopia.common.utils.modifier.clickableWithoutGettingFocus
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.span.Span
