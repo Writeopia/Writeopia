@@ -1,6 +1,5 @@
 package io.writeopia.ui.model
 
-import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
 
 enum class SelectionMetadata {
