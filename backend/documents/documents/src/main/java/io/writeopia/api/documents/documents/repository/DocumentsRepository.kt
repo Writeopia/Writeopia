@@ -1,6 +1,7 @@
 package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sql.WriteopiaDbBackend
 
 private var documentSqlDao: DocumentSqlBeDao? = null
@@ -10,6 +11,7 @@ private fun WriteopiaDbBackend.getDocumentDaoFn(): DocumentSqlBeDao =
         DocumentSqlBeDao(
             documentEntityQueries,
             storyStepEntityQueries,
+            folderEntityQueries
         ).also {
             documentSqlDao = it
         }
@@ -21,18 +23,38 @@ suspend fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
     }
 }
 
-suspend fun WriteopiaDbBackend.folderDiff(
+suspend fun WriteopiaDbBackend.saveFolder(vararg folders: Folder) {
+    folders.forEach { folder -> getDocumentDaoFn().insertFolder(folder) }
+}
+
+suspend fun WriteopiaDbBackend.documentsDiffByFolder(
     folderId: String,
-    userId: String,
+    workspaceId: String,
     lastSync: Long
 ): List<Document> =
-    getDocumentDaoFn().loadDocumentsWithContentFolderIdAfterTime(folderId, userId, lastSync)
+    getDocumentDaoFn().loadDocumentsWithContentFolderIdAfterTime(folderId, workspaceId, lastSync)
 
-suspend fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
+suspend fun WriteopiaDbBackend.documentsDiffByWorkspace(
+    workspaceId: String,
+    lastSync: Long
+): List<Document> =
+    getDocumentDaoFn().loadDocumentsWithContentByWorkspaceIdAfterTime(workspaceId, lastSync)
+
+suspend fun WriteopiaDbBackend.allFoldersByWorkspaceId(workspaceId: String): List<Folder> {
+    return getDocumentDaoFn().loadAllFoldersByWorkspaceId(workspaceId)
+}
+
+fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
     getDocumentDaoFn().loadDocumentByParentId(parentId)
 
-suspend fun WriteopiaDbBackend.getDocumentById(id: String = "test", userId: String): Document? =
-    getDocumentDaoFn().loadDocumentById(id, userId)
+suspend fun WriteopiaDbBackend.getDocumentById(
+    id: String = "test",
+    workspaceId: String
+): Document? =
+    getDocumentDaoFn().loadDocumentById(id, workspaceId)
+
+suspend fun WriteopiaDbBackend.getFolderById(id: String = "test", userId: String): Folder? =
+    getDocumentDaoFn().loadFolderById(id)
 
 suspend fun WriteopiaDbBackend.getIdsByParentId(parentId: String = "root"): List<String> =
     getDocumentDaoFn().loadDocumentIdsByParentId(parentId)

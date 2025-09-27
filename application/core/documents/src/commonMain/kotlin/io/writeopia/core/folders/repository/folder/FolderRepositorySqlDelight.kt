@@ -1,4 +1,4 @@
-package io.writeopia.core.folders.repository
+package io.writeopia.core.folders.repository.folder
 
 import io.writeopia.core.folders.extensions.toEntity
 import io.writeopia.sdk.models.document.Folder
@@ -15,18 +15,18 @@ class FolderRepositorySqlDelight(
     override suspend fun getFolderById(id: String): Folder? =
         folderDao.getFolderById(id)?.toModel(0)
 
-    override suspend fun getFoldersForUserAfterTime(
-        userId: String,
+    override suspend fun getFoldersForWorkspaceAfterTime(
+        workspaceId: String,
         instant: Instant
     ): List<Folder> {
         return folderDao.selectByUserIdAfterTime(
-            userId,
+            workspaceId,
             instant.toEpochMilliseconds()
         )
     }
 
-    override suspend fun getFoldersForUser(userId: String): List<Folder> =
-        folderDao.selectByUserId(userId)
+    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> =
+        folderDao.selectByWorkspaceId(workspaceId)
 
     override suspend fun createFolder(folder: Folder) {
         folderDao.createFolder(folder.toEntity())
@@ -74,6 +74,9 @@ class FolderRepositorySqlDelight(
     override suspend fun stopListeningForFoldersByParentId(parentId: String) {
         folderDao.removeListening(parentId)
     }
+
+    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =
+        getFoldersForWorkspace(workspaceId)
 
     override suspend fun deleteFolderById(folderId: String) {
         folderDao.deleteFolder(folderId)

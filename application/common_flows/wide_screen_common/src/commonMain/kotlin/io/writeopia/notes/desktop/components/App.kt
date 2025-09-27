@@ -221,6 +221,7 @@ fun DesktopApp(
                                     downloadModelState = globalShellViewModel.downloadModelState,
                                     userOnlineState = globalShellViewModel.userState,
                                     showDeleteConfirmation = globalShellViewModel.showDeleteConfirmation,
+                                    syncWorkspaceState = globalShellViewModel.lastWorkspaceSync,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
                                     selectWorkplacePath = globalShellViewModel::changeWorkspaceLocalPath,
@@ -242,7 +243,8 @@ fun DesktopApp(
                                         globalShellViewModel.deleteAccount(
                                             sideEffect = navigateToRegister
                                         )
-                                    }
+                                    },
+                                    syncWorkspace = globalShellViewModel::syncWorkspace
                                 )
                             }
 

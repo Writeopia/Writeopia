@@ -82,6 +82,7 @@ fun SettingsDialog(
     downloadModelState: StateFlow<ResultData<DownloadState>>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
+    syncWorkspaceState: StateFlow<String>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectWorkplacePath: (String) -> Unit,
@@ -96,6 +97,7 @@ fun SettingsDialog(
     showDeleteConfirm: () -> Unit,
     dismissDeleteConfirm: () -> Unit,
     deleteAccount: () -> Unit,
+    syncWorkspace: () -> Unit,
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -134,7 +136,9 @@ fun SettingsDialog(
                     WorkspaceSection(
                         workplacePathState = workplacePathState,
                         showPath = true,
-                        selectWorkplacePath = selectWorkplacePath
+                        selectWorkplacePath = selectWorkplacePath,
+                        syncWorkspace = syncWorkspace,
+                        syncWorkspaceState = syncWorkspaceState
                     )
                 },
                 aiScreen = {
@@ -161,6 +165,7 @@ fun SettingsScreen(
     showOllamaConfig: Boolean,
     selectedThemePosition: StateFlow<Int>,
     workplacePathState: StateFlow<String>,
+    syncWorkspaceState: StateFlow<String>,
     ollamaUrl: String,
     ollamaAvailableModels: Flow<ResultData<List<String>>>,
     ollamaSelectedModel: StateFlow<String>,
@@ -172,6 +177,7 @@ fun SettingsScreen(
     ollamaModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    syncWorkspace: () -> Unit,
 ) {
     ColorThemeOptions(
         selectedThemePosition = selectedThemePosition,
@@ -180,7 +186,13 @@ fun SettingsScreen(
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    WorkspaceSection(workplacePathState, showPath, selectWorkplacePath)
+    WorkspaceSection(
+        workplacePathState,
+        syncWorkspaceState,
+        showPath,
+        selectWorkplacePath,
+        syncWorkspace
+    )
 
     Spacer(modifier = Modifier.height(20.dp))
 
@@ -352,8 +364,10 @@ private fun AccountScreen(
 @Composable
 private fun WorkspaceSection(
     workplacePathState: StateFlow<String>,
+    syncWorkspaceState: StateFlow<String>,
     showPath: Boolean = true,
     selectWorkplacePath: (String) -> Unit,
+    syncWorkspace: () -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -387,6 +401,29 @@ private fun WorkspaceSection(
                     }
                     .padding(8.dp)
                     .fillMaxWidth()
+            )
+        }
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        Text(text = "Sync", style = titleStyle, color = titleColor)
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        val lastSync by syncWorkspaceState.collectAsState()
+
+        CommonButton(
+            text = "Sync workspace",
+            clickListener = syncWorkspace
+        )
+
+        if (lastSync.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = lastSync,
+                style = MaterialTheme.typography.bodyMedium,
+                color = titleColor
             )
         }
 

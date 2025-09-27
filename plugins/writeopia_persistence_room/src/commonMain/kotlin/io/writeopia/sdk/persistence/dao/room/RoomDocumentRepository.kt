@@ -29,16 +29,23 @@ class RoomDocumentRepository(
     override suspend fun loadDocumentsForFolder(folderId: String): List<Document> =
         documentEntityDao.loadDocumentsByParentId(folderId).map { it.toModel() }
 
-    override suspend fun loadFavDocumentsForUser(orderBy: String, userId: String): List<Document> =
+    override suspend fun loadFavDocumentsForWorkspace(
+        orderBy: String,
+        workspaceId: String
+    ): List<Document> =
         emptyList()
 
     override suspend fun deleteDocumentByFolder(folderId: String) {
     }
 
-    override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
+    override suspend fun search(
+        query: String,
+        workspaceId: String,
+        companyId: String?
+    ): List<Document> =
         documentEntityDao.search(query).map { it.toModel() }
 
-    override suspend fun getLastUpdatedAt(userId: String): List<Document> =
+    override suspend fun getLastUpdatedAt(workspaceId: String): List<Document> =
         documentEntityDao.selectByLastUpdated().map { it.toModel() }
 
     override suspend fun listenForDocumentsByParentId(
@@ -57,14 +64,14 @@ class RoomDocumentRepository(
             entity?.toModel()?.info()
         }
 
-    override suspend fun loadDocumentsForUser(userId: String): List<Document> =
-        documentEntityDao.loadDocumentsWithContentForUser(userId)
+    override suspend fun loadDocumentsWorkspace(workspaceId: String): List<Document> =
+        documentEntityDao.loadDocumentsWithContentForUser(workspaceId)
             .map { (documentEntity, storyEntity) ->
                 val content = loadInnerSteps(storyEntity)
                 documentEntity.toModel(content)
             }
 
-    override suspend fun loadDocumentsForUserAfterTime(
+    override suspend fun loadDocumentsForWorkspace(
         orderBy: String,
         userId: String,
         instant: Instant
@@ -107,8 +114,8 @@ class RoomDocumentRepository(
                 documentEntity.toModel(content)
             }
 
-    override suspend fun saveDocument(document: Document, userId: String) {
-        saveDocumentMetadata(document, userId)
+    override suspend fun saveDocument(document: Document) {
+        saveDocumentMetadata(document)
 
         document.content.toEntity(document.id).let { data ->
             storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
@@ -116,7 +123,7 @@ class RoomDocumentRepository(
         }
     }
 
-    override suspend fun saveDocumentMetadata(document: Document, userId: String) {
+    override suspend fun saveDocumentMetadata(document: Document) {
         documentEntityDao.insertDocuments(document.toEntity())
     }
 
@@ -146,11 +153,11 @@ class RoomDocumentRepository(
         storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(position, documentId))
     }
 
-    override suspend fun deleteByUserId(userId: String) {
+    override suspend fun deleteByWorkspace(userId: String) {
         documentEntityDao.deleteDocumentsByUserId(userId)
     }
 
-    override suspend fun moveDocumentsToNewUser(oldUserId: String, newUserId: String) {
+    override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
         documentEntityDao.moveDocumentsToNewUser(oldUserId, newUserId)
     }
 
@@ -171,7 +178,12 @@ class RoomDocumentRepository(
             .mapValues { (_, entity) ->
                 if (entity.linkToDocument != null) {
                     val title = documentEntityDao.getDocumentTitleById(entity.linkToDocument)
-                    return@mapValues entity.toModel(documentLink = DocumentLink(entity.linkToDocument, title))
+                    return@mapValues entity.toModel(
+                        documentLink = DocumentLink(
+                            entity.linkToDocument,
+                            title
+                        )
+                    )
                 }
 
                 if (entity.hasInnerSteps) {
@@ -203,4 +215,7 @@ class RoomDocumentRepository(
             )
             entity.toModel(content = content)
         }
+
+    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
+        emptyList()
 }
