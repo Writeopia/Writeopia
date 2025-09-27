@@ -40,6 +40,7 @@ import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
+import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.drawer.factory.DrawersFactory
 
@@ -62,7 +63,10 @@ fun DesktopNoteEditorScreen(
 
     Box(
         modifier = Modifier.clickable(
-            onClick = noteEditorViewModel::clearSelections,
+            onClick = {
+                noteEditorViewModel.clearSelections()
+                noteEditorViewModel.changeSideMenu(SideMenuTab.NONE)
+            },
             interactionSource = interactionSource,
             indication = null
         )
@@ -81,6 +85,11 @@ fun DesktopNoteEditorScreen(
                     loadNoteId = documentId,
                     onDocumentLinkClick = onDocumentLinkClick,
                     modifier = Modifier.padding(start = 30.dp, end = 30.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { }
+                        )
                 )
             }
         )
@@ -147,6 +156,7 @@ fun DesktopNoteEditorScreen(
             isEditableState = noteEditorViewModel.isEditable,
             isFavorite = noteEditorViewModel.notFavorite,
             selectedMetadataState = noteEditorViewModel.selectionMetadataState,
+            sideMenuTabState = noteEditorViewModel.sideMenuTabState,
             boldClick = noteEditorViewModel::onAddSpanClick,
             setEditable = noteEditorViewModel::toggleEditable,
             checkItemClick = noteEditorViewModel::onAddCheckListClick,
@@ -173,6 +183,7 @@ fun DesktopNoteEditorScreen(
             aiFaq = noteEditorViewModel::aiFaq,
             aiTags = noteEditorViewModel::aiTags,
             selectModel = noteEditorViewModel::selectModel,
+            changeSideMenuTab = noteEditorViewModel::changeSideMenu
         )
 
         if (showDeleteConfirmation) {
