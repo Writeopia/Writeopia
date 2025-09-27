@@ -5,6 +5,7 @@ import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.story.Tag
 import io.writeopia.ui.backstack.BackstackHandler
 import io.writeopia.ui.backstack.BackstackInform
 import io.writeopia.ui.manager.WriteopiaStateManager
@@ -142,6 +143,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun setTheme(isDarkTheme: Boolean)
 
     fun selectModel(model: String)
+
+    fun titleClick(tag: Tag)
 }
 
 data class ShareDocument(val content: String, val title: String, val type: String)

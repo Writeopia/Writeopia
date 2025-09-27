@@ -268,6 +268,19 @@ class WriteopiaStateManager(
                     Tag.HIGH_LIGHT_BLOCK -> {
                         result.add(SelectionMetadata.BOX)
                     }
+
+                    Tag.H1 -> {
+                        result.add(SelectionMetadata.TITLE)
+                    }
+
+                    Tag.H2 -> {
+                        result.add(SelectionMetadata.SUBTITLE)
+                    }
+
+                    Tag.H3 -> {
+                        result.add(SelectionMetadata.HEADING)
+                    }
+
                     else -> {}
                 }
             }
@@ -1127,6 +1140,26 @@ class WriteopiaStateManager(
         }
     }
 
+    fun addTitle(tag: Tag) {
+        val position = currentPosition()
+
+        val currentStory = getStory(position)
+        if (currentStory == null) return
+
+        val shouldRemove = currentStory.tags.any { it.tag == tag }
+
+        val newTags = currentStory.tags
+            .filterNotTo(mutableSetOf()) { it.tag.isTitle() }
+            .apply {
+                if (!shouldRemove) {
+                    add(TagInfo(tag))
+                }
+            }
+
+        val newStory = currentStory.copy(tags = newTags)
+        changeStoryState(Action.StoryStateChange(newStory, position))
+    }
+
     private suspend fun getUserId(): String =
         userRepository?.getUser()?.id ?: WriteopiaUser.disconnectedUser().id
 
@@ -1292,8 +1325,8 @@ class WriteopiaStateManager(
 
             _currentStory.value = state.copy(
                 selection = Selection(
-                    stateChange.selectionStart ?: 0,
-                    stateChange.selectionEnd ?: 0,
+                    stateChange.selectionStart ?: state.selection.start,
+                    stateChange.selectionEnd ?: state.selection.end,
                     stateChange.position
                 )
             )
@@ -1304,9 +1337,10 @@ class WriteopiaStateManager(
 
     private fun getStories() = _currentStory.value.stories
 
-    private fun currentPosition() = _currentStory.value.focus
+    private fun currentPosition() =
+        _currentStory.value.focus ?: _currentStory.value.selection.position
 
-    private fun getCurrentStory(): StoryStep? = currentPosition()?.let(::getStory)
+    private fun getCurrentStory(): StoryStep? = currentPosition().let(::getStory)
 
     private fun selectAll() {
         _positionsOnEdit.value = getStories().keys - setOf(0)

@@ -31,6 +31,7 @@ import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
 import io.writeopia.sdk.repository.DocumentRepository
@@ -722,6 +723,12 @@ class NoteEditorKmpViewModel(
 
     override fun searchInDocument(query: String) {
         _searchText.value = query
+    }
+
+    override fun titleClick(tag: Tag) {
+        viewModelScope.launch(Dispatchers.Default) {
+            writeopiaManager.addTitle(tag)
+        }
     }
 
     private fun documentPrompt(promptFn: (String, String, String) -> Flow<ResultData<String>>) {
