@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -57,6 +58,7 @@ import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.story.Tag
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.model.SelectionMetadata
@@ -97,7 +99,8 @@ fun SideEditorOptions(
     deleteDocument: () -> Unit,
     toggleFavorite: () -> Unit,
     selectModel: (String) -> Unit,
-    changeSideMenuTab: (SideMenuTab) -> Unit
+    changeSideMenuTab: (SideMenuTab) -> Unit,
+    titleClick: (Tag) -> Unit
 ) {
     val menuType by sideMenuTabState.collectAsState()
 
@@ -158,7 +161,8 @@ fun SideEditorOptions(
                                 codeBlockClick,
                                 highLightBlockClick,
                                 addImage,
-                                addPage
+                                addPage,
+                                titleClick
                             )
                         }
 
@@ -373,6 +377,57 @@ private fun Title(text: String) {
 }
 
 @Composable
+private fun TitleChanges(
+    metadata: Set<SelectionMetadata>,
+    modifier: Modifier = Modifier,
+    titleClick: (Tag) -> Unit
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TextButton(
+            modifier = Modifier.weight(1F),
+            text = "Title",
+            highlight = metadata.contains(
+                SelectionMetadata.TITLE
+            ),
+            textStyle = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Normal,
+            onClick = {
+                titleClick(Tag.H1)
+            }
+        )
+
+        TextButton(
+            modifier = Modifier.weight(1F),
+            text = "Subtitle",
+            highlight = metadata.contains(
+                SelectionMetadata.SUBTITLE
+            ),
+            textStyle = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Normal,
+            onClick = {
+                titleClick(Tag.H2)
+            }
+        )
+
+        TextButton(
+            modifier = Modifier.weight(1F),
+            text = "Heading",
+            highlight = metadata.contains(
+                SelectionMetadata.HEADING
+            ),
+            textStyle = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Normal,
+            onClick = {
+                titleClick(Tag.H3)
+            }
+        )
+    }
+}
+
+@Composable
 private fun TextChanges(spanClick: (Span) -> Unit) {
     Row(
         modifier = Modifier.horizontalOptionsRow(),
@@ -512,6 +567,8 @@ private fun TextButton(
         horizontal = 8.dp,
         vertical = 8.dp
     ),
+    textStyle: TextStyle = buttonsTextStyle(),
+    fontWeight: FontWeight = FontWeight.Bold,
     onClick: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.medium
@@ -541,8 +598,8 @@ private fun TextButton(
             .padding(paddingValues),
         text = text,
         color = MaterialTheme.colorScheme.onBackground,
-        style = buttonsTextStyle(),
-        fontWeight = FontWeight.Bold,
+        style = textStyle,
+        fontWeight = fontWeight,
         textAlign = TextAlign.Center
     )
 }
@@ -705,6 +762,7 @@ private fun TextOptions(
     highLightBlockClick: () -> Unit,
     addImage: (String) -> Unit,
     addPage: () -> Unit,
+    titleClick: (Tag) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -716,6 +774,13 @@ private fun TextOptions(
             .width(250.dp)
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
+        val selectedMetadata by selectedMetadataState.collectAsState()
+
+        Title("Title")
+        Spacer(modifier = Modifier.height(4.dp))
+        TitleChanges(metadata = selectedMetadata, titleClick = titleClick)
+        Spacer(modifier = Modifier.height(8.dp))
+
         Title(WrStrings.text())
         Spacer(modifier = Modifier.height(4.dp))
         TextChanges(spanClick)
@@ -733,8 +798,6 @@ private fun TextOptions(
 
         Title(WrStrings.decoration())
         Spacer(modifier = Modifier.height(4.dp))
-
-        val selectedMetadata by selectedMetadataState.collectAsState()
 
         DecorationCommands(
             commands = listOf(

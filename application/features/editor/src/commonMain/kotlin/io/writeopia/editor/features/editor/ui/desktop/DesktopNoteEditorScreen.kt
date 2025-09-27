@@ -183,7 +183,8 @@ fun DesktopNoteEditorScreen(
             aiFaq = noteEditorViewModel::aiFaq,
             aiTags = noteEditorViewModel::aiTags,
             selectModel = noteEditorViewModel::selectModel,
-            changeSideMenuTab = noteEditorViewModel::changeSideMenu
+            changeSideMenuTab = noteEditorViewModel::changeSideMenu,
+            titleClick = noteEditorViewModel::titleClick
         )
 
         if (showDeleteConfirmation) {
