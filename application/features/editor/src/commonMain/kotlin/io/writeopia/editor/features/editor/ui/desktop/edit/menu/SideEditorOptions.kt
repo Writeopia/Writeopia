@@ -53,6 +53,7 @@ import io.writeopia.common.utils.collections.inBatches
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.span.Span
@@ -73,6 +74,7 @@ fun SideEditorOptions(
     isEditableState: StateFlow<Boolean>,
     isFavorite: StateFlow<Boolean>,
     selectedMetadataState: StateFlow<Set<SelectionMetadata>>,
+    sideMenuTabState: StateFlow<SideMenuTab>,
     boldClick: (Span) -> Unit,
     setEditable: () -> Unit,
     checkItemClick: () -> Unit,
@@ -95,14 +97,13 @@ fun SideEditorOptions(
     deleteDocument: () -> Unit,
     toggleFavorite: () -> Unit,
     selectModel: (String) -> Unit,
+    changeSideMenuTab: (SideMenuTab) -> Unit
 ) {
-    var menuType by remember {
-        mutableStateOf(OptionsType.NONE)
-    }
+    val menuType by sideMenuTabState.collectAsState()
 
     val showSubMenu by remember {
         derivedStateOf {
-            menuType != OptionsType.NONE
+            menuType != SideMenuTab.NONE
         }
     }
 
@@ -111,11 +112,8 @@ fun SideEditorOptions(
         properties = PopupProperties(
             focusable = false,
             dismissOnBackPress = false,
-            dismissOnClickOutside = true
+            dismissOnClickOutside = false
         ),
-        onDismissRequest = {
-            menuType = OptionsType.NONE
-        },
     ) {
         Row(modifier) {
             AnimatedVisibility(
@@ -134,9 +132,9 @@ fun SideEditorOptions(
                     animationSpec = tween(200),
                 ) { type ->
                     when (type) {
-                        OptionsType.NONE -> {}
+                        SideMenuTab.NONE -> {}
 
-                        OptionsType.PAGE_STYLE -> {
+                        SideMenuTab.PAGE_STYLE -> {
                             PageOptions(
                                 changeFontFamily,
                                 isEditableState,
@@ -150,7 +148,7 @@ fun SideEditorOptions(
                             )
                         }
 
-                        OptionsType.TEXT_OPTIONS -> {
+                        SideMenuTab.TEXT_OPTIONS -> {
                             TextOptions(
                                 isDarkTheme,
                                 selectedMetadataState,
@@ -164,14 +162,14 @@ fun SideEditorOptions(
                             )
                         }
 
-                        OptionsType.EXPORT -> {
+                        SideMenuTab.EXPORT -> {
                             Actions(
                                 exportJson,
                                 exportMarkdown,
                             )
                         }
 
-                        OptionsType.AI -> {
+                        SideMenuTab.AI -> {
                             AiOptions(
                                 currentModel = currentModel,
                                 models = models,
@@ -200,7 +198,7 @@ fun SideEditorOptions(
 
                 Spacer(modifier = Modifier.height(spacing))
 
-                val background = @Composable { optionsType: OptionsType ->
+                val background = @Composable { optionsType: SideMenuTab ->
                     if (optionsType == menuType) {
                         MaterialTheme.colorScheme.primary
                     } else {
@@ -208,7 +206,7 @@ fun SideEditorOptions(
                     }
                 }
 
-                val tint = @Composable { optionsType: OptionsType ->
+                val tint = @Composable { optionsType: SideMenuTab ->
                     if (optionsType == menuType) {
                         MaterialTheme.colorScheme.onPrimary
                     } else {
@@ -222,17 +220,19 @@ fun SideEditorOptions(
                     modifier = Modifier
                         .padding(horizontal = spacing)
                         .clip(MaterialTheme.shapes.medium)
-                        .background(background(OptionsType.PAGE_STYLE))
+                        .background(background(SideMenuTab.PAGE_STYLE))
                         .clickable {
-                            menuType = if (menuType != OptionsType.PAGE_STYLE) {
-                                OptionsType.PAGE_STYLE
+                            val menuType = if (menuType != SideMenuTab.PAGE_STYLE) {
+                                SideMenuTab.PAGE_STYLE
                             } else {
-                                OptionsType.NONE
+                                SideMenuTab.NONE
                             }
+
+                            changeSideMenuTab(menuType)
                         }
                         .size(40.dp)
                         .padding(10.dp),
-                    tint = tint(OptionsType.PAGE_STYLE)
+                    tint = tint(SideMenuTab.PAGE_STYLE)
                 )
 
                 Spacer(modifier = Modifier.height(1.dp))
@@ -243,17 +243,19 @@ fun SideEditorOptions(
                     modifier = Modifier
                         .padding(horizontal = spacing)
                         .clip(MaterialTheme.shapes.medium)
-                        .background(background(OptionsType.TEXT_OPTIONS))
+                        .background(background(SideMenuTab.TEXT_OPTIONS))
                         .clickable {
-                            menuType = if (menuType != OptionsType.TEXT_OPTIONS) {
-                                OptionsType.TEXT_OPTIONS
+                            val menuType = if (menuType != SideMenuTab.TEXT_OPTIONS) {
+                                SideMenuTab.TEXT_OPTIONS
                             } else {
-                                OptionsType.NONE
+                                SideMenuTab.NONE
                             }
+
+                            changeSideMenuTab(menuType)
                         }
                         .size(40.dp)
                         .padding(9.dp),
-                    tint = tint(OptionsType.TEXT_OPTIONS)
+                    tint = tint(SideMenuTab.TEXT_OPTIONS)
                 )
 
                 Icon(
@@ -262,17 +264,19 @@ fun SideEditorOptions(
                     modifier = Modifier
                         .padding(horizontal = spacing)
                         .clip(MaterialTheme.shapes.medium)
-                        .background(background(OptionsType.AI))
+                        .background(background(SideMenuTab.AI))
                         .clickable {
-                            menuType = if (menuType != OptionsType.AI) {
-                                OptionsType.AI
+                            val menuType = if (menuType != SideMenuTab.AI) {
+                                SideMenuTab.AI
                             } else {
-                                OptionsType.NONE
+                                SideMenuTab.NONE
                             }
+
+                            changeSideMenuTab(menuType)
                         }
                         .size(40.dp)
                         .padding(9.dp),
-                    tint = tint(OptionsType.AI)
+                    tint = tint(SideMenuTab.AI)
                 )
 
                 Spacer(modifier = Modifier.height(spacing))
@@ -285,17 +289,19 @@ fun SideEditorOptions(
                     modifier = Modifier
                         .padding(horizontal = spacing)
                         .clip(MaterialTheme.shapes.medium)
-                        .background(background(OptionsType.EXPORT))
+                        .background(background(SideMenuTab.EXPORT))
                         .clickable {
-                            menuType = if (menuType != OptionsType.EXPORT) {
-                                OptionsType.EXPORT
+                            val menuType = if (menuType != SideMenuTab.EXPORT) {
+                                SideMenuTab.EXPORT
                             } else {
-                                OptionsType.NONE
+                                SideMenuTab.NONE
                             }
+
+                            changeSideMenuTab(menuType)
                         }
                         .size(40.dp)
                         .padding(9.dp),
-                    tint = tint(OptionsType.EXPORT)
+                    tint = tint(SideMenuTab.EXPORT)
                 )
 
                 Spacer(modifier = Modifier.height(spacing))
@@ -924,14 +930,6 @@ private fun buttonsTextStyle() =
 
 @Composable
 private fun smallButtonPadding() = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-
-private enum class OptionsType {
-    NONE,
-    PAGE_STYLE,
-    TEXT_OPTIONS,
-    EXPORT,
-    AI
-}
 
 private data class DecorationButton(
     val text: String,

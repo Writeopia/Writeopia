@@ -55,6 +55,10 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val selectionMetadataState: StateFlow<Set<SelectionMetadata>>
 
+    val sideMenuTabState: StateFlow<SideMenuTab>
+
+    fun changeSideMenu(tab: SideMenuTab)
+
     fun showSearch()
 
     fun hideSearch()
@@ -141,3 +145,11 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 }
 
 data class ShareDocument(val content: String, val title: String, val type: String)
+
+public enum class SideMenuTab {
+    NONE,
+    PAGE_STYLE,
+    TEXT_OPTIONS,
+    EXPORT,
+    AI
+}

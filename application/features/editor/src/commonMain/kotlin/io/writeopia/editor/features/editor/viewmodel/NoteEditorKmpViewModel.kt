@@ -250,6 +250,9 @@ class NoteEditorKmpViewModel(
             .stateIn(viewModelScope, SharingStarted.Lazily, "")
     }
 
+    private val _sideMenuTab = MutableStateFlow(SideMenuTab.NONE)
+    override val sideMenuTabState: StateFlow<SideMenuTab> = _sideMenuTab.asStateFlow()
+
     /**
      * This property defines if the document is favorite
      */
@@ -357,6 +360,10 @@ class NoteEditorKmpViewModel(
                         .filter { it.id != "root" }
                 }
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    override fun changeSideMenu(tab: SideMenuTab) {
+        _sideMenuTab.value = tab
+    }
 
     override fun deleteSelection() {
         writeopiaManager.deleteSelection()
