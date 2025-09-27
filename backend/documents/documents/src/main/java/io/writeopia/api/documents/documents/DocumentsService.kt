@@ -23,6 +23,7 @@ object DocumentsService {
 
     suspend fun receiveDocuments(
         documents: List<Document>,
+        workspaceId: String,
         writeopiaDb: WriteopiaDbBackend,
         useAi: Boolean
     ): Boolean {
@@ -30,7 +31,7 @@ object DocumentsService {
             writeopiaDb.saveDocument(document)
         }
 
-        return if (useAi) sendToAiHub(documents) else true
+        return if (useAi) sendToAiHub(documents, workspaceId) else true
     }
 
     suspend fun receiveFolders(
@@ -51,9 +52,9 @@ object DocumentsService {
 
     suspend fun getDocumentById(
         id: String,
-        userId: String,
+        workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
-    ): Document? = writeopiaDb.getDocumentById(id, userId)
+    ): Document? = writeopiaDb.getDocumentById(id, workspaceId)
 
     suspend fun getFolderById(
         id: String,
@@ -61,10 +62,10 @@ object DocumentsService {
         writeopiaDb: WriteopiaDbBackend
     ): Folder? = writeopiaDb.getFolderById(id, userId)
 
-    private suspend fun sendToAiHub(documents: List<Document>) =
+    private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String,) =
         wrWebClient.post("${Urls.AI_HUB}/documents/") {
             contentType(ContentType.Application.Json)
-            setBody(SendDocumentsRequest(documents.map { it.toApi() }))
+            setBody(SendDocumentsRequest(documents.map { it.toApi() }, workspaceId))
         }.status
             .isSuccess()
 }
