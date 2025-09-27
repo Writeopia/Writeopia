@@ -23,6 +23,7 @@ import io.writeopia.api.core.auth.repository.deleteUserById
 import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserById
+import io.writeopia.api.core.auth.utils.runIfMember
 import io.writeopia.connection.logger
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
@@ -115,20 +116,22 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     authenticate("auth-jwt", optional = debugMode) {
         post<AddUserToWorkspaceRequest>("/api/workspace/user") { request ->
             val userId = getUserId() ?: ""
-
             val (userEmail, workspaceId, role) = request
-            val result = WorkspaceService.addUserToWorkspaceSecure(
-                workspaceOwnerId = userId,
-                userEmail,
-                workspaceId,
-                role,
-                writeopiaDb
-            )
 
-            if (result) {
-                call.respond(HttpStatusCode.OK, "User added to workspace")
-            } else {
-                call.respond(HttpStatusCode.NotFound, "Not added")
+            runIfMember(userId, workspaceId, writeopiaDb, debugMode) {
+                val result = WorkspaceService.addUserToWorkspaceSecure(
+                    workspaceOwnerId = userId,
+                    userEmail,
+                    workspaceId,
+                    role,
+                    writeopiaDb
+                )
+
+                if (result) {
+                    call.respond(HttpStatusCode.OK, "User added to workspace")
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Not added")
+                }
             }
         }
     }

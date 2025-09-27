@@ -40,8 +40,8 @@ fun Routing.documentsRoute(
             val id = call.pathParameters["id"] ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb) {
-                val document = DocumentsService.getDocumentById(id, userId, writeopiaDb)
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                val document = DocumentsService.getDocumentById(id, workspaceId, writeopiaDb)
 
                 if (document != null) {
                     call.respond(
@@ -59,11 +59,11 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        get("/api/workspace/{workspaceId}/parent/{parentId}") {
+        get("/api/workspace/{workspaceId}/document/parent/{parentId}") {
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb) {
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
                 val parentId = call.pathParameters["parentId"]!!
                 val documentList = writeopiaDb.getDocumentsByParentId(parentId)
 
@@ -83,12 +83,12 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        get("/api/workspace/{workspaceId}/parent/{id}") {
+        get("/api/workspace/{workspaceId}/document/parent/{id}") {
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
             val id = call.pathParameters["id"]!!
 
-            runIfMember(userId, workspaceId, writeopiaDb) {
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
                 val ids = writeopiaDb.getIdsByParentId(id)
 
                 if (ids.isNotEmpty()) {
@@ -112,7 +112,7 @@ fun Routing.documentsRoute(
             val query = call.queryParameters["q"]
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb) {
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
                 if (query == null) {
                     call.respond(HttpStatusCode.BadRequest)
                 } else {
@@ -132,12 +132,14 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<SendDocumentsRequest>("/api/workspace/{workspaceId}/document") { request ->
+        post<SendDocumentsRequest>("/api/workspace/document") { request ->
             val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val documentList = request.documents
+            val workspaceId = request.workspaceId
+            val documentList = request.documents.map { document ->
+                document.copy(workspaceId = workspaceId)
+            }
 
-            runIfMember(userId, workspaceId, writeopiaDb) {
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     if (documentList.isNotEmpty()) {
                         val addedToHub = DocumentsService.receiveDocuments(
@@ -146,6 +148,7 @@ fun Routing.documentsRoute(
                                     .toModel()
                                     .copy(lastSyncedAt = Clock.System.now())
                             },
+                            workspaceId = workspaceId,
                             writeopiaDb,
                             useAi
                         )
@@ -182,7 +185,7 @@ fun Routing.documentsRoute(
         val userId = getUserId() ?: ""
         val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-        runIfMember(userId, workspaceId, writeopiaDb) {
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
             val folder = DocumentsService.getFolderById(id, userId, writeopiaDb)
 
             if (folder != null) {
@@ -199,13 +202,15 @@ fun Routing.documentsRoute(
         }
     }
 
-    post<SendFoldersRequest>("/api/workspace/{workspaceId}/folder") { request ->
+    post<SendFoldersRequest>("/api/workspace/folder") { request ->
         val userId = getUserId() ?: ""
-        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val workspaceId = request.workspaceId
 
-        runIfMember(userId, workspaceId, writeopiaDb) {
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
             try {
-                val folderList = request.folders
+                val folderList = request.folders.map { folder ->
+                    folder.copy(workspaceId = workspaceId)
+                }
 
                 if (folderList.isNotEmpty()) {
                     val addedToHub = DocumentsService.receiveFolders(
@@ -241,11 +246,11 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<FolderDiffRequest>("/api/workspace/{workspaceId}/document/folder/diff") { folderDiff ->
+        post<FolderDiffRequest>("/api/workspace/document/folder/diff") { folderDiff ->
             val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val workspaceId = folderDiff.workspaceId
 
-            runIfMember(userId, workspaceId, writeopiaDb) {
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     println("loading folder diff")
                     println("user id: ${getUserId()}")
@@ -275,11 +280,11 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<WorkspaceDiffRequest>("/api/workspace/{workspaceId}/workspace/diff") { workspaceDiff ->
+        post<WorkspaceDiffRequest>("/api/workspace/diff") { workspaceDiff ->
             val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val workspaceId = workspaceDiff.workspaceId
 
-            runIfMember(userId, workspaceId, writeopiaDb) {
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     println("loading workspace diff")
                     println("user id: ${getUserId()}")
