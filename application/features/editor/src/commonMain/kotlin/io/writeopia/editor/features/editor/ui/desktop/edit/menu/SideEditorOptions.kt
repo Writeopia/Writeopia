@@ -60,6 +60,7 @@ import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.icons.WrSdkIcons
+import io.writeopia.ui.model.SelectionMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -73,6 +74,7 @@ fun SideEditorOptions(
     fontStyleSelected: () -> StateFlow<Font>,
     isEditableState: StateFlow<Boolean>,
     isFavorite: StateFlow<Boolean>,
+    selectedMetadataState: StateFlow<Set<SelectionMetadata>>,
     boldClick: (Span) -> Unit,
     setEditable: () -> Unit,
     checkItemClick: () -> Unit,
@@ -111,8 +113,11 @@ fun SideEditorOptions(
         properties = PopupProperties(
             focusable = false,
             dismissOnBackPress = false,
-            dismissOnClickOutside = false
+            dismissOnClickOutside = true
         ),
+        onDismissRequest = {
+            menuType = OptionsType.NONE
+        },
     ) {
         Row(modifier) {
             AnimatedVisibility(
@@ -129,9 +134,6 @@ fun SideEditorOptions(
                 Crossfade(
                     menuType,
                     animationSpec = tween(200),
-                    modifier = Modifier.pointerInput(Unit) {
-                        detectTapGestures { }
-                    }
                 ) { type ->
                     when (type) {
                         OptionsType.NONE -> {}
@@ -153,6 +155,7 @@ fun SideEditorOptions(
                         OptionsType.TEXT_OPTIONS -> {
                             TextOptions(
                                 isDarkTheme,
+                                selectedMetadataState,
                                 boldClick,
                                 checkItemClick,
                                 listItemClick,
@@ -478,15 +481,16 @@ private fun IconAndText(text: String, iconImage: ImageVector, click: () -> Unit)
 }
 
 @Composable
-private fun DecorationCommands(commands: Iterable<Pair<String, () -> Unit>>) {
+private fun DecorationCommands(commands: Iterable<DecorationButton>) {
     Column {
         commands.inBatches(2)
             .forEach { line ->
                 Row {
-                    line.forEach { (command, listener) ->
+                    line.forEach { (command, highlight, listener) ->
                         TextButton(
                             modifier = Modifier.weight(1F),
                             text = command,
+                            highlight = highlight,
                             onClick = listener
                         )
                     }
@@ -499,20 +503,35 @@ private fun DecorationCommands(commands: Iterable<Pair<String, () -> Unit>>) {
 private fun TextButton(
     modifier: Modifier = Modifier,
     text: String,
+    highlight: Boolean = false,
     paddingValues: PaddingValues = PaddingValues(
         horizontal = 8.dp,
         vertical = 8.dp
     ),
     onClick: () -> Unit,
 ) {
+    val shape = MaterialTheme.shapes.medium
+
     Text(
         modifier = modifier
             .padding(start = 2.dp, end = 2.dp, bottom = 3.dp)
-            .clip(MaterialTheme.shapes.medium)
+            .clip(shape)
             .clickable(onClick = onClick)
+            .border(
+                width = 1.dp, color = if (highlight) {
+                    WriteopiaTheme.colorScheme.optionsSelector
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+                shape = shape
+            )
             .background(
-                MaterialTheme.colorScheme.surfaceVariant,
-                MaterialTheme.shapes.medium
+                color = if (highlight) {
+                    WriteopiaTheme.colorScheme.optionsSelector
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+                shape = shape
             )
             .padding(paddingValues),
         text = text,
@@ -525,15 +544,37 @@ private fun TextButton(
 
 @Composable
 private fun InsertCommand(
+    selectedMetadataState: StateFlow<Set<SelectionMetadata>>,
     checkItemClick: () -> Unit,
     listItemClick: () -> Unit,
     codeBlockClick: () -> Unit,
 ) {
+    val selectedMetadata by selectedMetadataState.collectAsState()
+
     Row(modifier = Modifier.horizontalOptionsRow()) {
+        val shapeLeft = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)
+
         Icon(
             imageVector = WrSdkIcons.checkbox,
             contentDescription = "Check box",
             modifier = Modifier.weight(1F)
+                .border(
+                    width = 1.dp,
+                    shape = shapeLeft,
+                    color = if (selectedMetadata.contains(SelectionMetadata.CHECK_ITEM)) {
+                        WriteopiaTheme.colorScheme.optionsSelector
+                    } else {
+                        Color.Transparent
+                    }
+                )
+                .background(
+                    color = if (selectedMetadata.contains(SelectionMetadata.CHECK_ITEM)) {
+                        WriteopiaTheme.colorScheme.optionsSelector
+                    } else {
+                        Color.Transparent
+                    },
+                    shape = shapeLeft
+                )
                 .clip(RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp))
                 .size(32.dp)
                 .clickable(onClick = checkItemClick)
@@ -545,17 +586,51 @@ private fun InsertCommand(
             imageVector = WrSdkIcons.list,
             contentDescription = "List item",
             modifier = Modifier.weight(1F)
+                .border(
+                    width = 1.dp,
+                    color = if (selectedMetadata.contains(SelectionMetadata.UNORDERED_LIST_ITEM)) {
+                        WriteopiaTheme.colorScheme.optionsSelector
+                    } else {
+                        Color.Transparent
+                    }
+                )
+                .background(
+                    color = if (selectedMetadata.contains(SelectionMetadata.UNORDERED_LIST_ITEM)) {
+                        WriteopiaTheme.colorScheme.optionsSelector
+                    } else {
+                        Color.Transparent
+                    },
+                )
                 .size(32.dp)
                 .clickable(onClick = listItemClick)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             tint = MaterialTheme.colorScheme.onBackground
         )
 
+        val shapeRight = RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)
+
         Icon(
             imageVector = WrIcons.code,
             contentDescription = "Code block",
             modifier = Modifier.weight(1F)
-                .clip(RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp))
+                .border(
+                    width = 1.dp,
+                    shape = shapeRight,
+                    color = if (selectedMetadata.contains(SelectionMetadata.CODE_BLOCK)) {
+                        WriteopiaTheme.colorScheme.optionsSelector
+                    } else {
+                        Color.Transparent
+                    }
+                )
+                .background(
+                    color = if (selectedMetadata.contains(SelectionMetadata.CODE_BLOCK)) {
+                        WriteopiaTheme.colorScheme.optionsSelector
+                    } else {
+                        Color.Transparent
+                    },
+                    shape = shapeRight
+                )
+                .clip(shapeRight)
                 .size(32.dp)
                 .clickable(onClick = codeBlockClick)
                 .padding(horizontal = 8.dp, vertical = 7.dp),
@@ -617,6 +692,7 @@ internal fun FontOptions(
 @Composable
 private fun TextOptions(
     isDarkTheme: Boolean,
+    selectedMetadataState: StateFlow<Set<SelectionMetadata>>,
     spanClick: (Span) -> Unit,
     checkItemClick: () -> Unit,
     listItemClick: () -> Unit,
@@ -647,15 +723,21 @@ private fun TextOptions(
 
         Title(WrStrings.insert())
         Spacer(modifier = Modifier.height(4.dp))
-        InsertCommand(checkItemClick, listItemClick, codeBlockClick)
+        InsertCommand(selectedMetadataState, checkItemClick, listItemClick, codeBlockClick)
         Spacer(modifier = Modifier.height(8.dp))
 
         Title(WrStrings.decoration())
         Spacer(modifier = Modifier.height(4.dp))
 
+        val selectedMetadata by selectedMetadataState.collectAsState()
+
         DecorationCommands(
             commands = listOf(
-                WrStrings.box() to highLightBlockClick,
+                DecorationButton(
+                    text = WrStrings.box(),
+                    highlight = selectedMetadata.contains(SelectionMetadata.BOX),
+                    onClick = highLightBlockClick
+                )
 //                "Warning" to {},
 //                "Tip" to {},
 //                "Code" to {}
@@ -851,3 +933,9 @@ private enum class OptionsType {
     EXPORT,
     AI
 }
+
+private data class DecorationButton(
+    val text: String,
+    val highlight: Boolean,
+    val onClick: () -> Unit
+)

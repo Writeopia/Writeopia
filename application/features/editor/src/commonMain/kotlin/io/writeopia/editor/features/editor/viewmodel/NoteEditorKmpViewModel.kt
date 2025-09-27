@@ -44,6 +44,7 @@ import io.writeopia.ui.backstack.BackstackInform
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawState
+import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.ui.utils.Spans
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -177,6 +178,13 @@ class NoteEditorKmpViewModel(
     private val _showGlobalMenu = MutableStateFlow(false)
     override val showGlobalMenu = _showGlobalMenu.asStateFlow()
 
+    override val selectionMetadataState: StateFlow<Set<SelectionMetadata>> =
+        writeopiaManager.selectionMetadataState.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(),
+            emptySet()
+        )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private val aiConfigState = authRepository.listenForUser()
         .flatMapConcat { user ->
@@ -222,7 +230,11 @@ class NoteEditorKmpViewModel(
 
                 else -> EditState.TEXT
             }
-        }.stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(), initialValue = EditState.TEXT)
+        }.stateIn(
+            viewModelScope,
+            started = SharingStarted.WhileSubscribed(),
+            initialValue = EditState.TEXT
+        )
     }
 
     private val story: StateFlow<StoryState> = writeopiaManager.currentStory

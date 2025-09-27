@@ -9,6 +9,7 @@ import io.writeopia.ui.backstack.BackstackHandler
 import io.writeopia.ui.backstack.BackstackInform
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawState
+import io.writeopia.ui.model.SelectionMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -51,6 +52,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     val searchText: StateFlow<String>
 
     val hasSelectedLines: StateFlow<Boolean>
+
+    val selectionMetadataState: StateFlow<Set<SelectionMetadata>>
 
     fun showSearch()
 
