@@ -132,8 +132,8 @@ class DocumentSqlBeDao(
         )
     }
 
-    fun loadDocumentById(id: String, userId: String): Document? =
-        documentQueries?.selectById(id, userId)
+    fun loadDocumentById(id: String, workspaceId: String): Document? =
+        documentQueries?.selectById(id, workspaceId)
             ?.executeAsOneOrNull()
             ?.let { entity ->
                 Document(
