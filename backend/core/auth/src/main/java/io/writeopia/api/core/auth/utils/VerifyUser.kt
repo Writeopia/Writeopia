@@ -10,11 +10,12 @@ suspend fun RoutingContext.runIfMember(
     userId: String,
     workspaceId: String,
     writeopiaDb: WriteopiaDbBackend,
+    debug: Boolean = false,
     block: suspend () -> Unit
 ) {
     val shouldContinue = writeopiaDb.isUserInWorkspace(userId, workspaceId)
 
-    if (shouldContinue) {
+    if (shouldContinue || debug) {
         block()
     }
 
