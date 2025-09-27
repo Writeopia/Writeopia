@@ -37,6 +37,7 @@ import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.model.DrawState
 import io.writeopia.ui.model.DrawStory
 import io.writeopia.ui.model.SelectionInfo
+import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.ui.model.TextInput
 import io.writeopia.ui.modifiers.StepsModifier
 import kotlinx.coroutines.CoroutineDispatcher
@@ -247,6 +248,33 @@ class WriteopiaStateManager(
         }
 
     private var _initialized = false
+
+    val selectionMetadataState: Flow<Set<SelectionMetadata>> = _currentStory.map { storyState ->
+        val selection = storyState.selection.position
+        val step = storyState.stories[selection]
+
+        if (step == null) {
+            emptySet()
+        } else {
+            val fromType = SelectionMetadata.fromStoryType(step.type.number)
+            val result = mutableSetOf<SelectionMetadata>()
+
+            if (fromType != null) {
+                result.add(fromType)
+            }
+
+            step.tags.forEach { tagInfo ->
+                when (tagInfo.tag) {
+                    Tag.HIGH_LIGHT_BLOCK -> {
+                        result.add(SelectionMetadata.BOX)
+                    }
+                    else -> {}
+                }
+            }
+
+            result
+        }
+    }
 
     val isOnSelection: Boolean
         get() = _positionsOnEdit.value.isNotEmpty()

@@ -138,15 +138,15 @@ fun DesktopNoteEditorScreen(
         }
 
         SideEditorOptions(
-            modifier = Modifier
-                .padding(horizontal = 10.dp, vertical = 40.dp)
-                .align(Alignment.TopEnd),
-            isDarkTheme,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 40.dp),
+            alignment = Alignment.TopEnd,
+            isDarkTheme = isDarkTheme,
             fontStyleSelected = { noteEditorViewModel.fontFamily },
             currentModel = noteEditorViewModel.currentModel,
             models = noteEditorViewModel.models,
             isEditableState = noteEditorViewModel.isEditable,
             isFavorite = noteEditorViewModel.notFavorite,
+            selectedMetadataState = noteEditorViewModel.selectionMetadataState,
             boldClick = noteEditorViewModel::onAddSpanClick,
             setEditable = noteEditorViewModel::toggleEditable,
             checkItemClick = noteEditorViewModel::onAddCheckListClick,
