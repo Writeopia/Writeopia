@@ -124,4 +124,7 @@
   <string name="use_offline">Use in offline mode</string>
   <string name="ai_explanation">[Tab - accept; Esc - remove]</string>
   <string name="ai_model">AI Model</string>
+  <string name="title">Title</string>
+  <string name="subtitle">Subtitle</string>
+  <string name="heading">Heading</string>
 </resources>
