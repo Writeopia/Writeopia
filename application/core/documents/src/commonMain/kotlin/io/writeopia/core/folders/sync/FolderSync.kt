@@ -69,7 +69,7 @@ class FolderSync(
 //        println("Documents sent: ${documentsNotSent.joinToString(separator = "\n\n")}")
 
         // Send documents to backend
-        val resultSend = documentsApi.sendDocuments(documentsNotSent, authToken)
+        val resultSend = documentsApi.sendDocuments(documentsNotSent, workspaceId, authToken)
 
         if (resultSend is ResultData.Complete) {
             val now = Clock.System.now()

@@ -68,10 +68,14 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         }
     }
 
-    suspend fun sendDocuments(documents: List<Document>, token: String): ResultData<Unit> {
+    suspend fun sendDocuments(
+        documents: List<Document>,
+        workspaceId: String,
+        token: String
+    ): ResultData<Unit> {
         val response = client.post("$baseUrl/api/document") {
             contentType(ContentType.Application.Json)
-            setBody(SendDocumentsRequest(documents.map { it.toApi() }))
+            setBody(SendDocumentsRequest(documents.map { it.toApi() }, workspaceId))
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
@@ -83,10 +87,14 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         }
     }
 
-    suspend fun sendFolders(folders: List<Folder>, token: String): ResultData<Unit> {
+    suspend fun sendFolders(
+        folders: List<Folder>,
+        workspaceId: String,
+        token: String
+    ): ResultData<Unit> {
         val response = client.post("$baseUrl/api/folder") {
             contentType(ContentType.Application.Json)
-            setBody(SendFoldersRequest(folders.map { it.toApi() }))
+            setBody(SendFoldersRequest(folders.map { it.toApi() }, workspaceId))
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
