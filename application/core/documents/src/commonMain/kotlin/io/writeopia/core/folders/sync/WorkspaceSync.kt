@@ -50,9 +50,10 @@ class WorkspaceSync(
             )
 
             println("sending documents")
-            val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent, authToken)
+            val resultSendDocuments =
+                documentsApi.sendDocuments(documentsNotSent, workspaceId, authToken)
             println("sending folders")
-            val resultSendFolders = documentsApi.sendFolders(foldersNotSent, authToken)
+            val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId, authToken)
 
             if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
                 println("documents sent")
