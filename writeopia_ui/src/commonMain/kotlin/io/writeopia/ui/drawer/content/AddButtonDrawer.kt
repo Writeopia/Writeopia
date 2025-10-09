@@ -5,8 +5,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import com.composables.icons.lucide.Lucide
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -14,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.Plus
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.ui.drawer.StoryStepDrawer
@@ -33,7 +33,7 @@ class AddButtonDrawer : StoryStepDrawer {
                 modifier = Modifier.size(45.dp),
                 contentPadding = PaddingValues(1.dp)
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "", tint = Color.White)
+                Icon(imageVector = Lucide.Plus, contentDescription = "", tint = Color.White)
             }
         }
     }

@@ -9,12 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCut
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.outlined.FormatBold
-import androidx.compose.material.icons.outlined.FormatItalic
-import androidx.compose.material.icons.outlined.FormatUnderlined
+import com.composables.icons.lucide.Lucide
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -23,6 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.Bold
+import com.composables.icons.lucide.Italic
+import com.composables.icons.lucide.Scissors
+import com.composables.icons.lucide.Trash2
+import com.composables.icons.lucide.Underline
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.ui.icons.WrSdkIcons
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -63,7 +63,7 @@ fun EditionScreen(
                     }
                     .size(iconSize)
                     .padding(iconPadding),
-                imageVector = Icons.Outlined.FormatBold,
+                imageVector = Lucide.Bold,
                 contentDescription = "BOLD",
 //            contentDescription = stringResource(R.string.delete),
                 tint = tint
@@ -77,7 +77,7 @@ fun EditionScreen(
                     }
                     .size(iconSize)
                     .padding(iconPadding),
-                imageVector = Icons.Outlined.FormatItalic,
+                imageVector = Lucide.Italic,
                 contentDescription = "ITALIC",
 //            contentDescription = stringResource(R.string.delete),
                 tint = tint
@@ -93,7 +93,7 @@ fun EditionScreen(
                     }
                     .size(iconSize)
                     .padding(iconPadding),
-                imageVector = Icons.Outlined.FormatUnderlined,
+                imageVector = Lucide.Underline,
                 contentDescription = "UNDERLINE",
 //            contentDescription = stringResource(R.string.delete),
                 tint = tint
@@ -148,7 +148,7 @@ fun EditionScreen(
                     .clickable(onClick = onCut)
                     .size(iconSize)
                     .padding(iconPadding),
-                imageVector = Icons.Default.ContentCut,
+                imageVector = Lucide.Scissors,
                 contentDescription = "Cut",
                 tint = tint
             )
@@ -161,7 +161,7 @@ fun EditionScreen(
                     .clickable(onClick = onDelete)
                     .size(iconSize)
                     .padding(iconPadding),
-                imageVector = Icons.Default.DeleteOutline,
+                imageVector = Lucide.Trash2,
                 contentDescription = "Delete",
 //            contentDescription = stringResource(R.string.delete),
                 tint = tint
@@ -221,7 +221,7 @@ fun EditionScreenForText(
                     }
                     .size(iconSize)
                     .padding(iconPadding),
-                imageVector = Icons.Outlined.FormatBold,
+                imageVector = Lucide.Bold,
                 contentDescription = "BOLD",
 //            contentDescription = stringResource(R.string.delete),
                 tint = tint
@@ -235,7 +235,7 @@ fun EditionScreenForText(
                     }
                     .size(iconSize)
                     .padding(iconPadding),
-                imageVector = Icons.Outlined.FormatItalic,
+                imageVector = Lucide.Italic,
                 contentDescription = "ITALIC",
 //            contentDescription = stringResource(R.string.delete),
                 tint = tint
@@ -251,7 +251,7 @@ fun EditionScreenForText(
                     }
                     .size(iconSize)
                     .padding(iconPadding),
-                imageVector = Icons.Outlined.FormatUnderlined,
+                imageVector = Lucide.Underline,
                 contentDescription = "UNDERLINE",
 //            contentDescription = stringResource(R.string.delete),
                 tint = tint

@@ -6,8 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import com.composables.icons.lucide.Lucide
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.composables.icons.lucide.ChevronRight
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.notemenu.ui.screen.configuration.modifier.icon
 import kotlinx.coroutines.flow.StateFlow
@@ -77,7 +77,7 @@ private fun PathToCurrentDirectory(pathState: StateFlow<List<String>>) {
             if (i != size) {
                 Icon(
                     modifier = Modifier.size(20.dp),
-                    imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
+                    imageVector = Lucide.ChevronRight,
                     contentDescription = "Next",
                     tint = MaterialTheme.colorScheme.onBackground
                 )

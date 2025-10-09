@@ -8,8 +8,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DragIndicator
+import com.composables.icons.lucide.Lucide
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,6 +28,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.GripVertical
 import io.writeopia.sdk.model.draganddrop.DropInfo
 
 @Composable
@@ -97,7 +97,7 @@ fun DragCardTargetMobile(
                             })
                         }
                         .align(Alignment.TopEnd),
-                    imageVector = Icons.Default.DragIndicator,
+                    imageVector = Lucide.GripVertical,
                     contentDescription = "Drag icon",
                     tint = iconTintOnHover
                 )
