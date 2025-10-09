@@ -37,6 +37,7 @@ publish = "0.33.0"
 lifecycleViewmodelCompose = "2.8.4"
 
 [libraries]
+compose-icons-lucide = { module = "com.composables:icons-lucide", version = "1.0.0" }
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }
 activity-compose = { module = "androidx.activity:activity-compose" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }

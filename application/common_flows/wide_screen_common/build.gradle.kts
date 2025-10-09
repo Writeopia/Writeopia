@@ -64,6 +64,7 @@ kotlin {
                 implementation(compose.material3)
 
                 implementation(libs.compose.navigation)
+                implementation(libs.compose.icons.lucide)
             }
         }
 

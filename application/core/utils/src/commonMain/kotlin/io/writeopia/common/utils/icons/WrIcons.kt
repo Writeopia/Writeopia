@@ -1,16 +1,14 @@
 package io.writeopia.common.utils.icons
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.FormatColorReset
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.composables.icons.lucide.ArrowLeft
+import com.composables.icons.lucide.Bell
+import com.composables.icons.lucide.Ellipsis
+import com.composables.icons.lucide.EllipsisVertical
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Heart
+import com.composables.icons.lucide.Lock
+import com.composables.icons.lucide.User
 import io.writeopia.common.utils.icons.all.ALargeSmall
 import io.writeopia.common.utils.icons.all.ArrowDownAZ
 import io.writeopia.common.utils.icons.all.ArrowDownUp
@@ -66,9 +64,9 @@ object WrIcons {
 
     val search: ImageVector = Search
 
-    val notifications: ImageVector = Icons.Outlined.Notifications
+    val notifications: ImageVector = Lucide.Bell
 
-    val favorites: ImageVector = Icons.Outlined.FavoriteBorder
+    val favorites: ImageVector = Lucide.Heart
 
     val file: ImageVector = FileMinus
 
@@ -82,9 +80,9 @@ object WrIcons {
 
     val sync: ImageVector = FolderSync
 
-    val moreVert: ImageVector = Icons.Outlined.MoreVert
+    val moreVert: ImageVector = Lucide.EllipsisVertical
 
-    val moreHoriz: ImageVector = Icons.Outlined.MoreHoriz
+    val moreHoriz: ImageVector = Lucide.Ellipsis
 
     val sort: ImageVector = ArrowDownUp
 
@@ -120,11 +118,11 @@ object WrIcons {
 
     val close: ImageVector = X
 
-    val delete: ImageVector = Icons.Outlined.DeleteOutline
+    val delete: ImageVector = io.writeopia.common.utils.icons.all.Trash
 
-    val transparent: ImageVector = Icons.Outlined.FormatColorReset
+    val transparent: ImageVector = Zap
 
-    val person: ImageVector = Icons.Outlined.Person
+    val person: ImageVector = Lucide.User
 
     val smallArrowRight: ImageVector = ChevronRight
 
@@ -142,7 +140,7 @@ object WrIcons {
 
     val backArrowDesktop: ImageVector = MoveLeft
 
-    val backArrowAndroid: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
+    val backArrowAndroid: ImageVector = Lucide.ArrowLeft
 
     val play: ImageVector = Play
 
@@ -154,7 +152,7 @@ object WrIcons {
 
     val visibilityOff = EyeClosed
 
-    val lock = Icons.Outlined.Lock
+    val lock = Lucide.Lock
 
     val image = Image
 

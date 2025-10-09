@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -202,7 +200,7 @@ fun DesktopNoteEditorScreen(
 
         if (!isEditable) {
             Icon(
-                imageVector = Icons.Outlined.Lock,
+                imageVector = WrIcons.lock,
                 contentDescription = "Lock",
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.align(Alignment.TopStart).padding(8.dp)

@@ -6,8 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Movie
+import com.composables.icons.lucide.Lucide
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.video.videoFrameMillis
+import com.composables.icons.lucide.Clapperboard
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.ui.drawer.StoryStepDrawer
@@ -65,7 +65,7 @@ class VideoDrawer(private val containerModifier: Modifier? = null) : StoryStepDr
                         .padding(8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Movie,
+                        imageVector = Lucide.Clapperboard,
                         contentDescription = "",
                         tint = Color.White
                     )
