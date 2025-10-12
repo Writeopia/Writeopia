@@ -6,6 +6,7 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.ui.extensions.toSpanStyle
@@ -34,18 +35,13 @@ object Spans {
 
             spans.filter { spanInfo -> spanInfo.span == Span.LINK }
                 .forEach { spanInfo ->
-                    val start = min(lastPosition, spanInfo.start)
-                    val end = min(lastPosition, spanInfo.end)
-
-                    val style = SpanStyle(background = Color.Blue)
-
-                    this.addLink(
-                        LinkAnnotation.Url(
-                            spanInfo.extra["url"] ?: "",
-                            styles = TextLinkStyles(style)
+                    addStyle(
+                        SpanStyle(
+                            color = Color.Blue,
+                            textDecoration = TextDecoration.Underline
                         ),
-                        start,
-                        end
+                        min(lastPosition, spanInfo.start),
+                        min(lastPosition, spanInfo.end)
                     )
                 }
         }

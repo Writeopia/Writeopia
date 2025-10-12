@@ -359,8 +359,8 @@ private fun AddLinkScreen(
                     singleLine = true,
                     textStyle = MaterialTheme.typography
                         .bodyMedium
-                        .copy(color = MaterialTheme.colorScheme.onPrimary),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onPrimary)
+                        .copy(color = MaterialTheme.colorScheme.onBackground),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onBackground)
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -375,7 +375,7 @@ private fun AddLinkScreen(
                         }
                         .size(28.dp)
                         .padding(4.dp),
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         }
