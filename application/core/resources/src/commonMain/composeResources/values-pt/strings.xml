@@ -118,4 +118,7 @@
   <string name="use_offline">User offline</string>
   <string name="ai_explanation">[Tab - aceitar; Esc - remover]</string>
   <string name="ai_model">Modelo IA</string>
+  <string name="title">Título</string>
+  <string name="subtitle">Subtítulo</string>
+  <string name="heading">Cabeçalho</string>
 </resources>

@@ -47,6 +47,7 @@ import writeopia.application.core.resources.generated.resources.favorites
 import writeopia.application.core.resources.generated.resources.folder
 import writeopia.application.core.resources.generated.resources.font
 import writeopia.application.core.resources.generated.resources.general
+import writeopia.application.core.resources.generated.resources.heading
 import writeopia.application.core.resources.generated.resources.highlight
 import writeopia.application.core.resources.generated.resources.home
 import writeopia.application.core.resources.generated.resources.image
@@ -92,11 +93,13 @@ import writeopia.application.core.resources.generated.resources.sort_by_name
 import writeopia.application.core.resources.generated.resources.sort_by_update
 import writeopia.application.core.resources.generated.resources.sorting
 import writeopia.application.core.resources.generated.resources.start_now
+import writeopia.application.core.resources.generated.resources.subtitle
 import writeopia.application.core.resources.generated.resources.suggestions
 import writeopia.application.core.resources.generated.resources.summarize
 import writeopia.application.core.resources.generated.resources.system_theme
 import writeopia.application.core.resources.generated.resources.tap_to_start
 import writeopia.application.core.resources.generated.resources.text
+import writeopia.application.core.resources.generated.resources.title
 import writeopia.application.core.resources.generated.resources.type_new_password
 import writeopia.application.core.resources.generated.resources.url
 import writeopia.application.core.resources.generated.resources.version
@@ -411,4 +414,13 @@ object WrStrings {
 
     @Composable
     fun aiModel() = stringResource(Res.string.ai_model)
+
+    @Composable
+    fun title() = stringResource(Res.string.title)
+
+    @Composable
+    fun subtitle() = stringResource(Res.string.subtitle)
+
+    @Composable
+    fun heading() = stringResource(Res.string.heading)
 }

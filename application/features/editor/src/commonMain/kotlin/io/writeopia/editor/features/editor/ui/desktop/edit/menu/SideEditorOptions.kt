@@ -388,7 +388,7 @@ private fun TitleChanges(
     ) {
         TextButton(
             modifier = Modifier.weight(1F),
-            text = "Title",
+            text = WrStrings.title(),
             highlight = metadata.contains(
                 SelectionMetadata.TITLE
             ),
@@ -401,7 +401,7 @@ private fun TitleChanges(
 
         TextButton(
             modifier = Modifier.weight(1F),
-            text = "Subtitle",
+            text = WrStrings.subtitle(),
             highlight = metadata.contains(
                 SelectionMetadata.SUBTITLE
             ),
@@ -414,7 +414,7 @@ private fun TitleChanges(
 
         TextButton(
             modifier = Modifier.weight(1F),
-            text = "Heading",
+            text = WrStrings.heading(),
             highlight = metadata.contains(
                 SelectionMetadata.HEADING
             ),
