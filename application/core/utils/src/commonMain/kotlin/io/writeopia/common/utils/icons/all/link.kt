@@ -49,4 +49,3 @@ internal val Link: ImageVector
     }
 
 private var _link: ImageVector? = null
-
