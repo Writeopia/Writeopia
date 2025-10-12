@@ -4,7 +4,12 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-data class SpanInfo private constructor(val start: Int, val end: Int, val span: Span) {
+data class SpanInfo private constructor(
+    val start: Int,
+    val end: Int,
+    val span: Span,
+    val extra: Map<String, String> = emptyMap()
+) {
 
     operator fun plus(spanInfo: SpanInfo) =
         if (spanInfo.span == spanInfo.span) {
@@ -89,10 +94,15 @@ data class SpanInfo private constructor(val start: Int, val end: Int, val span: 
             return SpanInfo(start, end, span)
         }
 
-        fun create(start: Int, end: Int, span: Span): SpanInfo {
+        fun create(
+            start: Int,
+            end: Int,
+            span: Span,
+            extra: Map<String, String> = emptyMap()
+        ): SpanInfo {
             val (realStart, realEnd) = if (start <= end) start to end else end to start
 
-            return SpanInfo(realStart, realEnd, span)
+            return SpanInfo(realStart, realEnd, span, extra)
         }
     }
 }
@@ -112,6 +122,7 @@ enum class Span(val label: String) {
     HIGHLIGHT_YELLOW("HIGHLIGHT"),
     HIGHLIGHT_GREEN("HIGHLIGHT_GREEN"),
     HIGHLIGHT_RED("HIGHLIGHT_RED"),
+    LINK("LINK"),
     NONE("");
 
     fun toText() = this.label

@@ -1,7 +1,12 @@
 package io.writeopia.ui.utils
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
+import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.ui.extensions.toSpanStyle
 import kotlin.math.abs
@@ -18,13 +23,31 @@ object Spans {
         return buildAnnotatedString {
             append(text.takeIf { it?.isNotEmpty() == true } ?: "")
 
-            spans.forEach { spanInfo ->
-                addStyle(
-                    spanInfo.span.toSpanStyle(isDarkTheme),
-                    min(lastPosition, spanInfo.start),
-                    min(lastPosition, spanInfo.end)
-                )
-            }
+            spans.filter { spanInfo -> spanInfo.span != Span.LINK }
+                .forEach { spanInfo ->
+                    addStyle(
+                        spanInfo.span.toSpanStyle(isDarkTheme),
+                        min(lastPosition, spanInfo.start),
+                        min(lastPosition, spanInfo.end)
+                    )
+                }
+
+            spans.filter { spanInfo -> spanInfo.span == Span.LINK }
+                .forEach { spanInfo ->
+                    val start = min(lastPosition, spanInfo.start)
+                    val end = min(lastPosition, spanInfo.end)
+
+                    val style = SpanStyle(background = Color.Blue)
+
+                    this.addLink(
+                        LinkAnnotation.Url(
+                            spanInfo.extra["url"] ?: "",
+                            styles = TextLinkStyles(style)
+                        ),
+                        start,
+                        end
+                    )
+                }
         }
     }
 

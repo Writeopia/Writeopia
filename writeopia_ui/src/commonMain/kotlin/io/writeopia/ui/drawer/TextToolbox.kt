@@ -21,6 +21,7 @@ import io.writeopia.ui.components.EditionScreenForText
 fun TextToolbox(
     hasSelection: Boolean,
     onSpanClick: (Span) -> Unit = {},
+    onLinkClick: (String) -> Unit = {},
 ) {
     Popup(offset = IntOffset(0, -40)) {
         AnimatedVisibility(
@@ -37,6 +38,7 @@ fun TextToolbox(
                     .padding(horizontal = 8.dp, vertical = 2.dp),
                 iconSize = 28.dp,
                 onSpanClick = onSpanClick,
+                onLinkConfirm = onLinkClick,
             )
         }
     }
