@@ -130,8 +130,6 @@ class TextDrawer(
             }
         }
 
-        println("selection: $selection")
-
         val hasSelection = selection.start != selection.end
 
         val selectedLink by remember {
@@ -303,7 +301,6 @@ private fun LinkHandler(link: String, modifier: Modifier = Modifier) {
         }
     }
 }
-
 
 @Preview
 @Composable

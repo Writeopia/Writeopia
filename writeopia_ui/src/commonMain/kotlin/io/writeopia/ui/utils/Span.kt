@@ -8,7 +8,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.ui.extensions.toSpanStyle
-import kotlin.math.abs
 import kotlin.math.min
 
 object Spans {
@@ -46,9 +45,12 @@ object Spans {
     }
 
     fun recalculateSpans(spans: Set<SpanInfo>, position: Int, change: Int): Set<SpanInfo> {
-        val toChangeSize = spans.filterTo(mutableSetOf()) { span -> span.isInside(position) }
+        val toChangeSize = spans
+            .filterTo(mutableSetOf()) { span ->
+                span.isInside(position)
+            }
         val sizeChanged = toChangeSize.mapTo(mutableSetOf()) { span ->
-            if (abs(change) > 0) {
+            if (change > 0 && span.expandable() || change < 0) {
                 span.changeSize(change)
             } else {
                 span

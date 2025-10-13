@@ -38,6 +38,12 @@ data class SpanInfo private constructor(
 
     fun size() = abs(end - start)
 
+    fun expandable() =
+        when (this.span) {
+            Span.LINK -> false
+            else -> true
+        }
+
     fun intersection(spanInfo: SpanInfo): Intersection {
         val (smaller, bigger) = orderSpansBySize(this, spanInfo)
 
