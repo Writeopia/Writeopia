@@ -32,11 +32,20 @@ object Spans {
 
             spans.filter { spanInfo -> spanInfo.span == Span.LINK }
                 .forEach { spanInfo ->
-                    addStyle(
+                    val style = if (isDarkTheme) {
                         SpanStyle(
-                            color = Color.Blue,
+                            color = Color(0xFF9E9E9E),
                             textDecoration = TextDecoration.Underline
-                        ),
+                        )
+                    } else {
+                        SpanStyle(
+                            color = Color(0xFF9E9E9E),
+                            textDecoration = TextDecoration.Underline
+                        )
+                    }
+
+                    addStyle(
+                        style,
                         min(lastPosition, spanInfo.start),
                         min(lastPosition, spanInfo.end)
                     )
