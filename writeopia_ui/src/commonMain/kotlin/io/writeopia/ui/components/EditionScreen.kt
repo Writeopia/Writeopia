@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
 import androidx.compose.material.icons.outlined.FormatUnderlined
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -28,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -220,7 +222,11 @@ fun EditionScreenForText(
 
     Crossfade(showLinkScreen) { showLink ->
         if (showLink) {
-            AddLinkScreen(cancel = { showLinkScreen = false }, onLinkConfirm = onLinkConfirm)
+            AddLinkScreen(
+                modifier = Modifier,
+                cancel = { showLinkScreen = false },
+                onLinkConfirm = onLinkConfirm
+            )
         } else {
             Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
                 val tint = MaterialTheme.colorScheme.onPrimary
@@ -341,7 +347,7 @@ private fun AddLinkScreen(
     var linkText by remember { mutableStateOf("") }
 
     Popup(properties = PopupProperties(focusable = true), onDismissRequest = cancel) {
-        Card(modifier = modifier) {
+        Card(modifier = modifier.shadow(elevation = 6.dp, shape = CardDefaults.shape)) {
             Row(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
