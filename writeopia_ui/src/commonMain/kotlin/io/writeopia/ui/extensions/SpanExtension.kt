@@ -31,4 +31,5 @@ fun Span.toSpanStyle(isDarkTheme: Boolean): SpanStyle =
         }
 
         Span.NONE -> SpanStyle()
+        Span.LINK -> SpanStyle()
     }

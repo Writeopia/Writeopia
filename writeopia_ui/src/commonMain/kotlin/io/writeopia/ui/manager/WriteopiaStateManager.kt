@@ -906,7 +906,7 @@ class WriteopiaStateManager(
         _currentStory.value = currentStory.value.copy(lastEdit = LastEdit.Metadata)
     }
 
-    fun toggleSpan(span: Span) {
+    fun toggleSpan(span: Span, extra: String? = null) {
         if (isEditable) {
             val onEdit = _positionsOnEdit.value
 
@@ -915,16 +915,19 @@ class WriteopiaStateManager(
                     writeopiaManager.addSpanToStories(_currentStory.value, onEdit, span)
             } else {
                 val selection = currentStory.value.selection
-
                 val (start, end) = selection.sortedPositions()
 
                 _currentStory.value = writeopiaManager.addSpan(
                     _currentStory.value,
                     selection.position,
-                    SpanInfo.create(start, end, span)
+                    SpanInfo.create(start, end, span, extra)
                 )
             }
         }
+    }
+
+    fun onLinkSet(link: String) {
+        toggleSpan(Span.LINK, link)
     }
 
     fun addImage(imagePath: String, position: Int? = null) {

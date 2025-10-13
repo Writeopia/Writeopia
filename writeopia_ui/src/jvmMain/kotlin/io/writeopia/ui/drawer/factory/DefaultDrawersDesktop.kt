@@ -51,6 +51,7 @@ object DefaultDrawersDesktop : DrawersFactory {
             TextToolbox(
                 hasSelection = hasSelection,
                 onSpanClick = manager::toggleSpan,
+                onLinkClick = manager::onLinkSet
             )
         }
 

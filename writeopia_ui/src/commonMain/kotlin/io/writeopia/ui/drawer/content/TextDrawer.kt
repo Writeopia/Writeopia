@@ -1,13 +1,20 @@
 package io.writeopia.ui.drawer.content
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
@@ -27,12 +35,19 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.withLink
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
@@ -116,6 +131,17 @@ class TextDrawer(
         }
 
         val hasSelection = selection.start != selection.end
+
+        val selectedLink by remember {
+            derivedStateOf {
+                spans
+                    .filter { spanInfo -> spanInfo.span == Span.LINK }
+                    .firstOrNull { (start, end, _, _) ->
+                        selection.start >= start && selection.start <= end
+                    }
+                    ?.extra
+            }
+        }
 
         val realPosition by remember {
             derivedStateOf {
@@ -242,20 +268,39 @@ class TextDrawer(
             }
 
             textToolbox(hasSelection)
-//            Popup(offset = IntOffset(0, -70)) {
-//                AnimatedVisibility(
-//                    visible = hasSelection,
-//                    enter = fadeIn(animationSpec = tween(durationMillis = 150)),
-//                    exit = fadeOut(animationSpec = tween(durationMillis = 150))
-//                ) {
-//                    EditionScreen(
-//                        modifier = Modifier
-//                            .padding(bottom = 20.dp)
-//                            .clip(MaterialTheme.shapes.large)
-//                            .background(MaterialTheme.colorScheme.primary)
-//                    )
-//                }
-//            }
+
+            Popup(offset = IntOffset(0, -20)) {
+                AnimatedVisibility(
+                    visible = selectedLink != null,
+                    enter = fadeIn(animationSpec = tween(durationMillis = 150)),
+                    exit = fadeOut(animationSpec = tween(durationMillis = 150))
+                ) {
+                    LinkHandler(selectedLink ?: "")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LinkHandler(link: String, modifier: Modifier = Modifier) {
+    Card(modifier = modifier) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val text = buildAnnotatedString {
+                val fixedLink = link.takeIf { it.startsWith("http") } ?: "https://$link"
+
+                withLink(link = LinkAnnotation.Url(url = fixedLink)) {
+                    append(link)
+                }
+            }
+
+            BasicText(
+                text,
+                style = TextStyle.Default.copy(color = MaterialTheme.colorScheme.onBackground),
+            )
         }
     }
 }
