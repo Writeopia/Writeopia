@@ -906,7 +906,7 @@ class WriteopiaStateManager(
         _currentStory.value = currentStory.value.copy(lastEdit = LastEdit.Metadata)
     }
 
-    fun toggleSpan(span: Span, extra: Map<String, String> = emptyMap()) {
+    fun toggleSpan(span: Span, extra: String? = null) {
         if (isEditable) {
             val onEdit = _positionsOnEdit.value
 
@@ -927,7 +927,7 @@ class WriteopiaStateManager(
     }
 
     fun onLinkSet(link: String) {
-        toggleSpan(Span.LINK, mapOf("url" to link))
+        toggleSpan(Span.LINK, link)
     }
 
     fun addImage(imagePath: String, position: Int? = null) {

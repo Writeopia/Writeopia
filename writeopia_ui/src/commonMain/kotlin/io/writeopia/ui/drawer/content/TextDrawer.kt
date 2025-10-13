@@ -139,7 +139,7 @@ class TextDrawer(
                     .firstOrNull { (start, end, _, _) ->
                         selection.start >= start && selection.start <= end
                     }
-                    ?.extra["url"]
+                    ?.extra
             }
         }
 
@@ -297,7 +297,10 @@ private fun LinkHandler(link: String, modifier: Modifier = Modifier) {
                 }
             }
 
-            BasicText(text)
+            BasicText(
+                text,
+                style = TextStyle.Default.copy(color = MaterialTheme.colorScheme.onBackground),
+            )
         }
     }
 }

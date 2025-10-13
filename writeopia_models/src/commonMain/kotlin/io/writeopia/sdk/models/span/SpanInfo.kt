@@ -8,7 +8,7 @@ data class SpanInfo private constructor(
     val start: Int,
     val end: Int,
     val span: Span,
-    val extra: Map<String, String> = emptyMap()
+    val extra: String? = null
 ) {
 
     operator fun plus(spanInfo: SpanInfo) =
@@ -34,7 +34,7 @@ data class SpanInfo private constructor(
     /**
      *  Serialize the object as a string: "start:end:span"
      */
-    fun toText(): String = "$start:$end:${span.toText()}"
+    fun toText(): String = "$start:$end:${span.toText()}:$extra"
 
     fun size() = abs(end - start)
 
@@ -91,20 +91,21 @@ data class SpanInfo private constructor(
 
         fun fromString(serialized: String): SpanInfo {
             val parts = serialized.split(":")
-            require(parts.size == 3) { "Invalid serialized format" }
+            require(parts.size == 3 || parts.size == 4) { "Invalid serialized format" }
 
             val start = parts[0].toIntOrNull() ?: error("Invalid start value")
             val end = parts[1].toIntOrNull() ?: error("Invalid end value")
             val span = Span.textFromString(parts[2])
+            val extra = if (parts.size >= 4) parts[3] else null
 
-            return SpanInfo(start, end, span)
+            return SpanInfo(start, end, span, extra)
         }
 
         fun create(
             start: Int,
             end: Int,
             span: Span,
-            extra: Map<String, String> = emptyMap()
+            extra: String? = null
         ): SpanInfo {
             val (realStart, realEnd) = if (start <= end) start to end else end to start
 
