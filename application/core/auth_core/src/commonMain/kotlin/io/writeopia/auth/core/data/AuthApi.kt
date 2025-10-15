@@ -12,11 +12,14 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.workspace.Role
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
+import kotlinx.datetime.Instant
 
 class AuthApi(private val client: HttpClient, private val baseUrl: String) {
 
@@ -83,5 +86,28 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         } catch (e: Exception) {
             ResultData.Error(e)
         }
+    }
+
+    suspend fun getAvailableWorkspaces(token: String): ResultData<List<Workspace>> {
+        return ResultData.Complete(
+            listOf(
+                Workspace(
+                    id = "id1",
+                    userId = "someuser",
+                    name = "Workspace1",
+                    lastSync = Instant.Companion.DISTANT_PAST,
+                    selected = true,
+                    role = Role.ADMIN.value
+                ),
+                Workspace(
+                    id = "id2",
+                    userId = "someuser2",
+                    name = "Workspace2",
+                    lastSync = Instant.Companion.DISTANT_PAST,
+                    selected = false,
+                    role = Role.EDITOR.value
+                ),
+            )
+        )
     }
 }

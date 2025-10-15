@@ -224,6 +224,7 @@ fun DesktopApp(
                                     syncWorkspaceState = globalShellViewModel.lastWorkspaceSync,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
+                                    workspaces = globalShellViewModel.availableWorkspaces,
                                     selectWorkplacePath = globalShellViewModel::changeWorkspaceLocalPath,
                                     ollamaUrlChange = globalShellViewModel::changeOllamaUrl,
                                     ollamaModelChange = globalShellViewModel::selectOllamaModel,
