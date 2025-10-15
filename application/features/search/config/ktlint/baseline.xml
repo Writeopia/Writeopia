@@ -1,3 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="src/commonMain/kotlin/io/writeopia/features/search/DocumentsSearchScreen.kt">
+        <error line="40" column="25" source="standard:chain-method-continuation" />
+        <error line="46" column="21" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/features/search/api/SearchApi.kt">
+        <error line="13" column="17" source="standard:class-signature" />
+        <error line="13" column="49" source="standard:class-signature" />
+        <error line="13" column="76" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/features/search/repository/SearchRepository.kt">
+        <error line="64" column="9" source="standard:chain-method-continuation" />
+        <error line="73" column="27" source="standard:class-signature" />
+        <error line="73" column="43" source="standard:class-signature" />
+        <error line="73" column="60" source="standard:class-signature" />
+        <error line="75" column="29" source="standard:class-signature" />
+        <error line="75" column="45" source="standard:class-signature" />
+        <error line="75" column="62" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/features/search/ui/SearchDialog.kt">
+        <error line="117" column="44" source="standard:chain-method-continuation" />
+        <error line="123" column="29" source="standard:chain-method-continuation" />
+        <error line="147" column="44" source="standard:chain-method-continuation" />
+        <error line="153" column="29" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/features/search/ui/SearchKmpViewModel.kt">
+        <error line="18" column="22" source="standard:class-signature" />
+        <error line="18" column="22" source="standard:class-signature" />
+    </file>
 </baseline>

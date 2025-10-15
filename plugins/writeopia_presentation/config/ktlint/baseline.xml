@@ -1,3 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/presentation/parse/PresentationParser.kt">
+        <error line="28" column="31" source="standard:chain-method-continuation" />
+    </file>
 </baseline>

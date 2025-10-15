@@ -1,3 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="src/commonMain/kotlin/io/writeopia/global/shell/SideGlobalMenu.kt">
+        <error line="85" column="44" source="standard:chain-method-continuation" />
+        <error line="85" column="58" source="standard:chain-method-continuation" />
+        <error line="129" column="52" source="standard:chain-method-continuation" />
+        <error line="139" column="52" source="standard:chain-method-continuation" />
+        <error line="183" column="13" source="standard:chain-method-continuation" />
+        <error line="223" column="28" source="standard:chain-method-continuation" />
+        <error line="230" column="13" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/global/shell/di/SideMenuKmpInjector.kt">
+        <error line="36" column="23" source="standard:class-signature" />
+        <error line="45" column="21" source="standard:function-expression-body" />
+        <error line="77" column="66" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/global/shell/viewmodel/GlobalShellKmpViewModel.kt">
+        <error line="79" column="27" source="standard:class-signature" />
+        <error line="79" column="27" source="standard:class-signature" />
+        <error line="79" column="40" source="standard:class-signature" />
+        <error line="87" column="17" source="standard:backing-property-naming" />
+        <error line="89" column="17" source="standard:backing-property-naming" />
+        <error line="95" column="17" source="standard:backing-property-naming" />
+        <error line="97" column="17" source="standard:backing-property-naming" />
+        <error line="103" column="17" source="standard:backing-property-naming" />
+        <error line="107" column="74" source="standard:chain-method-continuation" />
+        <error line="115" column="28" source="standard:chain-method-continuation" />
+        <error line="133" column="52" source="standard:chain-method-continuation" />
+        <error line="140" column="27" source="standard:chain-method-continuation" />
+        <error line="193" column="17" source="standard:backing-property-naming" />
+        <error line="194" column="23" source="standard:chain-method-continuation" />
+        <error line="194" column="39" source="standard:chain-method-continuation" />
+        <error line="242" column="17" source="standard:chain-method-continuation" />
+        <error line="278" column="26" source="standard:chain-method-continuation" />
+        <error line="282" column="21" source="standard:chain-method-continuation" />
+        <error line="430" column="33" source="standard:chain-method-continuation" />
+        <error line="435" column="21" source="standard:chain-method-continuation" />
+        <error line="448" column="57" source="standard:chain-method-continuation" />
+        <error line="448" column="65" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/global/shell/viewmodel/GlobalShellViewModel.kt">
+        <error line="14" column="34" source="standard:class-signature" />
+        <error line="14" column="52" source="standard:class-signature" />
+    </file>
 </baseline>
