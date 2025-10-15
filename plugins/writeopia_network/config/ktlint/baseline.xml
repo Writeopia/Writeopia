@@ -1,3 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/network/notes/NotesApi.kt">
+        <error line="18" column="16" source="standard:class-signature" />
+        <error line="18" column="48" source="standard:class-signature" />
+        <error line="18" column="75" source="standard:class-signature" />
+        <error line="23" column="46" source="standard:function-expression-body" />
+        <error line="24" column="22" source="standard:chain-method-continuation" />
+        <error line="29" column="61" source="standard:function-expression-body" />
+        <error line="30" column="22" source="standard:chain-method-continuation" />
+        <error line="32" column="17" source="standard:chain-method-continuation" />
+    </file>
 </baseline>
