@@ -41,6 +41,7 @@
         <error line="32" column="50" source="standard:argument-list-wrapping" />
         <error line="32" column="56" source="standard:wrapping" />
         <error line="32" column="56" source="standard:argument-list-wrapping" />
+        <error line="32" column="87" source="standard:chain-method-continuation" />
         <error line="33" column="1" source="standard:indent" />
         <error line="34" column="1" source="standard:indent" />
         <error line="35" column="1" source="standard:indent" />
@@ -54,6 +55,7 @@
         <error line="37" column="50" source="standard:argument-list-wrapping" />
         <error line="37" column="56" source="standard:wrapping" />
         <error line="37" column="56" source="standard:argument-list-wrapping" />
+        <error line="37" column="87" source="standard:chain-method-continuation" />
         <error line="38" column="1" source="standard:indent" />
         <error line="39" column="1" source="standard:indent" />
         <error line="40" column="1" source="standard:indent" />
@@ -79,6 +81,7 @@
         <error line="54" column="50" source="standard:argument-list-wrapping" />
         <error line="54" column="56" source="standard:wrapping" />
         <error line="54" column="56" source="standard:argument-list-wrapping" />
+        <error line="54" column="87" source="standard:chain-method-continuation" />
         <error line="55" column="1" source="standard:indent" />
         <error line="56" column="1" source="standard:indent" />
         <error line="57" column="1" source="standard:indent" />
@@ -92,6 +95,7 @@
         <error line="59" column="50" source="standard:argument-list-wrapping" />
         <error line="59" column="56" source="standard:wrapping" />
         <error line="59" column="56" source="standard:argument-list-wrapping" />
+        <error line="59" column="87" source="standard:chain-method-continuation" />
         <error line="60" column="1" source="standard:indent" />
         <error line="61" column="1" source="standard:indent" />
         <error line="62" column="1" source="standard:indent" />
@@ -238,225 +242,637 @@
         <error line="41" column="1" source="standard:indent" />
         <error line="44" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
+    <file name="src/androidMain/kotlin/io/writeopia/ui/drawer/content/VideoDrawer.kt">
+        <error line="29" column="19" source="standard:class-signature" />
+        <error line="29" column="66" source="standard:class-signature" />
+        <error line="42" column="21" source="standard:chain-method-continuation" />
+        <error line="44" column="43" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/androidMain/kotlin/io/writeopia/ui/drawer/factory/DefaultDrawersAndroid.kt">
+        <error line="69" column="29" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/backstack/SnapshotBackstackManager.kt">
+        <error line="103" column="53" source="standard:function-expression-body" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/components/EditionScreen.kt">
+        <error line="76" column="21" source="standard:chain-method-continuation" />
+        <error line="90" column="21" source="standard:chain-method-continuation" />
+        <error line="106" column="21" source="standard:chain-method-continuation" />
+        <error line="244" column="29" source="standard:chain-method-continuation" />
+        <error line="258" column="29" source="standard:chain-method-continuation" />
+        <error line="274" column="29" source="standard:chain-method-continuation" />
+        <error line="290" column="29" source="standard:chain-method-continuation" />
+        <error line="377" column="25" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/components/SwipeBox.kt">
+        <error line="103" column="13" source="standard:chain-method-continuation" />
+        <error line="107" column="13" source="standard:chain-method-continuation" />
+        <error line="112" column="13" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/components/multiselection/DragSelectionBox.kt">
+        <error line="79" column="40" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/components/multiselection/SelectableByDrag.kt">
+        <error line="14" column="69" source="standard:function-expression-body" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/DragCardTargetMobile.kt">
         <error line="62" column="13" source="standard:chain-wrapping" />
+        <error line="62" column="16" source="standard:condition-wrapping" />
+        <error line="99" column="25" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/DragRowTargetMobile.kt">
+        <error line="72" column="36" source="standard:chain-method-continuation" />
+        <error line="136" column="40" source="standard:condition-wrapping" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/DragTarget.kt">
+        <error line="37" column="13" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/DraggableScreen.kt">
         <error line="14" column="1" source="standard:no-unused-imports" />
         <error line="16" column="1" source="standard:no-unused-imports" />
+        <error line="39" column="25" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/DropTargetHorizontalDivision.kt">
         <error line="62" column="14" source="standard:enum-wrapping" />
         <error line="62" column="25" source="standard:enum-wrapping" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/SizeDp.kt">
+        <error line="5" column="19" source="standard:class-signature" />
+        <error line="5" column="34" source="standard:class-signature" />
+        <error line="5" column="48" source="standard:class-signature" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/external/HandleImageDrop.kt">
         <error line="13" column="1" source="standard:no-consecutive-blank-lines" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/AiAnswerDrawer.kt">
+        <error line="186" column="37" source="standard:chain-method-continuation" />
+        <error line="199" column="37" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/DesktopTextItemDrawer.kt">
+        <error line="138" column="29" source="standard:chain-method-continuation" />
+        <error line="162" column="40" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/DocumentLinkDrawer.kt">
+        <error line="126" column="48" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/EquationDrawer.kt">
+        <error line="141" column="56" source="standard:chain-method-continuation" />
+        <error line="160" column="64" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/HeaderDrawer.kt">
+        <error line="97" column="21" source="standard:chain-method-continuation" />
+        <error line="166" column="25" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/ImageDrawer.kt">
+        <error line="128" column="57" source="standard:chain-method-continuation" />
+        <error line="170" column="33" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/LastEmptySpace.kt">
+        <error line="54" column="21" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/SpaceDrawer.kt">
+        <error line="59" column="21" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/SwipeMessageDrawer.kt">
+        <error line="75" column="20" source="standard:function-expression-body" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/TextDrawer.kt">
+        <error line="142" column="21" source="standard:chain-method-continuation" />
+        <error line="196" column="25" source="standard:chain-method-continuation" />
+        <error line="207" column="25" source="standard:chain-method-continuation" />
+        <error line="210" column="25" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/decorations/TagDecoration.kt">
         <error line="13" column="82" source="standard:function-return-type-spacing" />
         <error line="13" column="83" source="standard:colon-spacing" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/factory/CommonDrawers.kt">
+        <error line="107" column="40" source="standard:chain-method-continuation" />
+        <error line="112" column="25" source="standard:chain-method-continuation" />
+        <error line="324" column="15" source="standard:function-expression-body" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/factory/KeyEventListenerFactory.kt">
+        <error line="21" column="90" source="standard:function-expression-body" />
+        <error line="72" column="90" source="standard:function-expression-body" />
         <error line="136" column="5" source="standard:chain-wrapping" />
+        <error line="136" column="8" source="standard:condition-wrapping" />
         <error line="137" column="5" source="standard:chain-wrapping" />
+        <error line="137" column="8" source="standard:condition-wrapping" />
         <error line="138" column="5" source="standard:chain-wrapping" />
+        <error line="138" column="8" source="standard:condition-wrapping" />
         <error line="142" column="9" source="standard:chain-wrapping" />
+        <error line="142" column="12" source="standard:condition-wrapping" />
         <error line="143" column="9" source="standard:chain-wrapping" />
+        <error line="143" column="12" source="standard:condition-wrapping" />
         <error line="147" column="9" source="standard:chain-wrapping" />
+        <error line="147" column="12" source="standard:condition-wrapping" />
         <error line="148" column="9" source="standard:chain-wrapping" />
+        <error line="148" column="12" source="standard:condition-wrapping" />
         <error line="152" column="9" source="standard:chain-wrapping" />
+        <error line="152" column="12" source="standard:condition-wrapping" />
         <error line="153" column="9" source="standard:chain-wrapping" />
+        <error line="153" column="12" source="standard:condition-wrapping" />
         <error line="157" column="9" source="standard:chain-wrapping" />
+        <error line="157" column="12" source="standard:condition-wrapping" />
         <error line="158" column="9" source="standard:chain-wrapping" />
+        <error line="158" column="12" source="standard:condition-wrapping" />
         <error line="162" column="1" source="standard:no-consecutive-blank-lines" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/preview/ImagePreviewDrawer.kt">
+        <error line="27" column="33" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/edition/TextCommandHandler.kt">
+        <error line="44" column="81" source="standard:function-expression-body" />
+        <error line="199" column="15" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Check.kt">
         <error line="13" column="1" source="standard:indent" />
+        <error line="13" column="1" source="standard:indent" />
+        <error line="14" column="1" source="standard:indent" />
         <error line="14" column="1" source="standard:indent" />
         <error line="15" column="1" source="standard:indent" />
+        <error line="15" column="1" source="standard:indent" />
+        <error line="16" column="1" source="standard:indent" />
         <error line="16" column="1" source="standard:indent" />
         <error line="17" column="1" source="standard:indent" />
+        <error line="17" column="1" source="standard:indent" />
+        <error line="17" column="23" source="standard:chain-method-continuation" />
+        <error line="24" column="1" source="standard:indent" />
         <error line="24" column="1" source="standard:indent" />
         <error line="25" column="1" source="standard:indent" />
+        <error line="25" column="1" source="standard:indent" />
+        <error line="26" column="1" source="standard:indent" />
         <error line="26" column="1" source="standard:indent" />
         <error line="27" column="1" source="standard:indent" />
+        <error line="27" column="1" source="standard:indent" />
+        <error line="28" column="1" source="standard:indent" />
         <error line="28" column="1" source="standard:indent" />
         <error line="29" column="1" source="standard:indent" />
+        <error line="29" column="1" source="standard:indent" />
+        <error line="30" column="1" source="standard:indent" />
         <error line="30" column="1" source="standard:indent" />
         <error line="31" column="1" source="standard:indent" />
+        <error line="31" column="1" source="standard:indent" />
+        <error line="32" column="1" source="standard:indent" />
         <error line="32" column="1" source="standard:indent" />
         <error line="33" column="1" source="standard:indent" />
+        <error line="33" column="1" source="standard:indent" />
+        <error line="34" column="1" source="standard:indent" />
         <error line="34" column="1" source="standard:indent" />
         <error line="35" column="1" source="standard:indent" />
+        <error line="35" column="1" source="standard:indent" />
+        <error line="36" column="1" source="standard:indent" />
         <error line="36" column="1" source="standard:indent" />
         <error line="37" column="1" source="standard:indent" />
+        <error line="37" column="1" source="standard:indent" />
+        <error line="38" column="1" source="standard:indent" />
         <error line="38" column="1" source="standard:indent" />
         <error line="39" column="1" source="standard:indent" />
+        <error line="39" column="1" source="standard:indent" />
+        <error line="40" column="1" source="standard:indent" />
         <error line="40" column="1" source="standard:indent" />
         <error line="41" column="1" source="standard:indent" />
+        <error line="41" column="1" source="standard:indent" />
+        <error line="43" column="13" source="standard:backing-property-naming" />
+        <error line="43" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/ChevronDown.kt">
+        <error line="20" column="35" source="standard:chain-method-continuation" />
+        <error line="46" column="13" source="standard:backing-property-naming" />
+        <error line="46" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/ChevronRight.kt">
+        <error line="20" column="36" source="standard:chain-method-continuation" />
+        <error line="46" column="13" source="standard:backing-property-naming" />
+        <error line="46" column="13" source="standard:backing-property-naming" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/ChevronUp.kt">
         <error line="16" column="1" source="standard:indent" />
+        <error line="16" column="1" source="standard:indent" />
+        <error line="17" column="1" source="standard:indent" />
         <error line="17" column="1" source="standard:indent" />
         <error line="18" column="1" source="standard:indent" />
+        <error line="18" column="1" source="standard:indent" />
+        <error line="19" column="1" source="standard:indent" />
         <error line="19" column="1" source="standard:indent" />
         <error line="20" column="1" source="standard:indent" />
+        <error line="20" column="1" source="standard:indent" />
+        <error line="20" column="27" source="standard:chain-method-continuation" />
+        <error line="27" column="1" source="standard:indent" />
         <error line="27" column="1" source="standard:indent" />
         <error line="28" column="1" source="standard:indent" />
+        <error line="28" column="1" source="standard:indent" />
+        <error line="29" column="1" source="standard:indent" />
         <error line="29" column="1" source="standard:indent" />
         <error line="30" column="1" source="standard:indent" />
+        <error line="30" column="1" source="standard:indent" />
+        <error line="31" column="1" source="standard:indent" />
         <error line="31" column="1" source="standard:indent" />
         <error line="32" column="1" source="standard:indent" />
+        <error line="32" column="1" source="standard:indent" />
+        <error line="33" column="1" source="standard:indent" />
         <error line="33" column="1" source="standard:indent" />
         <error line="34" column="1" source="standard:indent" />
+        <error line="34" column="1" source="standard:indent" />
+        <error line="35" column="1" source="standard:indent" />
         <error line="35" column="1" source="standard:indent" />
         <error line="36" column="1" source="standard:indent" />
+        <error line="36" column="1" source="standard:indent" />
+        <error line="37" column="1" source="standard:indent" />
         <error line="37" column="1" source="standard:indent" />
         <error line="38" column="1" source="standard:indent" />
+        <error line="38" column="1" source="standard:indent" />
+        <error line="39" column="1" source="standard:indent" />
         <error line="39" column="1" source="standard:indent" />
         <error line="40" column="1" source="standard:indent" />
+        <error line="40" column="1" source="standard:indent" />
+        <error line="41" column="1" source="standard:indent" />
         <error line="41" column="1" source="standard:indent" />
         <error line="42" column="1" source="standard:indent" />
+        <error line="42" column="1" source="standard:indent" />
+        <error line="43" column="1" source="standard:indent" />
         <error line="43" column="1" source="standard:indent" />
         <error line="44" column="1" source="standard:indent" />
+        <error line="44" column="1" source="standard:indent" />
+        <error line="46" column="13" source="standard:backing-property-naming" />
+        <error line="46" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Files.kt">
+        <error line="20" column="29" source="standard:chain-method-continuation" />
+        <error line="84" column="13" source="standard:backing-property-naming" />
+        <error line="84" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Link.kt">
+        <error line="16" column="20" source="standard:chain-method-continuation" />
+        <error line="47" column="18" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/List.kt">
+        <error line="20" column="28" source="standard:chain-method-continuation" />
+        <error line="115" column="13" source="standard:backing-property-naming" />
+        <error line="115" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Pencil.kt">
+        <error line="18" column="30" source="standard:chain-method-continuation" />
+        <error line="55" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/SquareCheck.kt">
+        <error line="20" column="35" source="standard:chain-method-continuation" />
+        <error line="68" column="13" source="standard:backing-property-naming" />
+        <error line="68" column="13" source="standard:backing-property-naming" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/WandSparkles.kt">
         <error line="16" column="1" source="standard:indent" />
+        <error line="16" column="1" source="standard:indent" />
+        <error line="17" column="1" source="standard:indent" />
         <error line="17" column="1" source="standard:indent" />
         <error line="18" column="1" source="standard:indent" />
+        <error line="18" column="1" source="standard:indent" />
+        <error line="19" column="1" source="standard:indent" />
         <error line="19" column="1" source="standard:indent" />
         <error line="20" column="1" source="standard:indent" />
+        <error line="20" column="1" source="standard:indent" />
+        <error line="20" column="30" source="standard:chain-method-continuation" />
+        <error line="27" column="1" source="standard:indent" />
         <error line="27" column="1" source="standard:indent" />
         <error line="28" column="1" source="standard:indent" />
+        <error line="28" column="1" source="standard:indent" />
+        <error line="29" column="1" source="standard:indent" />
         <error line="29" column="1" source="standard:indent" />
         <error line="30" column="1" source="standard:indent" />
+        <error line="30" column="1" source="standard:indent" />
+        <error line="31" column="1" source="standard:indent" />
         <error line="31" column="1" source="standard:indent" />
         <error line="32" column="1" source="standard:indent" />
+        <error line="32" column="1" source="standard:indent" />
+        <error line="33" column="1" source="standard:indent" />
         <error line="33" column="1" source="standard:indent" />
         <error line="34" column="1" source="standard:indent" />
+        <error line="34" column="1" source="standard:indent" />
+        <error line="35" column="1" source="standard:indent" />
         <error line="35" column="1" source="standard:indent" />
         <error line="36" column="1" source="standard:indent" />
+        <error line="36" column="1" source="standard:indent" />
+        <error line="37" column="1" source="standard:indent" />
         <error line="37" column="1" source="standard:indent" />
         <error line="38" column="1" source="standard:indent" />
+        <error line="38" column="1" source="standard:indent" />
+        <error line="39" column="1" source="standard:indent" />
         <error line="39" column="1" source="standard:indent" />
         <error line="40" column="1" source="standard:indent" />
+        <error line="40" column="1" source="standard:indent" />
+        <error line="41" column="1" source="standard:indent" />
         <error line="41" column="1" source="standard:indent" />
         <error line="42" column="1" source="standard:indent" />
+        <error line="42" column="1" source="standard:indent" />
+        <error line="43" column="1" source="standard:indent" />
         <error line="43" column="1" source="standard:indent" />
         <error line="44" column="1" source="standard:indent" />
+        <error line="44" column="1" source="standard:indent" />
+        <error line="45" column="1" source="standard:indent" />
         <error line="45" column="1" source="standard:indent" />
         <error line="46" column="1" source="standard:indent" />
+        <error line="46" column="1" source="standard:indent" />
+        <error line="47" column="1" source="standard:indent" />
         <error line="47" column="1" source="standard:indent" />
         <error line="48" column="1" source="standard:indent" />
+        <error line="48" column="1" source="standard:indent" />
+        <error line="49" column="1" source="standard:indent" />
         <error line="49" column="1" source="standard:indent" />
         <error line="50" column="1" source="standard:indent" />
+        <error line="50" column="1" source="standard:indent" />
+        <error line="51" column="1" source="standard:indent" />
         <error line="51" column="1" source="standard:indent" />
         <error line="52" column="1" source="standard:indent" />
+        <error line="52" column="1" source="standard:indent" />
+        <error line="53" column="1" source="standard:indent" />
         <error line="53" column="1" source="standard:indent" />
         <error line="54" column="1" source="standard:indent" />
+        <error line="54" column="1" source="standard:indent" />
+        <error line="55" column="1" source="standard:indent" />
         <error line="55" column="1" source="standard:indent" />
         <error line="56" column="1" source="standard:indent" />
+        <error line="56" column="1" source="standard:indent" />
+        <error line="57" column="1" source="standard:indent" />
         <error line="57" column="1" source="standard:indent" />
         <error line="58" column="1" source="standard:indent" />
+        <error line="58" column="1" source="standard:indent" />
+        <error line="59" column="1" source="standard:indent" />
         <error line="59" column="1" source="standard:indent" />
         <error line="60" column="1" source="standard:indent" />
+        <error line="60" column="1" source="standard:indent" />
+        <error line="61" column="1" source="standard:indent" />
         <error line="61" column="1" source="standard:indent" />
         <error line="62" column="1" source="standard:indent" />
+        <error line="62" column="1" source="standard:indent" />
+        <error line="63" column="1" source="standard:indent" />
         <error line="63" column="1" source="standard:indent" />
         <error line="64" column="1" source="standard:indent" />
+        <error line="64" column="1" source="standard:indent" />
+        <error line="65" column="1" source="standard:indent" />
         <error line="65" column="1" source="standard:indent" />
         <error line="66" column="1" source="standard:indent" />
+        <error line="66" column="1" source="standard:indent" />
+        <error line="67" column="1" source="standard:indent" />
         <error line="67" column="1" source="standard:indent" />
         <error line="68" column="1" source="standard:indent" />
+        <error line="68" column="1" source="standard:indent" />
+        <error line="69" column="1" source="standard:indent" />
         <error line="69" column="1" source="standard:indent" />
         <error line="70" column="1" source="standard:indent" />
+        <error line="70" column="1" source="standard:indent" />
+        <error line="71" column="1" source="standard:indent" />
         <error line="71" column="1" source="standard:indent" />
         <error line="72" column="1" source="standard:indent" />
+        <error line="72" column="1" source="standard:indent" />
+        <error line="73" column="1" source="standard:indent" />
         <error line="73" column="1" source="standard:indent" />
         <error line="74" column="1" source="standard:indent" />
+        <error line="74" column="1" source="standard:indent" />
+        <error line="75" column="1" source="standard:indent" />
         <error line="75" column="1" source="standard:indent" />
         <error line="76" column="1" source="standard:indent" />
+        <error line="76" column="1" source="standard:indent" />
+        <error line="77" column="1" source="standard:indent" />
         <error line="77" column="1" source="standard:indent" />
         <error line="78" column="1" source="standard:indent" />
+        <error line="78" column="1" source="standard:indent" />
+        <error line="79" column="1" source="standard:indent" />
         <error line="79" column="1" source="standard:indent" />
         <error line="80" column="1" source="standard:indent" />
+        <error line="80" column="1" source="standard:indent" />
+        <error line="81" column="1" source="standard:indent" />
         <error line="81" column="1" source="standard:indent" />
         <error line="82" column="1" source="standard:indent" />
+        <error line="82" column="1" source="standard:indent" />
+        <error line="83" column="1" source="standard:indent" />
         <error line="83" column="1" source="standard:indent" />
         <error line="84" column="1" source="standard:indent" />
+        <error line="84" column="1" source="standard:indent" />
+        <error line="85" column="1" source="standard:indent" />
         <error line="85" column="1" source="standard:indent" />
         <error line="86" column="1" source="standard:indent" />
+        <error line="86" column="1" source="standard:indent" />
+        <error line="87" column="1" source="standard:indent" />
         <error line="87" column="1" source="standard:indent" />
         <error line="88" column="1" source="standard:indent" />
+        <error line="88" column="1" source="standard:indent" />
+        <error line="89" column="1" source="standard:indent" />
         <error line="89" column="1" source="standard:indent" />
         <error line="90" column="1" source="standard:indent" />
+        <error line="90" column="1" source="standard:indent" />
+        <error line="91" column="1" source="standard:indent" />
         <error line="91" column="1" source="standard:indent" />
         <error line="92" column="1" source="standard:indent" />
+        <error line="92" column="1" source="standard:indent" />
+        <error line="93" column="1" source="standard:indent" />
         <error line="93" column="1" source="standard:indent" />
         <error line="94" column="1" source="standard:indent" />
+        <error line="94" column="1" source="standard:indent" />
+        <error line="95" column="1" source="standard:indent" />
         <error line="95" column="1" source="standard:indent" />
         <error line="96" column="1" source="standard:indent" />
+        <error line="96" column="1" source="standard:indent" />
+        <error line="97" column="1" source="standard:indent" />
         <error line="97" column="1" source="standard:indent" />
         <error line="98" column="1" source="standard:indent" />
+        <error line="98" column="1" source="standard:indent" />
+        <error line="99" column="1" source="standard:indent" />
         <error line="99" column="1" source="standard:indent" />
         <error line="100" column="1" source="standard:indent" />
+        <error line="100" column="1" source="standard:indent" />
+        <error line="101" column="1" source="standard:indent" />
         <error line="101" column="1" source="standard:indent" />
         <error line="102" column="1" source="standard:indent" />
+        <error line="102" column="1" source="standard:indent" />
+        <error line="103" column="1" source="standard:indent" />
         <error line="103" column="1" source="standard:indent" />
         <error line="104" column="1" source="standard:indent" />
+        <error line="104" column="1" source="standard:indent" />
+        <error line="105" column="1" source="standard:indent" />
         <error line="105" column="1" source="standard:indent" />
         <error line="106" column="1" source="standard:indent" />
+        <error line="106" column="1" source="standard:indent" />
+        <error line="107" column="1" source="standard:indent" />
         <error line="107" column="1" source="standard:indent" />
         <error line="108" column="1" source="standard:indent" />
+        <error line="108" column="1" source="standard:indent" />
+        <error line="109" column="1" source="standard:indent" />
         <error line="109" column="1" source="standard:indent" />
         <error line="110" column="1" source="standard:indent" />
+        <error line="110" column="1" source="standard:indent" />
+        <error line="111" column="1" source="standard:indent" />
         <error line="111" column="1" source="standard:indent" />
         <error line="112" column="1" source="standard:indent" />
+        <error line="112" column="1" source="standard:indent" />
+        <error line="113" column="1" source="standard:indent" />
         <error line="113" column="1" source="standard:indent" />
         <error line="114" column="1" source="standard:indent" />
+        <error line="114" column="1" source="standard:indent" />
+        <error line="115" column="1" source="standard:indent" />
         <error line="115" column="1" source="standard:indent" />
         <error line="116" column="1" source="standard:indent" />
+        <error line="116" column="1" source="standard:indent" />
+        <error line="117" column="1" source="standard:indent" />
         <error line="117" column="1" source="standard:indent" />
         <error line="118" column="1" source="standard:indent" />
+        <error line="118" column="1" source="standard:indent" />
+        <error line="119" column="1" source="standard:indent" />
         <error line="119" column="1" source="standard:indent" />
         <error line="120" column="1" source="standard:indent" />
+        <error line="120" column="1" source="standard:indent" />
+        <error line="121" column="1" source="standard:indent" />
         <error line="121" column="1" source="standard:indent" />
         <error line="122" column="1" source="standard:indent" />
+        <error line="122" column="1" source="standard:indent" />
+        <error line="123" column="1" source="standard:indent" />
         <error line="123" column="1" source="standard:indent" />
         <error line="124" column="1" source="standard:indent" />
+        <error line="124" column="1" source="standard:indent" />
+        <error line="125" column="1" source="standard:indent" />
         <error line="125" column="1" source="standard:indent" />
         <error line="126" column="1" source="standard:indent" />
+        <error line="126" column="1" source="standard:indent" />
+        <error line="127" column="1" source="standard:indent" />
         <error line="127" column="1" source="standard:indent" />
         <error line="128" column="1" source="standard:indent" />
+        <error line="128" column="1" source="standard:indent" />
+        <error line="129" column="1" source="standard:indent" />
         <error line="129" column="1" source="standard:indent" />
         <error line="130" column="1" source="standard:indent" />
+        <error line="130" column="1" source="standard:indent" />
+        <error line="131" column="1" source="standard:indent" />
         <error line="131" column="1" source="standard:indent" />
         <error line="132" column="1" source="standard:indent" />
+        <error line="132" column="1" source="standard:indent" />
+        <error line="133" column="1" source="standard:indent" />
         <error line="133" column="1" source="standard:indent" />
         <error line="134" column="1" source="standard:indent" />
+        <error line="134" column="1" source="standard:indent" />
+        <error line="135" column="1" source="standard:indent" />
         <error line="135" column="1" source="standard:indent" />
         <error line="136" column="1" source="standard:indent" />
+        <error line="136" column="1" source="standard:indent" />
+        <error line="137" column="1" source="standard:indent" />
         <error line="137" column="1" source="standard:indent" />
         <error line="138" column="1" source="standard:indent" />
+        <error line="138" column="1" source="standard:indent" />
+        <error line="139" column="1" source="standard:indent" />
         <error line="139" column="1" source="standard:indent" />
         <error line="140" column="1" source="standard:indent" />
+        <error line="140" column="1" source="standard:indent" />
+        <error line="141" column="1" source="standard:indent" />
         <error line="141" column="1" source="standard:indent" />
         <error line="142" column="1" source="standard:indent" />
+        <error line="142" column="1" source="standard:indent" />
+        <error line="143" column="1" source="standard:indent" />
         <error line="143" column="1" source="standard:indent" />
         <error line="144" column="1" source="standard:indent" />
+        <error line="144" column="1" source="standard:indent" />
+        <error line="145" column="1" source="standard:indent" />
         <error line="145" column="1" source="standard:indent" />
         <error line="146" column="1" source="standard:indent" />
+        <error line="146" column="1" source="standard:indent" />
+        <error line="147" column="1" source="standard:indent" />
         <error line="147" column="1" source="standard:indent" />
         <error line="148" column="1" source="standard:indent" />
+        <error line="148" column="1" source="standard:indent" />
+        <error line="150" column="13" source="standard:backing-property-naming" />
+        <error line="150" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/image/ImageLoadConfig.kt">
+        <error line="19" column="24" source="standard:chain-method-continuation" />
+        <error line="29" column="17" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/manager/BackpressureBuffer.kt">
+        <error line="13" column="22" source="standard:class-signature" />
+        <error line="13" column="45" source="standard:class-signature" />
+        <error line="13" column="78" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/manager/WriteopiaStateManager.kt">
+        <error line="89" column="23" source="standard:class-signature" />
+        <error line="181" column="17" source="standard:backing-property-naming" />
+        <error line="182" column="17" source="standard:backing-property-naming" />
+        <error line="206" column="17" source="standard:backing-property-naming" />
+        <error line="223" column="17" source="standard:backing-property-naming" />
+        <error line="243" column="17" source="standard:chain-method-continuation" />
+        <error line="250" column="17" source="standard:backing-property-naming" />
+        <error line="492" column="42" source="standard:chain-method-continuation" />
+        <error line="688" column="40" source="standard:chain-method-continuation" />
+        <error line="876" column="23" source="standard:chain-method-continuation" />
+        <error line="1121" column="27" source="standard:chain-method-continuation" />
+        <error line="1195" column="21" source="standard:chain-method-continuation" />
+        <error line="1199" column="21" source="standard:chain-method-continuation" />
+        <error line="1211" column="29" source="standard:chain-method-continuation" />
+        <error line="1233" column="28" source="standard:chain-method-continuation" />
+        <error line="1257" column="28" source="standard:chain-method-continuation" />
+        <error line="1353" column="52" source="standard:chain-method-continuation" />
+        <error line="1405" column="32" source="standard:class-signature" />
+        <error line="1405" column="50" source="standard:class-signature" />
+        <error line="1405" column="69" source="standard:class-signature" />
+        <error line="1405" column="86" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/model/SelectionInfo.kt">
+        <error line="3" column="26" source="standard:class-signature" />
+        <error line="3" column="41" source="standard:class-signature" />
+        <error line="3" column="54" source="standard:class-signature" />
+        <error line="3" column="70" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/model/TextInput.kt">
+        <error line="5" column="22" source="standard:class-signature" />
+        <error line="5" column="40" source="standard:class-signature" />
+        <error line="5" column="60" source="standard:class-signature" />
+        <error line="5" column="78" source="standard:class-signature" />
+        <error line="5" column="115" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/modifiers/StepsModifier.kt">
+        <error line="17" column="31" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/utils/Span.kt">
+        <error line="24" column="18" source="standard:chain-method-continuation" />
+        <error line="33" column="18" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/utils/TextStyle.kt">
+        <error line="46" column="9" source="standard:chain-method-continuation" />
+        <error line="51" column="9" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonTest/kotlin/io/writeopia/ui/manager/WriteopiaStateManagerTest.kt">
+        <error line="90" column="34" source="standard:chain-method-continuation" />
+        <error line="135" column="34" source="standard:chain-method-continuation" />
+        <error line="587" column="52" source="standard:chain-method-continuation" />
+        <error line="622" column="71" source="standard:chain-method-continuation" />
+        <error line="622" column="77" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonTest/kotlin/io/writeopia/ui/utils/MapStoryData.kt">
-        <error line="197" column="1" source="standard:max-line-length" />
-        <error line="296" column="1" source="standard:max-line-length" />
-        <error line="311" column="1" source="standard:max-line-length" />
-        <error line="380" column="1" source="standard:max-line-length" />
+        <error line="197" column="141" source="standard:max-line-length" />
+        <error line="296" column="141" source="standard:max-line-length" />
+        <error line="311" column="141" source="standard:max-line-length" />
+        <error line="380" column="141" source="standard:max-line-length" />
     </file>
     <file name="src/jsMain/kotlin/io/writeopia/ui/draganddrop/target/DragCardTarget.js.kt">
         <error line="76" column="13" source="standard:chain-wrapping" />
+        <error line="76" column="16" source="standard:condition-wrapping" />
+        <error line="116" column="25" source="standard:chain-method-continuation" />
         <error line="126" column="1" source="standard:no-consecutive-blank-lines" />
+    </file>
+    <file name="src/jsMain/kotlin/io/writeopia/ui/draganddrop/target/DragRowTarget.js.kt">
+        <error line="75" column="40" source="standard:condition-wrapping" />
+        <error line="104" column="60" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/jsMain/kotlin/io/writeopia/ui/drawer/factory/DefaultDrawersJs.kt">
+        <error line="78" column="29" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/jvmMain/kotlin/io/writeopia/ui/draganddrop/target/DragCardTarget.jvm.kt">
+        <error line="124" column="25" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/jvmMain/kotlin/io/writeopia/ui/draganddrop/target/DragRowTarget.jvm.kt">
+        <error line="75" column="40" source="standard:condition-wrapping" />
+        <error line="105" column="60" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/jvmMain/kotlin/io/writeopia/ui/drawer/factory/DefaultDrawersDesktop.kt">
+        <error line="101" column="33" source="standard:chain-method-continuation" />
+        <error line="118" column="29" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/nativeMain/kotlin/io/writeopia/ui/drawer/factory/DefaultDrawersNative.kt">
+        <error line="65" column="29" source="standard:chain-method-continuation" />
     </file>
 </baseline>
