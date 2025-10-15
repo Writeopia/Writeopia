@@ -390,17 +390,17 @@ private fun ChooseTeam(workspacesState: StateFlow<ResultData<List<Workspace>>>) 
             }
         }
     }
-
 }
 
 @Composable
 private fun TeamLine(workspace: Workspace, modifier: Modifier = Modifier) {
-    Row(modifier = modifier
-        .clip(MaterialTheme.shapes.large)
-        .clickable {}
-        .fillMaxWidth()
-        .padding(8.dp)) {
-
+    Row(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.large)
+            .clickable {}
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
         BasicText(
             workspace.name,
             style = MaterialTheme.typography
