@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -65,6 +66,7 @@ import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -83,6 +85,7 @@ fun SettingsDialog(
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
     syncWorkspaceState: StateFlow<String>,
+    workspaces: StateFlow<ResultData<List<Workspace>>>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectWorkplacePath: (String) -> Unit,
@@ -117,6 +120,7 @@ fun SettingsDialog(
                 accountScreen = {
                     AccountScreen(
                         userOnlineState,
+                        workspaces,
                         showDeleteConfirmation,
                         signIn,
                         resetPassword,
@@ -216,6 +220,7 @@ fun SettingsScreen(
 @Composable
 private fun AccountScreen(
     userOnlineState: StateFlow<WriteopiaUser>,
+    workspaces: StateFlow<ResultData<List<Workspace>>>,
     showDeleteConfirmation: StateFlow<Boolean>,
     signIn: () -> Unit,
     resetPassword: () -> Unit,
@@ -280,7 +285,8 @@ private fun AccountScreen(
                 )
 
                 Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-                ChooseTeam()
+
+                ChooseTeam(workspaces)
 
                 if (showDelete) {
                     Dialog(onDismissRequest = dismissDeleteConfirm) {
@@ -365,22 +371,51 @@ private fun AccountScreen(
 }
 
 @Composable
-private fun ChooseTeam() {
+private fun ChooseTeam(workspacesState: StateFlow<ResultData<List<Workspace>>>) {
     val titleStyle = MaterialTheme.typography.titleLarge
     val titleColor = MaterialTheme.colorScheme.onBackground
 
     Text("Choose team", style = titleStyle, color = titleColor)
     Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
-    Column {
+    val workspaces by workspacesState.collectAsState()
 
+    if (workspaces is ResultData.Complete) {
+        Column(
+            modifier = Modifier.width(360.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            (workspaces as ResultData.Complete<List<Workspace>>).data.forEach { workspace ->
+                TeamLine(workspace)
+            }
+        }
     }
+
 }
 
 @Composable
-private fun TeamLine() {
-    Card {
+private fun TeamLine(workspace: Workspace, modifier: Modifier = Modifier) {
+    Row(modifier = modifier
+        .clip(MaterialTheme.shapes.large)
+        .clickable {}
+        .fillMaxWidth()
+        .padding(8.dp)) {
 
+        BasicText(
+            workspace.name,
+            style = MaterialTheme.typography
+                .bodySmall
+                .copy(MaterialTheme.colorScheme.onBackground)
+        )
+
+        Spacer(modifier = Modifier.weight(1F))
+
+        BasicText(
+            workspace.role,
+            style = MaterialTheme.typography
+                .bodySmall
+                .copy(MaterialTheme.colorScheme.onBackground)
+        )
     }
 }
 

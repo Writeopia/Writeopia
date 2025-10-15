@@ -34,6 +34,7 @@ import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -76,37 +77,6 @@ class GlobalShellKmpViewModel(
     private val json: Json = writeopiaJson,
     private val workspaceSync: WorkspaceSync,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
-
-    init {
-        folderStateController.initCoroutine(viewModelScope)
-
-        viewModelScope.launch(Dispatchers.Default) {
-            val userId = getUserId()
-
-            if (!configRepository.hasFirstConfiguration(userId)) {
-                Tutorials.allTutorialsDocuments()
-                    .map { documentAsJson ->
-                        json.decodeFromString<DocumentApi>(documentAsJson).toModel()
-                    }
-                    .forEach { document ->
-                        val now = Clock.System.now()
-
-                        notesUseCase.saveDocumentDb(
-                            document.copy(
-                                createdAt = now,
-                                lastUpdatedAt = now
-                            )
-                        )
-                    }
-
-                ollamaRepository.saveOllamaUrl(userId, OllamaApi.defaultUrl())
-
-                configRepository.setTutorialNotes(true, userId)
-            }
-
-            ollamaRepository.refreshConfiguration(userId)
-        }
-    }
 
     private var localUserId: String? = null
     private var sideMenuWidthState = MutableStateFlow<Float?>(null)
@@ -293,6 +263,52 @@ class GlobalShellKmpViewModel(
 
     private val _showDeleteConfirmation = MutableStateFlow(false)
     override val showDeleteConfirmation: StateFlow<Boolean> = _showDeleteConfirmation.asStateFlow()
+
+    private val _availableWorkspaces: MutableStateFlow<ResultData<List<Workspace>>> =
+        MutableStateFlow(ResultData.Idle())
+    override val availableWorkspaces: StateFlow<ResultData<List<Workspace>>> = _availableWorkspaces
+
+    init {
+        folderStateController.initCoroutine(viewModelScope)
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val userId = getUserId()
+
+            if (!configRepository.hasFirstConfiguration(userId)) {
+                Tutorials.allTutorialsDocuments()
+                    .map { documentAsJson ->
+                        json.decodeFromString<DocumentApi>(documentAsJson).toModel()
+                    }
+                    .forEach { document ->
+                        val now = Clock.System.now()
+
+                        notesUseCase.saveDocumentDb(
+                            document.copy(
+                                createdAt = now,
+                                lastUpdatedAt = now
+                            )
+                        )
+                    }
+
+                ollamaRepository.saveOllamaUrl(userId, OllamaApi.defaultUrl())
+                configRepository.setTutorialNotes(true, userId)
+            }
+
+            ollamaRepository.refreshConfiguration(userId)
+        }
+
+        viewModelScope.launch {
+//            val result = authRepository.getAuthToken()?.let { token ->
+//                authApi.getAvailableWorkspaces(token)
+//            }
+
+            val result = authApi.getAvailableWorkspaces("")
+
+            if (result != null) {
+                _availableWorkspaces.value = result
+            }
+        }
+    }
 
     override fun init() {
         viewModelScope.launch {
