@@ -8,6 +8,7 @@ import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.flow.StateFlow
 
 interface GlobalShellViewModel : FolderController, OllamaConfigController {
@@ -34,6 +35,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
     val showDeleteConfirmation: StateFlow<Boolean>
 
     val lastWorkspaceSync: StateFlow<String>
+
+    val availableWorkspaces: StateFlow<ResultData<List<Workspace>>>
 
     override val ollamaSelectedModelState: StateFlow<String>
 
