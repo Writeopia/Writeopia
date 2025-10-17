@@ -13,12 +13,13 @@ internal class SqlDelightAuthRepository(
     private val writeopiaDb: WriteopiaDb?
 ) : AuthRepository {
 
-    override suspend fun getUser(): WriteopiaUser =
-        writeopiaDb?.writeopiaUserEntityQueries
+    override suspend fun getUser(): WriteopiaUser {
+        return writeopiaDb?.writeopiaUserEntityQueries
             ?.selectCurrentUser()
             ?.executeAsOneOrNull()
             ?.toModel()
             ?: WriteopiaUser.disconnectedUser()
+    }
 
     override suspend fun isLoggedIn(): Boolean = getAuthToken() != null
 
@@ -38,24 +39,28 @@ internal class SqlDelightAuthRepository(
     }
 
     override suspend fun saveUser(user: WriteopiaUser, selected: Boolean) {
-        writeopiaDb?.writeopiaUserEntityQueries
-            ?.insertUser(
+        println("saving user: ${user.id}, selected: ${selected.toLong()}")
+
+        writeopiaDb?.writeopiaUserEntityQueries?.run {
+            unselectAllUsers()
+            insertUser(
                 id = user.id,
                 name = user.name,
                 email = user.email,
                 selected = selected.toLong(),
                 tier = user.tier.tierName()
             )
+        }
     }
 
-    override suspend fun getAuthToken(): String? =
-        writeopiaDb?.tokenEntityQueries
+    override suspend fun getAuthToken(): String? {
+        return writeopiaDb?.tokenEntityQueries
             ?.selectTokenByUserId(getUser().id)
             ?.executeAsOneOrNull()
+    }
 
     override suspend fun saveToken(userId: String, token: String) {
-        writeopiaDb?.tokenEntityQueries
-            ?.insertToken(userId, token)
+        writeopiaDb?.tokenEntityQueries?.insertToken(userId, token)
     }
 
     override suspend fun useOffline() {

@@ -33,3 +33,7 @@ deleteUserByEmail:
 DELETE
 FROM writeopia_user_entity
 WHERE email = ?;
+
+unselectAllUsers:
+UPDATE writeopia_user_entity
+SET selected = 0;
