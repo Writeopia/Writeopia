@@ -5,17 +5,11 @@ import io.ktor.server.request.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.RoutingContext
-import io.ktor.server.routing.delete
-import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import io.writeopia.api.core.auth.service.WorkspaceService
-import io.writeopia.api.core.auth.models.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.repository.disableUserByEmail
 import io.writeopia.api.core.auth.repository.enableUserByEmail
-import io.writeopia.api.core.auth.repository.listWorkspaces
-import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
 
 fun Route.adminProtectedRoute(

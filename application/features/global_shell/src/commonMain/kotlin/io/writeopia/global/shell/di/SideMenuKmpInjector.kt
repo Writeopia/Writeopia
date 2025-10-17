@@ -8,6 +8,7 @@ import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.api.WorkspaceApi
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.di.OllamaConfigInjector
@@ -69,6 +70,9 @@ class SideMenuKmpInjector(
         )
     }
 
+    private fun provideDocumentsApi() =
+        WorkspaceApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+
     @Composable
     override fun provideSideMenuViewModel(): GlobalShellViewModel =
         viewModel {
@@ -82,7 +86,8 @@ class SideMenuKmpInjector(
                 ollamaRepository = ollamaInjection.provideRepository(),
                 configRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
                 authApi = authCoreInjection.provideAuthApi(),
-                workspaceSync = provideWorkspaceSync()
+                workspaceSync = provideWorkspaceSync(),
+                workspaceApi = provideDocumentsApi()
             )
         }
 

@@ -76,6 +76,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     fun deleteAccount(sideEffect: () -> Unit)
 
+    fun addUserToTeam(workspaceId: String, userEmail: String)
+
     override fun changeOllamaUrl(url: String)
 
     override fun selectOllamaModel(model: String)

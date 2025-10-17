@@ -103,6 +103,7 @@ fun SettingsDialog(
     dismissDeleteConfirm: () -> Unit,
     deleteAccount: () -> Unit,
     syncWorkspace: () -> Unit,
+    addUserToTeam: (String, String) -> Unit
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -161,7 +162,7 @@ fun SettingsDialog(
                     )
                 },
                 teamsScreen = {
-                    TeamsSection(workspaces)
+                    TeamsSection(workspaces, addUserToTeam)
                 }
             )
         }
@@ -813,7 +814,10 @@ fun DownloadModels(
 }
 
 @Composable
-private fun TeamsSection(workspacesState: StateFlow<ResultData<List<Workspace>>>) {
+private fun TeamsSection(
+    workspacesState: StateFlow<ResultData<List<Workspace>>>,
+    addUserToTeam: (String, String) -> Unit
+) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
         val titleColor = MaterialTheme.colorScheme.onBackground
@@ -858,25 +862,33 @@ private fun TeamsSection(workspacesState: StateFlow<ResultData<List<Workspace>>>
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    OutlinedTextField(
-                        value = userEmail,
-                        onValueChange = { userEmail = it },
-                        shape = MaterialTheme.shapes.large,
-                        singleLine = true,
-                        placeholder = {
-                            BasicText(
-                                "User email",
-                                style = MaterialTheme
-                                    .typography
-                                    .titleSmall
-                                    .copy(color = WriteopiaTheme.colorScheme.textLighter)
-                            )
-                        },
-                        textStyle = MaterialTheme
-                            .typography
-                            .titleSmall
-                            .copy(color = MaterialTheme.colorScheme.onBackground)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = userEmail,
+                            onValueChange = { userEmail = it },
+                            shape = MaterialTheme.shapes.large,
+                            singleLine = true,
+                            placeholder = {
+                                BasicText(
+                                    "User email",
+                                    style = MaterialTheme
+                                        .typography
+                                        .titleSmall
+                                        .copy(color = WriteopiaTheme.colorScheme.textLighter)
+                                )
+                            },
+                            textStyle = MaterialTheme
+                                .typography
+                                .titleSmall
+                                .copy(color = MaterialTheme.colorScheme.onBackground)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        CommonButton(text = "Add") {
+                            addUserToTeam(selected.id, userEmail)
+                        }
+                    }
                 }
             }
 
