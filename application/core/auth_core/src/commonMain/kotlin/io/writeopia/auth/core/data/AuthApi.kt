@@ -3,6 +3,7 @@ package io.writeopia.auth.core.data
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
+import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.put
@@ -14,11 +15,13 @@ import io.ktor.http.isSuccess
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Role
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
+import io.writeopia.sdk.serialization.data.toModel
 import kotlinx.datetime.Instant
 
 class AuthApi(private val client: HttpClient, private val baseUrl: String) {
@@ -89,25 +92,14 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
     }
 
     suspend fun getAvailableWorkspaces(token: String): ResultData<List<Workspace>> {
-        return ResultData.Complete(
-            listOf(
-                Workspace(
-                    id = "id1",
-                    userId = "someuser",
-                    name = "Workspace1",
-                    lastSync = Instant.Companion.DISTANT_PAST,
-                    selected = true,
-                    role = Role.ADMIN.value
-                ),
-                Workspace(
-                    id = "id2",
-                    userId = "someuser2",
-                    name = "Workspace2",
-                    lastSync = Instant.Companion.DISTANT_PAST,
-                    selected = false,
-                    role = Role.EDITOR.value
-                ),
-            )
-        )
+        return try {
+            val response = client.get("$baseUrl/api/workspace/user") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }.body<List<WorkspaceApi>>()
+
+            ResultData.Complete(response.map { workspaceApi -> workspaceApi.toModel() })
+        } catch (e: Exception) {
+            ResultData.Error(e)
+        }
     }
 }

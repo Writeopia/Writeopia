@@ -1,8 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="writeopia_persistence_sqldelight-js">
     <output-path>$PROJECT_DIR$/plugins/writeopia_persistence_sqldelight/build/libs</output-path>
-    <root id="archive" name="writeopia_persistence_sqldelight-js.jar">
-      <element id="module-output" name="Writeopia.plugins.writeopia_persistence_sqldelight.jsMain" />
-    </root>
+    <root id="archive" name="writeopia_persistence_sqldelight-js.jar" />
   </artifact>
 </component>

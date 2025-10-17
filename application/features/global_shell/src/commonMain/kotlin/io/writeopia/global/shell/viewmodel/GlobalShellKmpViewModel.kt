@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
@@ -298,11 +299,9 @@ class GlobalShellKmpViewModel(
         }
 
         viewModelScope.launch {
-//            val result = authRepository.getAuthToken()?.let { token ->
-//                authApi.getAvailableWorkspaces(token)
-//            }
-
-            val result = authApi.getAvailableWorkspaces("")
+            val result = authRepository.getAuthToken()?.let { token ->
+                authApi.getAvailableWorkspaces(token)
+            }
 
             if (result != null) {
                 _availableWorkspaces.value = result
@@ -326,6 +325,7 @@ class GlobalShellKmpViewModel(
         } else {
             viewModelScope.launch {
                 notesUseCase.listenForMenuItemsByParentId(id, getUserId())
+                    .collect()
                 _expandedFolders.value = expanded + id
             }
         }
