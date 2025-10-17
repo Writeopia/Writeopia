@@ -13,7 +13,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.models.utils.ResultData
-import io.writeopia.sdk.models.workspace.Role
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
@@ -22,10 +21,8 @@ import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.data.toModel
-import kotlinx.datetime.Instant
 
 class AuthApi(private val client: HttpClient, private val baseUrl: String) {
-
     suspend fun login(email: String, password: String): ResultData<AuthResponse> {
         return try {
             val response = client.post("$baseUrl/api/login") {
