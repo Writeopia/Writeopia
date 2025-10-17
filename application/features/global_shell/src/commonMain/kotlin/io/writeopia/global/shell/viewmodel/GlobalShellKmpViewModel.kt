@@ -17,6 +17,7 @@ import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
+import io.writeopia.core.folders.api.WorkspaceApi
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.di.AppConnectionInjection
@@ -77,6 +78,7 @@ class GlobalShellKmpViewModel(
     private val configRepository: ConfigurationRepository,
     private val json: Json = writeopiaJson,
     private val workspaceSync: WorkspaceSync,
+    private val workspaceApi: WorkspaceApi
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     private var localUserId: String? = null
@@ -524,6 +526,12 @@ class GlobalShellKmpViewModel(
                 println("result error: $result")
                 "Error in sync"
             }
+        }
+    }
+
+    override fun addUserToTeam(workspaceId: String, userEmail: String) {
+        viewModelScope.launch {
+
         }
     }
 

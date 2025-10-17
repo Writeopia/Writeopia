@@ -245,7 +245,8 @@ fun DesktopApp(
                                             sideEffect = navigateToRegister
                                         )
                                     },
-                                    syncWorkspace = globalShellViewModel::syncWorkspace
+                                    syncWorkspace = globalShellViewModel::syncWorkspace,
+                                    addUserToTeam = globalShellViewModel::addUserToTeam
                                 )
                             }
 

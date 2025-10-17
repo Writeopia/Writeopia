@@ -14,7 +14,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.server.testing.testApplication
-import io.writeopia.api.core.auth.models.AddUserToWorkspaceRequest
+import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.geteway.configurePersistence
