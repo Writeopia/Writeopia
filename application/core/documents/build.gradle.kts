@@ -45,6 +45,7 @@ kotlin {
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:core:connection"))
+                implementation(project(":common:endpoints"))
 
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.datetime)
