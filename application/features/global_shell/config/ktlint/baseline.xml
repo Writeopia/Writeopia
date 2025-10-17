@@ -15,24 +15,25 @@
         <error line="77" column="66" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/global/shell/viewmodel/GlobalShellKmpViewModel.kt">
-        <error line="79" column="27" source="standard:class-signature" />
-        <error line="79" column="27" source="standard:class-signature" />
-        <error line="79" column="40" source="standard:class-signature" />
-        <error line="87" column="17" source="standard:backing-property-naming" />
-        <error line="89" column="17" source="standard:backing-property-naming" />
-        <error line="95" column="17" source="standard:backing-property-naming" />
-        <error line="97" column="17" source="standard:backing-property-naming" />
-        <error line="103" column="17" source="standard:backing-property-naming" />
-        <error line="107" column="74" source="standard:chain-method-continuation" />
-        <error line="115" column="28" source="standard:chain-method-continuation" />
-        <error line="133" column="52" source="standard:chain-method-continuation" />
-        <error line="140" column="27" source="standard:chain-method-continuation" />
-        <error line="193" column="17" source="standard:backing-property-naming" />
-        <error line="194" column="23" source="standard:chain-method-continuation" />
-        <error line="194" column="39" source="standard:chain-method-continuation" />
-        <error line="242" column="17" source="standard:chain-method-continuation" />
-        <error line="278" column="26" source="standard:chain-method-continuation" />
-        <error line="282" column="21" source="standard:chain-method-continuation" />
+        <error line="80" column="27" source="standard:class-signature" />
+        <error line="80" column="27" source="standard:class-signature" />
+        <error line="80" column="40" source="standard:class-signature" />
+        <error line="88" column="17" source="standard:backing-property-naming" />
+        <error line="90" column="17" source="standard:backing-property-naming" />
+        <error line="96" column="17" source="standard:backing-property-naming" />
+        <error line="98" column="17" source="standard:backing-property-naming" />
+        <error line="104" column="17" source="standard:backing-property-naming" />
+        <error line="108" column="74" source="standard:chain-method-continuation" />
+        <error line="116" column="28" source="standard:chain-method-continuation" />
+        <error line="134" column="52" source="standard:chain-method-continuation" />
+        <error line="141" column="27" source="standard:chain-method-continuation" />
+        <error line="194" column="17" source="standard:backing-property-naming" />
+        <error line="195" column="23" source="standard:chain-method-continuation" />
+        <error line="195" column="39" source="standard:chain-method-continuation" />
+        <error line="243" column="17" source="standard:chain-method-continuation" />
+        <error line="279" column="26" source="standard:chain-method-continuation" />
+        <error line="283" column="21" source="standard:chain-method-continuation" />
+        <error line="327" column="29" source="standard:chain-method-continuation" />
         <error line="430" column="33" source="standard:chain-method-continuation" />
         <error line="435" column="21" source="standard:chain-method-continuation" />
         <error line="448" column="57" source="standard:chain-method-continuation" />
