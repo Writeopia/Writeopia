@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
     <file name="src/commonMain/kotlin/io/writeopia/auth/core/data/AuthApi.kt">
-        <error line="24" column="15" source="standard:class-signature" />
-        <error line="24" column="47" source="standard:class-signature" />
-        <error line="24" column="74" source="standard:class-signature" />
+        <error line="25" column="15" source="standard:class-signature" />
+        <error line="25" column="47" source="standard:class-signature" />
+        <error line="25" column="74" source="standard:class-signature" />
         <error line="26" column="82" source="standard:function-expression-body" />
         <error line="28" column="34" source="standard:chain-method-continuation" />
         <error line="46" column="33" source="standard:function-expression-body" />
@@ -12,15 +12,16 @@
         <error line="79" column="67" source="standard:function-expression-body" />
         <error line="81" column="34" source="standard:chain-method-continuation" />
         <error line="91" column="84" source="standard:function-expression-body" />
+        <error line="93" column="34" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/core/manager/SqlDelightAuthRepository.kt">
-        <error line="17" column="20" source="standard:chain-method-continuation" />
-        <error line="27" column="24" source="standard:chain-method-continuation" />
-        <error line="41" column="20" source="standard:chain-method-continuation" />
-        <error line="52" column="20" source="standard:chain-method-continuation" />
-        <error line="57" column="20" source="standard:chain-method-continuation" />
-        <error line="67" column="20" source="standard:chain-method-continuation" />
-        <error line="82" column="20" source="standard:chain-method-continuation" />
+        <error line="16" column="51" source="standard:function-expression-body" />
+        <error line="17" column="27" source="standard:chain-method-continuation" />
+        <error line="28" column="24" source="standard:chain-method-continuation" />
+        <error line="56" column="50" source="standard:function-expression-body" />
+        <error line="57" column="27" source="standard:chain-method-continuation" />
+        <error line="72" column="20" source="standard:chain-method-continuation" />
+        <error line="87" column="20" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/core/utils/UserExtensions.kt">
         <error line="7" column="52" source="standard:function-expression-body" />
