@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -157,6 +159,9 @@ fun SettingsDialog(
                         downloadModel,
                         deleteModel
                     )
+                },
+                teamsScreen = {
+                    TeamsSection(workspaces)
                 }
             )
         }
@@ -382,7 +387,7 @@ private fun ChooseTeam(workspacesState: StateFlow<ResultData<List<Workspace>>>) 
 
     if (workspaces is ResultData.Complete) {
         Column(
-            modifier = Modifier.width(360.dp),
+            modifier = Modifier.width(240.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             (workspaces as ResultData.Complete<List<Workspace>>).data.forEach { workspace ->
@@ -566,6 +571,7 @@ private fun AiSection(
         DownloadModels(downloadModelState, downloadModel)
     }
 }
+
 
 @Composable
 private fun SelectModels(
@@ -802,6 +808,94 @@ fun DownloadModels(
 
         is ResultData.Loading -> {
             CircularProgressIndicator()
+        }
+    }
+}
+
+@Composable
+private fun TeamsSection(workspacesState: StateFlow<ResultData<List<Workspace>>>) {
+    Column {
+        val titleStyle = MaterialTheme.typography.titleLarge
+        val titleColor = MaterialTheme.colorScheme.onBackground
+
+        Text("Manage teams", style = titleStyle, color = titleColor)
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        val workspaces by workspacesState.collectAsState()
+
+        when (workspaces) {
+            is ResultData.Complete -> {
+                val workspaces = (workspaces as ResultData.Complete<List<Workspace>>).data
+                var selectedWorkspace = remember {
+                    mutableStateOf<Workspace?>(null)
+                }
+
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    items(workspaces) { workspace ->
+                        CommonButton(text = workspace.name) {
+                            selectedWorkspace.value = workspace
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                val selected = selectedWorkspace.value
+
+                if (selected != null) {
+                    BasicText(
+                        text = "Add users to team: ${selected.name}",
+                        style = MaterialTheme
+                            .typography
+                            .titleSmall
+                            .copy(color = MaterialTheme.colorScheme.onBackground)
+                    )
+
+                    var userEmail by remember {
+                        mutableStateOf("")
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    OutlinedTextField(
+                        value = userEmail,
+                        onValueChange = { userEmail = it },
+                        shape = MaterialTheme.shapes.large,
+                        singleLine = true,
+                        placeholder = {
+                            BasicText(
+                                "User email",
+                                style = MaterialTheme
+                                    .typography
+                                    .titleSmall
+                                    .copy(color = WriteopiaTheme.colorScheme.textLighter)
+                            )
+                        },
+                        textStyle = MaterialTheme
+                            .typography
+                            .titleSmall
+                            .copy(color = MaterialTheme.colorScheme.onBackground)
+                    )
+                }
+            }
+
+            is ResultData.Error -> {
+                BasicText(
+                    text = "Error loading teams",
+                    style = MaterialTheme.typography.bodySmall.copy(color = titleColor)
+                )
+            }
+
+            is ResultData.Idle -> {}
+
+            is ResultData.InProgress -> {
+                CircularProgressIndicator()
+            }
+
+            is ResultData.Loading -> {
+                CircularProgressIndicator()
+            }
         }
     }
 }
