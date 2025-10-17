@@ -19,6 +19,11 @@ object WorkspaceService {
             ?.let(writeopiaDb::getWorkspacesByUserId)
             ?: emptyList()
 
+    fun getWorkspacesByUserId(
+        userId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): List<Workspace> = writeopiaDb.getWorkspacesByUserId(userId)
+
     fun addUserToWorkspaceAdmin(
         userEmail: String,
         workspaceId: String,

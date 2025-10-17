@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -33,6 +34,7 @@ fun SettingsPanel(
     appearanceScreen: @Composable () -> Unit,
     directoryScreen: @Composable () -> Unit,
     aiScreen: @Composable () -> Unit,
+    teamsScreen: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var pageState by remember {
@@ -42,78 +44,26 @@ fun SettingsPanel(
     Row(modifier = modifier) {
         Column(modifier = Modifier.width(180.dp).fillMaxHeight()) {
             if (ALLOW_BACKEND) {
-                Text(
-                    WrStrings.account(),
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(
-                            if (pageState == SettingsPage.ACCOUNT) {
-                                WriteopiaTheme.colorScheme.highlight
-                            } else {
-                                Color.Unspecified
-                            }
-                        )
-                        .clickable {
-                            pageState = SettingsPage.ACCOUNT
-                        }.padding(vertical = 4.dp, horizontal = 12.dp),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                SettingsButton(WrStrings.account(), SettingsPage.ACCOUNT, pageState) { page ->
+                    pageState = page
+                }
             }
 
-            Text(
-                WrStrings.appearance(),
-                modifier = Modifier.fillMaxWidth()
-                    .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(
-                        if (pageState == SettingsPage.APPEARANCE) {
-                            WriteopiaTheme.colorScheme.highlight
-                        } else {
-                            Color.Unspecified
-                        }
-                    )
-                    .clickable {
-                        pageState = SettingsPage.APPEARANCE
-                    }.padding(vertical = 4.dp, horizontal = 12.dp),
-                style = MaterialTheme.typography.bodyMedium
-            )
+            SettingsButton(WrStrings.appearance(), SettingsPage.APPEARANCE, pageState) { page ->
+                pageState = page
+            }
 
-            Text(
-                "AI",
-                modifier = Modifier.fillMaxWidth()
-                    .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(
-                        if (pageState == SettingsPage.AI) {
-                            WriteopiaTheme.colorScheme.highlight
-                        } else {
-                            Color.Unspecified
-                        }
-                    )
-                    .clickable {
-                        pageState = SettingsPage.AI
-                    }.padding(vertical = 4.dp, horizontal = 12.dp),
-                style = MaterialTheme.typography.bodyMedium
-            )
+            SettingsButton("AI", SettingsPage.AI, pageState) { page ->
+                pageState = page
+            }
 
-            Text(
-                WrStrings.workspaceName(),
-                modifier = Modifier.fillMaxWidth()
-                    .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(
-                        if (pageState == SettingsPage.DIRECTORY) {
-                            WriteopiaTheme.colorScheme.highlight
-                        } else {
-                            Color.Unspecified
-                        }
-                    )
-                    .clickable {
-                        pageState = SettingsPage.DIRECTORY
-                    }.padding(vertical = 4.dp, horizontal = 12.dp),
-                style = MaterialTheme.typography.bodyMedium
-            )
+            SettingsButton(WrStrings.workspaceName(), SettingsPage.DIRECTORY, pageState) { page ->
+                pageState = page
+            }
+
+            SettingsButton("Teams", SettingsPage.TEAMS, pageState) { page ->
+                pageState = page
+            }
 
             Spacer(modifier = Modifier.height(40.dp))
 
@@ -139,11 +89,40 @@ fun SettingsPanel(
                 SettingsPage.AI -> {
                     aiScreen()
                 }
+
+                SettingsPage.TEAMS -> {
+                    teamsScreen()
+                }
             }
         }
     }
 }
 
+@Composable
+private fun SettingsButton(
+    text: String,
+    pageState: SettingsPage,
+    currentPage: SettingsPage,
+    click: (SettingsPage) -> Unit
+) {
+    Text(
+        text,
+        modifier = Modifier.fillMaxWidth()
+            .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(
+                if (currentPage == pageState) {
+                    WriteopiaTheme.colorScheme.highlight
+                } else {
+                    Color.Unspecified
+                }
+            )
+            .clickable { click(pageState) }
+            .padding(vertical = 4.dp, horizontal = 12.dp),
+        style = MaterialTheme.typography.bodyMedium
+    )
+}
+
 enum class SettingsPage {
-    ACCOUNT, APPEARANCE, DIRECTORY, AI
+    ACCOUNT, APPEARANCE, DIRECTORY, AI, TEAMS,
 }
