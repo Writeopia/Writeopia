@@ -69,8 +69,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlin.collections.emptyList
-import kotlin.collections.map
 
 @OptIn(FlowPreview::class)
 class NoteEditorKmpViewModel(
