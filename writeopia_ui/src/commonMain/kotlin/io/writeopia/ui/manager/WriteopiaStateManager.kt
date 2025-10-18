@@ -1163,6 +1163,18 @@ class WriteopiaStateManager(
         changeStoryState(Action.StoryStateChange(newStory, position))
     }
 
+    fun triggerSearch(query: String) {
+        coroutineScope.launch(dispatcher) {
+            _currentStory.value = writeopiaManager.search(query, _currentStory.value)
+        }
+    }
+
+    fun clearSearch() {
+        coroutineScope.launch(dispatcher) {
+            _currentStory.value = writeopiaManager.clearSearch(_currentStory.value)
+        }
+    }
+
     private suspend fun getUserId(): String =
         userRepository?.getUser()?.id ?: WriteopiaUser.disconnectedUser().id
 

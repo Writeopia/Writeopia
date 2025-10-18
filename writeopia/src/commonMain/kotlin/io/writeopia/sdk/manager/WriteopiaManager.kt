@@ -98,6 +98,80 @@ class WriteopiaManager(
     }
 
     /**
+     * Searches for a query within the document's stories.
+     * It adds a highlight span to the matching text in each story step.
+     *
+     * @param query The text to search for.
+     * @param storyState The current state of the document.
+     * @return The updated StoryState with the highlight spans.
+     */
+    fun search(query: String, storyState: StoryState): StoryState {
+        if (query.isBlank()) {
+            return clearSearch(storyState)
+        }
+
+        val updatedStories = storyState.stories.mapValues { (_, story) ->
+            val spansWithoutHighlight = story.spans.filterNot { it.span == Span.HIGHLIGHT_YELLOW }
+            val haveHighlightSpan = story.spans.any { it.span == Span.HIGHLIGHT_YELLOW }
+
+            story.text?.let { text ->
+                val regex = Regex(query, RegexOption.IGNORE_CASE)
+                val matches = regex.findAll(text)
+
+                val newHighlightSpans = matches.map { matchResult ->
+                    SpanInfo.create(
+                        span = Span.HIGHLIGHT_YELLOW,
+                        start = matchResult.range.first,
+                        end = matchResult.range.last + 1
+                    )
+                }.toList()
+
+                if (newHighlightSpans.isNotEmpty()) {
+                    story.copy(
+                        spans = (spansWithoutHighlight + newHighlightSpans).toSet(),
+                        localId = GenerateId.generate()
+                    )
+                } else if (haveHighlightSpan) {
+                    story.copy(
+                        spans = spansWithoutHighlight.toSet(),
+                        localId = GenerateId.generate()
+                    )
+                } else {
+                    story
+                }
+
+            } ?: run {
+                story
+            }
+        }
+
+        return storyState.copy(
+            stories = updatedStories,
+            lastEdit = LastEdit.Nothing
+        )
+    }
+
+    /**
+     * Clears all search highlight spans from the stories.
+     *
+     * @param storyState The current state of the document.
+     * @return The updated StoryState without highlight spans.*/
+    fun clearSearch(storyState: StoryState): StoryState {
+        val updatedStories = storyState.stories.mapValues { (_, story) ->
+            story.copy(
+                spans = story.spans.filterNot { it.span == Span.HIGHLIGHT_YELLOW }.toSet(),
+                localId = GenerateId.generate()
+            )
+        }
+
+        return storyState.copy(
+            stories = updatedStories,
+            lastEdit = LastEdit.Nothing
+        )
+    }
+
+
+    /**
      * Merges two [StoryStep] into a group. This can be used to merge two images into a message
      * group or any other kind of group.
      *

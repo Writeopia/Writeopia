@@ -1182,4 +1182,77 @@ class WriteopiaStateManagerTest {
 
         assertEquals(stories[0]!!.spans.first().span, Span.BOLD)
     }
+
+    @Test
+    fun itShouldBePossibleToSearchText() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager =
+            WriteopiaStateManager.create(
+                writeopiaManager = WriteopiaManager(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                userRepository = userRepository,
+            )
+
+        storyManager.loadDocument(
+            Document(
+                content = messagesRepo.history(),
+                userId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        storyManager.triggerSearch("Sunny")
+
+        val storiesWithHighlight = storyManager.currentStory.value.stories
+            .values
+            .filter { storyStep ->
+                storyStep.spans.any { spanInfo ->
+                    spanInfo.span == Span.HIGHLIGHT_YELLOW
+                }
+            }
+
+        assertTrue(
+            storiesWithHighlight.isNotEmpty(),
+            "Stories with highlight spans should be found after searching"
+        )
+    }
+
+    @Test
+    fun itShouldBePossibleToCleanSearch() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager =
+            WriteopiaStateManager.create(
+                writeopiaManager = WriteopiaManager(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                userRepository = userRepository,
+            )
+
+        storyManager.loadDocument(
+            Document(
+                content = messagesRepo.history(),
+                userId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        storyManager.triggerSearch("Sunny")
+        storyManager.clearSearch()
+
+        val storiesAfterClear = storyManager.currentStory.value.stories
+        storiesAfterClear.values.forEach { storyStep ->
+            val hasHighlight = storyStep.spans.any { it.span == Span.HIGHLIGHT_YELLOW }
+            assertFalse(
+                hasHighlight,
+                "The HIGHLIGHT_YELLOW span should be removed after clearing the search."
+            )
+        }
+    }
 }
