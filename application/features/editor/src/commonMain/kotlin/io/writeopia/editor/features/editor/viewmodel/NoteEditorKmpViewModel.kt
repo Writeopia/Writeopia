@@ -49,6 +49,7 @@ import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.ui.utils.Spans
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -57,16 +58,21 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlin.collections.emptyList
+import kotlin.collections.map
 
+@OptIn(FlowPreview::class)
 class NoteEditorKmpViewModel(
     override val writeopiaManager: WriteopiaStateManager,
     private val documentRepository: DocumentRepository,
@@ -87,7 +93,22 @@ class NoteEditorKmpViewModel(
     BackstackInform by writeopiaManager,
     BackstackHandler by writeopiaManager {
 
+    private val _showSearch = MutableStateFlow(false)
+    private val _searchText = MutableStateFlow("")
+
     init {
+        combine(_searchText, _showSearch) { query, show ->
+            if (show) query else ""
+        }
+            .debounce(120)
+            .onEach { query ->
+                if (query.isNotBlank()) {
+                    writeopiaManager.triggerSearch(query)
+                } else {
+                    writeopiaManager.clearSearch()
+                }
+            }.launchIn(viewModelScope)
+
         viewModelScope.launch(Dispatchers.Default) {
             keyboardEventFlow
                 .onEach { delay(60) }
@@ -140,9 +161,6 @@ class NoteEditorKmpViewModel(
 
     private var isDarkTheme: Boolean = true
 
-    private val _showSearch = MutableStateFlow(false)
-    private val _searchText = MutableStateFlow("")
-
     override val showSearchState: StateFlow<Boolean> = _showSearch.asStateFlow()
     override val searchText: StateFlow<String> = _searchText.asStateFlow()
 
@@ -160,13 +178,6 @@ class NoteEditorKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), false)
 
 //    val selectionOfText = writeopiaManager.
-
-    private val findsOfSearch: Flow<Set<Int>> =
-        combine(writeopiaManager.documentInfo, searchText) { info, query ->
-            info.id to query
-        }.map { (documentId, query) ->
-            inDocumentSearchRepository.searchInDocument(query, documentId)
-        }
 
     /**
      * This property defines if the document should be edited (you can write in it, for example)
@@ -268,40 +279,7 @@ class NoteEditorKmpViewModel(
     override val toDrawWithDecoration: StateFlow<DrawState> by lazy {
         val infoFlow = documentId.flatMapLatest(documentRepository::listenForDocumentInfoById)
 
-        val toDraw = combine(
-            writeopiaManager.toDraw,
-            findsOfSearch,
-            searchText,
-            _showSearch
-        ) { drawState, finds, query, showSearch ->
-            if (finds.isEmpty() && showSearch) return@combine drawState.copy(focus = null)
-            if (finds.isEmpty()) return@combine drawState
-
-            val mutableStories = drawState.stories.toMutableList()
-
-            finds.forEach { position ->
-                val realPosition = minOf(position * 2, mutableStories.lastIndex)
-                val toDraw = mutableStories[realPosition]
-                val story = toDraw.storyStep
-
-                val findSpans = FindInText.findInText(story.text ?: "", query)
-                    .map { (start, end) ->
-                        SpanInfo.create(start, end, Span.HIGHLIGHT_YELLOW)
-                    }
-
-                mutableStories[realPosition] =
-                    toDraw.copy(
-                        storyStep = story.copy(
-                            spans = story.spans + findSpans,
-                            localId = GenerateId.generate()
-                        )
-                    )
-            }
-
-            drawState.copy(stories = mutableStories, focus = null)
-        }
-
-        toDraw.flatMapLatest { drawState ->
+        writeopiaManager.toDraw.flatMapLatest { drawState ->
             infoFlow.map { info -> drawState to info }
         }.map { (drawState, info) ->
             val imageVector = info?.icon
