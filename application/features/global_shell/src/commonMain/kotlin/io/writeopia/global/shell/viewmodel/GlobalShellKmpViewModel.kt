@@ -271,6 +271,28 @@ class GlobalShellKmpViewModel(
         MutableStateFlow(ResultData.Idle())
     override val availableWorkspaces: StateFlow<ResultData<List<Workspace>>> = _availableWorkspaces
 
+    private val _workspaceToEdit = MutableStateFlow<String?>(null)
+    override val workspaceToEdit: StateFlow<Workspace?> =
+        combine(_availableWorkspaces, _workspaceToEdit) { workspacesResult, selectedId ->
+            if (workspacesResult is ResultData.Complete) {
+                workspacesResult.data.firstOrNull { it.id == selectedId }
+            } else {
+                null
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+
+    override val usersOfWorkspaceToEdit: StateFlow<ResultData<List<String>>> =
+        workspaceToEdit.map { workspace ->
+            val token = authRepository.getAuthToken()
+            val workspaceId = workspace?.id
+
+            if (token != null && workspaceId != null) {
+                workspaceApi.usersOfWorkspace(workspaceId, token)
+            } else {
+                ResultData.Error()
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ResultData.Idle())
+
     init {
         folderStateController.initCoroutine(viewModelScope)
 
@@ -302,7 +324,7 @@ class GlobalShellKmpViewModel(
 
         viewModelScope.launch {
             val result = authRepository.getAuthToken()?.let { token ->
-                authApi.getAvailableWorkspaces(token)
+                workspaceApi.getAvailableWorkspaces(token)
             }
 
             if (result != null) {
@@ -529,10 +551,24 @@ class GlobalShellKmpViewModel(
         }
     }
 
-    override fun addUserToTeam(workspaceId: String, userEmail: String) {
+    override fun addUserToTeam(userEmail: String) {
         viewModelScope.launch {
+            val workspace = workspaceToEdit.value
 
+            if (workspace != null) {
+                authRepository.getAuthToken()?.let { token ->
+                    val result = workspaceApi.addUserToWorkspace(workspace.id, userEmail, token)
+
+                    if (result is ResultData.Complete) {
+                        //Todo: Renew the users of selected workspace
+                    }
+                }
+            }
         }
+    }
+
+    override fun selectWorkspaceToManage(workspaceId: String) {
+        _workspaceToEdit.value = workspaceId
     }
 
     private suspend fun getUserId(): String =

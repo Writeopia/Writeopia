@@ -38,6 +38,10 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     val availableWorkspaces: StateFlow<ResultData<List<Workspace>>>
 
+    val workspaceToEdit: StateFlow<Workspace?>
+
+    val usersOfWorkspaceToEdit: StateFlow<ResultData<List<String>>>
+
     override val ollamaSelectedModelState: StateFlow<String>
 
     override val ollamaUrl: StateFlow<String>
@@ -76,7 +80,9 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     fun deleteAccount(sideEffect: () -> Unit)
 
-    fun addUserToTeam(workspaceId: String, userEmail: String)
+    fun addUserToTeam(userEmail: String)
+
+    fun selectWorkspaceToManage(workspaceId: String)
 
     override fun changeOllamaUrl(url: String)
 
