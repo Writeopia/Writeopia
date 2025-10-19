@@ -88,6 +88,7 @@ fun SettingsDialog(
     showDeleteConfirmation: StateFlow<Boolean>,
     syncWorkspaceState: StateFlow<String>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
+    workspaceToEdit: StateFlow<Workspace?>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectWorkplacePath: (String) -> Unit,
@@ -103,7 +104,8 @@ fun SettingsDialog(
     dismissDeleteConfirm: () -> Unit,
     deleteAccount: () -> Unit,
     syncWorkspace: () -> Unit,
-    addUserToTeam: (String, String) -> Unit
+    addUserToTeam: (String) -> Unit,
+    selectWorkspaceToManage: (String) -> Unit,
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -162,7 +164,7 @@ fun SettingsDialog(
                     )
                 },
                 teamsScreen = {
-                    TeamsSection(workspaces, addUserToTeam)
+                    TeamsSection(workspaces, workspaceToEdit, selectWorkspaceToManage, addUserToTeam)
                 }
             )
         }
@@ -816,7 +818,9 @@ fun DownloadModels(
 @Composable
 private fun TeamsSection(
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
-    addUserToTeam: (String, String) -> Unit
+    selectedWorkspaceState: StateFlow<Workspace?>,
+    selectWorkspace: (String) -> Unit,
+    addUserToTeam: (String) -> Unit
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -831,21 +835,19 @@ private fun TeamsSection(
         when (workspaces) {
             is ResultData.Complete -> {
                 val workspaces = (workspaces as ResultData.Complete<List<Workspace>>).data
-                var selectedWorkspace = remember {
-                    mutableStateOf<Workspace?>(null)
-                }
+
 
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(workspaces) { workspace ->
                         CommonButton(text = workspace.name) {
-                            selectedWorkspace.value = workspace
+                            selectWorkspace(workspace.id)
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                val selected = selectedWorkspace.value
+                val selected = selectedWorkspaceState.collectAsState().value
 
                 if (selected != null) {
                     BasicText(
@@ -886,7 +888,7 @@ private fun TeamsSection(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         CommonButton(text = "Add") {
-                            addUserToTeam(selected.id, userEmail)
+                            addUserToTeam(userEmail)
                         }
                     }
                 }

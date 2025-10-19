@@ -87,16 +87,4 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
             ResultData.Error(e)
         }
     }
-
-    suspend fun getAvailableWorkspaces(token: String): ResultData<List<Workspace>> {
-        return try {
-            val response = client.get("$baseUrl/api/workspace/user") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }.body<List<WorkspaceApi>>()
-
-            ResultData.Complete(response.map { workspaceApi -> workspaceApi.toModel() })
-        } catch (e: Exception) {
-            ResultData.Error(e)
-        }
-    }
 }

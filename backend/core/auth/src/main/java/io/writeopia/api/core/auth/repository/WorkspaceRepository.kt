@@ -77,6 +77,18 @@ internal fun WriteopiaDbBackend.isUserInWorkspace(userId: String, workspaceId: S
         .executeAsList()
         .any { entity -> entity.workspace_id == workspaceId }
 
+
+internal fun WriteopiaDbBackend.isUserAdminInWorkspace(userId: String, workspaceId: String): Boolean =
+    this.workspaceEntityQueries
+        .getWorkspacesByUserIdIfAdmin(userId)
+        .executeAsList()
+        .any { entity -> entity.workspace_id == workspaceId }
+
+internal fun WriteopiaDbBackend.getUsersInWorkspace(workspaceId: String): List<String> =
+    this.workspaceToUserQueries
+        .getUsersInWorkspace(workspaceId)
+        .executeAsList()
+
 internal suspend fun WriteopiaDbBackend.removeUserFromWorkspace(workspaceId: String, userId: String) {
     this.workspaceToUserQueries.removeUserFromWorkspace(workspaceId, userId)
 }

@@ -222,6 +222,7 @@ fun DesktopApp(
                                     userOnlineState = globalShellViewModel.userState,
                                     showDeleteConfirmation = globalShellViewModel.showDeleteConfirmation,
                                     syncWorkspaceState = globalShellViewModel.lastWorkspaceSync,
+                                    workspaceToEdit = globalShellViewModel.workspaceToEdit,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
                                     workspaces = globalShellViewModel.availableWorkspaces,
@@ -246,7 +247,8 @@ fun DesktopApp(
                                         )
                                     },
                                     syncWorkspace = globalShellViewModel::syncWorkspace,
-                                    addUserToTeam = globalShellViewModel::addUserToTeam
+                                    addUserToTeam = globalShellViewModel::addUserToTeam,
+                                    selectWorkspaceToManage = globalShellViewModel::selectWorkspaceToManage,
                                 )
                             }
 
