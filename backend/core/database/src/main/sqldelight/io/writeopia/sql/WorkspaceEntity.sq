@@ -35,6 +35,28 @@ JOIN workspace_to_user
 JOIN user_entity
   ON user_entity.id = workspace_to_user.user_id
 WHERE workspace_to_user.user_id = ?;
+
+getWorkspacesByUserIdIfAdmin:
+SELECT
+  workspace_entity.id AS workspace_id,
+  workspace_entity.name AS workspace_name,
+  workspace_entity.icon AS workspace_icon,
+  workspace_entity.icon_tint AS workspace_icon_tint,
+  workspace_to_user.user_id AS user_id,
+  workspace_to_user.role AS user_role,
+  user_entity.id AS user_entity_id,
+  user_entity.name AS user_name,
+  user_entity.created_at AS user_created_at,
+  user_entity.email AS user_email,
+  user_entity.enabled AS user_enabled,
+  user_entity.workspace AS user_workspace
+FROM workspace_entity
+JOIN workspace_to_user
+  ON workspace_entity.id = workspace_to_user.workspace_id
+JOIN user_entity
+  ON user_entity.id = workspace_to_user.user_id
+WHERE workspace_to_user.user_id = ? AND workspace_to_user.role = 'ADMIN';
+
 insert:
 INSERT INTO workspace_entity(id, name, icon, icon_tint)
 VALUES (?, ?, ?, ?)

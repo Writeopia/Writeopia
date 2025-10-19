@@ -5,6 +5,7 @@ import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertUserInWorkspace
 import io.writeopia.api.core.auth.repository.removeUserFromWorkspace
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sql.WriteopiaDbBackend
 
@@ -23,6 +24,13 @@ object WorkspaceService {
         userId: String,
         writeopiaDb: WriteopiaDbBackend
     ): List<Workspace> = writeopiaDb.getWorkspacesByUserId(userId)
+
+    fun getUsersInWorkspace(
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): List<WriteopiaUser> {
+        writeopiaDb.
+    }
 
     fun addUserToWorkspaceAdmin(
         userEmail: String,
