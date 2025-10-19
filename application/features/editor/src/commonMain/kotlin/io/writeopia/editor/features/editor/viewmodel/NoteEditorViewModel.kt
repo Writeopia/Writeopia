@@ -52,6 +52,10 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val searchText: StateFlow<String>
 
+    val currentSearchIndexState: StateFlow<Int>
+
+    val totalSearchResultsState: StateFlow<Int>
+
     val hasSelectedLines: StateFlow<Boolean>
 
     val selectionMetadataState: StateFlow<Set<SelectionMetadata>>
@@ -65,6 +69,10 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun hideSearch()
 
     fun searchInDocument(query: String)
+
+    fun previousSearchResult()
+
+    fun nextSearchResult()
 
     fun toggleEditable()
 

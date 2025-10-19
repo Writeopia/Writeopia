@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
@@ -41,6 +44,7 @@ import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOption
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
+import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.drawer.factory.DrawersFactory
 
@@ -100,6 +104,8 @@ fun DesktopNoteEditorScreen(
 
         val textState by noteEditorViewModel.searchText.collectAsState()
         val showSearch by noteEditorViewModel.showSearchState.collectAsState()
+        val currentResultIndex by noteEditorViewModel.currentSearchIndexState.collectAsState()
+        val totalResults by noteEditorViewModel.totalSearchResultsState.collectAsState()
         val shape = MaterialTheme.shapes.medium
 
         AnimatedVisibility(
@@ -110,21 +116,55 @@ fun DesktopNoteEditorScreen(
             Box(modifier = Modifier.padding(6.dp)) {
                 val focusRequester = remember { FocusRequester() }
 
-                BasicTextField(
-                    value = textState,
-                    onValueChange = noteEditorViewModel::searchInDocument,
-                    modifier = Modifier.defaultMinSize(minWidth = 160.dp)
-                        .focusRequester(focusRequester)
+                Row(
+                    modifier = Modifier
                         .padding(12.dp)
                         .background(WriteopiaTheme.colorScheme.cardBg, shape)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, shape)
-                        .padding(8.dp),
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onBackground
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onBackground),
-                )
+                        .border(1.dp, MaterialTheme.colorScheme.outline, shape),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    BasicTextField(
+                        value = textState,
+                        onValueChange = noteEditorViewModel::searchInDocument,
+                        modifier = Modifier.defaultMinSize(minWidth = 160.dp)
+                            .focusRequester(focusRequester)
+                            .padding(8.dp),
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onBackground
+                        ),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.onBackground),
+                    )
+
+                    Text(
+                        modifier = Modifier.padding(4.dp).width(100.dp),
+                        text = if (totalResults == 0) WrStrings.searchNoResults() else "${currentResultIndex + 1}/$totalResults",
+                        textAlign = TextAlign.Right,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    )
+
+                    Icon(
+                        imageVector = WrIcons.smallArrowUp,
+                        contentDescription = "Previous result",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clickable(onClick = noteEditorViewModel::previousSearchResult)
+                            .padding(4.dp)
+                    )
+
+                    Icon(
+                        imageVector = WrIcons.smallArrowDown,
+                        contentDescription = "Next result",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clickable(onClick = noteEditorViewModel::nextSearchResult)
+                            .padding(4.dp)
+                    )
+                }
 
                 Icon(
                     imageVector = WrIcons.close,

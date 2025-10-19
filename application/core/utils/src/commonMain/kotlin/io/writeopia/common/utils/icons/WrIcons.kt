@@ -20,6 +20,7 @@ import io.writeopia.common.utils.icons.all.CalendarArrowDown
 import io.writeopia.common.utils.icons.all.ChartScatter
 import io.writeopia.common.utils.icons.all.ChevronDown
 import io.writeopia.common.utils.icons.all.ChevronRight
+import io.writeopia.common.utils.icons.all.ChevronUp
 import io.writeopia.common.utils.icons.all.CircleArrowLeft
 import io.writeopia.common.utils.icons.all.CircleArrowRight
 import io.writeopia.common.utils.icons.all.CirclePlus
@@ -130,6 +131,8 @@ object WrIcons {
     val smallArrowRight: ImageVector = ChevronRight
 
     val smallArrowDown: ImageVector = ChevronDown
+
+    val smallArrowUp: ImageVector = ChevronUp
 
     val undo: ImageVector = Undo2
 

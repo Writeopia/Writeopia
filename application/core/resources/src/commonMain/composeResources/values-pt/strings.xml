@@ -37,6 +37,7 @@
   <string name="enter_without_register">Entrar without register</string>
   <string name="register">Registrar</string>
   <string name="search">Pesquisar</string>
+  <string name="search_no_results">0 resultados</string>
   <string name="home">Home</string>
   <string name="favorites">Favoritos</string>
   <string name="settings">Configurações</string>

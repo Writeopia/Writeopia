@@ -37,6 +37,7 @@
   <string name="enter_without_register">Enter without register</string>
   <string name="register">Register</string>
   <string name="search">Search</string>
+  <string name="search_no_results">0 results</string>
   <string name="home">Home</string>
   <string name="favorites">Favorites</string>
   <string name="settings">Settings</string>

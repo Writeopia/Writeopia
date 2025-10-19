@@ -84,6 +84,7 @@ import writeopia.application.core.resources.generated.resources.recent
 import writeopia.application.core.resources.generated.resources.repeat_password
 import writeopia.application.core.resources.generated.resources.retry
 import writeopia.application.core.resources.generated.resources.search
+import writeopia.application.core.resources.generated.resources.search_no_results
 import writeopia.application.core.resources.generated.resources.settings
 import writeopia.application.core.resources.generated.resources.sign_in
 import writeopia.application.core.resources.generated.resources.sign_in_account
@@ -111,6 +112,9 @@ object WrStrings {
 
     @Composable
     fun search() = stringResource(Res.string.search)
+
+    @Composable
+    fun searchNoResults() = stringResource(Res.string.search_no_results)
 
     @Composable
     fun home() = stringResource(Res.string.home)
