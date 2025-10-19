@@ -58,6 +58,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -142,9 +143,13 @@ class NoteEditorKmpViewModel(
 
     private val _showSearch = MutableStateFlow(false)
     private val _searchText = MutableStateFlow("")
+    private val _currentSearchIndex = MutableStateFlow(0)
+    private val _totalSearchResults = MutableStateFlow(0)
 
     override val showSearchState: StateFlow<Boolean> = _showSearch.asStateFlow()
     override val searchText: StateFlow<String> = _searchText.asStateFlow()
+    override val currentSearchIndexState: StateFlow<Int> = _currentSearchIndex.asStateFlow()
+    override val totalSearchResultsState: StateFlow<Int> = _totalSearchResults.asStateFlow()
 
     private val hasLinesSelection = writeopiaManager.onEditPositions
         .map { it.isNotEmpty() }
@@ -272,12 +277,15 @@ class NoteEditorKmpViewModel(
             writeopiaManager.toDraw,
             findsOfSearch,
             searchText,
-            _showSearch
-        ) { drawState, finds, query, showSearch ->
+            _showSearch,
+            _currentSearchIndex
+        ) { drawState, finds, query, showSearch, currentSearchIndex ->
             if (finds.isEmpty() && showSearch) return@combine drawState.copy(focus = null)
             if (finds.isEmpty()) return@combine drawState
 
             val mutableStories = drawState.stories.toMutableList()
+            val activeFindPosition = if (finds.size > currentSearchIndex) finds.elementAt(currentSearchIndex) else null
+            _totalSearchResults.value = finds.size
 
             finds.forEach { position ->
                 val realPosition = minOf(position * 2, mutableStories.lastIndex)
@@ -286,7 +294,12 @@ class NoteEditorKmpViewModel(
 
                 val findSpans = FindInText.findInText(story.text ?: "", query)
                     .map { (start, end) ->
-                        SpanInfo.create(start, end, Span.HIGHLIGHT_YELLOW)
+                        val span = if (position == activeFindPosition) {
+                            Span.HIGHLIGHT_GREEN
+                        } else {
+                            Span.HIGHLIGHT_YELLOW
+                        }
+                        SpanInfo.create(start, end, span)
                     }
 
                 mutableStories[realPosition] =
@@ -718,11 +731,45 @@ class NoteEditorKmpViewModel(
             _showSearch.value = false
             delay(100)
             _searchText.value = ""
+            _currentSearchIndex.value = 0
         }
     }
 
     override fun searchInDocument(query: String) {
-        _searchText.value = query
+        viewModelScope.launch {
+            _searchText.value = query
+            val finds = findsOfSearch.first().toList().sorted()
+            if (finds.isEmpty()) {
+                _currentSearchIndex.value = 0
+                _totalSearchResults.value = 0
+                return@launch
+            }
+
+            val currentPosition = writeopiaManager.currentStory.value.focus ?: writeopiaManager.currentStory.value.selection.position
+            val newIndex = finds.indexOfFirst { it >= currentPosition }
+
+            _currentSearchIndex.value = if (newIndex != -1) newIndex else 0
+        }
+    }
+
+    override fun previousSearchResult() {
+        viewModelScope.launch {
+            val total = findsOfSearch.first().size
+            if (total == 0) return@launch
+
+            val currentIndex = _currentSearchIndex.value
+            _currentSearchIndex.value = (currentIndex - 1 + total) % total
+        }
+    }
+
+    override fun nextSearchResult() {
+        viewModelScope.launch {
+            val total = findsOfSearch.first().size
+            if (total == 0) return@launch
+
+            val currentIndex = _currentSearchIndex.value
+            _currentSearchIndex.value = (currentIndex + 1) % total
+        }
     }
 
     override fun titleClick(tag: Tag) {
