@@ -52,6 +52,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
@@ -281,15 +282,16 @@ class GlobalShellKmpViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override val usersOfWorkspaceToEdit: StateFlow<ResultData<List<String>>> =
-        workspaceToEdit.map { workspace ->
+        workspaceToEdit.flatMapLatest { workspace ->
             val token = authRepository.getAuthToken()
             val workspaceId = workspace?.id
 
             if (token != null && workspaceId != null) {
-                workspaceApi.usersOfWorkspace(workspaceId, token)
+                workspaceApi.getUsersOfWorkspace(workspaceId, token, forceRefresh = false)
             } else {
-                ResultData.Error()
+                flow { emit(ResultData.Error()) }
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ResultData.Idle())
 
@@ -560,7 +562,7 @@ class GlobalShellKmpViewModel(
                     val result = workspaceApi.addUserToWorkspace(workspace.id, userEmail, token)
 
                     if (result is ResultData.Complete) {
-                        //Todo: Renew the users of selected workspace
+                        workspaceApi.refreshUsersInWorkspace(workspace.id, token)
                     }
                 }
             }
