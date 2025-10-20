@@ -106,6 +106,7 @@ fun SettingsDialog(
     syncWorkspace: () -> Unit,
     addUserToTeam: (String) -> Unit,
     selectWorkspaceToManage: (String) -> Unit,
+    usersInSelectedWorkspace: StateFlow<ResultData<List<String>>>
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -164,7 +165,13 @@ fun SettingsDialog(
                     )
                 },
                 teamsScreen = {
-                    TeamsSection(workspaces, workspaceToEdit, selectWorkspaceToManage, addUserToTeam)
+                    TeamsSection(
+                        workspaces,
+                        workspaceToEdit,
+                        selectWorkspaceToManage,
+                        addUserToTeam,
+                        usersInSelectedWorkspace
+                    )
                 }
             )
         }
@@ -820,7 +827,8 @@ private fun TeamsSection(
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
     selectedWorkspaceState: StateFlow<Workspace?>,
     selectWorkspace: (String) -> Unit,
-    addUserToTeam: (String) -> Unit
+    addUserToTeam: (String) -> Unit,
+    usersInSelectedWorkspace: StateFlow<ResultData<List<String>>>
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -890,6 +898,45 @@ private fun TeamsSection(
                         CommonButton(text = "Add") {
                             addUserToTeam(userEmail)
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val usersResult = usersInSelectedWorkspace.collectAsState().value
+
+                    if (usersResult is ResultData.Complete) {
+                        val users = usersResult.data
+
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (users.isNotEmpty()) {
+                                users.forEach { userName ->
+                                    BasicText(
+                                        text = userName,
+                                        style = MaterialTheme
+                                            .typography
+                                            .bodySmall
+                                            .copy(MaterialTheme.colorScheme.onBackground)
+                                    )
+                                }
+                            } else {
+                                BasicText(
+                                    text = "No users in this team",
+                                    style = MaterialTheme
+                                        .typography
+                                        .bodySmall
+                                        .copy(MaterialTheme.colorScheme.onBackground)
+                                )
+                            }
+                        }
+                    } else if (usersResult is ResultData.Error) {
+                        BasicText(
+                            text = "Error loading users",style = MaterialTheme
+                                .typography
+                                .bodySmall
+                                .copy(MaterialTheme.colorScheme.onBackground)
+                        )
+                    } else {
+                        CircularProgressIndicator()
                     }
                 }
             }

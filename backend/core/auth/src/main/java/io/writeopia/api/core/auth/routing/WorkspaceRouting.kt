@@ -12,6 +12,7 @@ import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.runIfAdmin
 import io.writeopia.api.core.auth.utils.runIfMember
+import io.writeopia.app.mapping.toApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
@@ -68,12 +69,14 @@ fun Routing.workspaceRoute(
                 ?: throw IllegalArgumentException("User id is required")
 
             runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
-                val workspaces = WorkspaceService.getUsersInWorkspace(workspaceId, writeopiaDb)
+                val workspaces = WorkspaceService
+                    .getUsersInWorkspace(workspaceId, writeopiaDb)
+                    .map { workspaceUser -> workspaceUser.toApi() }
 
                 if (workspaces.isNotEmpty()) {
                     call.respond(HttpStatusCode.OK, workspaces)
                 } else {
-                    call.respond(HttpStatusCode.NotFound, "No workspaces found for user")
+                    call.respond(HttpStatusCode.NotFound, "No users found for workspace")
                 }
             }
         }
@@ -81,10 +84,11 @@ fun Routing.workspaceRoute(
 
     authenticate("auth-jwt", optional = debugMode) {
         post<AddUserToWorkspaceRequest>("/api/workspace/user") { request ->
+            println("adding user to workspace")
             val userId = getUserId() ?: ""
             val (userEmail, workspaceId, role) = request
 
-            runIfMember(userId, workspaceId, writeopiaDb, debugMode) {
+            runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
                 val result = WorkspaceService.addUserToWorkspaceSecure(
                     workspaceOwnerId = userId,
                     userEmail,
@@ -102,7 +106,7 @@ fun Routing.workspaceRoute(
         }
     }
 
-    post<AddUserToWorkspaceRequest>("/api/workspace/user") { request ->
+    post<AddUserToWorkspaceRequest>("/api/admin/workspace/user") { request ->
         val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
 
         adminUserFn(apiKey, providedKey, debugMode) {
