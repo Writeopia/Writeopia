@@ -344,13 +344,13 @@ class AuthIntegrationTest {
 
         assertTrue { response2.status.isSuccess() }
 
-        val getWorkspaceResponse = client.get("/admin/workspace/user/$email1") {
+        val getWorkspaceResponse = client.get("/api/workspace/user/email/$email1") {
             contentType(ContentType.Application.Json)
         }
 
         val workspaceOfUser1 = getWorkspaceResponse.body<List<WorkspaceApi>>().first()
 
-        val addUserToWorkspace = client.post("/admin/workspace/user") {
+        val addUserToWorkspace = client.post("/api/workspace/user") {
             contentType(ContentType.Application.Json)
             setBody(
                 AddUserToWorkspaceRequest(
@@ -363,7 +363,7 @@ class AuthIntegrationTest {
 
         assertTrue(addUserToWorkspace.status.isSuccess())
 
-        val getWorkspaceResponse2 = client.get("/admin/workspace/user/$email2") {
+        val getWorkspaceResponse2 = client.get("/api/workspace/user/email/$email2") {
             contentType(ContentType.Application.Json)
         }
 
@@ -412,13 +412,13 @@ class AuthIntegrationTest {
 
         assertTrue { response2.status.isSuccess() }
 
-        val getWorkspaceResponse = client.get("/admin/workspace/user/$email1") {
+        val getWorkspaceResponse = client.get("/api/workspace/user/email/$email1") {
             contentType(ContentType.Application.Json)
         }
 
         val workspaceOfUser1 = getWorkspaceResponse.body<List<WorkspaceApi>>().first()
 
-        val addUserToWorkspace = client.post("/admin/workspace/user") {
+        val addUserToWorkspace = client.post("/api/workspace/user") {
             contentType(ContentType.Application.Json)
             setBody(
                 AddUserToWorkspaceRequest(
@@ -431,7 +431,7 @@ class AuthIntegrationTest {
 
         assertTrue(addUserToWorkspace.status.isSuccess())
 
-        val getWorkspaceResponse2 = client.get("/admin/workspace/user/$email2") {
+        val getWorkspaceResponse2 = client.get("/api/workspace/user/email/$email2") {
             contentType(ContentType.Application.Json)
         }
 
@@ -441,12 +441,12 @@ class AuthIntegrationTest {
 
         val deleteResponse =
             client.delete(
-                "/admin/api/workspace/${workspaceOfUser1.id}/user/email/$email2"
+                "/api/workspace/${workspaceOfUser1.id}/user/email/$email2"
             )
 
         assertTrue(deleteResponse.status.isSuccess())
 
-        val getWorkspaceResponse3 = client.get("/admin/workspace/user/$email2") {
+        val getWorkspaceResponse3 = client.get("/api/workspace/user/email/$email2") {
             contentType(ContentType.Application.Json)
         }
 

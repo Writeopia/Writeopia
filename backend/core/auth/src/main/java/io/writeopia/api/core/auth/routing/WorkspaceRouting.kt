@@ -11,7 +11,6 @@ import io.ktor.server.routing.post
 import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.runIfAdmin
-import io.writeopia.api.core.auth.utils.runIfMember
 import io.writeopia.app.mapping.toApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.sdk.serialization.data.toApi
@@ -106,7 +105,7 @@ fun Routing.workspaceRoute(
         }
     }
 
-    post<AddUserToWorkspaceRequest>("/api/admin/workspace/user") { request ->
+    post<AddUserToWorkspaceRequest>("/admin/workspace/user") { request ->
         val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
 
         adminUserFn(apiKey, providedKey, debugMode) {
