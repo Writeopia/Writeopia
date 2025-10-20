@@ -390,12 +390,14 @@ private fun ChooseTeam(workspacesState: StateFlow<ResultData<List<Workspace>>>) 
     val titleStyle = MaterialTheme.typography.titleLarge
     val titleColor = MaterialTheme.colorScheme.onBackground
 
-    Text("Choose team", style = titleStyle, color = titleColor)
-    Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-
     val workspaces by workspacesState.collectAsState()
 
-    if (workspaces is ResultData.Complete) {
+    if (workspaces is ResultData.Complete &&
+        (workspaces as ResultData.Complete<List<Workspace>>).data.isNotEmpty()
+    ) {
+        Text("Your teams", style = titleStyle, color = titleColor)
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
         Column(
             modifier = Modifier.width(240.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -930,7 +932,7 @@ private fun TeamsSection(
                         }
                     } else if (usersResult is ResultData.Error) {
                         BasicText(
-                            text = "Error loading users",style = MaterialTheme
+                            text = "Error loading users", style = MaterialTheme
                                 .typography
                                 .bodySmall
                                 .copy(MaterialTheme.colorScheme.onBackground)
