@@ -248,7 +248,9 @@ fun DesktopApp(
                                     },
                                     syncWorkspace = globalShellViewModel::syncWorkspace,
                                     addUserToTeam = globalShellViewModel::addUserToTeam,
-                                    selectWorkspaceToManage = globalShellViewModel::selectWorkspaceToManage,
+                                    selectWorkspaceToManage =
+                                        globalShellViewModel::selectWorkspaceToManage,
+                                    usersInSelectedWorkspace = globalShellViewModel.usersOfWorkspaceToEdit,
                                 )
                             }
 
