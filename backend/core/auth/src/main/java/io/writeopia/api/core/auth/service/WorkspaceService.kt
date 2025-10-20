@@ -2,9 +2,11 @@ package io.writeopia.api.core.auth.service
 
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserById
+import io.writeopia.api.core.auth.repository.getUsersInWorkspace
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertUserInWorkspace
 import io.writeopia.api.core.auth.repository.removeUserFromWorkspace
+import io.writeopia.models.user.WorkspaceUser
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sql.WriteopiaDbBackend
@@ -28,9 +30,7 @@ object WorkspaceService {
     fun getUsersInWorkspace(
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
-    ): List<WriteopiaUser> {
-        writeopiaDb.
-    }
+    ): List<WorkspaceUser> = writeopiaDb.getUsersInWorkspace(workspaceId)
 
     fun addUserToWorkspaceAdmin(
         userEmail: String,
@@ -51,12 +51,18 @@ object WorkspaceService {
         writeopiaDb: WriteopiaDbBackend
     ): Boolean {
         val ownerWorkspaces = writeopiaDb.getWorkspacesByUserId(workspaceOwnerId)
-        if (!ownerWorkspaces.any { it.id == workspaceId }) return false
+        if (!ownerWorkspaces.any { it.id == workspaceId }) {
+            println("This user doesn't not have access to this workspace as admin")
+            false
+        }
 
-        return writeopiaDb.getUserById(userEmail)?.id?.let { userId ->
+        return writeopiaDb.getUserByEmail(userEmail)?.id?.let { userId ->
             writeopiaDb.insertUserInWorkspace(workspaceId, userId, role)
             true
-        } ?: false
+        } ?: run {
+            println("User with email $userEmail doesn't exist")
+            false
+        }
     }
 
     suspend fun removeUserFromWorkspaceSecure(

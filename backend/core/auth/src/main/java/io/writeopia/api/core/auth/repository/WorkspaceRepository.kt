@@ -1,5 +1,7 @@
 package io.writeopia.api.core.auth.repository
 
+import io.writeopia.models.user.WorkspaceUser
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.datetime.Clock
@@ -84,10 +86,18 @@ internal fun WriteopiaDbBackend.isUserAdminInWorkspace(userId: String, workspace
         .executeAsList()
         .any { entity -> entity.workspace_id == workspaceId }
 
-internal fun WriteopiaDbBackend.getUsersInWorkspace(workspaceId: String): List<String> =
+internal fun WriteopiaDbBackend.getUsersInWorkspace(workspaceId: String): List<WorkspaceUser> =
     this.workspaceToUserQueries
         .getUsersInWorkspace(workspaceId)
         .executeAsList()
+        .map { workspaceToUser ->
+            WorkspaceUser(
+                id = workspaceToUser.user_entity_id,
+                email = workspaceToUser.user_email,
+                name = workspaceToUser.user_name,
+                role = workspaceToUser.role
+            )
+        }
 
 internal suspend fun WriteopiaDbBackend.removeUserFromWorkspace(workspaceId: String, userId: String) {
     this.workspaceToUserQueries.removeUserFromWorkspace(workspaceId, userId)
