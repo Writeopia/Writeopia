@@ -414,7 +414,6 @@ private fun TeamLine(workspace: Workspace, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .clip(MaterialTheme.shapes.large)
-            .clickable {}
             .fillMaxWidth()
             .padding(8.dp)
     ) {
