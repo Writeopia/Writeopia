@@ -114,13 +114,13 @@ internal fun NoteEditorScreen(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                TextEditor(
-                    noteEditorViewModel,
-                    DefaultDrawersNative,
-                    Modifier.weight(1F).padding(horizontal = 6.dp),
-                    keyFn = { drawStory -> drawStory.mobileKey },
-                    onDocumentLinkClick = onDocumentLinkClick
-                )
+//                TextEditor(
+//                    noteEditorViewModel,
+//                    DefaultDrawersNative,
+//                    Modifier.weight(1F).padding(horizontal = 6.dp),
+//                    keyFn = { drawStory -> drawStory.mobileKey },
+//                    onDocumentLinkClick = onDocumentLinkClick
+//                )
 
                 BottomScreen(
                     noteEditorViewModel.isEditState,

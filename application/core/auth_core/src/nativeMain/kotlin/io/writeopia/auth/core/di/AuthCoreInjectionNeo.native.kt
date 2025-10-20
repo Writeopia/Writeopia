@@ -1,8 +1,31 @@
 package io.writeopia.auth.core.di
 
-actual class AuthCoreInjectionNeo {
-    actual fun provideAccountManager(): io.writeopia.auth.core.manager.AuthRepository =
-        io.writeopia.auth.core.manager.SqlDelightAuthRepository()
+import io.writeopia.auth.core.data.AuthApi
+import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.auth.core.manager.SqlDelightAuthRepository
+import io.writeopia.di.AppConnectionInjection
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
+import io.writeopia.sql.WriteopiaDb
+import io.writeopia.sqldelight.di.WriteopiaDbInjector
+
+actual class AuthCoreInjectionNeo(
+    private val writeopiaDb: WriteopiaDb? = WriteopiaDbInjector.singleton()?.database,
+    private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
+    private val connectionInjector: WriteopiaConnectionInjector =
+        WriteopiaConnectionInjector.singleton()
+) {
+
+    private val authRepository: AuthRepository by lazy {
+        SqlDelightAuthRepository(writeopiaDb)
+    }
+
+    actual fun provideAuthRepository(): AuthRepository = authRepository
+
+    actual fun provideAuthApi(): AuthApi =
+        AuthApi(
+            client = appConnectionInjection.provideHttpClient(),
+            baseUrl = connectionInjector.baseUrl()
+        )
 
     actual companion object {
         private var instance: AuthCoreInjectionNeo? = null
