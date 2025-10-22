@@ -26,8 +26,8 @@ import kotlinx.coroutines.flow.StateFlow
 
 fun NavGraphBuilder.startScreen(
     navigationController: NavController,
-    authInjection: AuthInjection,
-    colorTheme: StateFlow<ColorThemeOption?>
+    colorTheme: StateFlow<ColorThemeOption?>,
+    authInjection: AuthInjection = AuthInjection.singleton()
 ) {
     composable(route = Destinations.START_APP.id) {
         val authMenuViewModel: AuthMenuViewModel =

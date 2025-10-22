@@ -1,4 +1,4 @@
-package io.writeopia.core.folders.api
+package io.writeopia.auth.core.data
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -12,7 +12,6 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.app.dto.WorkspaceUserApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
-import io.writeopia.models.user.WorkspaceUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Role
 import io.writeopia.sdk.models.workspace.Workspace
