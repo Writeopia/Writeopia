@@ -1,4 +1,4 @@
-package io.writeopia.auth.core.data
+package io.writeopia.auth.core.data.model
 
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 

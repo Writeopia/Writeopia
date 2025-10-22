@@ -1,8 +1,13 @@
 package io.writeopia.auth.navigation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -13,6 +18,7 @@ import io.writeopia.auth.menu.AuthMenuScreen
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterPasswordScreen
 import io.writeopia.auth.register.RegisterScreen
+import io.writeopia.auth.workspace.ChooseWorkspace
 import io.writeopia.common.utils.Destinations
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
@@ -22,8 +28,8 @@ import kotlinx.coroutines.flow.StateFlow
 
 fun NavGraphBuilder.authNavigation(
     navController: NavController,
-    authInjection: AuthInjection,
     colorThemeOption: StateFlow<ColorThemeOption?>,
+    authInjection: AuthInjection = AuthInjection.singleton(),
     toAppNavigation: () -> Unit,
 ) {
     composable(Destinations.AUTH_RESET_PASSWORD.id) {
@@ -71,7 +77,24 @@ fun NavGraphBuilder.authNavigation(
                         authMenuViewModel.useOffline(toAppNavigation)
                     },
                     navigateUp = navController::navigateUp,
-                    navigateToApp = navController::navigateToApp
+                    navigateNext = navController::navigateToWorkspaceChoice
+                )
+            }
+        }
+
+        composable(Destinations.CHOOSE_WORKSPACE.id) {
+            val workspacesViewModel = authInjection.provideChooseWorkspaceViewModel()
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(WriteopiaTheme.colorScheme.globalBackground)
+            ) {
+                ChooseWorkspace(
+                    workspacesState = workspacesViewModel.workspacesState,
+                    onWorkspaceSelected = {
+
+                    }
                 )
             }
         }
@@ -93,7 +116,7 @@ fun NavGraphBuilder.authNavigation(
                     emailChanged = registerViewModel::emailChanged,
                     passwordChanged = registerViewModel::passwordChanged,
                     onRegisterRequest = registerViewModel::onRegister,
-                    onRegisterSuccess = toAppNavigation,
+                    onRegisterSuccess = navController::navigateToWorkspaceChoice,
                     navigateBack = navController::navigateUp
                 )
             }
@@ -108,3 +131,9 @@ fun NavController.navigateAuthRegister() {
 fun NavController.navigateToApp() {
     navigate(Destinations.MAIN_APP.id)
 }
+
+fun NavController.navigateToWorkspaceChoice() {
+    navigate(Destinations.CHOOSE_WORKSPACE.id)
+}
+
+

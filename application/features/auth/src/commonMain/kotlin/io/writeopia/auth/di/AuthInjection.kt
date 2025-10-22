@@ -8,10 +8,23 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterViewModel
 import io.writeopia.auth.register.ResetPasswordViewModel
+import io.writeopia.auth.workspace.ChooseWorkspaceViewModel
+import io.writeopia.auth.core.data.WorkspaceApi
+import io.writeopia.di.AppConnectionInjection
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 
-class AuthInjection(
-    private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton()
+class AuthInjection private constructor(
+    private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
+    private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
+    private val connectionInjector: WriteopiaConnectionInjector =
+        WriteopiaConnectionInjector.singleton(),
 ) {
+
+    fun provideWorkspaceApi() =
+        WorkspaceApi(
+            appConnectionInjection.provideHttpClient(),
+            connectionInjector.baseUrl()
+        )
 
     @Composable
     internal fun provideRegisterViewModel(
@@ -30,4 +43,20 @@ class AuthInjection(
         authManager: AuthRepository = authCoreInjection.provideAuthRepository(),
         authApi: AuthApi = authCoreInjection.provideAuthApi()
     ): AuthMenuViewModel = viewModel { AuthMenuViewModel(authManager, authApi) }
+
+    @Composable
+    fun provideChooseWorkspaceViewModel(): ChooseWorkspaceViewModel = viewModel {
+        ChooseWorkspaceViewModel(
+            authRepository = authCoreInjection.provideAuthRepository(),
+            workspaceApi = provideWorkspaceApi()
+        )
+    }
+
+    companion object {
+        private var instance: AuthInjection? = null
+
+        fun singleton() = instance ?: AuthInjection().also {
+            instance = it
+        }
+    }
 }
