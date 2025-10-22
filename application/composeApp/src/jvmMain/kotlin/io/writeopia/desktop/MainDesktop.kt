@@ -90,6 +90,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
             keyboardEventFlow.tryEmit(KeyboardEvent.IDLE)
         }
     }
+    val enterEventState = MutableStateFlow(false)
 
     val handleKeyboardEvent: (KeyEvent) -> Boolean = { keyEvent ->
         selectionState.value = keyEvent.isMultiSelectionTrigger()
@@ -227,8 +228,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                         "http://localhost:8080"
                     )
 
-                    val authInjection = AuthInjection()
-
                     val uiConfigurationInjector = UiConfigurationInjector.singleton()
 
                     val uiConfigurationViewModel = uiConfigurationInjector
@@ -252,7 +251,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                     Destinations.MAIN_APP.id
                                 }
                             ) {
-                                startScreen(navigationController, authInjection, colorTheme)
+                                startScreen(navigationController, colorTheme)
 
                                 composable(route = Destinations.MAIN_APP.id) {
                                     DesktopApp(
@@ -279,7 +278,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
                                 authNavigation(
                                     navController = navigationController,
-                                    authInjection = authInjection,
                                     colorThemeOption = colorTheme
                                 ) {
                                     navigationController.navigate(Destinations.MAIN_APP.id)

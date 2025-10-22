@@ -43,6 +43,7 @@ kotlin {
                 implementation(project(":plugins:writeopia_serialization"))
 
                 implementation(project(":application:core:connection"))
+                implementation(project(":common:endpoints"))
 
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)

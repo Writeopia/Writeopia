@@ -43,6 +43,7 @@ kotlin {
                 implementation(project(":application:core:persistence_bridge"))
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:resources"))
+                implementation(project(":application:core:common_ui"))
 
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_serialization"))
@@ -56,6 +57,7 @@ kotlin {
                 implementation(compose.material3)
                 implementation(compose.components.uiToolingPreview)
                 implementation(libs.compose.navigation)
+                implementation(libs.ktor.client.core)
             }
         }
 
