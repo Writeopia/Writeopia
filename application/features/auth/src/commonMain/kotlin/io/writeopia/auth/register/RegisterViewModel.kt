@@ -64,10 +64,8 @@ internal class RegisterViewModel(
                 _register.value = when (result) {
                     is ResultData.Complete -> {
                         val user = result.data.writeopiaUser.toModel()
-                        val workspace = result.data.workspace.toModel()
 
                         authRepository.saveUser(user = user, selected = true)
-                        authRepository.saveWorkspace(workspace)
 
                         result.map { true }
                     }

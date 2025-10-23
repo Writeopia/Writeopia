@@ -19,22 +19,32 @@ class SqlDelightDocumentRepository(
 
     private val _documentByParentState = MutableStateFlow<Map<String, List<Document>>>(emptyMap())
 
+    override suspend fun loadDocumentsForFolder(
+        folderId: String,
+        workspaceId: String
+    ): List<Document> =
+        documentSqlDao.loadDocumentByParentId(folderId, workspaceId)
+
     override suspend fun loadDocumentsWorkspace(workspaceId: String): List<Document> =
         documentSqlDao.loadDocumentsWithContentByWorkspaceId(OrderBy.NAME.type, workspaceId)
 
-    override suspend fun loadDocumentsForFolder(folderId: String): List<Document> =
-        documentSqlDao.loadDocumentByParentId(folderId)
-
-    override suspend fun loadFavDocumentsForWorkspace(orderBy: String, workspaceId: String): List<Document> =
+    override suspend fun loadFavDocumentsForWorkspace(
+        orderBy: String,
+        workspaceId: String
+    ): List<Document> =
         documentSqlDao.loadFavDocumentsWithContentByUserId(orderBy, workspaceId)
 
-    override suspend fun loadDocumentsByParentId(parentId: String): List<Document> =
-        documentSqlDao.loadDocumentByParentId(parentId)
+    override suspend fun loadDocumentsByParentId(
+        parentId: String,
+        workspaceId: String
+    ): List<Document> =
+        documentSqlDao.loadDocumentByParentId(parentId, workspaceId)
 
     override suspend fun listenForDocumentsByParentId(
         parentId: String,
+        workspaceId: String
     ): Flow<Map<String, List<Document>>> {
-        SelectedIds.ids.add(parentId)
+        SelectedIds.ids.add("$parentId:$workspaceId")
         refreshDocuments()
 
         return _documentByParentState
@@ -55,8 +65,8 @@ class SqlDelightDocumentRepository(
         }
     }
 
-    override suspend fun stopListeningForFoldersByParentId(parentId: String) {
-        SelectedIds.ids.remove(parentId)
+    override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
+        SelectedIds.ids.remove("$parentId:$workspaceId")
         refreshDocuments()
     }
 
@@ -71,23 +81,27 @@ class SqlDelightDocumentRepository(
         )
     }
 
-    override suspend fun loadOutdatedDocuments(folderId: String): List<Document> =
-        documentSqlDao.loadOutdatedDocumentByParentId(folderId)
+    override suspend fun loadOutdatedDocuments(
+        folderId: String,
+        workspaceId: String
+    ): List<Document> =
+        documentSqlDao.loadOutdatedDocumentByParentId(folderId, workspaceId)
 
     override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
         documentSqlDao.loadOutdatedDocumentByWorkspaceId(workspaceId)
 
-    override suspend fun loadDocumentById(id: String): Document? =
-        documentSqlDao.loadDocumentWithContentById(id)
+    override suspend fun loadDocumentById(id: String, workspaceId: String): Document? =
+        documentSqlDao.loadDocumentWithContentById(id, workspaceId)
 
-    override suspend fun loadDocumentByIds(ids: List<String>): List<Document> =
+    override suspend fun loadDocumentByIds(ids: List<String>, workspaceId: String): List<Document> =
         ids.mapNotNull { id ->
-            loadDocumentById(id)
+            loadDocumentById(id, workspaceId)
         }
 
     override suspend fun loadDocumentsWithContentByIds(
         ids: List<String>,
-        orderBy: String
+        orderBy: String,
+        workspaceId: String
     ): List<Document> =
         documentSqlDao.loadDocumentWithContentByIds(ids)
 
@@ -157,8 +171,9 @@ class SqlDelightDocumentRepository(
     }
 
     override suspend fun refreshDocuments() {
-        _documentByParentState.value = SelectedIds.ids.associateWith { id ->
-            documentSqlDao.loadDocumentByParentId(id)
+        _documentByParentState.value = SelectedIds.ids.associateWith { key ->
+            val (parentId, workspaceId) = key.split(":", limit = 2)
+            documentSqlDao.loadDocumentByParentId(parentId, workspaceId)
         }
     }
 

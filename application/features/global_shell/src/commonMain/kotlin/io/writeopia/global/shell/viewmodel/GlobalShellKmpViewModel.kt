@@ -213,11 +213,12 @@ class GlobalShellKmpViewModel(
     override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
         combine(
             authRepository.listenForUser(),
+            authRepository.listenForWorkspace(),
             notesNavigationUseCase.navigationState
-        ) { user, notesNavigation ->
-            user to notesNavigation
-        }.flatMapLatest { (user, notesNavigation) ->
-            notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id)
+        ) { user, workspace, notesNavigation ->
+            Triple(user, notesNavigation, workspace)
+        }.flatMapLatest { (user, notesNavigation, workspace) ->
+            notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id, workspace.id)
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
     }
 
@@ -350,7 +351,11 @@ class GlobalShellKmpViewModel(
             }
         } else {
             viewModelScope.launch {
-                notesUseCase.listenForMenuItemsByParentId(id, getUserId())
+                notesUseCase.listenForMenuItemsByParentId(
+                    id,
+                    getUserId(),
+                    authRepository.getUser().id
+                )
                     .collect()
                 _expandedFolders.value = expanded + id
             }
@@ -409,7 +414,10 @@ class GlobalShellKmpViewModel(
                     )
                 }
 
-                IconChange.DOCUMENT -> notesUseCase.updateDocumentById(menuItemId) { document ->
+                IconChange.DOCUMENT -> notesUseCase.updateDocumentById(
+                    menuItemId,
+                    authRepository.getWorkspace().id
+                ) { document ->
                     document.copy(
                         icon = MenuItem.Icon(icon, tint),
                         lastUpdatedAt = Clock.System.now()

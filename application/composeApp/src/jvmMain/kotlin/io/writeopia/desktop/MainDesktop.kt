@@ -90,7 +90,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
             keyboardEventFlow.tryEmit(KeyboardEvent.IDLE)
         }
     }
-    val enterEventState = MutableStateFlow(false)
 
     val handleKeyboardEvent: (KeyEvent) -> Boolean = { keyEvent ->
         selectionState.value = keyEvent.isMultiSelectionTrigger()

@@ -19,10 +19,15 @@ class InMemoryDocumentRepository : DocumentRepository {
         }
     }
 
-    override suspend fun loadDocumentsWorkspace(folderId: String): List<Document> =
+    override suspend fun loadDocumentsWorkspace(
+        workspaceId: String
+    ): List<Document> =
         documentsMap.values.toList()
 
-    override suspend fun loadDocumentsForFolder(folderId: String): List<Document> =
+    override suspend fun loadDocumentsForFolder(
+        folderId: String,
+        workspaceId: String
+    ): List<Document> =
         documentsMap.values.toList()
 
     override suspend fun loadFavDocumentsForWorkspace(
@@ -37,15 +42,17 @@ class InMemoryDocumentRepository : DocumentRepository {
         instant: Instant
     ): List<Document> = documentsMap.values.toList()
 
-    override suspend fun loadDocumentById(id: String): Document? = documentsMap["root"]
+    override suspend fun loadDocumentById(id: String, workspaceId: String): Document? =
+        documentsMap["root"]
 
-    override suspend fun loadDocumentByIds(ids: List<String>): List<Document> =
+    override suspend fun loadDocumentByIds(ids: List<String>, workspaceId: String): List<Document> =
         ids.mapNotNull { id ->
             documentsMap[id]
         }
 
     override suspend fun listenForDocumentsByParentId(
         parentId: String,
+        workspaceId: String
     ): Flow<Map<String, List<Document>>> = documentsMapState
 
     override suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo> {
@@ -54,7 +61,8 @@ class InMemoryDocumentRepository : DocumentRepository {
 
     override suspend fun loadDocumentsWithContentByIds(
         ids: List<String>,
-        orderBy: String
+        orderBy: String,
+        workspaceId: String
     ): List<Document> {
         val idSet = ids.toSet()
 
@@ -128,14 +136,14 @@ class InMemoryDocumentRepository : DocumentRepository {
         _documentsMapState.value = documentsMap
     }
 
-    override suspend fun stopListeningForFoldersByParentId(parentId: String) {
+    override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
     }
 
-    override suspend fun loadOutdatedDocuments(folderId: String): List<Document> = emptyList()
+    override suspend fun loadOutdatedDocuments(folderId: String, workspaceId: String): List<Document> = emptyList()
 
     override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
         emptyList()
 
-    override suspend fun loadDocumentsByParentId(parentId: String): List<Document> =
+    override suspend fun loadDocumentsByParentId(parentId: String, workspaceId: String): List<Document> =
         documentsMap.values.toList()
 }

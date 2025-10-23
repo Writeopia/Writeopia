@@ -22,8 +22,16 @@ class ChooseWorkspaceViewModel(
     fun loadWorkspaces() {
         viewModelScope.launch {
             authRepository.getAuthToken()?.let { token ->
+                _workspacesState.value = ResultData.Loading()
                 _workspacesState.value = workspaceApi.getAvailableWorkspaces(token)
             }
+        }
+    }
+
+    fun chooseWorkspace(workspace: Workspace, sideEffect: () -> Unit) {
+        viewModelScope.launch {
+            authRepository.saveWorkspace(workspace)
+            sideEffect()
         }
     }
 }
