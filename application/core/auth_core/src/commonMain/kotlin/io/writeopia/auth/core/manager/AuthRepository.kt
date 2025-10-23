@@ -11,6 +11,8 @@ interface AuthRepository : UserRepository {
 
     override fun listenForUser(): Flow<WriteopiaUser> = flow { emit(getUser()) }
 
+    fun listenForWorkspace(): Flow<Workspace> = flow { emit(getWorkspace())}
+
     override suspend fun getUser(): WriteopiaUser
 
     suspend fun isLoggedIn(): Boolean

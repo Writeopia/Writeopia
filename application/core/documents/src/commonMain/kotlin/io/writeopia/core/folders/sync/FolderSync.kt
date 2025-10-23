@@ -34,7 +34,7 @@ class FolderSync(
                 createdAt = Instant.DISTANT_PAST,
                 lastUpdatedAt = Instant.DISTANT_PAST,
                 itemCount = 0,
-                workspaceId = userId,
+                workspaceId = workspaceId,
             )
 
             folderRepository.createFolder(folder)
@@ -57,7 +57,7 @@ class FolderSync(
 
         // Then, load the outdated documents.
         // These documents were updated locally, but were not sent to the backend yet
-        val localOutdatedDocs = documentRepository.loadOutdatedDocuments(folderId)
+        val localOutdatedDocs = documentRepository.loadOutdatedDocuments(folderId, workspaceId)
 
         // Resolve conflicts of documents that were updated both locally and in the backend.
         // Documents will be saved locally by documentConflictHandler.handleConflict

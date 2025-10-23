@@ -54,15 +54,9 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 if (isVerified) {
                     val token = JwtConfig.generateToken(user.id)
 
-                    val workspace = AuthService.getWorkspaceForUser(
-                        writeopiaDb,
-                        user.id,
-                        user.name
-                    )
-
                     call.respond(
                         HttpStatusCode.OK,
-                        AuthResponse(token, user.toApi(), workspace.toApi())
+                        AuthResponse(token, user.toApi())
                     )
                 } else {
                     call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
@@ -89,15 +83,9 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 // Get workspace
                 val wUser = AuthService.createUser(writeopiaDb, request, enabled = debugMode)
 
-                val workspace = AuthService.getWorkspaceForUser(
-                    writeopiaDb,
-                    wUser.id,
-                    wUser.name
-                )
-
                 call.respond(
                     HttpStatusCode.Created,
-                    AuthResponse(null, wUser.toApi(), workspace.toApi()),
+                    AuthResponse(null, wUser.toApi()),
                 )
             } else {
                 logger.info("register request - user already exists")
