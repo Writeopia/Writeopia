@@ -89,8 +89,9 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
 
     suspend fun listenForFolderByParentId(
         parentId: String,
+        workspaceId: String
     ): Flow<Map<String, List<Pair<FolderEntity, Long>>>> {
-        SelectedIds.ids.add(parentId)
+        SelectedIds.ids.add("$parentId:$workspaceId")
         refreshFolders()
 
         return _foldersStateFlow
@@ -106,10 +107,16 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
         refreshFolders()
     }
 
-    suspend fun getFoldersByParentId(parentId: String): List<Pair<FolderEntity, Long>> {
+    suspend fun getFoldersByParentId(
+        parentId: String,
+        workspaceId: String
+    ): List<Pair<FolderEntity, Long>> {
         val countMap = countAllItems()
 
-        return folderEntityQueries?.selectChildrenFolder(parent_id = parentId)
+        return folderEntityQueries?.selectChildrenFolder(
+            parent_id = parentId,
+            workspace_id = workspaceId
+        )
             ?.executeAsList()
             ?.map { folderEntity ->
                 folderEntity to (countMap[folderEntity.id] ?: 0)
@@ -133,13 +140,14 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
     }
 
     suspend fun refreshFolders() {
-        _foldersStateFlow.value = SelectedIds.ids.associateWith {
-            getFoldersByParentId(it)
+        _foldersStateFlow.value = SelectedIds.ids.associateWith { key ->
+            val (parentId, workspaceId) = key.split(":", limit = 2)
+            getFoldersByParentId(parentId, workspaceId)
         }
     }
 
-    suspend fun removeListening(id: String) {
-        SelectedIds.ids.remove(id)
+    suspend fun removeListening(parentId: String, workspaceId: String) {
+        SelectedIds.ids.remove("$parentId:$workspaceId")
         refreshFolders()
     }
 

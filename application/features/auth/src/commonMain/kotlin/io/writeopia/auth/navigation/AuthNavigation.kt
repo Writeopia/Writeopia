@@ -98,7 +98,10 @@ fun NavGraphBuilder.authNavigation(
                 ChooseWorkspace(
                     workspacesState = workspacesViewModel.workspacesState,
                     onWorkspaceSelected = { workspace ->
-                        workspacesViewModel.chooseWorkspace(workspace, sideEffect = toAppNavigation)
+                        workspacesViewModel.chooseWorkspace(
+                            workspace.copy(selected = true),
+                            sideEffect = toAppNavigation
+                        )
                     },
                     retry = workspacesViewModel::loadWorkspaces,
                 )

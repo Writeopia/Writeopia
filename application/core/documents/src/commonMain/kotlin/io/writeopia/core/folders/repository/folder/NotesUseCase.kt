@@ -77,7 +77,9 @@ class NotesUseCase private constructor(
     }
 
     suspend fun loadDocumentsForWorkspaceFromDb(workspaceId: String): List<Document> =
-        documentRepository.loadDocumentsWorkspace(workspaceId)
+        documentRepository.loadDocumentsWorkspace(workspaceId).also {
+            println("loadDocumentsForWorkspaceFromDb")
+        }
 
     suspend fun loadDocumentsForWorkspaceAfterTimeFromDb(
         workspaceId: String,
@@ -97,7 +99,9 @@ class NotesUseCase private constructor(
         folderRepository.getFoldersForWorkspaceAfterTime(workspace, time)
 
     suspend fun loadFoldersForWorkspace(workspaceId: String): List<Folder> =
-        folderRepository.getFoldersForWorkspace(workspaceId)
+        folderRepository.getFoldersForWorkspace(workspaceId).also {
+            println("loadFoldersForWorkspace")
+        }
 
     private suspend fun loadDocumentsByIds(
         ids: Iterable<String>,
@@ -106,6 +110,8 @@ class NotesUseCase private constructor(
         val folders = ids.mapNotNull { id -> folderRepository.getFolderById(id) }
         val documents =
             ids.mapNotNull { id -> documentRepository.loadDocumentById(id, workspaceId) }
+
+        println("loadDocumentsByIds")
 
         return (folders + documents)
     }
@@ -122,13 +128,18 @@ class NotesUseCase private constructor(
         workspaceId: String
     ): Flow<Map<String, List<MenuItem>>> =
         combine(
-            listenForFoldersByParentId(parentId),
+            listenForFoldersByParentId(parentId, workspaceId),
             listenForDocumentsByParentId(parentId, workspaceId),
             notesConfig.listenOrderPreference(userId)
         ) { folders, documents, orderPreference ->
             val order =
                 orderPreference.takeIf { it.isNotEmpty() }?.let(OrderBy.Companion::fromString)
                     ?: OrderBy.UPDATE
+
+            val folderNames = folders.values.flatten().joinToString { it.title }
+            val documentNames = documents.values.flatten().joinToString { it.title }
+
+            println("listenForMenuItemsByParentId - userId: $userId, workspaceId: $workspaceId. folders: $folderNames, documents: $documentNames")
 
             folders.merge(documents).mapValues { (_, menuItems) ->
                 menuItems.sortedWithOrderBy(order)
@@ -161,7 +172,7 @@ class NotesUseCase private constructor(
         }
 
     suspend fun stopListeningForMenuItemsByParentId(id: String, workspaceId: String) {
-        folderRepository.stopListeningForFoldersByParentId(id)
+        folderRepository.stopListeningForFoldersByParentId(id, workspaceId)
         documentRepository.stopListeningForFoldersByParentId(id, workspaceId)
     }
 
@@ -232,9 +243,10 @@ class NotesUseCase private constructor(
 
     private suspend fun duplicateAllFoldersInside(folder: Folder, workspaceId: String) {
         val newFolder = duplicateFolder(folder, workspaceId)
-        val folderList = getFolderIdByParentId(folder.id).map { insideFolder ->
-            insideFolder.copy(parentId = newFolder.id)
-        }
+        val folderList = getFolderIdByParentId(folder.id, workspaceId)
+            .map { insideFolder ->
+                insideFolder.copy(parentId = newFolder.id)
+            }
 
         if (folderList.isNotEmpty()) {
             folderList.forEach { insideFolder ->
@@ -246,8 +258,8 @@ class NotesUseCase private constructor(
         }
     }
 
-    private suspend fun getFolderIdByParentId(parentId: String): List<Folder> =
-        folderRepository.getFolderByParentId(parentId)
+    private suspend fun getFolderIdByParentId(parentId: String, workspaceId: String): List<Folder> =
+        folderRepository.getFolderByParentId(parentId, workspaceId)
 
     private suspend fun duplicateFolder(folder: Folder, workspaceId: String): Folder {
         // Todo: É necessário mudar o parent id da pasta também
@@ -280,9 +292,10 @@ class NotesUseCase private constructor(
      * @param parentId The id of the folder
      */
     private suspend fun listenForFoldersByParentId(
-        parentId: String
+        parentId: String,
+        workspaceId: String
     ): Flow<Map<String, List<Folder>>> =
-        folderRepository.listenForFoldersByParentId(parentId)
+        folderRepository.listenForFoldersByParentId(parentId, workspaceId)
 
     private suspend fun moveItem(menuItem: MenuItem, parentId: String) {
         when (menuItem) {
