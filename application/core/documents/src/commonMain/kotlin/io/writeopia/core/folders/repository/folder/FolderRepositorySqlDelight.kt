@@ -56,12 +56,15 @@ class FolderRepositorySqlDelight(
         refreshFolders()
     }
 
-    override suspend fun getFolderByParentId(parentId: String): List<Folder> =
-        folderDao.getFoldersByParentId(parentId)
+    override suspend fun getFolderByParentId(parentId: String, workspaceId: String): List<Folder> =
+        folderDao.getFoldersByParentId(parentId, workspaceId)
             .map { (folderEntity, count) -> folderEntity.toModel(count) }
 
-    override suspend fun listenForFoldersByParentId(parentId: String): Flow<Map<String, List<Folder>>> {
-        return folderDao.listenForFolderByParentId(parentId)
+    override suspend fun listenForFoldersByParentId(
+        parentId: String,
+        workspaceId: String
+    ): Flow<Map<String, List<Folder>>> {
+        return folderDao.listenForFolderByParentId(parentId, workspaceId)
             .map { folderEntityMap ->
                 folderEntityMap.mapValues { (_, folderEntityListWithCount) ->
                     folderEntityListWithCount.map { (folderEntity, count) ->
@@ -71,8 +74,8 @@ class FolderRepositorySqlDelight(
             }
     }
 
-    override suspend fun stopListeningForFoldersByParentId(parentId: String) {
-        folderDao.removeListening(parentId)
+    override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
+        folderDao.removeListening(parentId, workspaceId)
     }
 
     override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =

@@ -301,17 +301,22 @@ class GlobalShellKmpViewModel(
 
         viewModelScope.launch(Dispatchers.Default) {
             val userId = getUserId()
+            val workspaceId = authRepository.getWorkspace().id
 
             if (!configRepository.hasFirstConfiguration(userId)) {
+                val now = Clock.System.now()
+
+                println("saving tutorials in db. Workspace: $workspaceId")
+
                 Tutorials.allTutorialsDocuments()
                     .map { documentAsJson ->
-                        json.decodeFromString<DocumentApi>(documentAsJson).toModel()
+                        json.decodeFromString<DocumentApi>(documentAsJson)
+                            .toModel()
                     }
                     .forEach { document ->
-                        val now = Clock.System.now()
-
                         notesUseCase.saveDocumentDb(
                             document.copy(
+                                workspaceId = workspaceId,
                                 createdAt = now,
                                 lastUpdatedAt = now
                             )
@@ -355,8 +360,7 @@ class GlobalShellKmpViewModel(
                     id,
                     getUserId(),
                     authRepository.getUser().id
-                )
-                    .collect()
+                ).collect()
                 _expandedFolders.value = expanded + id
             }
         }
