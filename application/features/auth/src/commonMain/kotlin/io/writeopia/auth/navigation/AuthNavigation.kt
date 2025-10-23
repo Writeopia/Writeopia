@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -85,6 +86,10 @@ fun NavGraphBuilder.authNavigation(
         composable(Destinations.CHOOSE_WORKSPACE.id) {
             val workspacesViewModel = authInjection.provideChooseWorkspaceViewModel()
 
+            LaunchedEffect(Unit) {
+                workspacesViewModel.loadWorkspaces()
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -92,9 +97,10 @@ fun NavGraphBuilder.authNavigation(
             ) {
                 ChooseWorkspace(
                     workspacesState = workspacesViewModel.workspacesState,
-                    onWorkspaceSelected = {
-
-                    }
+                    onWorkspaceSelected = { workspace ->
+                        workspacesViewModel.chooseWorkspace(workspace, sideEffect = toAppNavigation)
+                    },
+                    retry = workspacesViewModel::loadWorkspaces,
                 )
             }
         }

@@ -67,7 +67,11 @@ class FolderStateController(
                 if (_selectedNotes.value.isEmpty()) {
                     moveItemToFolder(menuItemUi, parentId)
                 } else {
-                    notesUseCase.moveItemsById(ids = selectedNotes.value, parentId)
+                    notesUseCase.moveItemsById(
+                        ids = selectedNotes.value,
+                        parentId,
+                        authRepository.getWorkspace().id
+                    )
                 }
             }
         }
@@ -98,7 +102,10 @@ class FolderStateController(
                     )
                 }
 
-                IconChange.DOCUMENT -> notesUseCase.updateDocumentById(menuItemId) { document ->
+                IconChange.DOCUMENT -> notesUseCase.updateDocumentById(
+                    menuItemId,
+                    authRepository.getWorkspace().id
+                ) { document ->
                     document.copy(
                         icon = MenuItem.Icon(icon, tint),
                         lastUpdatedAt = Clock.System.now()

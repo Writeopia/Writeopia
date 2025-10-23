@@ -19,6 +19,7 @@ import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.toModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.datetime.Clock
 
 class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) {
 
@@ -44,7 +45,6 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         return if (response.status.isSuccess()) {
             ResultData.Complete(Unit)
         } else {
-            println("Error when adding user to workspace: ${response.status}")
             ResultData.Error()
         }
     }
@@ -55,8 +55,13 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
                 header(HttpHeaders.Authorization, "Bearer $token")
             }.body<List<WorkspaceApi>>()
 
-            ResultData.Complete(response.map { workspaceApi -> workspaceApi.toModel() })
+            val now = Clock.System.now()
+
+            ResultData.Complete(
+                response.map { workspaceApi -> workspaceApi.toModel(now) }
+            )
         } catch (e: Exception) {
+            e.printStackTrace()
             ResultData.Error(e)
         }
     }
