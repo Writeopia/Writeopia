@@ -33,7 +33,10 @@ class InMemoryFolderRepository : FolderRepository {
         TODO("Not yet implemented")
     }
 
-    override suspend fun listenForFoldersByParentId(parentId: String): Flow<Map<String, List<Folder>>> {
+    override suspend fun listenForFoldersByParentId(
+        parentId: String,
+        workspaceId: String
+    ): Flow<Map<String, List<Folder>>> {
         return foldersStateFlow.asStateFlow()
     }
 
@@ -59,7 +62,8 @@ class InMemoryFolderRepository : FolderRepository {
     override suspend fun getFolderById(id: String): Folder =
         Folder.fromName("folder", "disconnecter_user").copy(id = id)
 
-    override suspend fun getFolderByParentId(parentId: String): List<Folder> = emptyList()
+    override suspend fun getFolderByParentId(parentId: String, workspaceId: String): List<Folder> =
+        emptyList()
 
     private fun refreshState() {
         foldersStateFlow.value = mutableMap
@@ -76,7 +80,7 @@ class InMemoryFolderRepository : FolderRepository {
         }
     }
 
-    override suspend fun stopListeningForFoldersByParentId(parentId: String) {
+    override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
     }
 
     override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> {

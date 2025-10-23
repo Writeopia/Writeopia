@@ -40,7 +40,7 @@ WHERE folderEntity.workspace_id = ? AND last_updated_at > ?;
 selectChildrenFolder:
 SELECT *
 FROM folderEntity
-WHERE folderEntity.parent_id = ?;
+WHERE folderEntity.parent_id = ? AND workspace_id = ?;
 
 selectFolderById:
 SELECT *
