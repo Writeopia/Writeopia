@@ -360,7 +360,10 @@ class NoteEditorKmpViewModel(
             .flatMapLatest {
                 combine(
                     _expandedFolders,
-                    folderRepository.listenForFoldersByParentId("root")
+                    folderRepository.listenForFoldersByParentId(
+                        "root",
+                        authRepository.getWorkspace().id
+                    )
                 ) { expanded, map ->
                     val folderUiMap = map.mapValues { (_, item) ->
                         item.map {
@@ -582,7 +585,10 @@ class NoteEditorKmpViewModel(
             }
         } else {
             viewModelScope.launch {
-                folderRepository.listenForFoldersByParentId(folderId)
+                folderRepository.listenForFoldersByParentId(
+                    folderId,
+                    authRepository.getWorkspace().id
+                )
                 _expandedFolders.value = expanded + folderId
             }
         }
