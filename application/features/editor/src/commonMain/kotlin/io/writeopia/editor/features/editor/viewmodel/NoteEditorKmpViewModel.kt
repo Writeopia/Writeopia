@@ -427,7 +427,8 @@ class NoteEditorKmpViewModel(
         if (writeopiaManager.isInitialized()) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val document = documentRepository.loadDocumentById(documentId)
+            val document =
+                documentRepository.loadDocumentById(documentId, authRepository.getWorkspace().id)
 
             if (document != null) {
                 writeopiaManager.loadDocument(document)

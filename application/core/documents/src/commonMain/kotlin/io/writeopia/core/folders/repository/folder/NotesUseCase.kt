@@ -42,8 +42,12 @@ class NotesUseCase private constructor(
             ?.also { folderRepository.refreshFolders() }
     }
 
-    suspend fun updateDocumentById(id: String, documentChange: (Document) -> Document) {
-        documentRepository.loadDocumentById(id)
+    suspend fun updateDocumentById(
+        id: String,
+        workspaceId: String,
+        documentChange: (Document) -> Document
+    ) {
+        documentRepository.loadDocumentById(id, workspaceId)
             ?.let(documentChange)
             ?.let { newDocument ->
                 documentRepository.saveDocumentMetadata(newDocument)
@@ -65,8 +69,8 @@ class NotesUseCase private constructor(
         folderRepository.refreshFolders()
     }
 
-    suspend fun moveItemsById(ids: Iterable<String>, parentId: String) {
-        val items = loadDocumentsByIds(ids).filter { it.id != parentId }
+    suspend fun moveItemsById(ids: Iterable<String>, workspaceId: String, parentId: String) {
+        val items = loadDocumentsByIds(ids, workspaceId).filter { it.id != parentId }
 
         items.forEach { moveItem(it, parentId) }
         folderRepository.refreshFolders()
@@ -95,9 +99,13 @@ class NotesUseCase private constructor(
     suspend fun loadFoldersForWorkspace(workspaceId: String): List<Folder> =
         folderRepository.getFoldersForWorkspace(workspaceId)
 
-    private suspend fun loadDocumentsByIds(ids: Iterable<String>): List<MenuItem> {
+    private suspend fun loadDocumentsByIds(
+        ids: Iterable<String>,
+        workspaceId: String,
+    ): List<MenuItem> {
         val folders = ids.mapNotNull { id -> folderRepository.getFolderById(id) }
-        val documents = ids.mapNotNull { id -> documentRepository.loadDocumentById(id) }
+        val documents =
+            ids.mapNotNull { id -> documentRepository.loadDocumentById(id, workspaceId) }
 
         return (folders + documents)
     }
@@ -111,10 +119,11 @@ class NotesUseCase private constructor(
     suspend fun listenForMenuItemsByParentId(
         parentId: String,
         userId: String,
+        workspaceId: String
     ): Flow<Map<String, List<MenuItem>>> =
         combine(
             listenForFoldersByParentId(parentId),
-            listenForDocumentsByParentId(parentId),
+            listenForDocumentsByParentId(parentId, workspaceId),
             notesConfig.listenOrderPreference(userId)
         ) { folders, documents, orderPreference ->
             val order =
@@ -129,23 +138,36 @@ class NotesUseCase private constructor(
     suspend fun listenForMenuItemsPerFolderId(
         notesNavigation: NotesNavigation,
         userId: String,
+        workspaceId: String
     ): Flow<Map<String, List<MenuItem>>> =
         when (notesNavigation) {
-            NotesNavigation.Favorites -> listenForMenuItemsByParentId(Folder.ROOT_PATH, userId)
+            NotesNavigation.Favorites -> listenForMenuItemsByParentId(
+                Folder.ROOT_PATH,
+                userId,
+                workspaceId
+            )
 
-            is NotesNavigation.Folder -> listenForMenuItemsByParentId(notesNavigation.id, userId)
+            is NotesNavigation.Folder -> listenForMenuItemsByParentId(
+                notesNavigation.id,
+                userId,
+                workspaceId
+            )
 
-            NotesNavigation.Root -> listenForMenuItemsByParentId(Folder.ROOT_PATH, userId)
+            NotesNavigation.Root -> listenForMenuItemsByParentId(
+                Folder.ROOT_PATH,
+                userId,
+                workspaceId
+            )
         }
 
-    suspend fun stopListeningForMenuItemsByParentId(id: String) {
+    suspend fun stopListeningForMenuItemsByParentId(id: String, workspaceId: String) {
         folderRepository.stopListeningForFoldersByParentId(id)
-        documentRepository.stopListeningForFoldersByParentId(id)
+        documentRepository.stopListeningForFoldersByParentId(id, workspaceId)
     }
 
-    suspend fun duplicateDocuments(ids: List<String>, userId: String) {
-        duplicateNotes(ids, userId)
-        duplicateFolders(ids)
+    suspend fun duplicateDocuments(ids: List<String>, userId: String, workspaceId: String) {
+        duplicateNotes(ids, userId, workspaceId)
+        duplicateFolders(ids, workspaceId)
     }
 
     suspend fun saveDocumentDb(document: Document) {
@@ -177,13 +199,14 @@ class NotesUseCase private constructor(
     }
 
     private suspend fun listenForDocumentsByParentId(
-        parentId: String
+        parentId: String,
+        workspaceId: String
     ): Flow<Map<String, List<Document>>> =
-        documentRepository.listenForDocumentsByParentId(parentId)
+        documentRepository.listenForDocumentsByParentId(parentId, workspaceId)
 
-    private suspend fun duplicateNotes(ids: List<String>, userId: String) {
+    private suspend fun duplicateNotes(ids: List<String>, userId: String, workspaceId: String) {
         notesConfig.getOrderPreference(userId).let { orderBy ->
-            documentRepository.loadDocumentsWithContentByIds(ids, orderBy)
+            documentRepository.loadDocumentsWithContentByIds(ids, orderBy, workspaceId)
         }.map { document ->
             document.duplicateWithNewIds()
         }.forEach { document ->
@@ -193,42 +216,47 @@ class NotesUseCase private constructor(
         documentRepository.refreshDocuments()
     }
 
-    private suspend fun duplicateFolders(ids: List<String>) {
-        ids.forEach { id -> duplicateFolderRecursively(id) }
+    private suspend fun duplicateFolders(ids: List<String>, workspaceId: String) {
+        ids.forEach { id -> duplicateFolderRecursively(id, workspaceId) }
 
         folderRepository.refreshFolders()
     }
 
-    private suspend fun duplicateFolderRecursively(id: String) {
+    private suspend fun duplicateFolderRecursively(id: String, workspaceId: String) {
         val folder = folderRepository.getFolderById(id)
 
         if (folder != null) {
-            duplicateAllFoldersInside(folder)
+            duplicateAllFoldersInside(folder, workspaceId)
         }
     }
 
-    private suspend fun duplicateAllFoldersInside(folder: Folder) {
-        val newFolder = duplicateFolder(folder)
+    private suspend fun duplicateAllFoldersInside(folder: Folder, workspaceId: String) {
+        val newFolder = duplicateFolder(folder, workspaceId)
         val folderList = getFolderIdByParentId(folder.id).map { insideFolder ->
             insideFolder.copy(parentId = newFolder.id)
         }
 
         if (folderList.isNotEmpty()) {
-            folderList.forEach { insideFolder -> duplicateAllFoldersInside(insideFolder) }
+            folderList.forEach { insideFolder ->
+                duplicateAllFoldersInside(
+                    insideFolder,
+                    workspaceId
+                )
+            }
         }
     }
 
     private suspend fun getFolderIdByParentId(parentId: String): List<Folder> =
         folderRepository.getFolderByParentId(parentId)
 
-    private suspend fun duplicateFolder(folder: Folder): Folder {
+    private suspend fun duplicateFolder(folder: Folder, workspaceId: String): Folder {
         // Todo: É necessário mudar o parent id da pasta também
         val newFolder = folder.copy(id = GenerateId.generate())
 
         return run {
             folderRepository.createFolder(newFolder)
 
-            documentRepository.loadDocumentsByParentId(folder.id)
+            documentRepository.loadDocumentsByParentId(folder.id, workspaceId)
                 .map { document ->
                     document.copy(
                         id = GenerateId.generate(),

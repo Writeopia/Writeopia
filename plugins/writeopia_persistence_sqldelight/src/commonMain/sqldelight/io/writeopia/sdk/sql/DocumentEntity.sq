@@ -88,14 +88,14 @@ selectWithContentById:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.id = ? AND deleted = 0
+WHERE documentEntity.id = ? AND deleted = 0 AND documentEntity.workspace_id = ?
 ORDER BY position;
 
 selectWithContentByFolderIdOutdatedDocuments:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.parent_document_id = ? AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)
+WHERE documentEntity.parent_document_id = ? AND documentEntity.workspace_id = ? AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)
 ORDER BY position;
 
 selectWithContentByWorkspaceIdOutdatedDocuments:
@@ -110,7 +110,7 @@ selectWithContentByParentId:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.parent_document_id = ? AND deleted = 0
+WHERE documentEntity.parent_document_id = ? AND deleted = 0 AND documentEntity.workspace_id = ?
 ORDER BY position;
 
 selectIdsByParentId:

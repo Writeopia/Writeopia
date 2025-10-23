@@ -1,6 +1,5 @@
 package io.writeopia.sdk.serialization.data.auth
 
-import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import kotlinx.serialization.Serializable
 
@@ -8,5 +7,4 @@ import kotlinx.serialization.Serializable
 data class AuthResponse(
     val token: String?,
     val writeopiaUser: WriteopiaUserApi,
-    val workspace: WorkspaceApi
 )

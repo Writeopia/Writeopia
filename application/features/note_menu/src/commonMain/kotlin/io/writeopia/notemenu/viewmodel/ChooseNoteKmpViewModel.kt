@@ -88,7 +88,11 @@ internal class ChooseNoteKmpViewModel(
     override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
         authRepository.listenForUser()
             .flatMapLatest { user ->
-                notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id)
+                notesUseCase.listenForMenuItemsPerFolderId(
+                    notesNavigation,
+                    user.id,
+                    getWorkspaceId()
+                )
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
     }
 
@@ -286,7 +290,11 @@ internal class ChooseNoteKmpViewModel(
 
     override fun copySelectedNotes() {
         viewModelScope.launch(Dispatchers.Default) {
-            notesUseCase.duplicateDocuments(selectedNotes.value.toList(), getUserId())
+            notesUseCase.duplicateDocuments(
+                selectedNotes.value.toList(),
+                getUserId(),
+                getWorkspaceId()
+            )
         }
     }
 

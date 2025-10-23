@@ -503,8 +503,8 @@ class DocumentSqlDao(
         storyStepQueries?.deleteByDocumentIds(ids)
     }
 
-    suspend fun loadDocumentWithContentById(documentId: String): Document? =
-        documentQueries?.selectWithContentById(documentId)
+    suspend fun loadDocumentWithContentById(documentId: String, workspaceId: String): Document? =
+        documentQueries?.selectWithContentById(documentId, workspaceId)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -571,8 +571,8 @@ class DocumentSqlDao(
             }
             ?.firstOrNull()
 
-    suspend fun loadDocumentByParentId(parentId: String): List<Document> {
-        return documentQueries?.selectWithContentByParentId(parentId)
+    suspend fun loadDocumentByParentId(parentId: String, workspaceId: String): List<Document> {
+        return documentQueries?.selectWithContentByParentId(parentId, workspaceId)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -639,8 +639,8 @@ class DocumentSqlDao(
             } ?: emptyList()
     }
 
-    suspend fun loadOutdatedDocumentByParentId(parentId: String): List<Document> {
-        return documentQueries?.selectWithContentByFolderIdOutdatedDocuments(parentId)
+    suspend fun loadOutdatedDocumentByParentId(parentId: String, workspaceId: String): List<Document> {
+        return documentQueries?.selectWithContentByFolderIdOutdatedDocuments(parentId, workspaceId)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->

@@ -26,7 +26,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class NotesMenuKmpInjection private constructor(
-    private val appConfigurationInjector: AppConfigurationInjector = AppConfigurationInjector.singleton(),
+    private val appConfigurationInjector: AppConfigurationInjector =
+        AppConfigurationInjector.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
     private val repositoryInjection: RepositoryInjector,
     private val selectionState: StateFlow<Boolean>,
@@ -41,7 +42,7 @@ class NotesMenuKmpInjection private constructor(
 
     private fun provideFolderRepository() = FoldersInjector.singleton().provideFoldersRepository()
 
-    private fun provideNotesUseCase(
+    fun provideNotesUseCase(
         documentRepository: DocumentRepository = provideDocumentRepository(),
         configurationRepository: ConfigurationRepository =
             appConfigurationInjector.provideNotesConfigurationRepository(),

@@ -16,7 +16,7 @@ import kotlinx.datetime.Instant
 interface DocumentRepository : DocumentUpdate, DocumentSearch {
     // Change workspaceId for workspace ID in this class.
 
-    suspend fun loadDocumentsForFolder(folderId: String): List<Document>
+    suspend fun loadDocumentsForFolder(folderId: String, workspaceId: String): List<Document>
 
     suspend fun loadDocumentsWorkspace(workspaceId: String): List<Document>
 
@@ -28,23 +28,23 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
         instant: Instant
     ): List<Document>
 
-    suspend fun loadOutdatedDocuments(folderId: String): List<Document>
+    suspend fun loadOutdatedDocuments(folderId: String, workspaceId: String): List<Document>
 
     suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document>
 
-    suspend fun loadDocumentById(id: String): Document?
+    suspend fun loadDocumentById(id: String, workspaceId: String): Document?
 
-    suspend fun loadDocumentByIds(ids: List<String>): List<Document>
+    suspend fun loadDocumentByIds(ids: List<String>, workspaceId: String): List<Document>
 
-    suspend fun loadDocumentsWithContentByIds(ids: List<String>, orderBy: String): List<Document>
+    suspend fun loadDocumentsWithContentByIds(ids: List<String>, orderBy: String, workspaceId: String): List<Document>
 
-    suspend fun loadDocumentsByParentId(parentId: String): List<Document>
+    suspend fun loadDocumentsByParentId(parentId: String, workspaceId: String): List<Document>
 
-    suspend fun listenForDocumentsByParentId(parentId: String): Flow<Map<String, List<Document>>>
+    suspend fun listenForDocumentsByParentId(parentId: String, workspaceId: String): Flow<Map<String, List<Document>>>
 
     suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo?>
 
-    suspend fun stopListeningForFoldersByParentId(parentId: String)
+    suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String)
 
     /**
      * Saves document. Both with content and meta data.
