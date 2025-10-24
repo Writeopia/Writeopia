@@ -85,7 +85,7 @@ class WriteopiaStateManager(
     private val listTypes: Set<Int> = setOf(
         StoryTypes.CHECK_ITEM.type.number,
         StoryTypes.UNORDERED_LIST_ITEM.type.number,
-    )
+    ),
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     private val selectionBuffer: EventBuffer<Pair<Boolean, Int>> = EventBuffer(coroutineScope)
@@ -298,7 +298,10 @@ class WriteopiaStateManager(
      */
     fun saveOnStoryChanges(documentTracker: DocumentTracker) {
         coroutineScope.launch(dispatcher) {
-            documentTracker.saveOnStoryChanges(_documentEditionState, getUserId())
+            documentTracker.saveOnStoryChanges(
+                _documentEditionState,
+                userRepository?.getWorkspace()?.id ?: ""
+            )
         }
     }
 
@@ -1090,10 +1093,10 @@ class WriteopiaStateManager(
             }
         }
 
-        val userId = getUserId()
-
         val newDocument =
-            documentInfo.document(getUserId()).copy(content = stories, title = text)
+            documentInfo.document(
+                userRepository?.getWorkspace()?.id ?: ""
+            ).copy(content = stories, title = text)
 
         documentRepository.saveDocument(newDocument)
         documentRepository.refreshDocuments()

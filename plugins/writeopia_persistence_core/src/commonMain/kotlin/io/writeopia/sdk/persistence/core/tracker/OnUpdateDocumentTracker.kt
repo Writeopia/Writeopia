@@ -24,7 +24,7 @@ class OnUpdateDocumentTracker(
 
     override suspend fun saveOnStoryChanges(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
-        userId: String
+        workspaceId: String
     ) {
         documentEditionFlow.collectLatest { (storyState, documentInfo) ->
             when (val lastEdit = storyState.lastEdit) {
@@ -56,7 +56,7 @@ class OnUpdateDocumentTracker(
                             createdAt = documentInfo.createdAt,
                             lastUpdatedAt = Clock.System.now(),
                             lastSyncedAt = documentInfo.lastSyncedAt,
-                            workspaceId = userId,
+                            workspaceId = workspaceId,
                             parentId = documentInfo.parentId,
                             icon = documentInfo.icon,
                             isLocked = documentInfo.isLocked,
@@ -82,7 +82,7 @@ class OnUpdateDocumentTracker(
                         createdAt = documentInfo.createdAt,
                         lastUpdatedAt = Clock.System.now(),
                         lastSyncedAt = documentInfo.lastSyncedAt,
-                        workspaceId = userId,
+                        workspaceId = workspaceId,
                         parentId = documentInfo.parentId,
                         icon = documentInfo.icon,
                         isLocked = documentInfo.isLocked
@@ -107,7 +107,7 @@ class OnUpdateDocumentTracker(
                             createdAt = documentInfo.createdAt,
                             lastUpdatedAt = Clock.System.now(),
                             lastSyncedAt = documentInfo.lastSyncedAt,
-                            workspaceId = userId,
+                            workspaceId = workspaceId,
                             parentId = documentInfo.parentId,
                             icon = documentInfo.icon,
                             isLocked = documentInfo.isLocked
@@ -140,7 +140,7 @@ class OnUpdateDocumentTracker(
                             createdAt = documentInfo.createdAt,
                             lastUpdatedAt = Clock.System.now(),
                             lastSyncedAt = documentInfo.lastSyncedAt,
-                            workspaceId = userId,
+                            workspaceId = workspaceId,
                             parentId = documentInfo.parentId,
                             icon = documentInfo.icon,
                             isLocked = documentInfo.isLocked,
