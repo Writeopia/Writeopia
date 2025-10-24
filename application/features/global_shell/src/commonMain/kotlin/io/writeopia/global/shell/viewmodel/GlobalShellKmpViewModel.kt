@@ -226,8 +226,9 @@ class GlobalShellKmpViewModel(
         combine(
             _expandedFolders,
             menuItemsPerFolderId,
-            highlightItem
-        ) { expanded, folderMap, highlighted ->
+            highlightItem,
+            authRepository.listenForWorkspace(),
+        ) { expanded, folderMap, highlighted, workspace ->
             val folderUiMap = folderMap.mapValues { (_, item) ->
                 item.map {
                     it.toUiCard(
@@ -239,7 +240,7 @@ class GlobalShellKmpViewModel(
 
             val itemsList = folderUiMap
                 .toNodeTree(
-                    MenuItemUi.FolderUi.root(),
+                    MenuItemUi.FolderUi.root(workspace.id),
                     filterPredicate = { menuItemUi ->
                         expanded.contains(menuItemUi.documentId)
                     }
