@@ -136,11 +136,6 @@ class NotesUseCase private constructor(
                 orderPreference.takeIf { it.isNotEmpty() }?.let(OrderBy.Companion::fromString)
                     ?: OrderBy.UPDATE
 
-            val folderNames = folders.values.flatten().joinToString { it.title }
-            val documentNames = documents.values.flatten().joinToString { it.title }
-
-            println("listenForMenuItemsByParentId - userId: $userId, workspaceId: $workspaceId. folders: $folderNames, documents: $documentNames")
-
             folders.merge(documents).mapValues { (_, menuItems) ->
                 menuItems.sortedWithOrderBy(order)
             }
