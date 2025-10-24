@@ -1,9 +1,5 @@
 package io.writeopia.ui.drawer.content
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -269,12 +265,8 @@ class TextDrawer(
 
             textToolbox(hasSelection)
 
-            Popup(offset = IntOffset(0, -20)) {
-                AnimatedVisibility(
-                    visible = selectedLink != null,
-                    enter = fadeIn(animationSpec = tween(durationMillis = 150)),
-                    exit = fadeOut(animationSpec = tween(durationMillis = 150))
-                ) {
+            if (selectedLink != null) {
+                Popup(offset = IntOffset(0, -20)) {
                     LinkHandler(selectedLink ?: "")
                 }
             }
