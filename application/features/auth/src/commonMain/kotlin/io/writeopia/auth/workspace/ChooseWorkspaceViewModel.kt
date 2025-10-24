@@ -30,6 +30,7 @@ class ChooseWorkspaceViewModel(
 
     fun chooseWorkspace(workspace: Workspace, sideEffect: () -> Unit) {
         viewModelScope.launch {
+            authRepository.unselectAllWorkspaces()
             authRepository.saveWorkspace(workspace)
             sideEffect()
         }
