@@ -316,6 +316,7 @@ class GlobalShellKmpViewModel(
                     .forEach { document ->
                         notesUseCase.saveDocumentDb(
                             document.copy(
+                                parentId = "${document.parentId}:$workspaceId",
                                 workspaceId = workspaceId,
                                 createdAt = now,
                                 lastUpdatedAt = now
