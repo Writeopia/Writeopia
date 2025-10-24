@@ -30,4 +30,6 @@ interface AuthRepository : UserRepository {
     override suspend fun getWorkspace(): Workspace
 
     suspend fun saveWorkspace(workspace: Workspace)
+
+    suspend fun unselectAllWorkspaces()
 }

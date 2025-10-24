@@ -95,4 +95,8 @@ internal class SqlDelightAuthRepository(
                 selected = workspace.selected.toLong(),
             )
     }
+
+    override suspend fun unselectAllWorkspaces() {
+        writeopiaDb?.workspaceEntityQueries?.unselectAll()
+    }
 }
