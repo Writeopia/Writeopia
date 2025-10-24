@@ -241,14 +241,12 @@ class GlobalShellKmpViewModel(
                 }
             }
 
-            val folderUiMapTitles = folderUiMap.values.flatten().joinToString { it.title }
-            println("folderUiMapTitles: $folderUiMapTitles")
-
             val itemsList = folderUiMap
                 .toNodeTree(
-                    MenuItemUi.FolderUi.root(workspace.id),
+                    MenuItemUi.FolderUi.root(),
+                    workspace.id,
                     filterPredicate = { menuItemUi ->
-                        expanded.contains("${menuItemUi.documentId}:${workspace.id}")
+                        expanded.contains(menuItemUi.documentId)
                     }
                 )
                 .toList()
