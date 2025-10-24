@@ -179,12 +179,15 @@ class GlobalShellKmpViewModel(
     override val editFolderState: StateFlow<Folder?> by lazy {
         combine(
             folderStateController.editingFolderState,
-            menuItemsPerFolderId
-        ) { selectedFolder, menuItems ->
+            menuItemsPerFolderId,
+            authRepository.listenForWorkspace()
+        ) { selectedFolder, menuItems, workspace ->
             if (selectedFolder != null) {
-                val folder = menuItems[selectedFolder.parentId]?.find { menuItem ->
-                    menuItem.id == selectedFolder.id
-                } as? Folder
+                val folder =
+                    menuItems["${selectedFolder.parentId}:${workspace.id}"]
+                        ?.find { menuItem ->
+                            menuItem.id == selectedFolder.id
+                        } as? Folder
 
                 folder
             } else {
@@ -238,7 +241,7 @@ class GlobalShellKmpViewModel(
                 }
             }
 
-            val folderUiMapTitles =  folderUiMap.values.flatten().joinToString { it.title }
+            val folderUiMapTitles = folderUiMap.values.flatten().joinToString { it.title }
             println("folderUiMapTitles: $folderUiMapTitles")
 
             val itemsList = folderUiMap
