@@ -229,9 +229,6 @@ class GlobalShellKmpViewModel(
             highlightItem,
             authRepository.listenForWorkspace(),
         ) { expanded, folderMap, highlighted, workspace ->
-//            println("expanded: $expanded")
-//            println("folderMap: $folderMap")
-
             val folderUiMap = folderMap.mapValues { (_, item) ->
                 item.map {
                     it.toUiCard(
@@ -241,6 +238,9 @@ class GlobalShellKmpViewModel(
                 }
             }
 
+            val folderUiMapTitles =  folderUiMap.values.flatten().joinToString { it.title }
+            println("folderUiMapTitles: $folderUiMapTitles")
+
             val itemsList = folderUiMap
                 .toNodeTree(
                     MenuItemUi.FolderUi.root(workspace.id),
@@ -249,6 +249,9 @@ class GlobalShellKmpViewModel(
                     }
                 )
                 .toList()
+
+            val items = itemsList.joinToString { it.title }
+            println("items: $items")
 
             itemsList.toMutableList().apply {
                 removeAt(0)
@@ -310,8 +313,6 @@ class GlobalShellKmpViewModel(
             if (!configRepository.hasFirstConfiguration(userId)) {
                 val now = Clock.System.now()
 
-                println("saving tutorials in db. Workspace: $workspaceId")
-
                 Tutorials.allTutorialsDocuments()
                     .map { documentAsJson ->
                         json.decodeFromString<DocumentApi>(documentAsJson)
@@ -364,7 +365,7 @@ class GlobalShellKmpViewModel(
                 notesUseCase.listenForMenuItemsByParentId(
                     id,
                     getUserId(),
-                    authRepository.getUser().id
+                    authRepository.getWorkspace().id
                 )
 
                 _expandedFolders.value = expanded + id
