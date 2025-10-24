@@ -64,16 +64,16 @@ class DocumentSqlDao(
                 )
             } ?: emptyList()
 
-    suspend fun insertDocumentWithContent(document: Document, companyId: String?) {
+    suspend fun insertDocumentWithContent(document: Document) {
         storyStepQueries?.deleteByDocumentId(document.id)
         document.content.values.forEachIndexed { i, storyStep ->
             insertStoryStep(storyStep, i.toLong(), document.id)
         }
 
-        insertDocument(document, companyId)
+        insertDocument(document)
     }
 
-    suspend fun insertDocument(document: Document, companyId: String?) {
+    suspend fun insertDocument(document: Document) {
         documentQueries?.insert(
             id = document.id,
             title = document.title,
@@ -86,7 +86,6 @@ class DocumentSqlDao(
             icon = document.icon?.label,
             icon_tint = document.icon?.tint?.toLong(),
             is_locked = document.isLocked.toLong(),
-            company_id = companyId,
             deleted = document.deleted.toLong()
         )
     }

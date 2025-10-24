@@ -136,7 +136,7 @@ class NotesUseCase private constructor(
                 orderPreference.takeIf { it.isNotEmpty() }?.let(OrderBy.Companion::fromString)
                     ?: OrderBy.UPDATE
 
-            println("listenForMenuItemsByParentId. folders $folders")
+//            println("listenForMenuItemsByParentId. folders $folders")
 
             folders.merge(documents).mapValues { (_, menuItems) ->
                 menuItems.sortedWithOrderBy(order)
