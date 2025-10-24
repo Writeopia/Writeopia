@@ -97,15 +97,18 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override val menuItemsState: StateFlow<ResultData<List<MenuItem>>> by lazy {
-        menuItemsPerFolderId.map { menuItems ->
+        combine(
+            menuItemsPerFolderId,
+            authRepository.listenForWorkspace()
+        ) { menuItems, workspace ->
             val pageItems = when (notesNavigation) {
                 NotesNavigation.Favorites -> menuItems.values.flatten().filter { it.favorite }
 
                 is NotesNavigation.Folder -> menuItems[notesNavigation.id]
 
-                NotesNavigation.Root -> menuItems[Folder.ROOT_PATH]
+                NotesNavigation.Root -> menuItems["${Folder.ROOT_PATH}:${workspace.id}"]
             }
-
+            
             ResultData.Complete(pageItems ?: emptyList())
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Loading())
     }
