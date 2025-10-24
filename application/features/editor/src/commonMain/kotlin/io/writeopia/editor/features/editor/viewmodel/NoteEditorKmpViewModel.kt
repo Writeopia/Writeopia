@@ -11,8 +11,8 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toFolderUi
-import io.writeopia.core.folders.repository.FolderRepository
 import io.writeopia.core.folders.repository.InDocumentSearchRepository
+import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.search.FindInText
 import io.writeopia.editor.model.EditState
@@ -284,7 +284,8 @@ class NoteEditorKmpViewModel(
             if (finds.isEmpty()) return@combine drawState
 
             val mutableStories = drawState.stories.toMutableList()
-            val activeFindPosition = if (finds.size > currentSearchIndex) finds.elementAt(currentSearchIndex) else null
+            val activeFindPosition =
+                if (finds.size > currentSearchIndex) finds.elementAt(currentSearchIndex) else null
             _totalSearchResults.value = finds.size
 
             finds.forEach { position ->
@@ -355,8 +356,12 @@ class NoteEditorKmpViewModel(
             .flatMapLatest {
                 combine(
                     _expandedFolders,
-                    folderRepository.listenForFoldersByParentId("root")
-                ) { expanded, map ->
+                    folderRepository.listenForFoldersByParentId(
+                        "root",
+                        authRepository.getWorkspace().id
+                    ),
+                    authRepository.listenForWorkspace(),
+                ) { expanded, map, workspace ->
                     val folderUiMap = map.mapValues { (_, item) ->
                         item.map {
                             it.toFolderUi(expanded = expanded.contains(it.id))
@@ -366,6 +371,7 @@ class NoteEditorKmpViewModel(
                     folderUiMap
                         .toNodeTree(
                             MenuItemUi.FolderUi.root(),
+                            workspace.id,
                             filterPredicate = { menuItemUi ->
                                 menuItemUi.expanded
                             }
@@ -422,7 +428,8 @@ class NoteEditorKmpViewModel(
         if (writeopiaManager.isInitialized()) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val document = documentRepository.loadDocumentById(documentId)
+            val document =
+                documentRepository.loadDocumentById(documentId, authRepository.getWorkspace().id)
 
             if (document != null) {
                 writeopiaManager.loadDocument(document)
@@ -576,7 +583,10 @@ class NoteEditorKmpViewModel(
             }
         } else {
             viewModelScope.launch {
-                folderRepository.listenForFoldersByParentId(folderId)
+                folderRepository.listenForFoldersByParentId(
+                    folderId,
+                    authRepository.getWorkspace().id
+                )
                 _expandedFolders.value = expanded + folderId
             }
         }
@@ -745,7 +755,8 @@ class NoteEditorKmpViewModel(
                 return@launch
             }
 
-            val currentPosition = writeopiaManager.currentStory.value.focus ?: writeopiaManager.currentStory.value.selection.position
+            val currentPosition = writeopiaManager.currentStory.value.focus
+                ?: writeopiaManager.currentStory.value.selection.position
             val newIndex = finds.indexOfFirst { it >= currentPosition }
 
             _currentSearchIndex.value = if (newIndex != -1) newIndex else 0

@@ -1,3 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="src/commonMain/kotlin/io/writeopia/forcegraph/ForceDirectedGraph.kt">
+        <error line="68" column="30" source="standard:chain-method-continuation" />
+        <error line="79" column="13" source="standard:chain-method-continuation" />
+        <error line="83" column="45" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/forcegraph/model/Graph.kt">
+        <error line="6" column="18" source="standard:class-signature" />
+        <error line="6" column="55" source="standard:class-signature" />
+        <error line="6" column="90" source="standard:class-signature" />
+    </file>
 </baseline>

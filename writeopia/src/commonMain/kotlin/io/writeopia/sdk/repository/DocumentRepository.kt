@@ -14,47 +14,49 @@ import kotlinx.datetime.Instant
  * those need to be passed as parameters.
  */
 interface DocumentRepository : DocumentUpdate, DocumentSearch {
-    // Change userId for workspace ID in this class.
+    // Change workspaceId for workspace ID in this class.
 
-    suspend fun loadDocumentsForFolder(folderId: String): List<Document>
+    suspend fun loadDocumentsForFolder(folderId: String, workspaceId: String): List<Document>
 
-    suspend fun loadDocumentsForUser(userId: String): List<Document>
+    suspend fun loadDocumentsWorkspace(workspaceId: String): List<Document>
 
-    suspend fun loadFavDocumentsForUser(orderBy: String, userId: String): List<Document>
+    suspend fun loadFavDocumentsForWorkspace(orderBy: String, workspaceId: String): List<Document>
 
-    suspend fun loadDocumentsForUserAfterTime(
+    suspend fun loadDocumentsForWorkspace(
         orderBy: String,
-        userId: String,
+        workspaceId: String,
         instant: Instant
     ): List<Document>
 
-    suspend fun loadOutdatedDocuments(folderId: String): List<Document>
+    suspend fun loadOutdatedDocuments(folderId: String, workspaceId: String): List<Document>
 
-    suspend fun loadDocumentById(id: String): Document?
+    suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document>
 
-    suspend fun loadDocumentByIds(ids: List<String>): List<Document>
+    suspend fun loadDocumentById(id: String, workspaceId: String): Document?
 
-    suspend fun loadDocumentsWithContentByIds(ids: List<String>, orderBy: String): List<Document>
+    suspend fun loadDocumentByIds(ids: List<String>, workspaceId: String): List<Document>
 
-    suspend fun loadDocumentsByParentId(parentId: String): List<Document>
+    suspend fun loadDocumentsWithContentByIds(ids: List<String>, orderBy: String, workspaceId: String): List<Document>
 
-    suspend fun listenForDocumentsByParentId(parentId: String): Flow<Map<String, List<Document>>>
+    suspend fun loadDocumentsByParentId(parentId: String, workspaceId: String): List<Document>
+
+    suspend fun listenForDocumentsByParentId(parentId: String, workspaceId: String): Flow<Map<String, List<Document>>>
 
     suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo?>
 
-    suspend fun stopListeningForFoldersByParentId(parentId: String)
+    suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String)
 
     /**
      * Saves document. Both with content and meta data.
      */
-    override suspend fun saveDocument(document: Document, userId: String)
+    override suspend fun saveDocument(document: Document)
 
     /**
      * Saves the document meta data. Use this was updating the content of the document is not
      * necessary. This is a much lighter operation than [saveDocument], because it is not
      * necessary to save/update all lines of content.
      */
-    override suspend fun saveDocumentMetadata(document: Document, userId: String)
+    override suspend fun saveDocumentMetadata(document: Document)
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Int, documentId: String)
 
@@ -69,16 +71,16 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
     suspend fun unFavoriteDocumentByIds(ids: Set<String>)
 
     /**
-     * Deleted all the documents of a User
+     * Deleted all the documents of a Workspace
      */
-    suspend fun deleteByUserId(userId: String)
+    suspend fun deleteByWorkspace(workspaceId: String)
 
     /**
      * Moves all tickets from one user to another. Use this we would like to pass all the data of
      * documents to another user. When the offline user becomes a new online user, all documents
      * should be moved to the new online user.
      */
-    suspend fun moveDocumentsToNewUser(oldUserId: String, newUserId: String)
+    suspend fun moveDocumentsToWorkspace(oldWorkspaceId: String, newWorkspaceId: String)
 
     suspend fun moveToFolder(documentId: String, parentId: String)
 

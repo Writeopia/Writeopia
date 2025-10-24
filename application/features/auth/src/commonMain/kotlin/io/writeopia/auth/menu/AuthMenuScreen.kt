@@ -31,6 +31,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -56,7 +60,7 @@ fun AuthMenuScreen(
     navigateToRegister: () -> Unit,
     offlineUsage: () -> Unit,
     navigateUp: () -> Unit,
-    navigateToApp: () -> Unit,
+    navigateNext: () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Icon(
@@ -88,7 +92,7 @@ fun AuthMenuScreen(
             is ResultData.Complete -> {
                 if (isConnected.data) {
                     LaunchedEffect("navigateUp") {
-                        navigateToApp()
+                        navigateNext()
                     }
                 }
                 authScreen(Modifier)
@@ -176,7 +180,16 @@ private fun AuthMenuContentScreen(
 
             OutlinedTextField(
                 password,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                modifier = Modifier.fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .onKeyEvent { keyEvent ->
+                        if (keyEvent.key.keyCode == Key.Enter.keyCode) {
+                            onLoginRequest()
+                            true
+                        } else {
+                            false
+                        }
+                    },
                 onValueChange = passwordChanged,
                 shape = shape,
                 singleLine = true,
@@ -222,7 +235,7 @@ private fun AuthMenuContentScreen(
             ) {
                 Text(
                     text = WrStrings.singIn(),
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = MaterialTheme.colorScheme.onPrimary,
                 )
             }
 

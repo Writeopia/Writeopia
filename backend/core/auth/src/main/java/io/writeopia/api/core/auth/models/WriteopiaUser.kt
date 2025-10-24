@@ -10,7 +10,7 @@ data class WriteopiaBeUser(
     val name: String,
     val password: String,
     val salt: String,
-    val companyDomain: String,
+    val workspace: String,
     val enabled: Boolean,
     val tier: Tier = Tier.FREE
 ) {
@@ -35,5 +35,4 @@ fun WriteopiaUserApi.toModel() =
         id = id,
         email = email,
         name = name,
-        company = ""
     )

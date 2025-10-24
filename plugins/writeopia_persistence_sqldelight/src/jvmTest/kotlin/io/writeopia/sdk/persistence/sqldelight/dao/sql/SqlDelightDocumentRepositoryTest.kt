@@ -6,12 +6,12 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
 import io.writeopia.sdk.sql.WriteopiaDb
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import java.awt.Menu
 import java.util.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -58,19 +58,25 @@ class SqlDelightDocumentRepositoryTest {
                 createdAt = instant,
                 lastUpdatedAt = instant,
                 lastSyncedAt = null,
-                userId = userId,
+                workspaceId = userId,
                 parentId = "",
                 content = bigContent
             )
 
-            documentRepository.saveDocument(document, "userId")
-            val result = documentRepository.loadDocumentById(document.id)
+            documentRepository.saveDocument(document)
+            val result = documentRepository.loadDocumentById(
+                document.id,
+                workspaceId = Workspace.disconnectedWorkspace().id
+            )
 
             assertEquals(result, document)
 
             val newDocument = document.copy(content = smallContent)
-            documentRepository.saveDocument(newDocument, userId)
-            val result1 = documentRepository.loadDocumentById(newDocument.id)
+            documentRepository.saveDocument(newDocument)
+            val result1 = documentRepository.loadDocumentById(
+                newDocument.id,
+                workspaceId = Workspace.disconnectedWorkspace().id
+            )
 
             assertEquals(result1?.content, smallContent)
         }
@@ -88,12 +94,15 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = userId,
             parentId = "",
             icon = MenuItem.Icon(icon, tint)
         )
 
-        documentRepository.saveDocument(document, "userId")
+        documentRepository.saveDocument(
+            document,
+            workspaceId = Workspace.disconnectedWorkspace().id
+        )
 
         val newDocument = documentRepository.loadDocumentById(documentId)
         assertEquals(newDocument?.icon?.label, icon)
@@ -113,13 +122,16 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = userId,
             parentId = "",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true
         )
 
-        documentRepository.saveDocument(document, userId)
+        documentRepository.saveDocument(
+            document,
+            workspaceId = Workspace.disconnectedWorkspace().id
+        )
 
         val newDocument = documentRepository.loadDocumentById(documentId)
         assertTrue { newDocument!!.isLocked }
@@ -138,13 +150,16 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = Instant.DISTANT_PAST,
-            userId = userId,
+            workspaceId = userId,
             parentId = "root",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true
         )
 
-        documentRepository.saveDocument(document, "userId")
+        documentRepository.saveDocument(
+            document,
+            workspaceId = Workspace.disconnectedWorkspace().id
+        )
 
         val newDocument = documentRepository.loadOutdatedDocuments("root")
 
@@ -165,13 +180,16 @@ class SqlDelightDocumentRepositoryTest {
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = userId,
             parentId = "root",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true
         )
 
-        documentRepository.saveDocument(document, "userId")
+        documentRepository.saveDocument(
+            document,
+            workspaceId = Workspace.disconnectedWorkspace().id
+        )
 
         val newDocument = documentRepository.loadOutdatedDocuments("root")
 

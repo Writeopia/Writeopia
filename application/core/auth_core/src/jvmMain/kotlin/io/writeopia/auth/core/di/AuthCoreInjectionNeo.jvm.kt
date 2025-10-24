@@ -15,7 +15,11 @@ actual class AuthCoreInjectionNeo(
         WriteopiaConnectionInjector.singleton()
 ) {
 
-    actual fun provideAuthRepository(): AuthRepository = SqlDelightAuthRepository(writeopiaDb)
+    private val authRepository: AuthRepository by lazy {
+        SqlDelightAuthRepository(writeopiaDb)
+    }
+
+    actual fun provideAuthRepository(): AuthRepository = authRepository
 
     actual fun provideAuthApi(): AuthApi =
         AuthApi(

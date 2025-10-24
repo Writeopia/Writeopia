@@ -28,18 +28,18 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
                         text = "text",
                         tags = setOf(TagInfo(Tag.H1))
                     )
-                )
+                    )
             ).toMap(),
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "workspaceId",
             parentId = "root",
             isLocked = false,
         )
 
-        documentRepository.saveDocument(document, "")
-        val loadedDocument = documentRepository.loadDocumentById(id)
+        documentRepository.saveDocument(document)
+        val loadedDocument = documentRepository.loadDocumentById(id, "workspaceId")
 
         assertEquals(document, loadedDocument)
     }
@@ -55,13 +55,13 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "workspaceId",
             parentId = "root",
             isLocked = false
         )
 
-        documentRepository.saveDocument(document, "")
-        val loadedDocument = documentRepository.loadDocumentById(id)
+        documentRepository.saveDocument(document)
+        val loadedDocument = documentRepository.loadDocumentById(id, "workspaceId")
 
         assertEquals(document, loadedDocument)
     }
@@ -77,13 +77,13 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "workspaceId",
             parentId = "root",
             isLocked = false
         )
 
-        documentRepository.saveDocument(document, "")
-        val loadedDocument = documentRepository.loadDocumentById(id)
+        documentRepository.saveDocument(document)
+        val loadedDocument = documentRepository.loadDocumentById(id, "workspaceId")
 
         assertEquals(document, loadedDocument)
     }
@@ -99,13 +99,13 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "workspaceId",
             parentId = "root",
             isLocked = false
         )
 
-        documentRepository.saveDocument(document, "")
-        val loadedDocument = documentRepository.loadDocumentById(id)
+        documentRepository.saveDocument(document)
+        val loadedDocument = documentRepository.loadDocumentById(id, "workspaceId")
 
         assertTrue(loadedDocument?.content?.isNotEmpty() == true)
         assertEquals(document, loadedDocument)
@@ -122,13 +122,13 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "workspaceId",
             parentId = "root",
             isLocked = false
         )
 
-        documentRepository.saveDocument(document, "")
-        val loadedDocument = documentRepository.loadDocumentById(id)
+        documentRepository.saveDocument(document)
+        val loadedDocument = documentRepository.loadDocumentById(id, "workspaceId")
 
         assertEquals(document, loadedDocument)
     }
@@ -144,23 +144,23 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = "userIdasd",
+            workspaceId = "userIdasd",
             favorite = false,
             parentId = "parentId",
             isLocked = false
         )
 
-        documentRepository.saveDocument(document, "")
+        documentRepository.saveDocument(document)
 
-        val loadedDocument0 = documentRepository.loadDocumentById(id)
+        val loadedDocument0 = documentRepository.loadDocumentById(id, "workspaceId")
         assertTrue(loadedDocument0?.favorite == false)
 
         documentRepository.favoriteDocumentByIds(setOf(id))
-        val loadedDocument1 = documentRepository.loadDocumentById(id)
+        val loadedDocument1 = documentRepository.loadDocumentById(id, "workspaceId")
         assertTrue(loadedDocument1?.favorite == true)
 
         documentRepository.unFavoriteDocumentByIds(setOf(id))
-        val loadedDocument2 = documentRepository.loadDocumentById(id)
+        val loadedDocument2 = documentRepository.loadDocumentById(id, "workspaceId")
         assertTrue(loadedDocument2?.favorite == false)
     }
 
@@ -172,14 +172,14 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = Clock.System.now(),
             lastUpdatedAt = Clock.System.now(),
             lastSyncedAt = null,
-            userId = "userId",
+            workspaceId = "workspaceId",
             parentId = "parentId",
             isLocked = false
         )
 
         val loadedDocument = documentRepository.run {
-            saveDocument(document, "")
-            loadDocumentsByParentId("parentId")
+            saveDocument(document)
+            loadDocumentsByParentId("parentId", "workspaceId")
         }.first()
 
         assertEquals(document.id, loadedDocument.id)

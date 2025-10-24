@@ -10,7 +10,7 @@ data class FolderApi(
     val title: String,
     val createdAt: Instant,
     val lastUpdatedAt: Instant,
-    val userId: String,
+    val workspaceId: String,
     val favorite: Boolean = false,
     val icon: IconApi? = null,
     val itemCount: Long,

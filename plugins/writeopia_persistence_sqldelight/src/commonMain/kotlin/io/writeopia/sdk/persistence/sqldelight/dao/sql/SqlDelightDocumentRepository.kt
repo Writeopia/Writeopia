@@ -19,22 +19,32 @@ class SqlDelightDocumentRepository(
 
     private val _documentByParentState = MutableStateFlow<Map<String, List<Document>>>(emptyMap())
 
-    override suspend fun loadDocumentsForUser(userId: String): List<Document> =
-        documentSqlDao.loadDocumentsWithContentByUserId(OrderBy.NAME.type, userId)
+    override suspend fun loadDocumentsForFolder(
+        folderId: String,
+        workspaceId: String
+    ): List<Document> =
+        documentSqlDao.loadDocumentByParentId(folderId, workspaceId)
 
-    override suspend fun loadDocumentsForFolder(folderId: String): List<Document> =
-        documentSqlDao.loadDocumentByParentId(folderId)
+    override suspend fun loadDocumentsWorkspace(workspaceId: String): List<Document> =
+        documentSqlDao.loadDocumentsWithContentByWorkspaceId(OrderBy.NAME.type, workspaceId)
 
-    override suspend fun loadFavDocumentsForUser(orderBy: String, userId: String): List<Document> =
-        documentSqlDao.loadFavDocumentsWithContentByUserId(orderBy, userId)
+    override suspend fun loadFavDocumentsForWorkspace(
+        orderBy: String,
+        workspaceId: String
+    ): List<Document> =
+        documentSqlDao.loadFavDocumentsWithContentByUserId(orderBy, workspaceId)
 
-    override suspend fun loadDocumentsByParentId(parentId: String): List<Document> =
-        documentSqlDao.loadDocumentByParentId(parentId)
+    override suspend fun loadDocumentsByParentId(
+        parentId: String,
+        workspaceId: String
+    ): List<Document> =
+        documentSqlDao.loadDocumentByParentId(parentId, workspaceId)
 
     override suspend fun listenForDocumentsByParentId(
         parentId: String,
+        workspaceId: String
     ): Flow<Map<String, List<Document>>> {
-        SelectedIds.ids.add(parentId)
+        SelectedIds.ids.add("$parentId:$workspaceId")
         refreshDocuments()
 
         return _documentByParentState
@@ -55,47 +65,54 @@ class SqlDelightDocumentRepository(
         }
     }
 
-    override suspend fun stopListeningForFoldersByParentId(parentId: String) {
-        SelectedIds.ids.remove(parentId)
+    override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
+        SelectedIds.ids.remove("$parentId:$workspaceId")
         refreshDocuments()
     }
 
-    override suspend fun loadDocumentsForUserAfterTime(
+    override suspend fun loadDocumentsForWorkspace(
         orderBy: String,
-        userId: String,
+        workspaceId: String,
         instant: Instant
     ): List<Document> {
         return documentSqlDao.loadDocumentsWithContentByUserIdAfterTime(
-            userId,
+            workspaceId,
             instant.toEpochMilliseconds()
         )
     }
 
-    override suspend fun loadOutdatedDocuments(folderId: String): List<Document> =
-        documentSqlDao.loadOutdatedDocumentByParentId(folderId)
+    override suspend fun loadOutdatedDocuments(
+        folderId: String,
+        workspaceId: String
+    ): List<Document> =
+        documentSqlDao.loadOutdatedDocumentByParentId(folderId, workspaceId)
 
-    override suspend fun loadDocumentById(id: String): Document? =
-        documentSqlDao.loadDocumentWithContentById(id)
+    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
+        documentSqlDao.loadOutdatedDocumentByWorkspaceId(workspaceId)
 
-    override suspend fun loadDocumentByIds(ids: List<String>): List<Document> =
+    override suspend fun loadDocumentById(id: String, workspaceId: String): Document? =
+        documentSqlDao.loadDocumentWithContentById(id, workspaceId)
+
+    override suspend fun loadDocumentByIds(ids: List<String>, workspaceId: String): List<Document> =
         ids.mapNotNull { id ->
-            loadDocumentById(id)
+            loadDocumentById(id, workspaceId)
         }
 
     override suspend fun loadDocumentsWithContentByIds(
         ids: List<String>,
-        orderBy: String
+        orderBy: String,
+        workspaceId: String
     ): List<Document> =
         documentSqlDao.loadDocumentWithContentByIds(ids)
 
-    override suspend fun saveDocument(document: Document, userId: String) {
+    override suspend fun saveDocument(document: Document) {
         // Todo: Add company later
-        documentSqlDao.insertDocumentWithContent(document, userId, null)
+        documentSqlDao.insertDocumentWithContent(document)
         refreshDocuments()
     }
 
-    override suspend fun saveDocumentMetadata(document: Document, userId: String) {
-        documentSqlDao.insertDocument(document, userId, null)
+    override suspend fun saveDocumentMetadata(document: Document) {
+        documentSqlDao.insertDocument(document)
 
         refreshDocuments()
     }
@@ -120,8 +137,8 @@ class SqlDelightDocumentRepository(
         documentSqlDao.deleteDocumentsByFolderId(folderId)
     }
 
-    override suspend fun deleteByUserId(userId: String) {
-        documentSqlDao.deleteDocumentsByUserId(userId)
+    override suspend fun deleteByWorkspace(workspaceId: String) {
+        documentSqlDao.deleteDocumentsByUserId(workspaceId)
     }
 
     override suspend fun favoriteDocumentByIds(ids: Set<String>) {
@@ -140,7 +157,7 @@ class SqlDelightDocumentRepository(
         refreshDocuments()
     }
 
-    override suspend fun moveDocumentsToNewUser(oldUserId: String, newUserId: String) {
+    override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
         TODO("Not yet implemented")
     }
 
@@ -154,8 +171,16 @@ class SqlDelightDocumentRepository(
     }
 
     override suspend fun refreshDocuments() {
-        _documentByParentState.value = SelectedIds.ids.associateWith { id ->
-            documentSqlDao.loadDocumentByParentId(id)
+        _documentByParentState.value = SelectedIds.ids.associateWith { key ->
+            val (parentId, workspaceId) = key.split(":", limit = 2)
+
+            println("refreshDocuments. parentId: $parentId, workspaceId: $workspaceId")
+
+            val result = documentSqlDao.loadDocumentByParentId(parentId, workspaceId)
+            val titles = result.joinToString { it.title }
+            println("titles: $titles")
+
+            result
         }
     }
 

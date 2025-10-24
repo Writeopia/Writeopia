@@ -43,9 +43,11 @@ kotlin {
                 implementation(project(":plugins:writeopia_serialization"))
 
                 implementation(project(":application:core:connection"))
+                implementation(project(":common:endpoints"))
 
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.datetime)
 
                 implementation(libs.ktor.client.core)
             }
@@ -53,6 +55,13 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
 

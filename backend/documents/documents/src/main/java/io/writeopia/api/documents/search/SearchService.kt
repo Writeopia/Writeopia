@@ -17,17 +17,17 @@ object SearchDocument {
 
     suspend fun search(
         query: String,
-        userId: String,
+        workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
     ): ResultData<List<Document>> {
-        return semanticSearch(query, userId).mapSuspend { idList ->
+        return semanticSearch(query, workspaceId).mapSuspend { idList ->
             idList.mapNotNull { id ->
-                writeopiaDb.getDocumentById(id, userId)
+                writeopiaDb.getDocumentById(id, workspaceId)
             }
         }
     }
 
-    private suspend fun semanticSearch(query: String, userId: String): ResultData<List<String>> {
+    private suspend fun semanticSearch(query: String, workspaceId: String): ResultData<List<String>> {
         val request = wrWebClient.get("${Urls.AI_HUB}/documents/search/?q=${query}") {
             contentType(ContentType.Application.Json)
         }
