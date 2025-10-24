@@ -22,6 +22,8 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
         folderEntityQueries?.selectFolderById(id)?.executeAsOneOrNull()
 
     suspend fun createFolder(folder: FolderEntity) {
+        println("createFolder. folder: $folder")
+
         folderEntityQueries?.insert(
             id = folder.id,
             parent_id = folder.parent_id,

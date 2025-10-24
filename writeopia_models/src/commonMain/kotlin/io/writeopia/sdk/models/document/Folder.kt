@@ -20,7 +20,7 @@ data class Folder(
     companion object {
         const val ROOT_PATH = "root"
 
-        fun fromName(name: String, userId: String): Folder {
+        fun fromName(name: String, workspaceId: String): Folder {
             val now = Clock.System.now()
 
             return Folder(
@@ -30,7 +30,7 @@ data class Folder(
                 createdAt = now,
                 lastUpdatedAt = now,
                 itemCount = 0,
-                workspaceId = userId,
+                workspaceId = workspaceId,
             )
         }
     }

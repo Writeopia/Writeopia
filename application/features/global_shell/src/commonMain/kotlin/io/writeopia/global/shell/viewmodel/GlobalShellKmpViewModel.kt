@@ -242,7 +242,7 @@ class GlobalShellKmpViewModel(
                 .toNodeTree(
                     MenuItemUi.FolderUi.root(workspace.id),
                     filterPredicate = { menuItemUi ->
-                        expanded.contains(menuItemUi.documentId)
+                        expanded.contains("${menuItemUi.documentId}:${workspace.id}")
                     }
                 )
                 .toList()

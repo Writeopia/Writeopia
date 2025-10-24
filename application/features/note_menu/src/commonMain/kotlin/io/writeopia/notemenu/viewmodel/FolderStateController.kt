@@ -36,7 +36,7 @@ class FolderStateController(
 
     override fun addFolder() {
         coroutineScope.launch(Dispatchers.Default) {
-            notesUseCase.createFolder("Untitled", getUserId())
+            notesUseCase.createFolder("Untitled", authRepository.getWorkspace().id)
         }
     }
 
@@ -134,9 +134,4 @@ class FolderStateController(
     override fun clearSelection() {
         _selectedNotes.value = emptySet()
     }
-
-    private suspend fun getUserId(): String =
-        localUserId ?: authRepository.getUser().id.also { id ->
-            localUserId = id
-        }
 }

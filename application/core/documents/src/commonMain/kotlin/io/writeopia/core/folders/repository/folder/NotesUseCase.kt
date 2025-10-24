@@ -27,8 +27,8 @@ class NotesUseCase private constructor(
     private val authRepository: AuthRepository
 ) {
 
-    suspend fun createFolder(name: String, userId: String) {
-        folderRepository.createFolder(Folder.fromName(name, userId))
+    suspend fun createFolder(name: String, workspaceId: String) {
+        folderRepository.createFolder(Folder.fromName(name, workspaceId))
     }
 
     suspend fun updateFolder(folder: Folder) {
@@ -135,6 +135,8 @@ class NotesUseCase private constructor(
             val order =
                 orderPreference.takeIf { it.isNotEmpty() }?.let(OrderBy.Companion::fromString)
                     ?: OrderBy.UPDATE
+
+            println("listenForMenuItemsByParentId. folders $folders")
 
             folders.merge(documents).mapValues { (_, menuItems) ->
                 menuItems.sortedWithOrderBy(order)
