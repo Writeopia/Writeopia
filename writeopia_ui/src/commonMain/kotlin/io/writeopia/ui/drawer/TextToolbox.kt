@@ -1,9 +1,5 @@
 package io.writeopia.ui.drawer
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -23,13 +19,8 @@ fun TextToolbox(
     onSpanClick: (Span) -> Unit = {},
     onLinkClick: (String) -> Unit = {},
 ) {
-    Popup(offset = IntOffset(0, -40)) {
-        AnimatedVisibility(
-            modifier = Modifier,
-            visible = hasSelection,
-            enter = fadeIn(animationSpec = tween(durationMillis = 150)),
-            exit = fadeOut(animationSpec = tween(durationMillis = 150))
-        ) {
+    if (hasSelection) {
+        Popup(offset = IntOffset(0, -40)) {
             EditionScreenForText(
                 modifier = Modifier
                     .shadow(elevation = 6.dp)
