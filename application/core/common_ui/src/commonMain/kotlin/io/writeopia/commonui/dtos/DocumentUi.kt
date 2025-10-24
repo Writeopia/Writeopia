@@ -62,8 +62,8 @@ sealed interface MenuItemUi : Node, Traversable {
         override fun getNodes(): List<Node> = insideContent
 
         companion object {
-            fun root(workspaceId: String) = FolderUi(
-                documentId = "${Folder.ROOT_PATH}:$workspaceId",
+            fun root() = FolderUi(
+                documentId = Folder.ROOT_PATH,
                 title = "",
                 selected = false,
                 isFavorite = false,
