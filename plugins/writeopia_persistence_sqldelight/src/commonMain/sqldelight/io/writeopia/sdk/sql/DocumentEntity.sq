@@ -10,7 +10,6 @@ CREATE TABLE documentEntity (
   icon TEXT,
   icon_tint INTEGER,
   is_locked INTEGER NOT NULL,
-  company_id TEXT,
   deleted INTEGER NOT NULL
 );
 
@@ -119,14 +118,13 @@ FROM documentEntity
 WHERE documentEntity.parent_document_id = ? AND deleted = 0;
 
 insert:
-INSERT INTO documentEntity(id, title, created_at, last_updated_at, last_synced_at, workspace_id, favorite, parent_document_id, icon, icon_tint, is_locked, company_id, deleted)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO documentEntity(id, title, created_at, last_updated_at, last_synced_at, workspace_id, favorite, parent_document_id, icon, icon_tint, is_locked, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at,
 last_updated_at=excluded.last_updated_at, last_synced_at=excluded.last_synced_at, workspace_id=excluded.workspace_id,
 favorite=excluded.favorite,parent_document_id=excluded.parent_document_id, icon=excluded.icon,
-icon_tint=excluded.icon_tint, is_locked=excluded.is_locked,
-company_id=excluded.company_id, deleted=excluded.deleted;
+icon_tint=excluded.icon_tint, is_locked=excluded.is_locked, deleted=excluded.deleted;
 
 delete:
 UPDATE documentEntity

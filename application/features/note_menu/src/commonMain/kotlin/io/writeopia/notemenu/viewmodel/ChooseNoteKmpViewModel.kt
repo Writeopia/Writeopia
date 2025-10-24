@@ -101,14 +101,17 @@ internal class ChooseNoteKmpViewModel(
             menuItemsPerFolderId,
             authRepository.listenForWorkspace()
         ) { menuItems, workspace ->
+            val item = menuItems.values.flatten().map { it.title }
+            println("menuItems: $item. for ${notesNavigation.id}:${workspace.id}")
+
             val pageItems = when (notesNavigation) {
                 NotesNavigation.Favorites -> menuItems.values.flatten().filter { it.favorite }
 
-                is NotesNavigation.Folder -> menuItems[notesNavigation.id]
+                is NotesNavigation.Folder -> menuItems["${notesNavigation.id}:${workspace.id}"]
 
                 NotesNavigation.Root -> menuItems["${Folder.ROOT_PATH}:${workspace.id}"]
             }
-            
+
             ResultData.Complete(pageItems ?: emptyList())
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Loading())
     }

@@ -229,6 +229,9 @@ class GlobalShellKmpViewModel(
             highlightItem,
             authRepository.listenForWorkspace(),
         ) { expanded, folderMap, highlighted, workspace ->
+//            println("expanded: $expanded")
+//            println("folderMap: $folderMap")
+
             val folderUiMap = folderMap.mapValues { (_, item) ->
                 item.map {
                     it.toUiCard(
@@ -317,7 +320,7 @@ class GlobalShellKmpViewModel(
                     .forEach { document ->
                         notesUseCase.saveDocumentDb(
                             document.copy(
-                                parentId = "${document.parentId}:$workspaceId",
+                                parentId = document.parentId,
                                 workspaceId = workspaceId,
                                 createdAt = now,
                                 lastUpdatedAt = now
@@ -362,7 +365,8 @@ class GlobalShellKmpViewModel(
                     id,
                     getUserId(),
                     authRepository.getUser().id
-                ).collect()
+                )
+
                 _expandedFolders.value = expanded + id
             }
         }
