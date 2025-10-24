@@ -363,8 +363,9 @@ class NoteEditorKmpViewModel(
                     folderRepository.listenForFoldersByParentId(
                         "root",
                         authRepository.getWorkspace().id
-                    )
-                ) { expanded, map ->
+                    ),
+                    authRepository.listenForWorkspace(),
+                ) { expanded, map, workspace ->
                     val folderUiMap = map.mapValues { (_, item) ->
                         item.map {
                             it.toFolderUi(expanded = expanded.contains(it.id))
@@ -373,7 +374,7 @@ class NoteEditorKmpViewModel(
 
                     folderUiMap
                         .toNodeTree(
-                            MenuItemUi.FolderUi.root(),
+                            MenuItemUi.FolderUi.root(workspace.id),
                             filterPredicate = { menuItemUi ->
                                 menuItemUi.expanded
                             }
