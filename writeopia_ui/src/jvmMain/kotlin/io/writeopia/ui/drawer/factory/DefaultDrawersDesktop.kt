@@ -57,7 +57,7 @@ object DefaultDrawersDesktop : DrawersFactory {
 
         return CommonDrawers.create(
             manager,
-            30.dp,
+            300.dp,
             aiExplanation,
             editable,
             onHeaderClick,

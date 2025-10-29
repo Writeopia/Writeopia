@@ -36,6 +36,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
@@ -128,7 +133,17 @@ fun DesktopNoteEditorScreen(
                         onValueChange = noteEditorViewModel::searchInDocument,
                         modifier = Modifier.defaultMinSize(minWidth = 160.dp)
                             .focusRequester(focusRequester)
-                            .padding(8.dp),
+                            .padding(8.dp)
+                            .onPreviewKeyEvent { keyEvent ->
+                                if (keyEvent.type == KeyEventType.KeyUp &&
+                                    keyEvent.key.keyCode == Key.Enter.keyCode
+                                ) {
+                                    noteEditorViewModel.nextSearchResult()
+                                    true
+                                }
+
+                                false
+                            },
                         singleLine = true,
                         textStyle = MaterialTheme.typography.bodySmall.copy(
                             color = MaterialTheme.colorScheme.onBackground
