@@ -284,8 +284,13 @@ class NoteEditorKmpViewModel(
             if (finds.isEmpty()) return@combine drawState
 
             val mutableStories = drawState.stories.toMutableList()
-            val activeFindPosition = if (finds.size > currentSearchIndex) finds.elementAt(currentSearchIndex) else null
+            val activeFindPosition =
+                if (finds.size > currentSearchIndex) finds.elementAt(currentSearchIndex) else null
             _totalSearchResults.value = finds.size
+
+            if (activeFindPosition != null) {
+                writeopiaManager.scrollToPosition(activeFindPosition)
+            }
 
             finds.forEach { position ->
                 val realPosition = minOf(position * 2, mutableStories.lastIndex)
@@ -745,7 +750,8 @@ class NoteEditorKmpViewModel(
                 return@launch
             }
 
-            val currentPosition = writeopiaManager.currentStory.value.focus ?: writeopiaManager.currentStory.value.selection.position
+            val currentPosition = writeopiaManager.currentStory.value.focus
+                ?: writeopiaManager.currentStory.value.selection.position
             val newIndex = finds.indexOfFirst { it >= currentPosition }
 
             _currentSearchIndex.value = if (newIndex != -1) newIndex else 0

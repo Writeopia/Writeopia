@@ -38,8 +38,12 @@ internal fun TextEditor(
 
     if (position != null) {
         LaunchedEffect(position, block = {
-            noteEditorViewModel.scrollToPosition.collectLatest {
-                listState.animateScrollBy(70F)
+            noteEditorViewModel.scrollToPosition.collectLatest { position ->
+                if (position == -1) {
+                    listState.animateScrollBy(70F)
+                } else if (position != null) {
+                    listState.scrollToItem(position, scrollOffset = -100)
+                }
             }
         })
     }
