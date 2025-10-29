@@ -269,7 +269,7 @@ class AuthIntegrationTest {
         }
 
         assertEquals(HttpStatusCode.Created, response.status)
-        assertNotNull(response.body<AuthResponse>().workspace)
+        assertNotNull(response.body<AuthResponse>().writeopiaUser)
     }
 
     @Test
@@ -293,7 +293,7 @@ class AuthIntegrationTest {
         }
 
         assertEquals(HttpStatusCode.Created, response.status)
-        assertNotNull(response.body<AuthResponse>().workspace)
+        assertNotNull(response.body<AuthResponse>().writeopiaUser)
 
         val response1 = client.post("api/login") {
             contentType(ContentType.Application.Json)
@@ -301,7 +301,7 @@ class AuthIntegrationTest {
         }
 
         assertEquals(HttpStatusCode.OK, response1.status)
-        assertNotNull(response.body<AuthResponse>().workspace)
+        assertNotNull(response.body<AuthResponse>().writeopiaUser)
     }
 
     @Test
