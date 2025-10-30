@@ -45,4 +45,8 @@ class RoomAuthRepository(
     override suspend fun saveWorkspace(workspace: Workspace) {
         workspaceCommonDao.insertWorkspace(workspace, true)
     }
+
+    override suspend fun unselectAllWorkspaces() {
+
+    }
 }

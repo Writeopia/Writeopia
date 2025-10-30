@@ -244,10 +244,9 @@ class GlobalShellKmpViewModel(
             val itemsList = folderUiMap
                 .toNodeTree(
                     MenuItemUi.FolderUi.root(),
-                    workspace.id,
-                    filterPredicate = { menuItemUi ->
-                        expanded.contains(menuItemUi.documentId)
-                    }
+//                    filterPredicate = { menuItemUi ->
+//                        expanded.contains(menuItemUi.documentId)
+//                    }
                 )
                 .toList()
 

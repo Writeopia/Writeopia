@@ -9,6 +9,7 @@ import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -137,6 +138,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         val now = now()
 
         val id = GenerateId.generate()
+        val workspaceId = Random(24).nextInt().toString()
         val document = Document(
             id = id,
             title = "Document1",
@@ -144,7 +146,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            workspaceId = "userIdasd",
+            workspaceId = workspaceId,
             favorite = false,
             parentId = "parentId",
             isLocked = false
@@ -152,15 +154,15 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
 
         documentRepository.saveDocument(document)
 
-        val loadedDocument0 = documentRepository.loadDocumentById(id, "workspaceId")
+        val loadedDocument0 = documentRepository.loadDocumentById(id, workspaceId)
         assertTrue(loadedDocument0?.favorite == false)
 
         documentRepository.favoriteDocumentByIds(setOf(id))
-        val loadedDocument1 = documentRepository.loadDocumentById(id, "workspaceId")
+        val loadedDocument1 = documentRepository.loadDocumentById(id, workspaceId)
         assertTrue(loadedDocument1?.favorite == true)
 
         documentRepository.unFavoriteDocumentByIds(setOf(id))
-        val loadedDocument2 = documentRepository.loadDocumentById(id, "workspaceId")
+        val loadedDocument2 = documentRepository.loadDocumentById(id, workspaceId)
         assertTrue(loadedDocument2?.favorite == false)
     }
 

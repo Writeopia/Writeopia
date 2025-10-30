@@ -64,7 +64,7 @@ kotlin {
 
 android {
     namespace = "io.writeopia.documents.graph"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 24

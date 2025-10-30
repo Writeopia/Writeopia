@@ -37,7 +37,6 @@ class SqlDelightAuthRepositoryTest {
             id = "someId",
             name = "someName",
             email = "someEmail",
-            company = "someCompany"
         )
 
         repository.saveUser(user, selected = true)
