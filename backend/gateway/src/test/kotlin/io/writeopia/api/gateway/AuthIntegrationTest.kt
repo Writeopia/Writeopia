@@ -144,7 +144,7 @@ class AuthIntegrationTest {
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
-        assertEquals(response2.status, HttpStatusCode.OK)
+        assertEquals(HttpStatusCode.OK, response2.status)
     }
 
     @Test
@@ -159,7 +159,7 @@ class AuthIntegrationTest {
                 header(HttpHeaders.Authorization, "Bearer asdasdasd")
             }
 
-            assertEquals(response2.status, HttpStatusCode.Unauthorized)
+            assertEquals(HttpStatusCode.Unauthorized, response2.status)
         }
 
     @Test
