@@ -19,7 +19,9 @@ import io.writeopia.api.core.auth.repository.deleteUserById
 import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserById
+import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.service.AuthService
+import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.connection.logger
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
@@ -79,14 +81,36 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 writeopiaDb.getEnabledUserByEmail(request.email)
             }
 
-            if (user == null) {
-                // Get workspace
-                val wUser = AuthService.createUser(writeopiaDb, request, enabled = debugMode)
+            val workspace = writeopiaDb.getWorkspaceById(request.workspaceId)
 
-                call.respond(
-                    HttpStatusCode.Created,
-                    AuthResponse(null, wUser.toApi()),
+            if (user == null && workspace == null) {
+                // Get user
+                val wUser = AuthService.createUser(writeopiaDb, request, enabled = debugMode)
+                // Every user has its own workspace.
+                WorkspaceService.createWorkspace(
+                    workspaceId = request.workspaceId,
+                    workspaceName = "Workspace: ${wUser.name}",
+                    writeopiaDb = writeopiaDb
                 )
+
+                val created = WorkspaceService.addUserToWorkspaceAdmin(
+                    request.email,
+                    request.workspaceId,
+                    "ADMIN",
+                    writeopiaDb
+                )
+
+                if (created) {
+                    call.respond(
+                        HttpStatusCode.Created,
+                        AuthResponse(null, wUser.toApi()),
+                    )
+                } else {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        AuthResponse(null, wUser.toApi()),
+                    )
+                }
             } else {
                 logger.info("register request - user already exists")
                 call.respond(HttpStatusCode.Conflict, "Not Created")

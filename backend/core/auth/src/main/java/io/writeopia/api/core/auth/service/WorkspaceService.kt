@@ -1,15 +1,16 @@
 package io.writeopia.api.core.auth.service
 
 import io.writeopia.api.core.auth.repository.getUserByEmail
-import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getUsersInWorkspace
+import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertUserInWorkspace
+import io.writeopia.api.core.auth.repository.insertWorkspace
 import io.writeopia.api.core.auth.repository.removeUserFromWorkspace
 import io.writeopia.models.user.WorkspaceUser
-import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sql.WriteopiaDbBackend
+import kotlinx.datetime.Instant
 
 object WorkspaceService {
 
@@ -32,16 +33,40 @@ object WorkspaceService {
         writeopiaDb: WriteopiaDbBackend
     ): List<WorkspaceUser> = writeopiaDb.getUsersInWorkspace(workspaceId)
 
+    fun createWorkspace(
+        workspaceId: String,
+        workspaceName: String,
+        writeopiaDb: WriteopiaDbBackend
+    ) {
+        writeopiaDb.insertWorkspace(
+            Workspace(
+                id = workspaceId,
+                userId = "",
+                name = workspaceName,
+                lastSync = Instant.DISTANT_PAST,
+                selected = false,
+                role = ""
+            )
+        )
+    }
+
     fun addUserToWorkspaceAdmin(
         userEmail: String,
         workspaceId: String,
         role: String,
         writeopiaDb: WriteopiaDbBackend
-    ): Boolean =
-        writeopiaDb.getUserByEmail(userEmail)?.id?.let { userId ->
-            writeopiaDb.insertUserInWorkspace(workspaceId, userId, role)
-            true
-        } ?: false
+    ): Boolean {
+        val user = writeopiaDb.getUserByEmail(userEmail)
+        val workspace = writeopiaDb.getWorkspaceById(workspaceId)
+
+        if (user != null && workspace != null) {
+            writeopiaDb.insertUserInWorkspace(workspaceId, user.id, role)
+            return true
+        } else {
+            return false
+        }
+    }
+
 
     fun addUserToWorkspaceSecure(
         workspaceOwnerId: String,
@@ -95,4 +120,5 @@ object WorkspaceService {
         writeopiaDb.removeUserFromWorkspace(workspaceId, user.id)
         return true
     }
+
 }
