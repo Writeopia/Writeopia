@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="build.gradle.kts">
+        <error line="129" column="42" source="standard:chain-method-continuation" />
+        <error line="129" column="48" source="standard:chain-method-continuation" />
+    </file>
     <file name="build/generated/compose/resourceGenerator/kotlin/androidMainResourceCollectors/writeopia/writeopia_ui/generated/resources/ActualResourceCollectors.kt">
         <error line="3" column="9" source="standard:package-name" />
         <error line="15" column="1" source="standard:indent" />
@@ -337,10 +341,10 @@
         <error line="75" column="20" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/content/TextDrawer.kt">
-        <error line="142" column="21" source="standard:chain-method-continuation" />
-        <error line="196" column="25" source="standard:chain-method-continuation" />
-        <error line="207" column="25" source="standard:chain-method-continuation" />
-        <error line="210" column="25" source="standard:chain-method-continuation" />
+        <error line="138" column="21" source="standard:chain-method-continuation" />
+        <error line="192" column="25" source="standard:chain-method-continuation" />
+        <error line="203" column="25" source="standard:chain-method-continuation" />
+        <error line="206" column="25" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/decorations/TagDecoration.kt">
         <error line="13" column="82" source="standard:function-return-type-spacing" />
@@ -796,20 +800,21 @@
         <error line="223" column="17" source="standard:backing-property-naming" />
         <error line="243" column="17" source="standard:chain-method-continuation" />
         <error line="250" column="17" source="standard:backing-property-naming" />
-        <error line="492" column="42" source="standard:chain-method-continuation" />
-        <error line="688" column="40" source="standard:chain-method-continuation" />
-        <error line="876" column="23" source="standard:chain-method-continuation" />
-        <error line="1121" column="27" source="standard:chain-method-continuation" />
-        <error line="1195" column="21" source="standard:chain-method-continuation" />
-        <error line="1199" column="21" source="standard:chain-method-continuation" />
-        <error line="1211" column="29" source="standard:chain-method-continuation" />
-        <error line="1233" column="28" source="standard:chain-method-continuation" />
-        <error line="1257" column="28" source="standard:chain-method-continuation" />
-        <error line="1353" column="52" source="standard:chain-method-continuation" />
-        <error line="1405" column="32" source="standard:class-signature" />
-        <error line="1405" column="50" source="standard:class-signature" />
-        <error line="1405" column="69" source="standard:class-signature" />
-        <error line="1405" column="86" source="standard:class-signature" />
+        <error line="495" column="42" source="standard:chain-method-continuation" />
+        <error line="695" column="40" source="standard:chain-method-continuation" />
+        <error line="883" column="23" source="standard:chain-method-continuation" />
+        <error line="1097" column="25" source="standard:chain-method-continuation" />
+        <error line="1128" column="27" source="standard:chain-method-continuation" />
+        <error line="1202" column="21" source="standard:chain-method-continuation" />
+        <error line="1206" column="21" source="standard:chain-method-continuation" />
+        <error line="1218" column="29" source="standard:chain-method-continuation" />
+        <error line="1240" column="28" source="standard:chain-method-continuation" />
+        <error line="1264" column="28" source="standard:chain-method-continuation" />
+        <error line="1360" column="52" source="standard:chain-method-continuation" />
+        <error line="1412" column="32" source="standard:class-signature" />
+        <error line="1412" column="50" source="standard:class-signature" />
+        <error line="1412" column="69" source="standard:class-signature" />
+        <error line="1412" column="86" source="standard:class-signature" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/model/SelectionInfo.kt">
         <error line="3" column="26" source="standard:class-signature" />
@@ -836,11 +841,12 @@
         <error line="51" column="9" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonTest/kotlin/io/writeopia/ui/manager/WriteopiaStateManagerTest.kt">
-        <error line="90" column="34" source="standard:chain-method-continuation" />
-        <error line="135" column="34" source="standard:chain-method-continuation" />
-        <error line="587" column="52" source="standard:chain-method-continuation" />
-        <error line="622" column="71" source="standard:chain-method-continuation" />
-        <error line="622" column="77" source="standard:chain-method-continuation" />
+        <error line="58" column="9" source="standard:blank-line-before-declaration" />
+        <error line="92" column="34" source="standard:chain-method-continuation" />
+        <error line="137" column="34" source="standard:chain-method-continuation" />
+        <error line="589" column="52" source="standard:chain-method-continuation" />
+        <error line="624" column="71" source="standard:chain-method-continuation" />
+        <error line="624" column="77" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonTest/kotlin/io/writeopia/ui/utils/MapStoryData.kt">
         <error line="197" column="141" source="standard:max-line-length" />

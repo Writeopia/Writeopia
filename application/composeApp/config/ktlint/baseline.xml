@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="build.gradle.kts">
+        <error line="171" column="42" source="standard:chain-method-continuation" />
+        <error line="171" column="48" source="standard:chain-method-continuation" />
+        <error line="179" column="44" source="standard:chain-method-continuation" />
+        <error line="179" column="50" source="standard:chain-method-continuation" />
+    </file>
     <file name="src/androidInstrumentedTest/kotlin/io/writeopia/robots/AndroidDocumentEditPageRobot.kt">
         <error line="8" column="36" source="standard:class-signature" />
         <error line="8" column="80" source="standard:class-signature" />
@@ -18,5 +24,8 @@
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/navigation/StartUp.kt">
         <error line="39" column="33" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/jvmMain/kotlin/io/writeopia/desktop/MainDesktop.kt">
+        <error line="25" column="1" source="standard:no-unused-imports" />
     </file>
 </baseline>
