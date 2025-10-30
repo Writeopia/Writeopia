@@ -375,7 +375,6 @@ class NoteEditorKmpViewModel(
                     folderUiMap
                         .toNodeTree(
                             MenuItemUi.FolderUi.root(),
-                            workspace.id,
                             filterPredicate = { menuItemUi ->
                                 menuItemUi.expanded
                             }

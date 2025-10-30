@@ -54,7 +54,7 @@ kotlin {
 
 android {
     namespace = "io.writeopia.utils"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 24

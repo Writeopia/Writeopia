@@ -59,7 +59,7 @@ kotlin {
 
 android {
     namespace = "io.writeopia.persistence"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 24

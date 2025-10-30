@@ -104,9 +104,9 @@ internal class ChooseNoteKmpViewModel(
             val pageItems = when (notesNavigation) {
                 NotesNavigation.Favorites -> menuItems.values.flatten().filter { it.favorite }
 
-                is NotesNavigation.Folder -> menuItems["${notesNavigation.id}:${workspace.id}"]
+                is NotesNavigation.Folder -> menuItems[notesNavigation.id]
 
-                NotesNavigation.Root -> menuItems["${Folder.ROOT_PATH}:${workspace.id}"]
+                NotesNavigation.Root -> menuItems[Folder.ROOT_PATH]
             }
 
             ResultData.Complete(pageItems ?: emptyList())

@@ -13,9 +13,8 @@ fun <K, V> Map<K, List<V>>.merge(map: Map<K, List<V>>) =
 
 fun <T : Node> Map<String, List<T>>.toNodeTree(
     node: T,
-    workspaceId: String,
     filterPredicate: (T) -> Boolean = { true }
-): T = createNodeTree(this, node, workspaceId, filterPredicate = filterPredicate)
+): T = createNodeTree(this, node, filterPredicate = filterPredicate)
 
 /**
  * Traverses an traversable iterable, filters the nodes and map the items of the traversal

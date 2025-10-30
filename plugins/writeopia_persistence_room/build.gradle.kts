@@ -53,7 +53,7 @@ mavenPublishing {
 
 android {
     namespace = "io.writeopia.sdk.persistence_room"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 24

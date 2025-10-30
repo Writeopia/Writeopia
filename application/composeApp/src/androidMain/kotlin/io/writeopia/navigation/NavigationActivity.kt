@@ -13,7 +13,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.BuildConfig
-import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
@@ -73,7 +72,6 @@ fun NavigationGraph(
     WriteopiaConnectionInjector.setBaseUrl(BuildConfig.BASE_URL)
     val uiConfigViewModel = uiConfigInjection.provideUiConfigurationViewModel()
     val repositoryInjection = RoomRepositoryInjection.singleton()
-    val authInjection = AuthInjection()
     val editorInjector = EditorKmpInjector.mobile(repositoryInjection)
     val notesMenuInjection = NotesMenuKmpInjection.mobile(repositoryInjection)
 
@@ -96,9 +94,9 @@ fun NavigationGraph(
         editorInjector = editorInjector,
         navigationViewModel = navigationViewModel
     ) {
-        startScreen(navController, authInjection, colorThemeState)
+        startScreen(navController, colorThemeState)
 
-        authNavigation(navController, authInjection, colorThemeState) {
+        authNavigation(navController, colorThemeState) {
             navController.navigateToNotes(NotesNavigation.Root)
         }
     }
