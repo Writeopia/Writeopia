@@ -19,7 +19,6 @@ import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
-import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
@@ -62,7 +61,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    workspace = ""
+                    workspaceId = ""
                 )
             )
         }
@@ -85,7 +84,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    workspace = ""
+                    workspaceId = ""
                 )
             )
         }
@@ -97,7 +96,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    workspace = ""
+                    workspaceId = ""
                 )
             )
         }
@@ -122,7 +121,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = password,
-                    workspace = ""
+                    workspaceId = ""
                 )
             )
         }
@@ -178,7 +177,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = password,
-                    workspace = ""
+                    workspaceId = ""
                 )
             )
         }
@@ -263,7 +262,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    workspace = ""
+                    workspaceId = ""
                 )
             )
         }
@@ -287,7 +286,7 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    workspace = ""
+                    workspaceId = ""
                 )
             )
         }
@@ -321,7 +320,7 @@ class AuthIntegrationTest {
                     name = Random.nextInt().toString(),
                     email = email1,
                     password = "lasjbdalsdq08w9y&",
-                    workspace = Random.nextInt().toString()
+                    workspaceId = Random.nextInt().toString()
                 )
             )
         }
@@ -337,7 +336,7 @@ class AuthIntegrationTest {
                     name = Random.nextInt().toString(),
                     email = email2,
                     password = "lasjbdalsdq08w9y&",
-                    workspace = Random.nextInt().toString()
+                    workspaceId = Random.nextInt().toString()
                 )
             )
         }
@@ -389,7 +388,7 @@ class AuthIntegrationTest {
                     name = Random.nextInt().toString(),
                     email = email1,
                     password = "lasjbdalsdq08w9y&",
-                    workspace = Random.nextInt().toString()
+                    workspaceId = Random.nextInt().toString()
                 )
             )
         }
@@ -405,7 +404,7 @@ class AuthIntegrationTest {
                     name = Random.nextInt().toString(),
                     email = email2,
                     password = "lasjbdalsdq08w9y&",
-                    workspace = Random.nextInt().toString()
+                    workspaceId = Random.nextInt().toString()
                 )
             )
         }

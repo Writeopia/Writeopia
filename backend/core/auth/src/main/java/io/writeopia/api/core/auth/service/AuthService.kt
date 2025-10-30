@@ -15,32 +15,6 @@ import kotlinx.datetime.Clock
 import java.util.UUID
 
 object AuthService {
-    fun getWorkspaceForUser(
-        writeopiaDb: WriteopiaDbBackend,
-        userId: String,
-        userName: String
-    ): Workspace {
-        val workspaces = writeopiaDb.getWorkspacesByUserId(userId)
-
-        return if (workspaces.isNotEmpty()) {
-            workspaces.first()
-        } else {
-            val workspace = Workspace(
-                id = UUID.randomUUID().toString(),
-                userId = userId,
-                "$userName Workspace",
-                lastSync = Clock.System.now(),
-                selected = false,
-                role = "ADMIN"
-            )
-
-            writeopiaDb.insertWorkspace(workspace)
-            writeopiaDb.insertUserInWorkspace(workspaceId = workspace.id, userId = userId, role = "ADMIN")
-
-            workspace
-        }
-    }
-
     fun createUser(
         writeopiaDb: WriteopiaDbBackend,
         registerRequest: RegisterRequest,
