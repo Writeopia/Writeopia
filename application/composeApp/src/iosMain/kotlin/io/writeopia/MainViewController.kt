@@ -7,7 +7,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.ComposeUIViewController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
@@ -56,7 +55,6 @@ fun MainViewController() = ComposeUIViewController {
 
             val editorInjector = EditorKmpInjector.mobile(sqlDelightDaoInjector)
 
-            val authInjection = AuthInjection()
             val navigationViewModel = viewModel { MobileNavigationViewModel() }
 
             val navController = rememberNavController()
@@ -73,7 +71,7 @@ fun MainViewController() = ComposeUIViewController {
                 editorInjector = editorInjector,
                 navigationViewModel = navigationViewModel,
             ) {
-                authNavigation(navController, authInjection, colorThemeState) {
+                authNavigation(navController, colorThemeState) {
                     navController.navigateToNotes(NotesNavigation.Root)
                 }
             }
