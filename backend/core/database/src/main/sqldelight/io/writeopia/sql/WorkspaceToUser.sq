@@ -12,7 +12,6 @@ SELECT
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
   user_entity.enabled AS user_enabled,
-  user_entity.workspace AS user_workspace,
   role
 FROM workspace_entity
 JOIN workspace_to_user

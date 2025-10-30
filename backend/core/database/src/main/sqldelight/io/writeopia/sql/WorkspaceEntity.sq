@@ -27,8 +27,7 @@ SELECT
   user_entity.name AS user_name,
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
-  user_entity.enabled AS user_enabled,
-  user_entity.workspace AS user_workspace
+  user_entity.enabled AS user_enabled
 FROM workspace_entity
 JOIN workspace_to_user
   ON workspace_entity.id = workspace_to_user.workspace_id
@@ -48,8 +47,7 @@ SELECT
   user_entity.name AS user_name,
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
-  user_entity.enabled AS user_enabled,
-  user_entity.workspace AS user_workspace
+  user_entity.enabled AS user_enabled
 FROM workspace_entity
 JOIN workspace_to_user
   ON workspace_entity.id = workspace_to_user.workspace_id
