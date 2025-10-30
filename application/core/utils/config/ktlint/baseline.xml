@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="build.gradle.kts">
+        <error line="57" column="42" source="standard:chain-method-continuation" />
+        <error line="57" column="48" source="standard:chain-method-continuation" />
+    </file>
     <file name="src/androidMain/kotlin/io/writeopia/common/utils/di/SharedPreferencesInjector.kt">
         <error line="5" column="53" source="standard:class-signature" />
         <error line="5" column="93" source="standard:class-signature" />
@@ -17,6 +21,7 @@
         <error line="18" column="33" source="standard:chain-method-continuation" />
         <error line="47" column="14" source="standard:chain-method-continuation" />
         <error line="54" column="14" source="standard:chain-method-continuation" />
+        <error line="55" column="62" source="standard:comma-spacing" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/common/utils/NotesNavigation.kt">
         <error line="3" column="30" source="standard:class-signature" />
@@ -309,6 +314,11 @@
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/common/utils/icons/all/ChevronRight.kt">
         <error line="20" column="36" source="standard:chain-method-continuation" />
+        <error line="46" column="13" source="standard:backing-property-naming" />
+        <error line="46" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/common/utils/icons/all/ChevronUp.kt">
+        <error line="20" column="33" source="standard:chain-method-continuation" />
         <error line="46" column="13" source="standard:backing-property-naming" />
         <error line="46" column="13" source="standard:backing-property-naming" />
     </file>
