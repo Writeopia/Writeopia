@@ -22,8 +22,8 @@ internal fun WriteopiaDbBackend.listWorkspaces(): List<Workspace> {
         }
 }
 
-internal fun WriteopiaDbBackend.getWorkspaceByUserId(id: String): Workspace? {
-    return this.workspaceEntityQueries.getWorkspaceById(id)
+internal fun WriteopiaDbBackend.getWorkspaceById(workspaceId: String): Workspace? {
+    return this.workspaceEntityQueries.getWorkspaceById(workspaceId)
         .executeAsOneOrNull()
         ?.let { entity ->
             Workspace(
