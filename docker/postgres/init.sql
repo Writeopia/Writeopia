@@ -40,8 +40,7 @@ CREATE TABLE user_entity (
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
-  enabled BOOLEAN NOT NULL,
-  workspace TEXT NOT NULL
+  enabled BOOLEAN NOT NULL
 );
 
 CREATE TABLE company_entity (

@@ -5,8 +5,7 @@ CREATE TABLE user_entity (
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
-  enabled BOOLEAN NOT NULL,
-  workspace TEXT NOT NULL
+  enabled BOOLEAN NOT NULL
 );
 
 selectUserByEmail:
@@ -28,10 +27,10 @@ WHERE id = ?
 LIMIT 1;
 
 insertUser:
-INSERT INTO user_entity(id, name, created_at, email, password, salt, enabled, workspace)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO user_entity(id, name, created_at, email, password, salt, enabled)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
-UPDATE SET id=excluded.id, name=excluded.name, created_at=excluded.created_at, email=excluded.email, password=excluded.password, salt=excluded.salt, enabled=excluded.enabled, workspace=excluded.workspace;
+UPDATE SET id=excluded.id, name=excluded.name, created_at=excluded.created_at, email=excluded.email, password=excluded.password, salt=excluded.salt, enabled=excluded.enabled;
 
 deleteUser:
 DELETE

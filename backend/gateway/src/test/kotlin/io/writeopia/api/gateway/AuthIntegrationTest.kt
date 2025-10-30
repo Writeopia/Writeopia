@@ -61,7 +61,6 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    workspaceId = ""
                 )
             )
         }
@@ -76,15 +75,16 @@ class AuthIntegrationTest {
         }
 
         val client = defaultClient()
+        val email = Random.nextInt().toString()
+        val workspace = Random.nextInt().toString()
 
         val response = client.post("/api/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
                     name = "Name",
-                    email = "email@gmail.com",
+                    email = email,
                     password = "lasjbdalsdq08w9y&",
-                    workspaceId = ""
                 )
             )
         }
@@ -94,15 +94,14 @@ class AuthIntegrationTest {
             setBody(
                 RegisterRequest(
                     name = "Name",
-                    email = "email@gmail.com",
+                    email = email,
                     password = "lasjbdalsdq08w9y&",
-                    workspaceId = ""
                 )
             )
         }
 
-        assertEquals(response.status, HttpStatusCode.Created)
-        assertEquals(response1.status, HttpStatusCode.Conflict)
+        assertEquals(HttpStatusCode.Created, response.status)
+        assertEquals(HttpStatusCode.Conflict, response1.status)
     }
 
     @Test
@@ -121,7 +120,6 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = password,
-                    workspaceId = ""
                 )
             )
         }
@@ -177,7 +175,6 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = password,
-                    workspaceId = ""
                 )
             )
         }
@@ -262,7 +259,6 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    workspaceId = ""
                 )
             )
         }
@@ -286,7 +282,6 @@ class AuthIntegrationTest {
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
-                    workspaceId = ""
                 )
             )
         }
@@ -320,7 +315,6 @@ class AuthIntegrationTest {
                     name = Random.nextInt().toString(),
                     email = email1,
                     password = "lasjbdalsdq08w9y&",
-                    workspaceId = Random.nextInt().toString()
                 )
             )
         }
@@ -336,7 +330,6 @@ class AuthIntegrationTest {
                     name = Random.nextInt().toString(),
                     email = email2,
                     password = "lasjbdalsdq08w9y&",
-                    workspaceId = Random.nextInt().toString()
                 )
             )
         }
@@ -388,7 +381,6 @@ class AuthIntegrationTest {
                     name = Random.nextInt().toString(),
                     email = email1,
                     password = "lasjbdalsdq08w9y&",
-                    workspaceId = Random.nextInt().toString()
                 )
             )
         }
@@ -404,7 +396,6 @@ class AuthIntegrationTest {
                     name = Random.nextInt().toString(),
                     email = email2,
                     password = "lasjbdalsdq08w9y&",
-                    workspaceId = Random.nextInt().toString()
                 )
             )
         }
