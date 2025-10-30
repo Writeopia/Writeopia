@@ -380,7 +380,6 @@
         <error line="157" column="12" source="standard:condition-wrapping" />
         <error line="158" column="9" source="standard:chain-wrapping" />
         <error line="158" column="12" source="standard:condition-wrapping" />
-        <error line="162" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/preview/ImagePreviewDrawer.kt">
         <error line="27" column="33" source="standard:chain-method-continuation" />
