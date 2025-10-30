@@ -13,8 +13,10 @@ import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlin.collections.mapKeys
 
 /**
  * UseCase responsible to perform CRUD operations in the Notes (Documents) of the app taking in to
@@ -164,6 +166,10 @@ class NotesUseCase private constructor(
                 userId,
                 workspaceId
             )
+        }.map { menuMap ->
+            menuMap.mapKeys { (key, value) ->
+                key.split(":", limit = 2)[0]
+            }
         }
 
     suspend fun stopListeningForMenuItemsByParentId(id: String, workspaceId: String) {

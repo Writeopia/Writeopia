@@ -35,6 +35,8 @@ postgresql = "42.7.8"
 compose-navigation = "2.8.0-alpha13"
 publish = "0.33.0"
 lifecycleViewmodelCompose = "2.8.4"
+compileSdk = "36"
+targetSdk = "36"
 
 [libraries]
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }

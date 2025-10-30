@@ -39,11 +39,10 @@ fun <T : Node> T.toList(): List<T> = Node.toList(this)
 internal fun <T : Node> createNodeTree(
     map: Map<String, List<T>>,
     node: T,
-    workspaceId: String,
     depth: Int = -1,
     filterPredicate: (T) -> Boolean = { true }
 ): T {
-    val nextNodes = map["${node.id}:$workspaceId"]
+    val nextNodes = map[node.id]
 
     nextNodes.takeIf { it?.isNotEmpty() == true }
         ?.map { nextNode ->
@@ -53,7 +52,7 @@ internal fun <T : Node> createNodeTree(
         }?.let(node::addNotes)
 
     nextNodes?.filter(filterPredicate)
-        ?.forEach { nextCode -> createNodeTree(map, nextCode, workspaceId, depth + 1) }
+        ?.forEach { nextCode -> createNodeTree(map, nextCode,depth + 1) }
 
     return node
 }

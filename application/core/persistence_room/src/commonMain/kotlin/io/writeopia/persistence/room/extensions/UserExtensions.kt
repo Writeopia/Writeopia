@@ -10,7 +10,6 @@ fun UserEntity.toModel(): Pair<WriteopiaUser, Boolean> =
         name = name,
         email = email,
         tier = Tier.valueOf(tier),
-        company = company
     ) to selected
 
 fun WriteopiaUser.toEntity(selected: Boolean): UserEntity =
@@ -18,7 +17,6 @@ fun WriteopiaUser.toEntity(selected: Boolean): UserEntity =
         id = id,
         name = name,
         email = email,
-        company = company,
         tier = tier.name,
         selected = selected
     )
