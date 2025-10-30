@@ -20,7 +20,7 @@ object AuthService {
         registerRequest: RegisterRequest,
         enabled: Boolean
     ): WriteopiaUser {
-        val (name, email, workspace, password) = registerRequest
+        val (name, email, password) = registerRequest
 
         val id = UUID.randomUUID().toString()
 
@@ -33,7 +33,6 @@ object AuthService {
             email = email,
             password = hash,
             salt = salt.toBase64(),
-            workspace = workspace,
             enabled = enabled
         )
 

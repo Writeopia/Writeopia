@@ -24,6 +24,7 @@ import io.writeopia.api.core.auth.service.AuthService
 import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.connection.logger
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
@@ -81,21 +82,20 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 writeopiaDb.getEnabledUserByEmail(request.email)
             }
 
-            val workspace = writeopiaDb.getWorkspaceById(request.workspaceId)
-
-            if (user == null && workspace == null) {
+            if (user == null) {
                 // Get user
                 val wUser = AuthService.createUser(writeopiaDb, request, enabled = debugMode)
+                val workspaceId = GenerateId.generate()
                 // Every user has its own workspace.
                 WorkspaceService.createWorkspace(
-                    workspaceId = request.workspaceId,
+                    workspaceId = workspaceId,
                     workspaceName = "Workspace: ${wUser.name}",
                     writeopiaDb = writeopiaDb
                 )
 
                 val created = WorkspaceService.addUserToWorkspaceAdmin(
                     request.email,
-                    request.workspaceId,
+                    workspaceId,
                     "ADMIN",
                     writeopiaDb
                 )
@@ -112,7 +112,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                     )
                 }
             } else {
-                logger.info("register request - user already exists")
+                logger.info("register request - user or workspace already exist")
                 call.respond(HttpStatusCode.Conflict, "Not Created")
             }
         } catch (e: Exception) {
