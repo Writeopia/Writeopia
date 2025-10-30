@@ -159,3 +159,5 @@ private fun isMoveStrongDownEvent(keyEvent: KeyEvent) =
 
 private fun isLineBreak(keyEvent: KeyEvent): Boolean = keyEvent.key == Key.Enter
 
+fun Key.isEnterKey(): Boolean =
+    this.keyCode == Key.Enter.keyCode || this.keyCode == Key.NumPadEnter.keyCode

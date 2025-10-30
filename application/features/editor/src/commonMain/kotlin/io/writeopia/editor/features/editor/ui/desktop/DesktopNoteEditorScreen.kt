@@ -36,7 +36,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -52,6 +51,7 @@ import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.drawer.factory.DrawersFactory
+import io.writeopia.ui.drawer.factory.isEnterKey
 
 @Composable
 fun DesktopNoteEditorScreen(
@@ -136,7 +136,7 @@ fun DesktopNoteEditorScreen(
                             .padding(8.dp)
                             .onPreviewKeyEvent { keyEvent ->
                                 if (keyEvent.type == KeyEventType.KeyUp &&
-                                    keyEvent.key.keyCode == Key.Enter.keyCode
+                                    keyEvent.key.isEnterKey()
                                 ) {
                                     noteEditorViewModel.nextSearchResult()
                                     true
