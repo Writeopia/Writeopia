@@ -58,6 +58,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
+                    workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
@@ -82,6 +83,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
+                    workspaceName = "workspace name",
                     name = "Name",
                     email = email,
                     password = "lasjbdalsdq08w9y&",
@@ -93,6 +95,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
+                    workspaceName = "workspace name",
                     name = "Name",
                     email = email,
                     password = "lasjbdalsdq08w9y&",
@@ -117,6 +120,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
+                    workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
                     password = password,
@@ -172,6 +176,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
+                    workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
                     password = password,
@@ -256,6 +261,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
+                    workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
@@ -279,6 +285,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
+                    workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
                     password = "lasjbdalsdq08w9y&",
@@ -312,6 +319,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
+                    workspaceName = "workspace name",
                     name = Random.nextInt().toString(),
                     email = email1,
                     password = "lasjbdalsdq08w9y&",
@@ -327,6 +335,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
+                    workspaceName = "workspace name",
                     name = Random.nextInt().toString(),
                     email = email2,
                     password = "lasjbdalsdq08w9y&",
@@ -378,6 +387,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
+                    workspaceName = "workspace name",
                     name = Random.nextInt().toString(),
                     email = email1,
                     password = "lasjbdalsdq08w9y&",
@@ -393,6 +403,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
+                    workspaceName = "workspace name",
                     name = Random.nextInt().toString(),
                     email = email2,
                     password = "lasjbdalsdq08w9y&",

@@ -57,7 +57,7 @@ internal class RegisterViewModel(
                 val result = authApi.register(
                     name = _name.value,
                     email = _email.value,
-                    workspace = _workspace.value,
+                    workspaceName = _workspace.value,
                     password = _password.value
                 )
 

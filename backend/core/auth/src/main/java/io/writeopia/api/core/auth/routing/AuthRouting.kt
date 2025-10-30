@@ -89,7 +89,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 // Every user has its own workspace.
                 WorkspaceService.createWorkspace(
                     workspaceId = workspaceId,
-                    workspaceName = "Workspace: ${wUser.name}",
+                    workspaceName = request.workspaceName,
                     writeopiaDb = writeopiaDb
                 )
 
