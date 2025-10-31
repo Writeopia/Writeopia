@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
 
 class ChooseWorkspaceViewModel(
     private val authRepository: AuthRepository,
@@ -37,7 +38,7 @@ class ChooseWorkspaceViewModel(
     fun chooseWorkspace(workspace: Workspace, sideEffect: () -> Unit) {
         viewModelScope.launch {
             authRepository.unselectAllWorkspaces()
-            authRepository.saveWorkspace(workspace)
+            authRepository.saveWorkspace(workspace.copy(lastSync = Instant.DISTANT_PAST))
             sideEffect()
         }
     }
