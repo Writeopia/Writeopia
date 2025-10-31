@@ -131,6 +131,28 @@ fun Routing.documentsRoute(
         }
     }
 
+    get("/api/workspace/{workspaceId}/folder/{id}") {
+        val id = call.pathParameters["id"]!!
+        val userId = getUserId() ?: ""
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            val folder = DocumentsService.getFolderById(id, userId, writeopiaDb)
+
+            if (folder != null) {
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = folder.toApi()
+                )
+            } else {
+                call.respond(
+                    status = HttpStatusCode.NotFound,
+                    message = "No lead with id: $id"
+                )
+            }
+        }
+    }
+
     authenticate("auth-jwt", optional = debug) {
         post<SendDocumentsRequest>("/api/workspace/document") { request ->
             val userId = getUserId() ?: ""
@@ -176,28 +198,6 @@ fun Routing.documentsRoute(
                         message = "${e.message}"
                     )
                 }
-            }
-        }
-    }
-
-    get("/api/workspace/{workspaceId}/folder/{id}") {
-        val id = call.pathParameters["id"]!!
-        val userId = getUserId() ?: ""
-        val workspaceId = call.pathParameters["workspaceId"] ?: ""
-
-        runIfMember(userId, workspaceId, writeopiaDb, debug) {
-            val folder = DocumentsService.getFolderById(id, userId, writeopiaDb)
-
-            if (folder != null) {
-                call.respond(
-                    status = HttpStatusCode.OK,
-                    message = folder.toApi()
-                )
-            } else {
-                call.respond(
-                    status = HttpStatusCode.NotFound,
-                    message = "No lead with id: $id"
-                )
             }
         }
     }

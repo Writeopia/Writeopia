@@ -251,8 +251,6 @@ class GlobalShellKmpViewModel(
                 .toList()
 
             val items = itemsList.joinToString { it.title }
-            println("items: $items")
-
             itemsList.toMutableList().apply {
                 removeAt(0)
             }
