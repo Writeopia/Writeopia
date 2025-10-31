@@ -18,12 +18,11 @@ class SearchRepository(
     private val searchApi: SearchApi,
     private val authRepository: AuthRepository,
 ) {
-    fun searchNotesAndFolders(query: String): Flow<List<SearchItem>> {
+    fun searchNotesAndFoldersLocally(query: String): Flow<List<SearchItem>> {
         if (query.isEmpty()) return flow { emit(getNotesAndFolders()) }
 
-        val foldersFlow: Flow<List<Folder>> = flow {
-            emit(folderSearch.search(query))
-        }
+        val foldersFlow: Flow<List<Folder>> = flow { emit(folderSearch.search(query)) }
+
         val documentsFlow: Flow<List<Document>> = flow {
             emit(
                 documentSearch.search(
@@ -34,10 +33,41 @@ class SearchRepository(
                 )
             )
         }
+
+        return combine(foldersFlow, documentsFlow) { folders, documents ->
+            (folders + documents).toSearchItems()
+        }
+    }
+
+    fun searchNotesAndFoldersRemotely(query: String): Flow<List<SearchItem>> {
+        return flow {
+//            println("triggering documentsApiFlow")
+//            emit(emptyList())
+//            println("calling api")
+            emit(searchApi.searchApi(query).toSearchItems())
+        }
+    }
+
+    fun searchNotesAndFolders(query: String): Flow<List<SearchItem>> {
+        if (query.isEmpty()) return flow { emit(getNotesAndFolders()) }
+
+        val foldersFlow: Flow<List<Folder>> = flow { emit(folderSearch.search(query)) }
+
+        val documentsFlow: Flow<List<Document>> = flow {
+            emit(
+                documentSearch.search(
+                    query,
+                    authRepository.getUser().id,
+                    // Todo: Add company later
+                    null
+                )
+            )
+        }
+
         val documentsApiFlow: Flow<List<Document>> = flow {
-            println("triggering documentsApiFlow")
-            emit(emptyList())
-            println("calling api")
+//            println("triggering documentsApiFlow")
+//            emit(emptyList())
+//            println("calling api")
             emit(searchApi.searchApi(query))
         }
 
@@ -60,7 +90,7 @@ class SearchRepository(
     }
 }
 
-fun List<MenuItem>.toSearchItems(): List<SearchItem> =
+private fun List<MenuItem>.toSearchItems(): List<SearchItem> =
     this.map { menuItem ->
         when (menuItem) {
             is Folder -> SearchItem.FolderInfo(menuItem.id, menuItem.title)
