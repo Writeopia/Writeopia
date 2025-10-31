@@ -14,7 +14,7 @@ data class Workspace(
         fun disconnectedWorkspace() = Workspace(
             id = "disconnected_workspace",
             userId = "disconnected_user",
-            name = "",
+            name = "Offline workspace",
             lastSync = Instant.Companion.DISTANT_PAST,
             selected = true,
             role = Role.ADMIN.value
