@@ -1,4 +1,4 @@
-CREATE VIRTUAL TABLE storyStepEntityFts USING fts4(
+CREATE VIRTUAL TABLE IF NOT EXISTS storyStepEntityFts USING fts4(
   text TEXT,
   id TEXT,
   document_id TEXT UNINDEXED,
