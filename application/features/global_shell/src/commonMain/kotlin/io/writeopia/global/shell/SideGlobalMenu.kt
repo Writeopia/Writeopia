@@ -69,7 +69,11 @@ fun SideGlobalMenu(
 
     val widthAnimatedState by animateDpAsState(widthState)
     val showContent by derivedStateOf {
-        widthState > width * 0.3F
+        when {
+            widthState > 80.dp -> ShowContent.FULL
+            widthState > 40.dp -> ShowContent.ICONS
+            else -> ShowContent.HIDE
+        }
     }
 
     Row(
@@ -77,10 +81,16 @@ fun SideGlobalMenu(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.width(widthAnimatedState).fillMaxHeight()) {
-            if (showContent) {
+            if (showContent != ShowContent.HIDE) {
                 val menuItems by foldersState.collectAsState()
 
-                Column {
+                Column(
+                    horizontalAlignment = if (showContent == ShowContent.ICONS) {
+                        Alignment.CenterHorizontally
+                    } else {
+                        Alignment.Start
+                    }
+                ) {
                     Spacer(
                         modifier = Modifier.height(48.dp).fillMaxWidth()
                             .combinedClickable(
@@ -91,68 +101,74 @@ fun SideGlobalMenu(
                             )
                     )
 
-                    settingsOptions(
+                    SettingsOptions(
+                        showContent = showContent,
                         iconVector = WrIcons.search,
                         contentDescription = WrStrings.search(),
                         text = WrStrings.search(),
                         click = searchClick
                     )
 
-                    settingsOptions(
+                    SettingsOptions(
+                        showContent = showContent,
                         iconVector = WrIcons.home,
                         contentDescription = WrStrings.home(),
                         text = WrStrings.home(),
                         click = homeClick
                     )
 
-                    settingsOptions(
+                    SettingsOptions(
+                        showContent = showContent,
                         iconVector = WrIcons.favorites,
                         contentDescription = WrStrings.favorites(),
                         text = WrStrings.favorites(),
                         click = favoritesClick
                     )
 
-                    settingsOptions(
+                    SettingsOptions(
+                        showContent = showContent,
                         iconVector = WrIcons.settings,
                         contentDescription = WrStrings.settings(),
                         text = WrStrings.settings(),
                         click = settingsClick,
                     )
 
-                    title(
-                        text = WrStrings.folder(),
-                        trailingContent = {
-                            Icon(
-                                imageVector = WrIcons.target,
-                                contentDescription = "Select opened file",
-                                tint = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.size(30.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable(onClick = highlightContent)
-                                    .padding(6.dp)
-                            )
+                    if (showContent == ShowContent.FULL) {
+                        title(
+                            text = WrStrings.folder(),
+                            trailingContent = {
+                                Icon(
+                                    imageVector = WrIcons.target,
+                                    contentDescription = "Select opened file",
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier.size(30.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable(onClick = highlightContent)
+                                        .padding(6.dp)
+                                )
 
-                            Icon(
-                                imageVector = WrIcons.addCircle,
-                                contentDescription = "Add Folder",
-                                tint = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.size(30.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable(onClick = addFolder)
-                                    .padding(6.dp)
-                            )
-                        }
-                    )
+                                Icon(
+                                    imageVector = WrIcons.addCircle,
+                                    contentDescription = "Add Folder",
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier.size(30.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable(onClick = addFolder)
+                                        .padding(6.dp)
+                                )
+                            }
+                        )
 
-                    DocumentList(
-                        menuItems = menuItems,
-                        editFolder = editFolder,
-                        selectedFolder = navigateToFolder,
-                        selectedDocument = navigateToEditDocument,
-                        moveRequest = moveRequest,
-                        expandFolder = expandFolder,
-                        changeIcon = changeIcon
-                    )
+                        DocumentList(
+                            menuItems = menuItems,
+                            editFolder = editFolder,
+                            selectedFolder = navigateToFolder,
+                            selectedDocument = navigateToEditDocument,
+                            moveRequest = moveRequest,
+                            expandFolder = expandFolder,
+                            changeIcon = changeIcon
+                        )
+                    }
                 }
             }
         }
@@ -160,7 +176,8 @@ fun SideGlobalMenu(
 }
 
 @Composable
-private fun settingsOptions(
+private fun SettingsOptions(
+    showContent: ShowContent,
     iconVector: ImageVector?,
     contentDescription: String,
     text: String,
@@ -181,7 +198,13 @@ private fun settingsOptions(
                 }
             }
             .padding(start = 14.dp, end = 10.dp, top = 10.dp, bottom = 10.dp)
-            .fillMaxWidth()
+            .let { modifierLet ->
+                if (showContent == ShowContent.FULL) {
+                    modifierLet.fillMaxWidth()
+                } else {
+                    modifierLet
+                }
+            }
     ) {
         iconVector?.let { icon ->
             Icon(
@@ -192,21 +215,23 @@ private fun settingsOptions(
             )
         }
 
-        Spacer(modifier = Modifier.width(10.dp))
+        if (showContent == ShowContent.FULL) {
+            Spacer(modifier = Modifier.width(10.dp))
 
-        Text(
-            text = text,
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontWeight = FontWeight.Bold
-            ),
-            maxLines = 1
-        )
+            Text(
+                text = text,
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                maxLines = 1
+            )
 
-        if (trailingContent != null) {
-            Spacer(modifier = Modifier.weight(1F))
+            if (trailingContent != null) {
+                Spacer(modifier = Modifier.weight(1F))
 
-            trailingContent()
+                trailingContent()
+            }
         }
     }
 }
@@ -266,4 +291,10 @@ fun SideGlobalMenuPreview() {
         changeIcon = { _, _, _, _ -> },
         toggleMaxScreen = {}
     )
+}
+
+private enum class ShowContent {
+    HIDE,
+    ICONS,
+    FULL
 }
