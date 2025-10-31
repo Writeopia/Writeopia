@@ -23,7 +23,7 @@ class SearchKmpViewModel(
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     override val queryResults by lazy {
         searchState
-            .debounce(2000)
+            .debounce(500)
             .flatMapLatest { query ->
                 searchRepository.searchNotesAndFolders(query)
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
