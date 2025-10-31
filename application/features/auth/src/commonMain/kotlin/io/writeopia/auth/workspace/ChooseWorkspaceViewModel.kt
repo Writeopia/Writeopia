@@ -21,9 +21,15 @@ class ChooseWorkspaceViewModel(
 
     fun loadWorkspaces() {
         viewModelScope.launch {
-            authRepository.getAuthToken()?.let { token ->
+            val token = authRepository.getAuthToken()
+
+            if (token != null) {
                 _workspacesState.value = ResultData.Loading()
                 _workspacesState.value = workspaceApi.getAvailableWorkspaces(token)
+            } else {
+                _workspacesState.value = ResultData.Complete(
+                    listOf(Workspace.disconnectedWorkspace())
+                )
             }
         }
     }
