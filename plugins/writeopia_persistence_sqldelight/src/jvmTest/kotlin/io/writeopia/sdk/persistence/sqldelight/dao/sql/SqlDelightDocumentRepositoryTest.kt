@@ -6,12 +6,12 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
 import io.writeopia.sdk.sql.WriteopiaDb
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import java.awt.Menu
 import java.util.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -54,25 +54,32 @@ class SqlDelightDocumentRepositoryTest {
 
             val instant = Instant.parse("2023-01-01T12:05:30Z")
             val userId = "disconnected_user"
+            val workspaceId = "workspaceId"
             val document = Document(
                 createdAt = instant,
                 lastUpdatedAt = instant,
                 lastSyncedAt = null,
-                userId = userId,
+                workspaceId = workspaceId,
                 parentId = "",
                 content = bigContent
             )
 
-            documentRepository.saveDocument(document, "userId")
-            val result = documentRepository.loadDocumentById(document.id)
+            documentRepository.saveDocument(document)
+            val result = documentRepository.loadDocumentById(
+                document.id,
+                workspaceId = workspaceId
+            )
 
-            assertEquals(result, document)
+            assertEquals(document, result)
 
             val newDocument = document.copy(content = smallContent)
-            documentRepository.saveDocument(newDocument, userId)
-            val result1 = documentRepository.loadDocumentById(newDocument.id)
+            documentRepository.saveDocument(newDocument)
+            val result1 = documentRepository.loadDocumentById(
+                newDocument.id,
+                workspaceId = workspaceId
+            )
 
-            assertEquals(result1?.content, smallContent)
+            assertEquals(smallContent, result1?.content)
         }
 
     @Test
@@ -83,19 +90,20 @@ class SqlDelightDocumentRepositoryTest {
         val tint = 123
 
         val userId = "disconnected_user"
+        val workspaceId = "workspaceId"
         val document = Document(
             id = documentId,
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = workspaceId,
             parentId = "",
             icon = MenuItem.Icon(icon, tint)
         )
 
-        documentRepository.saveDocument(document, "userId")
+        documentRepository.saveDocument(document)
 
-        val newDocument = documentRepository.loadDocumentById(documentId)
+        val newDocument = documentRepository.loadDocumentById(documentId, workspaceId)
         assertEquals(newDocument?.icon?.label, icon)
         assertEquals(newDocument?.icon?.tint, tint)
     }
@@ -108,20 +116,21 @@ class SqlDelightDocumentRepositoryTest {
         val tint = 123
 
         val userId = "disconnected_user"
+        val workspaceId = "workspaceId"
         val document = Document(
             id = documentId,
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = workspaceId,
             parentId = "",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true
         )
 
-        documentRepository.saveDocument(document, userId)
+        documentRepository.saveDocument(document)
 
-        val newDocument = documentRepository.loadDocumentById(documentId)
+        val newDocument = documentRepository.loadDocumentById(documentId, workspaceId)
         assertTrue { newDocument!!.isLocked }
     }
 
@@ -133,20 +142,21 @@ class SqlDelightDocumentRepositoryTest {
         val tint = 123
 
         val userId = "disconnected_user"
+        val workspaceId = "workspaceId"
         val document = Document(
             id = documentId,
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = Instant.DISTANT_PAST,
-            userId = userId,
+            workspaceId = workspaceId,
             parentId = "root",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true
         )
 
-        documentRepository.saveDocument(document, "userId")
+        documentRepository.saveDocument(document)
 
-        val newDocument = documentRepository.loadOutdatedDocuments("root")
+        val newDocument = documentRepository.loadOutdatedDocuments("root", workspaceId)
 
         assertEquals(1, newDocument.size)
         assertEquals(documentId, newDocument.first().id)
@@ -160,20 +170,21 @@ class SqlDelightDocumentRepositoryTest {
         val tint = 123
 
         val userId = "disconnected_user"
+        val workspaceId = "workspaceId"
         val document = Document(
             id = documentId,
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
-            userId = userId,
+            workspaceId = workspaceId,
             parentId = "root",
             icon = MenuItem.Icon(icon, tint),
             isLocked = true
         )
 
-        documentRepository.saveDocument(document, "userId")
+        documentRepository.saveDocument(document)
 
-        val newDocument = documentRepository.loadOutdatedDocuments("root")
+        val newDocument = documentRepository.loadOutdatedDocuments("root", workspaceId)
 
         assertEquals(1, newDocument.size)
         assertEquals(documentId, newDocument.first().id)

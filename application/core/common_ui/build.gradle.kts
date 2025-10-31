@@ -53,7 +53,7 @@ kotlin {
 
 android {
     namespace = "io.writeopia.core.common_ui"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 24

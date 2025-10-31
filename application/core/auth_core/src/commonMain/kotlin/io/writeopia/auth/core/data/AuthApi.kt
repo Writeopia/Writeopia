@@ -19,7 +19,6 @@ import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
 class AuthApi(private val client: HttpClient, private val baseUrl: String) {
-
     suspend fun login(email: String, password: String): ResultData<AuthResponse> {
         return try {
             val response = client.post("$baseUrl/api/login") {
@@ -29,6 +28,8 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
 
             ResultData.Complete(response)
         } catch (e: Exception) {
+            println("login error: ${e.message}")
+            e.printStackTrace()
             ResultData.Error(e)
         }
     }
@@ -36,17 +37,18 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
     suspend fun register(
         name: String,
         email: String,
-        company: String,
+        workspaceName: String,
         password: String
     ): ResultData<AuthResponse> {
         return try {
             val response = client.post("$baseUrl/api/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest(name, email, company, password))
+                setBody(RegisterRequest(name, email, workspaceName, password))
             }.body<AuthResponse>()
 
             ResultData.Complete(response)
         } catch (e: Exception) {
+            e.printStackTrace()
             ResultData.Error(e)
         }
     }

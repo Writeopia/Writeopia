@@ -45,6 +45,7 @@ kotlin {
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:core:connection"))
+                implementation(project(":common:endpoints"))
 
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.datetime)
@@ -57,7 +58,7 @@ kotlin {
 
 android {
     namespace = "io.writeopia.core.documents"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 24

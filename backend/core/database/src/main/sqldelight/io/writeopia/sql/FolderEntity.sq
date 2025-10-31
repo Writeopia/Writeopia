@@ -1,0 +1,84 @@
+CREATE TABLE folder_entity (
+  id TEXT PRIMARY KEY,
+  parent_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  last_updated_at BIGINT,
+  last_synced_at BIGINT,
+  favorite BOOLEAN NOT NULL,
+  icon TEXT,
+  icon_tint INTEGER
+);
+
+query:
+SELECT *
+FROM folder_entity
+WHERE title LIKE '%' || ? || '%'
+ORDER BY last_updated_at
+LIMIT 10;
+
+getLastUpdated:
+SELECT *
+FROM folder_entity
+ORDER BY last_updated_at;
+
+selectAllFolders:
+SELECT *
+FROM folder_entity;
+
+selectByWorkspace:
+SELECT *
+FROM folder_entity
+WHERE folder_entity.workspace_id = ?;
+
+selectByWorkspaceAfterTime:
+SELECT *
+FROM folder_entity
+WHERE folder_entity.workspace_id = ? AND last_updated_at > ?;
+
+selectChildrenFolder:
+SELECT *
+FROM folder_entity
+WHERE folder_entity.parent_id = ?;
+
+selectFolderById:
+SELECT *
+FROM folder_entity
+WHERE folder_entity.id = ?;
+
+countAllFolderItems:
+SELECT parent_id, COUNT(id)
+FROM folder_entity
+GROUP BY parent_id;
+
+countAllDocumentItems:
+SELECT parent_document_id, COUNT(id)
+FROM document_entity
+GROUP BY parent_document_id;
+
+insert:
+INSERT INTO folder_entity(id, parent_id, workspace_id, title, created_at, last_updated_at, favorite, icon, icon_tint, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET id=excluded.id, parent_id=excluded.parent_id, workspace_id=excluded.workspace_id, title=excluded.title,
+created_at=excluded.created_at, last_updated_at=excluded.last_updated_at, favorite=excluded.favorite,
+icon=excluded.icon, icon_tint=excluded.icon_tint, last_synced_at=excluded.last_synced_at;
+
+-- update:
+-- UPDATE(title, parent_id, update_at): SET title=title, parent_id=parent_id, update_at=update_at;
+
+deleteFolder:
+DELETE FROM folder_entity WHERE id = ?;
+
+deleteFolderByParent:
+DELETE FROM folder_entity WHERE parent_id = ?;
+
+moveToFolder:
+UPDATE folder_entity SET parent_id = ?, last_updated_at = ? WHERE id = ?;
+
+setLastUpdate:
+UPDATE folder_entity SET last_updated_at = ? WHERE id = ?;
+
+favoriteById:
+UPDATE folder_entity SET favorite = ? WHERE id = ?;

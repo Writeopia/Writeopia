@@ -1,3 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/export/DocumentToJson.kt">
+        <error line="15" column="22" source="standard:class-signature" />
+        <error line="15" column="66" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/export/DocumentToMarkdown.kt">
+        <error line="35" column="21" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/export/DocumentToTxt.kt">
+        <error line="43" column="16" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/export/files/KmpFileWritter.kt">
+        <error line="9" column="28" source="standard:class-signature" />
+        <error line="9" column="44" source="standard:class-signature" />
+    </file>
+    <file name="src/jsMain/kotlin/io/writeopia/sdk/export/files/KmpFileWritter.js.kt">
+        <error line="6" column="47" source="standard:class-signature" />
+        <error line="6" column="63" source="standard:class-signature" />
+    </file>
+    <file name="src/jvmMain/kotlin/io/writeopia/sdk/export/files/KmpFileWritter.jvm.kt">
+        <error line="10" column="47" source="standard:class-signature" />
+        <error line="10" column="63" source="standard:class-signature" />
+    </file>
+    <file name="src/nativeMain/kotlin/io/writeopia/sdk/export/files/KmpFileWritter.native.kt">
+        <error line="6" column="47" source="standard:class-signature" />
+        <error line="6" column="63" source="standard:class-signature" />
+    </file>
 </baseline>

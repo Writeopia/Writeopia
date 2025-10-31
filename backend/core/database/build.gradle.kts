@@ -35,7 +35,7 @@ sqldelight {
     databases {
         create("WriteopiaDbBackend") {
             packageName.set("io.writeopia.sql")
-            dialect("app.cash.sqldelight:postgresql-dialect:2.0.2")
+            dialect(libs.sqldelight.dialect.postgres)
         }
     }
 }

@@ -221,8 +221,11 @@ fun DesktopApp(
                                     downloadModelState = globalShellViewModel.downloadModelState,
                                     userOnlineState = globalShellViewModel.userState,
                                     showDeleteConfirmation = globalShellViewModel.showDeleteConfirmation,
+                                    syncWorkspaceState = globalShellViewModel.lastWorkspaceSync,
+                                    workspaceToEdit = globalShellViewModel.workspaceToEdit,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
+                                    workspaces = globalShellViewModel.availableWorkspaces,
                                     selectWorkplacePath = globalShellViewModel::changeWorkspaceLocalPath,
                                     ollamaUrlChange = globalShellViewModel::changeOllamaUrl,
                                     ollamaModelChange = globalShellViewModel::selectOllamaModel,
@@ -242,7 +245,12 @@ fun DesktopApp(
                                         globalShellViewModel.deleteAccount(
                                             sideEffect = navigateToRegister
                                         )
-                                    }
+                                    },
+                                    syncWorkspace = globalShellViewModel::syncWorkspace,
+                                    addUserToTeam = globalShellViewModel::addUserToTeam,
+                                    selectWorkspaceToManage =
+                                        globalShellViewModel::selectWorkspaceToManage,
+                                    usersInSelectedWorkspace = globalShellViewModel.usersOfWorkspaceToEdit,
                                 )
                             }
 

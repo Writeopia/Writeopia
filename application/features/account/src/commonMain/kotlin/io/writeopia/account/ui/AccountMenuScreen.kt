@@ -40,6 +40,7 @@ fun AccountMenuScreen(
             selectedThemePosition = MutableStateFlow(0),
             selectColorTheme = selectColorTheme,
             workplacePathState = MutableStateFlow(""),
+            syncWorkspaceState = MutableStateFlow(""),
             selectWorkplacePath = {},
             ollamaAvailableModels = MutableStateFlow(ResultData.Idle()),
             ollamaUrl = "",
@@ -49,7 +50,8 @@ fun AccountMenuScreen(
             ollamaModelChange = {},
             ollamaModelsRetry = {},
             downloadModel = {},
-            deleteModel = {}
+            deleteModel = {},
+            syncWorkspace = {}
         )
     }
 }

@@ -62,7 +62,7 @@ class DocumentRoomRepositoryTest {
             content = emptyMap(),
             createdAt = Clock.System.now(),
             lastUpdatedAt = Clock.System.now(),
-            userId = "userId",
+            workspaceId = "userId",
             parentId = "parentId"
         )
 
@@ -111,7 +111,7 @@ class DocumentRoomRepositoryTest {
             content = emptyMap(),
             createdAt = Clock.System.now(),
             lastUpdatedAt = Clock.System.now(),
-            userId = "userId",
+            workspaceId = "userId",
             parentId = "parentId"
         )
 

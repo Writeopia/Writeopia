@@ -10,6 +10,5 @@ fun Writeopia_user_entity.toModel(): WriteopiaUser {
         email = this.email,
         name = this.name,
         tier = Tier.valueOf(this.tier),
-        company = ""
     )
 }

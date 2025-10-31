@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class DocumentApi(
     val id: String = "",
     val title: String = "",
-    val userId: String,
+    val workspaceId: String,
     val content: List<StoryStepApi> = emptyList(),
     val createdAt: Long = Clock.System.now().toEpochMilliseconds(),
     val lastUpdatedAt: Long = Clock.System.now().toEpochMilliseconds(),

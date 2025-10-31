@@ -80,7 +80,7 @@ kotlin {
 
 android {
     namespace = "io.writeopia.features.search"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 24

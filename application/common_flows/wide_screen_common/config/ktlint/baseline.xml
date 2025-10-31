@@ -1,3 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="src/commonMain/kotlin/io/writeopia/notes/desktop/components/App.kt">
+        <error line="119" column="32" source="standard:chain-method-continuation" />
+        <error line="290" column="37" source="standard:chain-method-continuation" />
+        <error line="310" column="37" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/notes/desktop/components/GlobalHeader.kt">
+        <error line="35" column="28" source="standard:chain-method-continuation" />
+    </file>
 </baseline>

@@ -13,15 +13,18 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
-import io.writeopia.api.core.auth.AuthService
-import io.writeopia.api.core.auth.JwtConfig
 import io.writeopia.api.core.auth.hash.HashUtils
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.deleteUserById
 import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserById
+import io.writeopia.api.core.auth.repository.getWorkspaceById
+import io.writeopia.api.core.auth.service.AuthService
+import io.writeopia.api.core.auth.service.WorkspaceService
+import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.connection.logger
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
@@ -53,7 +56,11 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
                 if (isVerified) {
                     val token = JwtConfig.generateToken(user.id)
-                    call.respond(HttpStatusCode.OK, AuthResponse(token, user.toApi()))
+
+                    call.respond(
+                        HttpStatusCode.OK,
+                        AuthResponse(token, user.toApi())
+                    )
                 } else {
                     call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
                 }
@@ -69,17 +76,47 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         try {
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
-            val user = writeopiaDb.getUserByEmail(request.email)
+            val user = if (debugMode) {
+                writeopiaDb.getUserByEmail(request.email)
+            } else {
+                writeopiaDb.getEnabledUserByEmail(request.email)
+            }
 
             if (user == null) {
+                // Get user
                 val wUser = AuthService.createUser(writeopiaDb, request, enabled = debugMode)
+                val workspaceId = GenerateId.generate()
+                // Every user has its own workspace.
+                WorkspaceService.createWorkspace(
+                    workspaceId = workspaceId,
+                    workspaceName = request.workspaceName,
+                    writeopiaDb = writeopiaDb
+                )
 
-                call.respond(HttpStatusCode.Created, AuthResponse(null, wUser.toApi()))
+                val created = WorkspaceService.addUserToWorkspaceAdmin(
+                    request.email,
+                    workspaceId,
+                    "ADMIN",
+                    writeopiaDb
+                )
+
+                if (created) {
+                    call.respond(
+                        HttpStatusCode.Created,
+                        AuthResponse(null, wUser.toApi()),
+                    )
+                } else {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        AuthResponse(null, wUser.toApi()),
+                    )
+                }
             } else {
-                logger.info("register request - user already exists")
+                logger.info("register request - user or workspace already exist")
                 call.respond(HttpStatusCode.Conflict, "Not Created")
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             logger.info("register request error message: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, "Unknown error")
         }
@@ -139,30 +176,10 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
 fun RoutingContext.getUserId(): String? {
     val principal = call.principal<JWTPrincipal>()
+
+    if (principal == null) {
+        println("principal is null")
+    }
+
     return principal?.payload?.getClaim("userId")?.asString()
 }
-
-//suspend fun ApplicationCall.withAuth(
-//    byPass: Boolean = false,
-//    func: suspend () -> Unit
-//) {
-//    if (byPass) return func()
-//
-//    val token = request.headers.run {
-//        this["X-Forwarded-Authorization"] ?: this["Authorization"]
-//    }
-//
-//    val idToken = token?.replace("Bearer ", "")
-//        ?: return unAuthorized("The token was not correctly parsed")
-//
-//    return try {
-//        FirebaseAuth.getInstance().verifyIdToken(idToken)
-//        func()
-//    } catch (e: FirebaseAuthException) {
-//        application.log.info("Unauthorized: ${e.message}")
-//        unAuthorized(e.message ?: "Auth failed")
-//    }
-//}
-//
-//private suspend fun ApplicationCall.unAuthorized(message: String = "Auth failed") =
-//    respond(HttpStatusCode.Unauthorized, message)
