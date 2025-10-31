@@ -5,13 +5,13 @@
         <error line="88" column="48" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/global/shell/SideGlobalMenu.kt">
-        <error line="85" column="44" source="standard:chain-method-continuation" />
-        <error line="85" column="58" source="standard:chain-method-continuation" />
-        <error line="129" column="52" source="standard:chain-method-continuation" />
-        <error line="139" column="52" source="standard:chain-method-continuation" />
-        <error line="183" column="13" source="standard:chain-method-continuation" />
-        <error line="223" column="28" source="standard:chain-method-continuation" />
-        <error line="230" column="13" source="standard:chain-method-continuation" />
+        <error line="95" column="44" source="standard:chain-method-continuation" />
+        <error line="95" column="58" source="standard:chain-method-continuation" />
+        <error line="144" column="56" source="standard:chain-method-continuation" />
+        <error line="154" column="56" source="standard:chain-method-continuation" />
+        <error line="200" column="13" source="standard:chain-method-continuation" />
+        <error line="248" column="28" source="standard:chain-method-continuation" />
+        <error line="255" column="13" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/global/shell/di/SideMenuKmpInjector.kt">
         <error line="37" column="23" source="standard:class-signature" />
@@ -36,14 +36,14 @@
         <error line="201" column="23" source="standard:chain-method-continuation" />
         <error line="201" column="39" source="standard:chain-method-continuation" />
         <error line="251" column="17" source="standard:chain-method-continuation" />
-        <error line="295" column="24" source="standard:chain-method-continuation" />
-        <error line="316" column="26" source="standard:chain-method-continuation" />
-        <error line="318" column="29" source="standard:chain-method-continuation" />
-        <error line="321" column="21" source="standard:chain-method-continuation" />
-        <error line="475" column="33" source="standard:chain-method-continuation" />
-        <error line="480" column="21" source="standard:chain-method-continuation" />
-        <error line="493" column="57" source="standard:chain-method-continuation" />
-        <error line="493" column="65" source="standard:chain-method-continuation" />
+        <error line="293" column="24" source="standard:chain-method-continuation" />
+        <error line="314" column="26" source="standard:chain-method-continuation" />
+        <error line="316" column="29" source="standard:chain-method-continuation" />
+        <error line="319" column="21" source="standard:chain-method-continuation" />
+        <error line="473" column="33" source="standard:chain-method-continuation" />
+        <error line="478" column="21" source="standard:chain-method-continuation" />
+        <error line="491" column="57" source="standard:chain-method-continuation" />
+        <error line="491" column="65" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/global/shell/viewmodel/GlobalShellViewModel.kt">
         <error line="14" column="34" source="standard:class-signature" />
