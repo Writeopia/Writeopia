@@ -14,7 +14,7 @@ CREATE TABLE folderEntity (
 query:
 SELECT *
 FROM folderEntity
-WHERE title LIKE '%' || ? || '%'
+WHERE title LIKE '%' || ? || '%' AND workspace_id = ?
 ORDER BY last_updated_at
 LIMIT 10;
 

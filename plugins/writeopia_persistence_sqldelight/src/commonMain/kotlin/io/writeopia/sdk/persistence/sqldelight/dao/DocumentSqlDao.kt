@@ -21,13 +21,11 @@ import kotlinx.datetime.Instant
 class DocumentSqlDao(
     private val documentQueries: DocumentEntityQueries?,
     private val storyStepQueries: StoryStepEntityQueries?,
-
-    ) : DocumentSearch {
+) : DocumentSearch {
 
     override suspend fun search(
         query: String,
         workspaceId: String,
-        companyId: String?
     ): List<Document> =
         documentQueries?.query(query, workspace_id = workspaceId)
             ?.executeAsList()
@@ -638,7 +636,10 @@ class DocumentSqlDao(
             } ?: emptyList()
     }
 
-    suspend fun loadOutdatedDocumentByParentId(parentId: String, workspaceId: String): List<Document> {
+    suspend fun loadOutdatedDocumentByParentId(
+        parentId: String,
+        workspaceId: String
+    ): List<Document> {
         return documentQueries?.selectWithContentByFolderIdOutdatedDocuments(parentId, workspaceId)
             ?.awaitAsList()
             ?.groupBy { it.id }

@@ -13,6 +13,6 @@ class FolderEntity(
     @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "last_updated_at") val lastUpdatedAt: Long,
-    @ColumnInfo(name = "user_id") val userId: String,
+    @ColumnInfo(name = "workspace_id") val workspaceId: String,
     @ColumnInfo(name = "favorite") val favorite: Boolean = false,
 )

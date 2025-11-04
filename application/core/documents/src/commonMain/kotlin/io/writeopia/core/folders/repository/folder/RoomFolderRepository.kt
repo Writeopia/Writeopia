@@ -102,8 +102,8 @@ class RoomFolderRepository(
         TODO("Not yet implemented")
     }
 
-    override suspend fun search(query: String): List<Folder> =
-        folderRoomDao.search(query)
+    override suspend fun search(query: String, workspaceId: String): List<Folder> =
+        folderRoomDao.search(query, workspaceId)
 
     override suspend fun getLastUpdated(): List<Folder> =
         folderRoomDao.getLastUpdated()

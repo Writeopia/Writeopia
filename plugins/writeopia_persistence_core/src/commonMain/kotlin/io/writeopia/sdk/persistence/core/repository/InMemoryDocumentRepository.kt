@@ -104,7 +104,7 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun updateStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
     }
 
-    override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
+    override suspend fun search(query: String, workspaceId: String): List<Document> =
         documentsMap.values.filter { it.title.contains(query) }
 
     override suspend fun getLastUpdatedAt(userId: String): List<Document> =

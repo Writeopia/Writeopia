@@ -12,16 +12,21 @@
         <error line="13" column="17" source="standard:class-signature" />
         <error line="13" column="49" source="standard:class-signature" />
         <error line="13" column="76" source="standard:class-signature" />
+        <error line="15" column="58" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/features/search/repository/SearchRepository.kt">
-        <error line="42" column="78" source="standard:function-expression-body" />
-        <error line="94" column="9" source="standard:chain-method-continuation" />
-        <error line="103" column="27" source="standard:class-signature" />
-        <error line="103" column="43" source="standard:class-signature" />
-        <error line="103" column="60" source="standard:class-signature" />
-        <error line="105" column="29" source="standard:class-signature" />
-        <error line="105" column="45" source="standard:class-signature" />
-        <error line="105" column="62" source="standard:class-signature" />
+        <error line="9" column="1" source="standard:no-unused-imports" />
+        <error line="26" column="29" source="standard:no-multi-spaces" />
+        <error line="28" column="30" source="standard:if-else-wrapping" />
+        <error line="28" column="30" source="standard:multiline-if-else" />
+        <error line="53" column="78" source="standard:function-expression-body" />
+        <error line="71" column="9" source="standard:chain-method-continuation" />
+        <error line="80" column="27" source="standard:class-signature" />
+        <error line="80" column="43" source="standard:class-signature" />
+        <error line="80" column="60" source="standard:class-signature" />
+        <error line="82" column="29" source="standard:class-signature" />
+        <error line="82" column="45" source="standard:class-signature" />
+        <error line="82" column="62" source="standard:class-signature" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/features/search/ui/SearchDialog.kt">
         <error line="117" column="44" source="standard:chain-method-continuation" />

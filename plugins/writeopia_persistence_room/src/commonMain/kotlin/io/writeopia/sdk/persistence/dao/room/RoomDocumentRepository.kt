@@ -41,11 +41,7 @@ class RoomDocumentRepository(
     override suspend fun deleteDocumentByFolder(folderId: String) {
     }
 
-    override suspend fun search(
-        query: String,
-        workspaceId: String,
-        companyId: String?
-    ): List<Document> =
+    override suspend fun search(query: String, workspaceId: String): List<Document> =
         documentEntityDao.search(query).map { it.toModel() }
 
     override suspend fun getLastUpdatedAt(workspaceId: String): List<Document> =
@@ -88,7 +84,7 @@ class RoomDocumentRepository(
     }
 
     override suspend fun unFavoriteDocumentByIds(ids: Set<String>) {
-        setFavorite(ids, "",false)
+        setFavorite(ids, "", false)
     }
 
     override suspend fun loadDocumentById(

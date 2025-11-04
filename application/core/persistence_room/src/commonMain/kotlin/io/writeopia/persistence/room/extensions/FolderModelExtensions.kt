@@ -10,7 +10,7 @@ fun FolderEntity.toCommonEntity(): FolderCommonEntity {
         title = this.title,
         createdAt = this.createdAt,
         lastUpdatedAt = this.lastUpdatedAt,
-        userId = this.userId,
+        workspaceId = this.workspaceId,
         favorite = this.favorite,
     )
 }
@@ -22,7 +22,7 @@ fun FolderCommonEntity.toEntity(): FolderEntity {
         title = this.title,
         createdAt = this.createdAt,
         lastUpdatedAt = this.lastUpdatedAt,
-        userId = this.userId,
+        workspaceId = this.workspaceId,
         favorite = this.favorite
     )
 }

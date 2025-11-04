@@ -39,10 +39,11 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
         refreshFolders()
     }
 
-    override suspend fun search(query: String): List<Folder> = folderEntityQueries?.query(query)
-        ?.executeAsList()
-        ?.map { folderEntity -> folderEntity.toModel(0) }
-        ?: emptyList()
+    override suspend fun search(query: String, workspaceId: String): List<Folder> =
+        folderEntityQueries?.query(query, workspace_id = workspaceId)
+            ?.executeAsList()
+            ?.map { folderEntity -> folderEntity.toModel(0) }
+            ?: emptyList()
 
     override suspend fun getLastUpdated(): List<Folder> = folderEntityQueries?.getLastUpdated()
         ?.executeAsList()

@@ -11,14 +11,13 @@
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/sdk/persistence/dao/room/RoomDocumentRepository.kt">
         <error line="24" column="25" source="standard:class-signature" />
-        <error line="58" column="26" source="standard:chain-method-continuation" />
-        <error line="60" column="27" source="standard:chain-method-continuation" />
-        <error line="72" column="26" source="standard:chain-method-continuation" />
-        <error line="82" column="23" source="standard:function-expression-body" />
-        <error line="91" column="29" source="standard:comma-spacing" />
-        <error line="121" column="26" source="standard:chain-method-continuation" />
-        <error line="148" column="17" source="standard:chain-method-continuation" />
-        <error line="190" column="22" source="standard:chain-method-continuation" />
-        <error line="212" column="12" source="standard:chain-method-continuation" />
+        <error line="54" column="26" source="standard:chain-method-continuation" />
+        <error line="56" column="27" source="standard:chain-method-continuation" />
+        <error line="68" column="26" source="standard:chain-method-continuation" />
+        <error line="78" column="23" source="standard:function-expression-body" />
+        <error line="117" column="26" source="standard:chain-method-continuation" />
+        <error line="144" column="17" source="standard:chain-method-continuation" />
+        <error line="186" column="22" source="standard:chain-method-continuation" />
+        <error line="208" column="12" source="standard:chain-method-continuation" />
     </file>
 </baseline>
