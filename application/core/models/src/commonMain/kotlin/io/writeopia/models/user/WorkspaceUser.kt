@@ -6,4 +6,3 @@ data class WorkspaceUser(
     val name: String,
     val role: String,
 )
-

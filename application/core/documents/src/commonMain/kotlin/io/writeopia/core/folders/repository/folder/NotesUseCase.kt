@@ -113,8 +113,6 @@ class NotesUseCase private constructor(
         val documents =
             ids.mapNotNull { id -> documentRepository.loadDocumentById(id, workspaceId) }
 
-        println("loadDocumentsByIds")
-
         return (folders + documents)
     }
 

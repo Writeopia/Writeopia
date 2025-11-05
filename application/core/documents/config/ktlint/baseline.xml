@@ -29,9 +29,9 @@
         <error line="41" column="25" source="standard:chain-method-continuation" />
         <error line="52" column="27" source="standard:chain-method-continuation" />
         <error line="91" column="20" source="standard:chain-method-continuation" />
-        <error line="220" column="20" source="standard:chain-method-continuation" />
-        <error line="220" column="47" source="standard:chain-method-continuation" />
-        <error line="272" column="31" source="standard:chain-method-continuation" />
+        <error line="218" column="20" source="standard:chain-method-continuation" />
+        <error line="218" column="47" source="standard:chain-method-continuation" />
+        <error line="270" column="31" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/core/folders/repository/folder/RoomFolderRepository.kt">
         <error line="14" column="23" source="standard:class-signature" />

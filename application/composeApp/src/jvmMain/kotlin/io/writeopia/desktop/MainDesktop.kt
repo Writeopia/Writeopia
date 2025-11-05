@@ -223,8 +223,8 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
                     WriteopiaDbInjector.initialize(database)
                     WriteopiaConnectionInjector.setBaseUrl(
-//                        "https://writeopia.dev"
-                        "http://localhost:8080"
+                        "https://writeopia.dev"
+//                        "http://localhost:8080"
                     )
 
                     val uiConfigurationInjector = UiConfigurationInjector.singleton()

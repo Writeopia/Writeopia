@@ -5,12 +5,11 @@
         <error line="79" column="48" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/menu/AuthMenuScreen.kt">
-        <error line="37" column="1" source="standard:no-unused-imports" />
-        <error line="67" column="32" source="standard:chain-method-continuation" />
-        <error line="72" column="17" source="standard:chain-method-continuation" />
-        <error line="183" column="36" source="standard:chain-method-continuation" />
-        <error line="208" column="48" source="standard:chain-method-continuation" />
-        <error line="216" column="48" source="standard:chain-method-continuation" />
+        <error line="68" column="32" source="standard:chain-method-continuation" />
+        <error line="73" column="17" source="standard:chain-method-continuation" />
+        <error line="184" column="36" source="standard:chain-method-continuation" />
+        <error line="209" column="48" source="standard:chain-method-continuation" />
+        <error line="217" column="48" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/navigation/AuthNavigation.kt">
         <error line="4" column="1" source="standard:no-unused-imports" />
@@ -19,10 +18,10 @@
         <error line="148" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/register/RegisterScreen.kt">
-        <error line="67" column="32" source="standard:chain-method-continuation" />
-        <error line="203" column="32" source="standard:chain-method-continuation" />
-        <error line="228" column="44" source="standard:chain-method-continuation" />
-        <error line="236" column="44" source="standard:chain-method-continuation" />
+        <error line="69" column="32" source="standard:chain-method-continuation" />
+        <error line="205" column="32" source="standard:chain-method-continuation" />
+        <error line="230" column="44" source="standard:chain-method-continuation" />
+        <error line="238" column="44" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/register/RegisterViewModel.kt">
         <error line="24" column="17" source="standard:backing-property-naming" />

@@ -116,8 +116,6 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
     ): List<Pair<FolderEntity, Long>> {
         val countMap = countAllItems()
 
-        println("getFoldersByParentId. parentId: $parentId, workspaceId: $workspaceId")
-
         val result = folderEntityQueries?.selectChildrenFolder(
             parent_id = parentId,
             workspace_id = workspaceId
@@ -126,10 +124,6 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
             ?.map { folderEntity ->
                 folderEntity to (countMap[folderEntity.id] ?: 0)
             } ?: emptyList()
-
-        val foundFolders = result.map { it.first }.joinToString { it.title }
-
-        println("foundFolders: $foundFolders")
 
         return result
     }

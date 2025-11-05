@@ -59,9 +59,9 @@ object ApiInjectorDefaults {
             socketTimeoutMillis = 300000
         }
 
-//        install(DefaultRequest) {
-//            header(HttpHeaders.Authorization, "Bearer $tokenJwt")
-//        }
+        install(DefaultRequest) {
+            header(HttpHeaders.Authorization, "Bearer $tokenJwt")
+        }
 
         install(ContentNegotiation) {
             json(json = json)
