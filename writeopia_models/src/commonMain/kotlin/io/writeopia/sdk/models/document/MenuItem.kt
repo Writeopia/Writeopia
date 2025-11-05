@@ -8,7 +8,7 @@ interface MenuItem : Traversable {
     val title: String
     val createdAt: Instant
     val lastUpdatedAt: Instant
-    val userId: String
+    val workspaceId: String
     val favorite: Boolean
     val icon: Icon?
     override val parentId: String

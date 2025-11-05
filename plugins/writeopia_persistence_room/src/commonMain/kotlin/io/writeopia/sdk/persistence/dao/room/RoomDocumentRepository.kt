@@ -26,23 +26,30 @@ class RoomDocumentRepository(
     private val documentsState: MutableStateFlow<Map<String, List<Document>>> =
         MutableStateFlow(emptyMap())
 
-    override suspend fun loadDocumentsForFolder(folderId: String): List<Document> =
+    override suspend fun loadDocumentsForFolder(
+        folderId: String,
+        workspaceId: String
+    ): List<Document> =
         documentEntityDao.loadDocumentsByParentId(folderId).map { it.toModel() }
 
-    override suspend fun loadFavDocumentsForUser(orderBy: String, userId: String): List<Document> =
+    override suspend fun loadFavDocumentsForWorkspace(
+        orderBy: String,
+        workspaceId: String
+    ): List<Document> =
         emptyList()
 
     override suspend fun deleteDocumentByFolder(folderId: String) {
     }
 
-    override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
+    override suspend fun search(query: String, workspaceId: String): List<Document> =
         documentEntityDao.search(query).map { it.toModel() }
 
-    override suspend fun getLastUpdatedAt(userId: String): List<Document> =
+    override suspend fun getLastUpdatedAt(workspaceId: String): List<Document> =
         documentEntityDao.selectByLastUpdated().map { it.toModel() }
 
     override suspend fun listenForDocumentsByParentId(
-        parentId: String
+        parentId: String,
+        workspaceId: String
     ): Flow<Map<String, List<Document>>> =
         documentEntityDao.listenForDocumentsWithContentByParentId(parentId)
             .map { resultsMap ->
@@ -57,14 +64,14 @@ class RoomDocumentRepository(
             entity?.toModel()?.info()
         }
 
-    override suspend fun loadDocumentsForUser(userId: String): List<Document> =
-        documentEntityDao.loadDocumentsWithContentForUser(userId)
+    override suspend fun loadDocumentsWorkspace(workspaceId: String): List<Document> =
+        documentEntityDao.loadDocumentsWithContentForUser(workspaceId)
             .map { (documentEntity, storyEntity) ->
                 val content = loadInnerSteps(storyEntity)
                 documentEntity.toModel(content)
             }
 
-    override suspend fun loadDocumentsForUserAfterTime(
+    override suspend fun loadDocumentsForWorkspace(
         orderBy: String,
         userId: String,
         instant: Instant
@@ -73,14 +80,17 @@ class RoomDocumentRepository(
     }
 
     override suspend fun favoriteDocumentByIds(ids: Set<String>) {
-        setFavorite(ids, true)
+        setFavorite(ids, "", true)
     }
 
     override suspend fun unFavoriteDocumentByIds(ids: Set<String>) {
-        setFavorite(ids, false)
+        setFavorite(ids, "", false)
     }
 
-    override suspend fun loadDocumentById(id: String): Document? =
+    override suspend fun loadDocumentById(
+        id: String,
+        workspaceId: String
+    ): Document? =
         documentEntityDao.loadDocumentById(id)?.let { documentEntity ->
             val content = loadInnerSteps(
                 storyUnitEntityDao?.loadDocumentContent(documentEntity.id) ?: emptyList()
@@ -88,7 +98,10 @@ class RoomDocumentRepository(
             documentEntity.toModel(content)
         }
 
-    override suspend fun loadDocumentByIds(ids: List<String>): List<Document> =
+    override suspend fun loadDocumentByIds(
+        ids: List<String>,
+        workspaceId: String
+    ): List<Document> =
         documentEntityDao.loadDocumentByIds(ids).map { documentEntity ->
             val content = loadInnerSteps(
                 storyUnitEntityDao?.loadDocumentContent(documentEntity.id) ?: emptyList()
@@ -98,7 +111,8 @@ class RoomDocumentRepository(
 
     override suspend fun loadDocumentsWithContentByIds(
         ids: List<String>,
-        orderBy: String
+        orderBy: String,
+        workspaceId: String
     ): List<Document> =
         documentEntityDao.loadDocumentWithContentByIds(ids, orderBy)
             .entries
@@ -107,8 +121,8 @@ class RoomDocumentRepository(
                 documentEntity.toModel(content)
             }
 
-    override suspend fun saveDocument(document: Document, userId: String) {
-        saveDocumentMetadata(document, userId)
+    override suspend fun saveDocument(document: Document) {
+        saveDocumentMetadata(document)
 
         document.content.toEntity(document.id).let { data ->
             storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
@@ -116,7 +130,7 @@ class RoomDocumentRepository(
         }
     }
 
-    override suspend fun saveDocumentMetadata(document: Document, userId: String) {
+    override suspend fun saveDocumentMetadata(document: Document) {
         documentEntityDao.insertDocuments(document.toEntity())
     }
 
@@ -146,11 +160,11 @@ class RoomDocumentRepository(
         storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(position, documentId))
     }
 
-    override suspend fun deleteByUserId(userId: String) {
+    override suspend fun deleteByWorkspace(userId: String) {
         documentEntityDao.deleteDocumentsByUserId(userId)
     }
 
-    override suspend fun moveDocumentsToNewUser(oldUserId: String, newUserId: String) {
+    override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
         documentEntityDao.moveDocumentsToNewUser(oldUserId, newUserId)
     }
 
@@ -158,7 +172,10 @@ class RoomDocumentRepository(
         TODO("Not yet implemented")
     }
 
-    override suspend fun loadDocumentsByParentId(parentId: String): List<Document> =
+    override suspend fun loadDocumentsByParentId(
+        parentId: String,
+        workspaceId: String
+    ): List<Document> =
         documentEntityDao.loadDocumentsByParentId(parentId).map { it.toModel() }
 
     /**
@@ -171,7 +188,12 @@ class RoomDocumentRepository(
             .mapValues { (_, entity) ->
                 if (entity.linkToDocument != null) {
                     val title = documentEntityDao.getDocumentTitleById(entity.linkToDocument)
-                    return@mapValues entity.toModel(documentLink = DocumentLink(entity.linkToDocument, title))
+                    return@mapValues entity.toModel(
+                        documentLink = DocumentLink(
+                            entity.linkToDocument,
+                            title
+                        )
+                    )
                 }
 
                 if (entity.hasInnerSteps) {
@@ -182,9 +204,9 @@ class RoomDocumentRepository(
                 entity.toModel()
             }
 
-    private suspend fun setFavorite(ids: Set<String>, isFavorite: Boolean) {
+    private suspend fun setFavorite(ids: Set<String>, workspaceId: String, isFavorite: Boolean) {
         ids.mapNotNull { id ->
-            loadDocumentById(id)
+            loadDocumentById(id, workspaceId)
         }.forEach { document ->
             documentEntityDao.updateDocument(document.copy(favorite = isFavorite).toEntity())
         }
@@ -193,14 +215,23 @@ class RoomDocumentRepository(
     override suspend fun refreshDocuments() {
     }
 
-    override suspend fun stopListeningForFoldersByParentId(parentId: String) {
+    override suspend fun stopListeningForFoldersByParentId(
+        parentId: String,
+        workspaceId: String
+    ) {
     }
 
-    override suspend fun loadOutdatedDocuments(folderId: String): List<Document> =
+    override suspend fun loadOutdatedDocuments(
+        folderId: String,
+        workspaceId: String
+    ): List<Document> =
         documentEntityDao.loadOutdatedDocumentsByFolderId(folderId).map { entity ->
             val content = loadInnerSteps(
                 storyUnitEntityDao?.loadDocumentContent(entity.id) ?: emptyList()
             )
             entity.toModel(content = content)
         }
+
+    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
+        emptyList()
 }

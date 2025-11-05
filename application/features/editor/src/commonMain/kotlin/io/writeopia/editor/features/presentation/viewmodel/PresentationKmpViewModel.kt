@@ -38,10 +38,10 @@ class PresentationKmpViewModel(
     }
 
     override fun loadDocument(id: String) {
-        viewModelScope.launch {
-            documentRepository.loadDocumentById(id)?.let { document ->
-                _slidesState.value = presentationParser.parse(document.content.values)
-            }
-        }
+//        viewModelScope.launch {
+//            documentRepository.loadDocumentById(id)?.let { document ->
+//                _slidesState.value = presentationParser.parse(document.content.values)
+//            }
+//        }
     }
 }

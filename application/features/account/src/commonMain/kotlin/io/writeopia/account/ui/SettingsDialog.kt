@@ -18,9 +18,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -65,6 +68,7 @@ import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,6 +86,9 @@ fun SettingsDialog(
     downloadModelState: StateFlow<ResultData<DownloadState>>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
+    syncWorkspaceState: StateFlow<String>,
+    workspaces: StateFlow<ResultData<List<Workspace>>>,
+    workspaceToEdit: StateFlow<Workspace?>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectWorkplacePath: (String) -> Unit,
@@ -96,6 +103,10 @@ fun SettingsDialog(
     showDeleteConfirm: () -> Unit,
     dismissDeleteConfirm: () -> Unit,
     deleteAccount: () -> Unit,
+    syncWorkspace: () -> Unit,
+    addUserToTeam: (String) -> Unit,
+    selectWorkspaceToManage: (String) -> Unit,
+    usersInSelectedWorkspace: StateFlow<ResultData<List<String>>>
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -115,6 +126,7 @@ fun SettingsDialog(
                 accountScreen = {
                     AccountScreen(
                         userOnlineState,
+                        workspaces,
                         showDeleteConfirmation,
                         signIn,
                         resetPassword,
@@ -134,7 +146,9 @@ fun SettingsDialog(
                     WorkspaceSection(
                         workplacePathState = workplacePathState,
                         showPath = true,
-                        selectWorkplacePath = selectWorkplacePath
+                        selectWorkplacePath = selectWorkplacePath,
+                        syncWorkspace = syncWorkspace,
+                        syncWorkspaceState = syncWorkspaceState
                     )
                 },
                 aiScreen = {
@@ -149,6 +163,15 @@ fun SettingsDialog(
                         downloadModel,
                         deleteModel
                     )
+                },
+                teamsScreen = {
+                    TeamsSection(
+                        workspaces,
+                        workspaceToEdit,
+                        selectWorkspaceToManage,
+                        addUserToTeam,
+                        usersInSelectedWorkspace
+                    )
                 }
             )
         }
@@ -161,6 +184,7 @@ fun SettingsScreen(
     showOllamaConfig: Boolean,
     selectedThemePosition: StateFlow<Int>,
     workplacePathState: StateFlow<String>,
+    syncWorkspaceState: StateFlow<String>,
     ollamaUrl: String,
     ollamaAvailableModels: Flow<ResultData<List<String>>>,
     ollamaSelectedModel: StateFlow<String>,
@@ -172,6 +196,7 @@ fun SettingsScreen(
     ollamaModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    syncWorkspace: () -> Unit,
 ) {
     ColorThemeOptions(
         selectedThemePosition = selectedThemePosition,
@@ -180,7 +205,13 @@ fun SettingsScreen(
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    WorkspaceSection(workplacePathState, showPath, selectWorkplacePath)
+    WorkspaceSection(
+        workplacePathState,
+        syncWorkspaceState,
+        showPath,
+        selectWorkplacePath,
+        syncWorkspace
+    )
 
     Spacer(modifier = Modifier.height(20.dp))
 
@@ -204,6 +235,7 @@ fun SettingsScreen(
 @Composable
 private fun AccountScreen(
     userOnlineState: StateFlow<WriteopiaUser>,
+    workspaces: StateFlow<ResultData<List<Workspace>>>,
     showDeleteConfirmation: StateFlow<Boolean>,
     signIn: () -> Unit,
     resetPassword: () -> Unit,
@@ -221,7 +253,7 @@ private fun AccountScreen(
 
         val userOnline by userOnlineState.collectAsState()
 
-        if (userOnline.id != WriteopiaUser.DISCONNECTED) {
+        if (userOnline.id != WriteopiaUser.DISCONNECTED || true) {
             Text(
                 "${WrStrings.account()}: ${userOnline.name} - ${userOnline.tier.tierName()}",
                 style = MaterialTheme.typography.bodySmall,
@@ -266,6 +298,10 @@ private fun AccountScreen(
                     textColor = MaterialTheme.colorScheme.onPrimary,
                     clickListener = showDeleteConfirm
                 )
+
+                Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+                ChooseTeam(workspaces)
 
                 if (showDelete) {
                     Dialog(onDismissRequest = dismissDeleteConfirm) {
@@ -350,10 +386,62 @@ private fun AccountScreen(
 }
 
 @Composable
+private fun ChooseTeam(workspacesState: StateFlow<ResultData<List<Workspace>>>) {
+    val titleStyle = MaterialTheme.typography.titleLarge
+    val titleColor = MaterialTheme.colorScheme.onBackground
+
+    val workspaces by workspacesState.collectAsState()
+
+    if (workspaces is ResultData.Complete &&
+        (workspaces as ResultData.Complete<List<Workspace>>).data.isNotEmpty()
+    ) {
+        Text("Your teams", style = titleStyle, color = titleColor)
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        Column(
+            modifier = Modifier.width(240.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            (workspaces as ResultData.Complete<List<Workspace>>).data.forEach { workspace ->
+                TeamLine(workspace)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TeamLine(workspace: Workspace, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.large)
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
+        BasicText(
+            workspace.name,
+            style = MaterialTheme.typography
+                .bodySmall
+                .copy(MaterialTheme.colorScheme.onBackground)
+        )
+
+        Spacer(modifier = Modifier.weight(1F))
+
+        BasicText(
+            workspace.role,
+            style = MaterialTheme.typography
+                .bodySmall
+                .copy(MaterialTheme.colorScheme.onBackground)
+        )
+    }
+}
+
+@Composable
 private fun WorkspaceSection(
     workplacePathState: StateFlow<String>,
+    syncWorkspaceState: StateFlow<String>,
     showPath: Boolean = true,
     selectWorkplacePath: (String) -> Unit,
+    syncWorkspace: () -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -387,6 +475,29 @@ private fun WorkspaceSection(
                     }
                     .padding(8.dp)
                     .fillMaxWidth()
+            )
+        }
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        Text(text = "Sync", style = titleStyle, color = titleColor)
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        val lastSync by syncWorkspaceState.collectAsState()
+
+        CommonButton(
+            text = "Sync workspace",
+            clickListener = syncWorkspace
+        )
+
+        if (lastSync.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = lastSync,
+                style = MaterialTheme.typography.bodyMedium,
+                color = titleColor
             )
         }
 
@@ -471,6 +582,7 @@ private fun AiSection(
         DownloadModels(downloadModelState, downloadModel)
     }
 }
+
 
 @Composable
 private fun SelectModels(
@@ -707,6 +819,145 @@ fun DownloadModels(
 
         is ResultData.Loading -> {
             CircularProgressIndicator()
+        }
+    }
+}
+
+@Composable
+private fun TeamsSection(
+    workspacesState: StateFlow<ResultData<List<Workspace>>>,
+    selectedWorkspaceState: StateFlow<Workspace?>,
+    selectWorkspace: (String) -> Unit,
+    addUserToTeam: (String) -> Unit,
+    usersInSelectedWorkspace: StateFlow<ResultData<List<String>>>
+) {
+    Column {
+        val titleStyle = MaterialTheme.typography.titleLarge
+        val titleColor = MaterialTheme.colorScheme.onBackground
+
+        Text("Manage teams", style = titleStyle, color = titleColor)
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        val workspaces by workspacesState.collectAsState()
+
+        when (workspaces) {
+            is ResultData.Complete -> {
+                val workspaces = (workspaces as ResultData.Complete<List<Workspace>>).data
+
+
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    items(workspaces) { workspace ->
+                        CommonButton(text = workspace.name) {
+                            selectWorkspace(workspace.id)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                val selected = selectedWorkspaceState.collectAsState().value
+
+                if (selected != null) {
+                    BasicText(
+                        text = "Add users to team: ${selected.name}",
+                        style = MaterialTheme
+                            .typography
+                            .titleSmall
+                            .copy(color = MaterialTheme.colorScheme.onBackground)
+                    )
+
+                    var userEmail by remember {
+                        mutableStateOf("")
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = userEmail,
+                            onValueChange = { userEmail = it },
+                            shape = MaterialTheme.shapes.large,
+                            singleLine = true,
+                            placeholder = {
+                                BasicText(
+                                    "User email",
+                                    style = MaterialTheme
+                                        .typography
+                                        .titleSmall
+                                        .copy(color = WriteopiaTheme.colorScheme.textLighter)
+                                )
+                            },
+                            textStyle = MaterialTheme
+                                .typography
+                                .titleSmall
+                                .copy(color = MaterialTheme.colorScheme.onBackground)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        CommonButton(text = "Add") {
+                            addUserToTeam(userEmail)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val usersResult = usersInSelectedWorkspace.collectAsState().value
+
+                    if (usersResult is ResultData.Complete) {
+                        val users = usersResult.data
+
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (users.isNotEmpty()) {
+                                users.forEach { userName ->
+                                    BasicText(
+                                        text = userName,
+                                        style = MaterialTheme
+                                            .typography
+                                            .bodySmall
+                                            .copy(MaterialTheme.colorScheme.onBackground)
+                                    )
+                                }
+                            } else {
+                                BasicText(
+                                    text = "No users in this team",
+                                    style = MaterialTheme
+                                        .typography
+                                        .bodySmall
+                                        .copy(MaterialTheme.colorScheme.onBackground)
+                                )
+                            }
+                        }
+                    } else if (usersResult is ResultData.Error) {
+                        BasicText(
+                            text = "Error loading users", style = MaterialTheme
+                                .typography
+                                .bodySmall
+                                .copy(MaterialTheme.colorScheme.onBackground)
+                        )
+                    } else {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+
+            is ResultData.Error -> {
+                BasicText(
+                    text = "Error loading teams",
+                    style = MaterialTheme.typography.bodySmall.copy(color = titleColor)
+                )
+            }
+
+            is ResultData.Idle -> {}
+
+            is ResultData.InProgress -> {
+                CircularProgressIndicator()
+            }
+
+            is ResultData.Loading -> {
+                CircularProgressIndicator()
+            }
         }
     }
 }

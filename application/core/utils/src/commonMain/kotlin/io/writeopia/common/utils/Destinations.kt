@@ -14,6 +14,8 @@ enum class Destinations(val id: String, val root: String) {
     AUTH_MENU_INNER_NAVIGATION("auth_menu_inner_navigation", "Home"),
     AUTH_REGISTER("auth_register", "Home"),
     AUTH_RESET_PASSWORD("auth_reset_password", "Home"),
+
+    CHOOSE_WORKSPACE("choose_workspace", "Home"),
     AUTH_MENU("auth_menu", "Home"),
     AUTH_LOGIN("auth_login", "Home"),
 

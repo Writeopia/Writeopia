@@ -1,12 +1,15 @@
 package io.writeopia.core.folders.sync
 
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
 
 class DocumentConflictHandler(
     private val documentRepository: DocumentRepository,
+    private val folderRepository: FolderRepository,
     private val authRepository: AuthRepository
 ) {
 
@@ -26,12 +29,22 @@ class DocumentConflictHandler(
         // Todo: Implement!! Save external documents and remove localDocuments. A more complex
         // handling of conflicts can be implemented in the future.
         externalDocuments.forEach { document ->
-            documentRepository.saveDocument(
-                document.copy(lastSyncedAt = now),
-                authRepository.getUser().id
-            )
+            documentRepository.saveDocument(document.copy(lastSyncedAt = now))
         }
 
         return (localDocuments.toSet() - externalDocuments.toSet()).toList()
+    }
+
+    suspend fun handleConflictForFolders(
+        localFolders: List<Folder>,
+        externalFolders: List<Folder>,
+    ): List<Folder> {
+        val now = Clock.System.now()
+
+        externalFolders.forEach { folder ->
+            folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
+        }
+
+        return (localFolders.toSet() - externalFolders.toSet()).toList()
     }
 }

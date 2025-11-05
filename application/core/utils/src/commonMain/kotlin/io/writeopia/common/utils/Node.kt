@@ -52,7 +52,7 @@ internal fun <T : Node> createNodeTree(
         }?.let(node::addNotes)
 
     nextNodes?.filter(filterPredicate)
-        ?.forEach { nextCode -> createNodeTree(map, nextCode, depth + 1) }
+        ?.forEach { nextCode -> createNodeTree(map, nextCode,depth + 1) }
 
     return node
 }

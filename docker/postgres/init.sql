@@ -4,7 +4,7 @@ CREATE TABLE document_entity (
   created_at BIGINT NOT NULL,
   last_updated_at BIGINT NOT NULL,
   last_synced BIGINT NOT NULL,
-  user_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
   favorite BOOLEAN NOT NULL,
   parent_document_id TEXT NOT NULL,
   icon TEXT,
@@ -40,11 +40,37 @@ CREATE TABLE user_entity (
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
-  enabled BOOLEAN NOT NULL,
-  company TEXT NOT NULL
+  enabled BOOLEAN NOT NULL
 );
 
 CREATE TABLE company_entity (
   domain TEXT PRIMARY KEY,
   name TEXT NOT NULL
+);
+
+CREATE TABLE workspace_entity (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  icon TEXT,
+  icon_tint INTEGER
+);
+
+CREATE TABLE folder_entity (
+  id TEXT PRIMARY KEY,
+  parent_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  last_updated_at BIGINT NOT NULL,
+  last_synced_at BIGINT,
+  favorite BOOLEAN NOT NULL,
+  icon TEXT,
+  icon_tint INTEGER
+);
+
+CREATE TABLE workspace_to_user (
+    workspace_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    PRIMARY KEY(workspace_id, user_id)
 );

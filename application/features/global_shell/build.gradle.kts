@@ -64,6 +64,7 @@ kotlin {
                 implementation(libs.compose.navigation)
                 implementation(compose.components.uiToolingPreview)
                 implementation(libs.lifecycle.viewmodel.compose)
+                implementation(libs.ktor.client.core)
             }
         }
 
@@ -84,7 +85,7 @@ kotlin {
 
 android {
     namespace = "io.writeopia.global_shell"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 24

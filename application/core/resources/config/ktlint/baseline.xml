@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="build.gradle.kts">
+        <error line="43" column="42" source="standard:chain-method-continuation" />
+        <error line="43" column="48" source="standard:chain-method-continuation" />
+    </file>
     <file name="build/generated/compose/resourceGenerator/kotlin/androidMainResourceCollectors/writeopia/application/core/resources/generated/resources/ActualResourceCollectors.kt">
         <error line="15" column="1" source="standard:indent" />
         <error line="16" column="1" source="standard:indent" />
@@ -672,6 +676,7 @@
         <error line="543" column="50" source="standard:argument-list-wrapping" />
         <error line="543" column="56" source="standard:wrapping" />
         <error line="543" column="56" source="standard:argument-list-wrapping" />
+        <error line="543" column="87" source="standard:chain-method-continuation" />
         <error line="544" column="1" source="standard:indent" />
         <error line="545" column="1" source="standard:indent" />
         <error line="546" column="1" source="standard:indent" />
@@ -685,6 +690,7 @@
         <error line="548" column="50" source="standard:argument-list-wrapping" />
         <error line="548" column="56" source="standard:wrapping" />
         <error line="548" column="56" source="standard:argument-list-wrapping" />
+        <error line="548" column="87" source="standard:chain-method-continuation" />
         <error line="549" column="1" source="standard:indent" />
         <error line="550" column="1" source="standard:indent" />
         <error line="551" column="1" source="standard:indent" />
@@ -712,6 +718,7 @@
         <error line="565" column="50" source="standard:argument-list-wrapping" />
         <error line="565" column="56" source="standard:wrapping" />
         <error line="565" column="56" source="standard:argument-list-wrapping" />
+        <error line="565" column="87" source="standard:chain-method-continuation" />
         <error line="566" column="1" source="standard:indent" />
         <error line="567" column="1" source="standard:indent" />
         <error line="568" column="1" source="standard:indent" />
@@ -725,6 +732,7 @@
         <error line="570" column="50" source="standard:argument-list-wrapping" />
         <error line="570" column="56" source="standard:wrapping" />
         <error line="570" column="56" source="standard:argument-list-wrapping" />
+        <error line="570" column="87" source="standard:chain-method-continuation" />
         <error line="571" column="1" source="standard:indent" />
         <error line="572" column="1" source="standard:indent" />
         <error line="573" column="1" source="standard:indent" />
@@ -750,6 +758,7 @@
         <error line="587" column="50" source="standard:argument-list-wrapping" />
         <error line="587" column="56" source="standard:wrapping" />
         <error line="587" column="56" source="standard:argument-list-wrapping" />
+        <error line="587" column="87" source="standard:chain-method-continuation" />
         <error line="588" column="1" source="standard:indent" />
         <error line="589" column="1" source="standard:indent" />
         <error line="590" column="1" source="standard:indent" />
@@ -763,6 +772,7 @@
         <error line="592" column="50" source="standard:argument-list-wrapping" />
         <error line="592" column="56" source="standard:wrapping" />
         <error line="592" column="56" source="standard:argument-list-wrapping" />
+        <error line="592" column="87" source="standard:chain-method-continuation" />
         <error line="593" column="1" source="standard:indent" />
         <error line="594" column="1" source="standard:indent" />
         <error line="595" column="1" source="standard:indent" />
@@ -788,6 +798,7 @@
         <error line="609" column="50" source="standard:argument-list-wrapping" />
         <error line="609" column="56" source="standard:wrapping" />
         <error line="609" column="56" source="standard:argument-list-wrapping" />
+        <error line="609" column="87" source="standard:chain-method-continuation" />
         <error line="610" column="1" source="standard:indent" />
         <error line="611" column="1" source="standard:indent" />
         <error line="612" column="1" source="standard:indent" />
@@ -801,6 +812,7 @@
         <error line="614" column="50" source="standard:argument-list-wrapping" />
         <error line="614" column="56" source="standard:wrapping" />
         <error line="614" column="56" source="standard:argument-list-wrapping" />
+        <error line="614" column="87" source="standard:chain-method-continuation" />
         <error line="615" column="1" source="standard:indent" />
         <error line="616" column="1" source="standard:indent" />
         <error line="617" column="1" source="standard:indent" />
@@ -826,6 +838,7 @@
         <error line="631" column="50" source="standard:argument-list-wrapping" />
         <error line="631" column="56" source="standard:wrapping" />
         <error line="631" column="56" source="standard:argument-list-wrapping" />
+        <error line="631" column="87" source="standard:chain-method-continuation" />
         <error line="632" column="1" source="standard:indent" />
         <error line="633" column="1" source="standard:indent" />
         <error line="634" column="1" source="standard:indent" />
@@ -839,6 +852,7 @@
         <error line="636" column="50" source="standard:argument-list-wrapping" />
         <error line="636" column="56" source="standard:wrapping" />
         <error line="636" column="56" source="standard:argument-list-wrapping" />
+        <error line="636" column="87" source="standard:chain-method-continuation" />
         <error line="637" column="1" source="standard:indent" />
         <error line="638" column="1" source="standard:indent" />
         <error line="639" column="1" source="standard:indent" />
@@ -865,6 +879,7 @@
         <error line="654" column="50" source="standard:argument-list-wrapping" />
         <error line="654" column="56" source="standard:wrapping" />
         <error line="654" column="56" source="standard:argument-list-wrapping" />
+        <error line="654" column="87" source="standard:chain-method-continuation" />
         <error line="655" column="1" source="standard:indent" />
         <error line="656" column="1" source="standard:indent" />
         <error line="657" column="1" source="standard:indent" />
@@ -878,6 +893,7 @@
         <error line="659" column="50" source="standard:argument-list-wrapping" />
         <error line="659" column="56" source="standard:wrapping" />
         <error line="659" column="56" source="standard:argument-list-wrapping" />
+        <error line="659" column="87" source="standard:chain-method-continuation" />
         <error line="660" column="1" source="standard:indent" />
         <error line="661" column="1" source="standard:indent" />
         <error line="662" column="1" source="standard:indent" />
@@ -905,6 +921,7 @@
         <error line="676" column="50" source="standard:argument-list-wrapping" />
         <error line="676" column="56" source="standard:wrapping" />
         <error line="676" column="56" source="standard:argument-list-wrapping" />
+        <error line="676" column="87" source="standard:chain-method-continuation" />
         <error line="677" column="1" source="standard:indent" />
         <error line="678" column="1" source="standard:indent" />
         <error line="679" column="1" source="standard:indent" />
@@ -918,6 +935,7 @@
         <error line="681" column="50" source="standard:argument-list-wrapping" />
         <error line="681" column="56" source="standard:wrapping" />
         <error line="681" column="56" source="standard:argument-list-wrapping" />
+        <error line="681" column="87" source="standard:chain-method-continuation" />
         <error line="682" column="1" source="standard:indent" />
         <error line="683" column="1" source="standard:indent" />
         <error line="684" column="1" source="standard:indent" />
@@ -943,6 +961,7 @@
         <error line="698" column="50" source="standard:argument-list-wrapping" />
         <error line="698" column="56" source="standard:wrapping" />
         <error line="698" column="56" source="standard:argument-list-wrapping" />
+        <error line="698" column="87" source="standard:chain-method-continuation" />
         <error line="699" column="1" source="standard:indent" />
         <error line="700" column="1" source="standard:indent" />
         <error line="701" column="1" source="standard:indent" />
@@ -956,6 +975,7 @@
         <error line="703" column="50" source="standard:argument-list-wrapping" />
         <error line="703" column="56" source="standard:wrapping" />
         <error line="703" column="56" source="standard:argument-list-wrapping" />
+        <error line="703" column="87" source="standard:chain-method-continuation" />
         <error line="704" column="1" source="standard:indent" />
         <error line="705" column="1" source="standard:indent" />
         <error line="706" column="1" source="standard:indent" />
@@ -981,6 +1001,7 @@
         <error line="720" column="50" source="standard:argument-list-wrapping" />
         <error line="720" column="56" source="standard:wrapping" />
         <error line="720" column="56" source="standard:argument-list-wrapping" />
+        <error line="720" column="87" source="standard:chain-method-continuation" />
         <error line="721" column="1" source="standard:indent" />
         <error line="722" column="1" source="standard:indent" />
         <error line="723" column="1" source="standard:indent" />
@@ -994,6 +1015,7 @@
         <error line="725" column="50" source="standard:argument-list-wrapping" />
         <error line="725" column="56" source="standard:wrapping" />
         <error line="725" column="56" source="standard:argument-list-wrapping" />
+        <error line="725" column="87" source="standard:chain-method-continuation" />
         <error line="726" column="1" source="standard:indent" />
         <error line="727" column="1" source="standard:indent" />
         <error line="728" column="1" source="standard:indent" />
@@ -1019,6 +1041,7 @@
         <error line="742" column="50" source="standard:argument-list-wrapping" />
         <error line="742" column="56" source="standard:wrapping" />
         <error line="742" column="56" source="standard:argument-list-wrapping" />
+        <error line="742" column="87" source="standard:chain-method-continuation" />
         <error line="743" column="1" source="standard:indent" />
         <error line="744" column="1" source="standard:indent" />
         <error line="745" column="1" source="standard:indent" />
@@ -1032,6 +1055,7 @@
         <error line="747" column="50" source="standard:argument-list-wrapping" />
         <error line="747" column="56" source="standard:wrapping" />
         <error line="747" column="56" source="standard:argument-list-wrapping" />
+        <error line="747" column="87" source="standard:chain-method-continuation" />
         <error line="748" column="1" source="standard:indent" />
         <error line="749" column="1" source="standard:indent" />
         <error line="750" column="1" source="standard:indent" />
@@ -1057,6 +1081,7 @@
         <error line="764" column="50" source="standard:argument-list-wrapping" />
         <error line="764" column="56" source="standard:wrapping" />
         <error line="764" column="56" source="standard:argument-list-wrapping" />
+        <error line="764" column="87" source="standard:chain-method-continuation" />
         <error line="765" column="1" source="standard:indent" />
         <error line="766" column="1" source="standard:indent" />
         <error line="767" column="1" source="standard:indent" />
@@ -1070,6 +1095,7 @@
         <error line="769" column="50" source="standard:argument-list-wrapping" />
         <error line="769" column="56" source="standard:wrapping" />
         <error line="769" column="56" source="standard:argument-list-wrapping" />
+        <error line="769" column="87" source="standard:chain-method-continuation" />
         <error line="770" column="1" source="standard:indent" />
         <error line="771" column="1" source="standard:indent" />
         <error line="772" column="1" source="standard:indent" />
@@ -1095,6 +1121,7 @@
         <error line="786" column="50" source="standard:argument-list-wrapping" />
         <error line="786" column="56" source="standard:wrapping" />
         <error line="786" column="56" source="standard:argument-list-wrapping" />
+        <error line="786" column="87" source="standard:chain-method-continuation" />
         <error line="787" column="1" source="standard:indent" />
         <error line="788" column="1" source="standard:indent" />
         <error line="789" column="1" source="standard:indent" />
@@ -1108,6 +1135,7 @@
         <error line="791" column="50" source="standard:argument-list-wrapping" />
         <error line="791" column="56" source="standard:wrapping" />
         <error line="791" column="56" source="standard:argument-list-wrapping" />
+        <error line="791" column="87" source="standard:chain-method-continuation" />
         <error line="792" column="1" source="standard:indent" />
         <error line="793" column="1" source="standard:indent" />
         <error line="794" column="1" source="standard:indent" />
@@ -1133,6 +1161,7 @@
         <error line="808" column="50" source="standard:argument-list-wrapping" />
         <error line="808" column="56" source="standard:wrapping" />
         <error line="808" column="56" source="standard:argument-list-wrapping" />
+        <error line="808" column="87" source="standard:chain-method-continuation" />
         <error line="809" column="1" source="standard:indent" />
         <error line="810" column="1" source="standard:indent" />
         <error line="811" column="1" source="standard:indent" />
@@ -1146,6 +1175,7 @@
         <error line="813" column="50" source="standard:argument-list-wrapping" />
         <error line="813" column="56" source="standard:wrapping" />
         <error line="813" column="56" source="standard:argument-list-wrapping" />
+        <error line="813" column="87" source="standard:chain-method-continuation" />
         <error line="814" column="1" source="standard:indent" />
         <error line="815" column="1" source="standard:indent" />
         <error line="816" column="1" source="standard:indent" />
@@ -1172,6 +1202,7 @@
         <error line="831" column="50" source="standard:argument-list-wrapping" />
         <error line="831" column="56" source="standard:wrapping" />
         <error line="831" column="56" source="standard:argument-list-wrapping" />
+        <error line="831" column="87" source="standard:chain-method-continuation" />
         <error line="832" column="1" source="standard:indent" />
         <error line="833" column="1" source="standard:indent" />
         <error line="834" column="1" source="standard:indent" />
@@ -1185,6 +1216,7 @@
         <error line="836" column="50" source="standard:argument-list-wrapping" />
         <error line="836" column="56" source="standard:wrapping" />
         <error line="836" column="56" source="standard:argument-list-wrapping" />
+        <error line="836" column="87" source="standard:chain-method-continuation" />
         <error line="837" column="1" source="standard:indent" />
         <error line="838" column="1" source="standard:indent" />
         <error line="839" column="1" source="standard:indent" />
@@ -1212,6 +1244,7 @@
         <error line="853" column="50" source="standard:argument-list-wrapping" />
         <error line="853" column="56" source="standard:wrapping" />
         <error line="853" column="56" source="standard:argument-list-wrapping" />
+        <error line="853" column="87" source="standard:chain-method-continuation" />
         <error line="854" column="1" source="standard:indent" />
         <error line="855" column="1" source="standard:indent" />
         <error line="856" column="1" source="standard:indent" />
@@ -1225,6 +1258,7 @@
         <error line="858" column="50" source="standard:argument-list-wrapping" />
         <error line="858" column="56" source="standard:wrapping" />
         <error line="858" column="56" source="standard:argument-list-wrapping" />
+        <error line="858" column="87" source="standard:chain-method-continuation" />
         <error line="859" column="1" source="standard:indent" />
         <error line="860" column="1" source="standard:indent" />
         <error line="861" column="1" source="standard:indent" />
@@ -1250,6 +1284,7 @@
         <error line="875" column="50" source="standard:argument-list-wrapping" />
         <error line="875" column="56" source="standard:wrapping" />
         <error line="875" column="56" source="standard:argument-list-wrapping" />
+        <error line="875" column="87" source="standard:chain-method-continuation" />
         <error line="876" column="1" source="standard:indent" />
         <error line="877" column="1" source="standard:indent" />
         <error line="878" column="1" source="standard:indent" />
@@ -1263,6 +1298,7 @@
         <error line="880" column="50" source="standard:argument-list-wrapping" />
         <error line="880" column="56" source="standard:wrapping" />
         <error line="880" column="56" source="standard:argument-list-wrapping" />
+        <error line="880" column="87" source="standard:chain-method-continuation" />
         <error line="881" column="1" source="standard:indent" />
         <error line="882" column="1" source="standard:indent" />
         <error line="883" column="1" source="standard:indent" />
@@ -1288,6 +1324,7 @@
         <error line="897" column="50" source="standard:argument-list-wrapping" />
         <error line="897" column="56" source="standard:wrapping" />
         <error line="897" column="56" source="standard:argument-list-wrapping" />
+        <error line="897" column="87" source="standard:chain-method-continuation" />
         <error line="898" column="1" source="standard:indent" />
         <error line="899" column="1" source="standard:indent" />
         <error line="900" column="1" source="standard:indent" />
@@ -1301,6 +1338,7 @@
         <error line="902" column="50" source="standard:argument-list-wrapping" />
         <error line="902" column="56" source="standard:wrapping" />
         <error line="902" column="56" source="standard:argument-list-wrapping" />
+        <error line="902" column="87" source="standard:chain-method-continuation" />
         <error line="903" column="1" source="standard:indent" />
         <error line="904" column="1" source="standard:indent" />
         <error line="905" column="1" source="standard:indent" />
@@ -1326,6 +1364,7 @@
         <error line="919" column="50" source="standard:argument-list-wrapping" />
         <error line="919" column="56" source="standard:wrapping" />
         <error line="919" column="56" source="standard:argument-list-wrapping" />
+        <error line="919" column="87" source="standard:chain-method-continuation" />
         <error line="920" column="1" source="standard:indent" />
         <error line="921" column="1" source="standard:indent" />
         <error line="922" column="1" source="standard:indent" />
@@ -1339,6 +1378,7 @@
         <error line="924" column="50" source="standard:argument-list-wrapping" />
         <error line="924" column="56" source="standard:wrapping" />
         <error line="924" column="56" source="standard:argument-list-wrapping" />
+        <error line="924" column="87" source="standard:chain-method-continuation" />
         <error line="925" column="1" source="standard:indent" />
         <error line="926" column="1" source="standard:indent" />
         <error line="927" column="1" source="standard:indent" />
@@ -1365,6 +1405,7 @@
         <error line="942" column="50" source="standard:argument-list-wrapping" />
         <error line="942" column="56" source="standard:wrapping" />
         <error line="942" column="56" source="standard:argument-list-wrapping" />
+        <error line="942" column="87" source="standard:chain-method-continuation" />
         <error line="943" column="1" source="standard:indent" />
         <error line="944" column="1" source="standard:indent" />
         <error line="945" column="1" source="standard:indent" />
@@ -1378,6 +1419,7 @@
         <error line="947" column="50" source="standard:argument-list-wrapping" />
         <error line="947" column="56" source="standard:wrapping" />
         <error line="947" column="56" source="standard:argument-list-wrapping" />
+        <error line="947" column="87" source="standard:chain-method-continuation" />
         <error line="948" column="1" source="standard:indent" />
         <error line="949" column="1" source="standard:indent" />
         <error line="950" column="1" source="standard:indent" />
@@ -1405,6 +1447,7 @@
         <error line="964" column="50" source="standard:argument-list-wrapping" />
         <error line="964" column="56" source="standard:wrapping" />
         <error line="964" column="56" source="standard:argument-list-wrapping" />
+        <error line="964" column="87" source="standard:chain-method-continuation" />
         <error line="965" column="1" source="standard:indent" />
         <error line="966" column="1" source="standard:indent" />
         <error line="967" column="1" source="standard:indent" />
@@ -1418,6 +1461,7 @@
         <error line="969" column="50" source="standard:argument-list-wrapping" />
         <error line="969" column="56" source="standard:wrapping" />
         <error line="969" column="56" source="standard:argument-list-wrapping" />
+        <error line="969" column="87" source="standard:chain-method-continuation" />
         <error line="970" column="1" source="standard:indent" />
         <error line="971" column="1" source="standard:indent" />
         <error line="972" column="1" source="standard:indent" />
@@ -1443,6 +1487,7 @@
         <error line="986" column="50" source="standard:argument-list-wrapping" />
         <error line="986" column="56" source="standard:wrapping" />
         <error line="986" column="56" source="standard:argument-list-wrapping" />
+        <error line="986" column="87" source="standard:chain-method-continuation" />
         <error line="987" column="1" source="standard:indent" />
         <error line="988" column="1" source="standard:indent" />
         <error line="989" column="1" source="standard:indent" />
@@ -1456,6 +1501,7 @@
         <error line="991" column="50" source="standard:argument-list-wrapping" />
         <error line="991" column="56" source="standard:wrapping" />
         <error line="991" column="56" source="standard:argument-list-wrapping" />
+        <error line="991" column="87" source="standard:chain-method-continuation" />
         <error line="992" column="1" source="standard:indent" />
         <error line="993" column="1" source="standard:indent" />
         <error line="994" column="1" source="standard:indent" />
@@ -1481,6 +1527,7 @@
         <error line="1008" column="50" source="standard:argument-list-wrapping" />
         <error line="1008" column="56" source="standard:wrapping" />
         <error line="1008" column="56" source="standard:argument-list-wrapping" />
+        <error line="1008" column="87" source="standard:chain-method-continuation" />
         <error line="1009" column="1" source="standard:indent" />
         <error line="1010" column="1" source="standard:indent" />
         <error line="1011" column="1" source="standard:indent" />
@@ -1494,6 +1541,7 @@
         <error line="1013" column="50" source="standard:argument-list-wrapping" />
         <error line="1013" column="56" source="standard:wrapping" />
         <error line="1013" column="56" source="standard:argument-list-wrapping" />
+        <error line="1013" column="87" source="standard:chain-method-continuation" />
         <error line="1014" column="1" source="standard:indent" />
         <error line="1015" column="1" source="standard:indent" />
         <error line="1016" column="1" source="standard:indent" />
@@ -1519,6 +1567,7 @@
         <error line="1030" column="50" source="standard:argument-list-wrapping" />
         <error line="1030" column="56" source="standard:wrapping" />
         <error line="1030" column="56" source="standard:argument-list-wrapping" />
+        <error line="1030" column="87" source="standard:chain-method-continuation" />
         <error line="1031" column="1" source="standard:indent" />
         <error line="1032" column="1" source="standard:indent" />
         <error line="1033" column="1" source="standard:indent" />
@@ -1532,6 +1581,7 @@
         <error line="1035" column="50" source="standard:argument-list-wrapping" />
         <error line="1035" column="56" source="standard:wrapping" />
         <error line="1035" column="56" source="standard:argument-list-wrapping" />
+        <error line="1035" column="87" source="standard:chain-method-continuation" />
         <error line="1036" column="1" source="standard:indent" />
         <error line="1037" column="1" source="standard:indent" />
         <error line="1038" column="1" source="standard:indent" />
@@ -1558,6 +1608,7 @@
         <error line="1053" column="50" source="standard:argument-list-wrapping" />
         <error line="1053" column="56" source="standard:wrapping" />
         <error line="1053" column="56" source="standard:argument-list-wrapping" />
+        <error line="1053" column="87" source="standard:chain-method-continuation" />
         <error line="1054" column="1" source="standard:indent" />
         <error line="1055" column="1" source="standard:indent" />
         <error line="1056" column="1" source="standard:indent" />
@@ -1571,6 +1622,7 @@
         <error line="1058" column="50" source="standard:argument-list-wrapping" />
         <error line="1058" column="56" source="standard:wrapping" />
         <error line="1058" column="56" source="standard:argument-list-wrapping" />
+        <error line="1058" column="87" source="standard:chain-method-continuation" />
         <error line="1059" column="1" source="standard:indent" />
         <error line="1060" column="1" source="standard:indent" />
         <error line="1061" column="1" source="standard:indent" />
@@ -1598,6 +1650,7 @@
         <error line="1075" column="50" source="standard:argument-list-wrapping" />
         <error line="1075" column="56" source="standard:wrapping" />
         <error line="1075" column="56" source="standard:argument-list-wrapping" />
+        <error line="1075" column="87" source="standard:chain-method-continuation" />
         <error line="1076" column="1" source="standard:indent" />
         <error line="1077" column="1" source="standard:indent" />
         <error line="1078" column="1" source="standard:indent" />
@@ -1611,6 +1664,7 @@
         <error line="1080" column="50" source="standard:argument-list-wrapping" />
         <error line="1080" column="56" source="standard:wrapping" />
         <error line="1080" column="56" source="standard:argument-list-wrapping" />
+        <error line="1080" column="87" source="standard:chain-method-continuation" />
         <error line="1081" column="1" source="standard:indent" />
         <error line="1082" column="1" source="standard:indent" />
         <error line="1083" column="1" source="standard:indent" />
@@ -1637,6 +1691,7 @@
         <error line="1098" column="50" source="standard:argument-list-wrapping" />
         <error line="1098" column="56" source="standard:wrapping" />
         <error line="1098" column="56" source="standard:argument-list-wrapping" />
+        <error line="1098" column="87" source="standard:chain-method-continuation" />
         <error line="1099" column="1" source="standard:indent" />
         <error line="1100" column="1" source="standard:indent" />
         <error line="1101" column="1" source="standard:indent" />
@@ -1650,6 +1705,7 @@
         <error line="1103" column="50" source="standard:argument-list-wrapping" />
         <error line="1103" column="56" source="standard:wrapping" />
         <error line="1103" column="56" source="standard:argument-list-wrapping" />
+        <error line="1103" column="87" source="standard:chain-method-continuation" />
         <error line="1104" column="1" source="standard:indent" />
         <error line="1105" column="1" source="standard:indent" />
         <error line="1106" column="1" source="standard:indent" />
@@ -1678,6 +1734,7 @@
         <error line="1121" column="50" source="standard:argument-list-wrapping" />
         <error line="1121" column="56" source="standard:wrapping" />
         <error line="1121" column="56" source="standard:argument-list-wrapping" />
+        <error line="1121" column="87" source="standard:chain-method-continuation" />
         <error line="1122" column="1" source="standard:indent" />
         <error line="1123" column="1" source="standard:indent" />
         <error line="1124" column="1" source="standard:indent" />
@@ -1691,6 +1748,7 @@
         <error line="1126" column="50" source="standard:argument-list-wrapping" />
         <error line="1126" column="56" source="standard:wrapping" />
         <error line="1126" column="56" source="standard:argument-list-wrapping" />
+        <error line="1126" column="87" source="standard:chain-method-continuation" />
         <error line="1127" column="1" source="standard:indent" />
         <error line="1128" column="1" source="standard:indent" />
         <error line="1129" column="1" source="standard:indent" />
@@ -1718,6 +1776,7 @@
         <error line="1143" column="50" source="standard:argument-list-wrapping" />
         <error line="1143" column="56" source="standard:wrapping" />
         <error line="1143" column="56" source="standard:argument-list-wrapping" />
+        <error line="1143" column="87" source="standard:chain-method-continuation" />
         <error line="1144" column="1" source="standard:indent" />
         <error line="1145" column="1" source="standard:indent" />
         <error line="1146" column="1" source="standard:indent" />
@@ -1731,6 +1790,7 @@
         <error line="1148" column="50" source="standard:argument-list-wrapping" />
         <error line="1148" column="56" source="standard:wrapping" />
         <error line="1148" column="56" source="standard:argument-list-wrapping" />
+        <error line="1148" column="87" source="standard:chain-method-continuation" />
         <error line="1149" column="1" source="standard:indent" />
         <error line="1150" column="1" source="standard:indent" />
         <error line="1151" column="1" source="standard:indent" />
@@ -1756,6 +1816,7 @@
         <error line="1165" column="50" source="standard:argument-list-wrapping" />
         <error line="1165" column="56" source="standard:wrapping" />
         <error line="1165" column="56" source="standard:argument-list-wrapping" />
+        <error line="1165" column="87" source="standard:chain-method-continuation" />
         <error line="1166" column="1" source="standard:indent" />
         <error line="1167" column="1" source="standard:indent" />
         <error line="1168" column="1" source="standard:indent" />
@@ -1769,6 +1830,7 @@
         <error line="1170" column="50" source="standard:argument-list-wrapping" />
         <error line="1170" column="56" source="standard:wrapping" />
         <error line="1170" column="56" source="standard:argument-list-wrapping" />
+        <error line="1170" column="87" source="standard:chain-method-continuation" />
         <error line="1171" column="1" source="standard:indent" />
         <error line="1172" column="1" source="standard:indent" />
         <error line="1173" column="1" source="standard:indent" />
@@ -1795,6 +1857,7 @@
         <error line="1188" column="50" source="standard:argument-list-wrapping" />
         <error line="1188" column="56" source="standard:wrapping" />
         <error line="1188" column="56" source="standard:argument-list-wrapping" />
+        <error line="1188" column="87" source="standard:chain-method-continuation" />
         <error line="1189" column="1" source="standard:indent" />
         <error line="1190" column="1" source="standard:indent" />
         <error line="1191" column="1" source="standard:indent" />
@@ -1808,6 +1871,7 @@
         <error line="1193" column="50" source="standard:argument-list-wrapping" />
         <error line="1193" column="56" source="standard:wrapping" />
         <error line="1193" column="56" source="standard:argument-list-wrapping" />
+        <error line="1193" column="87" source="standard:chain-method-continuation" />
         <error line="1194" column="1" source="standard:indent" />
         <error line="1195" column="1" source="standard:indent" />
         <error line="1196" column="1" source="standard:indent" />
@@ -1835,6 +1899,7 @@
         <error line="1210" column="50" source="standard:argument-list-wrapping" />
         <error line="1210" column="56" source="standard:wrapping" />
         <error line="1210" column="56" source="standard:argument-list-wrapping" />
+        <error line="1210" column="87" source="standard:chain-method-continuation" />
         <error line="1211" column="1" source="standard:indent" />
         <error line="1212" column="1" source="standard:indent" />
         <error line="1213" column="1" source="standard:indent" />
@@ -1848,6 +1913,7 @@
         <error line="1215" column="50" source="standard:argument-list-wrapping" />
         <error line="1215" column="56" source="standard:wrapping" />
         <error line="1215" column="56" source="standard:argument-list-wrapping" />
+        <error line="1215" column="87" source="standard:chain-method-continuation" />
         <error line="1216" column="1" source="standard:indent" />
         <error line="1217" column="1" source="standard:indent" />
         <error line="1218" column="1" source="standard:indent" />
@@ -1873,6 +1939,7 @@
         <error line="1232" column="50" source="standard:argument-list-wrapping" />
         <error line="1232" column="56" source="standard:wrapping" />
         <error line="1232" column="56" source="standard:argument-list-wrapping" />
+        <error line="1232" column="87" source="standard:chain-method-continuation" />
         <error line="1233" column="1" source="standard:indent" />
         <error line="1234" column="1" source="standard:indent" />
         <error line="1235" column="1" source="standard:indent" />
@@ -1898,6 +1965,7 @@
         <error line="1249" column="50" source="standard:argument-list-wrapping" />
         <error line="1249" column="56" source="standard:wrapping" />
         <error line="1249" column="56" source="standard:argument-list-wrapping" />
+        <error line="1249" column="87" source="standard:chain-method-continuation" />
         <error line="1250" column="1" source="standard:indent" />
         <error line="1251" column="1" source="standard:indent" />
         <error line="1252" column="1" source="standard:indent" />
@@ -1911,6 +1979,7 @@
         <error line="1254" column="50" source="standard:argument-list-wrapping" />
         <error line="1254" column="56" source="standard:wrapping" />
         <error line="1254" column="56" source="standard:argument-list-wrapping" />
+        <error line="1254" column="87" source="standard:chain-method-continuation" />
         <error line="1255" column="1" source="standard:indent" />
         <error line="1256" column="1" source="standard:indent" />
         <error line="1257" column="1" source="standard:indent" />
@@ -1936,6 +2005,7 @@
         <error line="1271" column="50" source="standard:argument-list-wrapping" />
         <error line="1271" column="56" source="standard:wrapping" />
         <error line="1271" column="56" source="standard:argument-list-wrapping" />
+        <error line="1271" column="87" source="standard:chain-method-continuation" />
         <error line="1272" column="1" source="standard:indent" />
         <error line="1273" column="1" source="standard:indent" />
         <error line="1274" column="1" source="standard:indent" />
@@ -1949,6 +2019,7 @@
         <error line="1276" column="50" source="standard:argument-list-wrapping" />
         <error line="1276" column="56" source="standard:wrapping" />
         <error line="1276" column="56" source="standard:argument-list-wrapping" />
+        <error line="1276" column="87" source="standard:chain-method-continuation" />
         <error line="1277" column="1" source="standard:indent" />
         <error line="1278" column="1" source="standard:indent" />
         <error line="1279" column="1" source="standard:indent" />
@@ -1974,6 +2045,7 @@
         <error line="1293" column="50" source="standard:argument-list-wrapping" />
         <error line="1293" column="56" source="standard:wrapping" />
         <error line="1293" column="56" source="standard:argument-list-wrapping" />
+        <error line="1293" column="87" source="standard:chain-method-continuation" />
         <error line="1294" column="1" source="standard:indent" />
         <error line="1295" column="1" source="standard:indent" />
         <error line="1296" column="1" source="standard:indent" />
@@ -1987,6 +2059,7 @@
         <error line="1298" column="50" source="standard:argument-list-wrapping" />
         <error line="1298" column="56" source="standard:wrapping" />
         <error line="1298" column="56" source="standard:argument-list-wrapping" />
+        <error line="1298" column="87" source="standard:chain-method-continuation" />
         <error line="1299" column="1" source="standard:indent" />
         <error line="1300" column="1" source="standard:indent" />
         <error line="1301" column="1" source="standard:indent" />
@@ -2012,6 +2085,7 @@
         <error line="1315" column="50" source="standard:argument-list-wrapping" />
         <error line="1315" column="56" source="standard:wrapping" />
         <error line="1315" column="56" source="standard:argument-list-wrapping" />
+        <error line="1315" column="87" source="standard:chain-method-continuation" />
         <error line="1316" column="1" source="standard:indent" />
         <error line="1317" column="1" source="standard:indent" />
         <error line="1318" column="1" source="standard:indent" />
@@ -2025,6 +2099,7 @@
         <error line="1320" column="50" source="standard:argument-list-wrapping" />
         <error line="1320" column="56" source="standard:wrapping" />
         <error line="1320" column="56" source="standard:argument-list-wrapping" />
+        <error line="1320" column="87" source="standard:chain-method-continuation" />
         <error line="1321" column="1" source="standard:indent" />
         <error line="1322" column="1" source="standard:indent" />
         <error line="1323" column="1" source="standard:indent" />
@@ -2050,6 +2125,7 @@
         <error line="1337" column="50" source="standard:argument-list-wrapping" />
         <error line="1337" column="56" source="standard:wrapping" />
         <error line="1337" column="56" source="standard:argument-list-wrapping" />
+        <error line="1337" column="87" source="standard:chain-method-continuation" />
         <error line="1338" column="1" source="standard:indent" />
         <error line="1339" column="1" source="standard:indent" />
         <error line="1340" column="1" source="standard:indent" />
@@ -2063,6 +2139,7 @@
         <error line="1342" column="50" source="standard:argument-list-wrapping" />
         <error line="1342" column="56" source="standard:wrapping" />
         <error line="1342" column="56" source="standard:argument-list-wrapping" />
+        <error line="1342" column="87" source="standard:chain-method-continuation" />
         <error line="1343" column="1" source="standard:indent" />
         <error line="1344" column="1" source="standard:indent" />
         <error line="1345" column="1" source="standard:indent" />
@@ -2088,6 +2165,7 @@
         <error line="1359" column="50" source="standard:argument-list-wrapping" />
         <error line="1359" column="56" source="standard:wrapping" />
         <error line="1359" column="56" source="standard:argument-list-wrapping" />
+        <error line="1359" column="87" source="standard:chain-method-continuation" />
         <error line="1360" column="1" source="standard:indent" />
         <error line="1361" column="1" source="standard:indent" />
         <error line="1362" column="1" source="standard:indent" />
@@ -2101,6 +2179,7 @@
         <error line="1364" column="50" source="standard:argument-list-wrapping" />
         <error line="1364" column="56" source="standard:wrapping" />
         <error line="1364" column="56" source="standard:argument-list-wrapping" />
+        <error line="1364" column="87" source="standard:chain-method-continuation" />
         <error line="1365" column="1" source="standard:indent" />
         <error line="1366" column="1" source="standard:indent" />
         <error line="1367" column="1" source="standard:indent" />
@@ -2126,6 +2205,7 @@
         <error line="1381" column="50" source="standard:argument-list-wrapping" />
         <error line="1381" column="56" source="standard:wrapping" />
         <error line="1381" column="56" source="standard:argument-list-wrapping" />
+        <error line="1381" column="87" source="standard:chain-method-continuation" />
         <error line="1382" column="1" source="standard:indent" />
         <error line="1383" column="1" source="standard:indent" />
         <error line="1384" column="1" source="standard:indent" />
@@ -2139,6 +2219,7 @@
         <error line="1386" column="50" source="standard:argument-list-wrapping" />
         <error line="1386" column="56" source="standard:wrapping" />
         <error line="1386" column="56" source="standard:argument-list-wrapping" />
+        <error line="1386" column="87" source="standard:chain-method-continuation" />
         <error line="1387" column="1" source="standard:indent" />
         <error line="1388" column="1" source="standard:indent" />
         <error line="1389" column="1" source="standard:indent" />
@@ -2164,6 +2245,7 @@
         <error line="1403" column="50" source="standard:argument-list-wrapping" />
         <error line="1403" column="56" source="standard:wrapping" />
         <error line="1403" column="56" source="standard:argument-list-wrapping" />
+        <error line="1403" column="87" source="standard:chain-method-continuation" />
         <error line="1404" column="1" source="standard:indent" />
         <error line="1405" column="1" source="standard:indent" />
         <error line="1406" column="1" source="standard:indent" />
@@ -2177,6 +2259,7 @@
         <error line="1408" column="50" source="standard:argument-list-wrapping" />
         <error line="1408" column="56" source="standard:wrapping" />
         <error line="1408" column="56" source="standard:argument-list-wrapping" />
+        <error line="1408" column="87" source="standard:chain-method-continuation" />
         <error line="1409" column="1" source="standard:indent" />
         <error line="1410" column="1" source="standard:indent" />
         <error line="1411" column="1" source="standard:indent" />
@@ -2202,6 +2285,7 @@
         <error line="1425" column="50" source="standard:argument-list-wrapping" />
         <error line="1425" column="56" source="standard:wrapping" />
         <error line="1425" column="56" source="standard:argument-list-wrapping" />
+        <error line="1425" column="87" source="standard:chain-method-continuation" />
         <error line="1426" column="1" source="standard:indent" />
         <error line="1427" column="1" source="standard:indent" />
         <error line="1428" column="1" source="standard:indent" />
@@ -2215,6 +2299,7 @@
         <error line="1430" column="50" source="standard:argument-list-wrapping" />
         <error line="1430" column="56" source="standard:wrapping" />
         <error line="1430" column="56" source="standard:argument-list-wrapping" />
+        <error line="1430" column="87" source="standard:chain-method-continuation" />
         <error line="1431" column="1" source="standard:indent" />
         <error line="1432" column="1" source="standard:indent" />
         <error line="1433" column="1" source="standard:indent" />
@@ -2241,6 +2326,7 @@
         <error line="1448" column="50" source="standard:argument-list-wrapping" />
         <error line="1448" column="56" source="standard:wrapping" />
         <error line="1448" column="56" source="standard:argument-list-wrapping" />
+        <error line="1448" column="87" source="standard:chain-method-continuation" />
         <error line="1449" column="1" source="standard:indent" />
         <error line="1450" column="1" source="standard:indent" />
         <error line="1451" column="1" source="standard:indent" />
@@ -2254,6 +2340,7 @@
         <error line="1453" column="50" source="standard:argument-list-wrapping" />
         <error line="1453" column="56" source="standard:wrapping" />
         <error line="1453" column="56" source="standard:argument-list-wrapping" />
+        <error line="1453" column="87" source="standard:chain-method-continuation" />
         <error line="1454" column="1" source="standard:indent" />
         <error line="1455" column="1" source="standard:indent" />
         <error line="1456" column="1" source="standard:indent" />
@@ -2281,6 +2368,7 @@
         <error line="1470" column="50" source="standard:argument-list-wrapping" />
         <error line="1470" column="56" source="standard:wrapping" />
         <error line="1470" column="56" source="standard:argument-list-wrapping" />
+        <error line="1470" column="87" source="standard:chain-method-continuation" />
         <error line="1471" column="1" source="standard:indent" />
         <error line="1472" column="1" source="standard:indent" />
         <error line="1473" column="1" source="standard:indent" />
@@ -2294,6 +2382,7 @@
         <error line="1475" column="50" source="standard:argument-list-wrapping" />
         <error line="1475" column="56" source="standard:wrapping" />
         <error line="1475" column="56" source="standard:argument-list-wrapping" />
+        <error line="1475" column="87" source="standard:chain-method-continuation" />
         <error line="1476" column="1" source="standard:indent" />
         <error line="1477" column="1" source="standard:indent" />
         <error line="1478" column="1" source="standard:indent" />
@@ -2320,6 +2409,7 @@
         <error line="1493" column="50" source="standard:argument-list-wrapping" />
         <error line="1493" column="56" source="standard:wrapping" />
         <error line="1493" column="56" source="standard:argument-list-wrapping" />
+        <error line="1493" column="87" source="standard:chain-method-continuation" />
         <error line="1494" column="1" source="standard:indent" />
         <error line="1495" column="1" source="standard:indent" />
         <error line="1496" column="1" source="standard:indent" />
@@ -2333,6 +2423,7 @@
         <error line="1498" column="50" source="standard:argument-list-wrapping" />
         <error line="1498" column="56" source="standard:wrapping" />
         <error line="1498" column="56" source="standard:argument-list-wrapping" />
+        <error line="1498" column="87" source="standard:chain-method-continuation" />
         <error line="1499" column="1" source="standard:indent" />
         <error line="1500" column="1" source="standard:indent" />
         <error line="1501" column="1" source="standard:indent" />
@@ -2361,6 +2452,7 @@
         <error line="1516" column="50" source="standard:argument-list-wrapping" />
         <error line="1516" column="56" source="standard:wrapping" />
         <error line="1516" column="56" source="standard:argument-list-wrapping" />
+        <error line="1516" column="87" source="standard:chain-method-continuation" />
         <error line="1517" column="1" source="standard:indent" />
         <error line="1518" column="1" source="standard:indent" />
         <error line="1519" column="1" source="standard:indent" />
@@ -2374,6 +2466,7 @@
         <error line="1521" column="50" source="standard:argument-list-wrapping" />
         <error line="1521" column="56" source="standard:wrapping" />
         <error line="1521" column="56" source="standard:argument-list-wrapping" />
+        <error line="1521" column="87" source="standard:chain-method-continuation" />
         <error line="1522" column="1" source="standard:indent" />
         <error line="1523" column="1" source="standard:indent" />
         <error line="1524" column="1" source="standard:indent" />
@@ -2402,6 +2495,7 @@
         <error line="1539" column="50" source="standard:argument-list-wrapping" />
         <error line="1539" column="56" source="standard:wrapping" />
         <error line="1539" column="56" source="standard:argument-list-wrapping" />
+        <error line="1539" column="87" source="standard:chain-method-continuation" />
         <error line="1540" column="1" source="standard:indent" />
         <error line="1541" column="1" source="standard:indent" />
         <error line="1542" column="1" source="standard:indent" />
@@ -2415,6 +2509,7 @@
         <error line="1544" column="50" source="standard:argument-list-wrapping" />
         <error line="1544" column="56" source="standard:wrapping" />
         <error line="1544" column="56" source="standard:argument-list-wrapping" />
+        <error line="1544" column="87" source="standard:chain-method-continuation" />
         <error line="1545" column="1" source="standard:indent" />
         <error line="1546" column="1" source="standard:indent" />
         <error line="1547" column="1" source="standard:indent" />
@@ -2443,6 +2538,7 @@
         <error line="1562" column="50" source="standard:argument-list-wrapping" />
         <error line="1562" column="56" source="standard:wrapping" />
         <error line="1562" column="56" source="standard:argument-list-wrapping" />
+        <error line="1562" column="87" source="standard:chain-method-continuation" />
         <error line="1563" column="1" source="standard:indent" />
         <error line="1564" column="1" source="standard:indent" />
         <error line="1565" column="1" source="standard:indent" />
@@ -2456,6 +2552,7 @@
         <error line="1567" column="50" source="standard:argument-list-wrapping" />
         <error line="1567" column="56" source="standard:wrapping" />
         <error line="1567" column="56" source="standard:argument-list-wrapping" />
+        <error line="1567" column="87" source="standard:chain-method-continuation" />
         <error line="1568" column="1" source="standard:indent" />
         <error line="1569" column="1" source="standard:indent" />
         <error line="1570" column="1" source="standard:indent" />
@@ -2483,6 +2580,7 @@
         <error line="1584" column="50" source="standard:argument-list-wrapping" />
         <error line="1584" column="56" source="standard:wrapping" />
         <error line="1584" column="56" source="standard:argument-list-wrapping" />
+        <error line="1584" column="87" source="standard:chain-method-continuation" />
         <error line="1585" column="1" source="standard:indent" />
         <error line="1586" column="1" source="standard:indent" />
         <error line="1587" column="1" source="standard:indent" />
@@ -2496,6 +2594,7 @@
         <error line="1589" column="50" source="standard:argument-list-wrapping" />
         <error line="1589" column="56" source="standard:wrapping" />
         <error line="1589" column="56" source="standard:argument-list-wrapping" />
+        <error line="1589" column="87" source="standard:chain-method-continuation" />
         <error line="1590" column="1" source="standard:indent" />
         <error line="1591" column="1" source="standard:indent" />
         <error line="1592" column="1" source="standard:indent" />
@@ -2521,6 +2620,7 @@
         <error line="1606" column="50" source="standard:argument-list-wrapping" />
         <error line="1606" column="56" source="standard:wrapping" />
         <error line="1606" column="56" source="standard:argument-list-wrapping" />
+        <error line="1606" column="87" source="standard:chain-method-continuation" />
         <error line="1607" column="1" source="standard:indent" />
         <error line="1608" column="1" source="standard:indent" />
         <error line="1609" column="1" source="standard:indent" />
@@ -2534,6 +2634,7 @@
         <error line="1611" column="50" source="standard:argument-list-wrapping" />
         <error line="1611" column="56" source="standard:wrapping" />
         <error line="1611" column="56" source="standard:argument-list-wrapping" />
+        <error line="1611" column="87" source="standard:chain-method-continuation" />
         <error line="1612" column="1" source="standard:indent" />
         <error line="1613" column="1" source="standard:indent" />
         <error line="1614" column="1" source="standard:indent" />
@@ -2559,6 +2660,7 @@
         <error line="1628" column="50" source="standard:argument-list-wrapping" />
         <error line="1628" column="56" source="standard:wrapping" />
         <error line="1628" column="56" source="standard:argument-list-wrapping" />
+        <error line="1628" column="87" source="standard:chain-method-continuation" />
         <error line="1629" column="1" source="standard:indent" />
         <error line="1630" column="1" source="standard:indent" />
         <error line="1631" column="1" source="standard:indent" />
@@ -2572,6 +2674,7 @@
         <error line="1633" column="50" source="standard:argument-list-wrapping" />
         <error line="1633" column="56" source="standard:wrapping" />
         <error line="1633" column="56" source="standard:argument-list-wrapping" />
+        <error line="1633" column="87" source="standard:chain-method-continuation" />
         <error line="1634" column="1" source="standard:indent" />
         <error line="1635" column="1" source="standard:indent" />
         <error line="1636" column="1" source="standard:indent" />
@@ -2597,6 +2700,7 @@
         <error line="1650" column="50" source="standard:argument-list-wrapping" />
         <error line="1650" column="56" source="standard:wrapping" />
         <error line="1650" column="56" source="standard:argument-list-wrapping" />
+        <error line="1650" column="87" source="standard:chain-method-continuation" />
         <error line="1651" column="1" source="standard:indent" />
         <error line="1652" column="1" source="standard:indent" />
         <error line="1653" column="1" source="standard:indent" />
@@ -2610,6 +2714,7 @@
         <error line="1655" column="50" source="standard:argument-list-wrapping" />
         <error line="1655" column="56" source="standard:wrapping" />
         <error line="1655" column="56" source="standard:argument-list-wrapping" />
+        <error line="1655" column="87" source="standard:chain-method-continuation" />
         <error line="1656" column="1" source="standard:indent" />
         <error line="1657" column="1" source="standard:indent" />
         <error line="1658" column="1" source="standard:indent" />
@@ -2635,6 +2740,7 @@
         <error line="1672" column="50" source="standard:argument-list-wrapping" />
         <error line="1672" column="56" source="standard:wrapping" />
         <error line="1672" column="56" source="standard:argument-list-wrapping" />
+        <error line="1672" column="87" source="standard:chain-method-continuation" />
         <error line="1673" column="1" source="standard:indent" />
         <error line="1674" column="1" source="standard:indent" />
         <error line="1675" column="1" source="standard:indent" />
@@ -2648,6 +2754,7 @@
         <error line="1677" column="50" source="standard:argument-list-wrapping" />
         <error line="1677" column="56" source="standard:wrapping" />
         <error line="1677" column="56" source="standard:argument-list-wrapping" />
+        <error line="1677" column="87" source="standard:chain-method-continuation" />
         <error line="1678" column="1" source="standard:indent" />
         <error line="1679" column="1" source="standard:indent" />
         <error line="1680" column="1" source="standard:indent" />
@@ -2673,6 +2780,7 @@
         <error line="1694" column="50" source="standard:argument-list-wrapping" />
         <error line="1694" column="56" source="standard:wrapping" />
         <error line="1694" column="56" source="standard:argument-list-wrapping" />
+        <error line="1694" column="87" source="standard:chain-method-continuation" />
         <error line="1695" column="1" source="standard:indent" />
         <error line="1696" column="1" source="standard:indent" />
         <error line="1697" column="1" source="standard:indent" />
@@ -2686,6 +2794,7 @@
         <error line="1699" column="50" source="standard:argument-list-wrapping" />
         <error line="1699" column="56" source="standard:wrapping" />
         <error line="1699" column="56" source="standard:argument-list-wrapping" />
+        <error line="1699" column="87" source="standard:chain-method-continuation" />
         <error line="1700" column="1" source="standard:indent" />
         <error line="1701" column="1" source="standard:indent" />
         <error line="1702" column="1" source="standard:indent" />
@@ -2711,6 +2820,7 @@
         <error line="1716" column="50" source="standard:argument-list-wrapping" />
         <error line="1716" column="56" source="standard:wrapping" />
         <error line="1716" column="56" source="standard:argument-list-wrapping" />
+        <error line="1716" column="87" source="standard:chain-method-continuation" />
         <error line="1717" column="1" source="standard:indent" />
         <error line="1718" column="1" source="standard:indent" />
         <error line="1719" column="1" source="standard:indent" />
@@ -2724,6 +2834,7 @@
         <error line="1721" column="50" source="standard:argument-list-wrapping" />
         <error line="1721" column="56" source="standard:wrapping" />
         <error line="1721" column="56" source="standard:argument-list-wrapping" />
+        <error line="1721" column="87" source="standard:chain-method-continuation" />
         <error line="1722" column="1" source="standard:indent" />
         <error line="1723" column="1" source="standard:indent" />
         <error line="1724" column="1" source="standard:indent" />
@@ -2749,6 +2860,7 @@
         <error line="1738" column="50" source="standard:argument-list-wrapping" />
         <error line="1738" column="56" source="standard:wrapping" />
         <error line="1738" column="56" source="standard:argument-list-wrapping" />
+        <error line="1738" column="87" source="standard:chain-method-continuation" />
         <error line="1739" column="1" source="standard:indent" />
         <error line="1740" column="1" source="standard:indent" />
         <error line="1741" column="1" source="standard:indent" />
@@ -2762,6 +2874,7 @@
         <error line="1743" column="50" source="standard:argument-list-wrapping" />
         <error line="1743" column="56" source="standard:wrapping" />
         <error line="1743" column="56" source="standard:argument-list-wrapping" />
+        <error line="1743" column="87" source="standard:chain-method-continuation" />
         <error line="1744" column="1" source="standard:indent" />
         <error line="1745" column="1" source="standard:indent" />
         <error line="1746" column="1" source="standard:indent" />
@@ -2787,6 +2900,7 @@
         <error line="1760" column="50" source="standard:argument-list-wrapping" />
         <error line="1760" column="56" source="standard:wrapping" />
         <error line="1760" column="56" source="standard:argument-list-wrapping" />
+        <error line="1760" column="87" source="standard:chain-method-continuation" />
         <error line="1761" column="1" source="standard:indent" />
         <error line="1762" column="1" source="standard:indent" />
         <error line="1763" column="1" source="standard:indent" />
@@ -2800,6 +2914,7 @@
         <error line="1765" column="50" source="standard:argument-list-wrapping" />
         <error line="1765" column="56" source="standard:wrapping" />
         <error line="1765" column="56" source="standard:argument-list-wrapping" />
+        <error line="1765" column="87" source="standard:chain-method-continuation" />
         <error line="1766" column="1" source="standard:indent" />
         <error line="1767" column="1" source="standard:indent" />
         <error line="1768" column="1" source="standard:indent" />
@@ -2825,6 +2940,7 @@
         <error line="1782" column="50" source="standard:argument-list-wrapping" />
         <error line="1782" column="56" source="standard:wrapping" />
         <error line="1782" column="56" source="standard:argument-list-wrapping" />
+        <error line="1782" column="87" source="standard:chain-method-continuation" />
         <error line="1783" column="1" source="standard:indent" />
         <error line="1784" column="1" source="standard:indent" />
         <error line="1785" column="1" source="standard:indent" />
@@ -2838,6 +2954,7 @@
         <error line="1787" column="50" source="standard:argument-list-wrapping" />
         <error line="1787" column="56" source="standard:wrapping" />
         <error line="1787" column="56" source="standard:argument-list-wrapping" />
+        <error line="1787" column="87" source="standard:chain-method-continuation" />
         <error line="1788" column="1" source="standard:indent" />
         <error line="1789" column="1" source="standard:indent" />
         <error line="1790" column="1" source="standard:indent" />
@@ -2863,6 +2980,7 @@
         <error line="1804" column="50" source="standard:argument-list-wrapping" />
         <error line="1804" column="56" source="standard:wrapping" />
         <error line="1804" column="56" source="standard:argument-list-wrapping" />
+        <error line="1804" column="87" source="standard:chain-method-continuation" />
         <error line="1805" column="1" source="standard:indent" />
         <error line="1806" column="1" source="standard:indent" />
         <error line="1807" column="1" source="standard:indent" />
@@ -2876,6 +2994,7 @@
         <error line="1809" column="50" source="standard:argument-list-wrapping" />
         <error line="1809" column="56" source="standard:wrapping" />
         <error line="1809" column="56" source="standard:argument-list-wrapping" />
+        <error line="1809" column="87" source="standard:chain-method-continuation" />
         <error line="1810" column="1" source="standard:indent" />
         <error line="1811" column="1" source="standard:indent" />
         <error line="1812" column="1" source="standard:indent" />
@@ -2901,6 +3020,7 @@
         <error line="1826" column="50" source="standard:argument-list-wrapping" />
         <error line="1826" column="56" source="standard:wrapping" />
         <error line="1826" column="56" source="standard:argument-list-wrapping" />
+        <error line="1826" column="87" source="standard:chain-method-continuation" />
         <error line="1827" column="1" source="standard:indent" />
         <error line="1828" column="1" source="standard:indent" />
         <error line="1829" column="1" source="standard:indent" />
@@ -2914,6 +3034,7 @@
         <error line="1831" column="50" source="standard:argument-list-wrapping" />
         <error line="1831" column="56" source="standard:wrapping" />
         <error line="1831" column="56" source="standard:argument-list-wrapping" />
+        <error line="1831" column="87" source="standard:chain-method-continuation" />
         <error line="1832" column="1" source="standard:indent" />
         <error line="1833" column="1" source="standard:indent" />
         <error line="1834" column="1" source="standard:indent" />
@@ -2939,6 +3060,7 @@
         <error line="1848" column="50" source="standard:argument-list-wrapping" />
         <error line="1848" column="56" source="standard:wrapping" />
         <error line="1848" column="56" source="standard:argument-list-wrapping" />
+        <error line="1848" column="87" source="standard:chain-method-continuation" />
         <error line="1849" column="1" source="standard:indent" />
         <error line="1850" column="1" source="standard:indent" />
         <error line="1851" column="1" source="standard:indent" />
@@ -2952,6 +3074,7 @@
         <error line="1853" column="50" source="standard:argument-list-wrapping" />
         <error line="1853" column="56" source="standard:wrapping" />
         <error line="1853" column="56" source="standard:argument-list-wrapping" />
+        <error line="1853" column="87" source="standard:chain-method-continuation" />
         <error line="1854" column="1" source="standard:indent" />
         <error line="1855" column="1" source="standard:indent" />
         <error line="1856" column="1" source="standard:indent" />
@@ -2977,6 +3100,7 @@
         <error line="1870" column="50" source="standard:argument-list-wrapping" />
         <error line="1870" column="56" source="standard:wrapping" />
         <error line="1870" column="56" source="standard:argument-list-wrapping" />
+        <error line="1870" column="87" source="standard:chain-method-continuation" />
         <error line="1871" column="1" source="standard:indent" />
         <error line="1872" column="1" source="standard:indent" />
         <error line="1873" column="1" source="standard:indent" />
@@ -2990,6 +3114,7 @@
         <error line="1875" column="50" source="standard:argument-list-wrapping" />
         <error line="1875" column="56" source="standard:wrapping" />
         <error line="1875" column="56" source="standard:argument-list-wrapping" />
+        <error line="1875" column="87" source="standard:chain-method-continuation" />
         <error line="1876" column="1" source="standard:indent" />
         <error line="1877" column="1" source="standard:indent" />
         <error line="1878" column="1" source="standard:indent" />
@@ -3015,6 +3140,7 @@
         <error line="1892" column="50" source="standard:argument-list-wrapping" />
         <error line="1892" column="56" source="standard:wrapping" />
         <error line="1892" column="56" source="standard:argument-list-wrapping" />
+        <error line="1892" column="87" source="standard:chain-method-continuation" />
         <error line="1893" column="1" source="standard:indent" />
         <error line="1894" column="1" source="standard:indent" />
         <error line="1895" column="1" source="standard:indent" />
@@ -3028,6 +3154,7 @@
         <error line="1897" column="50" source="standard:argument-list-wrapping" />
         <error line="1897" column="56" source="standard:wrapping" />
         <error line="1897" column="56" source="standard:argument-list-wrapping" />
+        <error line="1897" column="87" source="standard:chain-method-continuation" />
         <error line="1898" column="1" source="standard:indent" />
         <error line="1899" column="1" source="standard:indent" />
         <error line="1900" column="1" source="standard:indent" />
@@ -3053,6 +3180,7 @@
         <error line="1914" column="50" source="standard:argument-list-wrapping" />
         <error line="1914" column="56" source="standard:wrapping" />
         <error line="1914" column="56" source="standard:argument-list-wrapping" />
+        <error line="1914" column="87" source="standard:chain-method-continuation" />
         <error line="1915" column="1" source="standard:indent" />
         <error line="1916" column="1" source="standard:indent" />
         <error line="1917" column="1" source="standard:indent" />
@@ -3066,6 +3194,7 @@
         <error line="1919" column="50" source="standard:argument-list-wrapping" />
         <error line="1919" column="56" source="standard:wrapping" />
         <error line="1919" column="56" source="standard:argument-list-wrapping" />
+        <error line="1919" column="87" source="standard:chain-method-continuation" />
         <error line="1920" column="1" source="standard:indent" />
         <error line="1921" column="1" source="standard:indent" />
         <error line="1922" column="1" source="standard:indent" />
@@ -3091,6 +3220,7 @@
         <error line="1936" column="50" source="standard:argument-list-wrapping" />
         <error line="1936" column="56" source="standard:wrapping" />
         <error line="1936" column="56" source="standard:argument-list-wrapping" />
+        <error line="1936" column="87" source="standard:chain-method-continuation" />
         <error line="1937" column="1" source="standard:indent" />
         <error line="1938" column="1" source="standard:indent" />
         <error line="1939" column="1" source="standard:indent" />
@@ -3104,6 +3234,7 @@
         <error line="1941" column="50" source="standard:argument-list-wrapping" />
         <error line="1941" column="56" source="standard:wrapping" />
         <error line="1941" column="56" source="standard:argument-list-wrapping" />
+        <error line="1941" column="87" source="standard:chain-method-continuation" />
         <error line="1942" column="1" source="standard:indent" />
         <error line="1943" column="1" source="standard:indent" />
         <error line="1944" column="1" source="standard:indent" />
@@ -3129,6 +3260,7 @@
         <error line="1958" column="50" source="standard:argument-list-wrapping" />
         <error line="1958" column="56" source="standard:wrapping" />
         <error line="1958" column="56" source="standard:argument-list-wrapping" />
+        <error line="1958" column="87" source="standard:chain-method-continuation" />
         <error line="1959" column="1" source="standard:indent" />
         <error line="1960" column="1" source="standard:indent" />
         <error line="1961" column="1" source="standard:indent" />
@@ -3154,6 +3286,7 @@
         <error line="1975" column="50" source="standard:argument-list-wrapping" />
         <error line="1975" column="56" source="standard:wrapping" />
         <error line="1975" column="56" source="standard:argument-list-wrapping" />
+        <error line="1975" column="87" source="standard:chain-method-continuation" />
         <error line="1976" column="1" source="standard:indent" />
         <error line="1977" column="1" source="standard:indent" />
         <error line="1978" column="1" source="standard:indent" />
@@ -3167,6 +3300,7 @@
         <error line="1980" column="50" source="standard:argument-list-wrapping" />
         <error line="1980" column="56" source="standard:wrapping" />
         <error line="1980" column="56" source="standard:argument-list-wrapping" />
+        <error line="1980" column="87" source="standard:chain-method-continuation" />
         <error line="1981" column="1" source="standard:indent" />
         <error line="1982" column="1" source="standard:indent" />
         <error line="1983" column="1" source="standard:indent" />
@@ -3192,6 +3326,7 @@
         <error line="1997" column="50" source="standard:argument-list-wrapping" />
         <error line="1997" column="56" source="standard:wrapping" />
         <error line="1997" column="56" source="standard:argument-list-wrapping" />
+        <error line="1997" column="87" source="standard:chain-method-continuation" />
         <error line="1998" column="1" source="standard:indent" />
         <error line="1999" column="1" source="standard:indent" />
         <error line="2000" column="1" source="standard:indent" />
@@ -3205,6 +3340,7 @@
         <error line="2002" column="50" source="standard:argument-list-wrapping" />
         <error line="2002" column="56" source="standard:wrapping" />
         <error line="2002" column="56" source="standard:argument-list-wrapping" />
+        <error line="2002" column="87" source="standard:chain-method-continuation" />
         <error line="2003" column="1" source="standard:indent" />
         <error line="2004" column="1" source="standard:indent" />
         <error line="2005" column="1" source="standard:indent" />
@@ -3230,6 +3366,7 @@
         <error line="2019" column="50" source="standard:argument-list-wrapping" />
         <error line="2019" column="56" source="standard:wrapping" />
         <error line="2019" column="56" source="standard:argument-list-wrapping" />
+        <error line="2019" column="87" source="standard:chain-method-continuation" />
         <error line="2020" column="1" source="standard:indent" />
         <error line="2021" column="1" source="standard:indent" />
         <error line="2022" column="1" source="standard:indent" />
@@ -3243,6 +3380,7 @@
         <error line="2024" column="50" source="standard:argument-list-wrapping" />
         <error line="2024" column="56" source="standard:wrapping" />
         <error line="2024" column="56" source="standard:argument-list-wrapping" />
+        <error line="2024" column="87" source="standard:chain-method-continuation" />
         <error line="2025" column="1" source="standard:indent" />
         <error line="2026" column="1" source="standard:indent" />
         <error line="2027" column="1" source="standard:indent" />
@@ -3268,6 +3406,7 @@
         <error line="2041" column="50" source="standard:argument-list-wrapping" />
         <error line="2041" column="56" source="standard:wrapping" />
         <error line="2041" column="56" source="standard:argument-list-wrapping" />
+        <error line="2041" column="87" source="standard:chain-method-continuation" />
         <error line="2042" column="1" source="standard:indent" />
         <error line="2043" column="1" source="standard:indent" />
         <error line="2044" column="1" source="standard:indent" />
@@ -3293,6 +3432,7 @@
         <error line="2058" column="50" source="standard:argument-list-wrapping" />
         <error line="2058" column="56" source="standard:wrapping" />
         <error line="2058" column="56" source="standard:argument-list-wrapping" />
+        <error line="2058" column="87" source="standard:chain-method-continuation" />
         <error line="2059" column="1" source="standard:indent" />
         <error line="2060" column="1" source="standard:indent" />
         <error line="2061" column="1" source="standard:indent" />
@@ -3306,6 +3446,7 @@
         <error line="2063" column="50" source="standard:argument-list-wrapping" />
         <error line="2063" column="56" source="standard:wrapping" />
         <error line="2063" column="56" source="standard:argument-list-wrapping" />
+        <error line="2063" column="87" source="standard:chain-method-continuation" />
         <error line="2064" column="1" source="standard:indent" />
         <error line="2065" column="1" source="standard:indent" />
         <error line="2066" column="1" source="standard:indent" />
@@ -3331,6 +3472,7 @@
         <error line="2080" column="50" source="standard:argument-list-wrapping" />
         <error line="2080" column="56" source="standard:wrapping" />
         <error line="2080" column="56" source="standard:argument-list-wrapping" />
+        <error line="2080" column="87" source="standard:chain-method-continuation" />
         <error line="2081" column="1" source="standard:indent" />
         <error line="2082" column="1" source="standard:indent" />
         <error line="2083" column="1" source="standard:indent" />
@@ -3344,6 +3486,7 @@
         <error line="2085" column="50" source="standard:argument-list-wrapping" />
         <error line="2085" column="56" source="standard:wrapping" />
         <error line="2085" column="56" source="standard:argument-list-wrapping" />
+        <error line="2085" column="87" source="standard:chain-method-continuation" />
         <error line="2086" column="1" source="standard:indent" />
         <error line="2087" column="1" source="standard:indent" />
         <error line="2088" column="1" source="standard:indent" />
@@ -3369,6 +3512,7 @@
         <error line="2102" column="50" source="standard:argument-list-wrapping" />
         <error line="2102" column="56" source="standard:wrapping" />
         <error line="2102" column="56" source="standard:argument-list-wrapping" />
+        <error line="2102" column="87" source="standard:chain-method-continuation" />
         <error line="2103" column="1" source="standard:indent" />
         <error line="2104" column="1" source="standard:indent" />
         <error line="2105" column="1" source="standard:indent" />
@@ -3382,6 +3526,7 @@
         <error line="2107" column="50" source="standard:argument-list-wrapping" />
         <error line="2107" column="56" source="standard:wrapping" />
         <error line="2107" column="56" source="standard:argument-list-wrapping" />
+        <error line="2107" column="87" source="standard:chain-method-continuation" />
         <error line="2108" column="1" source="standard:indent" />
         <error line="2109" column="1" source="standard:indent" />
         <error line="2110" column="1" source="standard:indent" />
@@ -3407,6 +3552,7 @@
         <error line="2124" column="50" source="standard:argument-list-wrapping" />
         <error line="2124" column="56" source="standard:wrapping" />
         <error line="2124" column="56" source="standard:argument-list-wrapping" />
+        <error line="2124" column="87" source="standard:chain-method-continuation" />
         <error line="2125" column="1" source="standard:indent" />
         <error line="2126" column="1" source="standard:indent" />
         <error line="2127" column="1" source="standard:indent" />
@@ -3432,6 +3578,7 @@
         <error line="2141" column="50" source="standard:argument-list-wrapping" />
         <error line="2141" column="56" source="standard:wrapping" />
         <error line="2141" column="56" source="standard:argument-list-wrapping" />
+        <error line="2141" column="87" source="standard:chain-method-continuation" />
         <error line="2142" column="1" source="standard:indent" />
         <error line="2143" column="1" source="standard:indent" />
         <error line="2144" column="1" source="standard:indent" />
@@ -3445,6 +3592,7 @@
         <error line="2146" column="50" source="standard:argument-list-wrapping" />
         <error line="2146" column="56" source="standard:wrapping" />
         <error line="2146" column="56" source="standard:argument-list-wrapping" />
+        <error line="2146" column="87" source="standard:chain-method-continuation" />
         <error line="2147" column="1" source="standard:indent" />
         <error line="2148" column="1" source="standard:indent" />
         <error line="2149" column="1" source="standard:indent" />
@@ -3470,6 +3618,7 @@
         <error line="2163" column="50" source="standard:argument-list-wrapping" />
         <error line="2163" column="56" source="standard:wrapping" />
         <error line="2163" column="56" source="standard:argument-list-wrapping" />
+        <error line="2163" column="87" source="standard:chain-method-continuation" />
         <error line="2164" column="1" source="standard:indent" />
         <error line="2165" column="1" source="standard:indent" />
         <error line="2166" column="1" source="standard:indent" />
@@ -3483,6 +3632,7 @@
         <error line="2168" column="50" source="standard:argument-list-wrapping" />
         <error line="2168" column="56" source="standard:wrapping" />
         <error line="2168" column="56" source="standard:argument-list-wrapping" />
+        <error line="2168" column="87" source="standard:chain-method-continuation" />
         <error line="2169" column="1" source="standard:indent" />
         <error line="2170" column="1" source="standard:indent" />
         <error line="2171" column="1" source="standard:indent" />
@@ -3508,6 +3658,7 @@
         <error line="2185" column="50" source="standard:argument-list-wrapping" />
         <error line="2185" column="56" source="standard:wrapping" />
         <error line="2185" column="56" source="standard:argument-list-wrapping" />
+        <error line="2185" column="87" source="standard:chain-method-continuation" />
         <error line="2186" column="1" source="standard:indent" />
         <error line="2187" column="1" source="standard:indent" />
         <error line="2188" column="1" source="standard:indent" />
@@ -3521,6 +3672,7 @@
         <error line="2190" column="50" source="standard:argument-list-wrapping" />
         <error line="2190" column="56" source="standard:wrapping" />
         <error line="2190" column="56" source="standard:argument-list-wrapping" />
+        <error line="2190" column="87" source="standard:chain-method-continuation" />
         <error line="2191" column="1" source="standard:indent" />
         <error line="2192" column="1" source="standard:indent" />
         <error line="2193" column="1" source="standard:indent" />
@@ -3546,6 +3698,7 @@
         <error line="2207" column="50" source="standard:argument-list-wrapping" />
         <error line="2207" column="56" source="standard:wrapping" />
         <error line="2207" column="56" source="standard:argument-list-wrapping" />
+        <error line="2207" column="87" source="standard:chain-method-continuation" />
         <error line="2208" column="1" source="standard:indent" />
         <error line="2209" column="1" source="standard:indent" />
         <error line="2210" column="1" source="standard:indent" />
@@ -3559,6 +3712,7 @@
         <error line="2212" column="50" source="standard:argument-list-wrapping" />
         <error line="2212" column="56" source="standard:wrapping" />
         <error line="2212" column="56" source="standard:argument-list-wrapping" />
+        <error line="2212" column="87" source="standard:chain-method-continuation" />
         <error line="2213" column="1" source="standard:indent" />
         <error line="2214" column="1" source="standard:indent" />
         <error line="2215" column="1" source="standard:indent" />
@@ -3584,6 +3738,7 @@
         <error line="2229" column="50" source="standard:argument-list-wrapping" />
         <error line="2229" column="56" source="standard:wrapping" />
         <error line="2229" column="56" source="standard:argument-list-wrapping" />
+        <error line="2229" column="87" source="standard:chain-method-continuation" />
         <error line="2230" column="1" source="standard:indent" />
         <error line="2231" column="1" source="standard:indent" />
         <error line="2232" column="1" source="standard:indent" />
@@ -3597,6 +3752,7 @@
         <error line="2234" column="50" source="standard:argument-list-wrapping" />
         <error line="2234" column="56" source="standard:wrapping" />
         <error line="2234" column="56" source="standard:argument-list-wrapping" />
+        <error line="2234" column="87" source="standard:chain-method-continuation" />
         <error line="2235" column="1" source="standard:indent" />
         <error line="2236" column="1" source="standard:indent" />
         <error line="2237" column="1" source="standard:indent" />
@@ -3622,6 +3778,7 @@
         <error line="2251" column="50" source="standard:argument-list-wrapping" />
         <error line="2251" column="56" source="standard:wrapping" />
         <error line="2251" column="56" source="standard:argument-list-wrapping" />
+        <error line="2251" column="87" source="standard:chain-method-continuation" />
         <error line="2252" column="1" source="standard:indent" />
         <error line="2253" column="1" source="standard:indent" />
         <error line="2254" column="1" source="standard:indent" />
@@ -3635,6 +3792,7 @@
         <error line="2256" column="50" source="standard:argument-list-wrapping" />
         <error line="2256" column="56" source="standard:wrapping" />
         <error line="2256" column="56" source="standard:argument-list-wrapping" />
+        <error line="2256" column="87" source="standard:chain-method-continuation" />
         <error line="2257" column="1" source="standard:indent" />
         <error line="2258" column="1" source="standard:indent" />
         <error line="2259" column="1" source="standard:indent" />
@@ -3660,6 +3818,7 @@
         <error line="2273" column="50" source="standard:argument-list-wrapping" />
         <error line="2273" column="56" source="standard:wrapping" />
         <error line="2273" column="56" source="standard:argument-list-wrapping" />
+        <error line="2273" column="87" source="standard:chain-method-continuation" />
         <error line="2274" column="1" source="standard:indent" />
         <error line="2275" column="1" source="standard:indent" />
         <error line="2276" column="1" source="standard:indent" />
@@ -3673,6 +3832,7 @@
         <error line="2278" column="50" source="standard:argument-list-wrapping" />
         <error line="2278" column="56" source="standard:wrapping" />
         <error line="2278" column="56" source="standard:argument-list-wrapping" />
+        <error line="2278" column="87" source="standard:chain-method-continuation" />
         <error line="2279" column="1" source="standard:indent" />
         <error line="2280" column="1" source="standard:indent" />
         <error line="2281" column="1" source="standard:indent" />
@@ -3698,6 +3858,7 @@
         <error line="2295" column="50" source="standard:argument-list-wrapping" />
         <error line="2295" column="56" source="standard:wrapping" />
         <error line="2295" column="56" source="standard:argument-list-wrapping" />
+        <error line="2295" column="87" source="standard:chain-method-continuation" />
         <error line="2296" column="1" source="standard:indent" />
         <error line="2297" column="1" source="standard:indent" />
         <error line="2298" column="1" source="standard:indent" />
@@ -3711,6 +3872,7 @@
         <error line="2300" column="50" source="standard:argument-list-wrapping" />
         <error line="2300" column="56" source="standard:wrapping" />
         <error line="2300" column="56" source="standard:argument-list-wrapping" />
+        <error line="2300" column="87" source="standard:chain-method-continuation" />
         <error line="2301" column="1" source="standard:indent" />
         <error line="2302" column="1" source="standard:indent" />
         <error line="2303" column="1" source="standard:indent" />
@@ -3736,6 +3898,7 @@
         <error line="2317" column="50" source="standard:argument-list-wrapping" />
         <error line="2317" column="56" source="standard:wrapping" />
         <error line="2317" column="56" source="standard:argument-list-wrapping" />
+        <error line="2317" column="87" source="standard:chain-method-continuation" />
         <error line="2318" column="1" source="standard:indent" />
         <error line="2319" column="1" source="standard:indent" />
         <error line="2320" column="1" source="standard:indent" />
@@ -3749,6 +3912,7 @@
         <error line="2322" column="50" source="standard:argument-list-wrapping" />
         <error line="2322" column="56" source="standard:wrapping" />
         <error line="2322" column="56" source="standard:argument-list-wrapping" />
+        <error line="2322" column="87" source="standard:chain-method-continuation" />
         <error line="2323" column="1" source="standard:indent" />
         <error line="2324" column="1" source="standard:indent" />
         <error line="2325" column="1" source="standard:indent" />
@@ -3775,6 +3939,7 @@
         <error line="2340" column="50" source="standard:argument-list-wrapping" />
         <error line="2340" column="56" source="standard:wrapping" />
         <error line="2340" column="56" source="standard:argument-list-wrapping" />
+        <error line="2340" column="87" source="standard:chain-method-continuation" />
         <error line="2341" column="1" source="standard:indent" />
         <error line="2342" column="1" source="standard:indent" />
         <error line="2343" column="1" source="standard:indent" />
@@ -3788,6 +3953,7 @@
         <error line="2345" column="50" source="standard:argument-list-wrapping" />
         <error line="2345" column="56" source="standard:wrapping" />
         <error line="2345" column="56" source="standard:argument-list-wrapping" />
+        <error line="2345" column="87" source="standard:chain-method-continuation" />
         <error line="2346" column="1" source="standard:indent" />
         <error line="2347" column="1" source="standard:indent" />
         <error line="2348" column="1" source="standard:indent" />
@@ -3816,6 +3982,7 @@
         <error line="2363" column="50" source="standard:argument-list-wrapping" />
         <error line="2363" column="56" source="standard:wrapping" />
         <error line="2363" column="56" source="standard:argument-list-wrapping" />
+        <error line="2363" column="87" source="standard:chain-method-continuation" />
         <error line="2364" column="1" source="standard:indent" />
         <error line="2365" column="1" source="standard:indent" />
         <error line="2366" column="1" source="standard:indent" />
@@ -3829,6 +3996,7 @@
         <error line="2368" column="50" source="standard:argument-list-wrapping" />
         <error line="2368" column="56" source="standard:wrapping" />
         <error line="2368" column="56" source="standard:argument-list-wrapping" />
+        <error line="2368" column="87" source="standard:chain-method-continuation" />
         <error line="2369" column="1" source="standard:indent" />
         <error line="2370" column="1" source="standard:indent" />
         <error line="2371" column="1" source="standard:indent" />
@@ -3856,6 +4024,7 @@
         <error line="2385" column="50" source="standard:argument-list-wrapping" />
         <error line="2385" column="56" source="standard:wrapping" />
         <error line="2385" column="56" source="standard:argument-list-wrapping" />
+        <error line="2385" column="87" source="standard:chain-method-continuation" />
         <error line="2386" column="1" source="standard:indent" />
         <error line="2387" column="1" source="standard:indent" />
         <error line="2388" column="1" source="standard:indent" />
@@ -3869,6 +4038,7 @@
         <error line="2390" column="50" source="standard:argument-list-wrapping" />
         <error line="2390" column="56" source="standard:wrapping" />
         <error line="2390" column="56" source="standard:argument-list-wrapping" />
+        <error line="2390" column="87" source="standard:chain-method-continuation" />
         <error line="2391" column="1" source="standard:indent" />
         <error line="2392" column="1" source="standard:indent" />
         <error line="2393" column="1" source="standard:indent" />
@@ -3894,6 +4064,7 @@
         <error line="2407" column="50" source="standard:argument-list-wrapping" />
         <error line="2407" column="56" source="standard:wrapping" />
         <error line="2407" column="56" source="standard:argument-list-wrapping" />
+        <error line="2407" column="87" source="standard:chain-method-continuation" />
         <error line="2408" column="1" source="standard:indent" />
         <error line="2409" column="1" source="standard:indent" />
         <error line="2410" column="1" source="standard:indent" />
@@ -3920,6 +4091,7 @@
         <error line="2425" column="50" source="standard:argument-list-wrapping" />
         <error line="2425" column="56" source="standard:wrapping" />
         <error line="2425" column="56" source="standard:argument-list-wrapping" />
+        <error line="2425" column="87" source="standard:chain-method-continuation" />
         <error line="2426" column="1" source="standard:indent" />
         <error line="2427" column="1" source="standard:indent" />
         <error line="2428" column="1" source="standard:indent" />
@@ -3933,6 +4105,7 @@
         <error line="2430" column="50" source="standard:argument-list-wrapping" />
         <error line="2430" column="56" source="standard:wrapping" />
         <error line="2430" column="56" source="standard:argument-list-wrapping" />
+        <error line="2430" column="87" source="standard:chain-method-continuation" />
         <error line="2431" column="1" source="standard:indent" />
         <error line="2432" column="1" source="standard:indent" />
         <error line="2433" column="1" source="standard:indent" />
@@ -3961,6 +4134,7 @@
         <error line="2448" column="50" source="standard:argument-list-wrapping" />
         <error line="2448" column="56" source="standard:wrapping" />
         <error line="2448" column="56" source="standard:argument-list-wrapping" />
+        <error line="2448" column="87" source="standard:chain-method-continuation" />
         <error line="2449" column="1" source="standard:indent" />
         <error line="2450" column="1" source="standard:indent" />
         <error line="2451" column="1" source="standard:indent" />
@@ -3974,6 +4148,7 @@
         <error line="2453" column="50" source="standard:argument-list-wrapping" />
         <error line="2453" column="56" source="standard:wrapping" />
         <error line="2453" column="56" source="standard:argument-list-wrapping" />
+        <error line="2453" column="87" source="standard:chain-method-continuation" />
         <error line="2454" column="1" source="standard:indent" />
         <error line="2455" column="1" source="standard:indent" />
         <error line="2456" column="1" source="standard:indent" />
@@ -4002,6 +4177,7 @@
         <error line="2471" column="50" source="standard:argument-list-wrapping" />
         <error line="2471" column="56" source="standard:wrapping" />
         <error line="2471" column="56" source="standard:argument-list-wrapping" />
+        <error line="2471" column="87" source="standard:chain-method-continuation" />
         <error line="2472" column="1" source="standard:indent" />
         <error line="2473" column="1" source="standard:indent" />
         <error line="2474" column="1" source="standard:indent" />
@@ -4015,6 +4191,7 @@
         <error line="2476" column="50" source="standard:argument-list-wrapping" />
         <error line="2476" column="56" source="standard:wrapping" />
         <error line="2476" column="56" source="standard:argument-list-wrapping" />
+        <error line="2476" column="87" source="standard:chain-method-continuation" />
         <error line="2477" column="1" source="standard:indent" />
         <error line="2478" column="1" source="standard:indent" />
         <error line="2479" column="1" source="standard:indent" />
@@ -4043,6 +4220,7 @@
         <error line="2494" column="50" source="standard:argument-list-wrapping" />
         <error line="2494" column="56" source="standard:wrapping" />
         <error line="2494" column="56" source="standard:argument-list-wrapping" />
+        <error line="2494" column="87" source="standard:chain-method-continuation" />
         <error line="2495" column="1" source="standard:indent" />
         <error line="2496" column="1" source="standard:indent" />
         <error line="2497" column="1" source="standard:indent" />
@@ -4056,6 +4234,7 @@
         <error line="2499" column="50" source="standard:argument-list-wrapping" />
         <error line="2499" column="56" source="standard:wrapping" />
         <error line="2499" column="56" source="standard:argument-list-wrapping" />
+        <error line="2499" column="87" source="standard:chain-method-continuation" />
         <error line="2500" column="1" source="standard:indent" />
         <error line="2501" column="1" source="standard:indent" />
         <error line="2502" column="1" source="standard:indent" />
@@ -4083,6 +4262,7 @@
         <error line="2516" column="50" source="standard:argument-list-wrapping" />
         <error line="2516" column="56" source="standard:wrapping" />
         <error line="2516" column="56" source="standard:argument-list-wrapping" />
+        <error line="2516" column="87" source="standard:chain-method-continuation" />
         <error line="2517" column="1" source="standard:indent" />
         <error line="2518" column="1" source="standard:indent" />
         <error line="2519" column="1" source="standard:indent" />
@@ -4096,6 +4276,7 @@
         <error line="2521" column="50" source="standard:argument-list-wrapping" />
         <error line="2521" column="56" source="standard:wrapping" />
         <error line="2521" column="56" source="standard:argument-list-wrapping" />
+        <error line="2521" column="87" source="standard:chain-method-continuation" />
         <error line="2522" column="1" source="standard:indent" />
         <error line="2523" column="1" source="standard:indent" />
         <error line="2524" column="1" source="standard:indent" />
@@ -4121,6 +4302,7 @@
         <error line="2538" column="50" source="standard:argument-list-wrapping" />
         <error line="2538" column="56" source="standard:wrapping" />
         <error line="2538" column="56" source="standard:argument-list-wrapping" />
+        <error line="2538" column="87" source="standard:chain-method-continuation" />
         <error line="2539" column="1" source="standard:indent" />
         <error line="2540" column="1" source="standard:indent" />
         <error line="2541" column="1" source="standard:indent" />
@@ -4134,6 +4316,7 @@
         <error line="2543" column="50" source="standard:argument-list-wrapping" />
         <error line="2543" column="56" source="standard:wrapping" />
         <error line="2543" column="56" source="standard:argument-list-wrapping" />
+        <error line="2543" column="87" source="standard:chain-method-continuation" />
         <error line="2544" column="1" source="standard:indent" />
         <error line="2545" column="1" source="standard:indent" />
         <error line="2546" column="1" source="standard:indent" />
@@ -4159,6 +4342,7 @@
         <error line="2560" column="50" source="standard:argument-list-wrapping" />
         <error line="2560" column="56" source="standard:wrapping" />
         <error line="2560" column="56" source="standard:argument-list-wrapping" />
+        <error line="2560" column="87" source="standard:chain-method-continuation" />
         <error line="2561" column="1" source="standard:indent" />
         <error line="2562" column="1" source="standard:indent" />
         <error line="2563" column="1" source="standard:indent" />
@@ -4172,6 +4356,7 @@
         <error line="2565" column="50" source="standard:argument-list-wrapping" />
         <error line="2565" column="56" source="standard:wrapping" />
         <error line="2565" column="56" source="standard:argument-list-wrapping" />
+        <error line="2565" column="87" source="standard:chain-method-continuation" />
         <error line="2566" column="1" source="standard:indent" />
         <error line="2567" column="1" source="standard:indent" />
         <error line="2568" column="1" source="standard:indent" />
@@ -4198,6 +4383,7 @@
         <error line="2583" column="50" source="standard:argument-list-wrapping" />
         <error line="2583" column="56" source="standard:wrapping" />
         <error line="2583" column="56" source="standard:argument-list-wrapping" />
+        <error line="2583" column="87" source="standard:chain-method-continuation" />
         <error line="2584" column="1" source="standard:indent" />
         <error line="2585" column="1" source="standard:indent" />
         <error line="2586" column="1" source="standard:indent" />
@@ -4211,6 +4397,7 @@
         <error line="2588" column="50" source="standard:argument-list-wrapping" />
         <error line="2588" column="56" source="standard:wrapping" />
         <error line="2588" column="56" source="standard:argument-list-wrapping" />
+        <error line="2588" column="87" source="standard:chain-method-continuation" />
         <error line="2589" column="1" source="standard:indent" />
         <error line="2590" column="1" source="standard:indent" />
         <error line="2591" column="1" source="standard:indent" />
@@ -4238,6 +4425,7 @@
         <error line="2605" column="50" source="standard:argument-list-wrapping" />
         <error line="2605" column="56" source="standard:wrapping" />
         <error line="2605" column="56" source="standard:argument-list-wrapping" />
+        <error line="2605" column="87" source="standard:chain-method-continuation" />
         <error line="2606" column="1" source="standard:indent" />
         <error line="2607" column="1" source="standard:indent" />
         <error line="2608" column="1" source="standard:indent" />
@@ -4251,6 +4439,7 @@
         <error line="2610" column="50" source="standard:argument-list-wrapping" />
         <error line="2610" column="56" source="standard:wrapping" />
         <error line="2610" column="56" source="standard:argument-list-wrapping" />
+        <error line="2610" column="87" source="standard:chain-method-continuation" />
         <error line="2611" column="1" source="standard:indent" />
         <error line="2612" column="1" source="standard:indent" />
         <error line="2613" column="1" source="standard:indent" />
@@ -4276,6 +4465,7 @@
         <error line="2627" column="50" source="standard:argument-list-wrapping" />
         <error line="2627" column="56" source="standard:wrapping" />
         <error line="2627" column="56" source="standard:argument-list-wrapping" />
+        <error line="2627" column="87" source="standard:chain-method-continuation" />
         <error line="2628" column="1" source="standard:indent" />
         <error line="2629" column="1" source="standard:indent" />
         <error line="2630" column="1" source="standard:indent" />
@@ -4289,6 +4479,7 @@
         <error line="2632" column="50" source="standard:argument-list-wrapping" />
         <error line="2632" column="56" source="standard:wrapping" />
         <error line="2632" column="56" source="standard:argument-list-wrapping" />
+        <error line="2632" column="87" source="standard:chain-method-continuation" />
         <error line="2633" column="1" source="standard:indent" />
         <error line="2634" column="1" source="standard:indent" />
         <error line="2635" column="1" source="standard:indent" />
@@ -4314,6 +4505,7 @@
         <error line="2649" column="50" source="standard:argument-list-wrapping" />
         <error line="2649" column="56" source="standard:wrapping" />
         <error line="2649" column="56" source="standard:argument-list-wrapping" />
+        <error line="2649" column="87" source="standard:chain-method-continuation" />
         <error line="2650" column="1" source="standard:indent" />
         <error line="2651" column="1" source="standard:indent" />
         <error line="2652" column="1" source="standard:indent" />
@@ -4327,6 +4519,7 @@
         <error line="2654" column="50" source="standard:argument-list-wrapping" />
         <error line="2654" column="56" source="standard:wrapping" />
         <error line="2654" column="56" source="standard:argument-list-wrapping" />
+        <error line="2654" column="87" source="standard:chain-method-continuation" />
         <error line="2655" column="1" source="standard:indent" />
         <error line="2656" column="1" source="standard:indent" />
         <error line="2657" column="1" source="standard:indent" />
@@ -4352,6 +4545,7 @@
         <error line="2671" column="50" source="standard:argument-list-wrapping" />
         <error line="2671" column="56" source="standard:wrapping" />
         <error line="2671" column="56" source="standard:argument-list-wrapping" />
+        <error line="2671" column="87" source="standard:chain-method-continuation" />
         <error line="2672" column="1" source="standard:indent" />
         <error line="2673" column="1" source="standard:indent" />
         <error line="2674" column="1" source="standard:indent" />
@@ -4365,6 +4559,7 @@
         <error line="2676" column="50" source="standard:argument-list-wrapping" />
         <error line="2676" column="56" source="standard:wrapping" />
         <error line="2676" column="56" source="standard:argument-list-wrapping" />
+        <error line="2676" column="87" source="standard:chain-method-continuation" />
         <error line="2677" column="1" source="standard:indent" />
         <error line="2678" column="1" source="standard:indent" />
         <error line="2679" column="1" source="standard:indent" />
@@ -4390,6 +4585,7 @@
         <error line="2693" column="50" source="standard:argument-list-wrapping" />
         <error line="2693" column="56" source="standard:wrapping" />
         <error line="2693" column="56" source="standard:argument-list-wrapping" />
+        <error line="2693" column="87" source="standard:chain-method-continuation" />
         <error line="2694" column="1" source="standard:indent" />
         <error line="2695" column="1" source="standard:indent" />
         <error line="2696" column="1" source="standard:indent" />
@@ -4403,6 +4599,7 @@
         <error line="2698" column="50" source="standard:argument-list-wrapping" />
         <error line="2698" column="56" source="standard:wrapping" />
         <error line="2698" column="56" source="standard:argument-list-wrapping" />
+        <error line="2698" column="87" source="standard:chain-method-continuation" />
         <error line="2699" column="1" source="standard:indent" />
         <error line="2700" column="1" source="standard:indent" />
         <error line="2701" column="1" source="standard:indent" />
@@ -4428,6 +4625,7 @@
         <error line="2715" column="50" source="standard:argument-list-wrapping" />
         <error line="2715" column="56" source="standard:wrapping" />
         <error line="2715" column="56" source="standard:argument-list-wrapping" />
+        <error line="2715" column="87" source="standard:chain-method-continuation" />
         <error line="2716" column="1" source="standard:indent" />
         <error line="2717" column="1" source="standard:indent" />
         <error line="2718" column="1" source="standard:indent" />
@@ -4441,6 +4639,7 @@
         <error line="2720" column="50" source="standard:argument-list-wrapping" />
         <error line="2720" column="56" source="standard:wrapping" />
         <error line="2720" column="56" source="standard:argument-list-wrapping" />
+        <error line="2720" column="87" source="standard:chain-method-continuation" />
         <error line="2721" column="1" source="standard:indent" />
         <error line="2722" column="1" source="standard:indent" />
         <error line="2723" column="1" source="standard:indent" />
@@ -4466,6 +4665,7 @@
         <error line="2737" column="50" source="standard:argument-list-wrapping" />
         <error line="2737" column="56" source="standard:wrapping" />
         <error line="2737" column="56" source="standard:argument-list-wrapping" />
+        <error line="2737" column="87" source="standard:chain-method-continuation" />
         <error line="2738" column="1" source="standard:indent" />
         <error line="2739" column="1" source="standard:indent" />
         <error line="2740" column="1" source="standard:indent" />
@@ -4479,6 +4679,7 @@
         <error line="2742" column="50" source="standard:argument-list-wrapping" />
         <error line="2742" column="56" source="standard:wrapping" />
         <error line="2742" column="56" source="standard:argument-list-wrapping" />
+        <error line="2742" column="87" source="standard:chain-method-continuation" />
         <error line="2743" column="1" source="standard:indent" />
         <error line="2744" column="1" source="standard:indent" />
         <error line="2745" column="1" source="standard:indent" />
@@ -4505,6 +4706,7 @@
         <error line="2760" column="50" source="standard:argument-list-wrapping" />
         <error line="2760" column="56" source="standard:wrapping" />
         <error line="2760" column="56" source="standard:argument-list-wrapping" />
+        <error line="2760" column="87" source="standard:chain-method-continuation" />
         <error line="2761" column="1" source="standard:indent" />
         <error line="2762" column="1" source="standard:indent" />
         <error line="2763" column="1" source="standard:indent" />
@@ -4518,6 +4720,7 @@
         <error line="2765" column="50" source="standard:argument-list-wrapping" />
         <error line="2765" column="56" source="standard:wrapping" />
         <error line="2765" column="56" source="standard:argument-list-wrapping" />
+        <error line="2765" column="87" source="standard:chain-method-continuation" />
         <error line="2766" column="1" source="standard:indent" />
         <error line="2767" column="1" source="standard:indent" />
         <error line="2768" column="1" source="standard:indent" />
@@ -4545,6 +4748,7 @@
         <error line="2782" column="50" source="standard:argument-list-wrapping" />
         <error line="2782" column="56" source="standard:wrapping" />
         <error line="2782" column="56" source="standard:argument-list-wrapping" />
+        <error line="2782" column="87" source="standard:chain-method-continuation" />
         <error line="2783" column="1" source="standard:indent" />
         <error line="2784" column="1" source="standard:indent" />
         <error line="2785" column="1" source="standard:indent" />
@@ -4558,6 +4762,7 @@
         <error line="2787" column="50" source="standard:argument-list-wrapping" />
         <error line="2787" column="56" source="standard:wrapping" />
         <error line="2787" column="56" source="standard:argument-list-wrapping" />
+        <error line="2787" column="87" source="standard:chain-method-continuation" />
         <error line="2788" column="1" source="standard:indent" />
         <error line="2789" column="1" source="standard:indent" />
         <error line="2790" column="1" source="standard:indent" />
@@ -4583,6 +4788,7 @@
         <error line="2804" column="50" source="standard:argument-list-wrapping" />
         <error line="2804" column="56" source="standard:wrapping" />
         <error line="2804" column="56" source="standard:argument-list-wrapping" />
+        <error line="2804" column="87" source="standard:chain-method-continuation" />
         <error line="2805" column="1" source="standard:indent" />
         <error line="2806" column="1" source="standard:indent" />
         <error line="2807" column="1" source="standard:indent" />
@@ -4596,6 +4802,7 @@
         <error line="2809" column="50" source="standard:argument-list-wrapping" />
         <error line="2809" column="56" source="standard:wrapping" />
         <error line="2809" column="56" source="standard:argument-list-wrapping" />
+        <error line="2809" column="87" source="standard:chain-method-continuation" />
         <error line="2810" column="1" source="standard:indent" />
         <error line="2811" column="1" source="standard:indent" />
         <error line="2812" column="1" source="standard:indent" />
@@ -4621,6 +4828,7 @@
         <error line="2826" column="50" source="standard:argument-list-wrapping" />
         <error line="2826" column="56" source="standard:wrapping" />
         <error line="2826" column="56" source="standard:argument-list-wrapping" />
+        <error line="2826" column="87" source="standard:chain-method-continuation" />
         <error line="2827" column="1" source="standard:indent" />
         <error line="2828" column="1" source="standard:indent" />
         <error line="2829" column="1" source="standard:indent" />
@@ -4634,6 +4842,7 @@
         <error line="2831" column="50" source="standard:argument-list-wrapping" />
         <error line="2831" column="56" source="standard:wrapping" />
         <error line="2831" column="56" source="standard:argument-list-wrapping" />
+        <error line="2831" column="87" source="standard:chain-method-continuation" />
         <error line="2832" column="1" source="standard:indent" />
         <error line="2833" column="1" source="standard:indent" />
         <error line="2834" column="1" source="standard:indent" />
@@ -4660,6 +4869,7 @@
         <error line="2849" column="50" source="standard:argument-list-wrapping" />
         <error line="2849" column="56" source="standard:wrapping" />
         <error line="2849" column="56" source="standard:argument-list-wrapping" />
+        <error line="2849" column="87" source="standard:chain-method-continuation" />
         <error line="2850" column="1" source="standard:indent" />
         <error line="2851" column="1" source="standard:indent" />
         <error line="2852" column="1" source="standard:indent" />
@@ -4673,6 +4883,7 @@
         <error line="2854" column="50" source="standard:argument-list-wrapping" />
         <error line="2854" column="56" source="standard:wrapping" />
         <error line="2854" column="56" source="standard:argument-list-wrapping" />
+        <error line="2854" column="87" source="standard:chain-method-continuation" />
         <error line="2855" column="1" source="standard:indent" />
         <error line="2856" column="1" source="standard:indent" />
         <error line="2857" column="1" source="standard:indent" />
@@ -4700,6 +4911,7 @@
         <error line="2871" column="50" source="standard:argument-list-wrapping" />
         <error line="2871" column="56" source="standard:wrapping" />
         <error line="2871" column="56" source="standard:argument-list-wrapping" />
+        <error line="2871" column="87" source="standard:chain-method-continuation" />
         <error line="2872" column="1" source="standard:indent" />
         <error line="2873" column="1" source="standard:indent" />
         <error line="2874" column="1" source="standard:indent" />
@@ -4713,6 +4925,7 @@
         <error line="2876" column="50" source="standard:argument-list-wrapping" />
         <error line="2876" column="56" source="standard:wrapping" />
         <error line="2876" column="56" source="standard:argument-list-wrapping" />
+        <error line="2876" column="87" source="standard:chain-method-continuation" />
         <error line="2877" column="1" source="standard:indent" />
         <error line="2878" column="1" source="standard:indent" />
         <error line="2879" column="1" source="standard:indent" />
@@ -4739,6 +4952,7 @@
         <error line="2894" column="50" source="standard:argument-list-wrapping" />
         <error line="2894" column="56" source="standard:wrapping" />
         <error line="2894" column="56" source="standard:argument-list-wrapping" />
+        <error line="2894" column="87" source="standard:chain-method-continuation" />
         <error line="2895" column="1" source="standard:indent" />
         <error line="2896" column="1" source="standard:indent" />
         <error line="2897" column="1" source="standard:indent" />
@@ -4752,6 +4966,7 @@
         <error line="2899" column="50" source="standard:argument-list-wrapping" />
         <error line="2899" column="56" source="standard:wrapping" />
         <error line="2899" column="56" source="standard:argument-list-wrapping" />
+        <error line="2899" column="87" source="standard:chain-method-continuation" />
         <error line="2900" column="1" source="standard:indent" />
         <error line="2901" column="1" source="standard:indent" />
         <error line="2902" column="1" source="standard:indent" />
@@ -4779,6 +4994,7 @@
         <error line="2916" column="50" source="standard:argument-list-wrapping" />
         <error line="2916" column="56" source="standard:wrapping" />
         <error line="2916" column="56" source="standard:argument-list-wrapping" />
+        <error line="2916" column="87" source="standard:chain-method-continuation" />
         <error line="2917" column="1" source="standard:indent" />
         <error line="2918" column="1" source="standard:indent" />
         <error line="2919" column="1" source="standard:indent" />
@@ -4792,6 +5008,7 @@
         <error line="2921" column="50" source="standard:argument-list-wrapping" />
         <error line="2921" column="56" source="standard:wrapping" />
         <error line="2921" column="56" source="standard:argument-list-wrapping" />
+        <error line="2921" column="87" source="standard:chain-method-continuation" />
         <error line="2922" column="1" source="standard:indent" />
         <error line="2923" column="1" source="standard:indent" />
         <error line="2924" column="1" source="standard:indent" />
@@ -4817,6 +5034,7 @@
         <error line="2938" column="50" source="standard:argument-list-wrapping" />
         <error line="2938" column="56" source="standard:wrapping" />
         <error line="2938" column="56" source="standard:argument-list-wrapping" />
+        <error line="2938" column="87" source="standard:chain-method-continuation" />
         <error line="2939" column="1" source="standard:indent" />
         <error line="2940" column="1" source="standard:indent" />
         <error line="2941" column="1" source="standard:indent" />
@@ -4830,6 +5048,7 @@
         <error line="2943" column="50" source="standard:argument-list-wrapping" />
         <error line="2943" column="56" source="standard:wrapping" />
         <error line="2943" column="56" source="standard:argument-list-wrapping" />
+        <error line="2943" column="87" source="standard:chain-method-continuation" />
         <error line="2944" column="1" source="standard:indent" />
         <error line="2945" column="1" source="standard:indent" />
         <error line="2946" column="1" source="standard:indent" />
@@ -4855,6 +5074,7 @@
         <error line="2960" column="50" source="standard:argument-list-wrapping" />
         <error line="2960" column="56" source="standard:wrapping" />
         <error line="2960" column="56" source="standard:argument-list-wrapping" />
+        <error line="2960" column="87" source="standard:chain-method-continuation" />
         <error line="2961" column="1" source="standard:indent" />
         <error line="2962" column="1" source="standard:indent" />
         <error line="2963" column="1" source="standard:indent" />
@@ -4868,6 +5088,7 @@
         <error line="2965" column="50" source="standard:argument-list-wrapping" />
         <error line="2965" column="56" source="standard:wrapping" />
         <error line="2965" column="56" source="standard:argument-list-wrapping" />
+        <error line="2965" column="87" source="standard:chain-method-continuation" />
         <error line="2966" column="1" source="standard:indent" />
         <error line="2967" column="1" source="standard:indent" />
         <error line="2968" column="1" source="standard:indent" />
@@ -4893,6 +5114,7 @@
         <error line="2982" column="50" source="standard:argument-list-wrapping" />
         <error line="2982" column="56" source="standard:wrapping" />
         <error line="2982" column="56" source="standard:argument-list-wrapping" />
+        <error line="2982" column="87" source="standard:chain-method-continuation" />
         <error line="2983" column="1" source="standard:indent" />
         <error line="2984" column="1" source="standard:indent" />
         <error line="2985" column="1" source="standard:indent" />
@@ -4906,6 +5128,7 @@
         <error line="2987" column="50" source="standard:argument-list-wrapping" />
         <error line="2987" column="56" source="standard:wrapping" />
         <error line="2987" column="56" source="standard:argument-list-wrapping" />
+        <error line="2987" column="87" source="standard:chain-method-continuation" />
         <error line="2988" column="1" source="standard:indent" />
         <error line="2989" column="1" source="standard:indent" />
         <error line="2990" column="1" source="standard:indent" />
@@ -4931,6 +5154,7 @@
         <error line="3004" column="50" source="standard:argument-list-wrapping" />
         <error line="3004" column="56" source="standard:wrapping" />
         <error line="3004" column="56" source="standard:argument-list-wrapping" />
+        <error line="3004" column="87" source="standard:chain-method-continuation" />
         <error line="3005" column="1" source="standard:indent" />
         <error line="3006" column="1" source="standard:indent" />
         <error line="3007" column="1" source="standard:indent" />
@@ -4944,6 +5168,7 @@
         <error line="3009" column="50" source="standard:argument-list-wrapping" />
         <error line="3009" column="56" source="standard:wrapping" />
         <error line="3009" column="56" source="standard:argument-list-wrapping" />
+        <error line="3009" column="87" source="standard:chain-method-continuation" />
         <error line="3010" column="1" source="standard:indent" />
         <error line="3011" column="1" source="standard:indent" />
         <error line="3012" column="1" source="standard:indent" />
@@ -4969,6 +5194,7 @@
         <error line="3026" column="50" source="standard:argument-list-wrapping" />
         <error line="3026" column="56" source="standard:wrapping" />
         <error line="3026" column="56" source="standard:argument-list-wrapping" />
+        <error line="3026" column="87" source="standard:chain-method-continuation" />
         <error line="3027" column="1" source="standard:indent" />
         <error line="3028" column="1" source="standard:indent" />
         <error line="3029" column="1" source="standard:indent" />
@@ -4982,6 +5208,7 @@
         <error line="3031" column="50" source="standard:argument-list-wrapping" />
         <error line="3031" column="56" source="standard:wrapping" />
         <error line="3031" column="56" source="standard:argument-list-wrapping" />
+        <error line="3031" column="87" source="standard:chain-method-continuation" />
         <error line="3032" column="1" source="standard:indent" />
         <error line="3033" column="1" source="standard:indent" />
         <error line="3034" column="1" source="standard:indent" />
@@ -5007,6 +5234,7 @@
         <error line="3048" column="50" source="standard:argument-list-wrapping" />
         <error line="3048" column="56" source="standard:wrapping" />
         <error line="3048" column="56" source="standard:argument-list-wrapping" />
+        <error line="3048" column="87" source="standard:chain-method-continuation" />
         <error line="3049" column="1" source="standard:indent" />
         <error line="3050" column="1" source="standard:indent" />
         <error line="3051" column="1" source="standard:indent" />
@@ -5020,6 +5248,7 @@
         <error line="3053" column="50" source="standard:argument-list-wrapping" />
         <error line="3053" column="56" source="standard:wrapping" />
         <error line="3053" column="56" source="standard:argument-list-wrapping" />
+        <error line="3053" column="87" source="standard:chain-method-continuation" />
         <error line="3054" column="1" source="standard:indent" />
         <error line="3055" column="1" source="standard:indent" />
         <error line="3056" column="1" source="standard:indent" />
@@ -5045,6 +5274,7 @@
         <error line="3070" column="50" source="standard:argument-list-wrapping" />
         <error line="3070" column="56" source="standard:wrapping" />
         <error line="3070" column="56" source="standard:argument-list-wrapping" />
+        <error line="3070" column="87" source="standard:chain-method-continuation" />
         <error line="3071" column="1" source="standard:indent" />
         <error line="3072" column="1" source="standard:indent" />
         <error line="3073" column="1" source="standard:indent" />
@@ -5058,6 +5288,7 @@
         <error line="3075" column="50" source="standard:argument-list-wrapping" />
         <error line="3075" column="56" source="standard:wrapping" />
         <error line="3075" column="56" source="standard:argument-list-wrapping" />
+        <error line="3075" column="87" source="standard:chain-method-continuation" />
         <error line="3076" column="1" source="standard:indent" />
         <error line="3077" column="1" source="standard:indent" />
         <error line="3078" column="1" source="standard:indent" />
@@ -5083,6 +5314,7 @@
         <error line="3092" column="50" source="standard:argument-list-wrapping" />
         <error line="3092" column="56" source="standard:wrapping" />
         <error line="3092" column="56" source="standard:argument-list-wrapping" />
+        <error line="3092" column="87" source="standard:chain-method-continuation" />
         <error line="3093" column="1" source="standard:indent" />
         <error line="3094" column="1" source="standard:indent" />
         <error line="3095" column="1" source="standard:indent" />
@@ -5096,6 +5328,7 @@
         <error line="3097" column="50" source="standard:argument-list-wrapping" />
         <error line="3097" column="56" source="standard:wrapping" />
         <error line="3097" column="56" source="standard:argument-list-wrapping" />
+        <error line="3097" column="87" source="standard:chain-method-continuation" />
         <error line="3098" column="1" source="standard:indent" />
         <error line="3099" column="1" source="standard:indent" />
         <error line="3100" column="1" source="standard:indent" />
@@ -5121,6 +5354,7 @@
         <error line="3114" column="50" source="standard:argument-list-wrapping" />
         <error line="3114" column="56" source="standard:wrapping" />
         <error line="3114" column="56" source="standard:argument-list-wrapping" />
+        <error line="3114" column="87" source="standard:chain-method-continuation" />
         <error line="3115" column="1" source="standard:indent" />
         <error line="3116" column="1" source="standard:indent" />
         <error line="3117" column="1" source="standard:indent" />
@@ -5134,6 +5368,7 @@
         <error line="3119" column="50" source="standard:argument-list-wrapping" />
         <error line="3119" column="56" source="standard:wrapping" />
         <error line="3119" column="56" source="standard:argument-list-wrapping" />
+        <error line="3119" column="87" source="standard:chain-method-continuation" />
         <error line="3120" column="1" source="standard:indent" />
         <error line="3121" column="1" source="standard:indent" />
         <error line="3122" column="1" source="standard:indent" />
@@ -5159,6 +5394,7 @@
         <error line="3136" column="50" source="standard:argument-list-wrapping" />
         <error line="3136" column="56" source="standard:wrapping" />
         <error line="3136" column="56" source="standard:argument-list-wrapping" />
+        <error line="3136" column="87" source="standard:chain-method-continuation" />
         <error line="3137" column="1" source="standard:indent" />
         <error line="3138" column="1" source="standard:indent" />
         <error line="3139" column="1" source="standard:indent" />
@@ -5172,6 +5408,7 @@
         <error line="3141" column="50" source="standard:argument-list-wrapping" />
         <error line="3141" column="56" source="standard:wrapping" />
         <error line="3141" column="56" source="standard:argument-list-wrapping" />
+        <error line="3141" column="87" source="standard:chain-method-continuation" />
         <error line="3142" column="1" source="standard:indent" />
         <error line="3143" column="1" source="standard:indent" />
         <error line="3144" column="1" source="standard:indent" />
@@ -5197,6 +5434,7 @@
         <error line="3158" column="50" source="standard:argument-list-wrapping" />
         <error line="3158" column="56" source="standard:wrapping" />
         <error line="3158" column="56" source="standard:argument-list-wrapping" />
+        <error line="3158" column="87" source="standard:chain-method-continuation" />
         <error line="3159" column="1" source="standard:indent" />
         <error line="3160" column="1" source="standard:indent" />
         <error line="3161" column="1" source="standard:indent" />
@@ -5210,6 +5448,7 @@
         <error line="3163" column="50" source="standard:argument-list-wrapping" />
         <error line="3163" column="56" source="standard:wrapping" />
         <error line="3163" column="56" source="standard:argument-list-wrapping" />
+        <error line="3163" column="87" source="standard:chain-method-continuation" />
         <error line="3164" column="1" source="standard:indent" />
         <error line="3165" column="1" source="standard:indent" />
         <error line="3166" column="1" source="standard:indent" />
@@ -5236,6 +5475,7 @@
         <error line="3181" column="50" source="standard:argument-list-wrapping" />
         <error line="3181" column="56" source="standard:wrapping" />
         <error line="3181" column="56" source="standard:argument-list-wrapping" />
+        <error line="3181" column="87" source="standard:chain-method-continuation" />
         <error line="3182" column="1" source="standard:indent" />
         <error line="3183" column="1" source="standard:indent" />
         <error line="3184" column="1" source="standard:indent" />
@@ -5249,6 +5489,7 @@
         <error line="3186" column="50" source="standard:argument-list-wrapping" />
         <error line="3186" column="56" source="standard:wrapping" />
         <error line="3186" column="56" source="standard:argument-list-wrapping" />
+        <error line="3186" column="87" source="standard:chain-method-continuation" />
         <error line="3187" column="1" source="standard:indent" />
         <error line="3188" column="1" source="standard:indent" />
         <error line="3189" column="1" source="standard:indent" />
@@ -5276,6 +5517,7 @@
         <error line="3203" column="50" source="standard:argument-list-wrapping" />
         <error line="3203" column="56" source="standard:wrapping" />
         <error line="3203" column="56" source="standard:argument-list-wrapping" />
+        <error line="3203" column="87" source="standard:chain-method-continuation" />
         <error line="3204" column="1" source="standard:indent" />
         <error line="3205" column="1" source="standard:indent" />
         <error line="3206" column="1" source="standard:indent" />
@@ -5289,6 +5531,7 @@
         <error line="3208" column="50" source="standard:argument-list-wrapping" />
         <error line="3208" column="56" source="standard:wrapping" />
         <error line="3208" column="56" source="standard:argument-list-wrapping" />
+        <error line="3208" column="87" source="standard:chain-method-continuation" />
         <error line="3209" column="1" source="standard:indent" />
         <error line="3210" column="1" source="standard:indent" />
         <error line="3211" column="1" source="standard:indent" />
@@ -5314,6 +5557,7 @@
         <error line="3225" column="50" source="standard:argument-list-wrapping" />
         <error line="3225" column="56" source="standard:wrapping" />
         <error line="3225" column="56" source="standard:argument-list-wrapping" />
+        <error line="3225" column="87" source="standard:chain-method-continuation" />
         <error line="3226" column="1" source="standard:indent" />
         <error line="3227" column="1" source="standard:indent" />
         <error line="3228" column="1" source="standard:indent" />
@@ -5327,6 +5571,7 @@
         <error line="3230" column="50" source="standard:argument-list-wrapping" />
         <error line="3230" column="56" source="standard:wrapping" />
         <error line="3230" column="56" source="standard:argument-list-wrapping" />
+        <error line="3230" column="87" source="standard:chain-method-continuation" />
         <error line="3231" column="1" source="standard:indent" />
         <error line="3232" column="1" source="standard:indent" />
         <error line="3233" column="1" source="standard:indent" />
@@ -5352,6 +5597,7 @@
         <error line="3247" column="50" source="standard:argument-list-wrapping" />
         <error line="3247" column="56" source="standard:wrapping" />
         <error line="3247" column="56" source="standard:argument-list-wrapping" />
+        <error line="3247" column="87" source="standard:chain-method-continuation" />
         <error line="3248" column="1" source="standard:indent" />
         <error line="3249" column="1" source="standard:indent" />
         <error line="3250" column="1" source="standard:indent" />
@@ -5377,6 +5623,7 @@
         <error line="3264" column="50" source="standard:argument-list-wrapping" />
         <error line="3264" column="56" source="standard:wrapping" />
         <error line="3264" column="56" source="standard:argument-list-wrapping" />
+        <error line="3264" column="87" source="standard:chain-method-continuation" />
         <error line="3265" column="1" source="standard:indent" />
         <error line="3266" column="1" source="standard:indent" />
         <error line="3267" column="1" source="standard:indent" />
@@ -5390,6 +5637,7 @@
         <error line="3269" column="50" source="standard:argument-list-wrapping" />
         <error line="3269" column="56" source="standard:wrapping" />
         <error line="3269" column="56" source="standard:argument-list-wrapping" />
+        <error line="3269" column="87" source="standard:chain-method-continuation" />
         <error line="3270" column="1" source="standard:indent" />
         <error line="3271" column="1" source="standard:indent" />
         <error line="3272" column="1" source="standard:indent" />
@@ -5415,6 +5663,7 @@
         <error line="3286" column="50" source="standard:argument-list-wrapping" />
         <error line="3286" column="56" source="standard:wrapping" />
         <error line="3286" column="56" source="standard:argument-list-wrapping" />
+        <error line="3286" column="87" source="standard:chain-method-continuation" />
         <error line="3287" column="1" source="standard:indent" />
         <error line="3288" column="1" source="standard:indent" />
         <error line="3289" column="1" source="standard:indent" />
@@ -5428,6 +5677,7 @@
         <error line="3291" column="50" source="standard:argument-list-wrapping" />
         <error line="3291" column="56" source="standard:wrapping" />
         <error line="3291" column="56" source="standard:argument-list-wrapping" />
+        <error line="3291" column="87" source="standard:chain-method-continuation" />
         <error line="3292" column="1" source="standard:indent" />
         <error line="3293" column="1" source="standard:indent" />
         <error line="3294" column="1" source="standard:indent" />
@@ -5453,6 +5703,7 @@
         <error line="3308" column="50" source="standard:argument-list-wrapping" />
         <error line="3308" column="56" source="standard:wrapping" />
         <error line="3308" column="56" source="standard:argument-list-wrapping" />
+        <error line="3308" column="87" source="standard:chain-method-continuation" />
         <error line="3309" column="1" source="standard:indent" />
         <error line="3310" column="1" source="standard:indent" />
         <error line="3311" column="1" source="standard:indent" />
@@ -5466,6 +5717,7 @@
         <error line="3313" column="50" source="standard:argument-list-wrapping" />
         <error line="3313" column="56" source="standard:wrapping" />
         <error line="3313" column="56" source="standard:argument-list-wrapping" />
+        <error line="3313" column="87" source="standard:chain-method-continuation" />
         <error line="3314" column="1" source="standard:indent" />
         <error line="3315" column="1" source="standard:indent" />
         <error line="3316" column="1" source="standard:indent" />
@@ -5491,6 +5743,7 @@
         <error line="3330" column="50" source="standard:argument-list-wrapping" />
         <error line="3330" column="56" source="standard:wrapping" />
         <error line="3330" column="56" source="standard:argument-list-wrapping" />
+        <error line="3330" column="87" source="standard:chain-method-continuation" />
         <error line="3331" column="1" source="standard:indent" />
         <error line="3332" column="1" source="standard:indent" />
         <error line="3333" column="1" source="standard:indent" />
@@ -5504,6 +5757,7 @@
         <error line="3335" column="50" source="standard:argument-list-wrapping" />
         <error line="3335" column="56" source="standard:wrapping" />
         <error line="3335" column="56" source="standard:argument-list-wrapping" />
+        <error line="3335" column="87" source="standard:chain-method-continuation" />
         <error line="3336" column="1" source="standard:indent" />
         <error line="3337" column="1" source="standard:indent" />
         <error line="3338" column="1" source="standard:indent" />
@@ -5530,6 +5784,7 @@
         <error line="3353" column="50" source="standard:argument-list-wrapping" />
         <error line="3353" column="56" source="standard:wrapping" />
         <error line="3353" column="56" source="standard:argument-list-wrapping" />
+        <error line="3353" column="87" source="standard:chain-method-continuation" />
         <error line="3354" column="1" source="standard:indent" />
         <error line="3355" column="1" source="standard:indent" />
         <error line="3356" column="1" source="standard:indent" />
@@ -5543,6 +5798,7 @@
         <error line="3358" column="50" source="standard:argument-list-wrapping" />
         <error line="3358" column="56" source="standard:wrapping" />
         <error line="3358" column="56" source="standard:argument-list-wrapping" />
+        <error line="3358" column="87" source="standard:chain-method-continuation" />
         <error line="3359" column="1" source="standard:indent" />
         <error line="3360" column="1" source="standard:indent" />
         <error line="3361" column="1" source="standard:indent" />

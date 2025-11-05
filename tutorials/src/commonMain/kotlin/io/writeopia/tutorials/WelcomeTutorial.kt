@@ -5,7 +5,7 @@ internal fun welcomeTutorial() =
 {
     "id": "816lZJxpi9",
     "title": "Welcome!",
-    "userId": "disconnected_user",
+    "workspaceId": "disconnected_user",
     "content": [
         {
             "id": "YcGM1nyET4",

@@ -1,3 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/import/json/WriteopiaJsonParser.kt">
+        <error line="22" column="22" source="standard:chain-method-continuation" />
+        <error line="26" column="22" source="standard:chain-method-continuation" />
+        <error line="31" column="22" source="standard:chain-method-continuation" />
+        <error line="36" column="22" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/import/markdown/MarkdownParser.kt">
+        <error line="14" column="21" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/jvmMain/kotlin/io/writeopia/sdk/import/files/KmpFileReader.jvm.kt">
+        <error line="19" column="18" source="standard:chain-method-continuation" />
+        <error line="27" column="37" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/jvmMain/kotlin/io/writeopia/sdk/import/markdown/MarkdownToDocument.jvm.kt">
+        <error line="21" column="14" source="standard:chain-method-continuation" />
+        <error line="26" column="36" source="standard:chain-method-continuation" />
+        <error line="41" column="13" source="standard:chain-method-continuation" />
+    </file>
 </baseline>

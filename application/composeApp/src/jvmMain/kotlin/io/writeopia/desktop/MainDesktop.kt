@@ -222,9 +222,10 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     val database = databaseState.writeopiaDb
 
                     WriteopiaDbInjector.initialize(database)
-                    WriteopiaConnectionInjector.setBaseUrl("https://writeopia.dev")
-
-                    val authInjection = AuthInjection()
+                    WriteopiaConnectionInjector.setBaseUrl(
+                        "https://writeopia.dev"
+//                        "http://localhost:8080"
+                    )
 
                     val uiConfigurationInjector = UiConfigurationInjector.singleton()
 
@@ -249,7 +250,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                     Destinations.MAIN_APP.id
                                 }
                             ) {
-                                startScreen(navigationController, authInjection, colorTheme)
+                                startScreen(navigationController, colorTheme)
 
                                 composable(route = Destinations.MAIN_APP.id) {
                                     DesktopApp(
@@ -276,7 +277,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
                                 authNavigation(
                                     navController = navigationController,
-                                    authInjection = authInjection,
                                     colorThemeOption = colorTheme
                                 ) {
                                     navigationController.navigate(Destinations.MAIN_APP.id)

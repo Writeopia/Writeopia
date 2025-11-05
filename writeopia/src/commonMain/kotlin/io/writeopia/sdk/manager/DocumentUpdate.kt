@@ -10,12 +10,12 @@ interface DocumentUpdate {
     /**
      * Saves the whole document
      */
-    suspend fun saveDocument(document: Document, userId: String)
+    suspend fun saveDocument(document: Document)
 
     /**
      * Saves the meta data of the document. Content is not saved.
      */
-    suspend fun saveDocumentMetadata(document: Document, userId: String)
+    suspend fun saveDocumentMetadata(document: Document)
 
     /**
      * Saves of [StoryStep] of a document

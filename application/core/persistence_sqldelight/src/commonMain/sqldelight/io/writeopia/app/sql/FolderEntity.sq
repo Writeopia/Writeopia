@@ -1,7 +1,7 @@
 CREATE TABLE folderEntity (
   id TEXT PRIMARY KEY,
   parent_id TEXT NOT NULL,
-  user_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
   title TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   last_updated_at INTEGER NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE folderEntity (
 query:
 SELECT *
 FROM folderEntity
-WHERE title LIKE '%' || ? || '%'
+WHERE title LIKE '%' || ? || '%' AND workspace_id = ?
 ORDER BY last_updated_at
 LIMIT 10;
 
@@ -27,20 +27,20 @@ selectAllFolders:
 SELECT *
 FROM folderEntity;
 
-selectByUserId:
+selectByWorkspace:
 SELECT *
 FROM folderEntity
-WHERE folderEntity.user_id = ?;
+WHERE folderEntity.workspace_id = ?;
 
-selectByUserIdAfterTime:
+selectByWorkspaceAfterTime:
 SELECT *
 FROM folderEntity
-WHERE folderEntity.user_id = ? AND last_updated_at > ?;
+WHERE folderEntity.workspace_id = ? AND last_updated_at > ?;
 
 selectChildrenFolder:
 SELECT *
 FROM folderEntity
-WHERE folderEntity.parent_id = ?;
+WHERE folderEntity.parent_id = ? AND workspace_id = ?;
 
 selectFolderById:
 SELECT *
@@ -58,12 +58,12 @@ FROM documentEntity
 GROUP BY parent_document_id;
 
 insert:
-INSERT INTO folderEntity(id, parent_id, user_id, title, created_at, last_updated_at, favorite, icon, icon_tint, last_synced_at)
+INSERT INTO folderEntity(id, parent_id, workspace_id, title, created_at, last_updated_at, favorite, icon, icon_tint, last_synced_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
-UPDATE SET id=excluded.id, parent_id=excluded.parent_id, user_id=excluded.user_id, title=excluded.title,
- created_at=excluded.created_at, last_updated_at=excluded.last_updated_at, favorite=excluded.favorite,
-  icon=excluded.icon, icon_tint=excluded.icon_tint, last_synced_at=excluded.last_synced_at;
+UPDATE SET id=excluded.id, parent_id=excluded.parent_id, workspace_id=excluded.workspace_id, title=excluded.title,
+created_at=excluded.created_at, last_updated_at=excluded.last_updated_at, favorite=excluded.favorite,
+icon=excluded.icon, icon_tint=excluded.icon_tint, last_synced_at=excluded.last_synced_at;
 
 -- update:
 -- UPDATE(title, parent_id, update_at): SET title=title, parent_id=parent_id, update_at=update_at;
@@ -82,3 +82,10 @@ UPDATE folderEntity SET last_updated_at = ? WHERE id = ?;
 
 favoriteById:
 UPDATE folderEntity SET favorite = ? WHERE id = ?;
+
+selectWithContentByWorkspaceIdOutdatedDocuments:
+SELECT *
+FROM documentEntity
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+WHERE documentEntity.workspace_id = ? AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)
+ORDER BY position;

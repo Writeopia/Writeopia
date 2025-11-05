@@ -4,4 +4,7 @@ import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AuthResponse(val token: String?, val writeopiaUser: WriteopiaUserApi)
+data class AuthResponse(
+    val token: String?,
+    val writeopiaUser: WriteopiaUserApi,
+)

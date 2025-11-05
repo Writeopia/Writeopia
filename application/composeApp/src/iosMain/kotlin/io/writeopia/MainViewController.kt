@@ -7,8 +7,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.ComposeUIViewController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.navigation.authNavigation
+import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.KmpSearchInjection
@@ -55,12 +55,15 @@ fun MainViewController() = ComposeUIViewController {
 
             val editorInjector = EditorKmpInjector.mobile(sqlDelightDaoInjector)
 
-            val authInjection = AuthInjection(sqlDelightDaoInjector)
             val navigationViewModel = viewModel { MobileNavigationViewModel() }
 
             val navController = rememberNavController()
+            val uiConfigInjection = UiConfigurationInjector.singleton()
+            val uiConfigViewModel = uiConfigInjection.provideUiConfigurationViewModel()
+            val colorThemeState = uiConfigViewModel.listenForColorTheme { "disconnected_user" }
 
             AppMobile(
+                startDestination = Destinations.START_APP.id,
                 navController = navController,
                 searchInjector = searchInjection,
                 uiConfigViewModel = uiConfigurationViewModel,
@@ -68,7 +71,7 @@ fun MainViewController() = ComposeUIViewController {
                 editorInjector = editorInjector,
                 navigationViewModel = navigationViewModel,
             ) {
-                authNavigation(navController, authInjection) {
+                authNavigation(navController, colorThemeState) {
                     navController.navigateToNotes(NotesNavigation.Root)
                 }
             }

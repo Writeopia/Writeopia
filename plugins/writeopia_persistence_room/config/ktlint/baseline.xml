@@ -1,8 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="build.gradle.kts">
+        <error line="56" column="42" source="standard:chain-method-continuation" />
+        <error line="56" column="48" source="standard:chain-method-continuation" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/sdk/persistence/dao/DocumentEntityDao.kt">
-        <error line="48" column="1" source="standard:max-line-length" />
         <error line="48" column="12" source="standard:argument-list-wrapping" />
+        <error line="48" column="140" source="standard:max-line-length" />
         <error line="48" column="161" source="standard:argument-list-wrapping" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/persistence/dao/room/RoomDocumentRepository.kt">
+        <error line="24" column="25" source="standard:class-signature" />
+        <error line="54" column="26" source="standard:chain-method-continuation" />
+        <error line="56" column="27" source="standard:chain-method-continuation" />
+        <error line="68" column="26" source="standard:chain-method-continuation" />
+        <error line="78" column="23" source="standard:function-expression-body" />
+        <error line="117" column="26" source="standard:chain-method-continuation" />
+        <error line="144" column="17" source="standard:chain-method-continuation" />
+        <error line="186" column="22" source="standard:chain-method-continuation" />
+        <error line="208" column="12" source="standard:chain-method-continuation" />
     </file>
 </baseline>

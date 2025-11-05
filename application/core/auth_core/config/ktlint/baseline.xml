@@ -1,3 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="build.gradle.kts">
+        <error line="87" column="42" source="standard:chain-method-continuation" />
+        <error line="87" column="48" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/androidMain/kotlin/io/writeopia/auth/core/repository/RoomAuthRepository.kt">
+        <error line="50" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="50" column="1" source="standard:no-empty-first-line-in-method-block" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/auth/core/data/AuthApi.kt">
+        <error line="21" column="15" source="standard:class-signature" />
+        <error line="21" column="47" source="standard:class-signature" />
+        <error line="21" column="74" source="standard:class-signature" />
+        <error line="22" column="82" source="standard:function-expression-body" />
+        <error line="24" column="34" source="standard:chain-method-continuation" />
+        <error line="42" column="33" source="standard:function-expression-body" />
+        <error line="44" column="34" source="standard:chain-method-continuation" />
+        <error line="56" column="85" source="standard:function-expression-body" />
+        <error line="75" column="67" source="standard:function-expression-body" />
+        <error line="77" column="34" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/auth/core/data/WorkspaceApi.kt">
+        <error line="24" column="20" source="standard:class-signature" />
+        <error line="24" column="52" source="standard:class-signature" />
+        <error line="24" column="79" source="standard:class-signature" />
+        <error line="52" column="84" source="standard:function-expression-body" />
+        <error line="54" column="34" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/auth/core/manager/AuthRepository.kt">
+        <error line="14" column="76" source="standard:curly-spacing" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/auth/core/manager/SqlDelightAuthRepository.kt">
+        <error line="16" column="51" source="standard:function-expression-body" />
+        <error line="17" column="27" source="standard:chain-method-continuation" />
+        <error line="28" column="24" source="standard:chain-method-continuation" />
+        <error line="56" column="50" source="standard:function-expression-body" />
+        <error line="57" column="27" source="standard:chain-method-continuation" />
+        <error line="72" column="20" source="standard:chain-method-continuation" />
+        <error line="87" column="20" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/auth/core/utils/UserExtensions.kt">
+        <error line="7" column="52" source="standard:function-expression-body" />
+    </file>
 </baseline>

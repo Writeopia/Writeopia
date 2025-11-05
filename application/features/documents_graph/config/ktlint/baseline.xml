@@ -1,3 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="build.gradle.kts">
+        <error line="67" column="42" source="standard:chain-method-continuation" />
+        <error line="67" column="48" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/documents/graph/extensions/GraphExtensions.kt">
+        <error line="25" column="24" source="standard:chain-method-continuation" />
+        <error line="31" column="13" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/documents/graph/ui/DocumentsGraphViewModel.kt">
+        <error line="31" column="17" source="standard:backing-property-naming" />
+        <error line="32" column="17" source="standard:backing-property-naming" />
+        <error line="44" column="24" source="standard:chain-method-continuation" />
+    </file>
 </baseline>

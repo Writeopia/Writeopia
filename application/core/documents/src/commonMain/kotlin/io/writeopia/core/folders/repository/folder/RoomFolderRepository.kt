@@ -1,4 +1,4 @@
-package io.writeopia.core.folders.repository
+package io.writeopia.core.folders.repository.folder
 
 import io.writeopia.common.utils.persistence.daos.FolderCommonDao
 import io.writeopia.sdk.models.document.Folder
@@ -27,14 +27,14 @@ class RoomFolderRepository(
         }
     }
 
-    override suspend fun getFoldersForUserAfterTime(
+    override suspend fun getFoldersForWorkspaceAfterTime(
         userId: String,
         instant: Instant
     ): List<Folder> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getFoldersForUser(userId: String): List<Folder> {
+    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> {
         TODO("Not yet implemented")
     }
 
@@ -71,11 +71,12 @@ class RoomFolderRepository(
     override suspend fun getFolderById(id: String): Folder? =
         folderRoomDao.getFolderById(id)
 
-    override suspend fun getFolderByParentId(parentId: String): List<Folder> =
+    override suspend fun getFolderByParentId(parentId: String, workspaceId: String): List<Folder> =
         folderRoomDao.getFolderByParentId(parentId)
 
     override suspend fun listenForFoldersByParentId(
-        parentId: String
+        parentId: String,
+        workspaceId: String,
     ): Flow<Map<String, List<Folder>>> {
         SelectedIds.ids.add(parentId)
 
@@ -93,12 +94,16 @@ class RoomFolderRepository(
         }
     }
 
-    override suspend fun stopListeningForFoldersByParentId(parentId: String) {
+    override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
         SelectedIds.ids.remove(parentId)
     }
 
-    override suspend fun search(query: String): List<Folder> =
-        folderRoomDao.search(query)
+    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun search(query: String, workspaceId: String): List<Folder> =
+        folderRoomDao.search(query, workspaceId)
 
     override suspend fun getLastUpdated(): List<Folder> =
         folderRoomDao.getLastUpdated()

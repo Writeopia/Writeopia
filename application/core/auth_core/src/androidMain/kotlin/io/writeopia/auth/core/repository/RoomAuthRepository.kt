@@ -3,12 +3,15 @@ package io.writeopia.auth.core.repository
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.persistence.daos.TokenCommonDao
 import io.writeopia.common.utils.persistence.daos.UserCommonDao
+import io.writeopia.common.utils.persistence.daos.WorkspaceCommonDao
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 
 class RoomAuthRepository(
     private val userDao: UserCommonDao,
-    private val tokenCommonDao: TokenCommonDao
+    private val tokenCommonDao: TokenCommonDao,
+    private val workspaceCommonDao: WorkspaceCommonDao
 ) : AuthRepository {
     override suspend fun getUser(): WriteopiaUser = userDao.selectCurrentUser()
 
@@ -33,6 +36,17 @@ class RoomAuthRepository(
     override suspend fun getAuthToken(): String? = tokenCommonDao.getTokenByUserId(getUser().id)
 
     override suspend fun useOffline() {
-        saveUser(WriteopiaUser.disconnectedUser().copy(id = WriteopiaUser.OFFLINE), true)
+        saveUser(WriteopiaUser.disconnectedUser().copy(id = WriteopiaUser.DISCONNECTED), true)
+    }
+
+    override suspend fun getWorkspace(): Workspace =
+        workspaceCommonDao.selectCurrentWorkspace() ?: Workspace.disconnectedWorkspace()
+
+    override suspend fun saveWorkspace(workspace: Workspace) {
+        workspaceCommonDao.insertWorkspace(workspace, true)
+    }
+
+    override suspend fun unselectAllWorkspaces() {
+
     }
 }

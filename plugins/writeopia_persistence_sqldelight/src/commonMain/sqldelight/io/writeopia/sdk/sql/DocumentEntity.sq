@@ -4,25 +4,24 @@ CREATE TABLE documentEntity (
   created_at INTEGER NOT NULL,
   last_updated_at INTEGER NOT NULL,
   last_synced_at INTEGER,
-  user_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
   favorite INTEGER NOT NULL,
   parent_document_id TEXT NOT NULL,
   icon TEXT,
   icon_tint INTEGER,
   is_locked INTEGER NOT NULL,
-  company_id TEXT,
   deleted INTEGER NOT NULL
 );
 
 selectAllFromUser:
 SELECT *
 FROM documentEntity
-WHERE user_id = ? AND deleted = 0;
+WHERE workspace_id = ? AND deleted = 0;
 
 selectLastUpdatedAtFromUser:
 SELECT *
 FROM documentEntity
-WHERE user_id = ? AND deleted = 0
+WHERE workspace_id = ? AND deleted = 0
 ORDER BY last_updated_at
 LIMIT 10;
 
@@ -34,7 +33,7 @@ WHERE id = ? AND deleted = 0;
 query:
 SELECT *
 FROM documentEntity
-WHERE title LIKE '%' || ? || '%' AND user_id = ? AND deleted = 0
+WHERE title LIKE '%' || ? || '%' AND workspace_id = ? AND deleted = 0
 ORDER BY last_updated_at;
 
 selectById:
@@ -46,7 +45,7 @@ LIMIT 1;
 selectWithContentFromUser:
 SELECT *
 FROM documentEntity
-LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id AND user_id = ? AND deleted = 0
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id AND workspace_id = ? AND deleted = 0
 ORDER BY position;
 
 selectWithContentByIds:
@@ -60,49 +59,57 @@ selectWithContentByUserId:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.user_id = ? AND deleted = 0
+WHERE documentEntity.workspace_id = ? AND deleted = 0
 ORDER BY position;
 
 selectFavoritesWithContentByUserId:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.user_id = ? AND documentEntity.favorite = 1 AND deleted = 0
+WHERE documentEntity.workspace_id = ? AND documentEntity.favorite = 1 AND deleted = 0
 ORDER BY position;
 
 selectWithContentByUserIdAfterTime:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.user_id = ? AND last_updated_at > ? AND deleted = 0
+WHERE documentEntity.workspace_id = ? AND last_updated_at > ? AND deleted = 0
 ORDER BY position;
 
 selectWithContentByFolderIdAfterTime:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.parent_document_id = ? AND last_synced_at > ? AND user_id = ? AND deleted = 0
+WHERE documentEntity.parent_document_id = ? AND last_synced_at > ? AND workspace_id = ? AND deleted = 0
 ORDER BY position;
 
 selectWithContentById:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.id = ? AND deleted = 0
+WHERE documentEntity.id = ? AND deleted = 0 AND documentEntity.workspace_id = ?
 ORDER BY position;
 
 selectWithContentByFolderIdOutdatedDocuments:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.parent_document_id = ? AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)
+WHERE documentEntity.parent_document_id = ? AND documentEntity.workspace_id = ? AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)
+ORDER BY position;
+
+selectWithContentByWorkspaceIdOutdatedDocuments:
+SELECT *
+FROM documentEntity
+LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
+WHERE documentEntity.workspace_id = ?
+--     AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)
 ORDER BY position;
 
 selectWithContentByParentId:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.parent_document_id = ? AND deleted = 0
+WHERE documentEntity.parent_document_id = ? AND deleted = 0 AND documentEntity.workspace_id = ?
 ORDER BY position;
 
 selectIdsByParentId:
@@ -111,14 +118,13 @@ FROM documentEntity
 WHERE documentEntity.parent_document_id = ? AND deleted = 0;
 
 insert:
-INSERT INTO documentEntity(id, title, created_at, last_updated_at, last_synced_at, user_id, favorite, parent_document_id, icon, icon_tint, is_locked, user_id, company_id, deleted)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO documentEntity(id, title, created_at, last_updated_at, last_synced_at, workspace_id, favorite, parent_document_id, icon, icon_tint, is_locked, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at,
-last_updated_at=excluded.last_updated_at, last_synced_at=excluded.last_synced_at, user_id=excluded.user_id,
+last_updated_at=excluded.last_updated_at, last_synced_at=excluded.last_synced_at, workspace_id=excluded.workspace_id,
 favorite=excluded.favorite,parent_document_id=excluded.parent_document_id, icon=excluded.icon,
-icon_tint=excluded.icon_tint, is_locked=excluded.is_locked,
-user_id=excluded.user_id, company_id=excluded.company_id, deleted=excluded.deleted;
+icon_tint=excluded.icon_tint, is_locked=excluded.is_locked, deleted=excluded.deleted;
 
 delete:
 UPDATE documentEntity
@@ -139,7 +145,7 @@ UPDATE documentEntity
 SET
     deleted = 1,
     last_updated_at = ?
-WHERE user_id = ?;
+WHERE workspace_id = ?;
 
 deleteByFolderId:
 UPDATE documentEntity

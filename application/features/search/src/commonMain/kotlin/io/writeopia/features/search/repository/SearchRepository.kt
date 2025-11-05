@@ -6,9 +6,12 @@ import io.writeopia.models.interfaces.search.FolderSearch
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.search.DocumentSearch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
@@ -18,21 +21,29 @@ class SearchRepository(
     private val searchApi: SearchApi,
     private val authRepository: AuthRepository,
 ) {
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun searchNotesAndFoldersLocally(query: String): Flow<List<SearchItem>> {
-        if (query.isEmpty()) return flow { emit(getNotesAndFolders()) }
+        val workspaceFlow =  authRepository.listenForWorkspace()
 
-        val foldersFlow: Flow<List<Folder>> = flow { emit(folderSearch.search(query)) }
-
-        val documentsFlow: Flow<List<Document>> = flow {
-            emit(
-                documentSearch.search(
-                    query,
-                    authRepository.getUser().id,
-                    // Todo: Add company later
-                    null
-                )
-            )
+        if (query.isEmpty()) return workspaceFlow.flatMapLatest { workspace ->
+            flow { emit(getNotesAndFolders(workspace.id)) }
         }
+
+        val foldersFlow: Flow<List<Folder>> = workspaceFlow.flatMapLatest { workspace ->
+            flow { emit(folderSearch.search(query, workspace.id)) }
+        }
+
+        val documentsFlow: Flow<List<Document>> =
+            authRepository.listenForWorkspace().flatMapLatest { workspace ->
+                flow {
+                    emit(
+                        documentSearch.search(
+                            query,
+                            workspace.id,
+                        )
+                    )
+                }
+            }
 
         return combine(foldersFlow, documentsFlow) { folders, documents ->
             (folders + documents).toSearchItems()
@@ -48,43 +59,9 @@ class SearchRepository(
         }
     }
 
-    fun searchNotesAndFolders(query: String): Flow<List<SearchItem>> {
-        if (query.isEmpty()) return flow { emit(getNotesAndFolders()) }
-
-        val foldersFlow: Flow<List<Folder>> = flow { emit(folderSearch.search(query)) }
-
-        val documentsFlow: Flow<List<Document>> = flow {
-            emit(
-                documentSearch.search(
-                    query,
-                    authRepository.getUser().id,
-                    // Todo: Add company later
-                    null
-                )
-            )
-        }
-
-        val documentsApiFlow: Flow<List<Document>> = flow {
-//            println("triggering documentsApiFlow")
-//            emit(emptyList())
-//            println("calling api")
-            emit(searchApi.searchApi(query))
-        }
-
-        return combine(
-            foldersFlow,
-            documentsFlow,
-            documentsApiFlow
-        ) { folders, documents, documentsApi ->
-            folders + documents + documentsApi
-        }.map { menuItems ->
-            menuItems.toSearchItems()
-        }
-    }
-
-    private suspend fun getNotesAndFolders(): List<SearchItem> {
+    private suspend fun getNotesAndFolders(workspaceId: String): List<SearchItem> {
         val folders = folderSearch.getLastUpdated()
-        val documents = documentSearch.getLastUpdatedAt(authRepository.getUser().id)
+        val documents = documentSearch.getLastUpdatedAt(workspaceId)
 
         return (folders + documents).toSearchItems()
     }

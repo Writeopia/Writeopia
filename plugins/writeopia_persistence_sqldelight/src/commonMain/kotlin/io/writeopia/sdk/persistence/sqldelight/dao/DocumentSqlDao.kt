@@ -21,11 +21,13 @@ import kotlinx.datetime.Instant
 class DocumentSqlDao(
     private val documentQueries: DocumentEntityQueries?,
     private val storyStepQueries: StoryStepEntityQueries?,
-
 ) : DocumentSearch {
 
-    override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
-        documentQueries?.query(query, user_id = userId)
+    override suspend fun search(
+        query: String,
+        workspaceId: String,
+    ): List<Document> =
+        documentQueries?.query(query, workspace_id = workspaceId)
             ?.executeAsList()
             ?.map { entity ->
                 Document(
@@ -34,7 +36,7 @@ class DocumentSqlDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                    userId = entity.user_id,
+                    workspaceId = entity.workspace_id,
                     favorite = entity.favorite == 1L,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
@@ -42,8 +44,8 @@ class DocumentSqlDao(
                 )
             } ?: emptyList()
 
-    override suspend fun getLastUpdatedAt(userId: String): List<Document> =
-        documentQueries?.selectLastUpdatedAtFromUser(userId)
+    override suspend fun getLastUpdatedAt(workspaceId: String): List<Document> =
+        documentQueries?.selectLastUpdatedAtFromUser(workspaceId)
             ?.executeAsList()
             ?.map { entity ->
                 Document(
@@ -52,7 +54,7 @@ class DocumentSqlDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                    userId = entity.user_id,
+                    workspaceId = entity.workspace_id,
                     favorite = entity.favorite == 1L,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
@@ -60,30 +62,28 @@ class DocumentSqlDao(
                 )
             } ?: emptyList()
 
-    suspend fun insertDocumentWithContent(document: Document, userId: String, companyId: String?) {
+    suspend fun insertDocumentWithContent(document: Document) {
         storyStepQueries?.deleteByDocumentId(document.id)
         document.content.values.forEachIndexed { i, storyStep ->
             insertStoryStep(storyStep, i.toLong(), document.id)
         }
 
-        insertDocument(document, userId, companyId)
+        insertDocument(document)
     }
 
-    suspend fun insertDocument(document: Document, userId: String, companyId: String?) {
+    suspend fun insertDocument(document: Document) {
         documentQueries?.insert(
             id = document.id,
             title = document.title,
             created_at = document.createdAt.toEpochMilliseconds(),
             last_updated_at = document.lastUpdatedAt.toEpochMilliseconds(),
             last_synced_at = document.lastSyncedAt?.toEpochMilliseconds(),
-            user_id = document.userId,
+            workspace_id = document.workspaceId,
             favorite = document.favorite.toLong(),
             parent_document_id = document.parentId,
             icon = document.icon?.label,
             icon_tint = document.icon?.tint?.toLong(),
             is_locked = document.isLocked.toLong(),
-            user_id_ = userId,
-            company_id = companyId,
             deleted = document.deleted.toLong()
         )
     }
@@ -122,7 +122,7 @@ class DocumentSqlDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                    userId = entity.user_id,
+                    workspaceId = entity.workspace_id,
                     favorite = entity.favorite == 1L,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let {
@@ -187,7 +187,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -202,8 +202,11 @@ class DocumentSqlDao(
                 }
             } ?: emptyList()
 
-    suspend fun loadDocumentsWithContentByUserId(orderBy: String, userId: String): List<Document> {
-        return documentQueries?.selectWithContentByUserId(userId)
+    suspend fun loadDocumentsWithContentByWorkspaceId(
+        orderBy: String,
+        workspaceId: String
+    ): List<Document> {
+        return documentQueries?.selectWithContentByUserId(workspaceId)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -254,7 +257,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -274,9 +277,9 @@ class DocumentSqlDao(
 
     suspend fun loadFavDocumentsWithContentByUserId(
         orderBy: String,
-        userId: String
+        workspaceId: String
     ): List<Document> {
-        return documentQueries?.selectFavoritesWithContentByUserId(userId)
+        return documentQueries?.selectFavoritesWithContentByUserId(workspaceId)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -327,7 +330,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -346,10 +349,10 @@ class DocumentSqlDao(
     }
 
     suspend fun loadDocumentsWithContentByUserIdAfterTime(
-        userId: String,
+        workspaceId: String,
         time: Long
     ): List<Document> {
-        return documentQueries?.selectWithContentByUserIdAfterTime(userId, time)
+        return documentQueries?.selectWithContentByUserIdAfterTime(workspaceId, time)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -400,7 +403,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -416,12 +419,11 @@ class DocumentSqlDao(
             } ?: emptyList()
     }
 
-
     suspend fun loadDocumentsWithContentByFolderIdAfterTime(
-        userId: String,
+        workspaceId: String,
         time: Long
     ): List<Document> {
-        return documentQueries?.selectWithContentByUserIdAfterTime(userId, time)
+        return documentQueries?.selectWithContentByUserIdAfterTime(workspaceId, time)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -472,7 +474,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -498,8 +500,8 @@ class DocumentSqlDao(
         storyStepQueries?.deleteByDocumentIds(ids)
     }
 
-    suspend fun loadDocumentWithContentById(documentId: String): Document? =
-        documentQueries?.selectWithContentById(documentId)
+    suspend fun loadDocumentWithContentById(documentId: String, workspaceId: String): Document? =
+        documentQueries?.selectWithContentById(documentId, workspaceId)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -550,7 +552,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -566,8 +568,8 @@ class DocumentSqlDao(
             }
             ?.firstOrNull()
 
-    suspend fun loadDocumentByParentId(parentId: String): List<Document> {
-        return documentQueries?.selectWithContentByParentId(parentId)
+    suspend fun loadDocumentByParentId(parentId: String, workspaceId: String): List<Document> {
+        return documentQueries?.selectWithContentByParentId(parentId, workspaceId)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -618,7 +620,7 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -634,8 +636,11 @@ class DocumentSqlDao(
             } ?: emptyList()
     }
 
-    suspend fun loadOutdatedDocumentByParentId(parentId: String): List<Document> {
-        return documentQueries?.selectWithContentByFolderIdOutdatedDocuments(parentId)
+    suspend fun loadOutdatedDocumentByParentId(
+        parentId: String,
+        workspaceId: String
+    ): List<Document> {
+        return documentQueries?.selectWithContentByFolderIdOutdatedDocuments(parentId, workspaceId)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -686,7 +691,75 @@ class DocumentSqlDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
+                        favorite = document.favorite == 1L,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(
+                                it,
+                                document.icon_tint?.toInt()
+                            )
+                        },
+                        isLocked = document.is_locked == 1L,
+                        deleted = document.deleted == 1L,
+                    )
+                }
+            } ?: emptyList()
+    }
+
+    suspend fun loadOutdatedDocumentByWorkspaceId(workspaceId: String): List<Document> {
+        return documentQueries?.selectWithContentByWorkspaceIdOutdatedDocuments(workspaceId)
+            ?.awaitAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (documentId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        innerContent.id_?.isNotEmpty() == true
+                    }.associate { innerContent ->
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!.toInt()).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked == 1L,
+//                                steps = emptyList(), // Todo: Fix!
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color?.toInt(),
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { documentId ->
+                                val title = documentQueries.selectTitleByDocumentId(documentId)
+                                    .executeAsOneOrNull()
+
+                                DocumentLink(documentId, title)
+                            }
+                        )
+
+                        innerContent.position!!.toInt() to storyStep
+                    }
+
+                    Document(
+                        id = documentId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite == 1L,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -707,8 +780,8 @@ class DocumentSqlDao(
             ?.awaitAsList()
             ?: emptyList()
 
-    suspend fun deleteDocumentsByUserId(userId: String) {
-        documentQueries?.deleteByUserId(Clock.System.now().toEpochMilliseconds(), userId)
+    suspend fun deleteDocumentsByUserId(workspaceId: String) {
+        documentQueries?.deleteByUserId(Clock.System.now().toEpochMilliseconds(), workspaceId)
     }
 
     suspend fun deleteDocumentsByFolderId(folderId: String) {

@@ -13,12 +13,13 @@ import io.writeopia.common.utils.collections.traverse
 import io.writeopia.common.utils.download.DownloadParser
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.IconChange
-import io.writeopia.sdk.models.utils.map
 import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.auth.core.data.WorkspaceApi
+import io.writeopia.core.folders.repository.folder.NotesUseCase
+import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
@@ -33,6 +34,8 @@ import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.utils.map
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -44,16 +47,20 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
 
@@ -71,38 +78,9 @@ class GlobalShellKmpViewModel(
     private val ollamaRepository: OllamaRepository,
     private val configRepository: ConfigurationRepository,
     private val json: Json = writeopiaJson,
+    private val workspaceSync: WorkspaceSync,
+    private val workspaceApi: WorkspaceApi
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
-
-    init {
-        folderStateController.initCoroutine(viewModelScope)
-
-        viewModelScope.launch(Dispatchers.Default) {
-            val userId = getUserId()
-
-            if (!configRepository.hasFirstConfiguration(userId)) {
-                Tutorials.allTutorialsDocuments()
-                    .map { documentAsJson ->
-                        json.decodeFromString<DocumentApi>(documentAsJson).toModel()
-                    }
-                    .forEach { document ->
-                        val now = Clock.System.now()
-
-                        notesUseCase.saveDocumentDb(
-                            document.copy(
-                                createdAt = now,
-                                lastUpdatedAt = now
-                            )
-                        )
-                    }
-
-                ollamaRepository.saveOllamaUrl(userId, OllamaApi.defaultUrl())
-
-                configRepository.setTutorialNotes(true, userId)
-            }
-
-            ollamaRepository.refreshConfiguration(userId)
-        }
-    }
 
     private var localUserId: String? = null
     private var sideMenuWidthState = MutableStateFlow<Float?>(null)
@@ -121,6 +99,9 @@ class GlobalShellKmpViewModel(
     private val _retryModels = MutableStateFlow(0)
 
     private val _loginStateTrigger = MutableStateFlow(GenerateId.generate())
+
+    private val _lastWorkspaceSync = MutableStateFlow("")
+    override val lastWorkspaceSync: StateFlow<String> = _lastWorkspaceSync.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val _ollamaConfigState = authRepository.listenForUser().flatMapLatest { user ->
@@ -198,12 +179,15 @@ class GlobalShellKmpViewModel(
     override val editFolderState: StateFlow<Folder?> by lazy {
         combine(
             folderStateController.editingFolderState,
-            menuItemsPerFolderId
-        ) { selectedFolder, menuItems ->
+            menuItemsPerFolderId,
+            authRepository.listenForWorkspace()
+        ) { selectedFolder, menuItems, workspace ->
             if (selectedFolder != null) {
-                val folder = menuItems[selectedFolder.parentId]?.find { menuItem ->
-                    menuItem.id == selectedFolder.id
-                } as? Folder
+                val folder =
+                    menuItems["${selectedFolder.parentId}:${workspace.id}"]
+                        ?.find { menuItem ->
+                            menuItem.id == selectedFolder.id
+                        } as? Folder
 
                 folder
             } else {
@@ -232,11 +216,12 @@ class GlobalShellKmpViewModel(
     override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
         combine(
             authRepository.listenForUser(),
+            authRepository.listenForWorkspace(),
             notesNavigationUseCase.navigationState
-        ) { user, notesNavigation ->
-            user to notesNavigation
-        }.flatMapLatest { (user, notesNavigation) ->
-            notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id)
+        ) { user, workspace, notesNavigation ->
+            Triple(user, notesNavigation, workspace)
+        }.flatMapLatest { (user, notesNavigation, workspace) ->
+            notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id, workspace.id)
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
     }
 
@@ -244,8 +229,9 @@ class GlobalShellKmpViewModel(
         combine(
             _expandedFolders,
             menuItemsPerFolderId,
-            highlightItem
-        ) { expanded, folderMap, highlighted ->
+            highlightItem,
+            authRepository.listenForWorkspace(),
+        ) { expanded, folderMap, highlighted, workspace ->
             val folderUiMap = folderMap.mapValues { (_, item) ->
                 item.map {
                     it.toUiCard(
@@ -258,12 +244,13 @@ class GlobalShellKmpViewModel(
             val itemsList = folderUiMap
                 .toNodeTree(
                     MenuItemUi.FolderUi.root(),
-                    filterPredicate = { menuItemUi ->
-                        expanded.contains(menuItemUi.documentId)
-                    }
+//                    filterPredicate = { menuItemUi ->
+//                        expanded.contains(menuItemUi.documentId)
+//                    }
                 )
                 .toList()
 
+            val items = itemsList.joinToString { it.title }
             itemsList.toMutableList().apply {
                 removeAt(0)
             }
@@ -287,6 +274,77 @@ class GlobalShellKmpViewModel(
     private val _showDeleteConfirmation = MutableStateFlow(false)
     override val showDeleteConfirmation: StateFlow<Boolean> = _showDeleteConfirmation.asStateFlow()
 
+    private val _availableWorkspaces: MutableStateFlow<ResultData<List<Workspace>>> =
+        MutableStateFlow(ResultData.Idle())
+    override val availableWorkspaces: StateFlow<ResultData<List<Workspace>>> = _availableWorkspaces
+
+    private val _workspaceToEdit = MutableStateFlow<String?>(null)
+    override val workspaceToEdit: StateFlow<Workspace?> =
+        combine(_availableWorkspaces, _workspaceToEdit) { workspacesResult, selectedId ->
+            if (workspacesResult is ResultData.Complete) {
+                workspacesResult.data.firstOrNull { it.id == selectedId }
+            } else {
+                null
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val usersOfWorkspaceToEdit: StateFlow<ResultData<List<String>>> =
+        workspaceToEdit.flatMapLatest { workspace ->
+            val token = authRepository.getAuthToken()
+            val workspaceId = workspace?.id
+
+            if (token != null && workspaceId != null) {
+                workspaceApi.getUsersOfWorkspace(workspaceId, token, forceRefresh = false)
+            } else {
+                flow { emit(ResultData.Error()) }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ResultData.Idle())
+
+    init {
+        folderStateController.initCoroutine(viewModelScope)
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val userId = getUserId()
+            val workspaceId = authRepository.getWorkspace().id
+
+            if (!configRepository.hasFirstConfiguration(userId)) {
+                val now = Clock.System.now()
+
+                Tutorials.allTutorialsDocuments()
+                    .map { documentAsJson ->
+                        json.decodeFromString<DocumentApi>(documentAsJson)
+                            .toModel()
+                    }
+                    .forEach { document ->
+                        notesUseCase.saveDocumentDb(
+                            document.copy(
+                                parentId = document.parentId,
+                                workspaceId = workspaceId,
+                                createdAt = now,
+                                lastUpdatedAt = now
+                            )
+                        )
+                    }
+
+                ollamaRepository.saveOllamaUrl(userId, OllamaApi.defaultUrl())
+                configRepository.setTutorialNotes(true, userId)
+            }
+
+            ollamaRepository.refreshConfiguration(userId)
+        }
+
+        viewModelScope.launch {
+            val result = authRepository.getAuthToken()?.let { token ->
+                workspaceApi.getAvailableWorkspaces(token)
+            }
+
+            if (result != null) {
+                _availableWorkspaces.value = result
+            }
+        }
+    }
+
     override fun init() {
         viewModelScope.launch {
             _workspaceLocalPath.value =
@@ -302,7 +360,12 @@ class GlobalShellKmpViewModel(
             }
         } else {
             viewModelScope.launch {
-                notesUseCase.listenForMenuItemsByParentId(id, getUserId())
+                notesUseCase.listenForMenuItemsByParentId(
+                    id,
+                    getUserId(),
+                    authRepository.getWorkspace().id
+                )
+
                 _expandedFolders.value = expanded + id
             }
         }
@@ -360,7 +423,10 @@ class GlobalShellKmpViewModel(
                     )
                 }
 
-                IconChange.DOCUMENT -> notesUseCase.updateDocumentById(menuItemId) { document ->
+                IconChange.DOCUMENT -> notesUseCase.updateDocumentById(
+                    menuItemId,
+                    authRepository.getWorkspace().id
+                ) { document ->
                     document.copy(
                         icon = MenuItem.Icon(icon, tint),
                         lastUpdatedAt = Clock.System.now()
@@ -482,6 +548,46 @@ class GlobalShellKmpViewModel(
 
     override fun showDeleteConfirm() {
         _showDeleteConfirmation.value = true
+    }
+
+    override fun syncWorkspace() {
+        viewModelScope.launch {
+            val workspaceId = authRepository.getWorkspace().id
+            println("syncing workspace: $workspaceId")
+            val result = workspaceSync.syncWorkspace(workspaceId)
+
+            _lastWorkspaceSync.value = if (result is ResultData.Complete) {
+                val lastSync = Clock.System
+                    .now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .toString()
+
+                "Last sync: $lastSync"
+            } else {
+                println("result error: $result")
+                "Error in sync"
+            }
+        }
+    }
+
+    override fun addUserToTeam(userEmail: String) {
+        viewModelScope.launch {
+            val workspace = workspaceToEdit.value
+
+            if (workspace != null) {
+                authRepository.getAuthToken()?.let { token ->
+                    val result = workspaceApi.addUserToWorkspace(workspace.id, userEmail, token)
+
+                    if (result is ResultData.Complete) {
+                        workspaceApi.refreshUsersInWorkspace(workspace.id, token)
+                    }
+                }
+            }
+        }
+    }
+
+    override fun selectWorkspaceToManage(workspaceId: String) {
+        _workspaceToEdit.value = workspaceId
     }
 
     private suspend fun getUserId(): String =

@@ -35,6 +35,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":writeopia"))
+                implementation(project(":writeopia_ui"))
                 implementation(project(":writeopia_models"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:navigation"))
@@ -43,6 +44,7 @@ kotlin {
                 implementation(project(":application:core:persistence_bridge"))
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:resources"))
+                implementation(project(":application:core:common_ui"))
 
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_serialization"))
@@ -56,6 +58,7 @@ kotlin {
                 implementation(compose.material3)
                 implementation(compose.components.uiToolingPreview)
                 implementation(libs.compose.navigation)
+                implementation(libs.ktor.client.core)
             }
         }
 
@@ -74,7 +77,7 @@ kotlin {
 
 android {
     namespace = "io.writeopia.auth"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 24

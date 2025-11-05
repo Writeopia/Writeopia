@@ -21,8 +21,8 @@ class FolderDaoDelegator(
         return delegate.getFolderById(id)?.toCommonEntity()?.toModel(0)
     }
 
-    override suspend fun search(query: String): List<Folder> {
-        return delegate.search(query).map { it.toCommonEntity().toModel(0) }
+    override suspend fun search(query: String, workspaceId: String): List<Folder> {
+        return delegate.search(query, workspaceId).map { it.toCommonEntity().toModel(0) }
     }
 
     override suspend fun getLastUpdated(): List<Folder> {

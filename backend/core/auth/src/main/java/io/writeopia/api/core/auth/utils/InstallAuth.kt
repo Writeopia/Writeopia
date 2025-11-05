@@ -1,13 +1,12 @@
-package io.writeopia.api.core.auth
+package io.writeopia.api.core.auth.utils
 
 import io.ktor.server.application.Application
-import io.ktor.server.application.install
-import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.authentication
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
 
 fun Application.installAuth() {
-    install(Authentication) {
+    authentication {
         jwt("auth-jwt") {
             realm = "writeopia"
 

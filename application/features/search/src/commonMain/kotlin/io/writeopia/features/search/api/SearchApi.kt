@@ -13,15 +13,18 @@ import io.writeopia.sdk.serialization.extensions.toModel
 class SearchApi(private val client: HttpClient, private val baseUrl: String) {
 
     suspend fun searchApi(query: String): List<Document> {
-        val url = "$baseUrl/api/document/search?q=\"$query\""
-        println("endpoint: $url")
-        val request = client.get(url) {
-            contentType(ContentType.Application.Json)
-        }
+        return try {
+            val url = "$baseUrl/api/document/search?q=\"$query\""
+            val request = client.get(url) {
+                contentType(ContentType.Application.Json)
+            }
 
-        return if (request.status.isSuccess()) {
-            request.body<List<DocumentApi>>().map { it.toModel() }
-        } else {
+            if (request.status.isSuccess()) {
+                request.body<List<DocumentApi>>().map { it.toModel() }
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
             emptyList()
         }
     }

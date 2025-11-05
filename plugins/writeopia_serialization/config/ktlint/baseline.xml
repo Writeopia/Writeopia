@@ -1,3 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/data/DocumentLink.kt">
+        <error line="6" column="28" source="standard:class-signature" />
+        <error line="6" column="44" source="standard:class-signature" />
+        <error line="6" column="69" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/data/IconApi.kt">
+        <error line="6" column="20" source="standard:class-signature" />
+        <error line="6" column="39" source="standard:class-signature" />
+        <error line="6" column="53" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/data/SpanInfoApi.kt">
+        <error line="6" column="24" source="standard:class-signature" />
+        <error line="6" column="40" source="standard:class-signature" />
+        <error line="6" column="54" source="standard:class-signature" />
+        <error line="6" column="70" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/data/StoryTypeApi.kt">
+        <error line="6" column="25" source="standard:class-signature" />
+        <error line="6" column="43" source="standard:class-signature" />
+        <error line="6" column="58" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/data/TagInfoApi.kt">
+        <error line="6" column="23" source="standard:class-signature" />
+        <error line="6" column="40" source="standard:class-signature" />
+        <error line="6" column="57" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/data/auth/DeleteAccountRequest.kt">
+        <error line="6" column="33" source="standard:class-signature" />
+        <error line="6" column="47" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/data/auth/DeleteAccountResponse.kt">
+        <error line="6" column="34" source="standard:class-signature" />
+        <error line="6" column="54" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/data/auth/LoginRequest.kt">
+        <error line="6" column="25" source="standard:class-signature" />
+        <error line="6" column="44" source="standard:class-signature" />
+        <error line="6" column="64" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/data/auth/ResetPasswordRequest.kt">
+        <error line="6" column="33" source="standard:class-signature" />
+        <error line="6" column="56" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/json/SendDocumentsRequest.kt">
+        <error line="7" column="33" source="standard:class-signature" />
+        <error line="7" column="67" source="standard:class-signature" />
+        <error line="7" column="90" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/json/SendFoldersRequest.kt">
+        <error line="7" column="26" source="standard:class-signature" />
+        <error line="7" column="56" source="standard:class-signature" />
+        <error line="7" column="79" source="standard:class-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/sdk/serialization/request/Resquest.kt">
+        <error line="6" column="32" source="standard:class-signature" />
+        <error line="6" column="43" source="standard:class-signature" />
+    </file>
 </baseline>

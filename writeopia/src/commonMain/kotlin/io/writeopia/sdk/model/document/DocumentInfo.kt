@@ -52,7 +52,7 @@ fun Document.info(userId: String = "", companyId: String? = null): DocumentInfo 
     companyId = companyId
 )
 
-fun DocumentInfo.document(userId: String): Document = Document(
+fun DocumentInfo.document(workspaceId: String): Document = Document(
     id = this.id,
     title = this.title,
     createdAt = this.createdAt,
@@ -62,5 +62,5 @@ fun DocumentInfo.document(userId: String): Document = Document(
     icon = this.icon,
     isLocked = this.isLocked,
     favorite = this.isFavorite,
-    userId = userId
+    workspaceId = workspaceId
 )

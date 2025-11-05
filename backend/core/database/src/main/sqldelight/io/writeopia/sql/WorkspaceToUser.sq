@@ -1,0 +1,31 @@
+CREATE TABLE workspace_to_user (
+    workspace_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    PRIMARY KEY(workspace_id, user_id)
+);
+
+getUsersInWorkspace:
+SELECT
+  user_entity.id AS user_entity_id,
+  user_entity.name AS user_name,
+  user_entity.created_at AS user_created_at,
+  user_entity.email AS user_email,
+  user_entity.enabled AS user_enabled,
+  role
+FROM workspace_entity
+JOIN workspace_to_user
+  ON workspace_entity.id = workspace_to_user.workspace_id
+JOIN user_entity
+  ON user_entity.id = workspace_to_user.user_id
+WHERE workspace_to_user.workspace_id = ?;
+
+insertWorkspaceToUser:
+INSERT INTO workspace_to_user(workspace_id, user_id, role)
+VALUES (?, ?, ?)
+ON CONFLICT(workspace_id, user_id) DO UPDATE SET role = excluded.role;
+
+removeUserFromWorkspace:
+DELETE FROM workspace_to_user
+WHERE workspace_id = ? AND user_id = ?;
+

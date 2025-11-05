@@ -29,6 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -39,6 +43,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.theme.WriteopiaTheme
+import io.writeopia.ui.drawer.factory.isEnterKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -189,7 +194,7 @@ private fun BoxScope.RegisterContent(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
             placeholder = {
-                Text(WrStrings.company())
+                Text(WrStrings.workspaceName())
             },
         )
 
@@ -197,7 +202,16 @@ private fun BoxScope.RegisterContent(
 
         OutlinedTextField(
             password,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            modifier = Modifier.fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .onKeyEvent { keyEvent ->
+                    if (keyEvent.key.isEnterKey() && keyEvent.type == KeyEventType.KeyUp) {
+                        onRegisterRequest()
+                        true
+                    } else {
+                        false
+                    }
+                },
             onValueChange = passwordChanged,
             shape = shape,
             singleLine = true,

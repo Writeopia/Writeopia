@@ -1,3 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="build.gradle.kts">
+        <error line="79" column="42" source="standard:chain-method-continuation" />
+        <error line="79" column="48" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/auth/menu/AuthMenuScreen.kt">
+        <error line="68" column="32" source="standard:chain-method-continuation" />
+        <error line="73" column="17" source="standard:chain-method-continuation" />
+        <error line="184" column="36" source="standard:chain-method-continuation" />
+        <error line="209" column="48" source="standard:chain-method-continuation" />
+        <error line="217" column="48" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/auth/navigation/AuthNavigation.kt">
+        <error line="4" column="1" source="standard:no-unused-imports" />
+        <error line="7" column="1" source="standard:no-unused-imports" />
+        <error line="11" column="1" source="standard:no-unused-imports" />
+        <error line="148" column="1" source="standard:no-consecutive-blank-lines" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/auth/register/RegisterScreen.kt">
+        <error line="69" column="32" source="standard:chain-method-continuation" />
+        <error line="205" column="32" source="standard:chain-method-continuation" />
+        <error line="230" column="44" source="standard:chain-method-continuation" />
+        <error line="238" column="44" source="standard:chain-method-continuation" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/auth/register/RegisterViewModel.kt">
+        <error line="24" column="17" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/auth/register/ResetPasswordScreen.kt">
+        <error line="58" column="32" source="standard:chain-method-continuation" />
+        <error line="162" column="44" source="standard:chain-method-continuation" />
+        <error line="170" column="44" source="standard:chain-method-continuation" />
+        <error line="200" column="44" source="standard:chain-method-continuation" />
+        <error line="208" column="44" source="standard:chain-method-continuation" />
+    </file>
 </baseline>

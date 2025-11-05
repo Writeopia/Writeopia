@@ -115,7 +115,7 @@ tasks.dokkaHtmlPartial {
 
 android {
     namespace = "io.writeopia.sdk.plugins.network"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 24

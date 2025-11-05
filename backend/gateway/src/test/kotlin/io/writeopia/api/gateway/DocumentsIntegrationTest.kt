@@ -8,16 +8,22 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
-import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.deleteDocumentById
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.data.DocumentApi
+import io.writeopia.sdk.serialization.data.FolderApi
+import io.writeopia.sdk.serialization.json.SendDocumentsRequest
+import io.writeopia.sdk.serialization.json.SendFoldersRequest
+import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
+import io.writeopia.sdk.serialization.request.WorkspaceDiffResponse
+import kotlinx.datetime.Clock
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ApplicationTest {
+class DocumentationIntegrationTests {
 
     private val db = configurePersistence()
 
@@ -28,33 +34,77 @@ class ApplicationTest {
         }
 
         val client = defaultClient()
+        val workspace = Random.nextInt().toString()
 
         val documentApiList = listOf(
             DocumentApi(
                 id = "testiaskkakakaka",
                 title = "Test Note",
-                userId = "",
+                workspaceId = workspace,
                 parentId = "parentIdddd",
                 isLocked = false,
                 createdAt = 1000L,
                 lastUpdatedAt = 2000L,
-                lastSyncedAt = 2000
+                lastSyncedAt = 0L
             )
         )
 
-        val response = client.post("/api/document") {
+        val response = client.post("/api/workspace/document") {
             contentType(ContentType.Application.Json)
-            setBody(SendDocumentsRequest(documentApiList))
+            setBody(SendDocumentsRequest(documentApiList, workspace))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("/api/document/${documentApiList.first().id}")
-
+        val response1 = client.get("/api/workspace/$workspace/document/${documentApiList.first().id}")
         assertEquals(HttpStatusCode.OK, response1.status)
-        assertEquals(documentApiList.first(), response1.body())
+
+        val actual = response1.body<DocumentApi>().copy(lastSyncedAt = 0L)
+
+        assertEquals(
+            documentApiList.first(),
+            actual
+        )
 
         documentApiList.forEach { documentApi ->
+            db.deleteDocumentById(documentApi.id)
+        }
+    }
+
+    @Test
+    fun `it should be possible to save and query folder by id`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+
+        val folderApiList = listOf(
+            FolderApi(
+                id = "testiaskkakakaka",
+                title = "Test Note",
+                parentId = "parentIdddd",
+                createdAt = Clock.System.now(),
+                lastUpdatedAt = Clock.System.now(),
+                workspaceId = "",
+                itemCount = 0L,
+            )
+        )
+
+        val response = client.post("/api/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(folderApiList, "someSpace"))
+        }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val response1 = client.get("/api/workspace/someSpace/folder/${folderApiList.first().id}")
+        val actual = response1.body<FolderApi>()
+
+        assertEquals(HttpStatusCode.OK, response1.status)
+        assertEquals(folderApiList.first().id, actual.id)
+
+        folderApiList.forEach { documentApi ->
             db.deleteDocumentById(documentApi.id)
         }
     }
@@ -67,11 +117,13 @@ class ApplicationTest {
 
         val client = defaultClient()
 
+        val workspace = Random.nextInt().toString()
+
         val documentApiList = listOf(
             DocumentApi(
                 id = "testiaskkakakaka",
                 title = "Test Note",
-                userId = "",
+                workspaceId = workspace,
                 parentId = "parentIdddd",
                 isLocked = false,
                 createdAt = 1000L,
@@ -80,15 +132,15 @@ class ApplicationTest {
             )
         )
 
-        val response = client.post("/api/document") {
+        val response = client.post("/api/workspace/document") {
             contentType(ContentType.Application.Json)
-            setBody(SendDocumentsRequest(documentApiList))
+            setBody(SendDocumentsRequest(documentApiList, workspace))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
         val response1 = client.get(
-            "/api/document/parent/${documentApiList.first().parentId}"
+            "/api/workspace/workspace/document/parent/${documentApiList.first().parentId}"
         )
 
         assertEquals(HttpStatusCode.OK, response1.status)
@@ -107,24 +159,25 @@ class ApplicationTest {
 
         val client = defaultClient()
 
+        val workspace = Random.nextInt().toString()
         val documentApi = DocumentApi(
             id = "testias",
             title = "Test Note",
-            userId = "",
+            workspaceId = workspace,
             parentId = "parentId",
             isLocked = false,
             createdAt = 1000L,
             lastUpdatedAt = 2000L
         )
 
-        val response = client.post("/api/document") {
+        val response = client.post("/api/workspace/document") {
             contentType(ContentType.Application.Json)
-            setBody(SendDocumentsRequest(listOf(documentApi)))
+            setBody(SendDocumentsRequest(listOf(documentApi), workspace))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("/api/document/parent/${documentApi.parentId}")
+        val response1 = client.get("/api/workspace/workspace/document/parent/${documentApi.parentId}")
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(
@@ -142,11 +195,12 @@ class ApplicationTest {
         }
 
         val client = defaultClient()
+        val workspace = Random.nextInt().toString()
 
         val documentApi = DocumentApi(
             id = "testias",
             title = "Test Note",
-            userId = "",
+            workspaceId = workspace,
             parentId = "parentId",
             isLocked = false,
             createdAt = 1000L,
@@ -156,32 +210,90 @@ class ApplicationTest {
 
         val documentApi2 = documentApi.copy(id = "testias2", lastUpdatedAt = 4000L)
 
-        val response = client.post("/api/document") {
+        val response = client.post("/api/workspace/document") {
             contentType(ContentType.Application.Json)
-            setBody(SendDocumentsRequest(listOf(documentApi)))
+            setBody(SendDocumentsRequest(listOf(documentApi), workspace))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.post("/api/document") {
+        val response1 = client.post("/api/workspace/document") {
             contentType(ContentType.Application.Json)
-            setBody(SendDocumentsRequest(listOf(documentApi2)))
+            setBody(SendDocumentsRequest(listOf(documentApi2), workspace))
         }
 
         assertEquals(HttpStatusCode.OK, response1.status)
 
         val request = FolderDiffRequest(
             folderId = "parentId",
+            workspaceId = workspace,
             lastFolderSync = 3000L
         )
 
-        val response2 = client.post("/api/document/folder/diff") {
+        val response2 = client.post("/api/workspace/document/folder/diff") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }
 
         assertEquals(HttpStatusCode.OK, response2.status)
         assertEquals(listOf(documentApi2), response2.body())
+
+        db.deleteDocumentById(documentApi.id)
+        db.deleteDocumentById(documentApi2.id)
+    }
+
+    @Test
+    fun `it should be possible to get diff of workspace`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+
+        val workspaceId = Random.nextInt().toString()
+
+        val documentApi = DocumentApi(
+            id = "testias",
+            title = "Test Note",
+            workspaceId = workspaceId,
+            parentId = "parentId",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 4000
+        )
+
+        val documentApi2 = documentApi.copy(id = "testias2", lastUpdatedAt = 4000L)
+
+        val response = client.post("/api/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(documentApi), workspaceId))
+        }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val response1 = client.post("/api/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(documentApi2), workspaceId))
+        }
+
+        assertEquals(HttpStatusCode.OK, response1.status)
+
+        val request = WorkspaceDiffRequest(
+            workspaceId = workspaceId,
+            lastSync = 0
+        )
+
+        val response2 = client.post("/api/workspace/diff") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+
+        assertEquals(HttpStatusCode.OK, response2.status)
+        assertEquals(
+            listOf(documentApi, documentApi2).map { it.id },
+            response2.body<WorkspaceDiffResponse>().documents.map { it.id }
+        )
 
         db.deleteDocumentById(documentApi.id)
         db.deleteDocumentById(documentApi2.id)

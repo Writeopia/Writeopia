@@ -12,34 +12,41 @@ import io.writeopia.api.core.auth.repository.disableUserByEmail
 import io.writeopia.api.core.auth.repository.enableUserByEmail
 import io.writeopia.sql.WriteopiaDbBackend
 
-fun Route.adminProtectedRoute(apiKey: String, writeopiaDb: WriteopiaDbBackend) {
+fun Route.adminProtectedRoute(
+    apiKey: String?,
+    writeopiaDb: WriteopiaDbBackend,
+    debugMode: Boolean = false,
+) {
     route("/admin") {
         post<ManageUserRequest>("/enable-user") { request ->
-            val providedKey = call.request.header("X-Admin-Key")
-            adminUserFn(apiKey, providedKey) {
+            val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
+            adminUserFn(apiKey, providedKey, debugMode) {
                 writeopiaDb.enableUserByEmail(request.email)
+                call.respond(HttpStatusCode.OK, "User enabled")
             }
         }
 
         post<ManageUserRequest>("/disable-user") { request ->
-            val providedKey = call.request.header("X-Admin-Key")
-            adminUserFn(apiKey, providedKey) {
+            val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
+            adminUserFn(apiKey, providedKey, debugMode) {
                 writeopiaDb.disableUserByEmail(request.email)
+                call.respond(HttpStatusCode.OK, "User disabled")
             }
         }
+
+
     }
 }
 
 suspend fun RoutingContext.adminUserFn(
-    apiKey: String,
+    apiKey: String?,
     providedKey: String?,
+    debugMode: Boolean = false,
     func: suspend () -> Unit
 ) {
-    if (providedKey != apiKey) {
+    if (providedKey != apiKey && !debugMode) {
         call.respond(HttpStatusCode.Unauthorized, "Invalid admin key")
     } else {
         func()
-
-        call.respond(HttpStatusCode.OK, "User enabled")
     }
 }

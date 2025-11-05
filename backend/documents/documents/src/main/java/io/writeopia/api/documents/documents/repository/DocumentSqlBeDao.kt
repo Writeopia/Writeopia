@@ -1,6 +1,7 @@
 package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.extensions.sortWithOrderBy
 import io.writeopia.sdk.models.link.DocumentLink
@@ -12,6 +13,8 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sql.DocumentEntityQueries
+import io.writeopia.sql.FolderEntityQueries
+import io.writeopia.sql.Folder_entity
 import io.writeopia.sql.StoryStepEntityQueries
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -19,10 +22,11 @@ import kotlinx.datetime.Instant
 class DocumentSqlBeDao(
     private val documentQueries: DocumentEntityQueries?,
     private val storyStepQueries: StoryStepEntityQueries?,
+    private val foldersQueries: FolderEntityQueries?,
 ) : DocumentSearch {
 
-    override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
-        documentQueries?.query(query)
+    override suspend fun search(query: String, workspaceId: String): List<Document> =
+        documentQueries?.query(query, workspaceId)
             ?.executeAsList()
             ?.map { entity ->
                 Document(
@@ -31,7 +35,7 @@ class DocumentSqlBeDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
-                    userId = entity.user_id,
+                    workspaceId = entity.workspace_id,
                     favorite = entity.favorite,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
@@ -49,7 +53,7 @@ class DocumentSqlBeDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
-                    userId = entity.user_id,
+                    workspaceId = entity.workspace_id,
                     favorite = entity.favorite,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
@@ -58,7 +62,8 @@ class DocumentSqlBeDao(
             } ?: emptyList()
 
     fun insertDocumentWithContent(document: Document) {
-        val result = documentQueries?.selectById(document.id, document.userId)?.executeAsOneOrNull()
+        val result =
+            documentQueries?.selectById(document.id, document.workspaceId)?.executeAsOneOrNull()
 
         if (result != null) {
             storyStepQueries?.deleteByDocumentId(document.id)
@@ -78,7 +83,7 @@ class DocumentSqlBeDao(
             created_at = document.createdAt.toEpochMilliseconds(),
             last_updated_at = document.lastUpdatedAt.toEpochMilliseconds(),
             last_synced = document.lastUpdatedAt.toEpochMilliseconds(),
-            user_id = document.userId,
+            workspace_id = document.workspaceId,
             favorite = document.favorite,
             parent_document_id = document.parentId,
             icon = document.icon?.label,
@@ -112,8 +117,23 @@ class DocumentSqlBeDao(
         }
     }
 
-    fun loadDocumentById(id: String, userId: String): Document? =
-        documentQueries?.selectById(id, userId)
+    fun insertFolder(folder: Folder) {
+        foldersQueries?.insert(
+            id = folder.id,
+            parent_id = folder.parentId,
+            workspace_id = folder.workspaceId,
+            title = folder.title,
+            created_at = folder.lastUpdatedAt.toEpochMilliseconds().toInt(),
+            last_updated_at = folder.lastUpdatedAt.toEpochMilliseconds(),
+            last_synced_at = folder.lastSyncedAt?.toEpochMilliseconds(),
+            favorite = folder.favorite,
+            icon = folder.icon?.label,
+            icon_tint = folder.icon?.tint
+        )
+    }
+
+    fun loadDocumentById(id: String, workspaceId: String): Document? =
+        documentQueries?.selectById(id, workspaceId)
             ?.executeAsOneOrNull()
             ?.let { entity ->
                 Document(
@@ -123,7 +143,7 @@ class DocumentSqlBeDao(
                     createdAt = Instant.fromEpochMilliseconds(entity.created_at),
                     lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
                     lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
-                    userId = entity.user_id,
+                    workspaceId = entity.workspace_id,
                     favorite = entity.favorite,
                     parentId = entity.parent_document_id,
                     icon = entity.icon?.let {
@@ -135,6 +155,11 @@ class DocumentSqlBeDao(
                     isLocked = entity.is_locked
                 )
             }
+
+    fun loadFolderById(id: String): Folder? =
+        foldersQueries?.selectFolderById(id)
+            ?.executeAsOneOrNull()
+            ?.toModel(0)
 
     fun loadDocumentWithContentByIds(id: List<String>): List<Document> =
         documentQueries?.selectWithContentByIds(id)
@@ -148,7 +173,7 @@ class DocumentSqlBeDao(
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
-                            type = StoryTypes.fromNumber(innerContent.type!!.toInt()).type,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
                             parentId = innerContent.parent_id,
                             url = innerContent.url,
                             path = innerContent.path,
@@ -178,7 +203,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep
+                        innerContent.position!! to storyStep
                     }
 
                     Document(
@@ -188,7 +213,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -214,7 +239,7 @@ class DocumentSqlBeDao(
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
-                            type = StoryTypes.fromNumber(innerContent.type!!.toInt()).type,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
                             parentId = innerContent.parent_id,
                             url = innerContent.url,
                             path = innerContent.path,
@@ -244,7 +269,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep
+                        innerContent.position!! to storyStep
                     }
 
                     Document(
@@ -254,7 +279,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -286,7 +311,7 @@ class DocumentSqlBeDao(
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
-                            type = StoryTypes.fromNumber(innerContent.type!!.toInt()).type,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
                             parentId = innerContent.parent_id,
                             url = innerContent.url,
                             path = innerContent.path,
@@ -316,7 +341,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep
+                        innerContent.position!! to storyStep
                     }
 
                     Document(
@@ -326,7 +351,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -358,7 +383,7 @@ class DocumentSqlBeDao(
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
-                            type = StoryTypes.fromNumber(innerContent.type!!.toInt()).type,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
                             parentId = innerContent.parent_id,
                             url = innerContent.url,
                             path = innerContent.path,
@@ -388,7 +413,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep
+                        innerContent.position!! to storyStep
                     }
 
                     Document(
@@ -398,7 +423,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -415,10 +440,10 @@ class DocumentSqlBeDao(
 
     fun loadDocumentsWithContentFolderIdAfterTime(
         folderId: String,
-        userId: String,
+        workspaceId: String,
         time: Long
     ): List<Document> {
-        return documentQueries?.selectWithContentByFolderIdAfterTime(folderId, time, userId)
+        return documentQueries?.selectWithContentByFolderIdAfterTime(folderId, time, workspaceId)
             ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -429,7 +454,7 @@ class DocumentSqlBeDao(
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
-                            type = StoryTypes.fromNumber(innerContent.type!!.toInt()).type,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
                             parentId = innerContent.parent_id,
                             url = innerContent.url,
                             path = innerContent.path,
@@ -459,7 +484,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep
+                        innerContent.position!! to storyStep
                     }
 
                     Document(
@@ -469,7 +494,77 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
+                        favorite = document.favorite,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(
+                                it,
+                                document.icon_tint
+                            )
+                        },
+                        isLocked = document.is_locked
+                    )
+                }
+            } ?: emptyList()
+    }
+
+    fun loadDocumentsWithContentByWorkspaceIdAfterTime(
+        workspaceId: String,
+        time: Long
+    ): List<Document> {
+        return documentQueries?.selectWithContentByWorkspaceIdAfterTime(time, workspaceId)
+            ?.executeAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (documentId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        !innerContent.id_.isNullOrEmpty()
+                    }.associate { innerContent ->
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked,
+//                                steps = emptyList(), // Todo: Fix!
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color,
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { documentId ->
+                                val title = documentQueries.selectTitleByDocumentId(documentId)
+                                    .executeAsOneOrNull()
+
+                                DocumentLink(documentId, title)
+                            }
+                        )
+
+                        innerContent.position!! to storyStep
+                    }
+
+                    Document(
+                        id = documentId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -507,7 +602,7 @@ class DocumentSqlBeDao(
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
-                            type = StoryTypes.fromNumber(innerContent.type!!.toInt()).type,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
                             parentId = innerContent.parent_id,
                             url = innerContent.url,
                             path = innerContent.path,
@@ -547,7 +642,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -574,7 +669,7 @@ class DocumentSqlBeDao(
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
-                            type = StoryTypes.fromNumber(innerContent.type!!.toInt()).type,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
                             parentId = innerContent.parent_id,
                             url = innerContent.url,
                             path = innerContent.path,
@@ -582,7 +677,7 @@ class DocumentSqlBeDao(
                             checked = innerContent.checked,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
-                                backgroundColor = innerContent.background_color?.toInt(),
+                                backgroundColor = innerContent.background_color,
                             ),
                             tags = innerContent.tags
                                 ?.split(",")
@@ -604,7 +699,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep
+                        innerContent.position!! to storyStep
                     }
 
                     Document(
@@ -614,7 +709,7 @@ class DocumentSqlBeDao(
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
-                        userId = document.user_id,
+                        workspaceId = document.workspace_id,
                         favorite = document.favorite,
                         parentId = document.parent_document_id,
                         icon = document.icon?.let {
@@ -633,6 +728,13 @@ class DocumentSqlBeDao(
         documentQueries?.selectIdsByParentId(parentId)
             ?.executeAsList()
             ?: emptyList()
+
+    fun loadAllFoldersByWorkspaceId(workspaceId: String): List<Folder> {
+        return foldersQueries?.selectByWorkspace(workspaceId)
+            ?.executeAsList()
+            ?.map { it.toModel(0) }
+            ?: emptyList()
+    }
 
     fun deleteDocumentsByUserId(userId: String) {
         documentQueries?.deleteByUserId(Clock.System.now().toEpochMilliseconds(), userId)
@@ -658,3 +760,24 @@ class DocumentSqlBeDao(
         )
     }
 }
+
+fun Folder_entity.toModel(count: Long) =
+    Folder(
+        id = this.id,
+        parentId = this.parent_id,
+        title = title,
+        createdAt = Instant.fromEpochMilliseconds(created_at.toLong()),
+        lastUpdatedAt = Instant.fromEpochMilliseconds(last_updated_at ?: 0),
+        workspaceId = workspace_id,
+        itemCount = count,
+        favorite = favorite,
+        icon = if (this.icon != null && this.icon_tint != null) MenuItem.Icon(
+            this.icon!!,
+            this.icon_tint!!
+        ) else null,
+        lastSyncedAt = if (last_synced_at != null) {
+            Instant.fromEpochMilliseconds(last_synced_at!!)
+        } else {
+            null
+        }
+    )

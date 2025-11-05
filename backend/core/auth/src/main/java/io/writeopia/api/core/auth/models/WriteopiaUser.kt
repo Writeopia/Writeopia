@@ -1,4 +1,4 @@
-package io.writeopia.api.core.auth.models;
+package io.writeopia.api.core.auth.models
 
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
@@ -10,7 +10,6 @@ data class WriteopiaBeUser(
     val name: String,
     val password: String,
     val salt: String,
-    val companyDomain: String,
     val enabled: Boolean,
     val tier: Tier = Tier.FREE
 ) {
@@ -18,7 +17,7 @@ data class WriteopiaBeUser(
         const val DISCONNECTED = "disconnected_user"
 
         fun disconnectedUser(): WriteopiaBeUser =
-            WriteopiaBeUser(id = "disconnected_user", "", "", "", "", "", enabled = false)
+            WriteopiaBeUser(id = "disconnected_user", "", "", "", "", enabled = false)
     }
 }
 
@@ -35,5 +34,4 @@ fun WriteopiaUserApi.toModel() =
         id = id,
         email = email,
         name = name,
-        company = ""
     )

@@ -5,7 +5,7 @@ import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.common.utils.anyNode
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.sdk.models.document.Folder
-import io.writeopia.core.folders.repository.NotesUseCase
+import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.sdk.models.document.MenuItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +36,7 @@ class FolderStateController(
 
     override fun addFolder() {
         coroutineScope.launch(Dispatchers.Default) {
-            notesUseCase.createFolder("Untitled", getUserId())
+            notesUseCase.createFolder("Untitled", authRepository.getWorkspace().id)
         }
     }
 
@@ -67,7 +67,11 @@ class FolderStateController(
                 if (_selectedNotes.value.isEmpty()) {
                     moveItemToFolder(menuItemUi, parentId)
                 } else {
-                    notesUseCase.moveItemsById(ids = selectedNotes.value, parentId)
+                    notesUseCase.moveItemsById(
+                        ids = selectedNotes.value,
+                        parentId,
+                        authRepository.getWorkspace().id
+                    )
                 }
             }
         }
@@ -98,7 +102,10 @@ class FolderStateController(
                     )
                 }
 
-                IconChange.DOCUMENT -> notesUseCase.updateDocumentById(menuItemId) { document ->
+                IconChange.DOCUMENT -> notesUseCase.updateDocumentById(
+                    menuItemId,
+                    authRepository.getWorkspace().id
+                ) { document ->
                     document.copy(
                         icon = MenuItem.Icon(icon, tint),
                         lastUpdatedAt = Clock.System.now()
@@ -127,9 +134,4 @@ class FolderStateController(
     override fun clearSelection() {
         _selectedNotes.value = emptySet()
     }
-
-    private suspend fun getUserId(): String =
-        localUserId ?: authRepository.getUser().id.also { id ->
-            localUserId = id
-        }
 }
