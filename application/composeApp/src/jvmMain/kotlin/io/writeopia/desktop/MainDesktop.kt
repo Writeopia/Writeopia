@@ -200,7 +200,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
         onCloseRequest = onCloseRequest,
         title = "",
         state = windowState,
-        onPreviewKeyEvent = handleKeyboardEvent,
+        onKeyEvent = handleKeyboardEvent,
         icon = CommonImages.logo()
     ) {
         //  Synchronize the topbar on Windows OS with the System Theme
