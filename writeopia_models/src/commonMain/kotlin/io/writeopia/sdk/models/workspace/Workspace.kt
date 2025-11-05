@@ -12,7 +12,7 @@ data class Workspace(
 ) {
     companion object {
         fun disconnectedWorkspace() = Workspace(
-            id = "disconnected_workspace",
+            id = "disconnected_user",
             userId = "disconnected_user",
             name = "Offline workspace",
             lastSync = Instant.Companion.DISTANT_PAST,
