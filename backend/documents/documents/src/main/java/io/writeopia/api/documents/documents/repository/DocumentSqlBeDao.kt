@@ -25,8 +25,8 @@ class DocumentSqlBeDao(
     private val foldersQueries: FolderEntityQueries?,
 ) : DocumentSearch {
 
-    override suspend fun search(query: String, userId: String, companyId: String?): List<Document> =
-        documentQueries?.query(query)
+    override suspend fun search(query: String, workspaceId: String): List<Document> =
+        documentQueries?.query(query, workspaceId)
             ?.executeAsList()
             ?.map { entity ->
                 Document(
