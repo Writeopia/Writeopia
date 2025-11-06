@@ -4,12 +4,4 @@
         <error line="3" column="28" source="standard:class-signature" />
         <error line="3" column="45" source="standard:class-signature" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/onboarding/OnboardingWorkspace.kt">
-        <error line="69" column="36" source="standard:chain-method-continuation" />
-        <error line="85" column="21" source="standard:chain-method-continuation" />
-        <error line="103" column="28" source="standard:chain-method-continuation" />
-        <error line="150" column="36" source="standard:chain-method-continuation" />
-        <error line="191" column="36" source="standard:chain-method-continuation" />
-        <error line="198" column="32" source="standard:chain-method-continuation" />
-    </file>
 </baseline>

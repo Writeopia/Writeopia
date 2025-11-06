@@ -3,8 +3,4 @@
     <file name="src/commonMain/kotlin/io/writeopia/sdk/persistence/core/repository/InMemoryDocumentRepository.kt">
         <error line="15" column="17" source="standard:backing-property-naming" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/sdk/persistence/core/tracker/OnUpdateDocumentTracker.kt">
-        <error line="97" column="58" source="standard:chain-method-continuation" />
-        <error line="130" column="58" source="standard:chain-method-continuation" />
-    </file>
 </baseline>

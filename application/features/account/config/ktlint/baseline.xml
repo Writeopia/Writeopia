@@ -1,34 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="build.gradle.kts">
-        <error line="67" column="42" source="standard:chain-method-continuation" />
-        <error line="67" column="48" source="standard:chain-method-continuation" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/account/ui/SettingsDialog.kt">
-        <error line="467" column="36" source="standard:chain-method-continuation" />
-        <error line="472" column="21" source="standard:chain-method-continuation" />
-        <error line="476" column="21" source="standard:chain-method-continuation" />
-        <error line="544" column="32" source="standard:chain-method-continuation" />
         <error line="586" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="606" column="40" source="standard:chain-method-continuation" />
-        <error line="610" column="25" source="standard:chain-method-continuation" />
-        <error line="617" column="25" source="standard:chain-method-continuation" />
-        <error line="630" column="48" source="standard:chain-method-continuation" />
-        <error line="634" column="33" source="standard:chain-method-continuation" />
-        <error line="678" column="25" source="standard:chain-method-continuation" />
-        <error line="718" column="21" source="standard:chain-method-continuation" />
-        <error line="732" column="32" source="standard:chain-method-continuation" />
-        <error line="737" column="17" source="standard:chain-method-continuation" />
-        <error line="772" column="32" source="standard:chain-method-continuation" />
         <error line="848" column="1" source="standard:no-consecutive-blank-lines" />
         <error line="934" column="58" source="standard:wrapping" />
         <error line="934" column="59" source="standard:argument-list-wrapping" />
-        <error line="1030" column="13" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/account/viewmodel/AccountMenuKmpViewModel.kt">
         <error line="17" column="27" source="standard:class-signature" />
         <error line="17" column="27" source="standard:class-signature" />
-        <error line="19" column="23" source="standard:chain-method-continuation" />
-        <error line="19" column="39" source="standard:chain-method-continuation" />
     </file>
 </baseline>

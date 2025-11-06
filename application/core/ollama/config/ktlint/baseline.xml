@@ -4,13 +4,6 @@
         <error line="56" column="83" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/api/OllamaApi.kt">
-        <error line="58" column="15" source="standard:chain-method-continuation" />
-        <error line="69" column="19" source="standard:chain-method-continuation" />
-        <error line="78" column="43" source="standard:chain-method-continuation" />
-        <error line="83" column="33" source="standard:chain-method-continuation" />
-        <error line="112" column="35" source="standard:chain-method-continuation" />
-        <error line="116" column="17" source="standard:chain-method-continuation" />
-        <error line="132" column="23" source="standard:chain-method-continuation" />
         <error line="193" column="72" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/model/OllamaConfig.kt">

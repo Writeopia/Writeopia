@@ -1,95 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="build.gradle.kts">
-        <error line="122" column="42" source="standard:chain-method-continuation" />
-        <error line="122" column="48" source="standard:chain-method-continuation" />
-    </file>
-    <file name="src/androidInstrumentedTest/kotlin/io/writeopia/notemenu/data/usecase/NotesUseCaseIntegrationTest.kt">
-        <error line="36" column="24" source="standard:chain-method-continuation" />
-        <error line="135" column="26" source="standard:chain-method-continuation" />
-        <error line="135" column="34" source="standard:chain-method-continuation" />
-        <error line="135" column="41" source="standard:chain-method-continuation" />
-        <error line="135" column="49" source="standard:chain-method-continuation" />
-        <error line="135" column="57" source="standard:chain-method-continuation" />
-        <error line="135" column="62" source="standard:chain-method-continuation" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/edit_folder/ui/EditFolderScreen.kt">
         <error line="1" column="9" source="standard:package-name" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/di/NotesMenuKmpInjection.kt">
         <error line="50" column="21" source="standard:function-expression-body" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/ui/screen/DesktopNotesMenu.kt">
-        <error line="78" column="36" source="standard:chain-method-continuation" />
-        <error line="107" column="44" source="standard:chain-method-continuation" />
-        <error line="107" column="55" source="standard:chain-method-continuation" />
-        <error line="158" column="36" source="standard:chain-method-continuation" />
-        <error line="214" column="36" source="standard:chain-method-continuation" />
-        <error line="214" column="66" source="standard:chain-method-continuation" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/ui/screen/actions/DesktopNoteActionsMenu.kt">
-        <error line="48" column="32" source="standard:chain-method-continuation" />
-        <error line="58" column="36" source="standard:chain-method-continuation" />
-        <error line="69" column="36" source="standard:chain-method-continuation" />
-        <error line="159" column="36" source="standard:chain-method-continuation" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/ui/screen/configuration/atoms/ArrangementOptionsMenu.kt">
-        <error line="37" column="44" source="standard:chain-method-continuation" />
-        <error line="47" column="44" source="standard:chain-method-continuation" />
-        <error line="57" column="44" source="standard:chain-method-continuation" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/ui/screen/configuration/atoms/SortOptions.kt">
         <error line="23" column="1" source="standard:no-unused-imports" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/ui/screen/configuration/modifier/icon.kt">
-        <error line="12" column="9" source="standard:chain-method-continuation" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/ui/screen/configuration/modifier/orderConfigModifierHorizontal.kt">
-        <error line="22" column="13" source="standard:chain-method-continuation" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/ui/screen/configuration/molecules/ConfigurationsMenu.kt">
-        <error line="78" column="17" source="standard:chain-method-continuation" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/ui/screen/configuration/molecules/NotesConfigurationMenu.kt">
-        <error line="63" column="32" source="standard:chain-method-continuation" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/ui/screen/documents/NoteItems.kt">
-        <error line="610" column="21" source="standard:chain-method-continuation" />
-        <error line="628" column="44" source="standard:chain-method-continuation" />
-        <error line="722" column="13" source="standard:chain-method-continuation" />
-        <error line="744" column="13" source="standard:chain-method-continuation" />
-        <error line="752" column="13" source="standard:chain-method-continuation" />
-        <error line="757" column="13" source="standard:chain-method-continuation" />
-        <error line="764" column="32" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/viewmodel/ChooseNoteKmpViewModel.kt">
         <error line="74" column="26" source="standard:class-signature" />
         <error line="74" column="26" source="standard:class-signature" />
         <error line="74" column="39" source="standard:class-signature" />
-        <error line="82" column="22" source="standard:chain-method-continuation" />
-        <error line="89" column="23" source="standard:chain-method-continuation" />
         <error line="116" column="17" source="standard:backing-property-naming" />
-        <error line="120" column="14" source="standard:chain-method-continuation" />
-        <error line="129" column="23" source="standard:chain-method-continuation" />
-        <error line="133" column="13" source="standard:chain-method-continuation" />
-        <error line="138" column="23" source="standard:chain-method-continuation" />
-        <error line="142" column="13" source="standard:chain-method-continuation" />
         <error line="145" column="17" source="standard:backing-property-naming" />
         <error line="157" column="17" source="standard:backing-property-naming" />
-        <error line="168" column="25" source="standard:chain-method-continuation" />
         <error line="252" column="57" source="standard:function-expression-body" />
-        <error line="462" column="22" source="standard:chain-method-continuation" />
-        <error line="471" column="13" source="standard:chain-method-continuation" />
-        <error line="481" column="13" source="standard:chain-method-continuation" />
-        <error line="485" column="22" source="standard:chain-method-continuation" />
-        <error line="490" column="13" source="standard:chain-method-continuation" />
-        <error line="496" column="13" source="standard:chain-method-continuation" />
-        <error line="508" column="13" source="standard:chain-method-continuation" />
-        <error line="512" column="22" source="standard:chain-method-continuation" />
-        <error line="540" column="13" source="standard:chain-method-continuation" />
-        <error line="582" column="28" source="standard:chain-method-continuation" />
-        <error line="585" column="28" source="standard:chain-method-continuation" />
-        <error line="590" column="13" source="standard:chain-method-continuation" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/viewmodel/ChooseNoteViewModel.kt">
         <error line="105" column="28" source="standard:class-signature" />

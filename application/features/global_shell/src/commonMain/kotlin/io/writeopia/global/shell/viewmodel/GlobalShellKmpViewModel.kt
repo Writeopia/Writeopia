@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
 import io.writeopia.api.OllamaApi
 import io.writeopia.auth.core.data.AuthApi
+import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.collections.toNodeTree
@@ -17,10 +18,8 @@ import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.repository.ConfigurationRepository
-import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.WorkspaceSync
-import io.writeopia.di.AppConnectionInjection
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
@@ -47,7 +46,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
@@ -517,7 +515,7 @@ class GlobalShellKmpViewModel(
             authRepository.logout()
             authRepository.saveToken(currentUserId, "")
 
-            AppConnectionInjection.singleton().setJwtToken("")
+//            AppConnectionInjection.singleton().setJwtToken("")
             _loginStateTrigger.value = GenerateId.generate()
             sideEffect()
         }

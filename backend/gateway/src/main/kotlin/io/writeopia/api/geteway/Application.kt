@@ -8,6 +8,7 @@ import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
 import io.writeopia.api.core.auth.utils.installAuth
+import io.writeopia.connection.logger
 import io.writeopia.plugins.configureEditorSockets
 import io.writeopia.sql.WriteopiaDbBackend
 
@@ -27,7 +28,7 @@ fun Application.module(
     debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false,
     adminKey: String? = System.getenv("ADMIN_KEY")
 ) {
-    println("debug: $debugMode")
+    logger.info("debug: $debugMode")
     installCORS()
     installAuth()
     configureRouting(writeopiaDb, useAi, debugMode = debugMode, adminKey = adminKey)

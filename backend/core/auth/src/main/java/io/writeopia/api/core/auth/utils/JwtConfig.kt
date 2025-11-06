@@ -23,6 +23,6 @@ object JwtConfig {
             .withAudience(AUDIENCE)
             .withIssuer(ISSUER)
             .withClaim("userId", userId)
-            .withExpiresAt(Instant.now().plusMillis(VALIDITY_IN_MS))
+//            .withExpiresAt(Instant.now().plusMillis(VALIDITY_IN_MS))
             .sign(algorithm)
 }
