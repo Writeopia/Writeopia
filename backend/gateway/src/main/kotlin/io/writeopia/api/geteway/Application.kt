@@ -1,8 +1,12 @@
 package io.writeopia.api.geteway
 
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.server.application.Application
+import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.plugins.cors.routing.CORS
 import io.writeopia.api.core.auth.utils.installAuth
 import io.writeopia.plugins.configureEditorSockets
 import io.writeopia.sql.WriteopiaDbBackend
@@ -24,9 +28,20 @@ fun Application.module(
     adminKey: String? = System.getenv("ADMIN_KEY")
 ) {
     println("debug: $debugMode")
+    installCORS()
     installAuth()
     configureRouting(writeopiaDb, useAi, debugMode = debugMode, adminKey = adminKey)
     configureSerialization()
     configureEditorSockets()
     configureHTTP()
+}
+
+fun Application.installCORS() {
+    install(CORS) {
+        allowHost("writeopia.io", schemes = listOf("https"))
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader("X-Admin-KEY")
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Options)
+    }
 }
