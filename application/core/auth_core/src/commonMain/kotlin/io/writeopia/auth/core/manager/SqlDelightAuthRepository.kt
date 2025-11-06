@@ -39,8 +39,6 @@ internal class SqlDelightAuthRepository(
     }
 
     override suspend fun saveUser(user: WriteopiaUser, selected: Boolean) {
-        println("saving user: ${user.id}, selected: ${selected.toLong()}")
-
         writeopiaDb?.writeopiaUserEntityQueries?.run {
             unselectAllUsers()
             insertUser(

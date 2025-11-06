@@ -24,17 +24,17 @@ class AppConnectionInjection private constructor(
 ) {
     private var httpClient: HttpClient? = null
 
-    private var _tokenJwt: String? = null
-    private fun token() = _tokenJwt
-
-    fun setJwtToken(token: String) {
-        _tokenJwt = token
-    }
+//    private var _tokenJwt: String? = null
+//    private fun token() = _tokenJwt
+//
+//    fun setJwtToken(token: String) {
+//        _tokenJwt = token
+//    }
 
     fun provideJson() = json
 
     fun provideHttpClient(): HttpClient = httpClient ?:
-    ApiInjectorDefaults.httpClient(json, apiLogger, token() ?: "").also {
+    ApiInjectorDefaults.httpClient(json, apiLogger).also {
         httpClient = it
     }
 
@@ -51,16 +51,11 @@ class AppConnectionInjection private constructor(
 object ApiInjectorDefaults {
     fun httpClient(
         json: Json,
-        apiLogger: Logger,
-        tokenJwt: String
+        apiLogger: Logger
     ) = HttpClient {
         install(HttpTimeout) {
             requestTimeoutMillis = 300000
             socketTimeoutMillis = 300000
-        }
-
-        install(DefaultRequest) {
-            header(HttpHeaders.Authorization, "Bearer $tokenJwt")
         }
 
         install(ContentNegotiation) {

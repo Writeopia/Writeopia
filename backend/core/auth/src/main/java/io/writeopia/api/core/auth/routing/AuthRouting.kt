@@ -178,7 +178,7 @@ fun RoutingContext.getUserId(): String? {
     val principal = call.principal<JWTPrincipal>()
 
     if (principal == null) {
-        println("principal is null")
+        logger.warn("principal is null")
     }
 
     return principal?.payload?.getClaim("userId")?.asString()

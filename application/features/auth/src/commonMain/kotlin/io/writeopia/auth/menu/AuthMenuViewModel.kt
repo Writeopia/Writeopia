@@ -71,7 +71,7 @@ class AuthMenuViewModel(
                         )
                         result.data.token?.let { token ->
                             authRepository.saveToken(user.id, token)
-                            AppConnectionInjection.singleton().setJwtToken(token)
+//                            AppConnectionInjection.singleton().setJwtToken(token)
                         }
 
                         result.map { true }

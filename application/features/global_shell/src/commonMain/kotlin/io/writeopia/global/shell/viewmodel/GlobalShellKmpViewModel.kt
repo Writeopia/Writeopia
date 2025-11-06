@@ -517,7 +517,7 @@ class GlobalShellKmpViewModel(
             authRepository.logout()
             authRepository.saveToken(currentUserId, "")
 
-            AppConnectionInjection.singleton().setJwtToken("")
+//            AppConnectionInjection.singleton().setJwtToken("")
             _loginStateTrigger.value = GenerateId.generate()
             sideEffect()
         }

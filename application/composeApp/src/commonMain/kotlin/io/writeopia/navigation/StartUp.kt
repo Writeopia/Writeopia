@@ -36,10 +36,10 @@ fun NavGraphBuilder.startScreen(
         IntroScreen(colorTheme.value)
 
         LaunchedEffect(Unit) {
-            AuthCoreInjectionNeo.singleton()
-                .provideAuthRepository()
-                .getAuthToken()
-                ?.let(AppConnectionInjection.singleton()::setJwtToken)
+//            AuthCoreInjectionNeo.singleton()
+//                .provideAuthRepository()
+//                .getAuthToken()
+//                ?.let(AppConnectionInjection.singleton()::setJwtToken)
 
             authMenuViewModel.isLoggedIn().collect { loggedIn ->
                 delay(300)
