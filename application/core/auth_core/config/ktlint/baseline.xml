@@ -19,9 +19,6 @@
         <error line="24" column="79" source="standard:class-signature" />
         <error line="52" column="84" source="standard:function-expression-body" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/auth/core/manager/AuthRepository.kt">
-        <error line="14" column="76" source="standard:curly-spacing" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/core/manager/SqlDelightAuthRepository.kt">
         <error line="16" column="51" source="standard:function-expression-body" />
     </file>

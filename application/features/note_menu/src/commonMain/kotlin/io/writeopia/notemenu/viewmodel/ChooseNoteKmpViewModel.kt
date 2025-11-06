@@ -33,6 +33,7 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.preview.PreviewParser
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
@@ -448,11 +449,15 @@ internal class ChooseNoteKmpViewModel(
     override fun syncFolderWithCloud() {
         viewModelScope.launch(Dispatchers.Default) {
             // Refresh happens inside syncFolder
-            if (authRepository.isLoggedIn() && authRepository.getUser().tier == Tier.PREMIUM) {
+            val workspace = authRepository.getWorkspace()
+            if (
+                authRepository.isLoggedIn() &&
+                authRepository.getUser().tier == Tier.PREMIUM &&
+                workspace != null
+            ) {
                 folderSync.syncFolder(
                     notesNavigation.id,
-                    authRepository.getWorkspace().id,
-                    authRepository.getUser().id
+                    workspace.id
                 )
             }
         }
@@ -630,5 +635,6 @@ internal class ChooseNoteKmpViewModel(
 
     private suspend fun getUserId(): String = authRepository.getUser().id
 
-    private suspend fun getWorkspaceId(): String = authRepository.getWorkspace().id
+    private suspend fun getWorkspaceId(): String =
+        authRepository.getWorkspace()?.id ?: Workspace.disconnectedWorkspace().id
 }

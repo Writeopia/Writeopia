@@ -65,7 +65,7 @@ internal class SqlDelightAuthRepository(
         saveUser(user.copy(id = WriteopiaUser.DISCONNECTED), true)
     }
 
-    override suspend fun getWorkspace(): Workspace =
+    override suspend fun getWorkspace(): Workspace? =
         writeopiaDb?.workspaceEntityQueries
             ?.selectCurrentWorkspace()
             ?.executeAsOneOrNull()
@@ -78,7 +78,7 @@ internal class SqlDelightAuthRepository(
                     selected = entity.selected.toBoolean(),
                     role = ""
                 )
-            } ?: Workspace.disconnectedWorkspace()
+            }
 
     override suspend fun saveWorkspace(workspace: Workspace) {
         writeopiaDb?.workspaceEntityQueries

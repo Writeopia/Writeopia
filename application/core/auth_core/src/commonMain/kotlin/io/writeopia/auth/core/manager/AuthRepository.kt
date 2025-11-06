@@ -11,7 +11,8 @@ interface AuthRepository : UserRepository {
 
     override fun listenForUser(): Flow<WriteopiaUser> = flow { emit(getUser()) }
 
-    fun listenForWorkspace(): Flow<Workspace> = flow { emit(getWorkspace())}
+    fun listenForWorkspace(): Flow<Workspace> =
+        flow { emit(getWorkspace() ?: Workspace.disconnectedWorkspace()) }
 
     override suspend fun getUser(): WriteopiaUser
 
@@ -27,7 +28,7 @@ interface AuthRepository : UserRepository {
 
     suspend fun useOffline()
 
-    override suspend fun getWorkspace(): Workspace
+    override suspend fun getWorkspace(): Workspace?
 
     suspend fun saveWorkspace(workspace: Workspace)
 

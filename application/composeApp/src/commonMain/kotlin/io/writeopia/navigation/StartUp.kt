@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import io.writeopia.auth.core.manager.LoginStatus
 import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.common.utils.Destinations
@@ -42,10 +43,10 @@ fun NavGraphBuilder.startScreen(
             authMenuViewModel.isLoggedIn().collect { loggedIn ->
                 delay(300)
                 navigationController.navigate(
-                    if (loggedIn) {
-                        Destinations.MAIN_APP.id
-                    } else {
-                        Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                    when (loggedIn) {
+                        LoginStatus.OFFLINE -> Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                        LoginStatus.CHOOSE_WORKSPACE -> Destinations.CHOOSE_WORKSPACE.id
+                        LoginStatus.ONLINE ->  Destinations.MAIN_APP.id
                     }
                 )
             }

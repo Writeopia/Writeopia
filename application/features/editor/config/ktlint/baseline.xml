@@ -5,12 +5,12 @@
         <error line="6" column="65" source="standard:class-signature" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/editor/features/editor/viewmodel/NoteEditorKmpViewModel.kt">
-        <error line="87" column="5" source="standard:class-signature" />
-        <error line="144" column="17" source="standard:backing-property-naming" />
-        <error line="146" column="17" source="standard:backing-property-naming" />
+        <error line="88" column="5" source="standard:class-signature" />
+        <error line="145" column="17" source="standard:backing-property-naming" />
         <error line="147" column="17" source="standard:backing-property-naming" />
-        <error line="230" column="17" source="standard:backing-property-naming" />
-        <error line="259" column="17" source="standard:backing-property-naming" />
+        <error line="148" column="17" source="standard:backing-property-naming" />
+        <error line="231" column="17" source="standard:backing-property-naming" />
+        <error line="260" column="17" source="standard:backing-property-naming" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/editor/features/editor/viewmodel/NoteEditorViewModel.kt">
         <error line="17" column="33" source="standard:class-signature" />

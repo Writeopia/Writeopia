@@ -33,6 +33,7 @@ import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -356,16 +357,15 @@ class NoteEditorKmpViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val listenForFolders: StateFlow<List<MenuItemUi.FolderUi>> =
-        MutableStateFlow("root")
-            .flatMapLatest {
+        authRepository.listenForWorkspace()
+            .flatMapLatest { workspace ->
                 combine(
                     _expandedFolders,
                     folderRepository.listenForFoldersByParentId(
                         "root",
-                        authRepository.getWorkspace().id
+                        workspace.id
                     ),
-                    authRepository.listenForWorkspace(),
-                ) { expanded, map, workspace ->
+                ) { expanded, map ->
                     val folderUiMap = map.mapValues { (_, item) ->
                         item.map {
                             it.toFolderUi(expanded = expanded.contains(it.id))
@@ -431,8 +431,10 @@ class NoteEditorKmpViewModel(
         if (writeopiaManager.isInitialized()) return
 
         viewModelScope.launch(Dispatchers.Default) {
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+
             val document =
-                documentRepository.loadDocumentById(documentId, authRepository.getWorkspace().id)
+                documentRepository.loadDocumentById(documentId, workspace.id)
 
             if (document != null) {
                 writeopiaManager.loadDocument(document)
@@ -586,9 +588,10 @@ class NoteEditorKmpViewModel(
             }
         } else {
             viewModelScope.launch {
+                val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
                 folderRepository.listenForFoldersByParentId(
                     folderId,
-                    authRepository.getWorkspace().id
+                    workspace.id
                 )
                 _expandedFolders.value = expanded + folderId
             }

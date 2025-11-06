@@ -304,7 +304,8 @@ class GlobalShellKmpViewModel(
 
         viewModelScope.launch(Dispatchers.Default) {
             val userId = getUserId()
-            val workspaceId = authRepository.getWorkspace().id
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            val workspaceId = workspace.id
 
             if (!configRepository.hasFirstConfiguration(userId)) {
                 val now = Clock.System.now()
@@ -358,10 +359,12 @@ class GlobalShellKmpViewModel(
             }
         } else {
             viewModelScope.launch {
+                val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+
                 notesUseCase.listenForMenuItemsByParentId(
                     id,
                     getUserId(),
-                    authRepository.getWorkspace().id
+                    workspace.id
                 )
 
                 _expandedFolders.value = expanded + id
@@ -413,6 +416,8 @@ class GlobalShellKmpViewModel(
 
     override fun changeIcons(menuItemId: String, icon: String, tint: Int, iconChange: IconChange) {
         viewModelScope.launch {
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+
             when (iconChange) {
                 IconChange.FOLDER -> notesUseCase.updateFolderById(menuItemId) { folder ->
                     folder.copy(
@@ -423,7 +428,7 @@ class GlobalShellKmpViewModel(
 
                 IconChange.DOCUMENT -> notesUseCase.updateDocumentById(
                     menuItemId,
-                    authRepository.getWorkspace().id
+                    workspace.id
                 ) { document ->
                     document.copy(
                         icon = MenuItem.Icon(icon, tint),
@@ -512,6 +517,7 @@ class GlobalShellKmpViewModel(
         viewModelScope.launch {
             val currentUserId = authRepository.getUser().id
 
+            authRepository.unselectAllWorkspaces()
             authRepository.logout()
             authRepository.saveToken(currentUserId, "")
 
@@ -531,6 +537,7 @@ class GlobalShellKmpViewModel(
                 }
 
                 if (result is ResultData.Complete && result.data) {
+                    authRepository.unselectAllWorkspaces()
                     authRepository.logout()
                     _loginStateTrigger.value = GenerateId.generate()
                     dismissDeleteConfirm()
@@ -550,8 +557,8 @@ class GlobalShellKmpViewModel(
 
     override fun syncWorkspace() {
         viewModelScope.launch {
-            val workspaceId = authRepository.getWorkspace().id
-            println("syncing workspace: $workspaceId")
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            val workspaceId = workspace.id
             val result = workspaceSync.syncWorkspace(workspaceId)
 
             _lastWorkspaceSync.value = if (result is ResultData.Complete) {
