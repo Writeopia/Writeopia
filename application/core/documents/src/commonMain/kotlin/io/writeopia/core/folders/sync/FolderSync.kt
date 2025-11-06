@@ -22,7 +22,7 @@ class FolderSync(
      * This logic is atomic. If it fails, the whole process must be tried again in a future time.
      * The sync time of the folder will only be updated with everything works correctly.
      */
-    suspend fun syncFolder(folderId: String, workspaceId: String, userId: String) {
+    suspend fun syncFolder(folderId: String, workspaceId: String) {
         val authToken = authRepository.getAuthToken() ?: return
 
 //        println("folderId: $folderId")

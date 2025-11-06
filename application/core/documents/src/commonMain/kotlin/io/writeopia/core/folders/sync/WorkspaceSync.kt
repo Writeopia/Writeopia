@@ -18,7 +18,7 @@ class WorkspaceSync(
     suspend fun syncWorkspace(workspaceId: String): ResultData<Unit> {
         try {
             val authToken = authRepository.getAuthToken() ?: return ResultData.Error(null)
-            val workspace = authRepository.getWorkspace()
+            val workspace = authRepository.getWorkspace() ?: return ResultData.Idle()
 
             val response = documentsApi.getWorkspaceNewData(
                 workspaceId,

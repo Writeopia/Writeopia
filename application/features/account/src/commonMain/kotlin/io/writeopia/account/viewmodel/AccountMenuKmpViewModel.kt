@@ -23,6 +23,7 @@ internal class AccountMenuKmpViewModel(
 
     override fun logout(onLogOutSuccess: () -> Unit) {
         viewModelScope.launch {
+            authRepository.unselectAllWorkspaces()
             val result = authRepository.logout()
 
             if (result.toBoolean()) {

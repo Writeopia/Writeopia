@@ -173,14 +173,7 @@ class SqlDelightDocumentRepository(
     override suspend fun refreshDocuments() {
         _documentByParentState.value = SelectedIds.ids.associateWith { key ->
             val (parentId, workspaceId) = key.split(":", limit = 2)
-
-            println("refreshDocuments. parentId: $parentId, workspaceId: $workspaceId")
-
-            val result = documentSqlDao.loadDocumentByParentId(parentId, workspaceId)
-            val titles = result.joinToString { it.title }
-            println("titles: $titles")
-
-            result
+            documentSqlDao.loadDocumentByParentId(parentId, workspaceId)
         }
     }
 

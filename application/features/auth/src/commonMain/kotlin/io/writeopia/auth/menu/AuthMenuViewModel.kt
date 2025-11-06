@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.auth.core.manager.LoginStatus
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
@@ -39,11 +40,21 @@ class AuthMenuViewModel(
         _password.value = name
     }
 
-    fun isLoggedIn(): Flow<Boolean> = flow {
+    fun isLoggedIn(): Flow<LoginStatus> = flow {
         val user = authRepository.getUser()
+        val workspace = authRepository.getWorkspace()
+
         val loggedId = authRepository.isLoggedIn() || user.id != WriteopiaUser.DISCONNECTED
 
-        emit(loggedId)
+        val status = when {
+            loggedId && workspace != null -> LoginStatus.ONLINE
+
+            loggedId && workspace == null -> LoginStatus.CHOOSE_WORKSPACE
+
+            else -> LoginStatus.OFFLINE
+        }
+
+        emit(status)
     }
 
     fun useOffline(sideEffect: () -> Unit) {

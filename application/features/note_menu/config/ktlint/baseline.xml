@@ -10,13 +10,13 @@
         <error line="23" column="1" source="standard:no-unused-imports" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/viewmodel/ChooseNoteKmpViewModel.kt">
-        <error line="74" column="26" source="standard:class-signature" />
-        <error line="74" column="26" source="standard:class-signature" />
-        <error line="74" column="39" source="standard:class-signature" />
-        <error line="116" column="17" source="standard:backing-property-naming" />
-        <error line="145" column="17" source="standard:backing-property-naming" />
-        <error line="157" column="17" source="standard:backing-property-naming" />
-        <error line="252" column="57" source="standard:function-expression-body" />
+        <error line="75" column="26" source="standard:class-signature" />
+        <error line="75" column="26" source="standard:class-signature" />
+        <error line="75" column="39" source="standard:class-signature" />
+        <error line="117" column="17" source="standard:backing-property-naming" />
+        <error line="146" column="17" source="standard:backing-property-naming" />
+        <error line="158" column="17" source="standard:backing-property-naming" />
+        <error line="253" column="57" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/viewmodel/ChooseNoteViewModel.kt">
         <error line="105" column="28" source="standard:class-signature" />
@@ -28,6 +28,7 @@
         <error line="131" column="72" source="standard:class-signature" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/viewmodel/FolderStateController.kt">
-        <error line="30" column="17" source="standard:backing-property-naming" />
+        <error line="31" column="17" source="standard:backing-property-naming" />
+        <error line="75" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
 </baseline>

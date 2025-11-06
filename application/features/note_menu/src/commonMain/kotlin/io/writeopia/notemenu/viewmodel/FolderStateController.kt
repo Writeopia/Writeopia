@@ -7,6 +7,7 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +37,8 @@ class FolderStateController(
 
     override fun addFolder() {
         coroutineScope.launch(Dispatchers.Default) {
-            notesUseCase.createFolder("Untitled", authRepository.getWorkspace().id)
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            notesUseCase.createFolder("Untitled", workspace.id)
         }
     }
 
@@ -67,10 +69,14 @@ class FolderStateController(
                 if (_selectedNotes.value.isEmpty()) {
                     moveItemToFolder(menuItemUi, parentId)
                 } else {
+                    val workspace =
+                        authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+
+
                     notesUseCase.moveItemsById(
                         ids = selectedNotes.value,
                         parentId,
-                        authRepository.getWorkspace().id
+                        workspace.id
                     )
                 }
             }
@@ -94,6 +100,8 @@ class FolderStateController(
         iconChange: IconChange
     ) {
         coroutineScope.launch {
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+
             when (iconChange) {
                 IconChange.FOLDER -> notesUseCase.updateFolderById(menuItemId) { folder ->
                     folder.copy(
@@ -104,7 +112,7 @@ class FolderStateController(
 
                 IconChange.DOCUMENT -> notesUseCase.updateDocumentById(
                     menuItemId,
-                    authRepository.getWorkspace().id
+                    workspace.id
                 ) { document ->
                     document.copy(
                         icon = MenuItem.Icon(icon, tint),

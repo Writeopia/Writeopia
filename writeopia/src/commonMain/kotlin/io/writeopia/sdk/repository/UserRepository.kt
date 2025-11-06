@@ -10,5 +10,5 @@ interface UserRepository {
 
     suspend fun getUser(): WriteopiaUser
 
-    suspend fun getWorkspace(): Workspace
+    suspend fun getWorkspace(): Workspace?
 }
