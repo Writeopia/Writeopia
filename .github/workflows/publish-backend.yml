@@ -2,6 +2,12 @@ name: Publish Backend
 
 on:
   workflow_dispatch:
+  tags:
+    push:
+      branches:
+        - 'master'
+      tags:
+        - 'backend-*'
 
 jobs:
   publish_backend:
