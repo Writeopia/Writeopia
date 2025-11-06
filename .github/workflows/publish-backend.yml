@@ -24,11 +24,8 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          # list of Docker images to use as base name for tags
           images: |
-            name/app
-            ghcr.io/username/app
-          # generate Docker tags based on the following events/attributes
+            images: ghcr.io/writeopia/writeopia-backend
           tags: |
             type=schedule
             type=ref,event=branch
@@ -37,6 +34,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=sha
+
       - name: Release build
         run: ./gradlew :backend:gateway:buildFatJar
 
