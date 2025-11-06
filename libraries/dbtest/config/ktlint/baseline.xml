@@ -4,6 +4,5 @@
         <error line="16" column="31" source="standard:class-signature" />
         <error line="16" column="81" source="standard:class-signature" />
         <error line="32" column="1" source="standard:indent" />
-        <error line="182" column="48" source="standard:chain-method-continuation" />
     </file>
 </baseline>

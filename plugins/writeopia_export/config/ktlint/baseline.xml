@@ -4,12 +4,6 @@
         <error line="15" column="22" source="standard:class-signature" />
         <error line="15" column="66" source="standard:class-signature" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/sdk/export/DocumentToMarkdown.kt">
-        <error line="35" column="21" source="standard:chain-method-continuation" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/sdk/export/DocumentToTxt.kt">
-        <error line="43" column="16" source="standard:chain-method-continuation" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/sdk/export/files/KmpFileWritter.kt">
         <error line="9" column="28" source="standard:class-signature" />
         <error line="9" column="44" source="standard:class-signature" />

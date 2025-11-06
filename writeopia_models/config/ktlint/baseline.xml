@@ -29,9 +29,6 @@
         <error line="125" column="17" source="standard:class-signature" />
         <error line="125" column="34" source="standard:class-signature" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/sdk/models/story/StoryStep.kt">
-        <error line="51" column="31" source="standard:chain-method-continuation" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/sdk/models/story/StoryType.kt">
         <error line="10" column="22" source="standard:class-signature" />
         <error line="10" column="40" source="standard:class-signature" />

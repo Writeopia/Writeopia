@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="build.gradle.kts">
-        <error line="68" column="42" source="standard:chain-method-continuation" />
-        <error line="68" column="48" source="standard:chain-method-continuation" />
-    </file>
-    <file name="src/androidMain/kotlin/io/writeopia/repository/UiConfigurationPreferenceDao.kt">
-        <error line="24" column="26" source="standard:chain-method-continuation" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/model/ColorThemeOption.kt">
         <error line="6" column="29" source="standard:class-signature" />
         <error line="6" column="46" source="standard:class-signature" />
@@ -15,14 +8,7 @@
         <error line="3" column="17" source="standard:class-signature" />
         <error line="3" column="34" source="standard:class-signature" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/repository/UiConfigurationRepositoryImpl.kt">
-        <error line="45" column="27" source="standard:chain-method-continuation" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/repository/UiConfigurationSqlDelightRepository.kt">
-        <error line="46" column="27" source="standard:chain-method-continuation" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/viewmodel/UiConfigurationKmpViewModel.kt">
         <error line="16" column="18" source="standard:class-signature" />
-        <error line="22" column="44" source="standard:chain-method-continuation" />
     </file>
 </baseline>

@@ -12,11 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.common.utils.Destinations
-import io.writeopia.di.AppConnectionInjection
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
 import io.writeopia.theme.WrieopiaTheme

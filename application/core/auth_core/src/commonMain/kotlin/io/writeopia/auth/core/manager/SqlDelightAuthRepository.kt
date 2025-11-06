@@ -51,11 +51,10 @@ internal class SqlDelightAuthRepository(
         }
     }
 
-    override suspend fun getAuthToken(): String? {
-        return writeopiaDb?.tokenEntityQueries
+    override suspend fun getAuthToken(): String? =
+        writeopiaDb?.tokenEntityQueries
             ?.selectTokenByUserId(getUser().id)
             ?.executeAsOneOrNull()
-    }
 
     override suspend fun saveToken(userId: String, token: String) {
         writeopiaDb?.tokenEntityQueries?.insertToken(userId, token)
