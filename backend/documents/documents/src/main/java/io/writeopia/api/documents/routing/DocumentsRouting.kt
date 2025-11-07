@@ -202,45 +202,47 @@ fun Routing.documentsRoute(
         }
     }
 
-    post<SendFoldersRequest>("/api/workspace/folder") { request ->
-        val userId = getUserId() ?: ""
-        val workspaceId = request.workspaceId
+    authenticate("auth-jwt", optional = debug) {
+        post<SendFoldersRequest>("/api/workspace/folder") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = request.workspaceId
 
-        runIfMember(userId, workspaceId, writeopiaDb, debug) {
-            try {
-                val folderList = request.folders.map { folder ->
-                    folder.copy(workspaceId = workspaceId)
-                }
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val folderList = request.folders.map { folder ->
+                        folder.copy(workspaceId = workspaceId)
+                    }
 
-                if (folderList.isNotEmpty()) {
-                    val addedToHub = DocumentsService.receiveFolders(
-                        folderList.map { folder -> folder.toModel() },
-                        writeopiaDb,
-                    )
-
-                    if (addedToHub) {
-                        call.respond(
-                            status = HttpStatusCode.OK,
-                            message = "Accepted"
+                    if (folderList.isNotEmpty()) {
+                        val addedToHub = DocumentsService.receiveFolders(
+                            folderList.map { folder -> folder.toModel() },
+                            writeopiaDb,
                         )
+
+                        if (addedToHub) {
+                            call.respond(
+                                status = HttpStatusCode.OK,
+                                message = "Accepted"
+                            )
+                        } else {
+                            call.respond(
+                                status = HttpStatusCode.InternalServerError,
+                                message = "It was not possible to add documents to AI HUB"
+                            )
+                        }
                     } else {
                         call.respond(
-                            status = HttpStatusCode.InternalServerError,
-                            message = "It was not possible to add documents to AI HUB"
+                            status = HttpStatusCode.OK,
+                            message = "Empty documents"
                         )
                     }
-                } else {
+                } catch (e: Exception) {
+                    e.printStackTrace()
                     call.respond(
-                        status = HttpStatusCode.OK,
-                        message = "Empty documents"
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
                     )
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                call.respond(
-                    status = HttpStatusCode.InternalServerError,
-                    message = "${e.message}"
-                )
             }
         }
     }
