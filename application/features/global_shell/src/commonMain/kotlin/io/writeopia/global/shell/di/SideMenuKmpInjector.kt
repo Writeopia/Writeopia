@@ -45,14 +45,13 @@ class SideMenuKmpInjector(
         configurationRepository: ConfigurationRepository =
             appConfigurationInjector.provideNotesConfigurationRepository(),
         folderRepository: FolderRepository = FoldersInjector.singleton().provideFoldersRepository(),
-    ): NotesUseCase {
-        return NotesUseCase.singleton(
+    ): NotesUseCase =
+        NotesUseCase.singleton(
             documentRepository,
             configurationRepository,
             folderRepository,
             authCoreInjection.provideAuthRepository()
         )
-    }
 
     private fun provideWorkspaceSync(): WorkspaceSync {
         val documentRepo = repositoryInjection.provideDocumentRepository()
