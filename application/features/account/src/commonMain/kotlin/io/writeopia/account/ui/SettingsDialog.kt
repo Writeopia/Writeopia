@@ -845,7 +845,6 @@ private fun TeamsSection(
             is ResultData.Complete -> {
                 val workspaces = (workspaces as ResultData.Complete<List<Workspace>>).data
 
-
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(workspaces) { workspace ->
                         CommonButton(text = workspace.name) {
@@ -859,86 +858,7 @@ private fun TeamsSection(
                 val selected = selectedWorkspaceState.collectAsState().value
 
                 if (selected != null) {
-                    BasicText(
-                        text = "Add users to team: ${selected.name}",
-                        style = MaterialTheme
-                            .typography
-                            .titleSmall
-                            .copy(color = MaterialTheme.colorScheme.onBackground)
-                    )
-
-                    var userEmail by remember {
-                        mutableStateOf("")
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = userEmail,
-                            onValueChange = { userEmail = it },
-                            shape = MaterialTheme.shapes.large,
-                            singleLine = true,
-                            placeholder = {
-                                BasicText(
-                                    "User email",
-                                    style = MaterialTheme
-                                        .typography
-                                        .titleSmall
-                                        .copy(color = WriteopiaTheme.colorScheme.textLighter)
-                                )
-                            },
-                            textStyle = MaterialTheme
-                                .typography
-                                .titleSmall
-                                .copy(color = MaterialTheme.colorScheme.onBackground)
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        CommonButton(text = "Add") {
-                            addUserToTeam(userEmail)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    val usersResult = usersInSelectedWorkspace.collectAsState().value
-
-                    if (usersResult is ResultData.Complete) {
-                        val users = usersResult.data
-
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            if (users.isNotEmpty()) {
-                                users.forEach { userName ->
-                                    BasicText(
-                                        text = userName,
-                                        style = MaterialTheme
-                                            .typography
-                                            .bodySmall
-                                            .copy(MaterialTheme.colorScheme.onBackground)
-                                    )
-                                }
-                            } else {
-                                BasicText(
-                                    text = "No users in this team",
-                                    style = MaterialTheme
-                                        .typography
-                                        .bodySmall
-                                        .copy(MaterialTheme.colorScheme.onBackground)
-                                )
-                            }
-                        }
-                    } else if (usersResult is ResultData.Error) {
-                        BasicText(
-                            text = "Error loading users", style = MaterialTheme
-                                .typography
-                                .bodySmall
-                                .copy(MaterialTheme.colorScheme.onBackground)
-                        )
-                    } else {
-                        CircularProgressIndicator()
-                    }
+                    AddUserToWorkspace(selected, usersInSelectedWorkspace, addUserToTeam)
                 }
             }
 
@@ -959,6 +879,105 @@ private fun TeamsSection(
                 CircularProgressIndicator()
             }
         }
+    }
+}
+
+@Composable
+private fun AddUserToWorkspace(
+    selected: Workspace,
+    usersInSelectedWorkspace: StateFlow<ResultData<List<String>>>,
+    addUserToTeam: (String) -> Unit
+) {
+    if (selected.role == "ADMIN") {
+        BasicText(
+            text = "Add users to team: ${selected.name}",
+            style = MaterialTheme
+                .typography
+                .titleSmall
+                .copy(color = MaterialTheme.colorScheme.onBackground)
+        )
+
+        var userEmail by remember {
+            mutableStateOf("")
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = userEmail,
+                onValueChange = { userEmail = it },
+                shape = MaterialTheme.shapes.large,
+                singleLine = true,
+                placeholder = {
+                    BasicText(
+                        "User email",
+                        style = MaterialTheme
+                            .typography
+                            .titleSmall
+                            .copy(color = WriteopiaTheme.colorScheme.textLighter)
+                    )
+                },
+                textStyle = MaterialTheme
+                    .typography
+                    .titleSmall
+                    .copy(color = MaterialTheme.colorScheme.onBackground)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            CommonButton(text = "Add") {
+                addUserToTeam(userEmail)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        val usersResult = usersInSelectedWorkspace.collectAsState().value
+
+        if (usersResult is ResultData.Complete) {
+            val users = usersResult.data
+
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (users.isNotEmpty()) {
+                    users.forEach { userName ->
+                        BasicText(
+                            text = userName,
+                            style = MaterialTheme
+                                .typography
+                                .bodySmall
+                                .copy(MaterialTheme.colorScheme.onBackground)
+                        )
+                    }
+                } else {
+                    BasicText(
+                        text = "No users in this team",
+                        style = MaterialTheme
+                            .typography
+                            .bodySmall
+                            .copy(MaterialTheme.colorScheme.onBackground)
+                    )
+                }
+            }
+        } else if (usersResult is ResultData.Error) {
+            BasicText(
+                text = "Error loading users",
+                style = MaterialTheme
+                    .typography
+                    .bodySmall
+                    .copy(MaterialTheme.colorScheme.onBackground)
+            )
+        } else {
+            CircularProgressIndicator()
+        }
+    } else {
+        BasicText(
+            text = "Only admins can add users",
+            style = MaterialTheme
+                .typography
+                .bodySmall
+                .copy(MaterialTheme.colorScheme.onBackground)
+        )
     }
 }
 
