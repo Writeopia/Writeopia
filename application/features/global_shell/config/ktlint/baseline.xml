@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
     <file name="src/commonMain/kotlin/io/writeopia/global/shell/di/SideMenuKmpInjector.kt">
-        <error line="37" column="23" source="standard:class-signature" />
-        <error line="46" column="21" source="standard:function-expression-body" />
+        <error line="39" column="23" source="standard:class-signature" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/global/shell/viewmodel/GlobalShellKmpViewModel.kt">
-        <error line="81" column="27" source="standard:class-signature" />
-        <error line="81" column="27" source="standard:class-signature" />
-        <error line="81" column="40" source="standard:class-signature" />
-        <error line="89" column="17" source="standard:backing-property-naming" />
-        <error line="91" column="17" source="standard:backing-property-naming" />
-        <error line="97" column="17" source="standard:backing-property-naming" />
-        <error line="99" column="17" source="standard:backing-property-naming" />
-        <error line="105" column="17" source="standard:backing-property-naming" />
-        <error line="198" column="17" source="standard:backing-property-naming" />
+        <error line="84" column="27" source="standard:class-signature" />
+        <error line="84" column="27" source="standard:class-signature" />
+        <error line="84" column="40" source="standard:class-signature" />
+        <error line="92" column="17" source="standard:backing-property-naming" />
+        <error line="94" column="17" source="standard:backing-property-naming" />
+        <error line="100" column="17" source="standard:backing-property-naming" />
+        <error line="102" column="17" source="standard:backing-property-naming" />
+        <error line="108" column="17" source="standard:backing-property-naming" />
+        <error line="201" column="17" source="standard:backing-property-naming" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/global/shell/viewmodel/GlobalShellViewModel.kt">
         <error line="14" column="34" source="standard:class-signature" />

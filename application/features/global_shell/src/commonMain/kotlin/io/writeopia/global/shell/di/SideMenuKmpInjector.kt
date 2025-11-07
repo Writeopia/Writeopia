@@ -24,6 +24,8 @@ import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
+import io.writeopia.ui.keyboard.KeyboardEvent
+import kotlinx.coroutines.flow.Flow
 
 class SideMenuKmpInjector(
     private val appConfigurationInjector: AppConfigurationInjector =
@@ -43,14 +45,13 @@ class SideMenuKmpInjector(
         configurationRepository: ConfigurationRepository =
             appConfigurationInjector.provideNotesConfigurationRepository(),
         folderRepository: FolderRepository = FoldersInjector.singleton().provideFoldersRepository(),
-    ): NotesUseCase {
-        return NotesUseCase.singleton(
+    ): NotesUseCase =
+        NotesUseCase.singleton(
             documentRepository,
             configurationRepository,
             folderRepository,
             authCoreInjection.provideAuthRepository()
         )
-    }
 
     private fun provideWorkspaceSync(): WorkspaceSync {
         val documentRepo = repositoryInjection.provideDocumentRepository()
@@ -74,7 +75,7 @@ class SideMenuKmpInjector(
         WorkspaceApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
 
     @Composable
-    override fun provideSideMenuViewModel(): GlobalShellViewModel =
+    override fun provideSideMenuViewModel(keyboardEventFlow: Flow<KeyboardEvent>?): GlobalShellViewModel =
         viewModel {
             GlobalShellKmpViewModel(
                 notesUseCase = provideNotesUseCase(),
@@ -87,7 +88,8 @@ class SideMenuKmpInjector(
                 configRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
                 authApi = authCoreInjection.provideAuthApi(),
                 workspaceSync = provideWorkspaceSync(),
-                workspaceApi = provideWorkspaceApi()
+                workspaceApi = provideWorkspaceApi(),
+                keyboardEventFlow = keyboardEventFlow
             )
         }
 
