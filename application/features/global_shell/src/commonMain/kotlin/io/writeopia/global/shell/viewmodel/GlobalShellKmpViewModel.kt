@@ -39,8 +39,10 @@ import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.tutorials.Tutorials
+import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -77,7 +79,8 @@ class GlobalShellKmpViewModel(
     private val configRepository: ConfigurationRepository,
     private val json: Json = writeopiaJson,
     private val workspaceSync: WorkspaceSync,
-    private val workspaceApi: WorkspaceApi
+    private val workspaceApi: WorkspaceApi,
+    private val keyboardEventFlow: Flow<KeyboardEvent>?,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     private var localUserId: String? = null
@@ -301,6 +304,20 @@ class GlobalShellKmpViewModel(
 
     init {
         folderStateController.initCoroutine(viewModelScope)
+
+        viewModelScope.launch {
+            keyboardEventFlow
+                ?.onEach { delay(60) }
+                ?.collect { event ->
+                    when (event) {
+                        KeyboardEvent.SEARCH -> {
+                            showSearch()
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
 
         viewModelScope.launch(Dispatchers.Default) {
             val userId = getUserId()
