@@ -59,12 +59,11 @@ fun EditionScreen(
     val clipShape = MaterialTheme.shapes.medium
     val spaceWidth = 8.dp
 
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
         val tint = MaterialTheme.colorScheme.onPrimary
 
         Row(
-            modifier = Modifier
-                .horizontalScroll(rememberScrollState()),
+            modifier = Modifier.horizontalScroll(rememberScrollState()).weight(1F),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
