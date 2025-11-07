@@ -131,24 +131,26 @@ fun Routing.documentsRoute(
         }
     }
 
-    get("/api/workspace/{workspaceId}/folder/{id}") {
-        val id = call.pathParameters["id"]!!
-        val userId = getUserId() ?: ""
-        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+    authenticate("auth-jwt", optional = debug) {
+        get("/api/workspace/{workspaceId}/folder/{id}") {
+            val id = call.pathParameters["id"]!!
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-        runIfMember(userId, workspaceId, writeopiaDb, debug) {
-            val folder = DocumentsService.getFolderById(id, userId, writeopiaDb)
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                val folder = DocumentsService.getFolderById(id, userId, writeopiaDb)
 
-            if (folder != null) {
-                call.respond(
-                    status = HttpStatusCode.OK,
-                    message = folder.toApi()
-                )
-            } else {
-                call.respond(
-                    status = HttpStatusCode.NotFound,
-                    message = "No lead with id: $id"
-                )
+                if (folder != null) {
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = folder.toApi()
+                    )
+                } else {
+                    call.respond(
+                        status = HttpStatusCode.NotFound,
+                        message = "No lead with id: $id"
+                    )
+                }
             }
         }
     }
