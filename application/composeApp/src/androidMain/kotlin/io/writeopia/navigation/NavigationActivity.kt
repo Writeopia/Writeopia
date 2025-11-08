@@ -29,6 +29,7 @@ import io.writeopia.persistence.room.injection.AppRoomDaosInjection
 import io.writeopia.persistence.room.injection.RoomRepositoryInjection
 import io.writeopia.persistence.room.injection.WriteopiaRoomInjector
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
+import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.ui.image.ImageLoadConfig
 
 class NavigationActivity : ComponentActivity() {
@@ -66,19 +67,19 @@ fun NavigationGraph(
     SharedPreferencesInjector.init(sharedPreferences)
     WriteopiaRoomInjector.init(database)
 
+    RepositoryInjector.initialize(RoomRepositoryInjection.singleton())
+
     val uiConfigInjection = UiConfigurationInjector.singleton()
 
     val appDaosInjection = AppRoomDaosInjection.singleton()
     WriteopiaConnectionInjector.setBaseUrl(BuildConfig.BASE_URL)
     val uiConfigViewModel = uiConfigInjection.provideUiConfigurationViewModel()
-    val repositoryInjection = RoomRepositoryInjection.singleton()
-    val editorInjector = EditorKmpInjector.mobile(repositoryInjection)
-    val notesMenuInjection = NotesMenuKmpInjection.mobile(repositoryInjection)
+    val editorInjector = EditorKmpInjector.mobile()
+    val notesMenuInjection = NotesMenuKmpInjection.mobile()
 
     val searchInjector = remember {
         MobileSearchInjection(
             appRoomDaosInjection = appDaosInjection,
-            roomInjector = repositoryInjection
         )
     }
 

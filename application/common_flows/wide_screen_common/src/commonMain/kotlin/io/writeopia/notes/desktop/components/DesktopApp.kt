@@ -50,6 +50,7 @@ import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.ui.screen.menu.EditFileScreen
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
+import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sql.WriteopiaDb
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
@@ -81,6 +82,8 @@ fun DesktopApp(
         WriteopiaDbInjector.initialize(writeopiaDb)
     }
 
+    RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
+
     val editorInjector = remember {
         EditorKmpInjector.desktop(
             selectionState = selectionState,
@@ -100,7 +103,7 @@ fun DesktopApp(
     }
 
     val documentsGraphInjection =
-        DocumentsGraphInjection(repositoryInjection = SqlDelightDaoInjector.singleton())
+        DocumentsGraphInjection(repositoryInjection = RepositoryInjector.singleton())
 
     val globalShellViewModel: GlobalShellViewModel =
         sideMenuInjector.provideSideMenuViewModel(keyboardEventFlow)

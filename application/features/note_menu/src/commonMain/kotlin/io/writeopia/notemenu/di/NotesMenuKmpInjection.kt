@@ -112,9 +112,8 @@ class NotesMenuKmpInjection private constructor(
         private var instanceDesktop: NotesMenuKmpInjection? = null
 
         fun mobile(
-            repositoryInjection: RepositoryInjector,
         ) = instanceMobile ?: NotesMenuKmpInjection(
-            repositoryInjection = repositoryInjection,
+            repositoryInjection = RepositoryInjector.singleton(),
             selectionState = MutableStateFlow(false),
             keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE)
         ).also {
@@ -124,9 +123,8 @@ class NotesMenuKmpInjection private constructor(
         fun desktop(
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
-            repositoryInjection: RepositoryInjector = SqlDelightDaoInjector.singleton(),
         ) = instanceDesktop ?: NotesMenuKmpInjection(
-            repositoryInjection = repositoryInjection,
+            repositoryInjection = RepositoryInjector.singleton(),
             selectionState = selectionState,
             keyboardEventFlow = keyboardEventFlow,
         ).also {

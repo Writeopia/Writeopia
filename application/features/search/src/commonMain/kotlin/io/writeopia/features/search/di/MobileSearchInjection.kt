@@ -7,7 +7,7 @@ import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 
 class MobileSearchInjection(
     private val appRoomDaosInjection: AppDaosInjection,
-    private val roomInjector: RepositoryInjector,
+    private val roomInjector: RepositoryInjector = RepositoryInjector.singleton(),
 ) : SearchInjection {
 
     override fun provideViewModel(): SearchKmpViewModel =

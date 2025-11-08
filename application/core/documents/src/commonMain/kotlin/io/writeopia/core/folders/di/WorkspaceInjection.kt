@@ -7,15 +7,13 @@ import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
-import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 
 class WorkspaceInjection private constructor(
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
-    // Mudar o RepositoryInjector para expect/actual ao invés de interface
-    private val repositoryInjection: RepositoryInjector = SqlDelightDaoInjector.singleton(),
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val connectionInjector: WriteopiaConnectionInjector =
         WriteopiaConnectionInjector.singleton(),
+    private val repositoryInjection: RepositoryInjector = RepositoryInjector.singleton(),
 ) {
 
     fun provideWorkspaceSync(): WorkspaceSync {

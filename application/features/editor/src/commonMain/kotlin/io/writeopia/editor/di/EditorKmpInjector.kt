@@ -98,13 +98,12 @@ class EditorKmpInjector private constructor(
 
     companion object {
         fun mobile(
-            daosInjection: RepositoryInjector,
             connectionInjector: WriteopiaConnectionInjector =
                 WriteopiaConnectionInjector.singleton(),
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
         ) = EditorKmpInjector(
             authCoreInjection,
-            daosInjection,
+            RepositoryInjector.singleton(),
             connectionInjector,
             MutableStateFlow(false),
             MutableStateFlow(KeyboardEvent.IDLE),
@@ -112,7 +111,7 @@ class EditorKmpInjector private constructor(
 
         fun desktop(
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
-            repositoryInjection: RepositoryInjector = SqlDelightDaoInjector.singleton(),
+            repositoryInjection: RepositoryInjector = RepositoryInjector.singleton(),
             connectionInjection: WriteopiaConnectionInjector =
                 WriteopiaConnectionInjector.singleton(),
             selectionState: StateFlow<Boolean>,
