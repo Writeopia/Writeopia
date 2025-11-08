@@ -17,6 +17,7 @@ import io.writeopia.navigation.MobileNavigationViewModel
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notemenu.navigation.navigateToNotes
+import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sqldelight.database.DatabaseCreation
 import io.writeopia.sqldelight.database.DatabaseFactory
 import io.writeopia.sqldelight.database.driver.DriverFactory
@@ -41,19 +42,19 @@ fun MainViewController() = ComposeUIViewController {
             val database = databaseState.writeopiaDb
 
             WriteopiaDbInjector.initialize(database)
+            RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
 
             val uiConfigurationInjector = remember { UiConfigurationInjector.singleton() }
-            val sqlDelightDaoInjector = remember { SqlDelightDaoInjector.singleton() }
             val searchInjection = remember { KmpSearchInjection.singleton() }
 
             val uiConfigurationViewModel = uiConfigurationInjector
                 .provideUiConfigurationViewModel()
 
             val notesMenuInjection = remember {
-                NotesMenuKmpInjection.mobile(sqlDelightDaoInjector)
+                NotesMenuKmpInjection.mobile()
             }
 
-            val editorInjector = EditorKmpInjector.mobile(sqlDelightDaoInjector)
+            val editorInjector = EditorKmpInjector.mobile()
 
             val navigationViewModel = viewModel { MobileNavigationViewModel() }
 

@@ -51,7 +51,7 @@ fun AccountMenuScreen(
             ollamaModelsRetry = {},
             downloadModel = {},
             deleteModel = {},
-            syncWorkspace = {}
+            syncWorkspace = accountMenuViewModel::syncWorkspace,
         )
     }
 }

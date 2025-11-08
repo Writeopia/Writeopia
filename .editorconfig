@@ -30,6 +30,7 @@ ktlint_standard_property-naming = disabled
 ktlint_standard_import-ordering = disabled
 ktlint_standard_no-multi-spaces = disabled
 ktlint_standard_chain-method-continuation = disabled
+ktlint_standard_class-signature = disabled
 
 
 

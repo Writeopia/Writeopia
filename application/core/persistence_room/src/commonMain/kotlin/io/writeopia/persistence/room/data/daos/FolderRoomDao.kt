@@ -22,6 +22,9 @@ interface FolderRoomDao {
     @Query("SELECT * FROM $FOLDER_ENTITY ORDER BY last_updated_at LIMIT 15")
     suspend fun getLastUpdated(): List<FolderEntity>
 
+    @Query("SELECT * FROM $FOLDER_ENTITY WHERE workspace_id = :workspaceId")
+    fun getFoldersByWorkspaceId(workspaceId: String): List<FolderEntity>
+
     @Query("SELECT * FROM $FOLDER_ENTITY WHERE parent_id = :id")
     suspend fun getFolderByParentId(id: String): List<FolderEntity>
 

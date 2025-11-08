@@ -5,12 +5,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.account.viewmodel.AccountMenuKmpViewModel
 import io.writeopia.account.viewmodel.AccountMenuViewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
+import io.writeopia.core.folders.di.WorkspaceInjection
 
-class AccountMenuKmpInjector private constructor() {
+class AccountMenuKmpInjector private constructor(
+    private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
+) {
 
     private fun provideAccountMenuKmpViewModel(): AccountMenuKmpViewModel =
         AccountMenuKmpViewModel(
-            authRepository = AuthCoreInjectionNeo.singleton().provideAuthRepository()
+            authRepository = AuthCoreInjectionNeo.singleton().provideAuthRepository(),
+            workspaceSync = workspaceInjection.provideWorkspaceSync()
         )
 
     @Composable

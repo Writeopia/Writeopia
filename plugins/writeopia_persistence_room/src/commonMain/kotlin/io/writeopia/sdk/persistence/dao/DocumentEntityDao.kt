@@ -131,4 +131,14 @@ interface DocumentEntityDao {
 
     @Query("SELECT title FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.id = :documentId")
     suspend fun getDocumentTitleById(documentId: String): String?
+
+    @Query(
+        "SELECT * " +
+            "FROM $DOCUMENT_ENTITY " +
+            "LEFT JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
+            "WHERE $DOCUMENT_ENTITY.workspace_id = :workspaceId "
+    )
+    suspend fun loadOutdatedDocumentsWithContentForWorkspace(
+        workspaceId: String
+    ): Map<DocumentEntity, List<StoryStepEntity>>
 }

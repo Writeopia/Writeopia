@@ -488,7 +488,9 @@ private fun WorkspaceSection(
 
         CommonButton(
             text = "Sync workspace",
-            clickListener = syncWorkspace
+            clickListener = {
+                syncWorkspace()
+            }
         )
 
         if (lastSync.isNotEmpty()) {
@@ -582,7 +584,6 @@ private fun AiSection(
         DownloadModels(downloadModelState, downloadModel)
     }
 }
-
 
 @Composable
 private fun SelectModels(

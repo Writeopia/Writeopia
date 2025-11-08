@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Instant
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.map
 
 class RoomDocumentRepository(
     private val documentEntityDao: DocumentEntityDao,
@@ -75,9 +78,7 @@ class RoomDocumentRepository(
         orderBy: String,
         userId: String,
         instant: Instant
-    ): List<Document> {
-        throw IllegalStateException("This method is not supported")
-    }
+    ): List<Document> = throw IllegalStateException("This method is not supported")
 
     override suspend fun favoriteDocumentByIds(ids: Set<String>) {
         setFavorite(ids, "", true)
@@ -233,5 +234,9 @@ class RoomDocumentRepository(
         }
 
     override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
-        emptyList()
+        documentEntityDao.loadOutdatedDocumentsWithContentForWorkspace(workspaceId)
+            .map { (documentEntity, storyEntity) ->
+                val content = loadInnerSteps(storyEntity)
+                documentEntity.toModel(content)
+            }
 }

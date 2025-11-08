@@ -17,33 +17,27 @@ class FolderDaoDelegator(
         delegate.upsertFolder(folderEntity.toRoomEntity().toEntity())
     }
 
-    override suspend fun getFolderById(id: String): Folder? {
-        return delegate.getFolderById(id)?.toCommonEntity()?.toModel(0)
-    }
+    override suspend fun getFolderById(id: String): Folder? =
+        delegate.getFolderById(id)?.toCommonEntity()?.toModel(0)
 
-    override suspend fun search(query: String, workspaceId: String): List<Folder> {
-        return delegate.search(query, workspaceId).map { it.toCommonEntity().toModel(0) }
-    }
+    override suspend fun search(query: String, workspaceId: String): List<Folder> =
+        delegate.search(query, workspaceId).map { it.toCommonEntity().toModel(0) }
 
-    override suspend fun getLastUpdated(): List<Folder> {
-        return delegate.getLastUpdated().map { it.toCommonEntity().toModel(0) }
-    }
+    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> =
+        delegate.getFoldersByWorkspaceId(workspaceId).map { it.toCommonEntity().toModel(0) }
 
-    override suspend fun getFolderByParentId(id: String): List<Folder> {
-        return delegate.getFolderByParentId(id).map { it.toCommonEntity().toModel(0) }
-    }
+    override suspend fun getLastUpdated(): List<Folder> =
+        delegate.getLastUpdated().map { it.toCommonEntity().toModel(0) }
 
-    override fun listenForFolderByParentId(id: String): Flow<List<Folder>> {
-        return delegate.listenForFolderByParentId(id).map { list ->
+    override suspend fun getFolderByParentId(id: String): List<Folder> =
+        delegate.getFolderByParentId(id).map { it.toCommonEntity().toModel(0) }
+
+    override fun listenForFolderByParentId(id: String): Flow<List<Folder>> =
+        delegate.listenForFolderByParentId(id).map { list ->
             list.map { it.toCommonEntity().toModel(0) }
         }
-    }
 
-    override suspend fun deleteById(id: String): Int {
-        return delegate.deleteById(id)
-    }
+    override suspend fun deleteById(id: String): Int = delegate.deleteById(id)
 
-    override suspend fun deleteByParentId(id: String): Int {
-        return delegate.deleteByParentId(id)
-    }
+    override suspend fun deleteByParentId(id: String): Int = delegate.deleteByParentId(id)
 }

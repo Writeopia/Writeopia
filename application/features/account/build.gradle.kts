@@ -39,6 +39,7 @@ kotlin {
                 implementation(project(":application:core:common_ui"))
                 implementation(project(":application:core:ollama"))
                 implementation(project(":application:core:resources"))
+                implementation(project(":application:core:documents"))
 
                 implementation(libs.kotlinx.datetime)
 
