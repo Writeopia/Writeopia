@@ -233,12 +233,10 @@ class RoomDocumentRepository(
             entity.toModel(content = content)
         }
 
-    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> {
-        println("loadOutdatedDocumentsForWorkspace. workspace: $workspaceId")
-        return documentEntityDao.loadOutdatedDocumentsWithContentForWorkspace(workspaceId)
+    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
+        documentEntityDao.loadOutdatedDocumentsWithContentForWorkspace(workspaceId)
             .map { (documentEntity, storyEntity) ->
                 val content = loadInnerSteps(storyEntity)
                 documentEntity.toModel(content)
             }
-    }
 }
