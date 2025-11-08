@@ -488,7 +488,9 @@ private fun WorkspaceSection(
 
         CommonButton(
             text = "Sync workspace",
-            clickListener = syncWorkspace
+            clickListener = {
+                syncWorkspace()
+            }
         )
 
         if (lastSync.isNotEmpty()) {

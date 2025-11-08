@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Instant
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.map
 
 class RoomDocumentRepository(
     private val documentEntityDao: DocumentEntityDao,
@@ -232,6 +235,12 @@ class RoomDocumentRepository(
             entity.toModel(content = content)
         }
 
-    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
-        emptyList()
+    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> {
+        println("loadOutdatedDocumentsForWorkspace. workspace: $workspaceId")
+        return documentEntityDao.loadOutdatedDocumentsWithContentForWorkspace(workspaceId)
+            .map { (documentEntity, storyEntity) ->
+                val content = loadInnerSteps(storyEntity)
+                documentEntity.toModel(content)
+            }
+    }
 }

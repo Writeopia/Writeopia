@@ -10,6 +10,8 @@ interface FolderCommonDao {
 
     suspend fun search(query: String, workspaceId: String): List<Folder>
 
+    suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder>
+
     suspend fun getLastUpdated(): List<Folder>
 
     suspend fun getFolderByParentId(id: String): List<Folder>

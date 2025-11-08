@@ -17,6 +17,7 @@ class WorkspaceSync(
 
     suspend fun syncWorkspace(workspaceId: String): ResultData<Unit> {
         try {
+            println("start to sync workspace")
             val authToken = authRepository.getAuthToken() ?: return ResultData.Error(null)
             val workspace = authRepository.getWorkspace() ?: return ResultData.Idle()
 
@@ -37,7 +38,8 @@ class WorkspaceSync(
                 documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
             val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
 
-            println("local outdated docs: ${localOutdatedFolders.size}")
+            println("local outdated folders: ${localOutdatedFolders.size}")
+            println("local outdated docs: ${localOutdatedDocs.size}")
 
             val documentsNotSent = documentConflictHandler.handleConflict(
                 localOutdatedDocs,

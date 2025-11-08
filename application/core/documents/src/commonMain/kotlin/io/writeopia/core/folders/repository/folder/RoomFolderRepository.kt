@@ -99,7 +99,7 @@ class RoomFolderRepository(
     }
 
     override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> {
-        TODO("Not yet implemented")
+        return folderRoomDao.getFoldersForWorkspace(workspaceId)
     }
 
     override suspend fun search(query: String, workspaceId: String): List<Folder> =

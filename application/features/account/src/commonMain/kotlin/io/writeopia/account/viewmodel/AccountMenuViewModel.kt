@@ -7,5 +7,9 @@ interface AccountMenuViewModel {
 
     val isLoggedIn: StateFlow<ResultData<Boolean>>
 
+    val lastWorkspaceSync: StateFlow<String>
+
     fun logout(onLogOutSuccess: () -> Unit)
+
+    fun syncWorkspace()
 }

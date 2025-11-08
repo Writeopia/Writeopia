@@ -10,6 +10,7 @@ import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.core.folders.di.FoldersInjector
+import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.di.OllamaConfigInjector
 import io.writeopia.di.OllamaInjection
@@ -36,6 +37,7 @@ class SideMenuKmpInjector(
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val connectionInjector: WriteopiaConnectionInjector =
         WriteopiaConnectionInjector.singleton(),
+    private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
 ) : SideMenuInjector, OllamaConfigInjector {
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
@@ -53,24 +55,6 @@ class SideMenuKmpInjector(
             authCoreInjection.provideAuthRepository()
         )
 
-    private fun provideWorkspaceSync(): WorkspaceSync {
-        val documentRepo = repositoryInjection.provideDocumentRepository()
-        return WorkspaceSync(
-            folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
-            documentRepository = documentRepo,
-            authRepository = authCoreInjection.provideAuthRepository(),
-            documentsApi = DocumentsApi(
-                appConnectionInjection.provideHttpClient(),
-                connectionInjector.baseUrl()
-            ),
-            documentConflictHandler = DocumentConflictHandler(
-                documentRepository = documentRepo,
-                folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
-                authCoreInjection.provideAuthRepository()
-            ),
-        )
-    }
-
     private fun provideWorkspaceApi() =
         WorkspaceApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
 
@@ -87,7 +71,7 @@ class SideMenuKmpInjector(
                 ollamaRepository = ollamaInjection.provideRepository(),
                 configRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
                 authApi = authCoreInjection.provideAuthApi(),
-                workspaceSync = provideWorkspaceSync(),
+                workspaceSync = workspaceInjection.provideWorkspaceSync(),
                 workspaceApi = provideWorkspaceApi(),
                 keyboardEventFlow = keyboardEventFlow
             )
