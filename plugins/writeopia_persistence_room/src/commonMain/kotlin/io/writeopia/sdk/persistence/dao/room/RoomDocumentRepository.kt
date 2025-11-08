@@ -78,9 +78,7 @@ class RoomDocumentRepository(
         orderBy: String,
         userId: String,
         instant: Instant
-    ): List<Document> {
-        throw IllegalStateException("This method is not supported")
-    }
+    ): List<Document> = throw IllegalStateException("This method is not supported")
 
     override suspend fun favoriteDocumentByIds(ids: Set<String>) {
         setFavorite(ids, "", true)

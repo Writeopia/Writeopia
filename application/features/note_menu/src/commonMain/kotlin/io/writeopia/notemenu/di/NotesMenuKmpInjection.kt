@@ -19,7 +19,6 @@ import io.writeopia.notemenu.viewmodel.FolderStateController
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
-import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +28,7 @@ class NotesMenuKmpInjection private constructor(
     private val appConfigurationInjector: AppConfigurationInjector =
         AppConfigurationInjector.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
-    private val repositoryInjection: RepositoryInjector,
+    private val repositoryInjection: RepositoryInjector = RepositoryInjector.singleton(),
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
@@ -47,14 +46,13 @@ class NotesMenuKmpInjection private constructor(
         configurationRepository: ConfigurationRepository =
             appConfigurationInjector.provideNotesConfigurationRepository(),
         folderRepository: FolderRepository = provideFolderRepository()
-    ): NotesUseCase {
-        return NotesUseCase.singleton(
+    ): NotesUseCase =
+        NotesUseCase.singleton(
             documentRepository,
             configurationRepository,
             folderRepository,
             authCoreInjection.provideAuthRepository()
         )
-    }
 
     private fun provideFolderStateController(): FolderStateController =
         FolderStateController(
@@ -111,9 +109,7 @@ class NotesMenuKmpInjection private constructor(
         private var instanceMobile: NotesMenuKmpInjection? = null
         private var instanceDesktop: NotesMenuKmpInjection? = null
 
-        fun mobile(
-        ) = instanceMobile ?: NotesMenuKmpInjection(
-            repositoryInjection = RepositoryInjector.singleton(),
+        fun mobile() = instanceMobile ?: NotesMenuKmpInjection(
             selectionState = MutableStateFlow(false),
             keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE)
         ).also {
@@ -124,7 +120,6 @@ class NotesMenuKmpInjection private constructor(
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
         ) = instanceDesktop ?: NotesMenuKmpInjection(
-            repositoryInjection = RepositoryInjector.singleton(),
             selectionState = selectionState,
             keyboardEventFlow = keyboardEventFlow,
         ).also {

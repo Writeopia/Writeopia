@@ -585,7 +585,6 @@ private fun AiSection(
     }
 }
 
-
 @Composable
 private fun SelectModels(
     ollamaAvailableModels: Flow<ResultData<List<String>>>,

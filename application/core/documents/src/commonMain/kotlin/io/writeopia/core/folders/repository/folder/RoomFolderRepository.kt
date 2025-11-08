@@ -98,9 +98,8 @@ class RoomFolderRepository(
         SelectedIds.ids.remove(parentId)
     }
 
-    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> {
-        return folderRoomDao.getFoldersForWorkspace(workspaceId)
-    }
+    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =
+        folderRoomDao.getFoldersForWorkspace(workspaceId)
 
     override suspend fun search(query: String, workspaceId: String): List<Folder> =
         folderRoomDao.search(query, workspaceId)
