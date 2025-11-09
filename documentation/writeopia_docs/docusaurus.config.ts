@@ -38,7 +38,7 @@ const config: Config = {
         title: 'Writeopia',
         logo: {
           alt: 'Writeopia Logo',
-          src: 'img/base_icon_transparent.svg',
+          src: 'img/logo.png',
         },
         items: [
           {
