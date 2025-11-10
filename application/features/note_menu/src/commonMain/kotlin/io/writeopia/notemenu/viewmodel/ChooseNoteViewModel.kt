@@ -37,6 +37,8 @@ interface ChooseNoteViewModel : FolderController {
 
     val showOnboardingState: StateFlow<OnboardingState>
 
+    val showAddMenuState: StateFlow<Boolean>
+
     //    fun requestDocuments(force: Boolean)
     fun handleMenuItemTap(id: String): Boolean
 
@@ -45,6 +47,10 @@ interface ChooseNoteViewModel : FolderController {
     fun showEditMenu()
 
     fun showSortMenu()
+
+    fun showAddMenu()
+
+    fun hideAddMenu()
 
     fun cancelEditMenu()
 
@@ -95,6 +101,8 @@ interface ChooseNoteViewModel : FolderController {
     fun completeOnboarding()
 
     fun syncFolderWithCloud()
+
+    fun newFolder()
 }
 
 sealed interface UserState<T> {

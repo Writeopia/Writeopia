@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
@@ -35,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,10 +55,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.icons.WrIcons.folder
 import io.writeopia.commonui.IconsPicker
+import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.notemenu.ui.dto.NotesUi
@@ -79,6 +83,7 @@ import io.writeopia.ui.drawer.preview.ImagePreviewDrawer
 import io.writeopia.ui.drawer.preview.TextPreviewDrawer
 import io.writeopia.ui.drawer.preview.UnOrderedListItemPreviewDrawer
 import io.writeopia.ui.model.DrawInfo
+import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 const val DOCUMENT_ITEM_TEST_TAG = "DocumentItem_"
@@ -86,8 +91,9 @@ const val ADD_NOTE_TEST_TAG = "addNote"
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun NotesCards(
+fun NotesCardsScreen(
     documents: ResultData<NotesUi>,
+    showAddMenuState: StateFlow<Boolean>,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     minimalNoteWidth: Dp = minimalNoteCardWidth(),
@@ -98,6 +104,8 @@ fun NotesCards(
     changeIcon: (String, String, Int, IconChange) -> Unit,
     onSelection: (String) -> Unit,
     newNote: () -> Unit,
+    newFolder: () -> Unit,
+    hideShowMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (documents) {
@@ -188,6 +196,58 @@ fun NotesCards(
         is ResultData.Loading, is ResultData.Idle, is ResultData.InProgress -> {
             Box(modifier = modifier.fillMaxSize()) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
+        }
+    }
+
+    val showAddMenu by showAddMenuState.collectAsState()
+
+    if (showAddMenu) {
+        Dialog(onDismissRequest = hideShowMenu) {
+            Card(modifier = Modifier.width(320.dp), shape = MaterialTheme.shapes.large) {
+                Column(
+                    modifier = Modifier.padding(
+                        start = 20.dp,
+                        end = 20.dp,
+                        bottom = 20.dp,
+                        top = 20.dp
+                    ),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val modifier = Modifier.height(50.dp).width(280.dp)
+
+                    Text(
+                        "Add",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    CommonButton(
+                        modifier = modifier,
+                        text = "Document",
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        clickListener = {
+                            hideShowMenu()
+                            newNote()
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    CommonButton(
+                        modifier = modifier,
+                        text = "Folder",
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        clickListener = {
+                            hideShowMenu()
+                            newFolder()
+                        }
+                    )
+                }
             }
         }
     }

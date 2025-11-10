@@ -33,12 +33,13 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.notemenu.ui.screen.configuration.molecules.MobileConfigurationsMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.notemenu.ui.screen.documents.ADD_NOTE_TEST_TAG
-import io.writeopia.notemenu.ui.screen.documents.NotesCards
+import io.writeopia.notemenu.ui.screen.documents.NotesCardsScreen
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.UserState
 import io.writeopia.notemenu.viewmodel.toNumberDesktop
@@ -55,6 +56,7 @@ internal fun MobileChooseNoteScreen(
     navigateToNote: (String, String) -> Unit,
     newNote: () -> Unit,
     navigateToAccount: () -> Unit,
+    navigateToNotes: (NotesNavigation) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(key1 = "refresh", block = {
@@ -76,7 +78,7 @@ internal fun MobileChooseNoteScreen(
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(newNoteClick = newNote)
+                FloatingActionButton(onClick = chooseNoteViewModel::showAddMenu)
             }
         ) { paddingValues ->
             DraggableScreen {
@@ -87,7 +89,8 @@ internal fun MobileChooseNoteScreen(
                     loadNote = navigateToNote,
                     selectionListener = chooseNoteViewModel::onDocumentSelected,
                     paddingValues = paddingValues,
-                    newNote = newNote
+                    newNote = newNote,
+                    navigateToNotes = navigateToNotes,
                 )
             }
         }
@@ -220,13 +223,15 @@ private fun getUserName(userNameState: UserState<String>): String =
     }
 
 @Composable
-private fun FloatingActionButton(newNoteClick: () -> Unit) {
+private fun FloatingActionButton(
+    onClick: () -> Unit
+) {
     FloatingActionButton(
         modifier = Modifier.semantics {
             testTag = ADD_NOTE_TEST_TAG
         },
         containerColor = MaterialTheme.colorScheme.primary,
-        onClick = newNoteClick,
+        onClick = onClick,
         content = {
             Icon(
                 imageVector = WrIcons.add,
@@ -246,19 +251,28 @@ private fun Content(
     loadNote: (String, String) -> Unit,
     selectionListener: (String, Boolean) -> Unit,
     newNote: () -> Unit,
+    navigateToNotes: (NotesNavigation) -> Unit,
     paddingValues: PaddingValues,
 ) {
-    NotesCards(
+    NotesCardsScreen(
         documents = chooseNoteViewModel.documentsState.collectAsState().value,
+        showAddMenuState = chooseNoteViewModel.showAddMenuState,
         animatedVisibilityScope = animatedVisibilityScope,
         sharedTransitionScope = sharedTransitionScope,
         loadNote = loadNote,
         selectionListener = selectionListener,
-        folderClick = {},
+        hideShowMenu = chooseNoteViewModel::hideAddMenu,
+        folderClick = { id ->
+            val handled = chooseNoteViewModel.handleMenuItemTap(id)
+            if (!handled) {
+                navigateToNotes(NotesNavigation.Folder(id))
+            }
+        },
         changeIcon = { _, _, _, _ -> },
-        moveRequest = { _, _ -> },
+        moveRequest = chooseNoteViewModel::moveToFolder,
         onSelection = {},
         newNote = newNote,
+        newFolder = chooseNoteViewModel::newFolder,
         modifier = Modifier
             .padding(paddingValues)
             .fillMaxSize()
