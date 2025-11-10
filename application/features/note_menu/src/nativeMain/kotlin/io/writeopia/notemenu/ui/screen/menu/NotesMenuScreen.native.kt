@@ -38,6 +38,7 @@ actual fun NotesMenuScreen(
         navigateToNote = onNoteClick,
         newNote = onNewNoteClick,
         navigateToAccount = onAccountClick,
+        navigateToNotes = navigateToFolders,
         modifier = modifier,
     )
 }
