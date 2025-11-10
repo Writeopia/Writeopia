@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -19,6 +20,7 @@ internal fun ChooseNoteScreen(
     navigateToNote: (String, String) -> Unit,
     newNote: () -> Unit,
     navigateToAccount: () -> Unit,
+    navigateToNotes: (NotesNavigation) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
@@ -43,6 +45,7 @@ internal fun ChooseNoteScreen(
         navigateToNote = navigateToNote,
         newNote = newNote,
         navigateToAccount = navigateToAccount,
+        navigateToNotes = navigateToNotes,
         modifier = modifier,
     )
 }

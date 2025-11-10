@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.notemenu.ui.screen.configuration.molecules.MobileConfigurationsMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu
@@ -55,6 +56,7 @@ internal fun MobileChooseNoteScreen(
     navigateToNote: (String, String) -> Unit,
     newNote: () -> Unit,
     navigateToAccount: () -> Unit,
+    navigateToNotes: (NotesNavigation) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(key1 = "refresh", block = {
@@ -87,7 +89,8 @@ internal fun MobileChooseNoteScreen(
                     loadNote = navigateToNote,
                     selectionListener = chooseNoteViewModel::onDocumentSelected,
                     paddingValues = paddingValues,
-                    newNote = newNote
+                    newNote = newNote,
+                    navigateToNotes = navigateToNotes,
                 )
             }
         }
@@ -248,6 +251,7 @@ private fun Content(
     loadNote: (String, String) -> Unit,
     selectionListener: (String, Boolean) -> Unit,
     newNote: () -> Unit,
+    navigateToNotes: (NotesNavigation) -> Unit,
     paddingValues: PaddingValues,
 ) {
     NotesCardsScreen(
@@ -258,9 +262,14 @@ private fun Content(
         loadNote = loadNote,
         selectionListener = selectionListener,
         hideShowMenu = chooseNoteViewModel::hideAddMenu,
-        folderClick = {},
+        folderClick = { id ->
+            val handled = chooseNoteViewModel.handleMenuItemTap(id)
+            if (!handled) {
+                navigateToNotes(NotesNavigation.Folder(id))
+            }
+        },
         changeIcon = { _, _, _, _ -> },
-        moveRequest = { _, _ -> },
+        moveRequest = chooseNoteViewModel::moveToFolder,
         onSelection = {},
         newNote = newNote,
         newFolder = chooseNoteViewModel::newFolder,

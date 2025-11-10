@@ -102,9 +102,7 @@ fun DesktopNotesMenu(
                                 navigateToNotes(NotesNavigation.Folder(id))
                             }
                         },
-                        moveRequest = { item, parentId ->
-                            chooseNoteViewModel.moveToFolder(item, parentId)
-                        },
+                        moveRequest = chooseNoteViewModel::moveToFolder,
                         modifier = Modifier.weight(1F).fillMaxHeight()
                             .padding(end = 10.dp, top = 20.dp),
                         changeIcon = chooseNoteViewModel::changeIcons,

@@ -170,7 +170,10 @@ class RoomDocumentRepository(
     }
 
     override suspend fun moveToFolder(documentId: String, parentId: String) {
-        TODO("Not yet implemented")
+        documentEntityDao.loadDocumentById(id = documentId)?.let { documentEntity ->
+            val updated = documentEntity.copy(parentId = parentId)
+            documentEntityDao.updateDocument(updated)
+        }
     }
 
     override suspend fun loadDocumentsByParentId(
