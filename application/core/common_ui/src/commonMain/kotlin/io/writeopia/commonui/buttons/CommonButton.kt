@@ -2,6 +2,7 @@ package io.writeopia.commonui.buttons
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -58,6 +60,8 @@ fun CommonButton(
     defaultColor: Color = WriteopiaTheme.colorScheme.defaultButton,
     selectedColor: Color = WriteopiaTheme.colorScheme.highlight,
     isEnabledState: StateFlow<Boolean> = MutableStateFlow(true),
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     clickListener: () -> Unit,
 ) {
     val isEditable by isEnabledState.collectAsState()
@@ -66,7 +70,8 @@ fun CommonButton(
     val shape = MaterialTheme.shapes.medium
 
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = verticalAlignment,
+        horizontalArrangement = horizontalArrangement,
         modifier = modifier
             .background(lockButtonColor, shape)
             .clip(shape)

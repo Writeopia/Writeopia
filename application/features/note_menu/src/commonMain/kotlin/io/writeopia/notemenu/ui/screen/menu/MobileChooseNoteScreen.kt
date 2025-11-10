@@ -38,7 +38,7 @@ import io.writeopia.notemenu.ui.screen.configuration.molecules.MobileConfigurati
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.notemenu.ui.screen.documents.ADD_NOTE_TEST_TAG
-import io.writeopia.notemenu.ui.screen.documents.NotesCards
+import io.writeopia.notemenu.ui.screen.documents.NotesCardsScreen
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.UserState
 import io.writeopia.notemenu.viewmodel.toNumberDesktop
@@ -76,7 +76,7 @@ internal fun MobileChooseNoteScreen(
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(newNoteClick = newNote)
+                FloatingActionButton(onClick = chooseNoteViewModel::showAddMenu)
             }
         ) { paddingValues ->
             DraggableScreen {
@@ -220,13 +220,15 @@ private fun getUserName(userNameState: UserState<String>): String =
     }
 
 @Composable
-private fun FloatingActionButton(newNoteClick: () -> Unit) {
+private fun FloatingActionButton(
+    onClick: () -> Unit
+) {
     FloatingActionButton(
         modifier = Modifier.semantics {
             testTag = ADD_NOTE_TEST_TAG
         },
         containerColor = MaterialTheme.colorScheme.primary,
-        onClick = newNoteClick,
+        onClick = onClick,
         content = {
             Icon(
                 imageVector = WrIcons.add,
@@ -248,17 +250,20 @@ private fun Content(
     newNote: () -> Unit,
     paddingValues: PaddingValues,
 ) {
-    NotesCards(
+    NotesCardsScreen(
         documents = chooseNoteViewModel.documentsState.collectAsState().value,
+        showAddMenuState = chooseNoteViewModel.showAddMenuState,
         animatedVisibilityScope = animatedVisibilityScope,
         sharedTransitionScope = sharedTransitionScope,
         loadNote = loadNote,
         selectionListener = selectionListener,
+        hideShowMenu = chooseNoteViewModel::hideAddMenu,
         folderClick = {},
         changeIcon = { _, _, _, _ -> },
         moveRequest = { _, _ -> },
         onSelection = {},
         newNote = newNote,
+        newFolder = chooseNoteViewModel::newFolder,
         modifier = Modifier
             .padding(paddingValues)
             .fillMaxSize()

@@ -204,6 +204,9 @@ internal class ChooseNoteKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Idle())
     }
 
+    private val _showAddMenu = MutableStateFlow(false)
+    override val showAddMenuState: StateFlow<Boolean> = _showAddMenu
+
     init {
         folderController.initCoroutine(viewModelScope)
 
@@ -463,6 +466,12 @@ internal class ChooseNoteKmpViewModel(
         }
     }
 
+    override fun newFolder() {
+        viewModelScope.launch(Dispatchers.Default) {
+            folderController.addFolder()
+        }
+    }
+
     private suspend fun importJsonNotes(externalFiles: List<ExternalFile>, now: Instant) {
         externalFiles.filter { file -> file.extension == "json" }
             .map { file -> file.fullPath }
@@ -484,6 +493,14 @@ internal class ChooseNoteKmpViewModel(
                 )
             }
             .collect(notesUseCase::saveDocumentDb)
+    }
+
+    override fun showAddMenu() {
+        _showAddMenu.value = true
+    }
+
+    override fun hideAddMenu() {
+        _showAddMenu.value = false
     }
 
     private suspend fun importMarkdownNotes(externalFiles: List<ExternalFile>, now: Instant) {

@@ -40,9 +40,9 @@ internal fun ChooseNoteScreen(
         chooseNoteViewModel,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
-        navigateToNote,
-        newNote,
-        navigateToAccount,
-        modifier
+        navigateToNote = navigateToNote,
+        newNote = newNote,
+        navigateToAccount = navigateToAccount,
+        modifier = modifier,
     )
 }

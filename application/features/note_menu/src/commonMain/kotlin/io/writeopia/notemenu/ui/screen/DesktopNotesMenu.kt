@@ -38,7 +38,7 @@ import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMen
 import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
 import io.writeopia.controller.OllamaConfigController
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
-import io.writeopia.notemenu.ui.screen.documents.NotesCards
+import io.writeopia.notemenu.ui.screen.documents.NotesCardsScreen
 import io.writeopia.notemenu.ui.screen.file.fileChooserLoad
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
@@ -86,8 +86,9 @@ fun DesktopNotesMenu(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(start = 40.dp)
                 ) {
-                    NotesCards(
+                    NotesCardsScreen(
                         documents = chooseNoteViewModel.documentsState.collectAsState().value,
+                        showAddMenuState = chooseNoteViewModel.showAddMenuState,
                         loadNote = { id, title ->
                             val handled = chooseNoteViewModel.handleMenuItemTap(id)
                             if (!handled) {
@@ -110,7 +111,9 @@ fun DesktopNotesMenu(
                         onSelection = chooseNoteViewModel::toggleSelection,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,
-                        newNote = onNewNoteClick
+                        newNote = onNewNoteClick,
+                        newFolder = chooseNoteViewModel::newFolder,
+                        hideShowMenu = chooseNoteViewModel::hideAddMenu,
                     )
 
                     Spacer(modifier = Modifier.width(20.dp))
@@ -159,7 +162,7 @@ fun DesktopNotesMenu(
                     .padding(horizontal = 40.dp - borderPadding, vertical = 40.dp)
                     .testTag("addNote"),
                 onClick = {
-                    chooseNoteViewModel.requestInitFlow(onNewNoteClick)
+                    chooseNoteViewModel.requestInitFlow(chooseNoteViewModel::showAddMenu)
                 },
                 content = {
                     Icon(
