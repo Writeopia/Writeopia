@@ -22,7 +22,7 @@
   />
 </p>
 
-This is the source code for Writopia, a text editing App and SDK.
+This is the source code for Writopia, a text editing [App](#Applicaion) and [SDK](#SDK).
 
 # Application
 Writeopia is a modern text editor that integrates AI while prioritizing offline functionality and user privacy. Unlike cloud-based AI assistants, Writeopia allows you to choose your own AI model and interact with it locally, ensuring that your data stays on your device.
