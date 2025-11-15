@@ -10,8 +10,10 @@ import kotlinx.coroutines.flow.flow
 interface AuthRepository : UserRepository {
 
     override fun listenForUser(): Flow<WriteopiaUser> = flow { emit(getUser()) }
-    override fun listenForWorkspace(): Flow<Workspace> =
-        flow { emit(getWorkspace() ?: Workspace.disconnectedWorkspace()) }
+
+    override fun listenForWorkspace(): Flow<Workspace> = flow {
+        emit(getWorkspace() ?: Workspace.disconnectedWorkspace())
+    }
 
     override suspend fun getUser(): WriteopiaUser
 
