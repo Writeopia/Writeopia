@@ -864,11 +864,11 @@ class WriteopiaStateManager(
     }
 
     fun onDragHover(position: Int) {
-        _dragPosition.value = position
+        dragPosition.value = position
     }
 
     fun onDragStart() {
-        _isDragging.value = true
+        isDragging.value = true
     }
 
     fun onDragStop() {
@@ -876,7 +876,7 @@ class WriteopiaStateManager(
             // It is necessary to delay the stop dragging event to wait for the move request to
             // be received.
             delay(100)
-            _isDragging.value = false
+            isDragging.value = false
         }
     }
 
