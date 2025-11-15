@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.flow
 interface UserRepository {
     fun listenForUser(): Flow<WriteopiaUser> = flow { emit(getUser()) }
 
+    fun listenForWorkspace(): Flow<Workspace>
+
     suspend fun getUser(): WriteopiaUser
 
     suspend fun getWorkspace(): Workspace?

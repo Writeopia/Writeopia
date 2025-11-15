@@ -23,6 +23,7 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.models.user.WriteopiaUser
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.repository.UserRepository
@@ -300,7 +301,9 @@ class WriteopiaStateManager(
         coroutineScope.launch(dispatcher) {
             documentTracker.saveOnStoryChanges(
                 _documentEditionState,
-                userRepository?.getWorkspace()?.id ?: ""
+                userRepository?.listenForWorkspace()?.map { workspace ->
+                    workspace.id
+                } ?: MutableStateFlow(Workspace.disconnectedWorkspace().id)
             )
         }
     }
