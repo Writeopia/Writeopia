@@ -13,6 +13,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.Clock
 
 class OnUpdateDocumentTracker(
@@ -24,9 +25,14 @@ class OnUpdateDocumentTracker(
 
     override suspend fun saveOnStoryChanges(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
-        workspaceId: String
+        workspaceIdFlow: Flow<String>,
     ) {
-        documentEditionFlow.collectLatest { (storyState, documentInfo) ->
+        combine(
+            documentEditionFlow,
+            workspaceIdFlow
+        ) { (storyState, documentInfo), workspaceId ->
+            Triple(storyState, documentInfo, workspaceId)
+        }.collectLatest { (storyState, documentInfo, workspaceId) ->
             when (val lastEdit = storyState.lastEdit) {
                 is LastEdit.LineEdition -> {
                     if (lastEdit.storyStep.ephemeral) return@collectLatest
