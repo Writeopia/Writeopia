@@ -33,6 +33,7 @@ actual fun NotesMenuScreen(
     modifier: Modifier
 ) {
     MobileChooseNoteScreen(
+        isDarkTheme = isDarkTheme,
         chooseNoteViewModel = chooseNoteViewModel,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
