@@ -185,7 +185,7 @@ class GlobalShellKmpViewModel(
         ) { selectedFolder, menuItems, workspace ->
             if (selectedFolder != null) {
                 val folder =
-                    menuItems["${selectedFolder.parentId}:${workspace.id}"]
+                    menuItems[selectedFolder.parentId]
                         ?.find { menuItem ->
                             menuItem.id == selectedFolder.id
                         } as? Folder
