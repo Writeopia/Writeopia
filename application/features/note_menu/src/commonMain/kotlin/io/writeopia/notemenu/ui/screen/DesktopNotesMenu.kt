@@ -49,6 +49,7 @@ import io.writeopia.onboarding.OnboardingWorkspace
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun DesktopNotesMenu(
+    isDarkTheme: Boolean,
     folderId: String,
     chooseNoteViewModel: ChooseNoteViewModel,
     ollamaConfigController: OllamaConfigController? = null,
@@ -87,6 +88,7 @@ fun DesktopNotesMenu(
                     modifier = Modifier.padding(start = 40.dp)
                 ) {
                     NotesCardsScreen(
+                        isDarkTheme = isDarkTheme,
                         documents = chooseNoteViewModel.documentsState.collectAsState().value,
                         showAddMenuState = chooseNoteViewModel.showAddMenuState,
                         loadNote = { id, title ->

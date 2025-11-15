@@ -28,6 +28,7 @@ object NoteMenuDestiny {
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 fun NavGraphBuilder.notesMenuNavigation(
+    isDarkTheme: Boolean,
     notesMenuInjection: NotesMenuInjection,
     ollamaConfigInjector: OllamaConfigInjector? = null,
     navigationController: NavController,
@@ -68,6 +69,7 @@ fun NavGraphBuilder.notesMenuNavigation(
         val ollamaConfigController = ollamaConfigInjector?.provideOllamaConfigController()
 
         NotesMenuScreen(
+            isDarkTheme = isDarkTheme,
             folderId = notesNavigation.id,
             chooseNoteViewModel = chooseNoteViewModel,
             ollamaConfigController = ollamaConfigController,
@@ -94,6 +96,7 @@ fun NavGraphBuilder.notesMenuNavigation(
         val ollamaConfigController = ollamaConfigInjector?.provideOllamaConfigController()
 
         NotesMenuScreen(
+            isDarkTheme = isDarkTheme,
             folderId = notesNavigation.id,
             chooseNoteViewModel = chooseNoteViewModel,
             ollamaConfigController = ollamaConfigController,
