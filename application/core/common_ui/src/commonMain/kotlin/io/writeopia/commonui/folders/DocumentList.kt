@@ -209,9 +209,7 @@ private fun FolderItem(
                 tint = WriteopiaTheme.colorScheme.textLight,
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .clickable(onClick = {
-                        editFolder(folder)
-                    })
+                    .clickable { editFolder(folder) }
                     .size(26.dp)
                     .padding(4.dp)
             )

@@ -277,6 +277,7 @@ private fun Content(
         onSelection = {},
         newNote = newNote,
         newFolder = chooseNoteViewModel::newFolder,
+        editFolder = chooseNoteViewModel::editFolder,
         modifier = Modifier
             .padding(paddingValues)
             .fillMaxSize()

@@ -107,6 +107,7 @@ fun NotesCardsScreen(
     newNote: () -> Unit,
     newFolder: () -> Unit,
     hideShowMenu: () -> Unit,
+    editFolder: (MenuItemUi.FolderUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (documents) {
@@ -139,6 +140,7 @@ fun NotesCardsScreen(
                                     changeIcon = changeIcon,
                                     onDragIconClick = onSelection,
                                     newNote = newNote,
+                                    editFolder = editFolder,
                                     modifier = listModifier,
                                 )
                             }
@@ -157,6 +159,7 @@ fun NotesCardsScreen(
                                     changeIcon = changeIcon,
                                     onDragIconClick = onSelection,
                                     newNote = newNote,
+                                    editFolder = editFolder,
                                     modifier = listModifier,
                                 )
                             }
@@ -174,6 +177,7 @@ fun NotesCardsScreen(
                                     changeIcon = changeIcon,
                                     onDragIconClick = onSelection,
                                     newNote = newNote,
+                                    editFolder = editFolder,
                                     modifier = listModifier,
                                 )
                             }
@@ -273,6 +277,7 @@ private fun LazyStaggeredGridNotes(
     contentPadding: PaddingValues = PaddingValues(12.dp),
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
+    editFolder: (MenuItemUi.FolderUi) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val spacing = 6.dp
@@ -329,6 +334,7 @@ private fun LazyStaggeredGridNotes(
                                 changeIcon(id, icon, tint, IconChange.FOLDER)
                             },
                             onDragIconClick = { onDragIconClick(menuItem.documentId) },
+                            editFolder = editFolder,
                             modifier = itemModifier
                         )
                     }
@@ -354,6 +360,7 @@ private fun LazyGridNotes(
     contentPadding: PaddingValues = PaddingValues(12.dp),
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
+    editFolder: (MenuItemUi.FolderUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val spacing = Arrangement.spacedBy(6.dp)
@@ -407,6 +414,7 @@ private fun LazyGridNotes(
                                 changeIcon(id, icon, tint, IconChange.FOLDER)
                             },
                             position = i,
+                            editFolder = editFolder,
                             onDragIconClick = { onDragIconClick(menuItem.documentId) },
                         )
                     }
@@ -431,6 +439,7 @@ private fun LazyColumnNotes(
     contentPadding: PaddingValues = PaddingValues(12.dp),
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
+    editFolder: (MenuItemUi.FolderUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -480,6 +489,7 @@ private fun LazyColumnNotes(
                                 changeIcon(id, icon, tint, IconChange.FOLDER)
                             },
                             position = i,
+                            editFolder = editFolder,
                             onDragIconClick = { onDragIconClick(menuItem.documentId) },
                         )
                     }
@@ -502,6 +512,7 @@ private fun FolderItem(
     changeIcon: (String, String, Int) -> Unit,
     onDragIconClick: () -> Unit,
     modifier: Modifier = Modifier,
+    editFolder: (MenuItemUi.FolderUi) -> Unit,
 ) {
 //    sharedTransitionScope.run {
     Box(
@@ -613,10 +624,29 @@ private fun FolderItem(
                     }
                 }
 
-                if (folderUi.isFavorite) {
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (folderUi.isFavorite) {
+                        Icon(
+                            modifier = Modifier.size(40.dp).padding(12.dp),
+                            imageVector = WrIcons.favorites,
+                            contentDescription = "Favorite",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+
                     Icon(
-                        modifier = Modifier.align(Alignment.TopEnd).size(40.dp).padding(12.dp),
-                        imageVector = WrIcons.favorites,
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .clip(MaterialTheme.shapes.large)
+                            .clickable {
+                                editFolder(folderUi)
+                            }
+                            .size(34.dp)
+                            .padding(8.dp),
+                        imageVector = WrIcons.moreHoriz,
                         contentDescription = "Favorite",
                         tint = MaterialTheme.colorScheme.onBackground
                     )
