@@ -207,6 +207,22 @@ internal class ChooseNoteKmpViewModel(
     private val _showAddMenuState = MutableStateFlow(false)
     override val showAddMenuState: StateFlow<Boolean> = _showAddMenuState
 
+    override val editFolderState: StateFlow<Folder?> by lazy {
+        combine(
+            folderController.editingFolderState,
+            menuItemsPerFolderId,
+        ) { selectedFolder, menuItems ->
+            if (selectedFolder != null) {
+                menuItems[selectedFolder.parentId]
+                    ?.find { menuItem ->
+                        menuItem.id == selectedFolder.id
+                    } as? Folder
+            } else {
+                null
+            }
+        }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+    }
+
     init {
         folderController.initCoroutine(viewModelScope)
 

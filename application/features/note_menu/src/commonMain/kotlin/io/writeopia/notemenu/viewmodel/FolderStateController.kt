@@ -43,7 +43,6 @@ class FolderStateController private constructor(
     }
 
     override fun editFolder(folder: MenuItemUi.FolderUi) {
-        println("editing folder: $folder. this: $this")
         _editingFolder.value = folder
     }
 
