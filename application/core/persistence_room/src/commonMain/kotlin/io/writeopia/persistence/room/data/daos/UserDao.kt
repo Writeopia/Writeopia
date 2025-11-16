@@ -21,4 +21,7 @@ interface UserDao {
 
     @Query("SELECT * FROM $USER_ENTITY WHERE selected = 1")
     suspend fun getCurrentUser(): UserEntity?
+
+    @Query("UPDATE $USER_ENTITY SET selected = 0")
+    suspend fun unselectAllUsers()
 }

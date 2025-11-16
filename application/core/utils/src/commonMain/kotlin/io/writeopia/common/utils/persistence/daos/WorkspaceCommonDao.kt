@@ -11,4 +11,6 @@ interface WorkspaceCommonDao {
     suspend fun deleteWorkspace(workspaceId: String)
 
     suspend fun selectCurrentWorkspace(): Workspace?
+
+    suspend fun unselectAllWorkspaces()
 }

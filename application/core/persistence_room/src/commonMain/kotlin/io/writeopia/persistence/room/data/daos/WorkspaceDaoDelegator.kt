@@ -22,5 +22,9 @@ class WorkspaceDaoDelegator(private val workspaceDao: WorkspaceDao): WorkspaceCo
     }
 
     override suspend fun selectCurrentWorkspace(): Workspace? =
-        workspaceDao.selectCurrentWorkspace()?.toDomain()
+        workspaceDao.currentWorkspace()?.toDomain()
+
+    override suspend fun unselectAllWorkspaces() {
+        workspaceDao.unselectAllWorkspaces()
+    }
 }

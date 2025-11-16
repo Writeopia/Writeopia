@@ -13,8 +13,11 @@ interface WorkspaceDao {
     suspend fun getWorkspaceById(id: String): WorkspaceEntity?
 
     @Query("SELECT * FROM workspace_entity WHERE selected = 1 LIMIT 1")
-    suspend fun selectCurrentWorkspace(): WorkspaceEntity?
+    suspend fun currentWorkspace(): WorkspaceEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(workspace: WorkspaceEntity)
+
+    @Query("UPDATE workspace_entity SET selected = 0")
+    suspend fun unselectAllWorkspaces()
 }
