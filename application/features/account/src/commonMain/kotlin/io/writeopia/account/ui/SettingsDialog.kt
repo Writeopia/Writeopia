@@ -496,7 +496,7 @@ private fun WorkspaceSection(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        when(lastSync) {
+        when (lastSync) {
             is ResultData.Complete<String> -> {
                 Text(
                     text = lastSync.data,
@@ -504,6 +504,7 @@ private fun WorkspaceSection(
                     color = titleColor
                 )
             }
+
             is ResultData.Error<*> -> {
                 Text(
                     text = lastSync.exception?.message ?: "Error syncing workspace",
@@ -511,6 +512,7 @@ private fun WorkspaceSection(
                     color = titleColor
                 )
             }
+
             is ResultData.Loading<*> -> {
                 println("progress...")
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
