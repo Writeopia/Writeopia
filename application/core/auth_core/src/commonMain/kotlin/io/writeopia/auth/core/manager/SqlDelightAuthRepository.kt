@@ -40,12 +40,12 @@ internal class SqlDelightAuthRepository(
 
     override suspend fun saveUser(user: WriteopiaUser, selected: Boolean) {
         writeopiaDb?.writeopiaUserEntityQueries?.insertUser(
-                id = user.id,
-                name = user.name,
-                email = user.email,
-                selected = selected.toLong(),
-                tier = user.tier.tierName()
-            )
+            id = user.id,
+            name = user.name,
+            email = user.email,
+            selected = selected.toLong(),
+            tier = user.tier.tierName()
+        )
     }
 
     override suspend fun getAuthToken(): String? =
