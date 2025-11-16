@@ -23,6 +23,7 @@ fun Document.toEntity() = DocumentEntity(
     title = title,
     createdAt = createdAt.toEpochMilliseconds(),
     lastUpdatedAt = lastUpdatedAt.toEpochMilliseconds(),
+    lastSyncedAt = lastSyncedAt?.toEpochMilliseconds(),
     workspaceId = workspaceId,
     favorite = favorite,
     parentId = parentId,
