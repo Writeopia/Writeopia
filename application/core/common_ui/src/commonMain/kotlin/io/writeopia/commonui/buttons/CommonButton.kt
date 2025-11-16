@@ -76,7 +76,7 @@ fun CommonButton(
             .background(lockButtonColor, shape)
             .clip(shape)
             .clickable(onClick = clickListener)
-            .padding(horizontal = 10.dp, vertical = 6.dp)
+            .padding(horizontal = 10.dp, vertical = verticalPaddingCommonButton().dp)
     ) {
         if (icon != null) {
             Icon(
@@ -120,7 +120,7 @@ fun CommonTextButton(
             .background(lockButtonColor, shape)
             .clip(shape)
             .clickable(onClick = clickListener)
-            .padding(horizontal = 10.dp, vertical = 6.dp)
+            .padding(horizontal = 10.dp, vertical = verticalPaddingCommonButton().dp)
     ) {
         Text(
             text,
