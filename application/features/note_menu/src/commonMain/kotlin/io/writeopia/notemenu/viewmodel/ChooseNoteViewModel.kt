@@ -3,6 +3,7 @@ package io.writeopia.notemenu.viewmodel
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.onboarding.OnboardingState
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.sorting.OrderBy
@@ -38,6 +39,8 @@ interface ChooseNoteViewModel : FolderController {
     val showOnboardingState: StateFlow<OnboardingState>
 
     val showAddMenuState: StateFlow<Boolean>
+
+    val editFolderState: StateFlow<Folder?>
 
     //    fun requestDocuments(force: Boolean)
     fun handleMenuItemTap(id: String): Boolean

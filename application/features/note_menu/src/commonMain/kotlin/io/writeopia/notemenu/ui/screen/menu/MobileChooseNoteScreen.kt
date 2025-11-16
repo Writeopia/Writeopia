@@ -130,6 +130,18 @@ internal fun MobileChooseNoteScreen(
                 onCancel = chooseNoteViewModel::cancelDeletion,
             )
         }
+
+        val folderEdit =
+            chooseNoteViewModel.editFolderState.collectAsState().value
+
+        if (folderEdit != null) {
+            EditFileScreen(
+                folderEdit = folderEdit,
+                onDismissRequest = chooseNoteViewModel::stopEditingFolder,
+                deleteFolder = chooseNoteViewModel::deleteFolder,
+                editFolder = chooseNoteViewModel::updateFolder
+            )
+        }
     }
 }
 
