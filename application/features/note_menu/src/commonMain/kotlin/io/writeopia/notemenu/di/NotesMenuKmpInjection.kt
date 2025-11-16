@@ -55,7 +55,7 @@ class NotesMenuKmpInjection private constructor(
         )
 
     private fun provideFolderStateController(): FolderStateController =
-        FolderStateController(
+        FolderStateController.singleton(
             provideNotesUseCase(),
             authCoreInjection.provideAuthRepository()
         )

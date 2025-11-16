@@ -114,6 +114,7 @@ fun DesktopNotesMenu(
                         newNote = onNewNoteClick,
                         newFolder = chooseNoteViewModel::newFolder,
                         hideShowMenu = chooseNoteViewModel::hideAddMenu,
+                        editFolder = chooseNoteViewModel::editFolder
                     )
 
                     Spacer(modifier = Modifier.width(20.dp))

@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
-class FolderStateController(
+class FolderStateController private constructor(
     private val notesUseCase: NotesUseCase,
     private val authRepository: AuthRepository,
 ) : FolderController {
@@ -43,6 +43,7 @@ class FolderStateController(
     }
 
     override fun editFolder(folder: MenuItemUi.FolderUi) {
+        println("editing folder: $folder. this: $this")
         _editingFolder.value = folder
     }
 
@@ -141,5 +142,15 @@ class FolderStateController(
 
     override fun clearSelection() {
         _selectedNotes.value = emptySet()
+    }
+
+    companion object {
+        var instance: FolderStateController? = null
+
+        fun singleton(notesUseCase: NotesUseCase, authRepository: AuthRepository) =
+            instance ?: FolderStateController(notesUseCase, authRepository)
+                .also {
+                    instance = it
+                }
     }
 }

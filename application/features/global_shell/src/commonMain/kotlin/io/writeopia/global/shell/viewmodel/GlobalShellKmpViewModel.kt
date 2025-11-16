@@ -70,10 +70,8 @@ class GlobalShellKmpViewModel(
     private val authRepository: AuthRepository,
     private val authApi: AuthApi,
     private val notesNavigationUseCase: NotesNavigationUseCase,
-    private val folderStateController: FolderStateController = FolderStateController(
-        notesUseCase,
-        authRepository
-    ),
+    private val folderStateController: FolderStateController =
+        FolderStateController.singleton(notesUseCase, authRepository),
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val ollamaRepository: OllamaRepository,
     private val configRepository: ConfigurationRepository,
@@ -181,16 +179,12 @@ class GlobalShellKmpViewModel(
         combine(
             folderStateController.editingFolderState,
             menuItemsPerFolderId,
-            authRepository.listenForWorkspace()
-        ) { selectedFolder, menuItems, workspace ->
+        ) { selectedFolder, menuItems ->
             if (selectedFolder != null) {
-                val folder =
-                    menuItems[selectedFolder.parentId]
-                        ?.find { menuItem ->
-                            menuItem.id == selectedFolder.id
-                        } as? Folder
-
-                folder
+                menuItems[selectedFolder.parentId]
+                    ?.find { menuItem ->
+                        menuItem.id == selectedFolder.id
+                    } as? Folder
             } else {
                 null
             }
@@ -231,8 +225,7 @@ class GlobalShellKmpViewModel(
             _expandedFolders,
             menuItemsPerFolderId,
             highlightItem,
-            authRepository.listenForWorkspace(),
-        ) { expanded, folderMap, highlighted, workspace ->
+        ) { expanded, folderMap, highlighted ->
             val folderUiMap = folderMap.mapValues { (_, item) ->
                 item.map {
                     it.toUiCard(
@@ -251,7 +244,6 @@ class GlobalShellKmpViewModel(
                 )
                 .toList()
 
-            val items = itemsList.joinToString { it.title }
             itemsList.toMutableList().apply {
                 removeAt(0)
             }

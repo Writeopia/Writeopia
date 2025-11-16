@@ -61,7 +61,7 @@ internal class ChooseNoteKmpViewModel(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val folderSync: FolderSync,
-    private val folderController: FolderStateController = FolderStateController(
+    private val folderController: FolderStateController = FolderStateController.singleton(
         notesUseCase,
         authRepository
     ),
