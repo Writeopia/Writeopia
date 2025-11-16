@@ -34,7 +34,7 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     val showDeleteConfirmation: StateFlow<Boolean>
 
-    val lastWorkspaceSync: StateFlow<String>
+    val lastWorkspaceSync: StateFlow<ResultData<String>>
 
     val availableWorkspaces: StateFlow<ResultData<List<Workspace>>>
 
