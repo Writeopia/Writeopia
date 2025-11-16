@@ -44,6 +44,7 @@ fun Navigation(
     SharedTransitionLayout {
         NavHost(navController = navController, startDestination = startDestination) {
             notesMenuNavigation(
+                isDarkTheme = isDarkTheme,
                 notesMenuInjection = notesMenuInjection,
                 ollamaConfigInjector = sideMenuKmpInjector,
                 navigationController = navController,

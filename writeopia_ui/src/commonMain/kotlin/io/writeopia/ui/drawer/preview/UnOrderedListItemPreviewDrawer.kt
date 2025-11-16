@@ -24,7 +24,8 @@ class UnOrderedListItemPreviewDrawer(
     private val textStyle: @Composable (StoryStep) -> TextStyle = {
         previewTextStyle(it)
     },
-    private val maxLines: Int = 1
+    private val maxLines: Int = 1,
+    private val isDarkTheme: Boolean,
 ) : StoryStepDrawer {
     @Composable
     override fun Step(step: StoryStep, drawInfo: DrawInfo) {
@@ -42,6 +43,7 @@ class UnOrderedListItemPreviewDrawer(
                 modifier = textModifier,
                 style = textStyle,
                 maxLines = maxLines,
+                isDarkTheme = isDarkTheme
             ).Step(
                 step = step,
                 drawInfo = drawInfo
@@ -54,7 +56,7 @@ class UnOrderedListItemPreviewDrawer(
 @Composable
 fun UnOrderedListItemPreviewDrawerPreview() {
     Surface {
-        UnOrderedListItemPreviewDrawer().Step(
+        UnOrderedListItemPreviewDrawer(isDarkTheme = true).Step(
             step = StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "This is a text list item preview"

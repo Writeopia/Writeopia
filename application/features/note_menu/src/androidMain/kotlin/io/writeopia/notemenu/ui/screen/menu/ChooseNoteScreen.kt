@@ -14,6 +14,7 @@ import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun ChooseNoteScreen(
+    isDarkTheme: Boolean,
     chooseNoteViewModel: ChooseNoteViewModel,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -39,6 +40,7 @@ internal fun ChooseNoteScreen(
     }
 
     MobileChooseNoteScreen(
+        isDarkTheme,
         chooseNoteViewModel,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,

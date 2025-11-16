@@ -50,6 +50,7 @@ import kotlinx.coroutines.flow.StateFlow
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun MobileChooseNoteScreen(
+    isDarkTheme: Boolean,
     chooseNoteViewModel: ChooseNoteViewModel,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -83,6 +84,7 @@ internal fun MobileChooseNoteScreen(
         ) { paddingValues ->
             DraggableScreen {
                 Content(
+                    isDarkTheme = isDarkTheme,
                     chooseNoteViewModel = chooseNoteViewModel,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
@@ -245,6 +247,7 @@ private fun FloatingActionButton(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun Content(
+    isDarkTheme: Boolean,
     chooseNoteViewModel: ChooseNoteViewModel,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -255,6 +258,7 @@ private fun Content(
     paddingValues: PaddingValues,
 ) {
     NotesCardsScreen(
+        isDarkTheme = isDarkTheme,
         documents = chooseNoteViewModel.documentsState.collectAsState().value,
         showAddMenuState = chooseNoteViewModel.showAddMenuState,
         animatedVisibilityScope = animatedVisibilityScope,

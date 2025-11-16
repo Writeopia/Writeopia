@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -13,6 +15,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.model.DrawInfo
+import io.writeopia.ui.utils.Spans
 import io.writeopia.ui.utils.previewTextStyle
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -24,14 +27,19 @@ class TextPreviewDrawer(
     private val maxLines: Int = Int.MAX_VALUE,
     private val textColor: @Composable (DrawInfo) -> Color = {
         MaterialTheme.colorScheme.onBackground
-    }
+    },
+    private val isDarkTheme: Boolean,
 ) : StoryStepDrawer {
 
     @Composable
     override fun Step(step: StoryStep, drawInfo: DrawInfo) {
+        val inputText by derivedStateOf {
+            Spans.createStringWithSpans(step.text, step.spans, isDarkTheme)
+        }
+
         Text(
             modifier = modifier,
-            text = step.text ?: "",
+            text = inputText,
             style = style(step),
             color = textColor(drawInfo),
             maxLines = maxLines
@@ -43,12 +51,12 @@ class TextPreviewDrawer(
 @Composable
 fun TextPreviewDrawerPreview() {
     Surface {
-        TextPreviewDrawer().Step(
+        TextPreviewDrawer(isDarkTheme = false).Step(
             step = StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "This is a text message preview"
             ),
-            drawInfo = DrawInfo()
+            drawInfo = DrawInfo(),
         )
     }
 }

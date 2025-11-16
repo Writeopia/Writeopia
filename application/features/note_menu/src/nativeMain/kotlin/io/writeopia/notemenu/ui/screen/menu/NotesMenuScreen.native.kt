@@ -15,6 +15,7 @@ import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 actual fun NotesMenuScreen(
+    isDarkTheme: Boolean,
     folderId: String,
     chooseNoteViewModel: ChooseNoteViewModel,
     ollamaConfigController: OllamaConfigController?,
@@ -32,6 +33,7 @@ actual fun NotesMenuScreen(
     modifier: Modifier
 ) {
     MobileChooseNoteScreen(
+        isDarkTheme = isDarkTheme,
         chooseNoteViewModel = chooseNoteViewModel,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,

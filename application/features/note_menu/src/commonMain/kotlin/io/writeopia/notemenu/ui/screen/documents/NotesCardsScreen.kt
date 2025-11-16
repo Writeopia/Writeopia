@@ -92,6 +92,7 @@ const val ADD_NOTE_TEST_TAG = "addNote"
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun NotesCardsScreen(
+    isDarkTheme: Boolean,
     documents: ResultData<NotesUi>,
     showAddMenuState: StateFlow<Boolean>,
     sharedTransitionScope: SharedTransitionScope,
@@ -126,7 +127,8 @@ fun NotesCardsScreen(
                         when (notesUi.notesArrangement) {
                             NotesArrangement.STAGGERED_GRID -> {
                                 LazyStaggeredGridNotes(
-                                    documentsUiList,
+                                    isDarkTheme = isDarkTheme,
+                                    documents = documentsUiList,
                                     animatedVisibilityScope = animatedVisibilityScope,
                                     sharedTransitionScope = sharedTransitionScope,
                                     minimalNoteWidth = minimalNoteWidth,
@@ -143,7 +145,8 @@ fun NotesCardsScreen(
 
                             NotesArrangement.GRID -> {
                                 LazyGridNotes(
-                                    documentsUiList,
+                                    isDarkTheme,
+                                    documents = documentsUiList,
                                     animatedVisibilityScope = animatedVisibilityScope,
                                     sharedTransitionScope = sharedTransitionScope,
                                     minimalNoteWidth = minimalNoteWidth,
@@ -160,7 +163,8 @@ fun NotesCardsScreen(
 
                             NotesArrangement.LIST -> {
                                 LazyColumnNotes(
-                                    documentsUiList,
+                                    isDarkTheme = isDarkTheme,
+                                    documents = documentsUiList,
                                     animatedVisibilityScope = animatedVisibilityScope,
                                     sharedTransitionScope = sharedTransitionScope,
                                     selectionListener = selectionListener,
@@ -256,6 +260,7 @@ fun NotesCardsScreen(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun LazyStaggeredGridNotes(
+    isDarkTheme: Boolean,
     documents: List<MenuItemUi>,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -304,7 +309,7 @@ private fun LazyStaggeredGridNotes(
                             animatedVisibilityScope = animatedVisibilityScope,
                             onDocumentClick,
                             selectionListener,
-                            previewDrawers(),
+                            previewDrawers(isDarkTheme),
                             position = i,
                             { onDragIconClick(menuItem.documentId) },
                             modifier = itemModifier,
@@ -336,6 +341,7 @@ private fun LazyStaggeredGridNotes(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun LazyGridNotes(
+    isDarkTheme: Boolean,
     documents: List<MenuItemUi>,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -382,7 +388,7 @@ private fun LazyGridNotes(
                             animatedVisibilityScope = animatedVisibilityScope,
                             onDocumentClick,
                             selectionListener,
-                            previewDrawers(),
+                            previewDrawers(isDarkTheme),
                             position = i,
                             { onDragIconClick(menuItem.documentId) },
                             modifier = Modifier.animateItem()
@@ -413,6 +419,7 @@ private fun LazyGridNotes(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun LazyColumnNotes(
+    isDarkTheme: Boolean,
     documents: List<MenuItemUi>,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -454,7 +461,7 @@ private fun LazyColumnNotes(
                             animatedVisibilityScope = animatedVisibilityScope,
                             onDocumentClick,
                             selectionListener,
-                            previewDrawers(),
+                            previewDrawers(isDarkTheme),
                             position = i,
                             onDragIconClick = { onDragIconClick(menuItem.documentId) },
                             modifier = Modifier.animateItem()
@@ -759,8 +766,8 @@ private fun NoNotesScreen() {
 }
 
 @Composable
-private fun previewDrawers(): Map<Int, StoryStepDrawer> {
-    val unOrderedListItemPreviewDrawer = UnOrderedListItemPreviewDrawer()
+private fun previewDrawers(isDarkTheme: Boolean): Map<Int, StoryStepDrawer> {
+    val unOrderedListItemPreviewDrawer = UnOrderedListItemPreviewDrawer(isDarkTheme = true)
 
     return mapOf(
         StoryTypes.TITLE.type.number to HeaderPreviewDrawer(
@@ -769,7 +776,7 @@ private fun previewDrawers(): Map<Int, StoryStepDrawer> {
             )
         ),
         StoryTypes.CHECK_ITEM.type.number to CheckItemPreviewDrawer(),
-        StoryTypes.TEXT.type.number to TextPreviewDrawer(),
+        StoryTypes.TEXT.type.number to TextPreviewDrawer(isDarkTheme = isDarkTheme),
         StoryTypes.DOCUMENT_LINK.type.number to DocumentLinkPreviewDrawer(),
         StoryTypes.UNORDERED_LIST_ITEM.type.number to unOrderedListItemPreviewDrawer,
         StoryTypes.IMAGE.type.number to ImagePreviewDrawer(),

@@ -32,6 +32,7 @@ import java.io.File
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalComposeUiApi::class)
 @Composable
 actual fun NotesMenuScreen(
+    isDarkTheme: Boolean,
     folderId: String,
     chooseNoteViewModel: ChooseNoteViewModel,
     ollamaConfigController: OllamaConfigController?,
@@ -65,6 +66,7 @@ actual fun NotesMenuScreen(
     )
 
     DesktopNotesMenu(
+        isDarkTheme = isDarkTheme,
         folderId = folderId,
         chooseNoteViewModel = chooseNoteViewModel,
         ollamaConfigController = ollamaConfigController,
