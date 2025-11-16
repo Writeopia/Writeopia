@@ -99,8 +99,8 @@ class GlobalShellKmpViewModel(
 
     private val loginStateTrigger = MutableStateFlow(GenerateId.generate())
 
-    private val _lastWorkspaceSync = MutableStateFlow("")
-    override val lastWorkspaceSync: StateFlow<String> = _lastWorkspaceSync.asStateFlow()
+    private val _lastWorkspaceSync = MutableStateFlow<ResultData<String>>(ResultData.Idle())
+    override val lastWorkspaceSync: StateFlow<ResultData<String>> = _lastWorkspaceSync.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val ollamaConfigState = authRepository.listenForUser().flatMapLatest { user ->
@@ -566,6 +566,8 @@ class GlobalShellKmpViewModel(
 
     override fun syncWorkspace() {
         viewModelScope.launch {
+            _lastWorkspaceSync.value = ResultData.Loading()
+
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
             val workspaceId = workspace.id
             val result = workspaceSync.syncWorkspace(workspaceId)
@@ -576,10 +578,10 @@ class GlobalShellKmpViewModel(
                     .toLocalDateTime(TimeZone.currentSystemDefault())
                     .toString()
 
-                "Last sync: $lastSync"
+                ResultData.Complete("Last sync: $lastSync")
             } else {
                 println("result error: $result")
-                "Error in sync"
+                ResultData.Error(RuntimeException("Error in sync"))
             }
         }
     }

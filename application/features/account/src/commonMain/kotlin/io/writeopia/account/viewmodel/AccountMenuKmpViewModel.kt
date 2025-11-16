@@ -26,8 +26,8 @@ internal class AccountMenuKmpViewModel(
     private val workspaceSync: WorkspaceSync,
 ) : AccountMenuViewModel, ViewModel() {
 
-    private val _lastWorkspaceSync = MutableStateFlow("")
-    override val lastWorkspaceSync: StateFlow<String> = _lastWorkspaceSync.asStateFlow()
+    private val _lastWorkspaceSync = MutableStateFlow<ResultData<String>>(ResultData.Idle())
+    override val lastWorkspaceSync: StateFlow<ResultData<String>> = _lastWorkspaceSync.asStateFlow()
 
     override val isLoggedIn: StateFlow<ResultData<Boolean>> by lazy {
         authRepository.listenForUser().map {
@@ -50,6 +50,9 @@ internal class AccountMenuKmpViewModel(
 
     override fun syncWorkspace() {
         viewModelScope.launch(Dispatchers.Default) {
+            _lastWorkspaceSync.value = ResultData.Loading()
+
+            println("syncWorkspace in account")
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
             val workspaceId = workspace.id
             val result = workspaceSync.syncWorkspace(workspaceId)
@@ -60,10 +63,10 @@ internal class AccountMenuKmpViewModel(
                     .toLocalDateTime(TimeZone.currentSystemDefault())
                     .toString()
 
-                "Last sync: $lastSync"
+                ResultData.Complete("Last sync: $lastSync")
             } else {
                 println("result error: $result")
-                "Error in sync"
+                ResultData.Error(RuntimeException("Error in sync"))
             }
         }
     }

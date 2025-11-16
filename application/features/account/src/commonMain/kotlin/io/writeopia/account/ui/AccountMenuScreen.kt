@@ -40,7 +40,7 @@ fun AccountMenuScreen(
             selectedThemePosition = MutableStateFlow(0),
             selectColorTheme = selectColorTheme,
             workplacePathState = MutableStateFlow(""),
-            syncWorkspaceState = MutableStateFlow(""),
+            syncWorkspaceState = accountMenuViewModel.lastWorkspaceSync,
             selectWorkplacePath = {},
             ollamaAvailableModels = MutableStateFlow(ResultData.Idle()),
             ollamaUrl = "",

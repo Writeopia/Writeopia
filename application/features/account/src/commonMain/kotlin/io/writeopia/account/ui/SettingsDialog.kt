@@ -86,7 +86,7 @@ fun SettingsDialog(
     downloadModelState: StateFlow<ResultData<DownloadState>>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
-    syncWorkspaceState: StateFlow<String>,
+    syncWorkspaceState: StateFlow<ResultData<String>>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
     workspaceToEdit: StateFlow<Workspace?>,
     onDismissRequest: () -> Unit,
@@ -184,7 +184,7 @@ fun SettingsScreen(
     showOllamaConfig: Boolean,
     selectedThemePosition: StateFlow<Int>,
     workplacePathState: StateFlow<String>,
-    syncWorkspaceState: StateFlow<String>,
+    syncWorkspaceState: StateFlow<ResultData<String>>,
     ollamaUrl: String,
     ollamaAvailableModels: Flow<ResultData<List<String>>>,
     ollamaSelectedModel: StateFlow<String>,
@@ -438,7 +438,7 @@ private fun TeamLine(workspace: Workspace, modifier: Modifier = Modifier) {
 @Composable
 private fun WorkspaceSection(
     workplacePathState: StateFlow<String>,
-    syncWorkspaceState: StateFlow<String>,
+    syncWorkspaceState: StateFlow<ResultData<String>>,
     showPath: Boolean = true,
     selectWorkplacePath: (String) -> Unit,
     syncWorkspace: () -> Unit,
@@ -484,23 +484,41 @@ private fun WorkspaceSection(
 
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
-        val lastSync by syncWorkspaceState.collectAsState()
-
         CommonButton(
             text = "Sync workspace",
             clickListener = {
+                println("syncWorkspace click...")
                 syncWorkspace()
             }
         )
 
-        if (lastSync.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(6.dp))
+        val lastSync = syncWorkspaceState.collectAsState().value
 
-            Text(
-                text = lastSync,
-                style = MaterialTheme.typography.bodyMedium,
-                color = titleColor
-            )
+        Spacer(modifier = Modifier.height(6.dp))
+
+        when (lastSync) {
+            is ResultData.Complete<String> -> {
+                Text(
+                    text = lastSync.data,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = titleColor
+                )
+            }
+
+            is ResultData.Error<*> -> {
+                Text(
+                    text = lastSync.exception?.message ?: "Error syncing workspace",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = titleColor
+                )
+            }
+
+            is ResultData.Loading<*> -> {
+                println("progress...")
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            }
+
+            else -> {}
         }
 
         if (showEditPathDialog) {

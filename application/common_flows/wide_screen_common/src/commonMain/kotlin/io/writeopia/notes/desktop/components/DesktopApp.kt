@@ -234,9 +234,7 @@ fun DesktopApp(
                                     ollamaUrlChange = globalShellViewModel::changeOllamaUrl,
                                     ollamaModelChange = globalShellViewModel::selectOllamaModel,
                                     ollamaModelsRetry = globalShellViewModel::retryModels,
-                                    downloadModel = { model ->
-                                        globalShellViewModel.modelToDownload(model)
-                                    },
+                                    downloadModel = globalShellViewModel::modelToDownload,
                                     deleteModel = globalShellViewModel::deleteModel,
                                     signIn = navigateToRegister,
                                     resetPassword = navigateToResetPassword,
