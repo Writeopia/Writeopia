@@ -486,10 +486,7 @@ private fun WorkspaceSection(
 
         CommonButton(
             text = "Sync workspace",
-            clickListener = {
-                println("syncWorkspace click...")
-                syncWorkspace()
-            }
+            clickListener = syncWorkspace
         )
 
         val lastSync = syncWorkspaceState.collectAsState().value
@@ -514,7 +511,6 @@ private fun WorkspaceSection(
             }
 
             is ResultData.Loading<*> -> {
-                println("progress...")
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
             }
 

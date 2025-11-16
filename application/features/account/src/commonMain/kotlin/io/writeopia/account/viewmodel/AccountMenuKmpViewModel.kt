@@ -52,7 +52,6 @@ internal class AccountMenuKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             _lastWorkspaceSync.value = ResultData.Loading()
 
-            println("syncWorkspace in account")
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
             val workspaceId = workspace.id
             val result = workspaceSync.syncWorkspace(workspaceId)
