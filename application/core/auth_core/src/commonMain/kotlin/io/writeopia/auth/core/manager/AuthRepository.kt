@@ -34,4 +34,6 @@ interface AuthRepository : UserRepository {
     suspend fun saveWorkspace(workspace: Workspace)
 
     suspend fun unselectAllWorkspaces()
+
+    suspend fun unselectAllUsers()
 }

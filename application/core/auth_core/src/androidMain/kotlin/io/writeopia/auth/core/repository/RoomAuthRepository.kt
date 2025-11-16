@@ -13,7 +13,7 @@ class RoomAuthRepository(
     private val tokenCommonDao: TokenCommonDao,
     private val workspaceCommonDao: WorkspaceCommonDao
 ) : AuthRepository {
-    override suspend fun getUser(): WriteopiaUser = userDao.selectCurrentUser()
+    override suspend fun getUser(): WriteopiaUser = userDao.selectedCurrentUser()
 
     override suspend fun isLoggedIn(): Boolean = getUser().id != WriteopiaUser.DISCONNECTED
 
@@ -47,6 +47,10 @@ class RoomAuthRepository(
     }
 
     override suspend fun unselectAllWorkspaces() {
+        workspaceCommonDao.unselectAllWorkspaces()
+    }
 
+    override suspend fun unselectAllUsers() {
+        userDao.unselectAllUsers()
     }
 }

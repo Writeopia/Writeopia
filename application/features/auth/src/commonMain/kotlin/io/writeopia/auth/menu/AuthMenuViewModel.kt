@@ -75,6 +75,7 @@ class AuthMenuViewModel(
                     is ResultData.Complete -> {
                         val user = result.data.writeopiaUser.toModel()
 
+                        authRepository.unselectAllUsers()
                         authRepository.saveUser(
                             user = user.copy(tier = Tier.PREMIUM),
                             selected = true

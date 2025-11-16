@@ -23,6 +23,10 @@ class UserDaoDelegator(private val delegate: UserDao): UserCommonDao {
         }
     }
 
-    override suspend fun selectCurrentUser(): WriteopiaUser =
+    override suspend fun selectedCurrentUser(): WriteopiaUser =
         delegate.getCurrentUser()?.toModel()?.first ?: WriteopiaUser.disconnectedUser()
+
+    override suspend fun unselectAllUsers() {
+        delegate.unselectAllUsers()
+    }
 }

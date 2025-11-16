@@ -10,5 +10,7 @@ interface UserCommonDao {
 
     suspend fun deleteUser(userId: String)
 
-    suspend fun selectCurrentUser(): WriteopiaUser
+    suspend fun selectedCurrentUser(): WriteopiaUser
+
+    suspend fun unselectAllUsers()
 }
