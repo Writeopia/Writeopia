@@ -48,9 +48,8 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         lastSync: Instant,
         token: String
     ): ResultData<Pair<List<Document>, List<Folder>>> {
-        println("getting workspace new data: $baseUrl/api/workspace/diff")
-
-        val response = client.post("$baseUrl/api/workspace/diff") {
+        val url = "$baseUrl/api/workspace/diff"
+        val response = client.post(url) {
             contentType(ContentType.Application.Json)
             setBody(WorkspaceDiffRequest(workspaceId, lastSync.toEpochMilliseconds()))
             header(HttpHeaders.Authorization, "Bearer $token")
