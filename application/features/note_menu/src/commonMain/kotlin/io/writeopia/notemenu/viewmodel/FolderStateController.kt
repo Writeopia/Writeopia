@@ -73,7 +73,6 @@ class FolderStateController private constructor(
                     val workspace =
                         authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
 
-
                     notesUseCase.moveItemsById(
                         ids = selectedNotes.value,
                         parentId,

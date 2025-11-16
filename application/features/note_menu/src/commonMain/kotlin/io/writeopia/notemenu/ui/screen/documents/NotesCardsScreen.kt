@@ -651,7 +651,6 @@ private fun FolderItem(
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
-
             }
         }
     }

@@ -87,27 +87,27 @@ class GlobalShellKmpViewModel(
     private val _showSettingsState = MutableStateFlow(false)
     override val showSettingsState: StateFlow<Boolean> = _showSettingsState.asStateFlow()
 
-    private val _expandedFolders = MutableStateFlow(setOf<String>())
+    private val expandedFolders = MutableStateFlow(setOf<String>())
 
-    private val _showSearch = MutableStateFlow(false)
-    override val showSearchDialog: StateFlow<Boolean> = _showSearch.asStateFlow()
+    private val _showSearchDialog = MutableStateFlow(false)
+    override val showSearchDialog: StateFlow<Boolean> = _showSearchDialog.asStateFlow()
 
     private val _workspaceLocalPath = MutableStateFlow("")
     override val workspaceLocalPath: StateFlow<String> = _workspaceLocalPath.asStateFlow()
 
-    private val _retryModels = MutableStateFlow(0)
+    private val retryModels = MutableStateFlow(0)
 
-    private val _loginStateTrigger = MutableStateFlow(GenerateId.generate())
+    private val loginStateTrigger = MutableStateFlow(GenerateId.generate())
 
     private val _lastWorkspaceSync = MutableStateFlow("")
     override val lastWorkspaceSync: StateFlow<String> = _lastWorkspaceSync.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val _ollamaConfigState = authRepository.listenForUser().flatMapLatest { user ->
+    private val ollamaConfigState = authRepository.listenForUser().flatMapLatest { user ->
         ollamaRepository.listenForConfiguration(user.id)
     }
 
-    override val userState: StateFlow<WriteopiaUser> = _loginStateTrigger.map {
+    override val userState: StateFlow<WriteopiaUser> = loginStateTrigger.map {
         authRepository.getUser()
     }.stateIn(viewModelScope, SharingStarted.Lazily, WriteopiaUser.disconnectedUser())
 
@@ -140,11 +140,11 @@ class GlobalShellKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Idle())
 
     override val ollamaUrl: StateFlow<String> =
-        _ollamaConfigState.map { config ->
+        ollamaConfigState.map { config ->
             config?.url.takeIf { it?.isNotEmpty() == true } ?: ""
         }.stateIn(viewModelScope, SharingStarted.Lazily, "")
 
-    override val ollamaSelectedModelState = _ollamaConfigState
+    override val ollamaSelectedModelState = ollamaConfigState
         .map { config -> config?.selectedModel ?: "" }
         .stateIn(viewModelScope, SharingStarted.Lazily, "")
 
@@ -156,7 +156,7 @@ class GlobalShellKmpViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val modelsForUrl: StateFlow<ResultData<List<String>>> =
-        combine(ollamaUrl, _retryModels) { url, _ ->
+        combine(ollamaUrl, retryModels) { url, _ ->
             url
         }.flatMapLatest { url ->
             ollamaRepository.listenToModels(url)
@@ -192,7 +192,7 @@ class GlobalShellKmpViewModel(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val _uiConfiguration: Flow<UiConfiguration> by lazy {
+    private val uiConfiguration: Flow<UiConfiguration> by lazy {
         authRepository.listenForUser().flatMapLatest { user ->
             uiConfigurationRepo.listenForUiConfiguration(user.id, viewModelScope)
         }.filterNotNull()
@@ -200,7 +200,7 @@ class GlobalShellKmpViewModel(
 
     override val showSideMenuState: StateFlow<Float> by lazy {
         combine(
-            _uiConfiguration,
+            uiConfiguration,
             sideMenuWidthState.asStateFlow()
         ) { configuration, width ->
             width ?: configuration.sideMenuWidth
@@ -222,7 +222,7 @@ class GlobalShellKmpViewModel(
 
     override val sideMenuItems: StateFlow<List<MenuItemUi>> by lazy {
         combine(
-            _expandedFolders,
+            expandedFolders,
             menuItemsPerFolderId,
             highlightItem,
         ) { expanded, folderMap, highlighted ->
@@ -361,10 +361,10 @@ class GlobalShellKmpViewModel(
     }
 
     override fun expandFolder(id: String) {
-        val expanded = _expandedFolders.value
+        val expanded = expandedFolders.value
         if (expanded.contains(id)) {
             viewModelScope.launch(Dispatchers.Default) {
-                _expandedFolders.value = expanded - id
+                expandedFolders.value = expanded - id
             }
         } else {
             viewModelScope.launch {
@@ -376,7 +376,7 @@ class GlobalShellKmpViewModel(
                     workspace.id
                 )
 
-                _expandedFolders.value = expanded + id
+                expandedFolders.value = expanded + id
             }
         }
     }
@@ -416,11 +416,11 @@ class GlobalShellKmpViewModel(
     }
 
     override fun showSearch() {
-        _showSearch.value = true
+        _showSearchDialog.value = true
     }
 
     override fun hideSearch() {
-        _showSearch.value = false
+        _showSearchDialog.value = false
     }
 
     override fun changeIcons(menuItemId: String, icon: String, tint: Int, iconChange: IconChange) {
@@ -472,7 +472,7 @@ class GlobalShellKmpViewModel(
     }
 
     override fun retryModels() {
-        _retryModels.value = Random.nextInt()
+        retryModels.value = Random.nextInt()
     }
 
     override fun modelToDownload(model: String, onComplete: () -> Unit) {
@@ -531,7 +531,7 @@ class GlobalShellKmpViewModel(
             authRepository.saveToken(currentUserId, "")
 
 //            AppConnectionInjection.singleton().setJwtToken("")
-            _loginStateTrigger.value = GenerateId.generate()
+            loginStateTrigger.value = GenerateId.generate()
             sideEffect()
         }
     }
@@ -548,7 +548,7 @@ class GlobalShellKmpViewModel(
                 if (result is ResultData.Complete && result.data) {
                     authRepository.unselectAllWorkspaces()
                     authRepository.logout()
-                    _loginStateTrigger.value = GenerateId.generate()
+                    loginStateTrigger.value = GenerateId.generate()
                     dismissDeleteConfirm()
                     logout(sideEffect = sideEffect)
                 }
