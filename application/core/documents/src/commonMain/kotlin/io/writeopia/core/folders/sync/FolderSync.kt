@@ -30,7 +30,6 @@ class FolderSync(
      */
     suspend fun syncFolder(folderId: String, workspaceId: String, force: Boolean = false) {
         try {
-
             val now = Clock.System.now()
             if (!force && now - lastSuccessfulSync < minSyncInternal) {
                 println("Skipping sync for $workspaceId. Last sync was less than $minSyncInternal ago.")
@@ -64,7 +63,6 @@ class FolderSync(
                 lastSync ?: Instant.DISTANT_PAST,
                 authToken
             )
-
 
             val newDocuments = if (response is ResultData.Complete) response.data else return
             println("Sync. received ${newDocuments.size} new documents")
