@@ -6,6 +6,9 @@ import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class WorkspaceSync(
     private val folderRepository: FolderRepository,
@@ -13,10 +16,18 @@ class WorkspaceSync(
     private val authRepository: AuthRepository,
     private val documentsApi: DocumentsApi,
     private val documentConflictHandler: DocumentConflictHandler,
+    private val minSyncInternal: Duration = 3.seconds
 ) {
+    private var lastSuccessfulSync: Instant = Instant.DISTANT_PAST
 
-    suspend fun syncWorkspace(workspaceId: String): ResultData<Unit> {
+    suspend fun syncWorkspace(workspaceId: String, force: Boolean = false): ResultData<Unit> {
         try {
+            val now = Clock.System.now()
+            if (!force && now - lastSuccessfulSync < minSyncInternal) {
+                println("Skipping sync for $workspaceId. Last sync was less than $minSyncInternal ago.")
+                return ResultData.Idle()
+            }
+
             println("start to sync workspace")
             val authToken = authRepository.getAuthToken() ?: return ResultData.Error(null)
             val workspace = authRepository.getWorkspace() ?: return ResultData.Idle()
@@ -68,6 +79,8 @@ class WorkspaceSync(
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()
+
+                lastSuccessfulSync = now
 
                 return ResultData.Complete(Unit)
             } else {

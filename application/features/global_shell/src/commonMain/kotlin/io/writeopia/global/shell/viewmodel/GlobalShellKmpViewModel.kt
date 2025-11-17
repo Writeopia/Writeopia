@@ -570,7 +570,7 @@ class GlobalShellKmpViewModel(
 
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
             val workspaceId = workspace.id
-            val result = workspaceSync.syncWorkspace(workspaceId)
+            val result = workspaceSync.syncWorkspace(workspaceId, force = true)
 
             _lastWorkspaceSync.value = if (result is ResultData.Complete) {
                 val lastSync = Clock.System

@@ -136,7 +136,9 @@ interface DocumentEntityDao {
         "SELECT * " +
             "FROM $DOCUMENT_ENTITY " +
             "LEFT JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
-            "WHERE $DOCUMENT_ENTITY.workspace_id = :workspaceId "
+            "WHERE $DOCUMENT_ENTITY.workspace_id = :workspaceId " +
+            "ORDER BY " +
+            "$STORY_UNIT_ENTITY.position"
     )
     suspend fun loadOutdatedDocumentsWithContentForWorkspace(
         workspaceId: String
