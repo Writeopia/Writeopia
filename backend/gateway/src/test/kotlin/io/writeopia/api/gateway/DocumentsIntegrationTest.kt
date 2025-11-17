@@ -12,8 +12,12 @@ import io.writeopia.api.documents.documents.repository.deleteDocumentById
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
+import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.data.FolderApi
+import io.writeopia.sdk.serialization.data.StoryStepApi
+import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
@@ -197,6 +201,15 @@ class DocumentationIntegrationTests {
         val client = defaultClient()
         val workspace = Random.nextInt().toString()
 
+        val content: Map<Int, StoryStepApi> = mapOf(
+            0 to StoryStep(type = StoryTypes.TEXT.type, text = "message1"),
+            1 to StoryStep(type = StoryTypes.TEXT.type, text = "message2"),
+            2 to StoryStep(type = StoryTypes.TEXT.type, text = "message3"),
+            3 to StoryStep(type = StoryTypes.TEXT.type, text = "message4"),
+        ).mapValues { (position, step) ->
+            step.toApi(position)
+        }
+
         val documentApi = DocumentApi(
             id = "testias",
             title = "Test Note",
@@ -205,7 +218,8 @@ class DocumentationIntegrationTests {
             isLocked = false,
             createdAt = 1000L,
             lastUpdatedAt = 2000L,
-            lastSyncedAt = 4000
+            lastSyncedAt = 4000,
+            content = content.values.toList()
         )
 
         val documentApi2 = documentApi.copy(id = "testias2", lastUpdatedAt = 4000L)
@@ -236,7 +250,10 @@ class DocumentationIntegrationTests {
         }
 
         assertEquals(HttpStatusCode.OK, response2.status)
-        assertEquals(listOf(documentApi2), response2.body())
+
+        val diff = response2.body<List<DocumentApi>>()
+
+        assertEquals(listOf(documentApi2), diff)
 
         db.deleteDocumentById(documentApi.id)
         db.deleteDocumentById(documentApi2.id)

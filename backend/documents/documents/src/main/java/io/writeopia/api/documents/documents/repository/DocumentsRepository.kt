@@ -18,13 +18,13 @@ private fun WriteopiaDbBackend.getDocumentDaoFn(): DocumentSqlBeDao =
     }
 
 suspend fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
-    documents.forEach { document ->
-        getDocumentDaoFn().insertDocumentWithContent(document)
-    }
+    val dao = getDocumentDaoFn()
+    documents.forEach(dao::insertDocumentWithContent)
 }
 
 suspend fun WriteopiaDbBackend.saveFolder(vararg folders: Folder) {
-    folders.forEach { folder -> getDocumentDaoFn().insertFolder(folder) }
+    val dao = getDocumentDaoFn()
+    folders.forEach(dao::insertFolder)
 }
 
 suspend fun WriteopiaDbBackend.documentsDiffByFolder(
@@ -50,8 +50,7 @@ fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<D
 suspend fun WriteopiaDbBackend.getDocumentById(
     id: String = "test",
     workspaceId: String
-): Document? =
-    getDocumentDaoFn().loadDocumentById(id, workspaceId)
+): Document? = getDocumentDaoFn().loadDocumentById(id, workspaceId)
 
 suspend fun WriteopiaDbBackend.getFolderById(id: String = "test", userId: String): Folder? =
     getDocumentDaoFn().loadFolderById(id)
@@ -60,7 +59,6 @@ suspend fun WriteopiaDbBackend.getIdsByParentId(parentId: String = "root"): List
     getDocumentDaoFn().loadDocumentIdsByParentId(parentId)
 
 suspend fun WriteopiaDbBackend.deleteDocumentById(vararg documentIds: String) {
-    documentIds.forEach { id ->
-        getDocumentDaoFn().deleteDocumentById(id)
-    }
+    val dao = getDocumentDaoFn()
+    documentIds.forEach(dao::deleteDocumentById)
 }

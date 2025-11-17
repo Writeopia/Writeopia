@@ -50,7 +50,6 @@ LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE deleted = FALSE
 ORDER BY position;
 
-
 selectWithContentByIds:
 SELECT *
 FROM document_entity

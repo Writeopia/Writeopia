@@ -185,7 +185,7 @@ internal class ChooseNoteKmpViewModel(
             val previewLimit = when (arrangement) {
                 NotesArrangement.LIST -> 4
                 NotesArrangement.GRID -> 4
-                NotesArrangement.STAGGERED_GRID -> 6
+                NotesArrangement.STAGGERED_GRID -> 4
             }
 
             resultData.map { documentList ->
@@ -475,7 +475,7 @@ internal class ChooseNoteKmpViewModel(
             ) {
                 folderSync.syncFolder(
                     notesNavigation.id,
-                    workspace.id
+                    workspace.id,
                 )
             }
         }
