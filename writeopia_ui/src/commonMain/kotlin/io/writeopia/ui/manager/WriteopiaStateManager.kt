@@ -461,7 +461,7 @@ class WriteopiaStateManager(
     /**
      * Click lister when user clicks in the menu to add a list item
      */
-    fun onListItemClicked() {
+    fun addListItem() {
         if (!isEditable) return
         val onEdit = _onEditPositions.value
 

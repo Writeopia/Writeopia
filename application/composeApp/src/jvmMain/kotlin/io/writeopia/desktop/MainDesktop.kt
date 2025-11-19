@@ -179,6 +179,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 false
             }
 
+            KeyboardCommands.isListEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.LIST)
+                false
+            }
+
             else -> false
         }
     }

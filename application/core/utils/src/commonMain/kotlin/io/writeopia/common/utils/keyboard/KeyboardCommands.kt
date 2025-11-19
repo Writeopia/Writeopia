@@ -92,4 +92,9 @@ object KeyboardCommands {
         keyEvent.isCommandTrigger() &&
             keyEvent.key.keyCode == Key.E.keyCode &&
             keyEvent.type == KeyEventType.KeyUp
+
+    fun isListEvent(keyEvent: KeyEvent) =
+        keyEvent.isCommandTrigger() &&
+            keyEvent.key.keyCode == Key.Minus.keyCode &&
+            keyEvent.type == KeyEventType.KeyUp
 }

@@ -130,6 +130,10 @@ class NoteEditorKmpViewModel(
                             showSearch()
                         }
 
+                        KeyboardEvent.LIST -> {
+                            writeopiaManager.addListItem()
+                        }
+
                         else -> {}
                     }
                 }
@@ -142,15 +146,15 @@ class NoteEditorKmpViewModel(
 
     private var isDarkTheme: Boolean = true
 
-    private val _showSearch = MutableStateFlow(false)
+    private val showSearch = MutableStateFlow(false)
     private val _searchText = MutableStateFlow("")
-    private val _currentSearchIndex = MutableStateFlow(0)
-    private val _totalSearchResults = MutableStateFlow(0)
+    private val _currentSearchIndexState = MutableStateFlow(0)
+    private val _totalSearchResultsState = MutableStateFlow(0)
 
-    override val showSearchState: StateFlow<Boolean> = _showSearch.asStateFlow()
+    override val showSearchState: StateFlow<Boolean> = showSearch.asStateFlow()
     override val searchText: StateFlow<String> = _searchText.asStateFlow()
-    override val currentSearchIndexState: StateFlow<Int> = _currentSearchIndex.asStateFlow()
-    override val totalSearchResultsState: StateFlow<Int> = _totalSearchResults.asStateFlow()
+    override val currentSearchIndexState: StateFlow<Int> = _currentSearchIndexState.asStateFlow()
+    override val totalSearchResultsState: StateFlow<Int> = _totalSearchResultsState.asStateFlow()
 
     private val hasLinesSelection = writeopiaManager.onEditPositions
         .map { it.isNotEmpty() }
@@ -228,7 +232,7 @@ class NoteEditorKmpViewModel(
     private val _shouldGoToNextScreen = MutableStateFlow(false)
     override val shouldGoToNextScreen = _shouldGoToNextScreen.asStateFlow()
 
-    private val _expandedFolders = MutableStateFlow(setOf<String>())
+    private val expandedFolders = MutableStateFlow(setOf<String>())
 
     override val isEditState: StateFlow<EditState> by lazy {
         writeopiaManager.onEditPositions.map { set ->
@@ -257,8 +261,8 @@ class NoteEditorKmpViewModel(
             .stateIn(viewModelScope, SharingStarted.Lazily, "")
     }
 
-    private val _sideMenuTab = MutableStateFlow(SideMenuTab.NONE)
-    override val sideMenuTabState: StateFlow<SideMenuTab> = _sideMenuTab.asStateFlow()
+    private val _sideMenuTabState = MutableStateFlow(SideMenuTab.NONE)
+    override val sideMenuTabState: StateFlow<SideMenuTab> = _sideMenuTabState.asStateFlow()
 
     /**
      * This property defines if the document is favorite
@@ -278,8 +282,8 @@ class NoteEditorKmpViewModel(
             writeopiaManager.toDraw,
             findsOfSearch,
             searchText,
-            _showSearch,
-            _currentSearchIndex
+            showSearch,
+            _currentSearchIndexState
         ) { drawState, finds, query, showSearch, currentSearchIndex ->
             if (finds.isEmpty() && showSearch) return@combine drawState.copy(focus = null)
             if (finds.isEmpty()) return@combine drawState
@@ -287,7 +291,7 @@ class NoteEditorKmpViewModel(
             val mutableStories = drawState.stories.toMutableList()
             val activeFindPosition =
                 if (finds.size > currentSearchIndex) finds.elementAt(currentSearchIndex) else null
-            _totalSearchResults.value = finds.size
+            _totalSearchResultsState.value = finds.size
 
             if (activeFindPosition != null) {
                 writeopiaManager.scrollToPosition(activeFindPosition)
@@ -360,7 +364,7 @@ class NoteEditorKmpViewModel(
         authRepository.listenForWorkspace()
             .flatMapLatest { workspace ->
                 combine(
-                    _expandedFolders,
+                    expandedFolders,
                     folderRepository.listenForFoldersByParentId(
                         "root",
                         workspace.id
@@ -385,7 +389,7 @@ class NoteEditorKmpViewModel(
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     override fun changeSideMenu(tab: SideMenuTab) {
-        _sideMenuTab.value = tab
+        _sideMenuTabState.value = tab
     }
 
     override fun deleteSelection() {
@@ -485,7 +489,7 @@ class NoteEditorKmpViewModel(
 
     override fun onAddListItemClick() {
         if (!isEditable.value) return
-        writeopiaManager.onListItemClicked()
+        writeopiaManager.addListItem()
     }
 
     override fun onAddCodeBlockClick() {
@@ -581,10 +585,10 @@ class NoteEditorKmpViewModel(
     }
 
     override fun expandFolder(folderId: String) {
-        val expanded = _expandedFolders.value
+        val expanded = expandedFolders.value
         if (expanded.contains(folderId)) {
             viewModelScope.launch(Dispatchers.Default) {
-                _expandedFolders.value = expanded - folderId
+                expandedFolders.value = expanded - folderId
             }
         } else {
             viewModelScope.launch {
@@ -593,7 +597,7 @@ class NoteEditorKmpViewModel(
                     folderId,
                     workspace.id
                 )
-                _expandedFolders.value = expanded + folderId
+                expandedFolders.value = expanded + folderId
             }
         }
     }
@@ -739,15 +743,15 @@ class NoteEditorKmpViewModel(
     }
 
     override fun showSearch() {
-        _showSearch.value = true
+        showSearch.value = true
     }
 
     override fun hideSearch() {
         viewModelScope.launch {
-            _showSearch.value = false
+            showSearch.value = false
             delay(100)
             _searchText.value = ""
-            _currentSearchIndex.value = 0
+            _currentSearchIndexState.value = 0
         }
     }
 
@@ -756,8 +760,8 @@ class NoteEditorKmpViewModel(
             _searchText.value = query
             val finds = findsOfSearch.first().toList().sorted()
             if (finds.isEmpty()) {
-                _currentSearchIndex.value = 0
-                _totalSearchResults.value = 0
+                _currentSearchIndexState.value = 0
+                _totalSearchResultsState.value = 0
                 return@launch
             }
 
@@ -765,7 +769,7 @@ class NoteEditorKmpViewModel(
                 ?: writeopiaManager.currentStory.value.selection.position
             val newIndex = finds.indexOfFirst { it >= currentPosition }
 
-            _currentSearchIndex.value = if (newIndex != -1) newIndex else 0
+            _currentSearchIndexState.value = if (newIndex != -1) newIndex else 0
         }
     }
 
@@ -774,8 +778,8 @@ class NoteEditorKmpViewModel(
             val total = findsOfSearch.first().size
             if (total == 0) return@launch
 
-            val currentIndex = _currentSearchIndex.value
-            _currentSearchIndex.value = (currentIndex - 1 + total) % total
+            val currentIndex = _currentSearchIndexState.value
+            _currentSearchIndexState.value = (currentIndex - 1 + total) % total
         }
     }
 
@@ -784,8 +788,8 @@ class NoteEditorKmpViewModel(
             val total = findsOfSearch.first().size
             if (total == 0) return@launch
 
-            val currentIndex = _currentSearchIndex.value
-            _currentSearchIndex.value = (currentIndex + 1) % total
+            val currentIndex = _currentSearchIndexState.value
+            _currentSearchIndexState.value = (currentIndex + 1) % total
         }
     }
 
