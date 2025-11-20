@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.common.utils.file.FileUtils
 import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.sdk.models.utils.map
@@ -114,11 +115,11 @@ internal class ChooseNoteKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Loading())
     }
 
-    private val _user: MutableStateFlow<UserState<WriteopiaUser>> =
+    private val user: MutableStateFlow<UserState<WriteopiaUser>> =
         MutableStateFlow(UserState.Idle())
 
     override val userName: StateFlow<UserState<String>> by lazy {
-        _user.map { userState ->
+        user.map { userState ->
             userState.map { user ->
                 user.name
             }
@@ -143,8 +144,8 @@ internal class ChooseNoteKmpViewModel(
             .stateIn(viewModelScope, SharingStarted.Lazily, OrderBy.UPDATE)
     }
 
-    private val _showLocalSyncConfig = MutableStateFlow<ConfigState>(ConfigState.Idle)
-    override val showLocalSyncConfigState = _showLocalSyncConfig.asStateFlow()
+    private val _showLocalSyncConfigState = MutableStateFlow<ConfigState>(ConfigState.Idle)
+    override val showLocalSyncConfigState = _showLocalSyncConfigState.asStateFlow()
 
     private val _editState = MutableStateFlow(false)
     override val editState: StateFlow<Boolean> = _editState.asStateFlow()
@@ -155,11 +156,11 @@ internal class ChooseNoteKmpViewModel(
     private val _showSortMenuState = MutableStateFlow(false)
     override val showSortMenuState: StateFlow<Boolean> = _showSortMenuState.asStateFlow()
 
-    private val _askToDelete = MutableStateFlow(false)
+    private val askToDelete = MutableStateFlow(false)
 
     override val titlesToDelete: StateFlow<List<String>> =
         combine(
-            _askToDelete,
+            askToDelete,
             selectedNotes,
             menuItemsState
         ) { shouldAsk, selectedIds, itemsState ->
@@ -253,7 +254,7 @@ internal class ChooseNoteKmpViewModel(
 
     override suspend fun requestUser() {
         try {
-            _user.value = if (authRepository.isLoggedIn()) {
+            user.value = if (authRepository.isLoggedIn()) {
                 val user = authRepository.getUser()
 
                 if (user.id != DISCONNECTED_USER_ID) {
@@ -326,7 +327,7 @@ internal class ChooseNoteKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             notesUseCase.deleteNotes(selected)
             clearSelection()
-            _askToDelete.value = false
+            askToDelete.value = false
         }
     }
 
@@ -358,7 +359,7 @@ internal class ChooseNoteKmpViewModel(
 
     override fun configureDirectory() {
         viewModelScope.launch(Dispatchers.Default) {
-            _showLocalSyncConfig.value =
+            _showLocalSyncConfigState.value =
                 ConfigState.Configure(
                     path = notesConfig.loadWorkspacePath(getUserId()) ?: "",
                     syncRequest = SyncRequest.CONFIGURE
@@ -387,17 +388,17 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun hideConfigSyncMenu() {
-        _showLocalSyncConfig.value = ConfigState.Idle
+        _showLocalSyncConfigState.value = ConfigState.Idle
     }
 
     override fun confirmWorkplacePath() {
-        val path = _showLocalSyncConfig.value.getPath()
+        val path = _showLocalSyncConfigState.value.getPath()
 
         if (path != null) {
             viewModelScope.launch(Dispatchers.Default) {
                 notesConfig.saveWorkspacePath(path = path, userId = getUserId())
 
-                when (_showLocalSyncConfig.value.getSyncRequest()) {
+                when (_showLocalSyncConfigState.value.getSyncRequest()) {
                     SyncRequest.WRITE -> {
                         writeWorkspaceLocally(path)
                     }
@@ -409,13 +410,13 @@ internal class ChooseNoteKmpViewModel(
                     SyncRequest.CONFIGURE, null -> {}
                 }
 
-                _showLocalSyncConfig.value = ConfigState.Idle
+                _showLocalSyncConfigState.value = ConfigState.Idle
             }
         }
     }
 
     override fun pathSelected(path: String) {
-        _showLocalSyncConfig.value = _showLocalSyncConfig.value.setPath { path }
+        _showLocalSyncConfigState.value = _showLocalSyncConfigState.value.setPath { path }
     }
 
     override fun onSyncLocallySelected() {
@@ -427,11 +428,11 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun requestPermissionToDeleteSelection() {
-        _askToDelete.value = true
+        askToDelete.value = true
     }
 
     override fun cancelDeletion() {
-        _askToDelete.value = false
+        askToDelete.value = false
     }
 
     override fun requestInitFlow(flow: () -> Unit) {
@@ -483,7 +484,13 @@ internal class ChooseNoteKmpViewModel(
 
     override fun newFolder() {
         viewModelScope.launch(Dispatchers.Default) {
-            folderController.addFolder()
+            val parentId = if (notesNavigation.navigationType == NotesNavigationType.FOLDER) {
+                notesNavigation.id
+            } else {
+                Folder.ROOT_PATH
+            }
+
+            folderController.addFolder(parentId = parentId)
         }
     }
 
@@ -587,7 +594,7 @@ internal class ChooseNoteKmpViewModel(
             if (workspacePath != null && FileUtils.folderExists(workspacePath)) {
                 workspaceFunc(workspacePath)
             } else {
-                _showLocalSyncConfig.value = ConfigState.Configure("", syncRequest)
+                _showLocalSyncConfigState.value = ConfigState.Configure("", syncRequest)
             }
         }
     }

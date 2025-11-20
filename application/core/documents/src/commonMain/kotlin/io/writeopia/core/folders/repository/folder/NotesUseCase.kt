@@ -1,6 +1,5 @@
 package io.writeopia.core.folders.repository.folder
 
-import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.collections.merge
 import io.writeopia.commonui.dtos.MenuItemUi
@@ -16,7 +15,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlin.collections.mapKeys
 
 /**
  * UseCase responsible to perform CRUD operations in the Notes (Documents) of the app taking in to
@@ -26,11 +24,10 @@ class NotesUseCase private constructor(
     private val documentRepository: DocumentRepository,
     private val notesConfig: ConfigurationRepository,
     private val folderRepository: FolderRepository,
-    private val authRepository: AuthRepository
 ) {
 
-    suspend fun createFolder(name: String, workspaceId: String) {
-        folderRepository.createFolder(Folder.fromName(name, workspaceId))
+    suspend fun createFolder(name: String, workspaceId: String, parentId: String) {
+        folderRepository.createFolder(Folder.fromName(name, workspaceId).copy(parentId = parentId))
     }
 
     suspend fun updateFolder(folder: Folder) {
@@ -317,13 +314,11 @@ class NotesUseCase private constructor(
             documentRepository: DocumentRepository,
             notesConfig: ConfigurationRepository,
             folderRepository: FolderRepository,
-            authRepository: AuthRepository
         ): NotesUseCase =
             instance ?: NotesUseCase(
                 documentRepository,
                 notesConfig,
                 folderRepository,
-                authRepository
             ).also {
                 instance = it
             }

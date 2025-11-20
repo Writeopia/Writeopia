@@ -35,10 +35,10 @@ class FolderStateController private constructor(
         this.coroutineScope = coroutineScope
     }
 
-    override fun addFolder() {
+    override fun addFolder(parentId: String) {
         coroutineScope.launch(Dispatchers.Default) {
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-            notesUseCase.createFolder("Untitled", workspace.id)
+            notesUseCase.createFolder("Untitled", workspace.id, parentId)
         }
     }
 
