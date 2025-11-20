@@ -43,7 +43,6 @@ class AuthMenuViewModel(
     fun isLoggedIn(): Flow<LoginStatus> = flow {
         val user = authRepository.getUser()
         val workspace = authRepository.getWorkspace()
-
         val loggedId = authRepository.isLoggedIn() || user.id != WriteopiaUser.DISCONNECTED
 
         val status = when {
@@ -51,7 +50,9 @@ class AuthMenuViewModel(
 
             loggedId && workspace == null -> LoginStatus.CHOOSE_WORKSPACE
 
-            else -> LoginStatus.OFFLINE
+            !loggedId && workspace != null -> LoginStatus.OFFLINE_CHOSEN
+
+            else -> LoginStatus.OFFLINE_NOT_CHOSEN
         }
 
         emit(status)

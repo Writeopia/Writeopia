@@ -44,9 +44,9 @@ fun NavGraphBuilder.startScreen(
                 delay(300)
                 navigationController.navigate(
                     when (loggedIn) {
-                        LoginStatus.OFFLINE -> Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                        LoginStatus.OFFLINE_NOT_CHOSEN -> Destinations.AUTH_MENU_INNER_NAVIGATION.id
                         LoginStatus.CHOOSE_WORKSPACE -> Destinations.CHOOSE_WORKSPACE.id
-                        LoginStatus.ONLINE ->  Destinations.MAIN_APP.id
+                        LoginStatus.ONLINE, LoginStatus.OFFLINE_CHOSEN -> Destinations.MAIN_APP.id
                     }
                 )
             }

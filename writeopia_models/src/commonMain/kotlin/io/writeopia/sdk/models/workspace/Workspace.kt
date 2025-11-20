@@ -15,7 +15,7 @@ data class Workspace(
             id = "disconnected_user",
             userId = "disconnected_user",
             name = "Offline workspace",
-            lastSync = Instant.Companion.DISTANT_PAST,
+            lastSync = Instant.DISTANT_PAST,
             selected = true,
             role = Role.ADMIN.value
         )
