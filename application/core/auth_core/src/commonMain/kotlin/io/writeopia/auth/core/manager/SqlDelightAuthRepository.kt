@@ -21,10 +21,14 @@ internal class SqlDelightAuthRepository(
             ?: WriteopiaUser.disconnectedUser()
     }
 
-    override suspend fun isLoggedIn(): Boolean = getAuthToken() != null
+    override suspend fun isLoggedIn(): Boolean =
+        getAuthToken().takeIf { it?.isEmpty() == false } != null
 
     override suspend fun logout(): ResultData<Boolean> {
         getUser().let { user ->
+            writeopiaDb?.tokenEntityQueries?.deleteToken(user.id)
+            writeopiaDb?.tokenEntityQueries?.deleteToken(WriteopiaUser.DISCONNECTED)
+
             writeopiaDb?.writeopiaUserEntityQueries
                 ?.insertUser(
                     id = user.id,
@@ -60,6 +64,8 @@ internal class SqlDelightAuthRepository(
     override suspend fun useOffline() {
         val user = getUser()
         saveUser(user.copy(id = WriteopiaUser.DISCONNECTED), true)
+        unselectAllWorkspaces()
+        saveWorkspace(Workspace.disconnectedWorkspace().copy(selected = true))
     }
 
     override suspend fun getWorkspace(): Workspace? =
