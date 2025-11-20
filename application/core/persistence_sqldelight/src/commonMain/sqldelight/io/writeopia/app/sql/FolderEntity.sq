@@ -55,6 +55,7 @@ GROUP BY parent_id;
 countAllDocumentItems:
 SELECT parent_document_id, COUNT(id)
 FROM documentEntity
+WHERE deleted = 0
 GROUP BY parent_document_id;
 
 insert:
