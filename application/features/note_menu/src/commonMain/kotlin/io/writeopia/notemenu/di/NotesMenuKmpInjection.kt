@@ -51,7 +51,6 @@ class NotesMenuKmpInjection private constructor(
             documentRepository,
             configurationRepository,
             folderRepository,
-            authCoreInjection.provideAuthRepository()
         )
 
     private fun provideFolderStateController(): FolderStateController =

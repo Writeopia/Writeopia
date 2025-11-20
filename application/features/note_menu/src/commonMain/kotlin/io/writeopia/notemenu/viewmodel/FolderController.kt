@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface FolderController {
     val selectedNotes: StateFlow<Set<String>>
 
-    fun addFolder()
+    fun addFolder(parentId: String = "root")
 
     fun editFolder(folder: MenuItemUi.FolderUi)
 

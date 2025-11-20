@@ -48,7 +48,6 @@ class SideMenuKmpInjector(
             documentRepository,
             configurationRepository,
             folderRepository,
-            authCoreInjection.provideAuthRepository()
         )
 
     private fun provideWorkspaceApi() =

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.common.utils.file.FileUtils
 import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.sdk.models.utils.map
@@ -483,7 +484,13 @@ internal class ChooseNoteKmpViewModel(
 
     override fun newFolder() {
         viewModelScope.launch(Dispatchers.Default) {
-            folderController.addFolder()
+            val parentId = if (notesNavigation.navigationType == NotesNavigationType.FOLDER) {
+                notesNavigation.id
+            } else {
+                Folder.ROOT_PATH
+            }
+
+            folderController.addFolder(parentId = parentId)
         }
     }
 
