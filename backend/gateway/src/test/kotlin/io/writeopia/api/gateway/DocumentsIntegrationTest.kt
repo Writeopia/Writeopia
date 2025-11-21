@@ -60,7 +60,8 @@ class DocumentationIntegrationTests {
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("/api/workspace/$workspace/document/${documentApiList.first().id}")
+        val response1 =
+            client.get("/api/workspace/$workspace/document/${documentApiList.first().id}")
         assertEquals(HttpStatusCode.OK, response1.status)
 
         val actual = response1.body<DocumentApi>().copy(lastSyncedAt = 0L)
@@ -73,6 +74,11 @@ class DocumentationIntegrationTests {
         documentApiList.forEach { documentApi ->
             db.deleteDocumentById(documentApi.id)
         }
+    }
+
+    @Test
+    fun `it should be possible to change the name of a workspace`() = testApplication {
+
     }
 
     @Test
@@ -181,7 +187,8 @@ class DocumentationIntegrationTests {
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("/api/workspace/workspace/document/parent/${documentApi.parentId}")
+        val response1 =
+            client.get("/api/workspace/workspace/document/parent/${documentApi.parentId}")
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(

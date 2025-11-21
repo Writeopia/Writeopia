@@ -8,12 +8,17 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
+import io.writeopia.api.core.auth.repository.changeWorkspaceName
+import io.writeopia.api.core.auth.repository.changeWorkspaceRoleForUser
 import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.runIfAdmin
 import io.writeopia.app.mapping.toApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.sdk.serialization.data.toApi
+import io.writeopia.sdk.serialization.request.WorkspaceNameChangeRequest
+import io.writeopia.sdk.serialization.request.WorkspaceRoleChangeRequest
 import io.writeopia.sql.WriteopiaDbBackend
 
 fun Routing.workspaceRoute(
@@ -62,10 +67,34 @@ fun Routing.workspaceRoute(
     }
 
     authenticate("auth-jwt", optional = debugMode) {
+        get("/api/workspace/{workspaceId}/user/{userEmail}") {
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"]
+                ?: throw IllegalArgumentException("Workspace id is required")
+            val userEmail = call.pathParameters["userEmail"]
+                ?: throw IllegalArgumentException("User email is required")
+
+            runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+                val user = WorkspaceService.getUserInWorkspace(
+                    workspaceId = workspaceId,
+                    userEmail = userEmail,
+                    writeopiaDb = writeopiaDb
+                )
+
+                if (user != null) {
+                    call.respond(HttpStatusCode.OK, user.toApi())
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "User not found")
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debugMode) {
         get("/api/user/workspaces/{workspaceId}") {
             val currentUserId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"]
-                ?: throw IllegalArgumentException("User id is required")
+                ?: throw IllegalArgumentException("Workspace id is required")
 
             runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
                 val workspaces = WorkspaceService
@@ -121,6 +150,39 @@ fun Routing.workspaceRoute(
                 call.respond(HttpStatusCode.OK, "User added to workspace")
             } else {
                 call.respond(HttpStatusCode.NotFound, "Not added")
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debugMode) {
+        put<WorkspaceNameChangeRequest>("/api/workspace/name") { nameChange ->
+            val userId = getUserId() ?: ""
+            val (workspaceId, newName) = nameChange
+
+            runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+                writeopiaDb.changeWorkspaceName(
+                    workspaceId = workspaceId,
+                    newName = newName
+                )
+
+                call.respond(status = HttpStatusCode.OK, "Name changed")
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debugMode) {
+        put<WorkspaceRoleChangeRequest>("/api/workspace/role") { roleChange ->
+            val userId = getUserId() ?: ""
+            val (workspaceId, changeRoleUserId, newRole) = roleChange
+
+            runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+                writeopiaDb.changeWorkspaceRoleForUser(
+                    workspaceId = workspaceId,
+                    userId = changeRoleUserId,
+                    newRole = newRole
+                )
+
+                call.respond(status = HttpStatusCode.OK, "Name changed")
             }
         }
     }

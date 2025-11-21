@@ -1,6 +1,7 @@
 package io.writeopia.api.core.auth.service
 
 import io.writeopia.api.core.auth.repository.getUserByEmail
+import io.writeopia.api.core.auth.repository.getUserInWorkspace
 import io.writeopia.api.core.auth.repository.getUsersInWorkspace
 import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
@@ -32,6 +33,12 @@ object WorkspaceService {
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
     ): List<WorkspaceUser> = writeopiaDb.getUsersInWorkspace(workspaceId)
+
+    fun getUserInWorkspace(
+        workspaceId: String,
+        userEmail: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): WorkspaceUser? = writeopiaDb.getUserInWorkspace(workspaceId, userEmail)
 
     fun createWorkspace(
         workspaceId: String,
