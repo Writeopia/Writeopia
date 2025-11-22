@@ -80,7 +80,10 @@ internal fun WriteopiaDbBackend.isUserInWorkspace(userId: String, workspaceId: S
         .any { entity -> entity.workspace_id == workspaceId }
 
 
-internal fun WriteopiaDbBackend.isUserAdminInWorkspace(userId: String, workspaceId: String): Boolean =
+internal fun WriteopiaDbBackend.isUserAdminInWorkspace(
+    userId: String,
+    workspaceId: String
+): Boolean =
     this.workspaceEntityQueries
         .getWorkspacesByUserIdIfAdmin(userId)
         .executeAsList()
@@ -99,6 +102,41 @@ internal fun WriteopiaDbBackend.getUsersInWorkspace(workspaceId: String): List<W
             )
         }
 
-internal suspend fun WriteopiaDbBackend.removeUserFromWorkspace(workspaceId: String, userId: String) {
+internal fun WriteopiaDbBackend.getUserInWorkspace(
+    workspaceId: String,
+    userEmail: String
+): WorkspaceUser? =
+    this.workspaceToUserQueries
+        .getUserInWorkspace(workspaceId, userEmail)
+        .executeAsOneOrNull()
+        ?.let { workspaceToUser ->
+            WorkspaceUser(
+                id = workspaceToUser.user_entity_id,
+                email = workspaceToUser.user_email,
+                name = workspaceToUser.user_name,
+                role = workspaceToUser.role
+            )
+        }
+
+internal suspend fun WriteopiaDbBackend.removeUserFromWorkspace(
+    workspaceId: String,
+    userId: String
+) {
     this.workspaceToUserQueries.removeUserFromWorkspace(workspaceId, userId)
+}
+
+fun WriteopiaDbBackend.changeWorkspaceName(workspaceId: String, newName: String) {
+    this.workspaceEntityQueries.changeName(newName, workspaceId)
+}
+
+fun WriteopiaDbBackend.changeWorkspaceRoleForUser(
+    workspaceId: String,
+    userId: String,
+    newRole: String
+) {
+    this.workspaceToUserQueries.changeRole(
+        workspace_id = workspaceId,
+        user_id = userId,
+        role = newRole
+    )
 }

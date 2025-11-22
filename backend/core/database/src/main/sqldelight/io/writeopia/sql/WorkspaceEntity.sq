@@ -61,3 +61,8 @@ VALUES (?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, name=excluded.name, icon=excluded.icon,
 icon_tint=excluded.icon_tint;
+
+changeName:
+UPDATE workspace_entity
+SET name = ?
+WHERE id = ?;

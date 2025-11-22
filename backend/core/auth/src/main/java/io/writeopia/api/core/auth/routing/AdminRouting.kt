@@ -33,8 +33,6 @@ fun Route.adminProtectedRoute(
                 call.respond(HttpStatusCode.OK, "User disabled")
             }
         }
-
-
     }
 }
 
