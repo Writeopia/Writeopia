@@ -17,7 +17,7 @@ class UiConfigurationPreferenceDao(
 ) : UiConfigurationDao {
 
     private val themeState = MutableStateFlow(
-        UiConfigurationEntity("disconnected_user", ColorThemeOption.LIGHT.theme, Font.SYSTEM.label)
+        UiConfigurationEntity("disconnected_user", ColorThemeOption.SYSTEM.theme, Font.SYSTEM.label)
     )
 
     override suspend fun saveUiConfiguration(configuration: UiConfigurationEntity) {
@@ -34,8 +34,8 @@ class UiConfigurationPreferenceDao(
             userId = userId,
             sharedPreferences.getString(
                 COLOR_THEME_OPTION,
-                ColorThemeOption.LIGHT.theme
-            ) ?: ColorThemeOption.LIGHT.theme,
+                ColorThemeOption.SYSTEM.theme
+            ) ?: ColorThemeOption.SYSTEM.theme,
             sharedPreferences.getString(
                 FONT_OPTION,
                 Font.SYSTEM.label
