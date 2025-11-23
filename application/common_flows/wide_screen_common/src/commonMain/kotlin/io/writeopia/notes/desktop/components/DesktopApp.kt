@@ -52,8 +52,6 @@ import io.writeopia.notemenu.ui.screen.menu.EditFileScreen
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sql.WriteopiaDb
-import io.writeopia.sqldelight.di.SqlDelightDaoInjector
-import io.writeopia.sqldelight.di.WriteopiaDbInjector
 import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.components.multiselection.DragSelectionBox
@@ -78,12 +76,6 @@ fun DesktopApp(
     navigateToResetPassword: () -> Unit,
     startDestination: String = startDestination(),
 ) {
-    if (writeopiaDb != null) {
-        WriteopiaDbInjector.initialize(writeopiaDb)
-    }
-
-    RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
-
     val editorInjector = remember {
         EditorKmpInjector.desktop(
             selectionState = selectionState,

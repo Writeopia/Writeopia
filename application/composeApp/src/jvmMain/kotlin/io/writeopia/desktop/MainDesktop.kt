@@ -44,6 +44,8 @@ import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.common.utils.ALLOW_BACKEND
+import io.writeopia.sdk.persistence.core.di.RepositoryInjector
+import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -227,6 +229,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     val database = databaseState.writeopiaDb
 
                     WriteopiaDbInjector.initialize(database)
+                    RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
                     WriteopiaConnectionInjector.setBaseUrl(
                         "https://writeopia.dev"
 //                        "http://localhost:8080"
