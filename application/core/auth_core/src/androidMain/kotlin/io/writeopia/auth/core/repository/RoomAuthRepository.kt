@@ -15,12 +15,11 @@ class RoomAuthRepository(
 ) : AuthRepository {
     override suspend fun getUser(): WriteopiaUser = userDao.selectedCurrentUser()
 
-    override suspend fun isLoggedIn(): Boolean = getUser().id != WriteopiaUser.DISCONNECTED
+    override suspend fun isLoggedIn(): Boolean = getAuthToken() != null
 
     override suspend fun logout(): ResultData<Boolean> {
-        if (isLoggedIn()) {
-            userDao.deleteUser(getUser().id)
-        }
+        unselectAllWorkspaces()
+        unselectAllUsers()
 
         return ResultData.Complete(true)
     }
@@ -36,11 +35,14 @@ class RoomAuthRepository(
     override suspend fun getAuthToken(): String? = tokenCommonDao.getTokenByUserId(getUser().id)
 
     override suspend fun useOffline() {
+        unselectAllUsers()
         saveUser(WriteopiaUser.disconnectedUser().copy(id = WriteopiaUser.DISCONNECTED), true)
+
+        unselectAllWorkspaces()
+        saveWorkspace(Workspace.disconnectedWorkspace().copy(selected = true))
     }
 
-    override suspend fun getWorkspace(): Workspace =
-        workspaceCommonDao.selectCurrentWorkspace() ?: Workspace.disconnectedWorkspace()
+    override suspend fun getWorkspace(): Workspace? = workspaceCommonDao.selectCurrentWorkspace()
 
     override suspend fun saveWorkspace(workspace: Workspace) {
         workspaceCommonDao.insertWorkspace(workspace, true)
