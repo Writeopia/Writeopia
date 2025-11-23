@@ -14,3 +14,7 @@ INSERT INTO token_entity(user_id, token)
 VALUES (?, ?)
 ON CONFLICT(user_id) DO
 UPDATE SET user_id=excluded.user_id, token=excluded.token;
+
+deleteToken:
+DELETE FROM token_entity
+WHERE user_id = ?;
