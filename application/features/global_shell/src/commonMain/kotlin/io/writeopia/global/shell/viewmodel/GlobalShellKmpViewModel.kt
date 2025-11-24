@@ -4,7 +4,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
-import io.writeopia.api.OllamaApi
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.auth.core.manager.AuthRepository
@@ -17,7 +16,6 @@ import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
-import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.model.ColorThemeOption
@@ -35,10 +33,6 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
-import io.writeopia.sdk.serialization.data.DocumentApi
-import io.writeopia.sdk.serialization.extensions.toModel
-import io.writeopia.sdk.serialization.json.writeopiaJson
-import io.writeopia.tutorials.Tutorials
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -61,7 +55,6 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.serialization.json.Json
 import kotlin.random.Random
 
 class GlobalShellKmpViewModel(
@@ -74,8 +67,6 @@ class GlobalShellKmpViewModel(
         FolderStateController.singleton(notesUseCase, authRepository),
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val ollamaRepository: OllamaRepository,
-    private val configRepository: ConfigurationRepository,
-    private val json: Json = writeopiaJson,
     private val workspaceSync: WorkspaceSync,
     private val workspaceApi: WorkspaceApi,
     private val keyboardEventFlow: Flow<KeyboardEvent>?,
@@ -309,37 +300,6 @@ class GlobalShellKmpViewModel(
                         else -> {}
                     }
                 }
-        }
-
-        viewModelScope.launch(Dispatchers.Default) {
-            val userId = getUserId()
-            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-            val workspaceId = workspace.id
-
-            if (!configRepository.hasFirstConfiguration(userId)) {
-                val now = Clock.System.now()
-
-                Tutorials.allTutorialsDocuments()
-                    .map { documentAsJson ->
-                        json.decodeFromString<DocumentApi>(documentAsJson)
-                            .toModel()
-                    }
-                    .forEach { document ->
-                        notesUseCase.saveDocumentDb(
-                            document.copy(
-                                parentId = document.parentId,
-                                workspaceId = workspaceId,
-                                createdAt = now,
-                                lastUpdatedAt = now
-                            )
-                        )
-                    }
-
-                ollamaRepository.saveOllamaUrl(userId, OllamaApi.defaultUrl())
-                configRepository.setTutorialNotes(true, userId)
-            }
-
-            ollamaRepository.refreshConfiguration(userId)
         }
 
         viewModelScope.launch {
