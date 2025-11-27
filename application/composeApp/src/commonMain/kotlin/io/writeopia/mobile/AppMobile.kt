@@ -1,13 +1,11 @@
 package io.writeopia.mobile
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,6 +49,7 @@ fun AppMobile(
         Box(modifier = Modifier) {
             Navigation(
                 isDarkTheme = colorTheme.isDarkTheme(),
+                isMobile = true,
                 startDestination = startDestination,
                 notesMenuInjection = notesMenuInjection,
                 navController = navController,

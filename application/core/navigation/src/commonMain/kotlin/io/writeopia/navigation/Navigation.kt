@@ -31,6 +31,7 @@ import io.writeopia.notemenu.navigation.notesMenuNavigation
 @Composable
 fun Navigation(
     isDarkTheme: Boolean,
+    isMobile: Boolean,
     startDestination: String,
     navController: NavHostController = rememberNavController(),
     notesMenuInjection: NotesMenuInjection,
@@ -87,6 +88,7 @@ fun Navigation(
 
             if (searchInjection != null) {
                 searchNavigation(
+                    isMobile = isMobile,
                     searchInjection,
                     navController::navigateToNote,
                     navController::navigateToFolder

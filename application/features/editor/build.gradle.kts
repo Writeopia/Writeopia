@@ -71,7 +71,6 @@ kotlin {
         val androidMain by getting {
             dependencies {
 //                implementation("androidx.activity:activity-compose")
-                implementation(libs.accompanist.systemuicontroller)
             }
         }
 

@@ -114,7 +114,7 @@ fun NavGraphBuilder.notesMenuNavigation(
             addFolder = chooseNoteViewModel::addFolder,
             editFolder = chooseNoteViewModel::editFolder,
             onForceGraphSelected = navigateToForceGraph,
-            navigationBar= navigationBar,
+            navigationBar = navigationBar,
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
     }

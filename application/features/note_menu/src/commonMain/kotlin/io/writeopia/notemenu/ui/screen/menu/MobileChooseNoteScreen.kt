@@ -70,8 +70,6 @@ internal fun MobileChooseNoteScreen(
     val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
     val editState by chooseNoteViewModel.editState.collectAsState()
 
-
-
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             topBar = {

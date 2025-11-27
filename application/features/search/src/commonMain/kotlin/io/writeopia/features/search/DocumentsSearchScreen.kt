@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun DocumentsSearchScreen(
+    modifier: Modifier = Modifier,
     searchState: StateFlow<String>,
     searchResults: StateFlow<List<SearchItem>>,
     onSearchType: (String) -> Unit,
@@ -28,7 +29,7 @@ fun DocumentsSearchScreen(
     val search by searchState.collectAsState()
 
     SearchScreen(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         search,
         searchResults,
         documentClick,
