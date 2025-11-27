@@ -30,5 +30,6 @@ expect fun NotesMenuScreen(
     navigateToFolders: (NotesNavigation) -> Unit,
     addFolder: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
+    navigationBar: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 )

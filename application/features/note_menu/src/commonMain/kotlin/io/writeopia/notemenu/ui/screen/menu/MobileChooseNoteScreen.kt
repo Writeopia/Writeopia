@@ -58,6 +58,7 @@ internal fun MobileChooseNoteScreen(
     newNote: () -> Unit,
     navigateToAccount: () -> Unit,
     navigateToNotes: (NotesNavigation) -> Unit,
+    navigationBar: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(key1 = "refresh", block = {
@@ -68,6 +69,8 @@ internal fun MobileChooseNoteScreen(
 
     val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
     val editState by chooseNoteViewModel.editState.collectAsState()
+
+
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
@@ -80,7 +83,8 @@ internal fun MobileChooseNoteScreen(
             },
             floatingActionButton = {
                 FloatingActionButton(onClick = chooseNoteViewModel::showAddMenu)
-            }
+            },
+            bottomBar = navigationBar
         ) { paddingValues ->
             DraggableScreen {
                 Content(
