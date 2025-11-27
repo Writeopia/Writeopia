@@ -30,6 +30,7 @@ actual fun NotesMenuScreen(
     navigateToFolders: (NotesNavigation) -> Unit,
     addFolder: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
+    navigationBar: @Composable () -> Unit,
     modifier: Modifier
 ) {
     MobileChooseNoteScreen(
@@ -41,6 +42,7 @@ actual fun NotesMenuScreen(
         newNote = onNewNoteClick,
         navigateToAccount = onAccountClick,
         navigateToNotes = navigateToFolders,
+        navigationBar = navigationBar,
         modifier = modifier,
     )
 }

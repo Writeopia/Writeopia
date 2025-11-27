@@ -188,6 +188,8 @@ fun DesktopApp(
                                 documentsGraphInjection = documentsGraphInjection,
                                 editorInjector = editorInjector,
                                 selectColorTheme = selectColorTheme,
+                                navigationBar = {},
+                                isMobile = false,
                                 navController = navigationController
                             ) {}
 

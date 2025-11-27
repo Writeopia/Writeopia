@@ -39,7 +39,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,7 +53,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import io.writeopia.common.utils.colors.ColorUtils
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.configuration.ui.HeaderEdition
@@ -83,18 +81,8 @@ internal fun NoteEditorScreen(
     onDocumentLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val systemUiController = rememberSystemUiController()
-    val systemBarColor = MaterialTheme.colorScheme.background
-    val systemBarDefaultColor = MaterialTheme.colorScheme.primary
-
-    DisposableEffect(systemUiController) {
-        systemUiController.setStatusBarColor(color = systemBarColor)
-        onDispose {}
-    }
-
     BackHandler {
         noteEditorViewModel.handleBackAction(navigateBack = {
-            systemUiController.setStatusBarColor(color = systemBarDefaultColor)
             navigateBack()
         })
     }
@@ -125,7 +113,6 @@ internal fun NoteEditorScreen(
                 titleState = noteEditorViewModel.currentTitle,
                 editableState = noteEditorViewModel.isEditable,
                 navigationClick = {
-                    systemUiController.setStatusBarColor(color = systemBarDefaultColor)
                     noteEditorViewModel.handleBackAction(navigateBack = navigateBack)
                 },
                 shareDocument = noteEditorViewModel::onMoreOptionsClick

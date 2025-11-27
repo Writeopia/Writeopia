@@ -2,6 +2,9 @@ package io.writeopia.account.navigation
 
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import io.writeopia.account.di.AccountMenuKmpInjector
@@ -28,12 +31,15 @@ fun NavGraphBuilder.accountMenuNavigation(
     ) {
         val accountMenuViewModel = AccountMenuKmpInjector.singleton().provideAccountMenuViewModel()
 
-        AccountMenuScreen(
-            accountMenuViewModel = accountMenuViewModel,
-            isLoggedInState = accountMenuViewModel.isLoggedIn,
-            onLogout = navigateToAuthMenu,
-            goToRegister = navigateToAuthMenu,
-            selectColorTheme = selectColorTheme
-        )
+        Scaffold { paddingValues ->
+            AccountMenuScreen(
+                modifier = Modifier.padding(paddingValues),
+                accountMenuViewModel = accountMenuViewModel,
+                isLoggedInState = accountMenuViewModel.isLoggedIn,
+                onLogout = navigateToAuthMenu,
+                goToRegister = navigateToAuthMenu,
+                selectColorTheme = selectColorTheme
+            )
+        }
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -39,6 +40,7 @@ fun NavGraphBuilder.notesMenuNavigation(
     navigateToAccount: () -> Unit,
     navigateToForceGraph: () -> Unit,
     navigateToFolders: (NotesNavigation) -> Unit,
+    navigationBar: @Composable () -> Unit,
 ) {
     composable(
         route = NoteMenuDestiny.noteMenu(),
@@ -84,6 +86,7 @@ fun NavGraphBuilder.notesMenuNavigation(
             addFolder = chooseNoteViewModel::addFolder,
             editFolder = chooseNoteViewModel::editFolder,
             onForceGraphSelected = navigateToForceGraph,
+            navigationBar = navigationBar,
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
     }
@@ -111,6 +114,7 @@ fun NavGraphBuilder.notesMenuNavigation(
             addFolder = chooseNoteViewModel::addFolder,
             editFolder = chooseNoteViewModel::editFolder,
             onForceGraphSelected = navigateToForceGraph,
+            navigationBar = navigationBar,
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
     }

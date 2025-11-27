@@ -28,8 +28,9 @@ fun AccountMenuScreen(
     onLogout: () -> Unit,
     goToRegister: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         Connect(accountMenuViewModel, isLoggedInState, onLogout, goToRegister)
 
         Spacer(modifier = Modifier.height(16.dp))

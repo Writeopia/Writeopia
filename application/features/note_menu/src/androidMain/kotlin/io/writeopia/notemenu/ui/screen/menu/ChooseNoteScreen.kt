@@ -22,6 +22,7 @@ internal fun ChooseNoteScreen(
     newNote: () -> Unit,
     navigateToAccount: () -> Unit,
     navigateToNotes: (NotesNavigation) -> Unit,
+    navigationBar: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
@@ -48,6 +49,7 @@ internal fun ChooseNoteScreen(
         newNote = newNote,
         navigateToAccount = navigateToAccount,
         navigateToNotes = navigateToNotes,
+        navigationBar = navigationBar,
         modifier = modifier,
     )
 }

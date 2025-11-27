@@ -58,6 +58,7 @@ internal fun MobileChooseNoteScreen(
     newNote: () -> Unit,
     navigateToAccount: () -> Unit,
     navigateToNotes: (NotesNavigation) -> Unit,
+    navigationBar: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(key1 = "refresh", block = {
@@ -80,7 +81,8 @@ internal fun MobileChooseNoteScreen(
             },
             floatingActionButton = {
                 FloatingActionButton(onClick = chooseNoteViewModel::showAddMenu)
-            }
+            },
+            bottomBar = navigationBar
         ) { paddingValues ->
             DraggableScreen {
                 Content(

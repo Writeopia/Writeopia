@@ -31,6 +31,7 @@ import io.writeopia.notemenu.navigation.notesMenuNavigation
 @Composable
 fun Navigation(
     isDarkTheme: Boolean,
+    isMobile: Boolean,
     startDestination: String,
     navController: NavHostController = rememberNavController(),
     notesMenuInjection: NotesMenuInjection,
@@ -39,6 +40,7 @@ fun Navigation(
     editorInjector: TextEditorInjector,
     searchInjection: SearchInjection? = null,
     selectColorTheme: (ColorThemeOption) -> Unit,
+    navigationBar: @Composable () -> Unit,
     builder: NavGraphBuilder.() -> Unit
 ) {
     SharedTransitionLayout {
@@ -54,7 +56,8 @@ fun Navigation(
                 navigateToAccount = navController::navigateToAccount,
                 navigateToNewNote = navController::navigateToNewNote,
                 navigateToFolders = navController::navigateToFolder,
-                navigateToForceGraph = navController::navigateToForceGraph
+                navigateToForceGraph = navController::navigateToForceGraph,
+                navigationBar = navigationBar
             )
 
             if (documentsGraphInjection != null) {
@@ -85,6 +88,7 @@ fun Navigation(
 
             if (searchInjection != null) {
                 searchNavigation(
+                    isMobile = isMobile,
                     searchInjection,
                     navController::navigateToNote,
                     navController::navigateToFolder
