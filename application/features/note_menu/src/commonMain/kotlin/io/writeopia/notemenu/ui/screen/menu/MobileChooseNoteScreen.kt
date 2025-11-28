@@ -24,6 +24,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,6 +71,10 @@ internal fun MobileChooseNoteScreen(
     val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
     val editState by chooseNoteViewModel.editState.collectAsState()
 
+    val folderEdit = chooseNoteViewModel.editFolderState.collectAsState().value
+
+    val showFab by derivedStateOf { !editState && !hasSelectedNotes }
+
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
@@ -80,11 +85,13 @@ internal fun MobileChooseNoteScreen(
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = chooseNoteViewModel::showAddMenu)
+                if (showFab) {
+                    FloatingActionButton(onClick = chooseNoteViewModel::showAddMenu)
+                }
             },
             bottomBar = navigationBar
         ) { paddingValues ->
-            DraggableScreen {
+            DraggableScreen(modifier = Modifier.padding(paddingValues)) {
                 Content(
                     isDarkTheme = isDarkTheme,
                     chooseNoteViewModel = chooseNoteViewModel,
@@ -92,57 +99,54 @@ internal fun MobileChooseNoteScreen(
                     animatedVisibilityScope = animatedVisibilityScope,
                     loadNote = navigateToNote,
                     selectionListener = chooseNoteViewModel::onDocumentSelected,
-                    paddingValues = paddingValues,
+                    paddingValues = PaddingValues(),
                     newNote = newNote,
                     navigateToNotes = navigateToNotes,
                 )
+
+                val selected = chooseNoteViewModel.notesArrangement.toNumberDesktop()
+
+                MobileConfigurationsMenu(
+                    selected = selected,
+                    visibilityState = editState,
+                    outsideClick = chooseNoteViewModel::cancelEditMenu,
+                    staggeredGridOptionClick = chooseNoteViewModel::staggeredGridArrangementSelected,
+                    gridOptionClick = chooseNoteViewModel::gridArrangementSelected,
+                    listOptionClick = chooseNoteViewModel::listArrangementSelected,
+                    sortingSelected = chooseNoteViewModel::sortingSelected,
+                    sortingState = chooseNoteViewModel.orderByState
+                )
+
+                val titlesToDelete by chooseNoteViewModel.titlesToDelete.collectAsState()
+
+                if (titlesToDelete.isNotEmpty()) {
+                    DeleteConfirmationDialog(
+                        onConfirmation = chooseNoteViewModel::deleteSelectedNotes,
+                        onCancel = chooseNoteViewModel::cancelDeletion,
+                    )
+                }
+
+                if (folderEdit != null) {
+                    EditFileScreen(
+                        folderEdit = folderEdit,
+                        onDismissRequest = chooseNoteViewModel::stopEditingFolder,
+                        deleteFolder = chooseNoteViewModel::deleteFolder,
+                        editFolder = chooseNoteViewModel::updateFolder
+                    )
+                }
+
+                NotesSelectionMenu(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(8.dp),
+                    visibilityState = hasSelectedNotes,
+                    onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
+                    onCopy = chooseNoteViewModel::copySelectedNotes,
+                    onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
+                    onClose = chooseNoteViewModel::clearSelection,
+                    shape = MaterialTheme.shapes.large
+                )
             }
-        }
-
-        NotesSelectionMenu(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(8.dp),
-            visibilityState = hasSelectedNotes,
-            onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
-            onCopy = chooseNoteViewModel::copySelectedNotes,
-            onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
-            onClose = chooseNoteViewModel::clearSelection,
-            shape = MaterialTheme.shapes.large
-        )
-
-        val selected = chooseNoteViewModel.notesArrangement.toNumberDesktop()
-
-        MobileConfigurationsMenu(
-            selected = selected,
-            visibilityState = editState,
-            outsideClick = chooseNoteViewModel::cancelEditMenu,
-            staggeredGridOptionClick = chooseNoteViewModel::staggeredGridArrangementSelected,
-            gridOptionClick = chooseNoteViewModel::gridArrangementSelected,
-            listOptionClick = chooseNoteViewModel::listArrangementSelected,
-            sortingSelected = chooseNoteViewModel::sortingSelected,
-            sortingState = chooseNoteViewModel.orderByState
-        )
-
-        val titlesToDelete by chooseNoteViewModel.titlesToDelete.collectAsState()
-
-        if (titlesToDelete.isNotEmpty()) {
-            DeleteConfirmationDialog(
-                onConfirmation = chooseNoteViewModel::deleteSelectedNotes,
-                onCancel = chooseNoteViewModel::cancelDeletion,
-            )
-        }
-
-        val folderEdit =
-            chooseNoteViewModel.editFolderState.collectAsState().value
-
-        if (folderEdit != null) {
-            EditFileScreen(
-                folderEdit = folderEdit,
-                onDismissRequest = chooseNoteViewModel::stopEditingFolder,
-                deleteFolder = chooseNoteViewModel::deleteFolder,
-                editFolder = chooseNoteViewModel::updateFolder
-            )
         }
     }
 }
