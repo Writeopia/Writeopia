@@ -121,7 +121,8 @@ internal fun NoteEditorScreen(
     ) { paddingValues ->
         Box(
             modifier = Modifier
-                .padding(top = paddingValues.calculateTopPadding())
+                .padding(paddingValues)
+                .padding(bottom = 20.dp)
                 .fillMaxSize()
                 .imePadding()
         ) {
@@ -318,7 +319,7 @@ private fun BottomScreen(
 
     val containerModifier = Modifier
         .fillMaxWidth()
-        .padding(8.dp)
+        .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
         .clip(MaterialTheme.shapes.large)
         .background(MaterialTheme.colorScheme.primary)
 
