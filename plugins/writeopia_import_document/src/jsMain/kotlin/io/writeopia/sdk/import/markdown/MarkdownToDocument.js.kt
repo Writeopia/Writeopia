@@ -10,4 +10,6 @@ actual object MarkdownToDocument {
         userId: String,
         parentId: String
     ): Flow<Document> = flow { }
+
+    actual fun readMarkdown(markdownText: String, userId: String, parentId: String): Document? = null
 }

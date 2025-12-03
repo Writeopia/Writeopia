@@ -34,6 +34,7 @@ internal fun NotesSelectionMenu(
     onDelete: () -> Unit,
     onCopy: () -> Unit,
     onFavorite: () -> Unit,
+    onSummary: () -> Unit,
     onClose: () -> Unit,
     shape: Shape = RoundedCornerShape(
         CornerSize(16.dp),
@@ -96,6 +97,16 @@ internal fun NotesSelectionMenu(
 
                 Icon(
                     modifier = Modifier
+                        .clickable(onClick = onSummary)
+                        .weight(1F)
+                        .padding(vertical = 25.dp),
+                    imageVector = WrSdkIcons.ai,
+                    contentDescription = "AI Summary",
+                    tint = tintColor
+                )
+
+                Icon(
+                    modifier = Modifier
                         .clickable(onClick = onDelete)
                         .weight(1F)
                         .padding(vertical = 25.dp),
@@ -124,6 +135,13 @@ internal fun NotesSelectionMenu(
 @Composable
 internal fun NotesSelectionMenuPreview() {
     Box(modifier = Modifier.fillMaxSize()) {
-        NotesSelectionMenu(visibilityState = true, onDelete = {}, onCopy = {}, onFavorite = {}, onClose = {})
+        NotesSelectionMenu(
+            visibilityState = true,
+            onDelete = {},
+            onCopy = {},
+            onFavorite = {},
+            onSummary = {},
+            onClose = {}
+        )
     }
 }

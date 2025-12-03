@@ -84,6 +84,8 @@ interface ChooseNoteViewModel : FolderController {
     fun deleteSelectedNotes()
 
     fun favoriteSelectedNotes()
+    
+    fun summarizeDocuments()
 
     fun hideConfigSyncMenu()
 

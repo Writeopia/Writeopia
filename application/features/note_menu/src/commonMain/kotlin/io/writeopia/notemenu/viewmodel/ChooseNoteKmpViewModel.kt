@@ -2,13 +2,13 @@ package io.writeopia.notemenu.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.writeopia.OllamaRepository
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.common.utils.file.FileUtils
 import io.writeopia.common.utils.file.SaveImage
-import io.writeopia.sdk.models.utils.map
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
@@ -34,11 +34,13 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.preview.PreviewParser
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,6 +60,7 @@ internal class ChooseNoteKmpViewModel(
     private val notesUseCase: NotesUseCase,
     private val notesConfig: ConfigurationRepository,
     private val authRepository: AuthRepository,
+    private val ollamaRepository: OllamaRepository? = null,
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
@@ -224,6 +227,8 @@ internal class ChooseNoteKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, null)
     }
 
+    private var aiJob: Job? = null
+
     init {
         folderController.initCoroutine(viewModelScope)
 
@@ -345,6 +350,69 @@ internal class ChooseNoteKmpViewModel(
                 notesUseCase.unFavoriteDocuments(selectedIds)
             } else {
                 notesUseCase.favoriteDocuments(selectedIds)
+            }
+        }
+    }
+
+    override fun summarizeDocuments() {
+        if (!hasSelectedNotes.value) return
+        if (ollamaRepository == null) return
+
+        aiJob?.cancel()
+        cancelEditMenu()
+
+        viewModelScope.launch {
+            val documents = notesUseCase.loadDocumentsByIds(selectedNotes.value, getWorkspaceId())
+            val prompt = buildString {
+                appendLine(
+                    """
+                You are a document summarization assistant.
+
+                Your task:
+                - Read ALL documents below and generate ONE unified summary.
+                - Detect the dominant language in the documents and produce the summary in that same language.
+                - Return the summary STRICTLY formatted as valid Markdown (no extra text outside the Markdown).
+                - Preserve useful formatting from the source when appropriate: lists (-), numbered steps, **bold**, > blockquotes, code blocks, and simple tables if they exist.
+                - The summary should be concise and information-dense, suitable to become the content of a new `.md` file.
+                - Do NOT hallucinate. If unsure about a fact, omit instead of inventing.
+                - Avoid wrapping your answer in ```markdown or other fences. Use ``` ONLY for code blocks that belong to the summary.
+
+                Documents:
+                """.trimIndent()
+                )
+
+                appendLine()
+
+                documents.forEach { doc ->
+                    val mdContent = documentToMarkdown.parse(doc.content)
+
+                    appendLine("```")
+                    appendLine(mdContent)
+                    appendLine("```")
+                    appendLine()
+                }
+
+                appendLine(
+                    """
+                End instructions: return ONLY the unified summary in valid Markdown format. No commentary, no metadata, no explanations outside Markdown.
+                """.trimIndent()
+                )
+            }
+
+            aiJob = viewModelScope.launch(Dispatchers.Default) {
+                val userId = getUserId()
+
+                val resultMd = PromptService.prompt(
+                    userId = userId,
+                    prompt = prompt,
+                    ollamaRepository = ollamaRepository,
+                ) ?: return@launch
+
+                val document =
+                    MarkdownToDocument.readMarkdown(resultMd, userId, notesNavigation.id)
+                        ?: return@launch
+
+                notesUseCase.saveDocumentDb(document)
             }
         }
     }
@@ -492,6 +560,11 @@ internal class ChooseNoteKmpViewModel(
 
             folderController.addFolder(parentId = parentId)
         }
+    }
+
+    override fun onCleared() {
+        aiJob?.cancel()
+        super.onCleared()
     }
 
     private suspend fun importJsonNotes(externalFiles: List<ExternalFile>, now: Instant) {

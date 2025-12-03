@@ -39,4 +39,22 @@ actual object MarkdownToDocument {
                 )
             }
             .map { it.toModel() }
+
+    actual fun readMarkdown(markdownText: String, userId: String, parentId: String): Document? {
+        val lines = markdownText.split("\n")
+        val story = MarkdownParser.parse(lines)
+
+        val title = story.firstOrNull { it.type.number == StoryTypes.TITLE.type.number }?.text ?: ""
+
+        return DocumentApi(
+            id = GenerateId.generate(),
+            title = title,
+            workspaceId = userId,
+            parentId = parentId,
+            content = story,
+            isFavorite = false,
+            deleted = false,
+            isLocked = false,
+        ).toModel()
+    }
 }

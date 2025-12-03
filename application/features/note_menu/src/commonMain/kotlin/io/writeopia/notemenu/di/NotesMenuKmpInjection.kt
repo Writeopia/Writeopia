@@ -2,6 +2,7 @@ package io.writeopia.notemenu.di
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.writeopia.OllamaRepository
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.core.configuration.di.AppConfigurationInjector
@@ -13,6 +14,7 @@ import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.DocumentConflictHandler
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.di.AppConnectionInjection
+import io.writeopia.di.OllamaInjection
 import io.writeopia.notemenu.viewmodel.ChooseNoteKmpViewModel
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.FolderStateController
@@ -34,6 +36,7 @@ class NotesMenuKmpInjection private constructor(
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val connectionInjector: WriteopiaConnectionInjector =
         WriteopiaConnectionInjector.singleton(),
+    private val ollamaInjection: OllamaInjection? = null
 ) : NotesMenuInjection {
 
     private fun provideDocumentRepository(): DocumentRepository =
@@ -83,11 +86,13 @@ class NotesMenuKmpInjection private constructor(
         notesUseCase: NotesUseCase = provideNotesUseCase(),
         notesConfig: ConfigurationRepository =
             appConfigurationInjector.provideNotesConfigurationRepository(),
+        ollamaRepository: OllamaRepository? = ollamaInjection?.provideRepository()
     ): ChooseNoteKmpViewModel =
         ChooseNoteKmpViewModel(
             notesUseCase = notesUseCase,
             notesConfig = notesConfig,
             authRepository = authCoreInjection.provideAuthRepository(),
+            ollamaRepository = ollamaRepository,
             selectionState = selectionState,
             notesNavigation = notesNavigation,
             folderController = provideFolderStateController(),
@@ -118,10 +123,12 @@ class NotesMenuKmpInjection private constructor(
         fun desktop(
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
+            ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
         ) = instanceDesktop ?: NotesMenuKmpInjection(
             selectionState = selectionState,
             keyboardEventFlow = keyboardEventFlow,
-        ).also {
+            ollamaInjection = ollamaInjection,
+            ).also {
             instanceDesktop = it
         }
     }
