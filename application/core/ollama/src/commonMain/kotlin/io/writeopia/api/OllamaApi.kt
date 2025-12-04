@@ -38,7 +38,10 @@ private const val FAQ_PROMPT =
 private const val TAGS_PROMPT =
     "Generate a list of relevant tags based on the following text. The tags should capture key topics, themes, and important concepts. Use concise, single-word tags that accurately represent the content. Produce at most 10 tags. Detect the language of the text and write in the same language. "
 private const val SUMMARY_PROMPT_COMPLETE =
-    "Summarize the following text while preserving its key points and main ideas. Keep the summary concise and clear. If the text contains multiple sections, highlight the most important aspects of each. Maintain the original tone and intent where possible"
+    "Summarize the following text while preserving its key points and main ideas. Keep the summary concise and clear. If the text contains multiple sections, highlight the most important aspects of each. Maintain the original tone and intent where possible. Detect the language of the text and write in the same language."
+
+private const val MARKDOWN_RESULT =
+    "Your return should be in valid Markdown format."
 
 /**
  * API for calling Ollama
@@ -190,19 +193,32 @@ class OllamaApi(
     ): Flow<ResultData<String>> =
         streamReply(model, "$TAGS_PROMPT:\n ```\n$prompt\n", url)
 
-    fun getModelsAsFlow(url: String): Flow<ResultData<ModelsResponse>> {
-        return flow {
-            try {
-                emit(ResultData.Loading())
+    suspend fun generateCompleteSummary(
+        model: String,
+        prompt: String,
+        url: String,
+        markdownResult: Boolean = false,
+    ): String {
+        val prompt = buildString {
+            append(SUMMARY_PROMPT_COMPLETE)
+            if (markdownResult) append(" $MARKDOWN_RESULT")
+            append(": \n ```\n$prompt\n```")
+        }
 
-                val request = client.get("${url.trim()}/${EndPoints.ollamaModels()}") {
-                    contentType(ContentType.Application.Json)
-                }
+        return generateReply(model, prompt, url).response ?: ""
+    }
 
-                emit(ResultData.Complete(request.body()))
-            } catch (e: Exception) {
-                emit(ResultData.Error(e))
+    fun getModelsAsFlow(url: String): Flow<ResultData<ModelsResponse>> = flow {
+        try {
+            emit(ResultData.Loading())
+
+            val request = client.get("${url.trim()}/${EndPoints.ollamaModels()}") {
+                contentType(ContentType.Application.Json)
             }
+
+            emit(ResultData.Complete(request.body()))
+        } catch (e: Exception) {
+            emit(ResultData.Error(e))
         }
     }
 

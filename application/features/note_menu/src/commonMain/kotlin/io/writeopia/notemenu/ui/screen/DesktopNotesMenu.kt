@@ -221,6 +221,7 @@ fun DesktopNotesMenu(
                 onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
                 onCopy = chooseNoteViewModel::copySelectedNotes,
                 onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
+                onSummary = chooseNoteViewModel::summarizeDocuments,
                 onClose = chooseNoteViewModel::clearSelection,
                 shape = RoundedCornerShape(CornerSize(16.dp)),
                 exitAnimationOffset = 2.3F,

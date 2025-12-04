@@ -3,11 +3,6 @@
     <file name="src/androidMain/kotlin/io/writeopia/core/folders/di/InDocumentSearchInjection.android.kt">
         <error line="7" column="74" source="standard:function-expression-body" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/core/folders/api/DocumentsApi.kt">
-        <error line="25" column="20" source="standard:class-signature" />
-        <error line="25" column="52" source="standard:class-signature" />
-        <error line="25" column="79" source="standard:class-signature" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/core/folders/repository/InDocumentSearchSqlRepository.kt">
         <error line="10" column="80" source="standard:function-expression-body" />
     </file>
@@ -18,9 +13,6 @@
     <file name="src/commonMain/kotlin/io/writeopia/core/folders/repository/folder/InMemoryFolderRepository.kt">
         <error line="39" column="40" source="standard:function-expression-body" />
         <error line="75" column="51" source="standard:function-expression-body" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/core/folders/repository/folder/RoomFolderRepository.kt">
-        <error line="14" column="23" source="standard:class-signature" />
     </file>
     <file name="src/jsMain/kotlin/io/writeopia/core/folders/di/InDocumentSearchInjection.js.kt">
         <error line="7" column="74" source="standard:function-expression-body" />

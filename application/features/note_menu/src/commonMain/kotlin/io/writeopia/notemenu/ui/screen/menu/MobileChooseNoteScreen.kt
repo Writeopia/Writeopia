@@ -143,6 +143,7 @@ internal fun MobileChooseNoteScreen(
                     onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
                     onCopy = chooseNoteViewModel::copySelectedNotes,
                     onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
+                    onSummary = chooseNoteViewModel::summarizeDocuments,
                     onClose = chooseNoteViewModel::clearSelection,
                     shape = MaterialTheme.shapes.large
                 )

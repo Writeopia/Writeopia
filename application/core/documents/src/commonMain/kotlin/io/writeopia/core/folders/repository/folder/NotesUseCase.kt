@@ -69,7 +69,7 @@ class NotesUseCase private constructor(
     }
 
     suspend fun moveItemsById(ids: Iterable<String>, workspaceId: String, parentId: String) {
-        val items = loadDocumentsByIds(ids, workspaceId).filter { it.id != parentId }
+        val items = loadMenuItemsByIds(ids, workspaceId).filter { it.id != parentId }
 
         items.forEach { moveItem(it, parentId) }
         folderRepository.refreshFolders()
@@ -102,13 +102,23 @@ class NotesUseCase private constructor(
             println("loadFoldersForWorkspace")
         }
 
-    private suspend fun loadDocumentsByIds(
+    suspend fun loadDocumentsByIds(
+        ids: Iterable<String>,
+        workspaceId: String,
+    ): List<Document> =
+        ids.mapNotNull { id -> documentRepository.loadDocumentById(id, workspaceId) }
+
+    private suspend fun loadFoldersByIds(
+        ids: Iterable<String>,
+    ): List<Folder> =
+        ids.mapNotNull { id -> folderRepository.getFolderById(id) }
+
+    private suspend fun loadMenuItemsByIds(
         ids: Iterable<String>,
         workspaceId: String,
     ): List<MenuItem> {
-        val folders = ids.mapNotNull { id -> folderRepository.getFolderById(id) }
-        val documents =
-            ids.mapNotNull { id -> documentRepository.loadDocumentById(id, workspaceId) }
+        val folders = loadFoldersByIds(ids)
+        val documents = loadDocumentsByIds(ids, workspaceId)
 
         return (folders + documents)
     }

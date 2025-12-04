@@ -2,13 +2,13 @@ package io.writeopia.notemenu.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.writeopia.OllamaRepository
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.common.utils.file.FileUtils
 import io.writeopia.common.utils.file.SaveImage
-import io.writeopia.sdk.models.utils.map
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
@@ -34,11 +34,13 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.preview.PreviewParser
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,6 +60,7 @@ internal class ChooseNoteKmpViewModel(
     private val notesUseCase: NotesUseCase,
     private val notesConfig: ConfigurationRepository,
     private val authRepository: AuthRepository,
+    private val ollamaRepository: OllamaRepository? = null,
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
@@ -224,6 +227,8 @@ internal class ChooseNoteKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, null)
     }
 
+    private var aiJob: Job? = null
+
     init {
         folderController.initCoroutine(viewModelScope)
 
@@ -345,6 +350,49 @@ internal class ChooseNoteKmpViewModel(
                 notesUseCase.unFavoriteDocuments(selectedIds)
             } else {
                 notesUseCase.favoriteDocuments(selectedIds)
+            }
+        }
+    }
+
+    override fun summarizeDocuments() {
+        if (!hasSelectedNotes.value) return
+        if (ollamaRepository == null) return
+
+        aiJob?.cancel()
+        cancelEditMenu()
+
+        viewModelScope.launch {
+            val documents = notesUseCase.loadDocumentsByIds(selectedNotes.value, getWorkspaceId())
+            val prompt = buildString {
+                documents.forEach { doc ->
+                    val documentMd = documentToMarkdown.parse(doc.content)
+
+                    appendLine("====================================================")
+                    appendLine(documentMd)
+                    appendLine("====================================================")
+                    appendLine()
+                }
+            }
+
+            aiJob = viewModelScope.launch(Dispatchers.Default) {
+                val userId = getUserId()
+                val workspaceId = getWorkspaceId()
+
+                val aiPromptResultMd = PromptService.prompt(
+                    userId = userId,
+                    prompt = prompt,
+                    ollamaRepository = ollamaRepository,
+                    markdownResult = true
+                ) ?: return@launch
+
+                val document =
+                    MarkdownToDocument.readMarkdown(
+                        markdownText = aiPromptResultMd,
+                        parentId = notesNavigation.id,
+                        workspaceId = workspaceId,
+                    ) ?: return@launch
+
+                notesUseCase.saveDocumentDb(document)
             }
         }
     }
@@ -529,7 +577,7 @@ internal class ChooseNoteKmpViewModel(
         externalFiles.filter { file -> file.extension == "md" }
             .map { file -> file.fullPath }
             .let { files ->
-                MarkdownToDocument.readDocuments(files, getUserId(), notesNavigation.id)
+                MarkdownToDocument.readDocuments(files, notesNavigation.id, getWorkspaceId())
             }
             .onCompletion { exception ->
                 if (exception == null) {

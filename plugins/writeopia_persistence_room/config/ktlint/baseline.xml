@@ -5,8 +5,4 @@
         <error line="48" column="140" source="standard:max-line-length" />
         <error line="48" column="161" source="standard:argument-list-wrapping" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/sdk/persistence/dao/room/RoomDocumentRepository.kt">
-        <error line="24" column="25" source="standard:class-signature" />
-        <error line="78" column="23" source="standard:function-expression-body" />
-    </file>
 </baseline>

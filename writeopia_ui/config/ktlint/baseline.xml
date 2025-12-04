@@ -238,10 +238,6 @@
         <error line="41" column="1" source="standard:indent" />
         <error line="44" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
-    <file name="src/androidMain/kotlin/io/writeopia/ui/drawer/content/VideoDrawer.kt">
-        <error line="29" column="19" source="standard:class-signature" />
-        <error line="29" column="66" source="standard:class-signature" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/backstack/SnapshotBackstackManager.kt">
         <error line="103" column="53" source="standard:function-expression-body" />
     </file>
@@ -262,11 +258,6 @@
     <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/DropTargetHorizontalDivision.kt">
         <error line="62" column="14" source="standard:enum-wrapping" />
         <error line="62" column="25" source="standard:enum-wrapping" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/SizeDp.kt">
-        <error line="5" column="19" source="standard:class-signature" />
-        <error line="5" column="34" source="standard:class-signature" />
-        <error line="5" column="48" source="standard:class-signature" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/draganddrop/target/external/HandleImageDrop.kt">
         <error line="13" column="1" source="standard:no-consecutive-blank-lines" />
@@ -690,36 +681,6 @@
         <error line="148" column="1" source="standard:indent" />
         <error line="150" column="13" source="standard:backing-property-naming" />
         <error line="150" column="13" source="standard:backing-property-naming" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/manager/BackpressureBuffer.kt">
-        <error line="13" column="22" source="standard:class-signature" />
-        <error line="13" column="45" source="standard:class-signature" />
-        <error line="13" column="78" source="standard:class-signature" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/manager/WriteopiaStateManager.kt">
-        <error line="89" column="23" source="standard:class-signature" />
-        <error line="181" column="17" source="standard:backing-property-naming" />
-        <error line="182" column="17" source="standard:backing-property-naming" />
-        <error line="206" column="17" source="standard:backing-property-naming" />
-        <error line="223" column="17" source="standard:backing-property-naming" />
-        <error line="250" column="17" source="standard:backing-property-naming" />
-        <error line="1412" column="32" source="standard:class-signature" />
-        <error line="1412" column="50" source="standard:class-signature" />
-        <error line="1412" column="69" source="standard:class-signature" />
-        <error line="1412" column="86" source="standard:class-signature" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/model/SelectionInfo.kt">
-        <error line="3" column="26" source="standard:class-signature" />
-        <error line="3" column="41" source="standard:class-signature" />
-        <error line="3" column="54" source="standard:class-signature" />
-        <error line="3" column="70" source="standard:class-signature" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/model/TextInput.kt">
-        <error line="5" column="22" source="standard:class-signature" />
-        <error line="5" column="40" source="standard:class-signature" />
-        <error line="5" column="60" source="standard:class-signature" />
-        <error line="5" column="78" source="standard:class-signature" />
-        <error line="5" column="115" source="standard:class-signature" />
     </file>
     <file name="src/commonTest/kotlin/io/writeopia/ui/manager/WriteopiaStateManagerTest.kt">
         <error line="58" column="9" source="standard:blank-line-before-declaration" />

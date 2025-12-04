@@ -5,5 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 expect object MarkdownToDocument {
 
-    fun readDocuments(files: List<String>, userId: String, parentId: String): Flow<Document>
+    fun readDocuments(files: List<String>, parentId: String, workspaceId: String): Flow<Document>
+
+    fun readMarkdown(markdownText: String, parentId: String, workspaceId: String): Document?
 }
