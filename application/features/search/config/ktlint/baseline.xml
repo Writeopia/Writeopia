@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
     <file name="src/commonMain/kotlin/io/writeopia/features/search/api/SearchApi.kt">
-        <error line="13" column="17" source="standard:class-signature" />
-        <error line="13" column="49" source="standard:class-signature" />
-        <error line="13" column="76" source="standard:class-signature" />
         <error line="15" column="58" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/features/search/repository/SearchRepository.kt">
@@ -11,15 +8,5 @@
         <error line="28" column="30" source="standard:if-else-wrapping" />
         <error line="28" column="30" source="standard:multiline-if-else" />
         <error line="53" column="78" source="standard:function-expression-body" />
-        <error line="80" column="27" source="standard:class-signature" />
-        <error line="80" column="43" source="standard:class-signature" />
-        <error line="80" column="60" source="standard:class-signature" />
-        <error line="82" column="29" source="standard:class-signature" />
-        <error line="82" column="45" source="standard:class-signature" />
-        <error line="82" column="62" source="standard:class-signature" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/features/search/ui/SearchKmpViewModel.kt">
-        <error line="19" column="22" source="standard:class-signature" />
-        <error line="19" column="22" source="standard:class-signature" />
     </file>
 </baseline>

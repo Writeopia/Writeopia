@@ -1,34 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="src/commonMain/kotlin/io/writeopia/edit_folder/ui/EditFolderScreen.kt">
-        <error line="1" column="9" source="standard:package-name" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/di/NotesMenuKmpInjection.kt">
-        <error line="50" column="21" source="standard:function-expression-body" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/ui/screen/configuration/atoms/SortOptions.kt">
         <error line="23" column="1" source="standard:no-unused-imports" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/viewmodel/ChooseNoteKmpViewModel.kt">
-        <error line="75" column="26" source="standard:class-signature" />
-        <error line="75" column="26" source="standard:class-signature" />
-        <error line="75" column="39" source="standard:class-signature" />
-        <error line="117" column="17" source="standard:backing-property-naming" />
-        <error line="146" column="17" source="standard:backing-property-naming" />
-        <error line="158" column="17" source="standard:backing-property-naming" />
-        <error line="253" column="57" source="standard:function-expression-body" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/notemenu/viewmodel/ChooseNoteViewModel.kt">
-        <error line="105" column="28" source="standard:class-signature" />
-        <error line="105" column="39" source="standard:class-signature" />
-        <error line="109" column="31" source="standard:class-signature" />
-        <error line="109" column="42" source="standard:class-signature" />
-        <error line="131" column="26" source="standard:class-signature" />
-        <error line="131" column="44" source="standard:class-signature" />
-        <error line="131" column="72" source="standard:class-signature" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/viewmodel/FolderStateController.kt">
         <error line="31" column="17" source="standard:backing-property-naming" />
-        <error line="75" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
 </baseline>
