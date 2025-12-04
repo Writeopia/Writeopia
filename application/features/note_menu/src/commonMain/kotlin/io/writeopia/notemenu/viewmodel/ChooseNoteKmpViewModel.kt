@@ -409,8 +409,11 @@ internal class ChooseNoteKmpViewModel(
                 ) ?: return@launch
 
                 val document =
-                    MarkdownToDocument.readMarkdown(resultMd, userId, notesNavigation.id)
-                        ?: return@launch
+                    MarkdownToDocument.readMarkdown(
+                        markdownText = resultMd,
+                        parentId = notesNavigation.id,
+                        workspaceId = getWorkspaceId(),
+                    ) ?: return@launch
 
                 notesUseCase.saveDocumentDb(document)
             }
@@ -602,7 +605,7 @@ internal class ChooseNoteKmpViewModel(
         externalFiles.filter { file -> file.extension == "md" }
             .map { file -> file.fullPath }
             .let { files ->
-                MarkdownToDocument.readDocuments(files, getUserId(), notesNavigation.id)
+                MarkdownToDocument.readDocuments(files, notesNavigation.id, getWorkspaceId())
             }
             .onCompletion { exception ->
                 if (exception == null) {

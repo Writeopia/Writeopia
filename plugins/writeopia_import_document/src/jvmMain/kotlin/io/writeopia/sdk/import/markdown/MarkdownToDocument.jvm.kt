@@ -15,8 +15,8 @@ actual object MarkdownToDocument {
 
     actual fun readDocuments(
         files: List<String>,
-        userId: String,
-        parentId: String
+        parentId: String,
+        workspaceId: String
     ): Flow<Document> =
         files.asFlow()
             .map(::File)
@@ -30,7 +30,7 @@ actual object MarkdownToDocument {
                 DocumentApi(
                     id = GenerateId.generate(),
                     title = title ?: "",
-                    workspaceId = userId,
+                    workspaceId = workspaceId,
                     parentId = parentId,
                     isLocked = false,
                     content = content,
@@ -40,7 +40,11 @@ actual object MarkdownToDocument {
             }
             .map { it.toModel() }
 
-    actual fun readMarkdown(markdownText: String, userId: String, parentId: String): Document? {
+    actual fun readMarkdown(
+        markdownText: String,
+        parentId: String,
+        workspaceId: String
+    ): Document? {
         val lines = markdownText.split("\n")
         val story = MarkdownParser.parse(lines)
 
@@ -49,7 +53,7 @@ actual object MarkdownToDocument {
         return DocumentApi(
             id = GenerateId.generate(),
             title = title,
-            workspaceId = userId,
+            workspaceId = workspaceId,
             parentId = parentId,
             content = story,
             isFavorite = false,

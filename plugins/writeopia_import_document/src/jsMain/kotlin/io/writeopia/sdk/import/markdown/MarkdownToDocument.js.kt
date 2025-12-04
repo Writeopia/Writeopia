@@ -7,9 +7,9 @@ import kotlinx.coroutines.flow.flow
 actual object MarkdownToDocument {
     actual fun readDocuments(
         files: List<String>,
-        userId: String,
-        parentId: String
+        parentId: String,
+        workspaceId: String
     ): Flow<Document> = flow { }
 
-    actual fun readMarkdown(markdownText: String, userId: String, parentId: String): Document? = null
+    actual fun readMarkdown(markdownText: String, parentId: String, workspaceId: String): Document? = null
 }
