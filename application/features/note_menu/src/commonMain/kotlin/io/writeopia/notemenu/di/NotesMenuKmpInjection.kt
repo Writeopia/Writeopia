@@ -128,7 +128,7 @@ class NotesMenuKmpInjection private constructor(
             selectionState = selectionState,
             keyboardEventFlow = keyboardEventFlow,
             ollamaInjection = ollamaInjection,
-            ).also {
+        ).also {
             instanceDesktop = it
         }
     }

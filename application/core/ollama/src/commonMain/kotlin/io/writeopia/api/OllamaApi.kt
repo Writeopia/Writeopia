@@ -208,19 +208,17 @@ class OllamaApi(
         return generateReply(model, prompt, url).response ?: ""
     }
 
-    fun getModelsAsFlow(url: String): Flow<ResultData<ModelsResponse>> {
-        return flow {
-            try {
-                emit(ResultData.Loading())
+    fun getModelsAsFlow(url: String): Flow<ResultData<ModelsResponse>> = flow {
+        try {
+            emit(ResultData.Loading())
 
-                val request = client.get("${url.trim()}/${EndPoints.ollamaModels()}") {
-                    contentType(ContentType.Application.Json)
-                }
-
-                emit(ResultData.Complete(request.body()))
-            } catch (e: Exception) {
-                emit(ResultData.Error(e))
+            val request = client.get("${url.trim()}/${EndPoints.ollamaModels()}") {
+                contentType(ContentType.Application.Json)
             }
+
+            emit(ResultData.Complete(request.body()))
+        } catch (e: Exception) {
+            emit(ResultData.Error(e))
         }
     }
 
