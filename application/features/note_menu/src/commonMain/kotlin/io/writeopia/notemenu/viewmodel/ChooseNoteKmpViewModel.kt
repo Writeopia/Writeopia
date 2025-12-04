@@ -364,55 +364,32 @@ internal class ChooseNoteKmpViewModel(
         viewModelScope.launch {
             val documents = notesUseCase.loadDocumentsByIds(selectedNotes.value, getWorkspaceId())
             val prompt = buildString {
-                appendLine(
-                    """
-                You are a document summarization assistant.
-
-                Your task:
-                - Read ALL documents below and generate ONE unified summary.
-                - Detect the dominant language in the documents and produce the summary in that same language.
-                - Return the summary STRICTLY formatted as valid Markdown (no extra text outside the Markdown).
-                - Preserve useful formatting from the source when appropriate: lists (-), numbered steps, **bold**, > blockquotes, code blocks, and simple tables if they exist.
-                - The summary should be concise and information-dense, suitable to become the content of a new `.md` file.
-                - Do NOT hallucinate. If unsure about a fact, omit instead of inventing.
-                - Avoid wrapping your answer in ```markdown or other fences. Use ``` ONLY for code blocks that belong to the summary.
-
-                Documents:
-                """.trimIndent()
-                )
-
-                appendLine()
-
                 documents.forEach { doc ->
-                    val mdContent = documentToMarkdown.parse(doc.content)
+                    val documentMd = documentToMarkdown.parse(doc.content)
 
-                    appendLine("```")
-                    appendLine(mdContent)
-                    appendLine("```")
+                    appendLine("====================================================")
+                    appendLine(documentMd)
+                    appendLine("====================================================")
                     appendLine()
                 }
-
-                appendLine(
-                    """
-                End instructions: return ONLY the unified summary in valid Markdown format. No commentary, no metadata, no explanations outside Markdown.
-                """.trimIndent()
-                )
             }
 
             aiJob = viewModelScope.launch(Dispatchers.Default) {
                 val userId = getUserId()
+                val workspaceId = getWorkspaceId()
 
-                val resultMd = PromptService.prompt(
+                val aiPromptResultMd = PromptService.prompt(
                     userId = userId,
                     prompt = prompt,
                     ollamaRepository = ollamaRepository,
+                    markdownResult = true
                 ) ?: return@launch
 
                 val document =
                     MarkdownToDocument.readMarkdown(
-                        markdownText = resultMd,
+                        markdownText = aiPromptResultMd,
                         parentId = notesNavigation.id,
-                        workspaceId = getWorkspaceId(),
+                        workspaceId = workspaceId,
                     ) ?: return@launch
 
                 notesUseCase.saveDocumentDb(document)
@@ -563,11 +540,6 @@ internal class ChooseNoteKmpViewModel(
 
             folderController.addFolder(parentId = parentId)
         }
-    }
-
-    override fun onCleared() {
-        aiJob?.cancel()
-        super.onCleared()
     }
 
     private suspend fun importJsonNotes(externalFiles: List<ExternalFile>, now: Instant) {

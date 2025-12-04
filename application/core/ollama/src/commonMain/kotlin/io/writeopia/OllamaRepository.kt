@@ -57,6 +57,15 @@ class OllamaRepository(
         return ollamaApi.generateReply(model, prompt, url).response ?: ""
     }
 
+    suspend fun generateCompleteSummary(
+        model: String,
+        prompt: String,
+        url: String,
+        markdownResult: Boolean = false
+    ): String {
+        return ollamaApi.generateCompleteSummary(model, prompt, url, markdownResult)
+    }
+
     fun streamReply(model: String, prompt: String, url: String): Flow<ResultData<String>> =
         ollamaApi.streamReply(model, prompt, url)
 
