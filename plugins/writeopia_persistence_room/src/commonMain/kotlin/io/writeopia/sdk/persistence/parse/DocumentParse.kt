@@ -27,5 +27,6 @@ fun Document.toEntity() = DocumentEntity(
     workspaceId = workspaceId,
     favorite = favorite,
     parentId = parentId,
-    isLocked = isLocked
+    isLocked = isLocked,
+    isDeleted = deleted
 )

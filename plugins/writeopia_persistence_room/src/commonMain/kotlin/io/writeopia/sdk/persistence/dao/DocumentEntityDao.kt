@@ -57,8 +57,8 @@ interface DocumentEntityDao {
     // The order here doesn't matter, because only one document should be returned
     @Query(
         "SELECT * FROM $DOCUMENT_ENTITY " +
-            "LEFT JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
-            "WHERE $DOCUMENT_ENTITY.id = :documentId " +
+            "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
+            "WHERE $DOCUMENT_ENTITY.id = :documentId AND is_deleted = FALSE " +
             "ORDER BY $DOCUMENT_ENTITY.created_at, $STORY_UNIT_ENTITY.position"
     )
     suspend fun loadDocumentWithContentById(
@@ -68,8 +68,8 @@ interface DocumentEntityDao {
     // The order here doesn't matter, because only one document should be returned
     @Query(
         "SELECT * FROM $DOCUMENT_ENTITY " +
-            "LEFT JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
-            "WHERE $DOCUMENT_ENTITY.id IN (:documentIds) " +
+            "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
+            "WHERE $DOCUMENT_ENTITY.id IN (:documentIds) AND is_deleted = FALSE " +
             "ORDER BY " +
             "CASE WHEN :orderBy = \'$TITLE\' THEN $DOCUMENT_ENTITY.title END COLLATE NOCASE ASC, " +
             "CASE WHEN :orderBy = \'$CREATED_AT\' THEN $DOCUMENT_ENTITY.created_at END DESC, " +
@@ -83,7 +83,7 @@ interface DocumentEntityDao {
 
     @Query(
         "SELECT * FROM $DOCUMENT_ENTITY " +
-            "LEFT JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
+            "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
             "WHERE workspace_id = :userId " +
             "ORDER BY " +
 //                "CASE WHEN :orderBy = \'$TITLE\' THEN $DOCUMENT_ENTITY.title END COLLATE NOCASE ASC, " +
@@ -97,22 +97,22 @@ interface DocumentEntityDao {
 
     @Query(
         "SELECT * FROM $DOCUMENT_ENTITY " +
-            "LEFT JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
-            "WHERE workspace_id = :userId " +
+            "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
+            "WHERE workspace_id = :userId AND is_deleted = FALSE " +
             "ORDER BY " +
 //                "CASE WHEN :orderBy = \'$TITLE\' THEN $DOCUMENT_ENTITY.title END COLLATE NOCASE ASC, " +
 //                "CASE WHEN :orderBy = \'$CREATED_AT\' THEN $DOCUMENT_ENTITY.created_at END DESC, " +
 //                "CASE WHEN :orderBy = \'$LAST_UPDATED_AT\' THEN $DOCUMENT_ENTITY.last_updated_at END DESC, " +
             "$STORY_UNIT_ENTITY.position"
     )
-    fun listenForDocumentsWithContentForUser(
+    fun listenForDocumentsWithContentForWorkspace(
         userId: String
     ): Flow<Map<DocumentEntity, List<StoryStepEntity>>>
 
     @Query(
         "SELECT * FROM $DOCUMENT_ENTITY " +
-            "LEFT JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
-            "WHERE $DOCUMENT_ENTITY.parent_id = :parentId " +
+            "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
+            "WHERE $DOCUMENT_ENTITY.parent_id = :parentId AND is_deleted = FALSE " +
             "ORDER BY " +
 //                "CASE WHEN :orderBy = \'$TITLE\' THEN $DOCUMENT_ENTITY.title END COLLATE NOCASE ASC, " +
 //                "CASE WHEN :orderBy = \'$CREATED_AT\' THEN $DOCUMENT_ENTITY.created_at END DESC, " +
@@ -135,7 +135,7 @@ interface DocumentEntityDao {
     @Query(
         "SELECT * " +
             "FROM $DOCUMENT_ENTITY " +
-            "LEFT JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
+            "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
             "WHERE $DOCUMENT_ENTITY.workspace_id = :workspaceId " +
             "ORDER BY " +
             "$STORY_UNIT_ENTITY.position"
