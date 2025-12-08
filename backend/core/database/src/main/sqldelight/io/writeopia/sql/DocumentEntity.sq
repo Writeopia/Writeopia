@@ -89,7 +89,7 @@ selectWithContentByWorkspaceIdAfterTime:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE last_synced > ? AND workspace_id = ? AND deleted = FALSE
+WHERE last_synced > ? AND workspace_id = ?
 ORDER BY position;
 
 selectWithContentById:
