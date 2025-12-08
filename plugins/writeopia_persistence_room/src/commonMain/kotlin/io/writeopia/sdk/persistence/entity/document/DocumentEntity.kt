@@ -7,6 +7,7 @@ import io.writeopia.sdk.models.CREATED_AT
 import io.writeopia.sdk.models.DOCUMENT_ENTITY
 import io.writeopia.sdk.models.FAVORITE
 import io.writeopia.sdk.models.ICON
+import io.writeopia.sdk.models.IS_DELETED
 import io.writeopia.sdk.models.IS_LOCKED
 import io.writeopia.sdk.models.LAST_SYNCED_AT
 import io.writeopia.sdk.models.LAST_UPDATED_AT
@@ -27,6 +28,7 @@ data class DocumentEntity(
     @ColumnInfo(PARENT_ID) val parentId: String,
     @ColumnInfo(ICON) val icon: String? = null,
     @ColumnInfo(IS_LOCKED) val isLocked: Boolean,
+    @ColumnInfo(IS_DELETED) val isDeleted: Boolean,
 ) {
     companion object {
         fun createById(id: String, workspaceId: String, parentId: String): DocumentEntity {
@@ -40,7 +42,8 @@ data class DocumentEntity(
                 workspaceId,
                 favorite = false,
                 parentId = parentId,
-                isLocked = false
+                isLocked = false,
+                isDeleted = false
             )
         }
     }
