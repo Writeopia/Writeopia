@@ -26,13 +26,26 @@ class DocumentConflictHandler(
         externalDocuments: List<Document>
     ): List<Document> {
         val now = Clock.System.now()
-        // Todo: Implement!! Save external documents and remove localDocuments. A more complex
-        // handling of conflicts can be implemented in the future.
-        externalDocuments.forEach { document ->
-            documentRepository.saveDocument(document.copy(lastSyncedAt = now))
+
+        val allDocumentsById = (localDocuments + externalDocuments).groupBy { it.id }
+
+        // Resolve conflicts for each document ID.
+        val resolvedDocuments = allDocumentsById.map { (_, documents) ->
+            // Select the document with the newest lastUpdatedAt
+            val winner = documents.maxByOrNull { it.lastUpdatedAt }
+                ?: throw IllegalStateException("Document list for ID cannot be empty.")
+
+            // Mark the winner as synced (or keep existing lastSyncedAt if it's external and already set)
+            winner.copy(lastSyncedAt = now)
         }
 
-        return (localDocuments.toSet() - externalDocuments.toSet()).toList()
+        // Save the resolved (winning and synced) documents to the repository.
+        resolvedDocuments.forEach { document ->
+            documentRepository.saveDocument(document)
+        }
+
+        // Determine which documents to return.
+        return resolvedDocuments
     }
 
     suspend fun handleConflictForFolders(
