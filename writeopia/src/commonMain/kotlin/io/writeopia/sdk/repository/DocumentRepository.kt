@@ -28,7 +28,7 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
         instant: Instant
     ): List<Document>
 
-    suspend fun loadOutdatedDocuments(folderId: String, workspaceId: String): List<Document>
+    suspend fun loadOutdatedDocumentsByFolder(folderId: String, workspaceId: String): List<Document>
 
     suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document>
 

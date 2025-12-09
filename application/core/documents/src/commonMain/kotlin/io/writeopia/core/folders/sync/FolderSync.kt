@@ -17,7 +17,7 @@ class FolderSync(
     private val documentConflictHandler: DocumentConflictHandler,
     private val folderRepository: FolderRepository,
     private val authRepository: AuthRepository,
-    private val minSyncInternal: Duration = 3.seconds
+    private val minSyncInternal: Duration = 2.seconds
 ) {
 
     private var lastSuccessfulSync: Instant = Instant.DISTANT_PAST
@@ -64,13 +64,19 @@ class FolderSync(
                 authToken
             )
 
-            val newDocuments = if (response is ResultData.Complete) response.data else return
+            val newDocuments = if (response is ResultData.Complete) {
+                response.data
+            } else {
+                println("newDocuments failed.")
+                return
+            }
             println("Sync. received ${newDocuments.size} new documents")
 //        println("Documents: ${newDocuments.joinToString(separator = "\n\n")}")
 
             // Then, load the outdated documents.
             // These documents were updated locally, but were not sent to the backend yet
-            val localOutdatedDocs = documentRepository.loadOutdatedDocuments(folderId, workspaceId)
+            val localOutdatedDocs = documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId)
+            println("Sync. loaded ${localOutdatedDocs.size} outdated documents")
 
             // Resolve conflicts of documents that were updated both locally and in the backend.
             // Documents will be saved locally by documentConflictHandler.handleConflict

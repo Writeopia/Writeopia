@@ -15,7 +15,8 @@ fun DocumentEntity.toModel(content: Map<Int, StoryStep> = emptyMap()) = Document
     favorite = favorite,
     parentId = parentId,
     isLocked = isLocked,
-    lastSyncedAt = lastSyncedAt?.let(Instant::fromEpochMilliseconds)
+    lastSyncedAt = lastSyncedAt?.let(Instant::fromEpochMilliseconds),
+    deleted = isDeleted
 )
 
 fun Document.toEntity() = DocumentEntity(
