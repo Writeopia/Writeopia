@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.jetbrains.skiko.wasm.onWasmReady
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.common.utils.Destinations
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
+import io.writeopia.sdk.persistence.core.di.RepositoryInjector
+import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
@@ -27,6 +30,13 @@ fun main() {
 fun CreateAppInMemory() {
     val coroutineScope = rememberCoroutineScope()
     val selectionState = MutableStateFlow(false)
+
+//    WriteopiaDbInjector.initialize(null)
+    RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
+    WriteopiaConnectionInjector.setBaseUrl(
+        "https://writeopia.dev"
+//                        "http://localhost:8080"
+    )
 
     val uiConfigurationViewModel = UiConfigurationInjector.singleton()
         .provideUiConfigurationViewModel()
