@@ -28,7 +28,7 @@ interface DocumentEntityDao {
     suspend fun deleteDocuments(vararg documents: DocumentEntity)
 
     @Query("DELETE FROM $DOCUMENT_ENTITY WHERE workspace_id = :userId")
-    suspend fun deleteDocumentsByUserId(userId: String)
+    suspend fun purgeDocumentsByUserId(userId: String)
 
     @Query("SELECT * FROM $DOCUMENT_ENTITY ORDER BY $DOCUMENT_ENTITY.last_updated_at LIMIT 10")
     suspend fun selectByLastUpdated(): List<DocumentEntity>

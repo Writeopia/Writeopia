@@ -16,6 +16,7 @@ import io.writeopia.sdk.persistence.parse.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -136,18 +137,24 @@ class RoomDocumentRepository(
     }
 
     override suspend fun deleteDocument(document: Document) {
-        documentEntityDao.deleteDocuments(document.toEntity())
+        documentEntityDao.updateDocument(
+            document.toEntity()
+                .copy(
+                    lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
+                    isDeleted = true
+                )
+        )
     }
 
     override suspend fun deleteDocumentByIds(ids: Set<String>) {
         // The user ID is not relevant in the way to delete documents
-        documentEntityDao.deleteDocuments(
-            *ids.map {
-                DocumentEntity.createById(
-                    it,
-                    "",
-                    parentId = ""
-                )
+        documentEntityDao.updateDocument(
+            *ids.mapNotNull {
+                documentEntityDao.loadDocumentById(it)
+                    ?.copy(
+                        lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
+                        isDeleted = true
+                    )
             }.toTypedArray()
         )
     }
@@ -162,7 +169,7 @@ class RoomDocumentRepository(
     }
 
     override suspend fun deleteByWorkspace(userId: String) {
-        documentEntityDao.deleteDocumentsByUserId(userId)
+        documentEntityDao.purgeDocumentsByUserId(userId)
     }
 
     override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
