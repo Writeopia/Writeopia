@@ -139,7 +139,7 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
     }
 
-    override suspend fun loadOutdatedDocuments(folderId: String, workspaceId: String): List<Document> = emptyList()
+    override suspend fun loadOutdatedDocumentsByFolder(folderId: String, workspaceId: String): List<Document> = emptyList()
 
     override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
         emptyList()

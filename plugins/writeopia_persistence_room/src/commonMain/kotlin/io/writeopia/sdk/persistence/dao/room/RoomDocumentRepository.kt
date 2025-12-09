@@ -225,16 +225,15 @@ class RoomDocumentRepository(
     ) {
     }
 
-    override suspend fun loadOutdatedDocuments(
+    override suspend fun loadOutdatedDocumentsByFolder(
         folderId: String,
         workspaceId: String
     ): List<Document> =
-        documentEntityDao.loadOutdatedDocumentsByFolderId(folderId).map { entity ->
-            val content = loadInnerSteps(
-                storyUnitEntityDao?.loadDocumentContent(entity.id) ?: emptyList()
-            )
-            entity.toModel(content = content)
-        }
+        documentEntityDao.loadOutdatedDocumentsByFolderId(folderId)
+            .map { (documentEntity, storyEntity) ->
+                val content = loadInnerSteps(storyEntity)
+                documentEntity.toModel(content)
+            }
 
     override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
         documentEntityDao.loadOutdatedDocumentsWithContentForWorkspace(workspaceId)

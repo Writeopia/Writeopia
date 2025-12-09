@@ -3,9 +3,6 @@
     <file name="src/commonMain/kotlin/io/writeopia/OllamaRepository.kt">
         <error line="56" column="83" source="standard:function-expression-body" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/api/OllamaApi.kt">
-        <error line="193" column="72" source="standard:function-expression-body" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/persistence/OllamaSqlDao.kt">
         <error line="10" column="17" source="standard:backing-property-naming" />
         <error line="34" column="79" source="standard:function-expression-body" />

@@ -70,7 +70,6 @@ internal fun MobileChooseNoteScreen(
 
     val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
     val editState by chooseNoteViewModel.editState.collectAsState()
-
     val folderEdit = chooseNoteViewModel.editFolderState.collectAsState().value
 
     val showFab by derivedStateOf { !editState && !hasSelectedNotes }

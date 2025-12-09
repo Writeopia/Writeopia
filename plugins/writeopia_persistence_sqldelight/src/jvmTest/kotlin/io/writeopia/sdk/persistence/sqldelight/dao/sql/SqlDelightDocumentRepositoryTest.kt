@@ -6,7 +6,6 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
-import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
 import io.writeopia.sdk.sql.WriteopiaDb
 import kotlinx.coroutines.test.runTest
@@ -156,7 +155,7 @@ class SqlDelightDocumentRepositoryTest {
 
         documentRepository.saveDocument(document)
 
-        val newDocument = documentRepository.loadOutdatedDocuments("root", workspaceId)
+        val newDocument = documentRepository.loadOutdatedDocumentsByFolder("root", workspaceId)
 
         assertEquals(1, newDocument.size)
         assertEquals(documentId, newDocument.first().id)
@@ -184,7 +183,7 @@ class SqlDelightDocumentRepositoryTest {
 
         documentRepository.saveDocument(document)
 
-        val newDocument = documentRepository.loadOutdatedDocuments("root", workspaceId)
+        val newDocument = documentRepository.loadOutdatedDocumentsByFolder("root", workspaceId)
 
         assertEquals(1, newDocument.size)
         assertEquals(documentId, newDocument.first().id)

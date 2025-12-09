@@ -81,7 +81,7 @@ class SqlDelightDocumentRepository(
         )
     }
 
-    override suspend fun loadOutdatedDocuments(
+    override suspend fun loadOutdatedDocumentsByFolder(
         folderId: String,
         workspaceId: String
     ): List<Document> =
