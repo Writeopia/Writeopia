@@ -4,7 +4,9 @@ import io.writeopia.sdk.serialization.serializers.InstantSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 fun writeopiaSerializersModule(): SerializersModule = SerializersModule {
     contextual(InstantSerializer)
 }

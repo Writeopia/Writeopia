@@ -53,7 +53,7 @@ kotlin {
                 implementation(project(":common:endpoints"))
 
                 implementation(libs.kotlinx.coroutines.core)
-                implementation(libs.kotlinx.datetime)
+                //
                 implementation(libs.ktor.client.core)
                 implementation(libs.kotlinx.serialization.json)
             }

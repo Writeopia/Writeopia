@@ -2,7 +2,7 @@ package io.writeopia.api.core.auth.repository
 
 import io.writeopia.api.core.auth.models.WriteopiaBeUser
 import io.writeopia.sql.WriteopiaDbBackend
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import java.util.UUID
 
 fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaBeUser? =

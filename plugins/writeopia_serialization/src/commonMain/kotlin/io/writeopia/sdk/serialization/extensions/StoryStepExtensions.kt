@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.serialization.extensions
 
 import io.writeopia.sdk.models.document.Document
@@ -11,7 +13,8 @@ import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.data.FolderApi
 import io.writeopia.sdk.serialization.data.StoryStepApi
 import io.writeopia.sdk.serialization.data.StoryTypeApi
-import kotlinx.datetime.Instant
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 fun StoryStep.toApi(position: Int): StoryStepApi =
     StoryStepApi(
@@ -67,6 +70,7 @@ fun DecorationApi.toModel(): Decoration = Decoration(
     this.backgroundColor,
 )
 
+@ExperimentalTime
 fun Document.toApi(): DocumentApi =
     DocumentApi(
         id = id,

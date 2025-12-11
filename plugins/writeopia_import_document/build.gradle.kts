@@ -87,7 +87,7 @@ kotlin {
                 implementation(project(":plugins:writeopia_serialization"))
 
                 implementation(libs.kotlinx.serialization.json)
-                implementation(libs.kotlinx.datetime)
+                //
                 implementation(libs.kotlinx.coroutines.core)
             }
         }

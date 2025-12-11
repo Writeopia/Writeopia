@@ -65,7 +65,7 @@ kotlin {
 
                 implementation(project(":plugins:writeopia_network"))
 
-                implementation(libs.kotlinx.datetime)
+                //
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)
@@ -74,6 +74,8 @@ kotlin {
                 implementation(libs.compose.navigation)
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.serialization.json)
+                implementation(libs.lifecycle.viewmodel.compose)
+
             }
         }
 

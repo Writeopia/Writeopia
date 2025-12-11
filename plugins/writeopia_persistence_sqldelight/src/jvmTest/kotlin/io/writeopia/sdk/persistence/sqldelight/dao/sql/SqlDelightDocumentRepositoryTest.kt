@@ -9,8 +9,8 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
 import io.writeopia.sdk.sql.WriteopiaDb
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import java.util.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals

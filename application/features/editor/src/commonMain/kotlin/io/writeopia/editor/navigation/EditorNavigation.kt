@@ -47,9 +47,9 @@ fun NavGraphBuilder.editorNavigation(
                 )
             }
         ) { backStackEntry ->
-            val noteId = backStackEntry.arguments?.getString("noteId")
-            val noteTitle = backStackEntry.arguments?.getString("noteTitle")
-            val parentFolderId = backStackEntry.arguments?.getString("parentFolderId")
+            val noteId = backStackEntry.savedStateHandle.get<String?>("noteId")
+            val noteTitle = backStackEntry.savedStateHandle.get<String?>("noteTitle")
+            val parentFolderId = backStackEntry.savedStateHandle.get<String?>("parentFolderId")
 
             if (noteId != null && noteTitle != null) {
                 val noteDetailsViewModel =
@@ -78,7 +78,7 @@ fun NavGraphBuilder.editorNavigation(
         }
 
         composable(route = "${Destinations.EDITOR.id}/{parentFolderId}") { backStackEntry ->
-            val parentFolderId = backStackEntry.arguments?.getString("parentFolderId")
+            val parentFolderId = backStackEntry.savedStateHandle.get<String?>("parentFolderId")
             val notesDetailsViewModel: NoteEditorViewModel =
                 editorInjector.provideNoteDetailsViewModel(
                     parentFolderId ?: "root",
@@ -106,7 +106,7 @@ fun NavGraphBuilder.editorNavigation(
         }
 
         composable(route = "${Destinations.PRESENTATION.id}/{documentId}") { backStackEntry ->
-            val documentId = backStackEntry.arguments?.getString("documentId")
+            val documentId = backStackEntry.savedStateHandle.get<String?>("documentId")
             val viewModel = editorInjector.providePresentationViewModel()
 
             if (documentId != null) {

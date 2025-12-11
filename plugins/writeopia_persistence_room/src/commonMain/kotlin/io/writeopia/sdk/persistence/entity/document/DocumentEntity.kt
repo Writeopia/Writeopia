@@ -14,7 +14,7 @@ import io.writeopia.sdk.models.LAST_UPDATED_AT
 import io.writeopia.sdk.models.PARENT_ID
 import io.writeopia.sdk.models.TITLE
 import io.writeopia.sdk.models.WORKSPACE_ID
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 @Entity(tableName = DOCUMENT_ENTITY)
 data class DocumentEntity(

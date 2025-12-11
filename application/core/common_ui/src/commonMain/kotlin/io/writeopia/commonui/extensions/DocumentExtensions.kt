@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.commonui.extensions
 
 import io.writeopia.commonui.dtos.MenuItemUi
@@ -5,6 +7,7 @@ import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.preview.PreviewParser
+import kotlin.time.ExperimentalTime
 
 fun Folder.toFolderUi(
     selected: Boolean = false,

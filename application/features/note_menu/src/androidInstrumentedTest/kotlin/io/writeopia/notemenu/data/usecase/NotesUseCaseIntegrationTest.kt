@@ -14,7 +14,7 @@ import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.persistence.dao.room.RoomDocumentRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import org.junit.Before
 import kotlin.test.Test
 import kotlin.test.assertEquals

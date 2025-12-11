@@ -62,7 +62,7 @@ kotlin {
                 implementation(project(":application:core:configuration"))
 
                 implementation(libs.kotlinx.serialization.json)
-                implementation(libs.kotlinx.datetime)
+                //
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)
@@ -70,6 +70,8 @@ kotlin {
                 implementation(libs.compose.navigation)
 
                 implementation(libs.kotlin.test)
+                implementation(libs.material.icons.core)
+                implementation(libs.lifecycle.viewmodel.compose)
             }
         }
 

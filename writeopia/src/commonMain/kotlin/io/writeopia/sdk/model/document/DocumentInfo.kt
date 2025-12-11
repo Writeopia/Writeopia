@@ -1,10 +1,13 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.model.document
 
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /**
  * Dto class to keep information about the document

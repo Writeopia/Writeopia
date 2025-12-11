@@ -55,8 +55,8 @@ fun NavGraphBuilder.notesMenuNavigation(
             },
         ),
     ) { backStackEntry ->
-        val navigationType = backStackEntry.arguments?.getString(NAVIGATION_TYPE)
-        val navigationPath = backStackEntry.arguments?.getString(NAVIGATION_PATH)
+        val navigationType = backStackEntry.savedStateHandle.get<String?>(NAVIGATION_TYPE)
+        val navigationPath = backStackEntry.savedStateHandle.get<String?>(NAVIGATION_PATH)
         val notesNavigation = if (navigationType != null && navigationPath != null) {
             NotesNavigation.fromType(
                 NotesNavigationType.fromType(navigationType),

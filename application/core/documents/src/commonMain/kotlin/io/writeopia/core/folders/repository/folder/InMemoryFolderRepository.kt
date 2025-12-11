@@ -1,10 +1,13 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.core.folders.repository.folder
 
 import io.writeopia.sdk.models.document.Folder
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.datetime.Instant
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 class InMemoryFolderRepository : FolderRepository {
 

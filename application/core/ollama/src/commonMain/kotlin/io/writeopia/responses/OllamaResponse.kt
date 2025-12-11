@@ -1,14 +1,11 @@
 package io.writeopia.responses
 
-import kotlinx.datetime.Instant
-import kotlinx.datetime.serializers.InstantIso8601Serializer
 import kotlinx.serialization.Serializable
 
 @Serializable
 class OllamaResponse(
     val model: String? = null,
-    @Serializable(with = InstantIso8601Serializer::class)
-    val created_at: Instant? = null,
+    val created_at: Long? = null,
     val response: String? = null,
     val done: Boolean? = null,
     val done_reason: String? = null,

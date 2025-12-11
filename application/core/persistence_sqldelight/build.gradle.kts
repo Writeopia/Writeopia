@@ -40,7 +40,7 @@ kotlin {
                 implementation(project(":libraries:dbtest"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:utils"))
-                implementation(libs.kotlinx.datetime)
+                //
                 implementation(libs.kotlinx.serialization.json)
             }
         }

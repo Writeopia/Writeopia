@@ -50,7 +50,7 @@ kotlin {
                 implementation(project(":plugins:writeopia_persistence_sqldelight"))
 
                 implementation(libs.kotlinx.coroutines.core)
-                implementation(libs.kotlinx.datetime)
+                //
                 implementation(libs.ktor.client.core)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(compose.foundation)

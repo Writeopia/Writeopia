@@ -105,7 +105,7 @@ kotlin {
                 implementation(project(":writeopia_models"))
                 implementation(project(":plugins:writeopia_persistence_core"))
 
-                implementation(libs.kotlinx.datetime)
+                //
 
                 implementation(libs.room.runtime)
                 implementation(libs.room.paging)

@@ -15,7 +15,7 @@ fun NavController.navigateToNewNote() {
 expect fun NavController.navigateToNote(id: String, title: String)
 
 fun NavController.navigateToNoteDesktop(id: String, title: String) {
-    val noteId = this.currentBackStackEntry?.arguments?.getString("noteId")
+    val noteId = this.currentBackStackEntry?.savedStateHandle?.get<String?>("noteId")
 
     if (noteId != id) {
         navigate("${Destinations.EDITOR.id}/$id/$title")
@@ -23,7 +23,7 @@ fun NavController.navigateToNoteDesktop(id: String, title: String) {
 }
 
 fun NavController.navigateToNoteMobile(id: String, title: String) {
-    val noteId = this.currentBackStackEntry?.arguments?.getString("noteId")
+    val noteId = this.currentBackStackEntry?.savedStateHandle?.get<String?>("noteId")
 
     if (noteId != id) {
         navigate("${Destinations.EDITOR.id}/$id/$title")
@@ -37,7 +37,7 @@ fun NavController.navigateToAccount() {
 fun NavController.navigateToFolder(navigation: NotesNavigation) {
     when (navigation) {
         is NotesNavigation.Folder -> {
-            val id = this.currentBackStackEntry?.arguments?.getString(NAVIGATION_PATH)
+            val id = this.currentBackStackEntry?.savedStateHandle?.get<String?>(NAVIGATION_PATH)
 
             if (id != navigation.id) {
                 this.navigate(
@@ -47,7 +47,7 @@ fun NavController.navigateToFolder(navigation: NotesNavigation) {
         }
 
         NotesNavigation.Favorites, NotesNavigation.Root -> {
-            val type = this.currentBackStackEntry?.arguments?.getString(NAVIGATION_TYPE)
+            val type = this.currentBackStackEntry?.savedStateHandle?.get<String?>(NAVIGATION_TYPE)
 
             if (type != navigation.navigationType.type) {
                 this.navigate(
@@ -61,7 +61,7 @@ fun NavController.navigateToFolder(navigation: NotesNavigation) {
 fun NavController.navigateToFolderDesktop(navigation: NotesNavigation) {
     when (navigation) {
         is NotesNavigation.Folder -> {
-            val id = this.currentBackStackEntry?.arguments?.getString(NAVIGATION_PATH)
+            val id = this.currentBackStackEntry?.savedStateHandle?.get<String?>(NAVIGATION_PATH)
 
             if (id != navigation.id) {
                 this.navigate(
@@ -71,7 +71,7 @@ fun NavController.navigateToFolderDesktop(navigation: NotesNavigation) {
         }
 
         NotesNavigation.Favorites, NotesNavigation.Root -> {
-            val type = this.currentBackStackEntry?.arguments?.getString(NAVIGATION_TYPE)
+            val type = this.currentBackStackEntry?.savedStateHandle?.get<String?>(NAVIGATION_TYPE)
 
             if (type != navigation.navigationType.type) {
                 this.navigate(

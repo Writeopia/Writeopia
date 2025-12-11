@@ -47,7 +47,7 @@ kotlin {
                 implementation(project(":application:core:utils"))
 
                 implementation(libs.kotlinx.serialization.json)
-                implementation(libs.kotlinx.datetime)
+                //
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)

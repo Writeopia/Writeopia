@@ -61,7 +61,7 @@ kotlin {
                 implementation(project(":application:features:note_menu"))
 
                 implementation(libs.kotlinx.serialization.json)
-                implementation(libs.kotlinx.datetime)
+                //
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)

@@ -90,7 +90,7 @@ kotlin {
                 implementation(project(":writeopia"))
                 implementation(project(":writeopia_models"))
 
-                implementation(libs.kotlinx.datetime)
+                //
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)

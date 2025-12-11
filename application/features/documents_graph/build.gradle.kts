@@ -52,6 +52,8 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.material3)
                 implementation(libs.compose.navigation)
+                implementation(libs.lifecycle.viewmodel.compose)
+
             }
         }
 

@@ -54,7 +54,7 @@ kotlin {
                 implementation(compose.ui)
                 implementation(compose.components.uiToolingPreview)
 
-                implementation(libs.kotlinx.datetime)
+                //
             }
         }
     }

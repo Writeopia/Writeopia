@@ -26,7 +26,7 @@ dependencies {
     implementation(project(":backend:core:connection"))
     implementation(project(":backend:core:auth"))
 
-    implementation(libs.kotlinx.datetime)
+    //
 
     implementation(libs.ktor.client.core)
 

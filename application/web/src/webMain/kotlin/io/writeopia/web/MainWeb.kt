@@ -4,36 +4,28 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.CanvasBasedWindow
+import androidx.compose.ui.window.ComposeViewport
+import androidx.navigation.compose.rememberNavController
+import io.writeopia.common.utils.Destinations
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
+import io.writeopia.sdk.persistence.core.di.RepositoryInjector
+import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.jetbrains.skiko.wasm.onWasmReady
-import androidx.navigation.compose.rememberNavController
-import io.writeopia.common.utils.Destinations
-import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
-import io.writeopia.sdk.persistence.core.di.RepositoryInjector
-import io.writeopia.sqldelight.database.DatabaseCreation
-import io.writeopia.sqldelight.database.DatabaseFactory
-import io.writeopia.sqldelight.database.driver.DriverFactory
-import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    onWasmReady {
-        CanvasBasedWindow(title = "Writeopia") {
-            ImageLoadConfig.configImageLoad()
-            CreateAppInMemory()
-        }
+    ComposeViewport {
+        ImageLoadConfig.configImageLoad()
+        CreateAppInMemory()
     }
 }
 

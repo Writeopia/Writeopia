@@ -49,13 +49,14 @@ kotlin {
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:documents"))
 
-                implementation(libs.kotlinx.datetime)
+                //
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
                 @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
                 implementation(libs.compose.navigation)
+                implementation(libs.lifecycle.viewmodel.compose)
             }
         }
 

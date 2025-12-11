@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.account.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -17,9 +19,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 internal class AccountMenuKmpViewModel(
     private val authRepository: AuthRepository,
@@ -59,7 +60,7 @@ internal class AccountMenuKmpViewModel(
             _lastWorkspaceSync.value = if (result is ResultData.Complete) {
                 val lastSync = Clock.System
                     .now()
-                    .toLocalDateTime(TimeZone.currentSystemDefault())
+//                    .toLocalDateTime(TimeZone.currentSystemDefault())
                     .toString()
 
                 ResultData.Complete("Last sync: $lastSync")

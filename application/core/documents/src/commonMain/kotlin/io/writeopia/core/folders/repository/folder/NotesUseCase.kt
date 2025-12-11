@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.core.folders.repository.folder
 
 import io.writeopia.common.utils.NotesNavigation
@@ -13,8 +15,9 @@ import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
+import kotlin.time.ExperimentalTime
 
 /**
  * UseCase responsible to perform CRUD operations in the Notes (Documents) of the app taking in to

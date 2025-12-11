@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sqldelight.dao
 
 import io.writeopia.app.sql.FolderEntity
@@ -9,7 +11,8 @@ import io.writeopia.sqldelight.extensions.toModel
 import io.writeopia.sqldelight.utils.sumValues
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
 
