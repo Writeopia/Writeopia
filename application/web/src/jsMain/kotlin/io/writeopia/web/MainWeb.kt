@@ -57,43 +57,62 @@ fun CreateAppInMemory() {
 
     val navigationController = rememberNavController()
 
-    val databaseStateFlow = DatabaseFactory.createDatabaseAsState(
-        DriverFactory(),
-        url = "",
-        coroutineScope = coroutineScope
-    )
+//    val databaseStateFlow = DatabaseFactory.createDatabaseAsState(
+//        DriverFactory(),
+//        url = "",
+//        coroutineScope = coroutineScope
+//    )
 
-    val databaseCreation = databaseStateFlow.collectAsState().value
+//    val databaseCreation = databaseStateFlow.collectAsState().value
 
-    when (databaseCreation) {
-        is DatabaseCreation.Complete -> {
-            val database = databaseCreation.writeopiaDb
+//    when (databaseCreation) {
+//        is DatabaseCreation.Complete -> {
+//            val database = databaseCreation.writeopiaDb
+//
+//            DesktopApp(
+//                writeopiaDb = database,
+//                selectionState = selectionState,
+//                colorThemeOption = colorTheme,
+//                selectColorTheme = uiConfigurationViewModel::changeColorTheme,
+//                coroutineScope = coroutineScope,
+//                keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
+//                toggleMaxScreen = {},
+//                navigateToRegister = {
+//                    navigationController.navigate(
+//                        Destinations.AUTH_MENU_INNER_NAVIGATION.id
+//                    )
+//                },
+//                navigateToResetPassword = {
+//                    navigationController.navigate(
+//                        Destinations.AUTH_RESET_PASSWORD.id
+//                    )
+//                }
+//            )
+//        }
+//
+//        DatabaseCreation.Loading -> {
+//            ScreenLoading()
+//        }
+//    }
 
-            DesktopApp(
-                writeopiaDb = database,
-                selectionState = selectionState,
-                colorThemeOption = colorTheme,
-                selectColorTheme = uiConfigurationViewModel::changeColorTheme,
-                coroutineScope = coroutineScope,
-                keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
-                toggleMaxScreen = {},
-                navigateToRegister = {
-                    navigationController.navigate(
-                        Destinations.AUTH_MENU_INNER_NAVIGATION.id
-                    )
-                },
-                navigateToResetPassword = {
-                    navigationController.navigate(
-                        Destinations.AUTH_RESET_PASSWORD.id
-                    )
-                }
+    DesktopApp(
+        selectionState = selectionState,
+        colorThemeOption = colorTheme,
+        selectColorTheme = uiConfigurationViewModel::changeColorTheme,
+        coroutineScope = coroutineScope,
+        keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
+        toggleMaxScreen = {},
+        navigateToRegister = {
+            navigationController.navigate(
+                Destinations.AUTH_MENU_INNER_NAVIGATION.id
+            )
+        },
+        navigateToResetPassword = {
+            navigationController.navigate(
+                Destinations.AUTH_RESET_PASSWORD.id
             )
         }
-
-        DatabaseCreation.Loading -> {
-            ScreenLoading()
-        }
-    }
+    )
 }
 
 @Composable
