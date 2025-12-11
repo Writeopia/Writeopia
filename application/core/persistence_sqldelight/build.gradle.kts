@@ -8,7 +8,12 @@ kotlin {
 
     jvm {}
 
-    js(IR) {
+    js {
+        browser()
+        binaries.library()
+    }
+
+    wasmJs {
         browser()
         binaries.library()
     }
@@ -50,7 +55,7 @@ kotlin {
             dependencies {
                 implementation(libs.sqldelight.web.driver)
                 implementation(devNpm("copy-webpack-plugin", "9.1.0"))
-                implementation(npm("@cashapp/sqldelight-sqljs-worker", "2.0.0"))
+                implementation(npm("@cashapp/sqldelight-sqljs-worker", "2.2.1"))
                 implementation(npm("sql.js", "1.8.0"))
             }
         }

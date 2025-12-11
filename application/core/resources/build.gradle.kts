@@ -13,7 +13,12 @@ kotlin {
 
     androidTarget()
 
-    js(IR) {
+    js {
+        browser()
+        binaries.library()
+    }
+
+    wasmJs {
         browser()
         binaries.library()
     }

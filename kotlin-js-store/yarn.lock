@@ -7,6 +7,11 @@
   resolved "https://registry.yarnpkg.com/@cashapp/sqldelight-sqljs-worker/-/sqldelight-sqljs-worker-2.0.0.tgz#16c0138a9611905272019481b2c6abfcb55f9ba8"
   integrity sha512-mdavcZ0KnY9LvUfs6Z3o9bDXumpVxICvgBSSo570anDhOGwak3ttU0YbkAtDsyqLIhBLGwGEUqyyDLJ1LqPndg==
 
+"@cashapp/sqldelight-sqljs-worker@2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@cashapp/sqldelight-sqljs-worker/-/sqldelight-sqljs-worker-2.2.1.tgz#c71776a9dddfc435d4f1e64317a7039d447ea024"
+  integrity sha512-cj/llgS1T94t7rz63fI7pbi+jJx+vQofCT58KyMZb9XVRuoxb4taB5wbbBa4e/iljiuN5XIGGPFx+5PvtVh3LQ==
+
 "@colors/colors@1.5.0":
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/@colors/colors/-/colors-1.5.0.tgz#bb504579c1cae923e6576a4f5da43d25f97bdbd9"

@@ -36,6 +36,7 @@ sqldelight {
         create("WriteopiaDbBackend") {
             packageName.set("io.writeopia.sql")
             dialect(libs.sqldelight.dialect.postgres)
+            generateAsync.set(true)
         }
     }
 }
