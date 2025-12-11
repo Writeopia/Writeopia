@@ -91,6 +91,7 @@ actual fun DragRowTarget(
                         .pointerHoverIcon(PointerIcon.Hand)
                         .onPointerEvent(PointerEventType.Enter) { active = true }
                         .onPointerEvent(PointerEventType.Exit) { active = false }
+                        .clickable(onClick = onClick)
                         .pointerInput(Unit) {
                             detectDragGestures(onDragStart = { offset ->
                                 onDragStart()
