@@ -52,7 +52,7 @@ class InMemoryConfigurationRepository private constructor() : ConfigurationRepos
     }
 
     override suspend fun setTutorialNotes(hasTutorials: Boolean, userId: String) {
-        TODO("Not yet implemented")
+
     }
 
     override suspend fun isOnboarded(): Boolean = true

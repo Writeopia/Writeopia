@@ -25,13 +25,9 @@ class InMemoryFolderRepository : FolderRepository {
     override suspend fun getFoldersForWorkspaceAfterTime(
         userId: String,
         instant: Instant
-    ): List<Folder> {
-        TODO("Not yet implemented")
-    }
+    ): List<Folder> = emptyList()
 
-    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> {
-        TODO("Not yet implemented")
-    }
+    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> = emptyList()
 
     override suspend fun listenForFoldersByParentId(
         parentId: String,
@@ -83,7 +79,5 @@ class InMemoryFolderRepository : FolderRepository {
     override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
     }
 
-    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> {
-        TODO("Not yet implemented")
-    }
+    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> = emptyList()
 }

@@ -1,11 +1,13 @@
 package io.writeopia.sdk.persistence.core.repository
 
 import io.writeopia.sdk.model.document.DocumentInfo
+import io.writeopia.sdk.model.document.info
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Instant
 
@@ -55,9 +57,12 @@ class InMemoryDocumentRepository : DocumentRepository {
         workspaceId: String
     ): Flow<Map<String, List<Document>>> = documentsMapState
 
-    override suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo> {
-        TODO("Not yet implemented")
-    }
+    override suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo> =
+        documentsMapState.map {  documentsMap ->
+            documentsMap.values.flatten().find { document ->
+                document.id == id
+            }?.info() ?: DocumentInfo.empty()
+        }
 
     override suspend fun loadDocumentsWithContentByIds(
         ids: List<String>,
