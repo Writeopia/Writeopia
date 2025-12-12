@@ -262,7 +262,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
                                 composable(route = Destinations.MAIN_APP.id) {
                                     DesktopApp(
-                                        writeopiaDb = database,
                                         selectionState = selectionState,
                                         keyboardEventFlow = keyboardEventFlow.filterNotNull(),
                                         coroutineScope = coroutineScope,

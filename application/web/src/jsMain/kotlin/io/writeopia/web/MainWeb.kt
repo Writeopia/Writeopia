@@ -15,8 +15,6 @@ import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
-import io.writeopia.sqldelight.database.DatabaseFactory
-import io.writeopia.sqldelight.database.driver.DriverFactory
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
@@ -50,20 +48,18 @@ fun CreateAppInMemory() {
 
     val navigationController = rememberNavController()
 
-    val databaseStateFlow = DatabaseFactory.createDatabaseAsState(
-        DriverFactory(),
-        url = "",
-        coroutineScope = coroutineScope
-    )
-
-//    val databaseCreation = databaseStateFlow.collectAsState().value
-
-//    when (databaseCreation) {
+//    val databaseStateFlow = DatabaseFactory.createDatabaseAsState(
+//        DriverFactory(),
+//        url = "",
+//        coroutineScope = coroutineScope
+//    )
+//
+//    when (val databaseCreation = databaseStateFlow.collectAsState().value) {
 //        is DatabaseCreation.Complete -> {
 //            val database = databaseCreation.writeopiaDb
+//            WriteopiaDbInjector.initialize(database)
 //
 //            DesktopApp(
-//                writeopiaDb = database,
 //                selectionState = selectionState,
 //                colorThemeOption = colorTheme,
 //                selectColorTheme = uiConfigurationViewModel::changeColorTheme,

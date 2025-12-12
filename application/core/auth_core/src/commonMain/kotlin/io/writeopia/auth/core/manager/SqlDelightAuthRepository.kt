@@ -2,6 +2,7 @@
 
 package io.writeopia.auth.core.manager
 
+import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import io.writeopia.auth.core.utils.toModel
 import io.writeopia.common.utils.extensions.toBoolean
 import io.writeopia.common.utils.extensions.toLong
@@ -16,13 +17,12 @@ internal class SqlDelightAuthRepository(
     private val writeopiaDb: WriteopiaDb?
 ) : AuthRepository {
 
-    override suspend fun getUser(): WriteopiaUser {
-        return writeopiaDb?.writeopiaUserEntityQueries
+    override suspend fun getUser(): WriteopiaUser =
+        writeopiaDb?.writeopiaUserEntityQueries
             ?.selectCurrentUser()
-            ?.executeAsOneOrNull()
+            ?.awaitAsOneOrNull()
             ?.toModel()
             ?: WriteopiaUser.disconnectedUser()
-    }
 
     override suspend fun isLoggedIn(): Boolean =
         getAuthToken().takeIf { it?.isEmpty() == false } != null
@@ -58,7 +58,7 @@ internal class SqlDelightAuthRepository(
     override suspend fun getAuthToken(): String? =
         writeopiaDb?.tokenEntityQueries
             ?.selectTokenByUserId(getUser().id)
-            ?.executeAsOneOrNull()
+            ?.awaitAsOneOrNull()
 
     override suspend fun saveToken(userId: String, token: String) {
         writeopiaDb?.tokenEntityQueries?.insertToken(userId, token)
@@ -74,7 +74,7 @@ internal class SqlDelightAuthRepository(
     override suspend fun getWorkspace(): Workspace? =
         writeopiaDb?.workspaceEntityQueries
             ?.selectCurrentWorkspace()
-            ?.executeAsOneOrNull()
+            ?.awaitAsOneOrNull()
             ?.let { entity ->
                 Workspace(
                     id = entity.id,

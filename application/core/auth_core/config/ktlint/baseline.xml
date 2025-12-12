@@ -9,9 +9,6 @@
     <file name="src/commonMain/kotlin/io/writeopia/auth/core/data/WorkspaceApi.kt">
         <error line="55" column="84" source="standard:function-expression-body" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/auth/core/manager/SqlDelightAuthRepository.kt">
-        <error line="19" column="51" source="standard:function-expression-body" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/core/utils/UserExtensions.kt">
         <error line="7" column="52" source="standard:function-expression-body" />
     </file>

@@ -3,6 +3,7 @@
 package io.writeopia.sdk.persistence.sqldelight.dao
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
+import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.link.DocumentLink
@@ -31,7 +32,7 @@ class DocumentSqlDao(
         workspaceId: String,
     ): List<Document> =
         documentQueries?.query(query, workspace_id = workspaceId)
-            ?.executeAsList()
+            ?.awaitAsList()
             ?.map { entity ->
                 Document(
                     id = entity.id,
@@ -49,7 +50,7 @@ class DocumentSqlDao(
 
     override suspend fun getLastUpdatedAt(workspaceId: String): List<Document> =
         documentQueries?.selectLastUpdatedAtFromUser(workspaceId)
-            ?.executeAsList()
+            ?.awaitAsList()
             ?.map { entity ->
                 Document(
                     id = entity.id,
@@ -116,7 +117,7 @@ class DocumentSqlDao(
 
     suspend fun loadDocumentById(id: String): Document? =
         documentQueries?.selectById(id)
-            ?.executeAsOneOrNull()
+            ?.awaitAsOneOrNull()
             ?.let { entity ->
                 Document(
                     id = entity.id,
@@ -174,7 +175,7 @@ class DocumentSqlDao(
                                 ?: emptySet(),
                             documentLink = innerContent.link_to_document?.let { documentId ->
                                 val title = documentQueries.selectTitleByDocumentId(documentId)
-                                    .executeAsOneOrNull()
+                                    .awaitAsOneOrNull()
 
                                 DocumentLink(documentId, title)
                             }
@@ -244,7 +245,7 @@ class DocumentSqlDao(
                                 ?: emptySet(),
                             documentLink = innerContent.link_to_document?.let { documentId ->
                                 val title = documentQueries.selectTitleByDocumentId(documentId)
-                                    .executeAsOneOrNull()
+                                    .awaitAsOneOrNull()
 
                                 DocumentLink(documentId, title)
                             }
@@ -317,7 +318,7 @@ class DocumentSqlDao(
                                 ?: emptySet(),
                             documentLink = innerContent.link_to_document?.let { documentId ->
                                 val title = documentQueries.selectTitleByDocumentId(documentId)
-                                    .executeAsOneOrNull()
+                                    .awaitAsOneOrNull()
 
                                 DocumentLink(documentId, title)
                             }
@@ -390,7 +391,7 @@ class DocumentSqlDao(
                                 ?: emptySet(),
                             documentLink = innerContent.link_to_document?.let { documentId ->
                                 val title = documentQueries.selectTitleByDocumentId(documentId)
-                                    .executeAsOneOrNull()
+                                    .awaitAsOneOrNull()
 
                                 DocumentLink(documentId, title)
                             }
@@ -461,7 +462,7 @@ class DocumentSqlDao(
                                 ?: emptySet(),
                             documentLink = innerContent.link_to_document?.let { documentId ->
                                 val title = documentQueries.selectTitleByDocumentId(documentId)
-                                    .executeAsOneOrNull()
+                                    .awaitAsOneOrNull()
 
                                 DocumentLink(documentId, title)
                             }
@@ -539,7 +540,7 @@ class DocumentSqlDao(
                                 ?: emptySet(),
                             documentLink = innerContent.link_to_document?.let { documentId ->
                                 val title = documentQueries.selectTitleByDocumentId(documentId)
-                                    .executeAsOneOrNull()
+                                    .awaitAsOneOrNull()
 
                                 DocumentLink(documentId, title)
                             }
@@ -607,7 +608,7 @@ class DocumentSqlDao(
                                 ?: emptySet(),
                             documentLink = innerContent.link_to_document?.let { documentId ->
                                 val title = documentQueries.selectTitleByDocumentId(documentId)
-                                    .executeAsOneOrNull()
+                                    .awaitAsOneOrNull()
 
                                 DocumentLink(documentId, title)
                             }
@@ -678,7 +679,7 @@ class DocumentSqlDao(
                                 ?: emptySet(),
                             documentLink = innerContent.link_to_document?.let { documentId ->
                                 val title = documentQueries.selectTitleByDocumentId(documentId)
-                                    .executeAsOneOrNull()
+                                    .awaitAsOneOrNull()
 
                                 DocumentLink(documentId, title)
                             }
@@ -746,7 +747,7 @@ class DocumentSqlDao(
                                 ?: emptySet(),
                             documentLink = innerContent.link_to_document?.let { documentId ->
                                 val title = documentQueries.selectTitleByDocumentId(documentId)
-                                    .executeAsOneOrNull()
+                                    .awaitAsOneOrNull()
 
                                 DocumentLink(documentId, title)
                             }

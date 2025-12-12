@@ -51,7 +51,6 @@ import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.ui.screen.menu.EditFileScreen
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
-import io.writeopia.sql.WriteopiaDb
 import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.components.multiselection.DragSelectionBox
@@ -65,7 +64,6 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun DesktopApp(
-    writeopiaDb: WriteopiaDb? = null,
     selectionState: StateFlow<Boolean>,
     keyboardEventFlow: Flow<KeyboardEvent>,
     colorThemeOption: StateFlow<ColorThemeOption?>,
