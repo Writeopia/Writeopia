@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.ui.manager
 
 import io.writeopia.sdk.manager.WriteopiaManager
@@ -25,6 +27,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
+import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class WriteopiaStateManagerTest {
