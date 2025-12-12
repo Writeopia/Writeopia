@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
     <file name="src/commonMain/kotlin/io/writeopia/sdk/persistence/core/repository/InMemoryDocumentRepository.kt">
-        <error line="15" column="17" source="standard:backing-property-naming" />
+        <error line="19" column="17" source="standard:backing-property-naming" />
     </file>
 </baseline>

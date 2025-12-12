@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
     <file name="src/commonMain/kotlin/io/writeopia/sdk/network/notes/NotesApi.kt">
-        <error line="23" column="46" source="standard:function-expression-body" />
-        <error line="29" column="61" source="standard:function-expression-body" />
+        <error line="26" column="46" source="standard:function-expression-body" />
+        <error line="32" column="61" source="standard:function-expression-body" />
     </file>
 </baseline>

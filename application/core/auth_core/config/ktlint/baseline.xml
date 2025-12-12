@@ -7,12 +7,15 @@
         <error line="75" column="67" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/core/data/WorkspaceApi.kt">
-        <error line="52" column="84" source="standard:function-expression-body" />
+        <error line="55" column="84" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/core/manager/SqlDelightAuthRepository.kt">
-        <error line="16" column="51" source="standard:function-expression-body" />
+        <error line="19" column="51" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/core/utils/UserExtensions.kt">
         <error line="7" column="52" source="standard:function-expression-body" />
+    </file>
+    <file name="src/webMain/kotlin/io/writeopia/auth/core/token/AppBearerTokenHandler.web.kt">
+        <error line="9" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
 </baseline>

@@ -2020,11 +2020,8 @@
         <error line="51" column="13" source="standard:backing-property-naming" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/common/utils/persistence/folder/FolderEntityExtensions.kt">
-        <error line="7" column="57" source="standard:function-expression-body" />
-        <error line="21" column="47" source="standard:function-expression-body" />
-    </file>
-    <file name="src/jsMain/kotlin/io/writeopia/common/utils/file/FileUtils.js.kt">
-        <error line="4" column="56" source="standard:function-expression-body" />
+        <error line="10" column="57" source="standard:function-expression-body" />
+        <error line="24" column="47" source="standard:function-expression-body" />
     </file>
     <file name="src/jvmMain/kotlin/io/writeopia/common/utils/keyboard/KeyboardExtensions.jvm.kt">
         <error line="10" column="49" source="standard:function-expression-body" />
@@ -2034,5 +2031,8 @@
     </file>
     <file name="src/nativeMain/kotlin/io/writeopia/common/utils/keyboard/KeyboardExtensions.native.kt">
         <error line="10" column="49" source="standard:function-expression-body" />
+    </file>
+    <file name="src/webMain/kotlin/io/writeopia/common/utils/file/FileUtils.web.kt">
+        <error line="4" column="56" source="standard:function-expression-body" />
     </file>
 </baseline>

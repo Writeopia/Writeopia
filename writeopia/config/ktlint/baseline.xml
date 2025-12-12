@@ -7,7 +7,7 @@
         <error line="74" column="88" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/sdk/manager/WriteopiaManager.kt">
-        <error line="283" column="42" source="standard:argument-list-wrapping" />
+        <error line="286" column="42" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/sdk/model/story/Section.kt">
         <error line="15" column="1" source="standard:no-consecutive-blank-lines" />

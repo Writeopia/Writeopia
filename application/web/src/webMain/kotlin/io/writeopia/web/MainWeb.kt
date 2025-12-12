@@ -20,7 +20,6 @@ import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 
-
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     ComposeViewport {
