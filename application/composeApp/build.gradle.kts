@@ -175,7 +175,7 @@ android {
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
 
         applicationId = "io.writeopia"
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 35
         versionName = "0.22.0"

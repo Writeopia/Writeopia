@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.persistence.entity.document
 
 import androidx.room.ColumnInfo
@@ -15,6 +17,7 @@ import io.writeopia.sdk.models.PARENT_ID
 import io.writeopia.sdk.models.TITLE
 import io.writeopia.sdk.models.WORKSPACE_ID
 import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 @Entity(tableName = DOCUMENT_ENTITY)
 data class DocumentEntity(

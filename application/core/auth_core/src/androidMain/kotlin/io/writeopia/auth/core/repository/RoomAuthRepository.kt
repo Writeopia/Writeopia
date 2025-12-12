@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.auth.core.repository
 
 import io.writeopia.auth.core.manager.AuthRepository
@@ -7,6 +9,7 @@ import io.writeopia.common.utils.persistence.daos.WorkspaceCommonDao
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import kotlin.time.ExperimentalTime
 
 class RoomAuthRepository(
     private val userDao: UserCommonDao,

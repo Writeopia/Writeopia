@@ -38,6 +38,7 @@ publish = "0.33.0"
 lifecycleViewmodelCompose = "2.9.6"
 compileSdk = "36"
 targetSdk = "36"
+minSdk = "26"
 
 [libraries]
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }

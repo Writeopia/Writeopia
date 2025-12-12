@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.persistence.dao.room
 
 import io.writeopia.sdk.model.document.DocumentInfo
@@ -20,6 +22,7 @@ import kotlin.time.Instant
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.map
+import kotlin.time.ExperimentalTime
 
 class RoomDocumentRepository(
     private val documentEntityDao: DocumentEntityDao,
