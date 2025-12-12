@@ -99,7 +99,6 @@ kotlin {
                 implementation(libs.activity.compose)
                 implementation(libs.androidx.material3)
                 implementation(libs.material)
-                implementation(project.dependencies.platform(libs.androidx.compose.bom))
 
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:features:auth"))
