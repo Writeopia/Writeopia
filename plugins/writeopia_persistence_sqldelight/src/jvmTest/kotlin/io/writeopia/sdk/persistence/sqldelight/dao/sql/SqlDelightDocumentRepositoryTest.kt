@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.persistence.sqldelight.dao.sql
 
 import app.cash.sqldelight.async.coroutines.synchronous
@@ -15,6 +17,8 @@ import java.util.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.ExperimentalTime
+
 
 class SqlDelightDocumentRepositoryTest {
 
