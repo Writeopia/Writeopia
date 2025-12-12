@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.api.gateway
 
 import io.ktor.client.call.body
@@ -26,6 +28,7 @@ import kotlin.time.Clock
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.ExperimentalTime
 
 class DocumentationIntegrationTests {
 
