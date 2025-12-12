@@ -11,7 +11,7 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sql.WriteopiaDbBackend
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import java.util.UUID
 
 object AuthService {

@@ -109,8 +109,8 @@ fun DesktopApp(
 
     coroutineScope.launch {
         navigationController.currentBackStackEntryFlow.collect { navEntry ->
-            val navigationType = navEntry.arguments?.getString(NAVIGATION_TYPE)
-            val navigationPath = navEntry.arguments?.getString(NAVIGATION_PATH)
+            val navigationType = navEntry.savedStateHandle.get<String?>(NAVIGATION_TYPE)
+            val navigationPath = navEntry.savedStateHandle.get<String?>(NAVIGATION_PATH)
             if (navigationType != null && navigationPath != null) {
                 NotesNavigation.fromType(
                     NotesNavigationType.fromType(navigationType),
@@ -133,8 +133,8 @@ fun DesktopApp(
                         width = sideMenuWidth.dp,
                         homeClick = {
                             val navType = navigationController.currentBackStackEntry
-                                ?.arguments
-                                ?.getString(NAVIGATION_TYPE)
+                                ?.savedStateHandle
+                                ?.get<String>(NAVIGATION_TYPE)
                                 ?.let(NotesNavigationType::fromType)
 
                             if (navType != NotesNavigationType.ROOT) {
@@ -143,8 +143,8 @@ fun DesktopApp(
                         },
                         favoritesClick = {
                             val navType = navigationController.currentBackStackEntry
-                                ?.arguments
-                                ?.getString(NAVIGATION_TYPE)
+                                ?.savedStateHandle
+                                ?.get<String?>(NAVIGATION_TYPE)
                                 ?.let(NotesNavigationType::fromType)
 
                             if (navType != NotesNavigationType.FAVORITES) {

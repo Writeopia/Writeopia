@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.notemenu.ui.screen.menu
 
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import io.writeopia.sdk.models.document.Folder
+import kotlin.time.ExperimentalTime
 
 @Composable
 fun EditFileScreen(

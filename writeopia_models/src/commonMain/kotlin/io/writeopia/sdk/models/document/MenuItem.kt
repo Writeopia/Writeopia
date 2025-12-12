@@ -1,7 +1,10 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.models.document
 
 import io.writeopia.sdk.models.utils.Traversable
-import kotlinx.datetime.Instant
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 interface MenuItem : Traversable {
     override val id: String

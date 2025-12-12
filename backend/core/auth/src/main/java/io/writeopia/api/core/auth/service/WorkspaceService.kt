@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.api.core.auth.service
 
 import io.writeopia.api.core.auth.repository.getUserByEmail
@@ -11,7 +13,8 @@ import io.writeopia.api.core.auth.repository.removeUserFromWorkspace
 import io.writeopia.models.user.WorkspaceUser
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sql.WriteopiaDbBackend
-import kotlinx.datetime.Instant
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 object WorkspaceService {
 

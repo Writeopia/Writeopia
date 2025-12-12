@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.global.shell.viewmodel
 
 import androidx.compose.ui.unit.dp
@@ -52,10 +54,9 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import kotlin.random.Random
+import kotlin.time.ExperimentalTime
 
 class GlobalShellKmpViewModel(
     private val notesUseCase: NotesUseCase,
@@ -535,7 +536,7 @@ class GlobalShellKmpViewModel(
             _lastWorkspaceSync.value = if (result is ResultData.Complete) {
                 val lastSync = Clock.System
                     .now()
-                    .toLocalDateTime(TimeZone.currentSystemDefault())
+//                    .toLocalDateTime(TimeZone.currentSystemDefault())
                     .toString()
 
                 ResultData.Complete("Last sync: $lastSync")

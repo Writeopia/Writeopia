@@ -1,4 +1,7 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
 import com.vanniktech.maven.publish.SonatypeHost
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 val sdkVersion: String by rootProject.extra
 
@@ -55,7 +58,12 @@ kotlin {
 
     jvm {}
 
-    js(IR) {
+    js {
+        browser()
+        binaries.library()
+    }
+
+    wasmJs {
         browser()
         binaries.library()
     }
@@ -77,7 +85,7 @@ kotlin {
                 implementation(project(":writeopia"))
                 implementation(project(":writeopia_models"))
 
-                implementation(libs.kotlinx.datetime)
+                //
                 implementation(libs.kotlinx.coroutines.core)
             }
         }

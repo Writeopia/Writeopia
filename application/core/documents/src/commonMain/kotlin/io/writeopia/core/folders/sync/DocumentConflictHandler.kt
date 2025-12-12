@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.core.folders.sync
 
 import io.writeopia.auth.core.manager.AuthRepository
@@ -5,7 +7,8 @@ import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.repository.DocumentRepository
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 class DocumentConflictHandler(
     private val documentRepository: DocumentRepository,

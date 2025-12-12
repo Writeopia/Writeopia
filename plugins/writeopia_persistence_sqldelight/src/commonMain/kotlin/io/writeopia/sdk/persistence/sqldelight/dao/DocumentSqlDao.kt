@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.persistence.sqldelight.dao
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
@@ -15,8 +17,9 @@ import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.persistence.sqldelight.toLong
 import io.writeopia.sdk.sql.DocumentEntityQueries
 import io.writeopia.sdk.sql.StoryStepEntityQueries
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 class DocumentSqlDao(
     private val documentQueries: DocumentEntityQueries?,

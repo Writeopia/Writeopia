@@ -1,3 +1,7 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.androidLibrary)
@@ -10,7 +14,12 @@ kotlin {
     jvm {}
     androidTarget()
 
-    js(IR) {
+    js {
+        browser()
+        binaries.library()
+    }
+
+    wasmJs {
         browser()
         binaries.library()
     }
@@ -56,7 +65,7 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

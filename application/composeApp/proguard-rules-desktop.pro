@@ -22,4 +22,5 @@
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
 -dontwarn java.util.List
+-dontwarn okhttp3.internal.graal.**
 

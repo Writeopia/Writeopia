@@ -12,7 +12,12 @@ kotlin {
 
     androidTarget()
 
-    js(IR) {
+    js {
+        browser()
+        binaries.library()
+    }
+
+    wasmJs {
         browser()
         binaries.library()
     }
@@ -48,7 +53,7 @@ kotlin {
                 implementation(project(":common:endpoints"))
 
                 implementation(libs.kotlinx.coroutines.core)
-                implementation(libs.kotlinx.datetime)
+                //
                 implementation(libs.ktor.client.core)
                 implementation(libs.kotlinx.serialization.json)
             }
@@ -61,7 +66,7 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

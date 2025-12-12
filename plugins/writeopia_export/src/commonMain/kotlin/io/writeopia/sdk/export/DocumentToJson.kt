@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.export
 
 import io.writeopia.sdk.export.files.KmpFileWriter
@@ -9,8 +11,9 @@ import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.writeopiaJsonPretty
 import io.writeopia.sdk.serialization.storage.WorkspaceStorageConfig
 import io.writeopia.sdk.utils.files.useKmp
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.serialization.json.Json
+import kotlin.time.ExperimentalTime
 
 class DocumentToJson(private val json: Json = writeopiaJsonPretty) : DocumentWriter {
 

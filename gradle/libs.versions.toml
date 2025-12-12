@@ -11,20 +11,21 @@ kotlinxCoroutines = "1.10.2"
 kotlinxCoroutinesSwing = "1.10.2"
 kotlinxDatetime = "0.6.0"
 kotlinxSerializationJson = "1.9.0"
-ktor = "3.0.3"
+ktor = "3.3.3"
 ktlint = "13.1.0"
 ktx = "1.17.0"
 material = "1.12.0"
+materialIconsCore = "1.7.3"
 platformtools = "0.4.0"
 room = "2.7.2"
 agp = "8.13.0"
-kotlin = "2.2.20"
+kotlin = "2.2.21"
 composeTest = "1.8.3"
-webWorkerDriver = "2.1.0"
+webWorkerDriver = "2.2.1"
 mockk = "1.14.4"
-sqldelight = "2.1.0"
-ksp = "2.2.20-2.0.4"
-compose-multiplatform = "1.8.0-beta02"
+sqldelight = "2.2.1"
+ksp = "2.2.21-2.0.4"
+compose-multiplatform = "1.9.3"
 dag-command = "1.14.0"
 dokka = "2.0.0"
 firebase = "33.11.0"
@@ -32,11 +33,12 @@ google-services = "4.4.2"
 logback-classic = "1.5.18"
 hikaricp = "7.0.2"
 postgresql = "42.7.8"
-compose-navigation = "2.8.0-alpha13"
+compose-navigation = "2.9.1"
 publish = "0.33.0"
-lifecycleViewmodelCompose = "2.8.4"
+lifecycleViewmodelCompose = "2.9.6"
 compileSdk = "36"
 targetSdk = "36"
+minSdk = "26"
 
 [libraries]
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }
@@ -81,6 +83,7 @@ ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negoti
 ktor-server-websocket = { module = "io.ktor:ktor-server-websockets-jvm" }
 ktor-server-cio = { module = "io.ktor:ktor-server-cio" }
 ktor-server-tests = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+material-icons-core = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "materialIconsCore" }
 platformtools-darkmodedetector = { module = "io.github.kdroidfilter:platformtools.darkmodedetector", version.ref = "platformtools" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }

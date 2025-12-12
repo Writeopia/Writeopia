@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
@@ -16,8 +18,9 @@ import io.writeopia.sql.DocumentEntityQueries
 import io.writeopia.sql.FolderEntityQueries
 import io.writeopia.sql.Folder_entity
 import io.writeopia.sql.StoryStepEntityQueries
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 class DocumentSqlBeDao(
     private val documentQueries: DocumentEntityQueries?,

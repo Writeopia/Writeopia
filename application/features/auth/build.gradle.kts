@@ -1,3 +1,7 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
 @Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     kotlin("multiplatform")
@@ -15,7 +19,12 @@ kotlin {
 
     jvm()
 
-    js(IR) {
+    js {
+        browser()
+        binaries.library()
+    }
+
+    wasmJs {
         browser()
         binaries.library()
     }
@@ -56,7 +65,7 @@ kotlin {
 
                 implementation(project(":plugins:writeopia_network"))
 
-                implementation(libs.kotlinx.datetime)
+                //
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)
@@ -65,6 +74,8 @@ kotlin {
                 implementation(libs.compose.navigation)
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.serialization.json)
+                implementation(libs.lifecycle.viewmodel.compose)
+
             }
         }
 
@@ -86,7 +97,7 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

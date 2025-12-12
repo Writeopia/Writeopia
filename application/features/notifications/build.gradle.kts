@@ -14,7 +14,12 @@ kotlin {
 
     jvm()
 
-    js(IR) {
+    js {
+        browser()
+        binaries.library()
+    }
+
+    wasmJs {
         browser()
         binaries.library()
     }
@@ -42,7 +47,7 @@ kotlin {
                 implementation(project(":application:core:utils"))
 
                 implementation(libs.kotlinx.serialization.json)
-                implementation(libs.kotlinx.datetime)
+                //
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)
@@ -68,7 +73,7 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

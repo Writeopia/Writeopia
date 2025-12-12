@@ -1,8 +1,11 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.core.folders.extensions
 
 import io.writeopia.app.sql.FolderEntity
 import io.writeopia.common.utils.extensions.toLong
 import io.writeopia.sdk.models.document.Folder
+import kotlin.time.ExperimentalTime
 
 fun Folder.toEntity() = FolderEntity(
     id = id,

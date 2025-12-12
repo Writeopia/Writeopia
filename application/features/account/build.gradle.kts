@@ -1,3 +1,7 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.androidLibrary)
@@ -13,7 +17,11 @@ kotlin {
 
     jvm {}
 
-    js(IR) {
+    js {
+        browser()
+    }
+
+    wasmJs {
         browser()
     }
 
@@ -41,13 +49,14 @@ kotlin {
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:documents"))
 
-                implementation(libs.kotlinx.datetime)
+                //
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
                 @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
                 implementation(libs.compose.navigation)
+                implementation(libs.lifecycle.viewmodel.compose)
             }
         }
 
@@ -68,7 +77,7 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

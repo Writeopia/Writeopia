@@ -4,239 +4,164 @@
         <error line="3" column="9" source="standard:package-name" />
         <error line="15" column="1" source="standard:indent" />
         <error line="16" column="1" source="standard:indent" />
-        <error line="19" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="21" column="1" source="standard:indent" />
-        <error line="22" column="1" source="standard:indent" />
-        <error line="23" column="1" source="standard:indent" />
-        <error line="26" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="28" column="1" source="standard:indent" />
-        <error line="29" column="1" source="standard:indent" />
-        <error line="32" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="34" column="1" source="standard:indent" />
-        <error line="35" column="1" source="standard:indent" />
-        <error line="38" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="40" column="1" source="standard:indent" />
-        <error line="41" column="1" source="standard:indent" />
-        <error line="44" column="1" source="standard:no-consecutive-blank-lines" />
-    </file>
-    <file name="build/generated/compose/resourceGenerator/kotlin/commonMainResourceAccessors/writeopia/writeopia_ui/generated/resources/String0.commonMain.kt">
-        <error line="3" column="9" source="standard:package-name" />
-        <error line="12" column="1" source="standard:indent" />
-        <error line="12" column="45" source="standard:no-trailing-spaces" />
-        <error line="13" column="1" source="standard:indent" />
-        <error line="15" column="1" source="standard:indent" />
-        <error line="15" column="38" source="standard:no-trailing-spaces" />
-        <error line="16" column="1" source="standard:indent" />
-        <error line="20" column="14" source="standard:function-naming" />
+        <error line="20" column="1" source="standard:indent" />
         <error line="21" column="1" source="standard:indent" />
         <error line="22" column="1" source="standard:indent" />
         <error line="26" column="1" source="standard:indent" />
-        <error line="28" column="13" source="standard:function-naming" />
-        <error line="29" column="1" source="standard:indent" />
-        <error line="29" column="26" source="standard:argument-list-wrapping" />
-        <error line="31" column="1" source="standard:no-blank-line-in-list" />
-        <error line="31" column="1" source="standard:no-trailing-spaces" />
+        <error line="27" column="1" source="standard:indent" />
+        <error line="31" column="1" source="standard:indent" />
         <error line="32" column="1" source="standard:indent" />
-        <error line="32" column="50" source="standard:wrapping" />
-        <error line="32" column="50" source="standard:argument-list-wrapping" />
-        <error line="32" column="56" source="standard:wrapping" />
-        <error line="32" column="56" source="standard:argument-list-wrapping" />
+        <error line="36" column="1" source="standard:indent" />
+        <error line="37" column="1" source="standard:indent" />
+    </file>
+    <file name="build/generated/compose/resourceGenerator/kotlin/commonMainResourceAccessors/writeopia/writeopia_ui/generated/resources/String0.commonMain.kt">
+        <error line="3" column="9" source="standard:package-name" />
+        <error line="16" column="1" source="standard:indent" />
+        <error line="16" column="22" source="standard:wrapping" />
+        <error line="16" column="60" source="standard:wrapping" />
+        <error line="17" column="52" source="standard:paren-spacing" />
+        <error line="18" column="52" source="standard:paren-spacing" />
+        <error line="20" column="1" source="standard:indent" />
+        <error line="20" column="7" source="standard:wrapping" />
+        <error line="21" column="1" source="standard:indent" />
+        <error line="24" column="1" source="standard:indent" />
+        <error line="24" column="22" source="standard:wrapping" />
+        <error line="24" column="46" source="standard:wrapping" />
+        <error line="25" column="52" source="standard:paren-spacing" />
+        <error line="26" column="52" source="standard:paren-spacing" />
+        <error line="28" column="1" source="standard:indent" />
+        <error line="28" column="7" source="standard:wrapping" />
+        <error line="29" column="1" source="standard:indent" />
+        <error line="32" column="14" source="standard:function-naming" />
         <error line="33" column="1" source="standard:indent" />
         <error line="34" column="1" source="standard:indent" />
-        <error line="35" column="1" source="standard:indent" />
-        <error line="35" column="9" source="standard:argument-list-wrapping" />
-        <error line="35" column="10" source="standard:wrapping" />
-        <error line="35" column="11" source="standard:argument-list-wrapping" />
-        <error line="36" column="1" source="standard:no-blank-line-in-list" />
-        <error line="36" column="1" source="standard:no-trailing-spaces" />
-        <error line="37" column="1" source="standard:indent" />
-        <error line="37" column="50" source="standard:wrapping" />
-        <error line="37" column="50" source="standard:argument-list-wrapping" />
-        <error line="37" column="56" source="standard:wrapping" />
-        <error line="37" column="56" source="standard:argument-list-wrapping" />
-        <error line="38" column="1" source="standard:indent" />
-        <error line="39" column="1" source="standard:indent" />
-        <error line="40" column="1" source="standard:indent" />
-        <error line="40" column="9" source="standard:argument-list-wrapping" />
-        <error line="40" column="10" source="standard:wrapping" />
-        <error line="40" column="11" source="standard:argument-list-wrapping" />
-        <error line="41" column="1" source="standard:indent" />
-        <error line="41" column="52" source="standard:wrapping" />
-        <error line="41" column="52" source="standard:argument-list-wrapping" />
-        <error line="42" column="1" source="standard:indent" />
-        <error line="42" column="98" source="standard:argument-list-wrapping" />
-        <error line="43" column="1" source="standard:indent" />
-        <error line="43" column="6" source="standard:wrapping" />
-        <error line="43" column="7" source="standard:argument-list-wrapping" />
-        <error line="48" column="1" source="standard:indent" />
-        <error line="50" column="13" source="standard:function-naming" />
-        <error line="51" column="1" source="standard:indent" />
-        <error line="51" column="19" source="standard:argument-list-wrapping" />
-        <error line="53" column="1" source="standard:no-blank-line-in-list" />
-        <error line="53" column="1" source="standard:no-trailing-spaces" />
-        <error line="54" column="1" source="standard:indent" />
-        <error line="54" column="50" source="standard:wrapping" />
-        <error line="54" column="50" source="standard:argument-list-wrapping" />
-        <error line="54" column="56" source="standard:wrapping" />
-        <error line="54" column="56" source="standard:argument-list-wrapping" />
-        <error line="55" column="1" source="standard:indent" />
-        <error line="56" column="1" source="standard:indent" />
-        <error line="57" column="1" source="standard:indent" />
-        <error line="57" column="9" source="standard:argument-list-wrapping" />
-        <error line="57" column="10" source="standard:wrapping" />
-        <error line="57" column="11" source="standard:argument-list-wrapping" />
-        <error line="58" column="1" source="standard:no-blank-line-in-list" />
-        <error line="58" column="1" source="standard:no-trailing-spaces" />
-        <error line="59" column="1" source="standard:indent" />
-        <error line="59" column="50" source="standard:wrapping" />
-        <error line="59" column="50" source="standard:argument-list-wrapping" />
-        <error line="59" column="56" source="standard:wrapping" />
-        <error line="59" column="56" source="standard:argument-list-wrapping" />
-        <error line="60" column="1" source="standard:indent" />
-        <error line="61" column="1" source="standard:indent" />
-        <error line="62" column="1" source="standard:indent" />
-        <error line="62" column="9" source="standard:argument-list-wrapping" />
-        <error line="62" column="10" source="standard:wrapping" />
-        <error line="62" column="11" source="standard:argument-list-wrapping" />
-        <error line="63" column="1" source="standard:indent" />
-        <error line="63" column="52" source="standard:wrapping" />
-        <error line="63" column="52" source="standard:argument-list-wrapping" />
-        <error line="64" column="1" source="standard:indent" />
-        <error line="64" column="98" source="standard:argument-list-wrapping" />
-        <error line="65" column="1" source="standard:indent" />
-        <error line="65" column="6" source="standard:wrapping" />
-        <error line="65" column="7" source="standard:argument-list-wrapping" />
     </file>
     <file name="build/generated/compose/resourceGenerator/kotlin/commonMainResourceCollectors/writeopia/writeopia_ui/generated/resources/ExpectResourceCollectors.kt">
         <error line="1" column="9" source="standard:package-name" />
     </file>
     <file name="build/generated/compose/resourceGenerator/kotlin/commonResClass/writeopia/writeopia_ui/generated/resources/Res.kt">
-        <error line="3" column="9" source="standard:package-name" />
-        <error line="12" column="1" source="standard:indent" />
-        <error line="13" column="1" source="standard:indent" />
-        <error line="14" column="1" source="standard:indent" />
-        <error line="15" column="1" source="standard:indent" />
-        <error line="16" column="1" source="standard:indent" />
-        <error line="17" column="1" source="standard:indent" />
+        <error line="3" column="1" source="standard:indent" />
+        <error line="4" column="1" source="standard:indent" />
+        <error line="7" column="9" source="standard:package-name" />
         <error line="18" column="1" source="standard:indent" />
         <error line="19" column="1" source="standard:indent" />
         <error line="20" column="1" source="standard:indent" />
         <error line="21" column="1" source="standard:indent" />
+        <error line="22" column="1" source="standard:indent" />
         <error line="23" column="1" source="standard:indent" />
         <error line="24" column="1" source="standard:indent" />
         <error line="25" column="1" source="standard:indent" />
         <error line="26" column="1" source="standard:indent" />
-        <error line="27" column="1" source="standard:indent" />
+        <error line="26" column="32" source="standard:parameter-list-wrapping" />
+        <error line="26" column="44" source="standard:parameter-list-wrapping" />
+        <error line="26" column="77" source="standard:binary-expression-wrapping" />
+        <error line="26" column="77" source="standard:argument-list-wrapping" />
+        <error line="26" column="141" source="standard:binary-expression-wrapping" />
+        <error line="26" column="141" source="standard:max-line-length" />
+        <error line="26" column="146" source="standard:argument-list-wrapping" />
         <error line="28" column="1" source="standard:indent" />
         <error line="29" column="1" source="standard:indent" />
         <error line="30" column="1" source="standard:indent" />
         <error line="31" column="1" source="standard:indent" />
         <error line="32" column="1" source="standard:indent" />
+        <error line="33" column="1" source="standard:indent" />
         <error line="34" column="1" source="standard:indent" />
-        <error line="34" column="17" source="standard:class-naming" />
+        <error line="35" column="1" source="standard:indent" />
         <error line="36" column="1" source="standard:indent" />
-        <error line="36" column="17" source="standard:class-naming" />
         <error line="38" column="1" source="standard:indent" />
         <error line="38" column="17" source="standard:class-naming" />
         <error line="40" column="1" source="standard:indent" />
         <error line="40" column="17" source="standard:class-naming" />
         <error line="42" column="1" source="standard:indent" />
         <error line="42" column="17" source="standard:class-naming" />
+        <error line="44" column="1" source="standard:indent" />
+        <error line="44" column="17" source="standard:class-naming" />
+        <error line="46" column="1" source="standard:indent" />
+        <error line="46" column="17" source="standard:class-naming" />
     </file>
     <file name="build/generated/compose/resourceGenerator/kotlin/iosArm64MainResourceCollectors/writeopia/writeopia_ui/generated/resources/ActualResourceCollectors.kt">
         <error line="3" column="9" source="standard:package-name" />
         <error line="15" column="1" source="standard:indent" />
         <error line="16" column="1" source="standard:indent" />
-        <error line="19" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="20" column="1" source="standard:indent" />
         <error line="21" column="1" source="standard:indent" />
         <error line="22" column="1" source="standard:indent" />
-        <error line="23" column="1" source="standard:indent" />
-        <error line="26" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="28" column="1" source="standard:indent" />
-        <error line="29" column="1" source="standard:indent" />
-        <error line="32" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="34" column="1" source="standard:indent" />
-        <error line="35" column="1" source="standard:indent" />
-        <error line="38" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="40" column="1" source="standard:indent" />
-        <error line="41" column="1" source="standard:indent" />
-        <error line="44" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="26" column="1" source="standard:indent" />
+        <error line="27" column="1" source="standard:indent" />
+        <error line="31" column="1" source="standard:indent" />
+        <error line="32" column="1" source="standard:indent" />
+        <error line="36" column="1" source="standard:indent" />
+        <error line="37" column="1" source="standard:indent" />
     </file>
     <file name="build/generated/compose/resourceGenerator/kotlin/iosSimulatorArm64MainResourceCollectors/writeopia/writeopia_ui/generated/resources/ActualResourceCollectors.kt">
         <error line="3" column="9" source="standard:package-name" />
         <error line="15" column="1" source="standard:indent" />
         <error line="16" column="1" source="standard:indent" />
-        <error line="19" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="20" column="1" source="standard:indent" />
         <error line="21" column="1" source="standard:indent" />
         <error line="22" column="1" source="standard:indent" />
-        <error line="23" column="1" source="standard:indent" />
-        <error line="26" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="28" column="1" source="standard:indent" />
-        <error line="29" column="1" source="standard:indent" />
-        <error line="32" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="34" column="1" source="standard:indent" />
-        <error line="35" column="1" source="standard:indent" />
-        <error line="38" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="40" column="1" source="standard:indent" />
-        <error line="41" column="1" source="standard:indent" />
-        <error line="44" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="26" column="1" source="standard:indent" />
+        <error line="27" column="1" source="standard:indent" />
+        <error line="31" column="1" source="standard:indent" />
+        <error line="32" column="1" source="standard:indent" />
+        <error line="36" column="1" source="standard:indent" />
+        <error line="37" column="1" source="standard:indent" />
     </file>
     <file name="build/generated/compose/resourceGenerator/kotlin/iosX64MainResourceCollectors/writeopia/writeopia_ui/generated/resources/ActualResourceCollectors.kt">
         <error line="3" column="9" source="standard:package-name" />
         <error line="15" column="1" source="standard:indent" />
         <error line="16" column="1" source="standard:indent" />
-        <error line="19" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="20" column="1" source="standard:indent" />
         <error line="21" column="1" source="standard:indent" />
         <error line="22" column="1" source="standard:indent" />
-        <error line="23" column="1" source="standard:indent" />
-        <error line="26" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="28" column="1" source="standard:indent" />
-        <error line="29" column="1" source="standard:indent" />
-        <error line="32" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="34" column="1" source="standard:indent" />
-        <error line="35" column="1" source="standard:indent" />
-        <error line="38" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="40" column="1" source="standard:indent" />
-        <error line="41" column="1" source="standard:indent" />
-        <error line="44" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="26" column="1" source="standard:indent" />
+        <error line="27" column="1" source="standard:indent" />
+        <error line="31" column="1" source="standard:indent" />
+        <error line="32" column="1" source="standard:indent" />
+        <error line="36" column="1" source="standard:indent" />
+        <error line="37" column="1" source="standard:indent" />
     </file>
     <file name="build/generated/compose/resourceGenerator/kotlin/jsMainResourceCollectors/writeopia/writeopia_ui/generated/resources/ActualResourceCollectors.kt">
         <error line="3" column="9" source="standard:package-name" />
         <error line="15" column="1" source="standard:indent" />
         <error line="16" column="1" source="standard:indent" />
-        <error line="19" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="20" column="1" source="standard:indent" />
         <error line="21" column="1" source="standard:indent" />
         <error line="22" column="1" source="standard:indent" />
-        <error line="23" column="1" source="standard:indent" />
-        <error line="26" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="28" column="1" source="standard:indent" />
-        <error line="29" column="1" source="standard:indent" />
-        <error line="32" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="34" column="1" source="standard:indent" />
-        <error line="35" column="1" source="standard:indent" />
-        <error line="38" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="40" column="1" source="standard:indent" />
-        <error line="41" column="1" source="standard:indent" />
-        <error line="44" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="26" column="1" source="standard:indent" />
+        <error line="27" column="1" source="standard:indent" />
+        <error line="31" column="1" source="standard:indent" />
+        <error line="32" column="1" source="standard:indent" />
+        <error line="36" column="1" source="standard:indent" />
+        <error line="37" column="1" source="standard:indent" />
     </file>
     <file name="build/generated/compose/resourceGenerator/kotlin/jvmMainResourceCollectors/writeopia/writeopia_ui/generated/resources/ActualResourceCollectors.kt">
         <error line="3" column="9" source="standard:package-name" />
         <error line="15" column="1" source="standard:indent" />
         <error line="16" column="1" source="standard:indent" />
-        <error line="19" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="20" column="1" source="standard:indent" />
         <error line="21" column="1" source="standard:indent" />
         <error line="22" column="1" source="standard:indent" />
-        <error line="23" column="1" source="standard:indent" />
-        <error line="26" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="28" column="1" source="standard:indent" />
-        <error line="29" column="1" source="standard:indent" />
-        <error line="32" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="34" column="1" source="standard:indent" />
-        <error line="35" column="1" source="standard:indent" />
-        <error line="38" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="40" column="1" source="standard:indent" />
-        <error line="41" column="1" source="standard:indent" />
-        <error line="44" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="26" column="1" source="standard:indent" />
+        <error line="27" column="1" source="standard:indent" />
+        <error line="31" column="1" source="standard:indent" />
+        <error line="32" column="1" source="standard:indent" />
+        <error line="36" column="1" source="standard:indent" />
+        <error line="37" column="1" source="standard:indent" />
+    </file>
+    <file name="build/generated/compose/resourceGenerator/kotlin/wasmJsMainResourceCollectors/writeopia/writeopia_ui/generated/resources/ActualResourceCollectors.kt">
+        <error line="3" column="9" source="standard:package-name" />
+        <error line="15" column="1" source="standard:indent" />
+        <error line="16" column="1" source="standard:indent" />
+        <error line="20" column="1" source="standard:indent" />
+        <error line="21" column="1" source="standard:indent" />
+        <error line="22" column="1" source="standard:indent" />
+        <error line="26" column="1" source="standard:indent" />
+        <error line="27" column="1" source="standard:indent" />
+        <error line="31" column="1" source="standard:indent" />
+        <error line="32" column="1" source="standard:indent" />
+        <error line="36" column="1" source="standard:indent" />
+        <error line="37" column="1" source="standard:indent" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/backstack/SnapshotBackstackManager.kt">
         <error line="103" column="53" source="standard:function-expression-body" />
@@ -682,24 +607,21 @@
         <error line="150" column="13" source="standard:backing-property-naming" />
         <error line="150" column="13" source="standard:backing-property-naming" />
     </file>
-    <file name="src/commonTest/kotlin/io/writeopia/ui/manager/WriteopiaStateManagerTest.kt">
-        <error line="58" column="9" source="standard:blank-line-before-declaration" />
-    </file>
     <file name="src/commonTest/kotlin/io/writeopia/ui/utils/MapStoryData.kt">
         <error line="197" column="141" source="standard:max-line-length" />
         <error line="296" column="141" source="standard:max-line-length" />
         <error line="311" column="141" source="standard:max-line-length" />
         <error line="380" column="141" source="standard:max-line-length" />
     </file>
-    <file name="src/jsMain/kotlin/io/writeopia/ui/draganddrop/target/DragCardTarget.js.kt">
+    <file name="src/jvmMain/kotlin/io/writeopia/ui/draganddrop/target/DragRowTarget.jvm.kt">
+        <error line="75" column="40" source="standard:condition-wrapping" />
+    </file>
+    <file name="src/webMain/kotlin/io/writeopia/ui/draganddrop/target/DragCardTarget.js.kt">
         <error line="76" column="13" source="standard:chain-wrapping" />
         <error line="76" column="16" source="standard:condition-wrapping" />
         <error line="126" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
-    <file name="src/jsMain/kotlin/io/writeopia/ui/draganddrop/target/DragRowTarget.js.kt">
-        <error line="75" column="40" source="standard:condition-wrapping" />
-    </file>
-    <file name="src/jvmMain/kotlin/io/writeopia/ui/draganddrop/target/DragRowTarget.jvm.kt">
+    <file name="src/webMain/kotlin/io/writeopia/ui/draganddrop/target/DragRowTarget.js.kt">
         <error line="75" column="40" source="standard:condition-wrapping" />
     </file>
 </baseline>

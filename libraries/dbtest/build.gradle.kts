@@ -1,3 +1,7 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.ktlint)
@@ -8,7 +12,12 @@ kotlin {
 
     jvm {}
 
-    js(IR) {
+    js {
+        browser()
+        binaries.library()
+    }
+
+    wasmJs {
         browser()
         binaries.library()
     }
@@ -30,7 +39,7 @@ kotlin {
                 implementation(project(":writeopia"))
                 implementation(project(":writeopia_models"))
                 implementation(project(":plugins:writeopia_persistence_core"))
-                implementation(libs.kotlinx.datetime)
+                //
                 implementation(libs.kotlin.test)
             }
         }

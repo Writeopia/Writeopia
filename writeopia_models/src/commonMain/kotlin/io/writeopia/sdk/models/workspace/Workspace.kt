@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.models.workspace
 
-import kotlinx.datetime.Instant
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 data class Workspace(
     val id: String,

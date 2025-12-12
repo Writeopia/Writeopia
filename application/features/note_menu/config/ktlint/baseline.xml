@@ -4,6 +4,6 @@
         <error line="23" column="1" source="standard:no-unused-imports" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/viewmodel/FolderStateController.kt">
-        <error line="31" column="17" source="standard:backing-property-naming" />
+        <error line="34" column="17" source="standard:backing-property-naming" />
     </file>
 </baseline>

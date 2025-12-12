@@ -7,14 +7,14 @@
         <error line="10" column="80" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/core/folders/repository/folder/FolderRepositorySqlDelight.kt">
-        <error line="21" column="21" source="standard:function-expression-body" />
-        <error line="66" column="40" source="standard:function-expression-body" />
+        <error line="24" column="21" source="standard:function-expression-body" />
+        <error line="69" column="40" source="standard:function-expression-body" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/core/folders/repository/folder/InMemoryFolderRepository.kt">
-        <error line="39" column="40" source="standard:function-expression-body" />
-        <error line="75" column="51" source="standard:function-expression-body" />
+        <error line="38" column="40" source="standard:function-expression-body" />
+        <error line="74" column="51" source="standard:function-expression-body" />
     </file>
-    <file name="src/jsMain/kotlin/io/writeopia/core/folders/di/InDocumentSearchInjection.js.kt">
+    <file name="src/webMain/kotlin/io/writeopia/core/folders/di/InDocumentSearchInjection.web.kt">
         <error line="7" column="74" source="standard:function-expression-body" />
     </file>
 </baseline>

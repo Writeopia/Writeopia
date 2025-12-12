@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.core.folders.repository.folder
 
 import io.writeopia.core.folders.extensions.toEntity
@@ -6,7 +8,8 @@ import io.writeopia.sqldelight.dao.FolderSqlDelightDao
 import io.writeopia.sqldelight.extensions.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Instant
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 class FolderRepositorySqlDelight(
     private val folderDao: FolderSqlDelightDao

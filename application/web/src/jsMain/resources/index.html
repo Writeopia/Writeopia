@@ -2,24 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Writeopia web</title>
+    <title>Writeopia</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <style>
-        html, body {
+        /* Basic styles to ensure the Compose content fills the entire viewport.
+           Compose Multiplatform usually handles the styling within the Kotlin code,
+           but these base styles help.
+        */
+        body {
             margin: 0;
             padding: 0;
-            overflow: hidden;
+            overflow: hidden; /* Prevent body scrollbars */
+            min-height: 100vh;
         }
     </style>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
-<canvas id="ComposeTarget"></canvas>
-<script>
-    var canvas = document.getElementById("ComposeTarget");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-</script>
-<script src="skiko.js"></script>
+
+<div id="root">
+    Loading...
+</div>
+
 <script src="web.js"></script>
+
 </body>
 </html>

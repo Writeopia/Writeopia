@@ -13,7 +13,12 @@ kotlin {
 
     jvm()
 
-    js(IR) {
+    js {
+        browser()
+        binaries.library()
+    }
+
+    wasmJs {
         browser()
         binaries.library()
     }
@@ -59,7 +64,7 @@ kotlin {
                 implementation(project(":application:features:account"))
                 implementation(project(":application:features:onboarding"))
 
-                implementation(libs.kotlinx.datetime)
+                //
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)
@@ -69,6 +74,8 @@ kotlin {
                 implementation(libs.compose.navigation)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.ktor.client.core)
+                implementation(libs.material.icons.core)
+                implementation(libs.lifecycle.viewmodel.compose)
             }
         }
 
@@ -122,7 +129,7 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

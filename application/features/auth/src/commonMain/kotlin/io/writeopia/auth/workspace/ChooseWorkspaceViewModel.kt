@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.auth.workspace
 
 import androidx.lifecycle.ViewModel
@@ -18,10 +20,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.serialization.json.Json
 import kotlin.sequences.forEach
+import kotlin.time.ExperimentalTime
 
 class ChooseWorkspaceViewModel(
     private val authRepository: AuthRepository,

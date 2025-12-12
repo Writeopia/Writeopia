@@ -39,6 +39,7 @@ class SqlDelightAuthRepositoryTest {
             email = "someEmail",
         )
 
+        repository.unselectAllUsers()
         repository.saveUser(user, selected = true)
         val userFromDb = repository.getUser()
 

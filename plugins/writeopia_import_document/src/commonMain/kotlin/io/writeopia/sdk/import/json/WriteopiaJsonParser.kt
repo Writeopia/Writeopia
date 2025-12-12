@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.import.json
 
 import io.writeopia.sdk.import.files.KmpFileReader
@@ -10,8 +12,9 @@ import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.serialization.storage.WorkspaceStorageConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.serialization.json.Json
+import kotlin.time.ExperimentalTime
 
 class WriteopiaJsonParser(
     private val kmpFileReader: KmpFileReader = KmpFileReader,

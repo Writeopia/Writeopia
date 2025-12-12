@@ -111,7 +111,7 @@ class OllamaRepository(
     }
 
     override suspend fun getConfiguredUrl(id: String): String? =
-        ollamaDao?.getConfiguration(id)?.url
+        ollamaDao?.getConfiguration(id)?.url ?: OllamaApi.defaultUrl()
 
     suspend fun deleteModel(model: String, url: String): ResultData<Boolean> =
         ollamaApi.removeModel(model, url)

@@ -1,7 +1,10 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.serialization.data
 
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.serialization.Serializable
+import kotlin.time.ExperimentalTime
 
 @Serializable
 data class DocumentApi(

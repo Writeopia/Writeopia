@@ -1,7 +1,10 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.models.extensions
 
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.sorting.OrderBy
+import kotlin.time.ExperimentalTime
 
 fun List<Document>.sortWithOrderBy(orderBy: OrderBy): List<Document> =
     when (orderBy) {

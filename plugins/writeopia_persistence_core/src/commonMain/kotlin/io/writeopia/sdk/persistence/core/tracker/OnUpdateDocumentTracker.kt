@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.sdk.persistence.core.tracker
 
 import io.writeopia.sdk.filter.DocumentFilter
@@ -14,7 +16,8 @@ import io.writeopia.sdk.models.story.StoryTypes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 class OnUpdateDocumentTracker(
     private val documentUpdate: DocumentUpdate,

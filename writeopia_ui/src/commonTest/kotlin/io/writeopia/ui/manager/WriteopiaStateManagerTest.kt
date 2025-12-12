@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.ui.manager
 
 import io.writeopia.sdk.manager.WriteopiaManager
@@ -17,7 +19,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -25,6 +27,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
+import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class WriteopiaStateManagerTest {
@@ -55,6 +58,7 @@ class WriteopiaStateManagerTest {
 
     private val userRepository: UserRepository = object : UserRepository {
         override suspend fun getUser(): WriteopiaUser = WriteopiaUser.disconnectedUser()
+
         override suspend fun getWorkspace(): Workspace = Workspace.disconnectedWorkspace()
     }
 

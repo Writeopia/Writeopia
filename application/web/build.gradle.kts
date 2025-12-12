@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.targets.js.WASM
+
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.compose.multiplatform)
@@ -10,7 +12,12 @@ kotlin {
 
     jvmToolchain(21)
 
-    js(IR) {
+    js {
+        browser()
+        binaries.executable()
+    }
+
+    wasmJs {
         browser()
         binaries.executable()
     }
@@ -37,6 +44,13 @@ kotlin {
 
                 implementation(libs.compose.navigation)
             }
+        }
+
+        sourceSets.jsMain.dependencies {
+            implementation(libs.sqldelight.web.driver)
+            implementation(devNpm("copy-webpack-plugin", "9.1.0"))
+            implementation(npm("@cashapp/sqldelight-sqljs-worker", "2.2.1"))
+            implementation(npm("sql.js", "1.8.0"))
         }
     }
 }

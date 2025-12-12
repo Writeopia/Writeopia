@@ -26,7 +26,7 @@ dependencies {
     implementation(libs.database.postgresql)
 
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.datetime)
+    //
 
     testImplementation(libs.kotlin.test)
 }

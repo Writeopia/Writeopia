@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.editor.features.editor.viewmodel
 
 import androidx.compose.ui.text.buildAnnotatedString
@@ -68,6 +70,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlin.time.ExperimentalTime
 
 class NoteEditorKmpViewModel(
     override val writeopiaManager: WriteopiaStateManager,

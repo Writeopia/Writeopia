@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.auth.menu
 
 import androidx.lifecycle.ViewModel
@@ -25,10 +27,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.serialization.json.Json
 import kotlin.sequences.forEach
 import kotlin.sequences.map
+import kotlin.time.ExperimentalTime
 
 class AuthMenuViewModel(
     private val authRepository: AuthRepository,
