@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.api.documents.routing
 
 import io.ktor.http.HttpStatusCode
@@ -25,6 +27,7 @@ import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 //Todo: Add a check that only users or a workspace are allowed to interact with this endpoints.

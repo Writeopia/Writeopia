@@ -1,9 +1,12 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.api.core.auth.repository
 
 import io.writeopia.api.core.auth.models.WriteopiaBeUser
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
 import java.util.UUID
+import kotlin.time.ExperimentalTime
 
 fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaBeUser? =
     this.userEntityQueries

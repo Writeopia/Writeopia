@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.api.core.auth.repository
 
 import io.writeopia.models.user.WorkspaceUser
@@ -5,6 +7,7 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 internal fun WriteopiaDbBackend.listWorkspaces(): List<Workspace> {
