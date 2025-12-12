@@ -58,6 +58,7 @@ class WriteopiaStateManagerTest {
 
     private val userRepository: UserRepository = object : UserRepository {
         override suspend fun getUser(): WriteopiaUser = WriteopiaUser.disconnectedUser()
+
         override suspend fun getWorkspace(): Workspace = Workspace.disconnectedWorkspace()
     }
 
