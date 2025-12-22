@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 class OllamaResponse(
     val model: String? = null,
-    val created_at: Long? = null,
+//    val created_at: Long? = null,
     val response: String? = null,
     val done: Boolean? = null,
     val done_reason: String? = null,
