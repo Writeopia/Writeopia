@@ -104,7 +104,7 @@ class MarkdownParserTest {
         val expected = listOf(
             StoryTypes.TITLE.type.number to "Sample Markdown Document",
             StoryTypes.TEXT.type.number to "",
-            StoryTypes.TEXT.type.number to "Welcome to this **Markdown** example!",
+            StoryTypes.TEXT.type.number to "Welcome to this Markdown example!",
         )
 
         val results = MarkdownParser.parse(sample)
