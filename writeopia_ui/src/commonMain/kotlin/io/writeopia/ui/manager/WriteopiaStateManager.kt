@@ -3,6 +3,7 @@
 package io.writeopia.ui.manager
 
 import io.writeopia.sdk.manager.DocumentTracker
+import io.writeopia.sdk.manager.InTextMarkdownHandler
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.manager.fixMove
 import io.writeopia.sdk.model.action.Action
@@ -90,6 +91,7 @@ class WriteopiaStateManager(
         StoryTypes.CHECK_ITEM.type.number,
         StoryTypes.UNORDERED_LIST_ITEM.type.number,
     ),
+    private val inTextMarkdownHandler: InTextMarkdownHandler? = InTextMarkdownHandler
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     private val selectionBuffer: EventBuffer<Pair<Boolean, Int>> = EventBuffer(coroutineScope)
@@ -572,7 +574,15 @@ class WriteopiaStateManager(
         if (!isEditable) return
         backStackManager.addTextState(_currentStory.value, stateChange.position)
 
-        changeStoryStateAndTrackIt(stateChange, trackIt = false)
+        val step = stateChange.storyStep
+
+        val newState = if (inTextMarkdownHandler != null) {
+            stateChange.copy(storyStep = inTextMarkdownHandler.handleMarkdown(step))
+        } else {
+            stateChange
+        }
+
+        changeStoryStateAndTrackIt(newState, trackIt = false)
     }
 
     /**
