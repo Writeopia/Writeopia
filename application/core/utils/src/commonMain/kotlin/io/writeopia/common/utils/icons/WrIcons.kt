@@ -1,7 +1,6 @@
 package io.writeopia.common.utils.icons
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.FormatColorReset
@@ -43,6 +42,7 @@ import io.writeopia.common.utils.icons.all.Image
 import io.writeopia.common.utils.icons.all.Italic
 import io.writeopia.common.utils.icons.all.LayoutGrid
 import io.writeopia.common.utils.icons.all.LayoutPanelLeft
+import io.writeopia.common.utils.icons.all.Link
 import io.writeopia.common.utils.icons.all.Moon
 import io.writeopia.common.utils.icons.all.MoveLeft
 import io.writeopia.common.utils.icons.all.NotebookText
@@ -59,7 +59,6 @@ import io.writeopia.common.utils.icons.all.Undo2
 import io.writeopia.common.utils.icons.all.WandSparkles
 import io.writeopia.common.utils.icons.all.X
 import io.writeopia.common.utils.icons.all.Zap
-import io.writeopia.common.utils.icons.all.Link
 
 object WrIcons {
     val settings: ImageVector = Bolt
@@ -146,7 +145,7 @@ object WrIcons {
 
     val backArrowDesktop: ImageVector = MoveLeft
 
-    val backArrowAndroid: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
+    val backArrowMobile: ImageVector = PlatformIcons.backArrowMobile
 
     val play: ImageVector = Play
 
@@ -221,7 +220,7 @@ object WrIcons {
             "sortByCreated" to sortByCreated,
             "sortByUpdate" to sortByUpdate,
             "backArrowDesktop" to backArrowDesktop,
-            "backArrowAndroid" to backArrowAndroid,
+            "backArrowAndroid" to backArrowMobile,
             "play" to play,
             "circularArrowLeft" to circularArrowLeft,
             "circularArrowRight" to circularArrowRight,

@@ -128,4 +128,12 @@
   <string name="title">Title</string>
   <string name="subtitle">Subtitle</string>
   <string name="heading">Heading</string>
+  <string name="dont_show_again">Don't show again</string>
+  <string name="manage_teams">Manage teams</string>
+  <string name="error_loading_teams">Error loading teams</string>
+  <string name="add_to_team">Add users to team: </string>
+  <string name="add">Add</string>
+  <string name="user_email">User email</string>
+  <string name="choose_workspace">Choose your workspace</string>
+  <string name="your_teams">Your teams</string>
 </resources>

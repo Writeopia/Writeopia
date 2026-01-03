@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -72,6 +73,7 @@ fun DesktopApp(
     toggleMaxScreen: () -> Unit,
     navigateToRegister: () -> Unit,
     navigateToResetPassword: () -> Unit,
+    hasGlobalHeader: Boolean = true,
     startDestination: String = startDestination(),
 ) {
     val editorInjector = remember {
@@ -166,11 +168,15 @@ fun DesktopApp(
                     )
 
                     Column {
-                        GlobalHeader(
-                            navigationController,
-                            globalShellViewModel.folderPath,
-                            toggleMaxScreen
-                        )
+                        if (hasGlobalHeader) {
+                            GlobalHeader(
+                                navigationController,
+                                globalShellViewModel.folderPath,
+                                toggleMaxScreen
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
 
                         Box(
                             modifier = Modifier

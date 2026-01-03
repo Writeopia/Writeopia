@@ -98,6 +98,53 @@ fun CommonButton(
         )
     }
 }
+@Composable
+fun LargeButton(
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    iconDescription: String? = null,
+    text: String,
+    defaultColor: Color = WriteopiaTheme.colorScheme.defaultButton,
+    selectedColor: Color = WriteopiaTheme.colorScheme.highlight,
+    isEnabledState: StateFlow<Boolean> = MutableStateFlow(true),
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+    clickListener: () -> Unit,
+) {
+    val isEditable by isEnabledState.collectAsState()
+    val lockButtonColor = if (isEditable) defaultColor else selectedColor
+
+    val shape = MaterialTheme.shapes.medium
+
+    Row(
+        verticalAlignment = verticalAlignment,
+        horizontalArrangement = horizontalArrangement,
+        modifier = modifier
+            .background(lockButtonColor, shape)
+            .clip(shape)
+            .clickable(onClick = clickListener)
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = iconDescription,
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.size(14.dp)
+            )
+
+            Spacer(modifier = Modifier.width(4.dp))
+        }
+
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
 
 @Composable
 fun CommonTextButton(

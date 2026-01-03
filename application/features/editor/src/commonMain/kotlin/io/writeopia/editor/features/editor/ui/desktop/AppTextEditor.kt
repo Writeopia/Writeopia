@@ -64,7 +64,10 @@ fun AppTextEditor(
 
         if (isEditionHeader) {
             Dialog(onDismissRequest = viewModel::onHeaderEditionCancel) {
-                Card(modifier = Modifier.padding(30.dp), shape = MaterialTheme.shapes.large) {
+                Card(
+                    modifier = Modifier.padding(30.dp),
+                    shape = MaterialTheme.shapes.large
+                ) {
                     Spacer(modifier = Modifier.height(20.dp))
 
                     HeaderEditionOptions(

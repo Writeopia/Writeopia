@@ -17,10 +17,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -33,7 +33,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -52,8 +51,10 @@ import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
+import io.writeopia.editor.input.InputScreen
 import io.writeopia.editor.model.EditState
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.span.Span
 import io.writeopia.ui.components.EditionScreen
 import io.writeopia.ui.drawer.factory.DefaultDrawersNative
 import kotlinx.coroutines.flow.StateFlow
@@ -63,6 +64,7 @@ const val NOTE_EDITION_SCREEN_TITLE_TEST_TAG = "noteEditionScreenTitle"
 
 @Composable
 internal fun NoteEditorScreen(
+    isDarkTheme: Boolean,
     documentId: String?,
     title: String?,
     noteEditorViewModel: NoteEditorViewModel,
@@ -70,8 +72,6 @@ internal fun NoteEditorScreen(
     onDocumentLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val systemBarDefaultColor = MaterialTheme.colorScheme.primary
-
     if (documentId != null) {
         noteEditorViewModel.loadDocument(documentId)
     } else {
@@ -80,14 +80,6 @@ internal fun NoteEditorScreen(
             "Untitled",
 //            stringResource(R.string.untitled)
         )
-    }
-
-    val document = noteEditorViewModel.documentToShareInfo.collectAsState().value
-
-    if (document != null) {
-        LaunchedEffect(document.hashCode()) {
-            shareDocument(document)
-        }
     }
 
     Scaffold(
@@ -112,15 +104,17 @@ internal fun NoteEditorScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(MaterialTheme.colorScheme.background),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-//                TextEditor(
-//                    noteEditorViewModel,
-//                    DefaultDrawersNative,
-//                    Modifier.weight(1F).padding(horizontal = 6.dp),
-//                    keyFn = { drawStory -> drawStory.mobileKey },
-//                    onDocumentLinkClick = onDocumentLinkClick
-//                )
+                TextEditor(
+                    isDarkTheme,
+                    noteEditorViewModel,
+                    DefaultDrawersNative,
+                    Modifier.weight(1F).padding(horizontal = 6.dp),
+                    keyFn = { drawStory -> drawStory.mobileKey },
+                    onDocumentLinkClick = onDocumentLinkClick
+                )
 
                 BottomScreen(
                     noteEditorViewModel.isEditState,
@@ -128,15 +122,20 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::redo,
                     noteEditorViewModel.canUndo,
                     noteEditorViewModel.canRedo,
+                    noteEditorViewModel::onAddSpanClick,
                     noteEditorViewModel::deleteSelection,
-                    noteEditorViewModel::clearSelections
+                    noteEditorViewModel::copySelection,
+                    noteEditorViewModel::cutSelection,
+                    noteEditorViewModel::clearSelections,
+                    noteEditorViewModel::onAddCheckListClick,
+                    noteEditorViewModel::onAddListItemClick,
+                    noteEditorViewModel::addPage,
                 )
             }
 
             val headerEdition by noteEditorViewModel.editHeader.collectAsState()
 
             HeaderEdition(
-                modifier = Modifier.fillMaxWidth(),
                 availableColors = ColorUtils.headerColors(),
                 onColorSelection = noteEditorViewModel::onHeaderColorSelection,
                 outsideClick = noteEditorViewModel::onHeaderEditionCancel,
@@ -224,7 +223,7 @@ private fun TopBar(
                         .clip(CircleShape)
                         .clickable(onClick = navigationClick)
                         .padding(10.dp),
-                    imageVector = WrIcons.backArrowAndroid,
+                    imageVector = WrIcons.backArrowMobile,
                     contentDescription = "",
 //                    stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onBackground
@@ -257,7 +256,6 @@ private fun shareDocument(shareDocument: ShareDocument) {}
 //        TopBar(titleState = MutableStateFlow("Title"), shareDocument = {})
 //    }
 // }
-
 @Composable
 private fun BottomScreen(
     editState: StateFlow<EditState>,
@@ -265,14 +263,20 @@ private fun BottomScreen(
     reDo: () -> Unit = {},
     canUndo: StateFlow<Boolean>,
     canRedo: StateFlow<Boolean>,
+    onSpanSelected: (Span) -> Unit = {},
     deleteSelection: () -> Unit = {},
-    onClose: () -> Unit = {}
+    copySelection: () -> Unit = {},
+    cutSelection: () -> Unit = {},
+    onClose: () -> Unit = {},
+    onCheckItem: () -> Unit = {},
+    onListItem: () -> Unit = {},
+    onAddPage: () -> Unit = {},
 ) {
     val edit by editState.collectAsState()
 
     val containerModifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp)
+        .widthIn(max = 500.dp)
+        .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
         .clip(MaterialTheme.shapes.large)
         .background(MaterialTheme.colorScheme.primary)
 
@@ -291,20 +295,27 @@ private fun BottomScreen(
     ) { editStateAnimated ->
         when (editStateAnimated) {
             EditState.TEXT -> {
-//                InputScreen(
-//                    modifier = containerModifier,
-//                    onBackPress = unDo,
-//                    onForwardPress = reDo,
-//                    canUndoState = canUndo,
-//                    canRedoState = canRedo,
-//                )
+                InputScreen(
+                    modifier = containerModifier,
+                    onAddSpan = onSpanSelected,
+                    onBackPress = unDo,
+                    onForwardPress = reDo,
+                    canUndoState = canUndo,
+                    canRedoState = canRedo,
+                )
             }
 
             EditState.SELECTED_TEXT -> {
                 EditionScreen(
                     modifier = containerModifier,
+                    onSpanClick = onSpanSelected,
                     onDelete = deleteSelection,
-                    onClose = onClose
+                    onCopy = copySelection,
+                    onCut = cutSelection,
+                    onClose = onClose,
+                    checkboxClick = onCheckItem,
+                    listItemClick = onListItem,
+                    onAddPage = onAddPage,
                 )
             }
         }

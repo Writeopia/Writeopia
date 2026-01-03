@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,8 +18,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.writeopia.commonui.buttons.CommonButton
+import io.writeopia.commonui.buttons.LargeButton
+import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.flow.StateFlow
@@ -30,13 +34,14 @@ fun BoxScope.ChooseWorkspace(
     retry: () -> Unit
 ) {
     Column(
-        modifier = Modifier.align(Alignment.Center),
+        modifier = Modifier.align(Alignment.Center).padding(horizontal = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         BasicText(
-            text = "Choose your workspace",
-            style = MaterialTheme.typography.titleLarge.copy(
-                MaterialTheme.colorScheme.onBackground
+            text = WrStrings.chooseWorkspace(),
+            style = MaterialTheme.typography.displayMedium.copy(
+                MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
             ),
         )
 
@@ -49,11 +54,12 @@ fun BoxScope.ChooseWorkspace(
                 val workspaces = workspacesResult.data
 
                 LazyColumn(
-                    modifier = Modifier.width(200.dp).defaultMinSize(minHeight = 100.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.width(400.dp).defaultMinSize(minHeight = 100.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     items(workspaces) { workspace ->
-                        CommonButton(
+                        LargeButton(
                             modifier = Modifier.fillMaxWidth(),
                             text = workspace.name,
                             clickListener = {

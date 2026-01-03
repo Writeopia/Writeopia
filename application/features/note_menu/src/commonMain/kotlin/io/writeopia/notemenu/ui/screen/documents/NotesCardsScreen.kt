@@ -225,7 +225,7 @@ fun NotesCardsScreen(
                     val modifier = Modifier.height(50.dp).width(280.dp)
 
                     Text(
-                        "Add",
+                        WrStrings.add(),
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.fillMaxWidth()
                     )

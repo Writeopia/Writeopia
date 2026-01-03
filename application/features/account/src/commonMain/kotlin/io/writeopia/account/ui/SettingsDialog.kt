@@ -248,8 +248,10 @@ private fun AccountScreen(
         val titleStyle = MaterialTheme.typography.titleLarge
         val titleColor = MaterialTheme.colorScheme.onBackground
 
-        Text(WrStrings.account(), style = titleStyle, color = titleColor)
+        ChooseTeam(workspaces)
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        Text(WrStrings.account(), style = titleStyle, color = titleColor)
 
         val userOnline by userOnlineState.collectAsState()
 
@@ -263,6 +265,8 @@ private fun AccountScreen(
                     .padding(vertical = 8.dp)
                     .fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
 
             Column(modifier = Modifier.width(IntrinsicSize.Max)) {
                 CommonTextButton(
@@ -291,6 +295,12 @@ private fun AccountScreen(
 
                 val showDelete by showDeleteConfirmation.collectAsState()
 
+                Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+                Text("Danger zone", style = titleStyle, color = titleColor)
+
+                Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
+
                 CommonTextButton(
                     text = WrStrings.deleteAccount(),
                     modifier = Modifier.fillMaxWidth(),
@@ -298,10 +308,6 @@ private fun AccountScreen(
                     textColor = MaterialTheme.colorScheme.onPrimary,
                     clickListener = showDeleteConfirm
                 )
-
-                Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-
-                ChooseTeam(workspaces)
 
                 if (showDelete) {
                     Dialog(onDismissRequest = dismissDeleteConfirm) {
@@ -395,8 +401,7 @@ private fun ChooseTeam(workspacesState: StateFlow<ResultData<List<Workspace>>>) 
     if (workspaces is ResultData.Complete &&
         (workspaces as ResultData.Complete<List<Workspace>>).data.isNotEmpty()
     ) {
-        Text("Your teams", style = titleStyle, color = titleColor)
-        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+        Text(WrStrings.yourTeams(), style = titleStyle, color = titleColor)
 
         Column(
             modifier = Modifier.width(240.dp),
@@ -415,7 +420,7 @@ private fun TeamLine(workspace: Workspace, modifier: Modifier = Modifier) {
         modifier = modifier
             .clip(MaterialTheme.shapes.large)
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(vertical = 8.dp)
     ) {
         BasicText(
             workspace.name,
@@ -850,7 +855,7 @@ private fun TeamsSection(
         val titleStyle = MaterialTheme.typography.titleLarge
         val titleColor = MaterialTheme.colorScheme.onBackground
 
-        Text("Manage teams", style = titleStyle, color = titleColor)
+        Text(WrStrings.manageTeams(), style = titleStyle, color = titleColor)
 
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
@@ -879,7 +884,7 @@ private fun TeamsSection(
 
             is ResultData.Error -> {
                 BasicText(
-                    text = "Error loading teams",
+                    text = WrStrings.errorLoadingTeams(),
                     style = MaterialTheme.typography.bodySmall.copy(color = titleColor)
                 )
             }
@@ -905,7 +910,7 @@ private fun AddUserToWorkspace(
 ) {
     if (selected.role == "ADMIN") {
         BasicText(
-            text = "Add users to team: ${selected.name}",
+            text = "${WrStrings.addToTeam()} ${selected.name}",
             style = MaterialTheme
                 .typography
                 .titleSmall
@@ -926,7 +931,7 @@ private fun AddUserToWorkspace(
                 singleLine = true,
                 placeholder = {
                     BasicText(
-                        "User email",
+                        WrStrings.userEmail(),
                         style = MaterialTheme
                             .typography
                             .titleSmall
@@ -941,7 +946,7 @@ private fun AddUserToWorkspace(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            CommonButton(text = "Add") {
+            CommonButton(text = WrStrings.add()) {
                 addUserToTeam(userEmail)
             }
         }

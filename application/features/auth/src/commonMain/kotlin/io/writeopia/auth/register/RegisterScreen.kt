@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
@@ -38,7 +39,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import io.writeopia.auth.utils.loginScreen
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
@@ -137,7 +137,7 @@ private fun BoxScope.RegisterContent(
     Column(
         modifier = modifier
             .align(Alignment.Center)
-            .loginScreen(),
+            .widthIn(max = 430.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -152,7 +152,7 @@ private fun BoxScope.RegisterContent(
 
         Text(
             WrStrings.journeyStarts(),
-            color = WriteopiaTheme.colorScheme.textLight,
+            color = WriteopiaTheme.colorScheme.textLighter,
             modifier = Modifier.padding(horizontal = 10.dp),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold

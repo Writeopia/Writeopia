@@ -113,7 +113,7 @@ internal fun MobileChooseNoteScreen(
                     gridOptionClick = chooseNoteViewModel::gridArrangementSelected,
                     listOptionClick = chooseNoteViewModel::listArrangementSelected,
                     sortingSelected = chooseNoteViewModel::sortingSelected,
-                    sortingState = chooseNoteViewModel.orderByState
+                    sortingState = chooseNoteViewModel.orderByState,
                 )
 
                 val titlesToDelete by chooseNoteViewModel.titlesToDelete.collectAsState()
@@ -290,7 +290,7 @@ private fun Content(
                 navigateToNotes(NotesNavigation.Folder(id))
             }
         },
-        changeIcon = { _, _, _, _ -> },
+        changeIcon = chooseNoteViewModel::changeIcons,
         moveRequest = chooseNoteViewModel::moveToFolder,
         onSelection = {},
         newNote = newNote,

@@ -15,4 +15,13 @@ actual fun TextEditorScreen(
     onDocumentLinkClick: (String) -> Unit,
     modifier: Modifier
 ) {
+    NoteEditorScreen(
+        isDarkTheme = isDarkTheme,
+        documentId = documentId,
+        title = title,
+        noteEditorViewModel = noteEditorViewModel,
+        navigateBack = navigateBack,
+        onDocumentLinkClick = onDocumentLinkClick,
+        modifier = modifier
+    )
 }
