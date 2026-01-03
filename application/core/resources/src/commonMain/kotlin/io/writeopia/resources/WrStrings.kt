@@ -7,6 +7,8 @@ import writeopia.application.core.resources.generated.resources.access_ollama_si
 import writeopia.application.core.resources.generated.resources.account
 import writeopia.application.core.resources.generated.resources.action_points
 import writeopia.application.core.resources.generated.resources.actions
+import writeopia.application.core.resources.generated.resources.add
+import writeopia.application.core.resources.generated.resources.add_to_team
 import writeopia.application.core.resources.generated.resources.ai_explanation
 import writeopia.application.core.resources.generated.resources.ai_model
 import writeopia.application.core.resources.generated.resources.are_you_sure
@@ -16,6 +18,7 @@ import writeopia.application.core.resources.generated.resources.available_models
 import writeopia.application.core.resources.generated.resources.box
 import writeopia.application.core.resources.generated.resources.cancel
 import writeopia.application.core.resources.generated.resources.change_account
+import writeopia.application.core.resources.generated.resources.choose_workspace
 import writeopia.application.core.resources.generated.resources.choose_your_model
 import writeopia.application.core.resources.generated.resources.close
 import writeopia.application.core.resources.generated.resources.color_theme
@@ -32,10 +35,12 @@ import writeopia.application.core.resources.generated.resources.delete
 import writeopia.application.core.resources.generated.resources.delete_account
 import writeopia.application.core.resources.generated.resources.dismiss
 import writeopia.application.core.resources.generated.resources.document
+import writeopia.application.core.resources.generated.resources.dont_show_again
 import writeopia.application.core.resources.generated.resources.download_model
 import writeopia.application.core.resources.generated.resources.download_models
 import writeopia.application.core.resources.generated.resources.download_ollama
 import writeopia.application.core.resources.generated.resources.email
+import writeopia.application.core.resources.generated.resources.error_loading_teams
 import writeopia.application.core.resources.generated.resources.error_model_download
 import writeopia.application.core.resources.generated.resources.error_requesting_models
 import writeopia.application.core.resources.generated.resources.export
@@ -62,6 +67,7 @@ import writeopia.application.core.resources.generated.resources.links
 import writeopia.application.core.resources.generated.resources.local_folder
 import writeopia.application.core.resources.generated.resources.lock_document
 import writeopia.application.core.resources.generated.resources.logout
+import writeopia.application.core.resources.generated.resources.manage_teams
 import writeopia.application.core.resources.generated.resources.markdown
 import writeopia.application.core.resources.generated.resources.move_to
 import writeopia.application.core.resources.generated.resources.move_to_home
@@ -107,6 +113,8 @@ import writeopia.application.core.resources.generated.resources.version
 import writeopia.application.core.resources.generated.resources.workspaceName
 import writeopia.application.core.resources.generated.resources.you_are_offline
 import writeopia.application.core.resources.generated.resources.use_offline
+import writeopia.application.core.resources.generated.resources.user_email
+import writeopia.application.core.resources.generated.resources.your_teams
 
 object WrStrings {
 
@@ -427,4 +435,28 @@ object WrStrings {
 
     @Composable
     fun heading() = stringResource(Res.string.heading)
+
+    @Composable
+    fun dontShowAgain() = stringResource(Res.string.dont_show_again)
+
+    @Composable
+    fun manageTeams() = stringResource(Res.string.manage_teams)
+
+    @Composable
+    fun errorLoadingTeams() = stringResource(Res.string.error_loading_teams)
+
+    @Composable
+    fun addToTeam() = stringResource(Res.string.add_to_team)
+
+    @Composable
+    fun add() = stringResource(Res.string.add)
+
+    @Composable
+    fun userEmail() = stringResource(Res.string.user_email)
+
+    @Composable
+    fun chooseWorkspace() = stringResource(Res.string.choose_workspace)
+
+    @Composable
+    fun yourTeams() = stringResource(Res.string.your_teams)
 }

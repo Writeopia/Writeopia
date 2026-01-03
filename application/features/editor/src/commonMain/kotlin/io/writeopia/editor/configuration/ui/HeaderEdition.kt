@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -27,7 +27,6 @@ fun BoxScope.HeaderEdition(
     visibilityState: Boolean,
     outsideClick: () -> Unit,
 ) {
-    val shape = CircleShape
     val topCorner = CornerSize(16.dp)
     val bottomCorner = CornerSize(0.dp)
 
@@ -38,7 +37,8 @@ fun BoxScope.HeaderEdition(
         animationLabel = "HeaderEditionAnimation",
     ) {
         Column(
-            modifier = modifier
+            modifier = Modifier
+                .widthIn(max = 500.dp)
                 .clip(
                     RoundedCornerShape(
                         topCorner,

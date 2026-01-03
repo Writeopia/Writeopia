@@ -41,12 +41,13 @@ fun AppMobile(
     notesMenuInjection: NotesMenuInjection,
     editorInjector: TextEditorInjector,
     navigationViewModel: NavigationViewModel,
+    modifier: Modifier = Modifier,
     builder: NavGraphBuilder.() -> Unit
 ) {
     val colorTheme by uiConfigViewModel.listenForColorTheme { "disconnected_user" }.collectAsState()
 
     WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
-        Box(modifier = Modifier) {
+        Box(modifier = modifier) {
             Navigation(
                 isDarkTheme = colorTheme.isDarkTheme(),
                 isMobile = true,

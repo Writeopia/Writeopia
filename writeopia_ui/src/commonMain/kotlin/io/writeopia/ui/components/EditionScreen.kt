@@ -59,7 +59,10 @@ fun EditionScreen(
     val clipShape = MaterialTheme.shapes.medium
     val spaceWidth = 8.dp
 
-    Row(modifier = modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = modifier.padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         val tint = MaterialTheme.colorScheme.onPrimary
 
         Row(

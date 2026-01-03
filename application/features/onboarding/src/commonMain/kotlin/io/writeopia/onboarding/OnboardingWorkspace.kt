@@ -84,7 +84,7 @@ fun OnboardingWorkspace(
                     )
                     .padding(8.dp)
                     .align(Alignment.BottomEnd),
-                text = "Don't show again",
+                text = WrStrings.dontShowAgain(),
                 color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,

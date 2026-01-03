@@ -129,7 +129,8 @@ internal fun NoteEditorScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(MaterialTheme.colorScheme.background),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 TextEditor(
                     isDarkTheme = isDarkTheme,
@@ -252,7 +253,7 @@ private fun TopBar(
                         .clip(CircleShape)
                         .clickable(onClick = navigationClick)
                         .padding(10.dp),
-                    imageVector = WrIcons.backArrowAndroid,
+                    imageVector = WrIcons.backArrowMobile,
                     contentDescription = "",
 //                    stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onBackground
@@ -364,23 +365,3 @@ private fun BottomScreen(
         }
     }
 }
-
-// @Preview
-// @Composable
-// private fun BottomScreenTextPreview() {
-//    BottomScreen(
-//        editState = MutableStateFlow(EditState.TEXT),
-//        canUndo = MutableStateFlow(true),
-//        canRedo = MutableStateFlow(true),
-//    )
-// }
-//
-// @Preview
-// @Composable
-// private fun BottomScreenSelectedPreview() {
-//    BottomScreen(
-//        editState = MutableStateFlow(EditState.SELECTED_TEXT),
-//        canUndo = MutableStateFlow(true),
-//        canRedo = MutableStateFlow(true),
-//    )
-// }

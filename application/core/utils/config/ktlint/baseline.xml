@@ -2019,10 +2019,6 @@
     <file name="src/commonMain/kotlin/io/writeopia/common/utils/icons/all/link.kt">
         <error line="51" column="13" source="standard:backing-property-naming" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/common/utils/persistence/folder/FolderEntityExtensions.kt">
-        <error line="10" column="57" source="standard:function-expression-body" />
-        <error line="24" column="47" source="standard:function-expression-body" />
-    </file>
     <file name="src/jvmMain/kotlin/io/writeopia/common/utils/keyboard/KeyboardExtensions.jvm.kt">
         <error line="10" column="49" source="standard:function-expression-body" />
     </file>

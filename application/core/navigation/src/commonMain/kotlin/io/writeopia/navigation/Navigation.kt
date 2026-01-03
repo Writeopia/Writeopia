@@ -68,9 +68,7 @@ fun Navigation(
 
             editorNavigation(
                 isDarkTheme = isDarkTheme,
-                navigateBack = {
-                    navController.navigateUp()
-                },
+                navigateBack = navController::navigateUp,
                 editorInjector = editorInjector,
                 navigateToPresentation = navController::navigateToPresentation,
                 sharedTransitionScope = this@SharedTransitionLayout,
@@ -83,6 +81,7 @@ fun Navigation(
                 navigateToAuthMenu = {
                     navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
                 },
+                navigationClick = navController::navigateUp,
                 selectColorTheme = selectColorTheme
             )
 
@@ -90,8 +89,9 @@ fun Navigation(
                 searchNavigation(
                     isMobile = isMobile,
                     searchInjection,
-                    navController::navigateToNote,
-                    navController::navigateToFolder
+                    navigateToDocument = navController::navigateToNote,
+                    navigateToFolder = navController::navigateToFolder,
+                    navigationClick = navController::navigateUp
                 )
             }
 

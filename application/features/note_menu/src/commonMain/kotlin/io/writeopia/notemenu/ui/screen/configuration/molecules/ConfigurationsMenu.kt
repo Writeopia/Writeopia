@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,6 +48,7 @@ private const val INNER_PADDING = 3
 
 @Composable
 internal fun BoxScope.MobileConfigurationsMenu(
+    dialogMaxWidth: Dp = 500.dp,
     selected: Flow<Int>,
     visibilityState: Boolean,
     outsideClick: () -> Unit,
@@ -71,7 +73,7 @@ internal fun BoxScope.MobileConfigurationsMenu(
         Column(
             modifier = Modifier
                 .padding(12.dp)
-                .fillMaxWidth()
+                .widthIn(max = dialogMaxWidth)
                 .clip(
                     MaterialTheme.shapes.large
                 )
@@ -244,6 +246,7 @@ private fun ConfigurationsMenu_Preview() {
             .background(Color.White)
     ) {
         MobileConfigurationsMenu(
+            600.dp,
             MutableStateFlow(1),
             true,
             {},

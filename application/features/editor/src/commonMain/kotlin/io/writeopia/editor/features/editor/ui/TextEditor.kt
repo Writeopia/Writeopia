@@ -1,6 +1,7 @@
 package io.writeopia.editor.features.editor.ui
 
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -11,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
 import io.writeopia.editor.configuration.ui.DrawConfigFactory
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.model.Font
@@ -62,7 +64,7 @@ internal fun TextEditor(
     val isEditable by noteEditorViewModel.isEditable.collectAsState()
 
     WriteopiaEditor(
-        modifier = modifier,
+        modifier = modifier.widthIn(max = 850.dp),
         editable = editable,
         listState = listState,
         keyFn = keyFn,

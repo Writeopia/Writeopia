@@ -15,4 +15,6 @@ class FolderEntity(
     @ColumnInfo(name = "last_updated_at") val lastUpdatedAt: Long,
     @ColumnInfo(name = "workspace_id") val workspaceId: String,
     @ColumnInfo(name = "favorite") val favorite: Boolean = false,
+    @ColumnInfo(name = "icon") val icon: String,
+    @ColumnInfo(name = "icon_tint") val iconTint: Long,
 )

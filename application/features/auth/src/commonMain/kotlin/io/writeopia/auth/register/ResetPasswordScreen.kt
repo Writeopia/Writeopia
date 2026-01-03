@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,7 +35,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import io.writeopia.auth.utils.loginScreen
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
@@ -53,7 +53,7 @@ fun RegisterPasswordScreen(
     onPasswordResetSuccess: () -> Unit,
     navigateBack: () -> Unit,
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().widthIn(430.dp)) {
         Icon(
             modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp)
                 .clip(CircleShape)
@@ -117,8 +117,7 @@ private fun BoxScope.ResetPasswordContent(
     Column(
         modifier = modifier
             .padding(horizontal = 50.dp)
-            .align(Alignment.Center)
-            .loginScreen(),
+            .align(Alignment.Center),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(

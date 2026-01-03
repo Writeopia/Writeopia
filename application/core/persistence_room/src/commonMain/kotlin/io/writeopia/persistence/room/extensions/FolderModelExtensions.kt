@@ -12,6 +12,8 @@ fun FolderEntity.toCommonEntity(): FolderCommonEntity {
         lastUpdatedAt = this.lastUpdatedAt,
         workspaceId = this.workspaceId,
         favorite = this.favorite,
+        icon = this.icon,
+        iconTint = this.iconTint,
     )
 }
 
@@ -23,6 +25,8 @@ fun FolderCommonEntity.toEntity(): FolderEntity {
         createdAt = this.createdAt,
         lastUpdatedAt = this.lastUpdatedAt,
         workspaceId = this.workspaceId,
-        favorite = this.favorite
+        favorite = this.favorite,
+        icon = this.icon,
+        iconTint = this.iconTint,
     )
 }

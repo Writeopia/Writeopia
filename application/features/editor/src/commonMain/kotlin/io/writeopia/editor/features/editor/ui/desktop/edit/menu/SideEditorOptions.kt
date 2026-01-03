@@ -713,6 +713,7 @@ private fun Modifier.horizontalOptionsRow() =
 internal fun FontOptions(
     changeFontFamily: (Font) -> Unit,
     selectedState: StateFlow<Font>,
+    modifier: Modifier = Modifier,
     selectedColor: Color = WriteopiaTheme.colorScheme.highlight,
     defaultColor: Color = MaterialTheme.colorScheme.surfaceVariant
 ) {
@@ -726,7 +727,7 @@ internal fun FontOptions(
     ).toList()
         .inBatches(2)
         .forEach { items ->
-            Row {
+            Row(modifier) {
                 items.forEach { (name, family) ->
                     Text(
                         name,

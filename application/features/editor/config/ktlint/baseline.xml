@@ -4,8 +4,4 @@
         <error line="4" column="1" source="standard:no-unused-imports" />
         <error line="11" column="1" source="standard:no-unused-imports" />
     </file>
-    <file name="src/nativeMain/kotlin/io/writeopia/editor/features/editor/ui/screen/NoteEditorScreen.native.kt">
-        <error line="52" column="1" source="standard:no-unused-imports" />
-        <error line="58" column="1" source="standard:no-unused-imports" />
-    </file>
 </baseline>

@@ -7,6 +7,7 @@ import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -33,6 +34,8 @@ class FolderSync(
      */
     suspend fun syncFolder(folderId: String, workspaceId: String, force: Boolean = false) {
         try {
+            if (workspaceId == Workspace.disconnectedWorkspace().id) return
+
             val now = Clock.System.now()
             if (!force && now - lastSuccessfulSync < minSyncInternal) {
                 println("Skipping sync for $workspaceId. Last sync was less than $minSyncInternal ago.")
