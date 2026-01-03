@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -66,7 +66,7 @@ internal fun NotesSelectionMenu(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .widthIn(max = 500.dp)
                 .clip(shape)
                 .background(MaterialTheme.colorScheme.primary),
         ) {

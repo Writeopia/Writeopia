@@ -73,6 +73,7 @@ fun DesktopApp(
     toggleMaxScreen: () -> Unit,
     navigateToRegister: () -> Unit,
     navigateToResetPassword: () -> Unit,
+    modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
     startDestination: String = startDestination(),
 ) {
@@ -122,7 +123,7 @@ fun DesktopApp(
 
     WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
         val globalBackground = WriteopiaTheme.colorScheme.globalBackground
-        DragSelectionBox {
+        DragSelectionBox(modifier = modifier) {
             DraggableScreen {
                 Row(Modifier.background(globalBackground)) {
                     val sideMenuWidth by globalShellViewModel.showSideMenuState.collectAsState()
@@ -297,7 +298,7 @@ fun DesktopApp(
                                     .align(alignment = Alignment.CenterStart)
                                     .clip(RoundedCornerShape(100))
                                     .clickable(onClick = globalShellViewModel::toggleSideMenu)
-                                    .padding(vertical = 6.dp)
+                                    .padding(top = 10.dp, bottom = 10.dp, start = 8.dp, end = 16.dp)
                                     .draggable(
                                         orientation = Orientation.Horizontal,
                                         state = rememberDraggableState { delta ->
