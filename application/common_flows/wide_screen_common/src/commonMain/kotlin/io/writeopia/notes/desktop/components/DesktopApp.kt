@@ -43,7 +43,6 @@ import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.notes.navigateToFolder
-import io.writeopia.navigation.notes.navigateToNote
 import io.writeopia.navigation.notes.navigateToNoteMobile
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuKmpInjection

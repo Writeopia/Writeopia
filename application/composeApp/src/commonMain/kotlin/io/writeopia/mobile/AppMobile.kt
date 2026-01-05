@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,7 +14,6 @@ import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.editor.di.EditorKmpInjector
-import io.writeopia.features.search.di.KmpSearchInjection
 import io.writeopia.features.search.di.SearchInjection
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.navigation.MobileNavigationViewModel
