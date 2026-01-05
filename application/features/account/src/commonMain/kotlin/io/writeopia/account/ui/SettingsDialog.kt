@@ -58,6 +58,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SettingsPanel
@@ -114,10 +115,12 @@ fun SettingsDialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        val currentPlatform = LocalPlatform.current
+
         Card(
             modifier = Modifier
                 .width(700.dp)
-                .fillMaxHeight(fraction = 0.7F),
+                .fillMaxHeight(fraction = if (currentPlatform.isDesktop()) 0.7F else 1F),
 //                .padding(horizontal = 40.dp, vertical = 20.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
@@ -889,7 +892,12 @@ private fun TeamsSection(
                 )
             }
 
-            is ResultData.Idle -> {}
+            is ResultData.Idle -> {
+                BasicText(
+                    text = WrStrings.youAreOffline(),
+                    style = MaterialTheme.typography.bodySmall.copy(color = titleColor)
+                )
+            }
 
             is ResultData.InProgress -> {
                 CircularProgressIndicator()

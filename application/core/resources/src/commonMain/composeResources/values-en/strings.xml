@@ -136,4 +136,5 @@
   <string name="user_email">User email</string>
   <string name="choose_workspace">Choose your workspace</string>
   <string name="your_teams">Your teams</string>
+  <string name="teams">Teams</string>
 </resources>

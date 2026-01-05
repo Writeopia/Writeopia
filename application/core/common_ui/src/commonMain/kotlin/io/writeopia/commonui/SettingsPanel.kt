@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.ALLOW_BACKEND
+import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 
@@ -43,6 +44,8 @@ fun SettingsPanel(
 
     Row(modifier = modifier) {
         Column(modifier = Modifier.width(180.dp).fillMaxHeight()) {
+            val currentPlatform = LocalPlatform.current
+
             if (ALLOW_BACKEND) {
                 SettingsButton(WrStrings.account(), SettingsPage.ACCOUNT, pageState) { page ->
                     pageState = page
@@ -53,15 +56,21 @@ fun SettingsPanel(
                 pageState = page
             }
 
-            SettingsButton("AI", SettingsPage.AI, pageState) { page ->
-                pageState = page
+            if (currentPlatform.isDesktop()) {
+                SettingsButton("AI", SettingsPage.AI, pageState) { page ->
+                    pageState = page
+                }
+
+                SettingsButton(
+                    WrStrings.workspaceName(),
+                    SettingsPage.DIRECTORY,
+                    pageState
+                ) { page ->
+                    pageState = page
+                }
             }
 
-            SettingsButton(WrStrings.workspaceName(), SettingsPage.DIRECTORY, pageState) { page ->
-                pageState = page
-            }
-
-            SettingsButton("Teams", SettingsPage.TEAMS, pageState) { page ->
+            SettingsButton(WrStrings.teams(), SettingsPage.TEAMS, pageState) { page ->
                 pageState = page
             }
 

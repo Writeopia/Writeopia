@@ -26,7 +26,7 @@ import io.writeopia.sdk.models.document.Folder
 import kotlin.time.ExperimentalTime
 
 @Composable
-fun EditFileScreen(
+fun EditFileDialog(
     folderEdit: Folder,
     onDismissRequest: () -> Unit,
     editFolder: (Folder) -> Unit,
