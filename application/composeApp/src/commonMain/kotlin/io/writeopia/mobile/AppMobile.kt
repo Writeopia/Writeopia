@@ -1,128 +1,211 @@
 package io.writeopia.mobile
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavGraphBuilder
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.navigation.NavHostController
-import androidx.navigation.NavOptionsBuilder
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import io.writeopia.auth.navigation.authNavigation
+import io.writeopia.common.utils.ALLOW_BACKEND
+import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
-import io.writeopia.common.utils.icons.WrIcons
-import io.writeopia.editor.di.TextEditorInjector
+import io.writeopia.common.utils.keyboard.KeyboardCommands
+import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
+import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.SearchInjection
-import io.writeopia.model.isDarkTheme
-import io.writeopia.navigation.NavItemName
-import io.writeopia.navigation.Navigation
-import io.writeopia.navigation.NavigationViewModel
-import io.writeopia.navigation.notes.navigateToNoteMenu
-import io.writeopia.navigation.notifications.navigateToNotifications
-import io.writeopia.navigation.search.navigateToSearch
+import io.writeopia.model.ColorThemeOption
+import io.writeopia.navigation.MobileNavigationViewModel
+import io.writeopia.navigation.startScreen
 import io.writeopia.notemenu.di.NotesMenuInjection
-import io.writeopia.theme.WrieopiaTheme
+import io.writeopia.notemenu.navigation.navigateToNotes
+import io.writeopia.notes.desktop.components.DesktopApp
+import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.viewmodel.UiConfigurationViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppMobile(
-    startDestination: String,
-    navController: NavHostController,
-    searchInjector: SearchInjection,
-    uiConfigViewModel: UiConfigurationViewModel,
+    navigationViewModel: MobileNavigationViewModel,
+    editorInjector: EditorKmpInjector,
     notesMenuInjection: NotesMenuInjection,
-    editorInjector: TextEditorInjector,
-    navigationViewModel: NavigationViewModel,
-    modifier: Modifier = Modifier,
-    builder: NavGraphBuilder.() -> Unit
+    searchInjection: SearchInjection,
+    uiConfigurationViewModel: UiConfigurationViewModel,
+    colorThemeState: StateFlow<ColorThemeOption?>,
+    navController: NavHostController,
 ) {
-    val colorTheme by uiConfigViewModel.listenForColorTheme { "disconnected_user" }.collectAsState()
-
-    WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
-        Box(modifier = modifier) {
-            Navigation(
-                isDarkTheme = colorTheme.isDarkTheme(),
-                isMobile = true,
-                startDestination = startDestination,
-                notesMenuInjection = notesMenuInjection,
+    BoxWithConstraints {
+        if (maxWidth > maxHeight) {
+            val coroutineScope = rememberCoroutineScope()
+            NavHost(
                 navController = navController,
-                editorInjector = editorInjector,
-                selectColorTheme = uiConfigViewModel::changeColorTheme,
-                searchInjection = searchInjector,
-                navigationBar = {
-                    NavigationBar(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                    ) {
-                        val navBackStackEntry by navController.currentBackStackEntryAsState()
-                        val currentDestination = navBackStackEntry?.destination
-                        val navigationItems by navigationViewModel.selectedNavigation.collectAsState()
+                startDestination = if (ALLOW_BACKEND) {
+                    Destinations.START_APP.id
+                } else {
+                    Destinations.MAIN_APP.id
+                }
+            ) {
+                val selectionState = MutableStateFlow(false)
+                val keyboardEventFlow = MutableStateFlow<KeyboardEvent?>(null)
+                val sendEvent = { keyboardEvent: KeyboardEvent ->
+                    coroutineScope.launch(Dispatchers.Default) {
+                        keyboardEventFlow.tryEmit(keyboardEvent)
+                        delay(20)
+                        keyboardEventFlow.tryEmit(KeyboardEvent.IDLE)
+                    }
+                }
 
-                        navigationItems.forEach { item ->
-                            val isSelected =
-                                currentDestination?.hierarchy?.any { destination ->
-                                    destination.route?.let {
-                                        NavItemName.selectRoute(it)
-                                    }?.value == item.navItemName.value
-                                } ?: false
+                val handleKeyboardEvent: (KeyEvent) -> Boolean = { keyEvent ->
+                    selectionState.value = keyEvent.isMultiSelectionTrigger()
 
-                            NavigationBarItem(
-                                selected = isSelected,
-                                icon = {
-                                    Icon(
-                                        imageVector = item.navItemName.iconForNavItem(),
-                                        contentDescription = item.navItemName.value
-                                    )
-                                },
-                                onClick = {
-                                    navController.navigateToItem(item.navItemName) {
-                                        if (!isSelected) {
-                                            popUpTo(navController.graph.findStartDestination().route!!) {
-                                                saveState = true
-                                            }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    }
-                                },
-                                colors = NavigationBarItemDefaults.colors()
-                                    .copy(
-                                        selectedIconColor = MaterialTheme.colorScheme.onSecondary,
-                                        unselectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                                        selectedIndicatorColor = MaterialTheme.colorScheme.secondary,
-                                    )
+                    when {
+                        KeyboardCommands.isDeleteEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.DELETE)
+                            false
+                        }
+
+                        KeyboardCommands.isSelectAllEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.SELECT_ALL)
+                            false
+                        }
+
+                        KeyboardCommands.isBoxEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.BOX)
+                            false
+                        }
+
+                        KeyboardCommands.isBoldEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.BOLD)
+                            false
+                        }
+
+                        KeyboardCommands.isItalicEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.ITALIC)
+                            false
+                        }
+
+                        KeyboardCommands.isUnderlineEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.UNDERLINE)
+                            false
+                        }
+
+                        KeyboardCommands.isLinkEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.LINK)
+                            false
+                        }
+
+                        KeyboardCommands.isLocalSaveEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.LOCAL_SAVE)
+                            false
+                        }
+
+                        KeyboardCommands.isCopyEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.COPY)
+                            false
+                        }
+
+                        KeyboardCommands.isCutEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.CUT)
+                            false
+                        }
+
+                        KeyboardCommands.isQuestionEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.AI_QUESTION)
+                            false
+                        }
+
+                        KeyboardCommands.isCancelEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.CANCEL)
+                            true
+                        }
+
+                        KeyboardCommands.isAcceptAiEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.ACCEPT_AI)
+                            false
+                        }
+
+                        KeyboardCommands.isUndoKeyboardEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.UNDO)
+                            false
+                        }
+
+                        KeyboardCommands.isRedoKeyboardEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.REDO)
+                            false
+                        }
+                        KeyboardCommands.isEquationEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.EQUATION)
+                            false
+                        }
+
+                        KeyboardCommands.isSearchEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.SEARCH)
+                            false
+                        }
+
+                        KeyboardCommands.isListEvent(keyEvent) -> {
+                            sendEvent(KeyboardEvent.LIST)
+                            false
+                        }
+
+                        else -> false
+                    }
+                }
+
+                startScreen(navController, colorThemeState)
+
+                composable(route = Destinations.MAIN_APP.id) {
+                    DesktopApp(
+                        hasGlobalHeader = false,
+                        selectionState = selectionState,
+                        keyboardEventFlow = keyboardEventFlow.filterNotNull(),
+                        coroutineScope = coroutineScope,
+                        colorThemeOption = colorThemeState,
+                        selectColorTheme =
+                            uiConfigurationViewModel::changeColorTheme,
+                        toggleMaxScreen = {},
+                        navigateToRegister = {
+                            navController.navigate(
+                                Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                            )
+                        },
+                        navigateToResetPassword = {
+                            navController.navigate(
+                                Destinations.AUTH_RESET_PASSWORD.id
                             )
                         }
-                    }
-                },
-                builder = builder
-            )
+                    )
+                }
+
+                authNavigation(
+                    navController = navController,
+                    colorThemeOption = colorThemeState
+                ) {
+                    navController.navigate(Destinations.MAIN_APP.id)
+                }
+            }
+        } else {
+            PortraitMobile(
+                startDestination = Destinations.START_APP.id,
+                navController = navController,
+                searchInjector = searchInjection,
+                uiConfigViewModel = uiConfigurationViewModel,
+                notesMenuInjection = notesMenuInjection,
+                editorInjector = editorInjector,
+                navigationViewModel = navigationViewModel,
+            ) {
+                startScreen(navController, colorThemeState)
+
+                authNavigation(navController, colorThemeState) {
+                    navController.navigateToNotes(NotesNavigation.Root)
+                }
+            }
         }
     }
 }
-
-fun NavHostController.navigateToItem(
-    navItem: NavItemName,
-    builder: NavOptionsBuilder.() -> Unit
-) {
-    when (navItem) {
-        NavItemName.HOME -> this.navigateToNoteMenu(NotesNavigation.Root, builder)
-        NavItemName.SEARCH -> this.navigateToSearch(builder)
-        NavItemName.NOTIFICATIONS -> this.navigateToNotifications(builder)
-    }
-}
-
-fun NavItemName.iconForNavItem(): ImageVector =
-    when (this) {
-        NavItemName.HOME -> WrIcons.home
-        NavItemName.SEARCH -> WrIcons.search
-        NavItemName.NOTIFICATIONS -> WrIcons.notifications
-    }
