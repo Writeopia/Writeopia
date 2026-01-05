@@ -293,7 +293,7 @@ fun DesktopApp(
                             Box(
                                 modifier = Modifier
                                     .height(60.dp)
-                                    .width(16.dp)
+                                    .width(24.dp)
                                     .align(alignment = Alignment.CenterStart)
                                     .clip(RoundedCornerShape(100))
                                     .clickable(onClick = globalShellViewModel::toggleSideMenu)
