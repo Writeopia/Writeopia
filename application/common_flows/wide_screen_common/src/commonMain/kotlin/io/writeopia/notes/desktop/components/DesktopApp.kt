@@ -49,7 +49,7 @@ import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
 import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
 import io.writeopia.notemenu.navigation.navigateToNotes
-import io.writeopia.notemenu.ui.screen.menu.EditFileScreen
+import io.writeopia.notemenu.ui.screen.menu.EditFileDialog
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.theme.WrieopiaTheme
@@ -194,7 +194,6 @@ fun DesktopApp(
                                 editorInjector = editorInjector,
                                 selectColorTheme = selectColorTheme,
                                 navigationBar = {},
-                                isMobile = false,
                                 navController = navigationController
                             ) {}
 
@@ -202,7 +201,7 @@ fun DesktopApp(
                                 globalShellViewModel.editFolderState.collectAsState().value
 
                             if (folderEdit != null) {
-                                EditFileScreen(
+                                EditFileDialog(
                                     folderEdit = folderEdit,
                                     onDismissRequest = globalShellViewModel::stopEditingFolder,
                                     deleteFolder = globalShellViewModel::deleteFolder,

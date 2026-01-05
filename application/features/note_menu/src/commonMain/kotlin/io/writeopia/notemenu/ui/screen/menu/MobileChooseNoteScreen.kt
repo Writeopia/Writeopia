@@ -126,7 +126,7 @@ internal fun MobileChooseNoteScreen(
                 }
 
                 if (folderEdit != null) {
-                    EditFileScreen(
+                    EditFileDialog(
                         folderEdit = folderEdit,
                         onDismissRequest = chooseNoteViewModel::stopEditingFolder,
                         deleteFolder = chooseNoteViewModel::deleteFolder,

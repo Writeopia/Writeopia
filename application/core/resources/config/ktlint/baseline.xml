@@ -1153,7 +1153,7 @@
         <error line="206" column="1" source="standard:indent" />
         <error line="209" column="1" source="standard:indent" />
         <error line="209" column="22" source="standard:wrapping" />
-        <error line="209" column="44" source="standard:wrapping" />
+        <error line="209" column="46" source="standard:wrapping" />
         <error line="210" column="52" source="standard:paren-spacing" />
         <error line="211" column="52" source="standard:paren-spacing" />
         <error line="213" column="1" source="standard:indent" />
@@ -1161,7 +1161,7 @@
         <error line="214" column="1" source="standard:indent" />
         <error line="217" column="1" source="standard:indent" />
         <error line="217" column="22" source="standard:wrapping" />
-        <error line="217" column="46" source="standard:wrapping" />
+        <error line="217" column="44" source="standard:wrapping" />
         <error line="218" column="52" source="standard:paren-spacing" />
         <error line="219" column="52" source="standard:paren-spacing" />
         <error line="221" column="1" source="standard:indent" />
@@ -1169,7 +1169,7 @@
         <error line="222" column="1" source="standard:indent" />
         <error line="225" column="1" source="standard:indent" />
         <error line="225" column="22" source="standard:wrapping" />
-        <error line="225" column="70" source="standard:wrapping" />
+        <error line="225" column="46" source="standard:wrapping" />
         <error line="226" column="52" source="standard:paren-spacing" />
         <error line="227" column="52" source="standard:paren-spacing" />
         <error line="229" column="1" source="standard:indent" />
@@ -1177,7 +1177,7 @@
         <error line="230" column="1" source="standard:indent" />
         <error line="233" column="1" source="standard:indent" />
         <error line="233" column="22" source="standard:wrapping" />
-        <error line="233" column="44" source="standard:wrapping" />
+        <error line="233" column="70" source="standard:wrapping" />
         <error line="234" column="52" source="standard:paren-spacing" />
         <error line="235" column="52" source="standard:paren-spacing" />
         <error line="237" column="1" source="standard:indent" />
@@ -1185,7 +1185,7 @@
         <error line="238" column="1" source="standard:indent" />
         <error line="241" column="1" source="standard:indent" />
         <error line="241" column="22" source="standard:wrapping" />
-        <error line="241" column="52" source="standard:wrapping" />
+        <error line="241" column="44" source="standard:wrapping" />
         <error line="242" column="52" source="standard:paren-spacing" />
         <error line="243" column="52" source="standard:paren-spacing" />
         <error line="245" column="1" source="standard:indent" />
@@ -1193,22 +1193,22 @@
         <error line="246" column="1" source="standard:indent" />
         <error line="249" column="1" source="standard:indent" />
         <error line="249" column="22" source="standard:wrapping" />
-        <error line="249" column="42" source="standard:wrapping" />
+        <error line="249" column="52" source="standard:wrapping" />
         <error line="250" column="52" source="standard:paren-spacing" />
-        <error line="252" column="1" source="standard:indent" />
-        <error line="252" column="7" source="standard:wrapping" />
+        <error line="251" column="52" source="standard:paren-spacing" />
         <error line="253" column="1" source="standard:indent" />
-        <error line="256" column="1" source="standard:indent" />
-        <error line="256" column="22" source="standard:wrapping" />
-        <error line="256" column="58" source="standard:wrapping" />
-        <error line="257" column="52" source="standard:paren-spacing" />
+        <error line="253" column="7" source="standard:wrapping" />
+        <error line="254" column="1" source="standard:indent" />
+        <error line="257" column="1" source="standard:indent" />
+        <error line="257" column="22" source="standard:wrapping" />
+        <error line="257" column="42" source="standard:wrapping" />
         <error line="258" column="52" source="standard:paren-spacing" />
         <error line="260" column="1" source="standard:indent" />
         <error line="260" column="7" source="standard:wrapping" />
         <error line="261" column="1" source="standard:indent" />
         <error line="264" column="1" source="standard:indent" />
         <error line="264" column="22" source="standard:wrapping" />
-        <error line="264" column="56" source="standard:wrapping" />
+        <error line="264" column="58" source="standard:wrapping" />
         <error line="265" column="52" source="standard:paren-spacing" />
         <error line="266" column="52" source="standard:paren-spacing" />
         <error line="268" column="1" source="standard:indent" />
@@ -1216,7 +1216,7 @@
         <error line="269" column="1" source="standard:indent" />
         <error line="272" column="1" source="standard:indent" />
         <error line="272" column="22" source="standard:wrapping" />
-        <error line="272" column="50" source="standard:wrapping" />
+        <error line="272" column="56" source="standard:wrapping" />
         <error line="273" column="52" source="standard:paren-spacing" />
         <error line="274" column="52" source="standard:paren-spacing" />
         <error line="276" column="1" source="standard:indent" />
@@ -1224,7 +1224,7 @@
         <error line="277" column="1" source="standard:indent" />
         <error line="280" column="1" source="standard:indent" />
         <error line="280" column="22" source="standard:wrapping" />
-        <error line="280" column="62" source="standard:wrapping" />
+        <error line="280" column="50" source="standard:wrapping" />
         <error line="281" column="52" source="standard:paren-spacing" />
         <error line="282" column="52" source="standard:paren-spacing" />
         <error line="284" column="1" source="standard:indent" />
@@ -1232,7 +1232,7 @@
         <error line="285" column="1" source="standard:indent" />
         <error line="288" column="1" source="standard:indent" />
         <error line="288" column="22" source="standard:wrapping" />
-        <error line="288" column="66" source="standard:wrapping" />
+        <error line="288" column="62" source="standard:wrapping" />
         <error line="289" column="52" source="standard:paren-spacing" />
         <error line="290" column="52" source="standard:paren-spacing" />
         <error line="292" column="1" source="standard:indent" />
@@ -1240,7 +1240,7 @@
         <error line="293" column="1" source="standard:indent" />
         <error line="296" column="1" source="standard:indent" />
         <error line="296" column="22" source="standard:wrapping" />
-        <error line="296" column="74" source="standard:wrapping" />
+        <error line="296" column="66" source="standard:wrapping" />
         <error line="297" column="52" source="standard:paren-spacing" />
         <error line="298" column="52" source="standard:paren-spacing" />
         <error line="300" column="1" source="standard:indent" />
@@ -1248,21 +1248,21 @@
         <error line="301" column="1" source="standard:indent" />
         <error line="304" column="1" source="standard:indent" />
         <error line="304" column="22" source="standard:wrapping" />
-        <error line="304" column="56" source="standard:wrapping" />
+        <error line="304" column="74" source="standard:wrapping" />
         <error line="305" column="52" source="standard:paren-spacing" />
         <error line="306" column="52" source="standard:paren-spacing" />
         <error line="308" column="1" source="standard:indent" />
         <error line="308" column="7" source="standard:wrapping" />
         <error line="309" column="1" source="standard:indent" />
-        <error line="312" column="14" source="standard:function-naming" />
-        <error line="313" column="1" source="standard:indent" />
-        <error line="314" column="1" source="standard:indent" />
-        <error line="315" column="1" source="standard:indent" />
+        <error line="312" column="1" source="standard:indent" />
+        <error line="312" column="22" source="standard:wrapping" />
+        <error line="312" column="56" source="standard:wrapping" />
+        <error line="313" column="52" source="standard:paren-spacing" />
+        <error line="314" column="52" source="standard:paren-spacing" />
         <error line="316" column="1" source="standard:indent" />
+        <error line="316" column="7" source="standard:wrapping" />
         <error line="317" column="1" source="standard:indent" />
-        <error line="318" column="1" source="standard:indent" />
-        <error line="319" column="1" source="standard:indent" />
-        <error line="320" column="1" source="standard:indent" />
+        <error line="320" column="14" source="standard:function-naming" />
         <error line="321" column="1" source="standard:indent" />
         <error line="322" column="1" source="standard:indent" />
         <error line="323" column="1" source="standard:indent" />
@@ -1292,6 +1292,15 @@
         <error line="347" column="1" source="standard:indent" />
         <error line="348" column="1" source="standard:indent" />
         <error line="349" column="1" source="standard:indent" />
+        <error line="350" column="1" source="standard:indent" />
+        <error line="351" column="1" source="standard:indent" />
+        <error line="352" column="1" source="standard:indent" />
+        <error line="353" column="1" source="standard:indent" />
+        <error line="354" column="1" source="standard:indent" />
+        <error line="355" column="1" source="standard:indent" />
+        <error line="356" column="1" source="standard:indent" />
+        <error line="357" column="1" source="standard:indent" />
+        <error line="358" column="1" source="standard:indent" />
     </file>
     <file name="build/generated/compose/resourceGenerator/kotlin/commonResClass/writeopia/application/core/resources/generated/resources/Res.kt">
         <error line="3" column="1" source="standard:indent" />

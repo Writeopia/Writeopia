@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
@@ -22,7 +23,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
-import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.keyboard.KeyboardCommands
@@ -44,6 +44,8 @@ import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.common.utils.ALLOW_BACKEND
+import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import kotlinx.coroutines.Dispatchers
@@ -203,6 +205,83 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
             windowState.placement = WindowPlacement.Floating
         }
     }
+
+    val appFn = @Composable {
+        when (val databaseState = databaseStateFlow.collectAsState().value) {
+            is DatabaseCreation.Complete -> {
+                val database = databaseState.writeopiaDb
+
+                WriteopiaDbInjector.initialize(database)
+                RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
+                WriteopiaConnectionInjector.setBaseUrl(
+                    "https://writeopia.dev"
+//                        "http://localhost:8080"
+                )
+
+                val uiConfigurationInjector = UiConfigurationInjector.singleton()
+
+                val uiConfigurationViewModel = uiConfigurationInjector
+                    .provideUiConfigurationViewModel()
+
+                val colorTheme =
+                    uiConfigurationViewModel.listenForColorTheme { "disconnected_user" }
+
+                val navigationController = rememberNavController()
+
+                WrieopiaTheme(darkTheme = colorTheme.value.isDarkTheme()) {
+                    GlobalToastBox(
+                        modifier = Modifier
+                            .background(WriteopiaTheme.colorScheme.globalBackground)
+                    ) {
+                        NavHost(
+                            navController = navigationController,
+                            startDestination = if (ALLOW_BACKEND) {
+                                Destinations.START_APP.id
+                            } else {
+                                Destinations.MAIN_APP.id
+                            }
+                        ) {
+                            startScreen(navigationController, colorTheme)
+
+                            composable(route = Destinations.MAIN_APP.id) {
+                                DesktopApp(
+                                    selectionState = selectionState,
+                                    keyboardEventFlow = keyboardEventFlow.filterNotNull(),
+                                    coroutineScope = coroutineScope,
+                                    colorThemeOption = colorTheme,
+                                    selectColorTheme =
+                                        uiConfigurationViewModel::changeColorTheme,
+                                    toggleMaxScreen = topDoubleBarClick,
+                                    navigateToRegister = {
+                                        navigationController.navigate(
+                                            Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                                        )
+                                    },
+                                    navigateToResetPassword = {
+                                        navigationController.navigate(
+                                            Destinations.AUTH_RESET_PASSWORD.id
+                                        )
+                                    }
+                                )
+                            }
+
+                            authNavigation(
+                                navController = navigationController,
+                                colorThemeOption = colorTheme
+                            ) {
+                                navigationController.navigate(Destinations.MAIN_APP.id)
+                            }
+                        }
+                    }
+                }
+            }
+
+            DatabaseCreation.Loading -> {
+                ScreenLoading()
+            }
+        }
+    }
+
     Window(
         onCloseRequest = onCloseRequest,
         title = "",
@@ -224,78 +303,8 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 }
             }
 
-            when (val databaseState = databaseStateFlow.collectAsState().value) {
-                is DatabaseCreation.Complete -> {
-                    val database = databaseState.writeopiaDb
-
-                    WriteopiaDbInjector.initialize(database)
-                    RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
-                    WriteopiaConnectionInjector.setBaseUrl(
-                        "https://writeopia.dev"
-//                        "http://localhost:8080"
-                    )
-
-                    val uiConfigurationInjector = UiConfigurationInjector.singleton()
-
-                    val uiConfigurationViewModel = uiConfigurationInjector
-                        .provideUiConfigurationViewModel()
-
-                    val colorTheme =
-                        uiConfigurationViewModel.listenForColorTheme { "disconnected_user" }
-
-                    val navigationController = rememberNavController()
-
-                    WrieopiaTheme(darkTheme = colorTheme.value.isDarkTheme()) {
-                        GlobalToastBox(
-                            modifier = Modifier
-                                .background(WriteopiaTheme.colorScheme.globalBackground)
-                        ) {
-                            NavHost(
-                                navController = navigationController,
-                                startDestination = if (ALLOW_BACKEND) {
-                                    Destinations.START_APP.id
-                                } else {
-                                    Destinations.MAIN_APP.id
-                                }
-                            ) {
-                                startScreen(navigationController, colorTheme)
-
-                                composable(route = Destinations.MAIN_APP.id) {
-                                    DesktopApp(
-                                        selectionState = selectionState,
-                                        keyboardEventFlow = keyboardEventFlow.filterNotNull(),
-                                        coroutineScope = coroutineScope,
-                                        colorThemeOption = colorTheme,
-                                        selectColorTheme =
-                                            uiConfigurationViewModel::changeColorTheme,
-                                        toggleMaxScreen = topDoubleBarClick,
-                                        navigateToRegister = {
-                                            navigationController.navigate(
-                                                Destinations.AUTH_MENU_INNER_NAVIGATION.id
-                                            )
-                                        },
-                                        navigateToResetPassword = {
-                                            navigationController.navigate(
-                                                Destinations.AUTH_RESET_PASSWORD.id
-                                            )
-                                        }
-                                    )
-                                }
-
-                                authNavigation(
-                                    navController = navigationController,
-                                    colorThemeOption = colorTheme
-                                ) {
-                                    navigationController.navigate(Destinations.MAIN_APP.id)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                DatabaseCreation.Loading -> {
-                    ScreenLoading()
-                }
+            CompositionLocalProvider(LocalPlatform provides PlatformType.DESKTOP) {
+                appFn()
             }
         }
     }

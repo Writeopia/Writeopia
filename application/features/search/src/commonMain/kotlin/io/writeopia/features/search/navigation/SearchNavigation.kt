@@ -25,6 +25,7 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.features.search.DocumentsSearchScreen
 import io.writeopia.features.search.di.SearchInjection
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 
@@ -34,7 +35,6 @@ object SearchDestiny {
 
 @OptIn(ExperimentalMaterial3Api::class)
 fun NavGraphBuilder.searchNavigation(
-    isMobile: Boolean,
     searchInjection: SearchInjection,
     navigateToDocument: (String, String) -> Unit,
     navigateToFolder: (NotesNavigation) -> Unit,
@@ -56,7 +56,9 @@ fun NavGraphBuilder.searchNavigation(
             )
         }
 
-        if (isMobile) {
+        val currentPlatform = LocalPlatform.current
+
+        if (currentPlatform.isMobile()) {
             Scaffold(
                 contentWindowInsets = WindowInsets.systemBars,
                 topBar = {

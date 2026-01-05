@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SlideInBox
 import io.writeopia.ui.icons.WrSdkIcons
@@ -95,15 +96,19 @@ internal fun NotesSelectionMenu(
                     tint = tintColor
                 )
 
-                Icon(
-                    modifier = Modifier
-                        .clickable(onClick = onSummary)
-                        .weight(1F)
-                        .padding(vertical = 25.dp),
-                    imageVector = WrSdkIcons.ai,
-                    contentDescription = "AI Summary",
-                    tint = tintColor
-                )
+                val currentPlatform = LocalPlatform.current
+
+                if (currentPlatform.isDesktop()) {
+                    Icon(
+                        modifier = Modifier
+                            .clickable(onClick = onSummary)
+                            .weight(1F)
+                            .padding(vertical = 25.dp),
+                        imageVector = WrSdkIcons.ai,
+                        contentDescription = "AI Summary",
+                        tint = tintColor
+                    )
+                }
 
                 Icon(
                     modifier = Modifier

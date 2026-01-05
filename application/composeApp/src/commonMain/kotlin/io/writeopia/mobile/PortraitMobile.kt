@@ -50,7 +50,6 @@ fun PortraitMobile(
         Box(modifier = modifier) {
             Navigation(
                 isDarkTheme = colorTheme.isDarkTheme(),
-                isMobile = true,
                 startDestination = startDestination,
                 notesMenuInjection = notesMenuInjection,
                 navController = navController,

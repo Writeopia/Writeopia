@@ -26,7 +26,7 @@ val LocalDragSelectionInfo = compositionLocalOf { DragSelectionInfo() }
 @Composable
 fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScope.() -> Unit) {
     var initialPosition by remember { mutableStateOf(Offset.Zero) }
-    var thisDragAmount by remember { mutableStateOf(Offset.Zero) }
+    var finalPosition by remember { mutableStateOf(Offset.Zero) }
     var state by remember { mutableStateOf(DragSelectionInfo(isDragging = false)) }
 
     CompositionLocalProvider(LocalDragSelectionInfo provides state) {
@@ -40,16 +40,16 @@ fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScop
                             selectionBox = SelectionBox(x = offset.x, y = offset.y)
                         )
                     },
-                    onDrag = { _, dragAmount ->
-                        thisDragAmount += dragAmount
+                    onDrag = { pointerChange, dragAmount ->
+                        finalPosition = pointerChange.position
                     },
                     onDragEnd = {
                         state = state.copy(isDragging = false)
-                        thisDragAmount = Offset.Zero
+                        finalPosition = Offset.Zero
                     },
                     onDragCancel = {
                         state = state.copy(isDragging = false)
-                        thisDragAmount = Offset.Zero
+                        finalPosition = Offset.Zero
                     },
                 )
             }
@@ -59,16 +59,16 @@ fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScop
             if (state.isDragging) {
                 val shape = MaterialTheme.shapes.medium
 
-                val (x, width) = if (thisDragAmount.x > 0) {
-                    initialPosition.x to thisDragAmount.x
+                val (x, width) = if (initialPosition.x < finalPosition.x) {
+                    initialPosition.x to finalPosition.x - initialPosition.x
                 } else {
-                    (initialPosition.x + thisDragAmount.x) to -thisDragAmount.x
+                    finalPosition.x to initialPosition.x - finalPosition.x
                 }
 
-                val (y, height) = if (thisDragAmount.y > 0) {
-                    initialPosition.y to thisDragAmount.y
+                val (y, height) = if (initialPosition.y < finalPosition.y) {
+                    initialPosition.y to finalPosition.y - initialPosition.y
                 } else {
-                    (initialPosition.y + thisDragAmount.y) to -thisDragAmount.y
+                    finalPosition.y to initialPosition.y - finalPosition.y
                 }
 
                 state = state.copy(
