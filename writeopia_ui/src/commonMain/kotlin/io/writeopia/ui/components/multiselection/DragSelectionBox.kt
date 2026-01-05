@@ -41,7 +41,7 @@ fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScop
                         )
                     },
                     onDrag = { pointerChange, dragAmount ->
-                        finalPosition = pointerChange.position
+                        finalPosition = pointerChange.position / 2F
                     },
                     onDragEnd = {
                         state = state.copy(isDragging = false)
