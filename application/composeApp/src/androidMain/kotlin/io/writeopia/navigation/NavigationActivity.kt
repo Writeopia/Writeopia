@@ -17,9 +17,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.BuildConfig
-import io.writeopia.auth.navigation.authNavigation
-import io.writeopia.common.utils.Destinations
-import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.di.SharedPreferencesInjector
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.MobileSearchInjection
@@ -27,7 +24,6 @@ import io.writeopia.mobile.AppMobile
 import io.writeopia.model.isDarkTheme
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
-import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.persistence.room.DatabaseConfigAndroid
 import io.writeopia.persistence.room.WriteopiaApplicationDatabase
 import io.writeopia.persistence.room.injection.AppRoomDaosInjection
@@ -48,7 +44,6 @@ class NavigationActivity : ComponentActivity() {
             NavigationGraph(
                 application = application,
                 window = window,
-                startDestination = Destinations.START_APP.id
             )
         }
     }
@@ -69,7 +64,6 @@ fun NavigationGraph(
             application
         )
     ),
-    startDestination: String
 ) {
     SharedPreferencesInjector.init(sharedPreferences)
     WriteopiaRoomInjector.init(database)
@@ -98,18 +92,12 @@ fun NavigationGraph(
         .isAppearanceLightStatusBars = !color.isDarkTheme()
 
     AppMobile(
-        startDestination = startDestination,
-        navController = navController,
-        searchInjector = searchInjector,
-        uiConfigViewModel = uiConfigViewModel,
-        notesMenuInjection = notesMenuInjection,
-        editorInjector = editorInjector,
-        navigationViewModel = navigationViewModel
-    ) {
-        startScreen(navController, colorThemeState)
-
-        authNavigation(navController, colorThemeState) {
-            navController.navigateToNotes(NotesNavigation.Root)
-        }
-    }
+        navigationViewModel,
+        editorInjector,
+        notesMenuInjection,
+        searchInjector,
+        uiConfigViewModel,
+        colorThemeState,
+        navController
+    )
 }

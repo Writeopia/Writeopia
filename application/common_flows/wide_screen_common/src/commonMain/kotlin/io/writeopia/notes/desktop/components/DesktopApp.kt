@@ -44,6 +44,7 @@ import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNote
+import io.writeopia.navigation.notes.navigateToNoteMobile
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
@@ -159,7 +160,7 @@ fun DesktopApp(
                             val navigation = NotesNavigation.Folder(id)
                             navigationController.navigateToNotes(navigation)
                         },
-                        navigateToEditDocument = navigationController::navigateToNote,
+                        navigateToEditDocument = navigationController::navigateToNoteMobile,
                         moveRequest = globalShellViewModel::moveToFolder,
                         expandFolder = globalShellViewModel::expandFolder,
                         searchClick = globalShellViewModel::showSearch,
@@ -269,7 +270,7 @@ fun DesktopApp(
                                     searchResults = searchViewModel.queryResults,
                                     onSearchType = searchViewModel::onSearchType,
                                     onDismissRequest = globalShellViewModel::hideSearch,
-                                    documentClick = navigationController::navigateToNote,
+                                    documentClick = navigationController::navigateToNoteMobile,
                                     onFolderClick = navigationController::navigateToFolder
                                 )
                             }
