@@ -80,7 +80,8 @@ fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScop
                 Box(
                     modifier = Modifier.offset(
                         x = density.run { x.toDp() },
-                        y = density.run { y.toDp() })
+                        y = density.run { y.toDp() }
+                    )
                         .size(
                             width = density.run { width.toDp() },
                             height = density.run { height.toDp() }
