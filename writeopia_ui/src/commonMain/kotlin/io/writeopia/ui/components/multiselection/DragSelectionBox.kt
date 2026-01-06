@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 
 val LocalDragSelectionInfo = compositionLocalOf { DragSelectionInfo() }
@@ -28,6 +29,7 @@ fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScop
     var initialPosition by remember { mutableStateOf(Offset.Zero) }
     var finalPosition by remember { mutableStateOf(Offset.Zero) }
     var state by remember { mutableStateOf(DragSelectionInfo(isDragging = false)) }
+    val density = LocalDensity.current
 
     CompositionLocalProvider(LocalDragSelectionInfo provides state) {
         Box(
@@ -76,8 +78,13 @@ fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScop
                 )
 
                 Box(
-                    modifier = Modifier.offset(x = x.dp, y = y.dp)
-                        .size(width = width.dp, height = height.dp)
+                    modifier = Modifier.offset(
+                        x = density.run { x.toDp() },
+                        y = density.run { y.toDp() })
+                        .size(
+                            width = density.run { width.toDp() },
+                            height = density.run { height.toDp() }
+                        )
                         .border(width = 1.dp, color = dragBoxColor, shape = shape)
                         .background(
                             color = dragBoxColor.copy(alpha = 0.2F),
