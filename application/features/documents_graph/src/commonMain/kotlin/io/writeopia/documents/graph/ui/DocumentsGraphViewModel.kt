@@ -2,6 +2,7 @@ package io.writeopia.documents.graph.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.documents.graph.ItemData
 import io.writeopia.documents.graph.extensions.toGraph
 import io.writeopia.documents.graph.repository.GraphRepository
@@ -25,7 +26,7 @@ import kotlin.math.sqrt
 
 class DocumentsGraphViewModel(
     private val graphRepository: GraphRepository,
-    private val userRepository: UserRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _selectedOrigin = MutableStateFlow("root")
@@ -43,7 +44,10 @@ class DocumentsGraphViewModel(
     private val graphState: StateFlow<Graph> by lazy {
         _selectedOrigin.map { origin ->
             val result =
-                graphRepository.loadAllDocumentsAsAdjacencyList(userRepository.getUser().id)
+                authRepository.getWorkspace()
+                    ?.id
+                    ?.let { graphRepository.loadAllDocumentsAsAdjacencyList(it) }
+                    ?: emptyMap()
 
             val nodes = result.values.flatten()
             val isSmall = nodes.size <= 12
