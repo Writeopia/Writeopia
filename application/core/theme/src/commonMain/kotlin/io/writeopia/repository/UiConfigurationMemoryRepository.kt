@@ -11,7 +11,7 @@ class UiConfigurationMemoryRepository : UiConfigurationRepository {
         UiConfiguration(
             userId = "disconnected_user",
             colorThemeOption = ColorThemeOption.SYSTEM,
-            sideMenuWidth = 280F
+            sideMenuWidth = 500F
         )
     )
 
