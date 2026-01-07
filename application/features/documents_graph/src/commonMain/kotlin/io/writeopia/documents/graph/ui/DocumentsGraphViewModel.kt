@@ -9,7 +9,6 @@ import io.writeopia.documents.graph.repository.GraphRepository
 import io.writeopia.forcegraph.model.Graph
 import io.writeopia.forcegraph.Link
 import io.writeopia.forcegraph.Node
-import io.writeopia.sdk.repository.UserRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
