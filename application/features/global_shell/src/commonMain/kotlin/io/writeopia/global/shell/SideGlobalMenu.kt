@@ -6,7 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dtos.MenuItemUi
-import io.writeopia.commonui.folders.DocumentList
+import io.writeopia.commonui.folders.documentList
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -84,82 +85,95 @@ fun SideGlobalMenu(
             if (showContent != ShowContent.HIDE) {
                 val menuItems by foldersState.collectAsState()
 
-                Column(
+                LazyColumn(
                     horizontalAlignment = if (showContent == ShowContent.ICONS) {
                         Alignment.CenterHorizontally
                     } else {
                         Alignment.Start
-                    }
+                    },
+                    contentPadding = PaddingValues(bottom = 40.dp)
                 ) {
-                    Spacer(
-                        modifier = Modifier.height(48.dp).fillMaxWidth()
-                            .combinedClickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onDoubleClick = toggleMaxScreen,
-                                onClick = {}
-                            )
-                    )
+                    item {
+                        Spacer(
+                            modifier = Modifier.height(48.dp).fillMaxWidth()
+                                .combinedClickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onDoubleClick = toggleMaxScreen,
+                                    onClick = {}
+                                )
+                        )
+                    }
 
-                    SettingsOptions(
-                        showContent = showContent,
-                        iconVector = WrIcons.search,
-                        contentDescription = WrStrings.search(),
-                        text = WrStrings.search(),
-                        click = searchClick
-                    )
+                    item {
+                        SettingsOptions(
+                            showContent = showContent,
+                            iconVector = WrIcons.search,
+                            contentDescription = WrStrings.search(),
+                            text = WrStrings.search(),
+                            click = searchClick
+                        )
+                    }
 
-                    SettingsOptions(
-                        showContent = showContent,
-                        iconVector = WrIcons.home,
-                        contentDescription = WrStrings.home(),
-                        text = WrStrings.home(),
-                        click = homeClick
-                    )
+                    item {
+                        SettingsOptions(
+                            showContent = showContent,
+                            iconVector = WrIcons.home,
+                            contentDescription = WrStrings.home(),
+                            text = WrStrings.home(),
+                            click = homeClick
+                        )
+                    }
 
-                    SettingsOptions(
-                        showContent = showContent,
-                        iconVector = WrIcons.favorites,
-                        contentDescription = WrStrings.favorites(),
-                        text = WrStrings.favorites(),
-                        click = favoritesClick
-                    )
+                    item {
+                        SettingsOptions(
+                            showContent = showContent,
+                            iconVector = WrIcons.favorites,
+                            contentDescription = WrStrings.favorites(),
+                            text = WrStrings.favorites(),
+                            click = favoritesClick
+                        )
+                    }
 
-                    SettingsOptions(
-                        showContent = showContent,
-                        iconVector = WrIcons.settings,
-                        contentDescription = WrStrings.settings(),
-                        text = WrStrings.settings(),
-                        click = settingsClick,
-                    )
+                    item {
+                        SettingsOptions(
+                            showContent = showContent,
+                            iconVector = WrIcons.settings,
+                            contentDescription = WrStrings.settings(),
+                            text = WrStrings.settings(),
+                            click = settingsClick,
+                        )
+                    }
 
                     if (showContent == ShowContent.FULL) {
-                        title(
-                            text = WrStrings.folder(),
-                            trailingContent = {
-                                Icon(
-                                    imageVector = WrIcons.target,
-                                    contentDescription = "Select opened file",
-                                    tint = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.size(30.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .clickable(onClick = highlightContent)
-                                        .padding(6.dp)
-                                )
+                        item {
+                            title(
+                                text = WrStrings.folder(),
+                                trailingContent = {
+                                    Icon(
+                                        imageVector = WrIcons.target,
+                                        contentDescription = "Select opened file",
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.size(30.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable(onClick = highlightContent)
+                                            .padding(6.dp)
+                                    )
 
-                                Icon(
-                                    imageVector = WrIcons.addCircle,
-                                    contentDescription = "Add Folder",
-                                    tint = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.size(30.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .clickable(onClick = addFolder)
-                                        .padding(6.dp)
-                                )
-                            }
-                        )
+                                    Icon(
+                                        imageVector = WrIcons.addCircle,
+                                        contentDescription = "Add Folder",
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.size(30.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable(onClick = addFolder)
+                                            .padding(6.dp)
+                                    )
+                                }
+                            )
+                        }
 
-                        DocumentList(
+                        documentList(
                             menuItems = menuItems,
                             editFolder = editFolder,
                             selectedFolder = navigateToFolder,
