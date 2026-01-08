@@ -345,12 +345,12 @@ class GlobalShellKmpViewModel(
     override fun toggleSideMenu() {
         val width = showSideMenuState.value
 
-        sideMenuWidthState.value = if (width.dp < 5.dp) 280F else 0F
+        sideMenuWidthState.value = if (width.dp < 5.dp) 500F else 0F
         saveMenuWidth()
     }
 
     override fun saveMenuWidth() {
-        val width = sideMenuWidthState.value ?: 280F
+        val width = sideMenuWidthState.value ?: 500F
 
         viewModelScope.launch(Dispatchers.Default) {
             val uiConfiguration =

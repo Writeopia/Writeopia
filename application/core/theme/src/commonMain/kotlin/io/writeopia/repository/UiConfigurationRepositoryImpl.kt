@@ -32,7 +32,7 @@ class UiConfigurationRepositoryImpl(
                 UiConfiguration(
                     userId = userId,
                     colorThemeOption = ColorThemeOption.SYSTEM,
-                    sideMenuWidth = 280F
+                    sideMenuWidth = 500F
                 ).let(change)
             )
         }

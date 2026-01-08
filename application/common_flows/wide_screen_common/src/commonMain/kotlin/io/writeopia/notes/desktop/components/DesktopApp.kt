@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -127,11 +128,12 @@ fun DesktopApp(
             DraggableScreen {
                 Row(Modifier.background(globalBackground)) {
                     val sideMenuWidth by globalShellViewModel.showSideMenuState.collectAsState()
+                    val density = LocalDensity.current
 
                     SideGlobalMenu(
                         modifier = Modifier.fillMaxHeight(),
                         foldersState = globalShellViewModel.sideMenuItems,
-                        width = sideMenuWidth.dp,
+                        width = density.run { sideMenuWidth.toDp() },
                         homeClick = {
                             val navType = navigationController.currentBackStackEntry
                                 ?.savedStateHandle

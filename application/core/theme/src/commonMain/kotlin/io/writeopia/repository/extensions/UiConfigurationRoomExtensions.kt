@@ -14,6 +14,6 @@ fun UiConfiguration.toRoomEntity() = UiConfigurationEntity(
 fun UiConfigurationEntity.toModel() = UiConfiguration(
     userId = userId,
     colorThemeOption = ColorThemeOption.fromText(colorThemeOption) ?: ColorThemeOption.SYSTEM,
-    sideMenuWidth = 280F,
+    sideMenuWidth = 500F,
     font = Font.fromLabel(this.font)
 )
