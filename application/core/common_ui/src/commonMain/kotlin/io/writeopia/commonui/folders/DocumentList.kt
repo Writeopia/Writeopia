@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -42,8 +44,7 @@ import io.writeopia.ui.draganddrop.target.DragRowTarget
 import io.writeopia.ui.draganddrop.target.DropTarget
 import io.writeopia.ui.icons.WrSdkIcons
 
-@Composable
-fun DocumentList(
+fun LazyListScope.documentList(
     menuItems: List<MenuItemUi>,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
     selectedFolder: (String) -> Unit,
@@ -52,40 +53,38 @@ fun DocumentList(
     expandFolder: (String) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
 ) {
-    LazyColumn(Modifier.fillMaxWidth()) {
-        itemsIndexed(
-            menuItems,
-            key = { _, item -> item.id }
-        ) { i, item ->
-            val itemModifier = Modifier.animateItem()
+    itemsIndexed(
+        menuItems,
+        key = { _, item -> item.id }
+    ) { i, item ->
+        val itemModifier = Modifier.animateItem()
 
-            when (item) {
-                is MenuItemUi.DocumentUi -> {
-                    DocumentItem(
-                        item,
-                        position = i,
-                        selectedDocument,
-                        changeIcon = { id, icon, tint ->
-                            changeIcon(id, icon, tint, IconChange.DOCUMENT)
-                        },
-                        modifier = itemModifier
-                    )
-                }
+        when (item) {
+            is MenuItemUi.DocumentUi -> {
+                DocumentItem(
+                    item,
+                    position = i,
+                    selectedDocument,
+                    changeIcon = { id, icon, tint ->
+                        changeIcon(id, icon, tint, IconChange.DOCUMENT)
+                    },
+                    modifier = itemModifier
+                )
+            }
 
-                is MenuItemUi.FolderUi -> {
-                    FolderItem(
-                        item,
-                        position = i,
-                        editFolder,
-                        selectedFolder,
-                        moveRequest,
-                        expandFolder = expandFolder,
-                        changeIcon = { id, icon, tint ->
-                            changeIcon(id, icon, tint, IconChange.FOLDER)
-                        },
-                        modifier = itemModifier
-                    )
-                }
+            is MenuItemUi.FolderUi -> {
+                FolderItem(
+                    item,
+                    position = i,
+                    editFolder,
+                    selectedFolder,
+                    moveRequest,
+                    expandFolder = expandFolder,
+                    changeIcon = { id, icon, tint ->
+                        changeIcon(id, icon, tint, IconChange.FOLDER)
+                    },
+                    modifier = itemModifier
+                )
             }
         }
     }
