@@ -16,6 +16,7 @@ import io.writeopia.common.utils.download.DownloadParser
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.common.utils.toList
+import io.writeopia.commonui.buttons.sideMenuDefaultWidth
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.folders.repository.folder.NotesUseCase
@@ -345,12 +346,12 @@ class GlobalShellKmpViewModel(
     override fun toggleSideMenu() {
         val width = showSideMenuState.value
 
-        sideMenuWidthState.value = if (width.dp < 5.dp) 500F else 0F
+        sideMenuWidthState.value = if (width.dp < 5.dp) sideMenuDefaultWidth() else 0F
         saveMenuWidth()
     }
 
     override fun saveMenuWidth() {
-        val width = sideMenuWidthState.value ?: 500F
+        val width = sideMenuWidthState.value ?: sideMenuDefaultWidth()
 
         viewModelScope.launch(Dispatchers.Default) {
             val uiConfiguration =
