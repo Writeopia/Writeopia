@@ -335,7 +335,7 @@ fun Routing.documentsRoute(
             runIfMember(userId, workspaceId, writeopiaDb, debug) {
                 val multipart = call.receiveMultipart()
 
-                val imageUrl = imageStorageService.uploadImage(multipart, userId)
+                val imageUrl = imageStorageService.uploadImage(multipart, userId, debug)
 
                 if (imageUrl != null) {
                     call.respond(HttpStatusCode.Created, ImageUploadRequest(imageUrl))
