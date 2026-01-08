@@ -124,6 +124,10 @@ class SqlDelightDocumentRepository(
         documentSqlDao.insertStoryStep(storyStep, position.toLong(), documentId)
     }
 
+    override suspend fun updateStoryStepUrl(url: String, id: String) {
+        documentSqlDao.updateStoryStepUrl(url, id)
+    }
+
     override suspend fun deleteDocument(document: Document) {
         documentSqlDao.deleteDocumentById(document.id)
 
@@ -179,6 +183,9 @@ class SqlDelightDocumentRepository(
             documentSqlDao.loadDocumentByParentId(parentId, workspaceId)
         }
     }
+
+    override suspend fun queryUnsyncedImagesSteps(): List<StoryStep> =
+        documentSqlDao.queryUnsyncedImagesSteps()
 
     private fun refreshDocument(document: Document) {
         val documents = _documentByParentState.value

@@ -63,6 +63,8 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Int, documentId: String)
 
+    suspend fun updateStoryStepUrl(url: String, id: String)
+
     suspend fun deleteDocument(document: Document)
 
     suspend fun deleteDocumentByIds(ids: Set<String>)
@@ -88,4 +90,6 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
     suspend fun moveToFolder(documentId: String, parentId: String)
 
     suspend fun refreshDocuments()
+
+    suspend fun queryUnsyncedImagesSteps(): List<StoryStep>
 }

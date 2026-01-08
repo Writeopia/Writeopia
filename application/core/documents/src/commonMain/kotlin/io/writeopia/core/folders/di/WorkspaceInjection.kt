@@ -3,6 +3,7 @@ package io.writeopia.core.folders.di
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.sync.DocumentConflictHandler
+import io.writeopia.core.folders.sync.ImageSync
 import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
@@ -31,6 +32,11 @@ class WorkspaceInjection private constructor(
                 folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
                 authCoreInjection.provideAuthRepository()
             ),
+            imageSync = ImageSync(
+                appConnectionInjection.provideHttpClient(),
+                connectionInjector.baseUrl(),
+                repositoryInjection.provideDocumentRepository()
+            )
         )
     }
 

@@ -166,6 +166,10 @@ class RoomDocumentRepository(
         storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(position, documentId))
     }
 
+    override suspend fun updateStoryStepUrl(url: String, id: String) {
+        storyUnitEntityDao?.updateUrl(url, id)
+    }
+
     override suspend fun updateStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
         storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(position, documentId))
     }
@@ -227,6 +231,11 @@ class RoomDocumentRepository(
 
     override suspend fun refreshDocuments() {
     }
+
+    override suspend fun queryUnsyncedImagesSteps(): List<StoryStep> =
+        storyUnitEntityDao?.getUnsyncedSteps()
+            ?.map { step -> step.toModel() }
+            ?: emptyList()
 
     override suspend fun stopListeningForFoldersByParentId(
         parentId: String,

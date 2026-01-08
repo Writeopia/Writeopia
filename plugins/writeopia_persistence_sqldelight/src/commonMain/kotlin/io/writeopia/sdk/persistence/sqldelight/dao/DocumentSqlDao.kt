@@ -17,6 +17,7 @@ import io.writeopia.sdk.models.extensions.sortWithOrderBy
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.persistence.sqldelight.toLong
 import io.writeopia.sdk.sql.DocumentEntityQueries
+import io.writeopia.sdk.sql.StoryStepEntity
 import io.writeopia.sdk.sql.StoryStepEntityQueries
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -806,5 +807,49 @@ class DocumentSqlDao(
             Clock.System.now().toEpochMilliseconds(),
             documentId
         )
+    }
+
+    suspend fun updateStoryStepUrl(url: String, id: String) {
+        storyStepQueries?.updateUrl(url, id)
+    }
+
+    suspend fun queryUnsyncedImagesSteps(): List<StoryStep> {
+        return storyStepQueries?.selectUnSyncedSteps()
+            ?.awaitAsList()
+            ?.map { innerContent ->
+                val storyStep = StoryStep(
+                    id = innerContent.id,
+                    localId = innerContent.local_id,
+                    type = StoryTypes.fromNumber(innerContent.type.toInt()).type,
+                    parentId = innerContent.parent_id,
+                    url = innerContent.url,
+                    path = innerContent.path,
+                    text = innerContent.text,
+                    checked = innerContent.checked == 1L,
+//                                steps = emptyList(), // Todo: Fix!
+                    decoration = Decoration(
+                        backgroundColor = innerContent.background_color?.toInt(),
+                    ),
+                    tags = innerContent.tags
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .mapNotNull(TagInfo.Companion::fromString)
+                        .toSet(),
+                    spans = innerContent.spans
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .map(SpanInfo::fromString)
+                        .toSet(),
+                    documentLink = innerContent.link_to_document?.let { documentId ->
+                        val title = documentQueries?.selectTitleByDocumentId(documentId)
+                            ?.awaitAsOneOrNull()
+
+                        DocumentLink(documentId, title)
+                    }
+                )
+
+                storyStep
+            }
+            ?: emptyList()
     }
 }
