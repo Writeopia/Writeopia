@@ -4,6 +4,7 @@ package io.writeopia.api.documents.routing
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.authenticate
+import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
@@ -14,17 +15,20 @@ import io.writeopia.api.documents.documents.DocumentsService
 import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
 import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
 import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
-import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
+import io.writeopia.backend.models.ImageStorageService
+import io.writeopia.buckets.GcpBucketImageStorageService
 import io.writeopia.connection.ResultData
 import io.writeopia.connection.map
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
+import io.writeopia.sdk.serialization.request.ImageUploadRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
-import io.writeopia.sdk.serialization.request.WorkspaceDiffResponse
+import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -35,7 +39,8 @@ import kotlin.time.Instant
 fun Routing.documentsRoute(
     writeopiaDb: WriteopiaDbBackend,
     useAi: Boolean,
-    debug: Boolean = false
+    debug: Boolean = false,
+    imageStorageService: ImageStorageService = GcpBucketImageStorageService
 ) {
     authenticate("auth-jwt", optional = debug) {
         get("/api/workspace/{workspaceId}/document/{id}") {
@@ -307,7 +312,8 @@ fun Routing.documentsRoute(
 
                     call.respond(
                         status = HttpStatusCode.OK,
-                        message = WorkspaceDiffResponse(
+                        message = Workspac
+                            eDiffResponse(
                             folders.map { it.toApi() },
                             documents.map { it.toApi() }
                         )
@@ -317,6 +323,25 @@ fun Routing.documentsRoute(
                         status = HttpStatusCode.InternalServerError,
                         message = "${e.message}"
                     )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post("/api/workspace/{workspaceId}/document/upload-image") {
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                val multipart = call.receiveMultipart()
+
+                val imageUrl = imageStorageService.uploadImage(multipart, userId)
+
+                if (imageUrl != null) {
+                    call.respond(HttpStatusCode.Created, ImageUploadRequest(imageUrl))
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, "No image found in request")
                 }
             }
         }

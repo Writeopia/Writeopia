@@ -1,4 +1,4 @@
-package io.writeopia.sdk.serialization.request
+package io.writeopia.sdk.serialization.response
 
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.data.FolderApi
