@@ -20,6 +20,7 @@ class WorkspaceSync(
     private val authRepository: AuthRepository,
     private val documentsApi: DocumentsApi,
     private val documentConflictHandler: DocumentConflictHandler,
+    private val imageSync: ImageSync,
     private val minSyncInternal: Duration = 3.seconds
 ) {
     private var lastSuccessfulSync: Instant = Instant.DISTANT_PAST
@@ -73,10 +74,14 @@ class WorkspaceSync(
             println("sending ${documentsNotSent.size} documents")
             val resultSendDocuments =
                 documentsApi.sendDocuments(documentsNotSent, workspaceId, authToken)
+
             println("sending ${foldersNotSent.size} folders")
             val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId, authToken)
 
-            if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
+            if (
+                resultSendDocuments is ResultData.Complete &&
+                resultSendFolders is ResultData.Complete
+            ) {
                 println("documents sent")
                 val now = Clock.System.now()
                 // If everything ran accordingly, update the sync time of the folder.
@@ -89,6 +94,8 @@ class WorkspaceSync(
                 folderRepository.refreshFolders()
 
                 lastSuccessfulSync = now
+
+                imageSync.syncAllImages(workspaceId = workspaceId, token = authToken)
 
                 return ResultData.Complete(Unit)
             } else {

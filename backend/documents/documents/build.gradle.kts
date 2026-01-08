@@ -25,6 +25,8 @@ dependencies {
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
     implementation(project(":backend:core:auth"))
+    implementation(project(":backend:core:models"))
+    implementation(project(":backend:core:buckets"))
 
     //
 

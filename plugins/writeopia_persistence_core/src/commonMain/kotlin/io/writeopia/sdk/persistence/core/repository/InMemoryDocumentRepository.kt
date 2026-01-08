@@ -93,6 +93,9 @@ class InMemoryDocumentRepository : DocumentRepository {
         }
     }
 
+    override suspend fun updateStoryStepUrl(url: String, id: String) {
+    }
+
     override suspend fun deleteDocument(document: Document) {
         documentsMap.remove(document.id)
     }
@@ -142,6 +145,8 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun refreshDocuments() {
         _documentsMapState.value = documentsMap
     }
+
+    override suspend fun queryUnsyncedImagesSteps(): List<StoryStep> = emptyList()
 
     override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
     }

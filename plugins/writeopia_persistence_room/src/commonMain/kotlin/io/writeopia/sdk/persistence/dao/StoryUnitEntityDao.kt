@@ -34,4 +34,14 @@ interface StoryUnitEntityDao {
             "ORDER BY position"
     )
     suspend fun queryInnerSteps(parentId: String): List<StoryStepEntity>
+
+    @Query("UPDATE $STORY_UNIT_ENTITY  SET url = :url WHERE id = :id")
+    suspend fun updateUrl(id: String, url: String?)
+
+    @Query(
+        "SELECT * FROM $STORY_UNIT_ENTITY " +
+            "WHERE path IS NOT NULL AND path != '' " +
+            "AND (url IS NULL OR url = '')"
+    )
+    suspend fun getUnsyncedSteps(): List<StoryStepEntity>
 }

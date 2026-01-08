@@ -4,6 +4,7 @@ composeShimmer = "1.0.5"
 espressoCore = "3.7.0"
 firebaseAdmin = "9.2.0"
 firebaseAuthProvider = "1.5.0"
+googleCloudStorage = "2.61.0"
 junit = "1.3.0"
 kotlinxCoroutines = "1.10.2"
 kotlinxCoroutinesSwing = "1.10.2"
@@ -50,6 +51,7 @@ coil-video = { module = "io.coil-kt.coil3:coil-video", version.ref = "coilVersio
 compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.ref = "composeShimmer" }
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebaseAdmin" }
 firebase-auth-provider = { module = "com.kborowy:firebase-auth-provider", version.ref = "firebaseAuthProvider" }
+google-cloud-storage = { module = "com.google.cloud:google-cloud-storage", version.ref = "googleCloudStorage" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }

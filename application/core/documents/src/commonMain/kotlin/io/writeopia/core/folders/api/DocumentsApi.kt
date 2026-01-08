@@ -21,7 +21,7 @@ import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
-import io.writeopia.sdk.serialization.request.WorkspaceDiffResponse
+import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
