@@ -6,11 +6,14 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: writeopia
+      # Explicitly set the data path for the new structure
+      PGDATA: /var/lib/postgresql/data/pgdata 
       JWT_SECRET: dont_use_this
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Change the destination to the parent directory
+      - postgres_data:/var/lib/postgresql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     restart: unless-stopped
 
