@@ -100,6 +100,14 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                     writeopiaDb
                 )
 
+                if (!debugMode) {
+                    val verificationToken = java.util.UUID.randomUUID().toString()
+                    writeopiaDb.saveVerificationToken(request.email, verificationToken)
+
+                    // 3. Send Email (Placeholder for your Cloud Function or Email Provider)
+                    EmailService.sendVerificationEmail(request.email, verificationToken)
+                }
+
                 if (created) {
                     call.respond(
                         HttpStatusCode.Created,
@@ -170,6 +178,20 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             val username = principal!!.payload.getClaim("username").asString()
             val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
             call.respondText("Hello, $username! Token is expired at $expiresAt ms.")
+        }
+    }
+
+    get("/api/verify") {
+        val token = call.parameters["token"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+        val email = writeopiaDb.getEmailByToken(token)
+        
+        if (email != null) {
+            writeopiaDb.enableUser(email)
+            writeopiaDb.deleteVerificationToken(token)
+
+            call.respondText("Email verified successfully! You can now log in.")
+        } else {
+            call.respond(HttpStatusCode.Unauthorized, "Invalid or expired token.")
         }
     }
 }
