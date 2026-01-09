@@ -123,12 +123,12 @@ fun DesktopApp(
     }
 
     WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+        val density = LocalDensity.current
         val globalBackground = WriteopiaTheme.colorScheme.globalBackground
         DragSelectionBox(modifier = modifier) {
             DraggableScreen {
                 Row(Modifier.background(globalBackground)) {
                     val sideMenuWidth by globalShellViewModel.showSideMenuState.collectAsState()
-                    val density = LocalDensity.current
 
                     SideGlobalMenu(
                         modifier = Modifier.fillMaxHeight(),
