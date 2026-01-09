@@ -37,6 +37,7 @@ import io.writeopia.ui.backstack.BackstackHandler
 import io.writeopia.ui.backstack.BackstackInform
 import io.writeopia.ui.backstack.SnapshotBackstackManager
 import io.writeopia.ui.edition.TextCommandHandler
+import io.writeopia.ui.extensions.toSelectionMetadata
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.model.DrawState
 import io.writeopia.ui.model.DrawStory
@@ -257,14 +258,14 @@ class WriteopiaStateManager(
     private var initialized = false
 
     val selectionMetadataState: Flow<Set<SelectionMetadata>> = _currentStory.map { storyState ->
-        val selection = storyState.selection.position
-        val step = storyState.stories[selection]
+        val selectionPos = storyState.selection.position
+        val (selectStart, selectEnd) = (storyState.selection.start to storyState.selection.end)
+        val step = storyState.stories[selectionPos]
 
-        if (step == null) {
-            emptySet()
-        } else {
+        val result = mutableSetOf<SelectionMetadata>()
+
+        if (step != null) {
             val fromType = SelectionMetadata.fromStoryType(step.type.number)
-            val result = mutableSetOf<SelectionMetadata>()
 
             if (fromType != null) {
                 result.add(fromType)
@@ -292,8 +293,14 @@ class WriteopiaStateManager(
                 }
             }
 
-            result
+            step.spans.filter { span ->
+                span.isInside(selectStart) || span.isInside(selectEnd)
+            }.forEach { span ->
+                span.span.toSelectionMetadata()?.let(result::add)
+            }
         }
+
+        result
     }
 
     val isOnSelection: Boolean

@@ -39,6 +39,7 @@ fun NavGraphBuilder.searchNavigation(
     navigateToDocument: (String, String) -> Unit,
     navigateToFolder: (NotesNavigation) -> Unit,
     navigationClick: () -> Unit,
+    navigationBar: @Composable () -> Unit,
 ) {
     composable(
         route = SearchDestiny.search(),
@@ -87,7 +88,8 @@ fun NavGraphBuilder.searchNavigation(
                             }
                         }
                     )
-                }
+                },
+                bottomBar = navigationBar
             ) { paddingValues ->
                 screen(Modifier.padding(paddingValues))
             }

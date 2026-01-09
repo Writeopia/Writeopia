@@ -6,6 +6,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import io.writeopia.sdk.models.span.Span
+import io.writeopia.ui.model.SelectionMetadata
 
 fun Span.toSpanStyle(isDarkTheme: Boolean): SpanStyle =
     when (this) {
@@ -32,4 +33,18 @@ fun Span.toSpanStyle(isDarkTheme: Boolean): SpanStyle =
 
         Span.NONE -> SpanStyle()
         Span.LINK -> SpanStyle()
+    }
+
+fun Span.toSelectionMetadata(): SelectionMetadata? =
+    when (this) {
+        Span.BOLD -> SelectionMetadata.BOLD
+        Span.ITALIC -> SelectionMetadata.ITALIC
+        Span.UNDERLINE -> SelectionMetadata.UNDERLINE
+        // The following Span types do not have direct equivalents
+        // in the current SelectionMetadata enum
+        Span.HIGHLIGHT_YELLOW,
+        Span.HIGHLIGHT_GREEN,
+        Span.HIGHLIGHT_RED,
+        Span.LINK,
+        Span.NONE -> null
     }

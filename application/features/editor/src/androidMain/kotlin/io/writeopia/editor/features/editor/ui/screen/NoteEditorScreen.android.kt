@@ -66,6 +66,8 @@ import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.ui.components.EditionScreen
 import io.writeopia.ui.drawer.factory.DefaultDrawersAndroid
+import io.writeopia.ui.model.SelectionMetadata
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 const val NAVIGATE_BACK_TEST_TAG = "NoteEditorScreenNavigateBack"
@@ -145,6 +147,7 @@ internal fun NoteEditorScreen(
 
                 BottomScreen(
                     noteEditorViewModel.isEditState,
+                    metadataState = noteEditorViewModel.writeopiaManager.selectionMetadataState,
                     noteEditorViewModel::undo,
                     noteEditorViewModel::redo,
                     noteEditorViewModel.canUndo,
@@ -303,6 +306,7 @@ private fun shareDocument(context: Context, shareDocument: ShareDocument) {
 @Composable
 private fun BottomScreen(
     editState: StateFlow<EditState>,
+    metadataState: Flow<Set<SelectionMetadata>>,
     unDo: () -> Unit = {},
     reDo: () -> Unit = {},
     canUndo: StateFlow<Boolean>,
@@ -341,11 +345,12 @@ private fun BottomScreen(
             EditState.TEXT -> {
                 InputScreen(
                     modifier = containerModifier,
+                    metadataState = metadataState,
                     onAddSpan = onSpanSelected,
                     onBackPress = unDo,
                     onForwardPress = reDo,
                     canUndoState = canUndo,
-                    canRedoState = canRedo,
+                    canRedoState = canRedo
                 )
             }
 
@@ -359,7 +364,7 @@ private fun BottomScreen(
                     onClose = onClose,
                     checkboxClick = onCheckItem,
                     listItemClick = onListItem,
-                    onAddPage = onAddPage,
+                    onAddPage = onAddPage
                 )
             }
         }

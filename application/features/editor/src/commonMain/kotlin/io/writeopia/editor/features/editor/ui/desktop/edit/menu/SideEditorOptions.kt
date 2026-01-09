@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -428,38 +429,71 @@ private fun TitleChanges(
 }
 
 @Composable
-private fun TextChanges(spanClick: (Span) -> Unit) {
+private fun TextChanges(
+    metadata: Set<SelectionMetadata>,
+    spanClick: (Span) -> Unit
+) {
     Row(
         modifier = Modifier.horizontalOptionsRow(),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val boldShape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)
+        val boldHighlight = metadata.contains(SelectionMetadata.BOLD)
+        val boldBgColor = if (boldHighlight) {
+            WriteopiaTheme.colorScheme.optionsSelector
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        }
+
         Icon(
             imageVector = WrIcons.bold,
             contentDescription = "Bold",
             modifier = Modifier.weight(1F)
-                .clip(RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp))
+                .clip(boldShape)
+                .background(color = boldBgColor, shape = boldShape)
+                .border(width = 1.dp, boldBgColor, shape = boldShape)
                 .size(32.dp)
                 .clickable { spanClick(Span.BOLD) }
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             tint = MaterialTheme.colorScheme.onBackground
         )
 
+        val italicShape = RectangleShape
+        val italicHighlight = metadata.contains(SelectionMetadata.ITALIC)
+        val italicBgColor = if (italicHighlight) {
+            WriteopiaTheme.colorScheme.optionsSelector
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        }
+
         Icon(
             imageVector = WrIcons.italic,
             contentDescription = "Italic",
             modifier = Modifier.weight(1F)
                 .size(32.dp)
+                .background(color = italicBgColor, shape = italicShape)
+                .border(width = 1.dp, italicBgColor, shape = italicShape)
                 .clickable { spanClick(Span.ITALIC) }
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             tint = MaterialTheme.colorScheme.onBackground
         )
 
+        val underlineShape = RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)
+        val underlineHighlight = metadata.contains(SelectionMetadata.UNDERLINE)
+        val underlineBgColor = if (underlineHighlight) {
+            WriteopiaTheme.colorScheme.optionsSelector
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        }
+
         Icon(
             imageVector = WrIcons.underline,
             contentDescription = "Underlined text",
             modifier = Modifier.weight(1F)
-                .clip(RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp))
+                .clip(underlineShape)
                 .size(32.dp)
+                .background(color = underlineBgColor, shape = underlineShape)
+                .border(width = 1.dp, underlineBgColor, shape = underlineShape)
                 .clickable { spanClick(Span.UNDERLINE) }
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             tint = MaterialTheme.colorScheme.onBackground
@@ -784,7 +818,7 @@ private fun TextOptions(
 
         Title(WrStrings.text())
         Spacer(modifier = Modifier.height(4.dp))
-        TextChanges(spanClick)
+        TextChanges(selectedMetadata, spanClick)
         Spacer(modifier = Modifier.height(8.dp))
 
         Title(WrStrings.highlighting())
