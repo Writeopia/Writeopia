@@ -546,6 +546,8 @@ internal class ChooseNoteKmpViewModel(
     }
 
     private suspend fun importJsonNotes(externalFiles: List<ExternalFile>, now: Instant) {
+        val workspaceId = authRepository.getWorkspace()?.id ?: return
+
         externalFiles.filter { file -> file.extension == "json" }
             .map { file -> file.fullPath }
             .let(writeopiaJsonParser::readDocuments)
@@ -561,7 +563,7 @@ internal class ChooseNoteKmpViewModel(
                     id = GenerateId.generate(),
                     lastUpdatedAt = now,
                     createdAt = now,
-                    workspaceId = getUserId(),
+                    workspaceId = workspaceId,
                     favorite = false
                 )
             }
@@ -577,6 +579,8 @@ internal class ChooseNoteKmpViewModel(
     }
 
     private suspend fun importMarkdownNotes(externalFiles: List<ExternalFile>, now: Instant) {
+        val workspaceId = authRepository.getWorkspace()?.id ?: return
+
         externalFiles.filter { file -> file.extension == "md" }
             .map { file -> file.fullPath }
             .let { files ->
@@ -589,14 +593,12 @@ internal class ChooseNoteKmpViewModel(
                 }
             }
             .map { document ->
-                println("content size: ${document.content.size}")
-
                 document.copy(
                     parentId = notesNavigation.id,
                     id = GenerateId.generate(),
                     lastUpdatedAt = now,
                     createdAt = now,
-                    workspaceId = getUserId(),
+                    workspaceId = workspaceId,
                     favorite = false
                 )
             }
@@ -604,6 +606,8 @@ internal class ChooseNoteKmpViewModel(
     }
 
     private suspend fun importImages(externalFiles: List<ExternalFile>, now: Instant) {
+        val workspaceId = authRepository.getWorkspace()?.id ?: return
+
         externalFiles.filter { file -> supportedImageFiles.contains(file.extension) }
             .map { externalImage ->
                 val imagePath = externalImage.fullPath
@@ -622,7 +626,7 @@ internal class ChooseNoteKmpViewModel(
                     id = GenerateId.generate(),
                     lastUpdatedAt = now,
                     createdAt = now,
-                    workspaceId = getUserId(),
+                    workspaceId = workspaceId,
                     lastSyncedAt = null,
                     favorite = false,
                     title = "",
