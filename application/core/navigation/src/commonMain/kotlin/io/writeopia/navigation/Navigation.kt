@@ -89,11 +89,15 @@ fun Navigation(
                     searchInjection,
                     navigateToDocument = navController::navigateToNote,
                     navigateToFolder = navController::navigateToFolder,
-                    navigationClick = navController::navigateUp
+                    navigationClick = navController::navigateUp,
+                    navigationBar = navigationBar
                 )
             }
 
-            notificationsNavigation()
+            notificationsNavigation(
+                navigationClick = navController::navigateUp,
+                navigationBar = navigationBar
+            )
 
             builder()
         }
