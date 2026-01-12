@@ -95,11 +95,11 @@ class DesktopTextItemDrawer(
             }
 
             DropTargetVerticalDivision(
-                        modifier = Modifier
-                            .let { modifierLet ->
-                                tagDecoration.decorate(modifierLet, step.tags, config)
-                            }
-                            .padding(bottom = paddingBottom.dp, top = paddingTop.dp)
+                modifier = Modifier
+                    .let { modifierLet ->
+                        tagDecoration.decorate(modifierLet, step.tags, config)
+                    }
+                    .padding(bottom = paddingBottom.dp, top = paddingTop.dp)
             ) { inBound, data ->
                 when (inBound) {
                     InBounds.OUTSIDE -> {}

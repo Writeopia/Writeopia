@@ -30,6 +30,7 @@ class StepsModifierTest {
 
         assertEquals(expected, result)
     }
+
     @Test
     fun `tags should be merged correctly, with multiple types`() {
         val input = listOf(
