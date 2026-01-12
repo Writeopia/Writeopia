@@ -23,7 +23,7 @@ object DefaultTagDecoration : TagDecoration {
     ): Modifier =
         if (tags.mapTo(mutableSetOf()) { it.tag }.contains(Tag.HIGH_LIGHT_BLOCK)) {
             modifier
-                .background(config.selectedColor(), shareForTagInfo(tags))
+                .background(config.selectedColor(), shapeForTagInfo(tags))
                 .padding(paddingForTagInfo(tags, config))
         } else {
             modifier.padding(start = config.textDrawerInnerStartPadding.dp)
@@ -33,7 +33,7 @@ object DefaultTagDecoration : TagDecoration {
     override fun background(defaultColor: Color, tags: Iterable<Tag>, config: DrawConfig): Color =
         if (tags.contains(Tag.HIGH_LIGHT_BLOCK)) config.selectedColor() else defaultColor
 
-    private fun shareForTagInfo(tagInfoList: Iterable<TagInfo>): Shape {
+    private fun shapeForTagInfo(tagInfoList: Iterable<TagInfo>): Shape {
         val corner = 8.dp
 
         val tagInfo = tagInfoList.firstOrNull { info ->

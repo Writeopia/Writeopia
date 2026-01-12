@@ -188,6 +188,27 @@ class ContentHandlerTest {
         assertTrue { state.stories[0]!!.tags.any { it.tag == Tag.COLLAPSED } }
         state.stories.values.drop(0).all { it.tags.any { it.tag.isHidden() } }
     }
+
+    @Test
+    fun `when changing the type of a story, it should not change the position of the box highlight`() {
+        val input = MapStoryData.messagesWithHighlight()
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val position = 1
+
+        val newState = contentHandler.changeStoryType(
+            currentStory = input,
+            typeInfo = TypeInfo(StoryTypes.TEXT.type),
+            position = 1,
+            CommandInfo(CommandFactory.h1(), CommandTrigger.WRITTEN)
+        )
+
+        val story = newState.stories[position]
+
+        assertEquals(
+            story?.tags?.first { it.tag == Tag.HIGH_LIGHT_BLOCK }?.position,
+            0
+        )
+    }
 }
 
 private fun normalizer(): UnitsNormalizationMap =
