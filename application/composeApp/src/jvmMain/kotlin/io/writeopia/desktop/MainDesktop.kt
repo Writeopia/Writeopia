@@ -39,7 +39,6 @@ import io.writeopia.sqldelight.database.DatabaseCreation
 import io.writeopia.sqldelight.database.DatabaseFactory
 import io.writeopia.sqldelight.database.driver.DriverFactory
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
-import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
@@ -228,7 +227,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
                 val navigationController = rememberNavController()
 
-                WrieopiaTheme(darkTheme = colorTheme.value.isDarkTheme()) {
+                WriteopiaTheme(darkTheme = colorTheme.value.isDarkTheme()) {
                     GlobalToastBox(
                         modifier = Modifier
                             .background(WriteopiaTheme.colorScheme.globalBackground)

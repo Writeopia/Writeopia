@@ -12,6 +12,7 @@ import io.writeopia.ui.icons.all.Link
 import io.writeopia.ui.icons.all.SquareCheck
 import io.writeopia.ui.icons.all.WandSparkles
 import io.writeopia.ui.icons.all.pencil
+import io.writeopia.ui.icons.all.textSelect
 
 object WrSdkIcons {
 
@@ -36,4 +37,6 @@ object WrSdkIcons {
     val linkPage: ImageVector = Link
 
     val edit: ImageVector = pencil
+
+    val highlight = textSelect
 }

@@ -3,9 +3,6 @@
     <file name="build.gradle.kts">
         <error line="78" column="1" source="standard:no-blank-line-before-rbrace" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/auth/navigation/AuthNavigation.kt">
-        <error line="148" column="1" source="standard:no-consecutive-blank-lines" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/auth/register/RegisterViewModel.kt">
         <error line="24" column="17" source="standard:backing-property-naming" />
     </file>

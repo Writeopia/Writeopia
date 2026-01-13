@@ -18,7 +18,6 @@ import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.common.utils.Destinations
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
-import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
@@ -63,7 +62,7 @@ fun ScreenLoading() {
 
 @Composable
 fun IntroScreen(colorThemeOption: ColorThemeOption?) {
-    WrieopiaTheme(darkTheme = colorThemeOption.isDarkTheme()) {
+    WriteopiaTheme(darkTheme = colorThemeOption.isDarkTheme()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

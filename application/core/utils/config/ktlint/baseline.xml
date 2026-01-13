@@ -2016,6 +2016,10 @@
         <error line="56" column="13" source="standard:backing-property-naming" />
         <error line="56" column="13" source="standard:backing-property-naming" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/common/utils/icons/all/highlighter.kt">
+        <error line="52" column="13" source="standard:backing-property-naming" />
+        <error line="54" column="1" source="standard:no-consecutive-blank-lines" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/common/utils/icons/all/link.kt">
         <error line="51" column="13" source="standard:backing-property-naming" />
     </file>

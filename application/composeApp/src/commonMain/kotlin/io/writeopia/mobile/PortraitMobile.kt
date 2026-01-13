@@ -29,7 +29,7 @@ import io.writeopia.navigation.notes.navigateToNoteMenu
 import io.writeopia.navigation.notifications.navigateToNotifications
 import io.writeopia.navigation.search.navigateToSearch
 import io.writeopia.notemenu.di.NotesMenuInjection
-import io.writeopia.theme.WrieopiaTheme
+import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.viewmodel.UiConfigurationViewModel
 
 @Composable
@@ -46,7 +46,7 @@ fun PortraitMobile(
 ) {
     val colorTheme by uiConfigViewModel.listenForColorTheme { "disconnected_user" }.collectAsState()
 
-    WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+    WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
         Box(modifier = modifier) {
             Navigation(
                 isDarkTheme = colorTheme.isDarkTheme(),

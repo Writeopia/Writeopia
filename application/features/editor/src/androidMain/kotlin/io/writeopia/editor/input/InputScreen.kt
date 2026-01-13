@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 @Composable
 internal fun InputScreen(
     modifier: Modifier = Modifier,
+    isDarkTheme: Boolean,
     metadataState: Flow<Set<SelectionMetadata>>,
     onAddSpan: (Span) -> Unit,
     onBackPress: () -> Unit = {},
@@ -21,6 +22,7 @@ internal fun InputScreen(
 ) {
     MobileInputScreen(
         modifier,
+        isDarkTheme,
         metadataState,
         onAddSpan,
         onBackPress,

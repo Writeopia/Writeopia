@@ -70,7 +70,7 @@ val LocalWriteopiaColors = staticCompositionLocalOf {
 }
 
 @Composable
-fun WrieopiaTheme(
+fun WriteopiaTheme(
     darkTheme: Boolean = isSystemInDarkMode(),
     content: @Composable () -> Unit
 ) {
