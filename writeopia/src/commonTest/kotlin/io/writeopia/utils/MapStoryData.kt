@@ -254,12 +254,48 @@ object MapStoryData {
             localId = "2",
             type = StoryTypes.TEXT.type,
             text = "message2",
-            tags = setOf(TagInfo(Tag.HIGH_LIGHT_BLOCK, 3))
+            tags = setOf(TagInfo(Tag.HIGH_LIGHT_BLOCK, 0))
         ),
         2 to StoryStep(
             localId = "4",
             type = StoryTypes.TEXT.type,
             text = "message3",
+        ),
+        3 to StoryStep(
+            localId = "6",
+            type = StoryTypes.TEXT.type,
+            text = "message4",
+        ),
+        4 to StoryStep(
+            localId = "7",
+            type = StoryTypes.TEXT.type,
+            text = "message5",
+        ),
+        5 to StoryStep(
+            localId = "8",
+            type = StoryTypes.TEXT.type,
+            text = "message6",
+        )
+    )
+
+    fun messagesWithHighlight(): Map<Int, StoryStep> = mapOf(
+        0 to StoryStep(
+            localId = "0",
+            type = StoryTypes.TEXT.type,
+            text = "message1",
+            tags = setOf(TagInfo(Tag.H1), TagInfo(Tag.HIGH_LIGHT_BLOCK, -1))
+        ),
+        1 to StoryStep(
+            localId = "2",
+            type = StoryTypes.TEXT.type,
+            text = "message2",
+            tags = setOf(TagInfo(Tag.HIGH_LIGHT_BLOCK, 0))
+        ),
+        2 to StoryStep(
+            localId = "4",
+            type = StoryTypes.TEXT.type,
+            text = "message3",
+            tags = setOf(TagInfo(Tag.HIGH_LIGHT_BLOCK, 1))
         ),
         3 to StoryStep(
             localId = "6",
