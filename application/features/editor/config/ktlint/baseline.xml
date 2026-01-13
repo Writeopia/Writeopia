@@ -4,4 +4,7 @@
         <error line="4" column="1" source="standard:no-unused-imports" />
         <error line="11" column="1" source="standard:no-unused-imports" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/editor/ui/MobileInputScreen.kt">
+        <error line="245" column="1" source="standard:no-consecutive-blank-lines" />
+    </file>
 </baseline>

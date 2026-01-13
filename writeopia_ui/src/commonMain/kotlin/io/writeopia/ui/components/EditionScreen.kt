@@ -49,6 +49,7 @@ fun EditionScreen(
     onSpanClick: (Span) -> Unit = {},
     checkboxClick: () -> Unit = {},
     listItemClick: () -> Unit = {},
+    onHighlight: () -> Unit = {},
     onDelete: () -> Unit = {},
     onCopy: () -> Unit = {},
     onCut: () -> Unit = {},
@@ -136,6 +137,20 @@ fun EditionScreen(
                     .size(iconSize)
                     .padding(iconPadding),
                 imageVector = WrSdkIcons.list,
+                contentDescription = "List item",
+//            contentDescription = stringResource(R.string.delete),
+                tint = tint
+            )
+
+            Spacer(modifier = Modifier.width(spaceWidth))
+
+            Icon(
+                modifier = Modifier
+                    .clip(clipShape)
+                    .clickable(onClick = onHighlight)
+                    .size(iconSize)
+                    .padding(iconPadding),
+                imageVector = WrSdkIcons.highlight,
                 contentDescription = "List item",
 //            contentDescription = stringResource(R.string.delete),
                 tint = tint

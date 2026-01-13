@@ -22,7 +22,6 @@ import io.writeopia.auth.workspace.ChooseWorkspace
 import io.writeopia.common.utils.Destinations
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
-import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.time.ExperimentalTime
@@ -37,7 +36,7 @@ fun NavGraphBuilder.authNavigation(
         val viewModel = authInjection.provideResetPasswordViewModel()
         val colorTheme by colorThemeOption.collectAsState()
 
-        WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+        WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
             RegisterPasswordScreen(
                 modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
                 passwordState = viewModel.password,
@@ -64,7 +63,7 @@ fun NavGraphBuilder.authNavigation(
             val authMenuViewModel: AuthMenuViewModel = authInjection.provideAuthMenuViewModel()
             val colorTheme by colorThemeOption.collectAsState()
 
-            WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+            WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
                 AuthMenuScreen(
                     modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
                     emailState = authMenuViewModel.email,
@@ -112,7 +111,7 @@ fun NavGraphBuilder.authNavigation(
             val registerViewModel = authInjection.provideRegisterViewModel()
             val colorTheme by colorThemeOption.collectAsState()
 
-            WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+            WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
                 RegisterScreen(
                     modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
                     nameState = registerViewModel.name,
@@ -144,5 +143,3 @@ fun NavController.navigateToApp() {
 fun NavController.navigateToWorkspaceChoice() {
     navigate(Destinations.CHOOSE_WORKSPACE.id)
 }
-
-

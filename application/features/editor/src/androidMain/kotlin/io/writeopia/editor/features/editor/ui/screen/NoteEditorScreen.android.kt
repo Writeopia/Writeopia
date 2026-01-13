@@ -148,6 +148,7 @@ internal fun NoteEditorScreen(
                 BottomScreen(
                     noteEditorViewModel.isEditState,
                     metadataState = noteEditorViewModel.writeopiaManager.selectionMetadataState,
+                    isDarkTheme = isDarkTheme,
                     noteEditorViewModel::undo,
                     noteEditorViewModel::redo,
                     noteEditorViewModel.canUndo,
@@ -160,6 +161,7 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::onAddCheckListClick,
                     noteEditorViewModel::onAddListItemClick,
                     noteEditorViewModel::addPage,
+                    noteEditorViewModel::toggleHighLightBlock
                 )
             }
 
@@ -307,6 +309,7 @@ private fun shareDocument(context: Context, shareDocument: ShareDocument) {
 private fun BottomScreen(
     editState: StateFlow<EditState>,
     metadataState: Flow<Set<SelectionMetadata>>,
+    isDarkTheme: Boolean,
     unDo: () -> Unit = {},
     reDo: () -> Unit = {},
     canUndo: StateFlow<Boolean>,
@@ -319,6 +322,7 @@ private fun BottomScreen(
     onCheckItem: () -> Unit = {},
     onListItem: () -> Unit = {},
     onAddPage: () -> Unit = {},
+    onHighlight: () -> Unit,
 ) {
     val edit by editState.collectAsState()
 
@@ -345,6 +349,7 @@ private fun BottomScreen(
             EditState.TEXT -> {
                 InputScreen(
                     modifier = containerModifier,
+                    isDarkTheme = isDarkTheme,
                     metadataState = metadataState,
                     onAddSpan = onSpanSelected,
                     onBackPress = unDo,
@@ -364,6 +369,7 @@ private fun BottomScreen(
                     onClose = onClose,
                     checkboxClick = onCheckItem,
                     listItemClick = onListItem,
+                    onHighlight = onHighlight,
                     onAddPage = onAddPage
                 )
             }

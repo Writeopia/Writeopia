@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import io.writeopia.common.utils.collections.inBatches
+import io.writeopia.common.utils.colors.highlightColors
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
@@ -508,19 +509,7 @@ private fun HighlightText(isDarkTheme: Boolean, spanClick: (Span) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        val colors = if (isDarkTheme) {
-            listOf(
-                Span.HIGHLIGHT_RED to Color(0xFFD32F2F),
-                Span.HIGHLIGHT_GREEN to Color(0xFF2E7D32),
-                Span.HIGHLIGHT_YELLOW to Color(0xFFF9A825)
-            )
-        } else {
-            listOf(
-                Span.HIGHLIGHT_RED to Color(0xFFE57373),
-                Span.HIGHLIGHT_GREEN to Color.Green,
-                Span.HIGHLIGHT_YELLOW to Color.Yellow
-            )
-        }
+        val colors = highlightColors(isDarkTheme)
 
         colors.forEach { (span, color) ->
             Box(

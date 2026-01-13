@@ -53,7 +53,6 @@ import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.ui.screen.menu.EditFileDialog
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
-import io.writeopia.theme.WrieopiaTheme
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.components.multiselection.DragSelectionBox
 import io.writeopia.ui.draganddrop.target.DraggableScreen
@@ -122,7 +121,7 @@ fun DesktopApp(
         }
     }
 
-    WrieopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+    WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
         val density = LocalDensity.current
         val globalBackground = WriteopiaTheme.colorScheme.globalBackground
         DragSelectionBox(modifier = modifier) {
