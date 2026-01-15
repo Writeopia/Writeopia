@@ -11,6 +11,7 @@ import io.writeopia.ui.icons.all.Files
 import io.writeopia.ui.icons.all.Link
 import io.writeopia.ui.icons.all.SquareCheck
 import io.writeopia.ui.icons.all.WandSparkles
+import io.writeopia.ui.icons.all.aLargeSmall
 import io.writeopia.ui.icons.all.pencil
 import io.writeopia.ui.icons.all.textSelect
 
@@ -39,4 +40,6 @@ object WrSdkIcons {
     val edit: ImageVector = pencil
 
     val highlight = textSelect
+
+    val titleChange = aLargeSmall
 }

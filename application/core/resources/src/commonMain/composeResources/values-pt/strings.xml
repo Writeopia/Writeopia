@@ -18,7 +18,7 @@
   <string name="add_note">Adicionar nota</string>
   <string name="back">Voltar</string>
   <string name="copy_note">Copiar documento</string>
-  <string name="favorite">Favotiro</string>
+  <string name="favorite">Favorito</string>
   <string name="delete">Deletar</string>
   <string name="logout">Sair</string>
   <string name="export_json">Exportar como JSON</string>

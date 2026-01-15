@@ -67,6 +67,8 @@ import io.writeopia.ui.model.SelectionMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
+private const val MENU_WIDTH = 300
+
 @Composable
 fun SideEditorOptions(
     modifier: Modifier = Modifier,
@@ -335,7 +337,7 @@ private fun PageOptions(
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.shapes.medium
         ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
-            .width(250.dp)
+            .width(MENU_WIDTH.dp)
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
         Title("Font")
@@ -379,7 +381,7 @@ private fun Title(text: String) {
 }
 
 @Composable
-private fun TitleChanges(
+fun TitleChanges(
     metadata: Set<SelectionMetadata>,
     modifier: Modifier = Modifier,
     titleClick: (Tag) -> Unit
@@ -795,7 +797,7 @@ private fun TextOptions(
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.shapes.medium
         ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
-            .width(250.dp)
+            .width(MENU_WIDTH.dp)
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
         val selectedMetadata by selectedMetadataState.collectAsState()
@@ -863,7 +865,7 @@ private fun Actions(
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.shapes.medium
         ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
-            .width(250.dp)
+            .width(MENU_WIDTH.dp)
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
         Title(WrStrings.export())
@@ -912,7 +914,7 @@ private fun AiOptions(
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.shapes.medium
         ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
-            .width(250.dp)
+            .width(MENU_WIDTH.dp)
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
         Title(WrStrings.askAi())
