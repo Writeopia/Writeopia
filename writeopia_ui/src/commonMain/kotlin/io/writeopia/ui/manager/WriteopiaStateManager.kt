@@ -257,51 +257,60 @@ class WriteopiaStateManager(
 
     private var initialized = false
 
-    val selectionMetadataState: Flow<Set<SelectionMetadata>> = _currentStory.map { storyState ->
-        val selectionPos = storyState.selection.position
-        val (selectStart, selectEnd) = (storyState.selection.start to storyState.selection.end)
-        val step = storyState.stories[selectionPos]
+    val selectionMetadataState: Flow<Set<SelectionMetadata>> =
+        combine(_currentStory, _onEditPositions) { storyState, onEditPositions ->
+            val result = mutableSetOf<SelectionMetadata>()
 
-        val result = mutableSetOf<SelectionMetadata>()
+            val findMetadata = { storyStep: StoryStep ->
+                val (selectStart, selectEnd) = (storyState.selection.start to storyState.selection.end)
+                val fromType = SelectionMetadata.fromStoryType(storyStep.type.number)
 
-        if (step != null) {
-            val fromType = SelectionMetadata.fromStoryType(step.type.number)
+                if (fromType != null) {
+                    result.add(fromType)
+                }
 
-            if (fromType != null) {
-                result.add(fromType)
-            }
+                storyStep.tags.forEach { tagInfo ->
+                    when (tagInfo.tag) {
+                        Tag.HIGH_LIGHT_BLOCK -> {
+                            result.add(SelectionMetadata.BOX)
+                        }
 
-            step.tags.forEach { tagInfo ->
-                when (tagInfo.tag) {
-                    Tag.HIGH_LIGHT_BLOCK -> {
-                        result.add(SelectionMetadata.BOX)
+                        Tag.H1 -> {
+                            result.add(SelectionMetadata.TITLE)
+                        }
+
+                        Tag.H2 -> {
+                            result.add(SelectionMetadata.SUBTITLE)
+                        }
+
+                        Tag.H3 -> {
+                            result.add(SelectionMetadata.HEADING)
+                        }
+
+                        else -> {}
                     }
+                }
 
-                    Tag.H1 -> {
-                        result.add(SelectionMetadata.TITLE)
-                    }
-
-                    Tag.H2 -> {
-                        result.add(SelectionMetadata.SUBTITLE)
-                    }
-
-                    Tag.H3 -> {
-                        result.add(SelectionMetadata.HEADING)
-                    }
-
-                    else -> {}
+                storyStep.spans.filter { span ->
+                    span.isInside(selectStart) || span.isInside(selectEnd)
+                }.forEach { span ->
+                    span.span.toSelectionMetadata()?.let(result::add)
                 }
             }
 
-            step.spans.filter { span ->
-                span.isInside(selectStart) || span.isInside(selectEnd)
-            }.forEach { span ->
-                span.span.toSelectionMetadata()?.let(result::add)
-            }
-        }
+            if (!onEditPositions.isNotEmpty()) {
+                val selectionPos = storyState.selection.position
+                val step = storyState.stories[selectionPos]
 
-        result
-    }
+                if (step != null) {
+                    findMetadata(step)
+                }
+            } else {
+                onEditPositions.mapNotNull(::getStory).forEach(findMetadata)
+            }
+
+            result
+        }
 
     val isOnSelection: Boolean
         get() = _onEditPositions.value.isNotEmpty()
@@ -1142,6 +1151,16 @@ class WriteopiaStateManager(
             }
     }
 
+    private fun getSelectedStoriesWithPosition(): List<Pair<Int, StoryStep>> {
+        val stories = getStories()
+        return _onEditPositions.value
+            .sorted()
+            .mapNotNull { position ->
+                val story = stories[position]
+                if (story != null) position to story else null
+            }
+    }
+
     /**
      * This method returns the current text being selected. It can bet the result of a selection of
      * multiple lines, a selection inside a line or just the text of the file that it being edited.
@@ -1175,14 +1194,24 @@ class WriteopiaStateManager(
     }
 
     fun addTitle(tag: Tag) {
-        val position = currentPosition()
+        if (isOnSelection) {
+            getSelectedStoriesWithPosition().forEach { (pos, storyStep) ->
+                addTitleToStory(storyStep, tag, pos)
+            }
+        } else {
+            val position = currentPosition()
+            val currentStory = getStory(position)
 
-        val currentStory = getStory(position)
-        if (currentStory == null) return
+            currentStory?.let { storyStep ->
+                addTitleToStory(storyStep, tag, position)
+            }
+        }
+    }
 
-        val shouldRemove = currentStory.tags.any { it.tag == tag }
+    private fun addTitleToStory(storyStep: StoryStep, tag: Tag, position: Int) {
+        val shouldRemove = storyStep.tags.any { it.tag == tag }
 
-        val newTags = currentStory.tags
+        val newTags = storyStep.tags
             .filterNotTo(mutableSetOf()) { it.tag.isTitle() }
             .apply {
                 if (!shouldRemove) {
@@ -1190,7 +1219,7 @@ class WriteopiaStateManager(
                 }
             }
 
-        val newStory = currentStory.copy(tags = newTags)
+        val newStory = storyStep.copy(tags = newTags)
         changeStoryState(Action.StoryStateChange(newStory, position))
     }
 

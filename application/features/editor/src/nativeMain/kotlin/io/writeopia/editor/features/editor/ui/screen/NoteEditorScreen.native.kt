@@ -55,6 +55,8 @@ import io.writeopia.editor.input.InputScreen
 import io.writeopia.editor.model.EditState
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.story.Tag
+import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.components.EditionScreen
 import io.writeopia.ui.drawer.factory.DefaultDrawersNative
 import io.writeopia.ui.model.SelectionMetadata
@@ -134,7 +136,8 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::onAddCheckListClick,
                     noteEditorViewModel::onAddListItemClick,
                     noteEditorViewModel::addPage,
-                    noteEditorViewModel::toggleHighLightBlock
+                    noteEditorViewModel::toggleHighLightBlock,
+                    noteEditorViewModel::titleClick
                 )
             }
 
@@ -279,6 +282,7 @@ private fun BottomScreen(
     onListItem: () -> Unit = {},
     onAddPage: () -> Unit = {},
     onHighlight: () -> Unit = {},
+    titleClick: (Tag) -> Unit
 ) {
     val edit by editState.collectAsState()
 
@@ -318,6 +322,8 @@ private fun BottomScreen(
             EditState.SELECTED_TEXT -> {
                 EditionScreen(
                     modifier = containerModifier,
+                    metadataState = metadataState,
+                    highlightButtonColor = WriteopiaTheme.colorScheme.optionsSelector,
                     onSpanClick = onSpanSelected,
                     onHighlight = onHighlight,
                     onDelete = deleteSelection,
@@ -327,6 +333,7 @@ private fun BottomScreen(
                     checkboxClick = onCheckItem,
                     listItemClick = onListItem,
                     onAddPage = onAddPage,
+                    titleClick = titleClick
                 )
             }
         }

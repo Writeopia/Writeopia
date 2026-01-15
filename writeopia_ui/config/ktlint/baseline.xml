@@ -338,6 +338,9 @@
         <error line="84" column="13" source="standard:backing-property-naming" />
         <error line="84" column="13" source="standard:backing-property-naming" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/LargeSmallA.kt">
+        <error line="67" column="13" source="standard:backing-property-naming" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/List.kt">
         <error line="115" column="13" source="standard:backing-property-naming" />
         <error line="115" column="13" source="standard:backing-property-naming" />
