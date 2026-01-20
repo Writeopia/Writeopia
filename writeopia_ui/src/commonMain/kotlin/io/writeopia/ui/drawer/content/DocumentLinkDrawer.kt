@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -137,7 +139,8 @@ class DocumentLinkDrawer(
                                 .padding(
                                     horizontal = config.linkHorizontalPadding.dp,
                                     vertical = config.linkVerticalPadding.dp
-                                )
+                                ),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             leadingIcon?.let { icon ->
                                 Icon(
