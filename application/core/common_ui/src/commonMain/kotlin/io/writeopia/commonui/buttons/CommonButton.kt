@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -62,6 +63,7 @@ fun CommonButton(
     isEnabledState: StateFlow<Boolean> = MutableStateFlow(true),
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+    textStyle: TextStyle = MaterialTheme.typography.bodySmall,
     clickListener: () -> Unit,
 ) {
     val isEditable by isEnabledState.collectAsState()
@@ -91,7 +93,7 @@ fun CommonButton(
 
         Text(
             text,
-            style = MaterialTheme.typography.bodySmall,
+            style = textStyle,
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold

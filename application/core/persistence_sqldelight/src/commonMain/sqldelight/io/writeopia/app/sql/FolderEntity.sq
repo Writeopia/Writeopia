@@ -21,6 +21,7 @@ LIMIT 10;
 getLastUpdated:
 SELECT *
 FROM folderEntity
+WHERE folderEntity.id != "root"
 ORDER BY last_updated_at;
 
 selectAllFolders:

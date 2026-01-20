@@ -234,9 +234,10 @@ fun NotesCardsScreen(
 
                     CommonButton(
                         modifier = modifier,
-                        text = "Document",
+                        text = WrStrings.document(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
+                        textStyle = MaterialTheme.typography.bodyMedium,
                         clickListener = {
                             hideShowMenu()
                             newNote()
@@ -247,9 +248,10 @@ fun NotesCardsScreen(
 
                     CommonButton(
                         modifier = modifier,
-                        text = "Folder",
+                        text = WrStrings.folder(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
+                        textStyle = MaterialTheme.typography.bodyMedium,
                         clickListener = {
                             hideShowMenu()
                             newFolder()
