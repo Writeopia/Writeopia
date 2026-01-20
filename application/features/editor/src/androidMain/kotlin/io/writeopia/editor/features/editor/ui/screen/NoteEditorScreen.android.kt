@@ -220,7 +220,7 @@ private fun TopBar(
     val isEditable by editableState.collectAsState()
 
     TopAppBar(
-        modifier = modifier.height(44.dp),
+        modifier = modifier.height(110.dp),
         title = {
             Row(
                 modifier = Modifier.fillMaxHeight(),

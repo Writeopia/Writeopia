@@ -3,6 +3,7 @@ package io.writeopia.navigation.notes
 import androidx.navigation.NavController
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.common.utils.encoding.encodeForNavigation
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
 import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
@@ -18,7 +19,7 @@ fun NavController.navigateToNoteDesktop(id: String, title: String) {
     val noteId = this.currentBackStackEntry?.savedStateHandle?.get<String?>("noteId")
 
     if (noteId != id) {
-        navigate("${Destinations.EDITOR.id}/$id/$title")
+        navigate("${Destinations.EDITOR.id}/$id/${title.encodeForNavigation()}")
     }
 }
 
@@ -26,7 +27,7 @@ fun NavController.navigateToNoteMobile(id: String, title: String) {
     val noteId = this.currentBackStackEntry?.savedStateHandle?.get<String?>("noteId")
 
     if (noteId != id) {
-        navigate("${Destinations.EDITOR.id}/$id/$title")
+        navigate("${Destinations.EDITOR.id}/$id/${title.encodeForNavigation()}")
     }
 }
 

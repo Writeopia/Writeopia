@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.configuration.ui.DrawConfigFactory
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.model.Font
@@ -79,6 +80,7 @@ internal fun TextEditor(
             generateSection = noteEditorViewModel::aiSection,
             receiveExternalFile = noteEditorViewModel::receiveExternalFile,
             onDocumentLinkClick = onDocumentLinkClick,
+            linkLeadingIcon = WrIcons.pageStyle,
             equationToImageUrl = "https://latex.codecogs.com/png.latex?\\Large&space;x="
         ),
         storyState = storyState,
