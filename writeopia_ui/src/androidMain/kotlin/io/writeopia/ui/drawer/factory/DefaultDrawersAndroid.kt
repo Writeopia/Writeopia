@@ -80,6 +80,7 @@ object DefaultDrawersAndroid : DrawersFactory {
                     )
                 }
             },
+            linkLeadingIcon = linkLeadingIcon,
             onDocumentLinkClick = onDocumentLinkClick,
         )
 

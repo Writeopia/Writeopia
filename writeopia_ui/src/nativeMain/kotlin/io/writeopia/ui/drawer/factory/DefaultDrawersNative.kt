@@ -76,6 +76,7 @@ object DefaultDrawersNative : DrawersFactory {
                     )
                 }
             },
+            linkLeadingIcon = linkLeadingIcon,
             onDocumentLinkClick = onDocumentLinkClick,
         )
 
