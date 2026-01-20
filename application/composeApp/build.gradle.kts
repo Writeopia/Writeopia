@@ -176,8 +176,8 @@ android {
         applicationId = "io.writeopia"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 54
-        versionName = "0.41.0"
+        versionCode = 55
+        versionName = "0.42.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

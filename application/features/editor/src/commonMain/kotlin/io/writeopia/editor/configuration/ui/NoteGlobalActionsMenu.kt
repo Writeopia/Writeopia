@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FontOptions
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.LockButton
@@ -67,7 +69,7 @@ internal fun NoteGlobalActionsMenu(
             Spacer(modifier = Modifier.height(8.dp))
 
             FontOptions(
-                modifier = Modifier.widthIn(max = 300.dp),
+                modifier = Modifier.fillMaxWidth(),
                 changeFontFamily = changeFontFamily,
                 selectedState = selectedState,
                 selectedColor = WriteopiaTheme.colorScheme.highlight,
@@ -82,6 +84,7 @@ internal fun NoteGlobalActionsMenu(
 
             Row {
                 ShareButton(
+                    modifier = Modifier.weight(1F),
                     text = WrStrings.exportJson(),
                     onClick = onShareJson
                 )
@@ -89,6 +92,7 @@ internal fun NoteGlobalActionsMenu(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 ShareButton(
+                    modifier = Modifier.weight(1F),
                     text = WrStrings.exportMarkdown(),
                     onClick = onShareMd
                 )
@@ -107,17 +111,18 @@ private fun Title(label: String) {
 }
 
 @Composable
-private fun ShareButton(text: String, onClick: () -> Unit) {
+private fun ShareButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Text(
-        modifier = Modifier
+        modifier = modifier
             .clickable(onClick = onClick)
             .clip(RoundedCornerShape(6.dp))
-            .background(MaterialTheme.colorScheme.secondary)
+            .background(MaterialTheme.colorScheme.background)
             .padding(8.dp),
         text = text,
-        color = MaterialTheme.colorScheme.onPrimary,
-        style = MaterialTheme.typography.bodyMedium.copy(
+        color = MaterialTheme.colorScheme.onBackground,
+        style = MaterialTheme.typography.bodySmall.copy(
             fontWeight = FontWeight.Bold
-        )
+        ),
+        textAlign = TextAlign.Center
     )
 }

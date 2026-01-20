@@ -23,7 +23,7 @@ class SearchRepository(
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     fun searchNotesAndFoldersLocally(query: String): Flow<List<SearchItem>> {
-        val workspaceFlow =  authRepository.listenForWorkspace()
+        val workspaceFlow = authRepository.listenForWorkspace()
 
         if (query.isEmpty()) return workspaceFlow.flatMapLatest { workspace ->
             flow { emit(getNotesAndFolders(workspace.id)) }
