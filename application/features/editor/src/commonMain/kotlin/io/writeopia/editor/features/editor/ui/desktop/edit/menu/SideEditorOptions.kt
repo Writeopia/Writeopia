@@ -53,6 +53,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import io.writeopia.common.utils.collections.inBatches
 import io.writeopia.common.utils.colors.highlightColors
+import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
@@ -744,6 +745,9 @@ internal fun FontOptions(
 ) {
     val selected by selectedState.collectAsState()
 
+    val currentPlatform = LocalPlatform.current
+    val buttonPadding = if (currentPlatform.isMobile()) 8.dp else 4.dp
+
     mapOf(
         Font.SYSTEM.label to FontFamily.Default,
         Font.SERIF.label to FontFamily.Serif,
@@ -768,7 +772,7 @@ internal fun FontOptions(
                             .clickable {
                                 changeFontFamily(Font.fromLabel(name))
                             }
-                            .padding(4.dp),
+                            .padding(buttonPadding),
                         color = MaterialTheme.colorScheme.onBackground,
                         style = buttonsTextStyle()
                     )

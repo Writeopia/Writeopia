@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -65,6 +66,7 @@ object CommonDrawers {
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit = { _, _ -> },
         headerEndContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
         onDocumentLinkClick: (String) -> Unit,
+        linkLeadingIcon: ImageVector? = null,
         equationToImageUrl: String? = null,
         textToolbox: @Composable (Boolean) -> Unit = {}
     ): Map<Int, StoryStepDrawer> {
@@ -180,6 +182,7 @@ object CommonDrawers {
             onDragStart = manager::onDragStart,
             onDragStop = manager::onDragStop,
             moveRequest = manager::moveRequest,
+            leadingIcon = linkLeadingIcon,
             onClick = onDocumentLinkClick
         )
 
@@ -321,8 +324,8 @@ private fun RowScope.messageDrawer(
     eventListener: (KeyEvent, TextFieldValue, StoryStep, Int, EmptyErase, Int, EndOfText) -> Boolean,
     onSelectionLister: (Int) -> Unit,
     textToolbox: @Composable (Boolean) -> Unit
-): TextDrawer {
-    return TextDrawer(
+): TextDrawer =
+    TextDrawer(
         modifier = modifier.weight(1F),
         onKeyEvent = eventListener,
         onTextEdit = manager::handleTextInput,
@@ -339,4 +342,3 @@ private fun RowScope.messageDrawer(
         aiExplanation = aiExplanation,
         textToolbox = textToolbox
     )
-}

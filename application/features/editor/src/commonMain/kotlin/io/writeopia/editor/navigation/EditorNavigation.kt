@@ -15,6 +15,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import io.writeopia.common.utils.Destinations
+import io.writeopia.common.utils.encoding.decodeFromNavigation
 import io.writeopia.editor.di.TextEditorInjector
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.editor.ui.screen.TextEditorScreen
@@ -48,6 +49,7 @@ fun NavGraphBuilder.editorNavigation(
         ) { backStackEntry ->
             val noteId = backStackEntry.savedStateHandle.get<String?>("noteId")
             val noteTitle = backStackEntry.savedStateHandle.get<String?>("noteTitle")
+                ?.decodeFromNavigation()
             val parentFolderId = backStackEntry.savedStateHandle.get<String?>("parentFolderId")
 
             if (noteId != null && noteTitle != null) {

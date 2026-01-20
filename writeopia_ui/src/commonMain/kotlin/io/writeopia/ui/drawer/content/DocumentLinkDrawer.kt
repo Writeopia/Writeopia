@@ -6,8 +6,13 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -53,6 +59,7 @@ class DocumentLinkDrawer(
     private val enabled: Boolean,
     private val paddingValues: PaddingValues = PaddingValues(0.dp),
     private val receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
+    private val leadingIcon: ImageVector? = null,
     private val onClick: (String) -> Unit
 ) : StoryStepDrawer {
 
@@ -122,23 +129,40 @@ class DocumentLinkDrawer(
                             onSelected(!drawInfo.selectMode, drawInfo.position)
                         }
                     ) {
-                        Text(
-                            modifier = Modifier.padding(
-                                horizontal = config.iaAnswerHorizontalPadding.dp,
-                                vertical = config.iaAnswerHorizontalPadding.dp
-                            ).clickable {
-                                step.documentLink?.id?.let(onClick)
-                            }.pointerHoverIcon(PointerIcon.Hand),
-                            text = step.documentLink?.title ?: "New Document",
-                            style = TextStyle(
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontSize = 16.sp,
-                                textDecoration = TextDecoration.Underline
-//                            fontFamily = fontFamily
-                            ),
-                        )
+                        Row(
+                            modifier = Modifier
+                                .clickable {
+                                    step.documentLink?.id?.let(onClick)
+                                }.pointerHoverIcon(PointerIcon.Hand)
+                                .padding(
+                                    horizontal = config.linkHorizontalPadding.dp,
+                                    vertical = config.linkVerticalPadding.dp
+                                )
+                        ) {
+                            leadingIcon?.let { icon ->
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    imageVector = icon,
+                                    contentDescription = "Document Link",
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
 
-                        endContent?.invoke(step, drawInfo, isHovered)
+                                Spacer(modifier = Modifier.width(6.dp))
+                            }
+
+                            Text(
+                                modifier = Modifier,
+                                text = step.documentLink?.title ?: "New Document",
+                                style = TextStyle(
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    fontSize = 16.sp,
+                                    textDecoration = TextDecoration.Underline
+//                            fontFamily = fontFamily
+                                ),
+                            )
+
+                            endContent?.invoke(step, drawInfo, isHovered)
+                        }
                     }
                 }
             }

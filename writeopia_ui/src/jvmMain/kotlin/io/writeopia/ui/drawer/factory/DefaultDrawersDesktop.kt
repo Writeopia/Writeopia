@@ -18,6 +18,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontFamily
@@ -45,6 +46,7 @@ object DefaultDrawersDesktop : DrawersFactory {
         generateSection: (Int) -> Unit,
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
+        linkLeadingIcon: ImageVector?,
         equationToImageUrl: String?
     ): Map<Int, StoryStepDrawer> {
         val textToolbox: @Composable (Boolean) -> Unit = @Composable { hasSelection ->
@@ -72,6 +74,7 @@ object DefaultDrawersDesktop : DrawersFactory {
             receiveExternalFile = receiveExternalFile,
             equationToImageUrl = equationToImageUrl,
             textToolbox = textToolbox,
+            linkLeadingIcon = linkLeadingIcon,
             headerEndContent = { storyStep, drawInfo, isHovered ->
                 // Todo: This code needs to be fixed!
                 val isTitle = storyStep.tags.any { it.tag.isTitle() }
