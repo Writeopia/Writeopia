@@ -16,7 +16,11 @@ interface FolderRoomDao {
     @Query("SELECT * FROM $FOLDER_ENTITY WHERE folder_id = :id")
     suspend fun getFolderById(id: String): FolderEntity?
 
-    @Query("SELECT * FROM $FOLDER_ENTITY WHERE title LIKE '%' || :query || '%' AND workspace_id = :workspaceId ORDER BY last_updated_at")
+    @Query("SELECT * " +
+        "FROM $FOLDER_ENTITY " +
+        "WHERE title LIKE '%' || :query || '%' " +
+        "AND workspace_id = :workspaceId AND folder_id != 'root' " +
+        "ORDER BY last_updated_at")
     suspend fun search(query: String, workspaceId: String): List<FolderEntity>
 
     @Query("SELECT * FROM $FOLDER_ENTITY ORDER BY last_updated_at LIMIT 15")

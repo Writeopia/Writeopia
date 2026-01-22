@@ -89,7 +89,7 @@ internal fun NoteGlobalActionsMenu(
                     onClick = onShareJson
                 )
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(4.dp))
 
                 ShareButton(
                     modifier = Modifier.weight(1F),
@@ -114,8 +114,8 @@ private fun Title(label: String) {
 private fun ShareButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Text(
         modifier = modifier
-            .clickable(onClick = onClick)
             .clip(RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
             .background(MaterialTheme.colorScheme.background)
             .padding(8.dp),
         text = text,
