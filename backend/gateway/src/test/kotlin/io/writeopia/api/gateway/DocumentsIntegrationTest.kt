@@ -23,6 +23,7 @@ import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
+import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import kotlin.time.Clock
 import kotlin.random.Random
@@ -324,5 +325,99 @@ class DocumentationIntegrationTests {
 
         db.deleteDocumentById(documentApi.id)
         db.deleteDocumentById(documentApi2.id)
+    }
+
+    @Test
+    fun `it should be possible to get folder contents with folders and documents`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+        val parentFolderId = "parentFolderId"
+
+        val childFolder1 = FolderApi(
+            id = "childFolder1",
+            title = "Child Folder 1",
+            parentId = parentFolderId,
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val childFolder2 = FolderApi(
+            id = "childFolder2",
+            title = "Child Folder 2",
+            parentId = parentFolderId,
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val document1 = DocumentApi(
+            id = "document1",
+            title = "Document 1",
+            workspaceId = workspaceId,
+            parentId = parentFolderId,
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val document2 = DocumentApi(
+            id = "document2",
+            title = "Document 2",
+            workspaceId = workspaceId,
+            parentId = parentFolderId,
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        // Save folders
+        val folderResponse = client.post("/api/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(listOf(childFolder1, childFolder2), workspaceId))
+        }
+
+        assertEquals(HttpStatusCode.OK, folderResponse.status)
+
+        // Save documents
+        val documentResponse = client.post("/api/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document1, document2), workspaceId))
+        }
+
+        assertEquals(HttpStatusCode.OK, documentResponse.status)
+
+        // Get folder contents
+        val contentsResponse = client.get("/api/workspace/$workspaceId/folder/$parentFolderId/contents")
+
+        assertEquals(HttpStatusCode.OK, contentsResponse.status)
+
+        val contents = contentsResponse.body<FolderContentResponse>()
+
+        // Verify folders
+        assertEquals(2, contents.folders.size)
+        assertEquals(
+            listOf(childFolder1.id, childFolder2.id).sorted(),
+            contents.folders.map { it.id }.sorted()
+        )
+
+        // Verify documents
+        assertEquals(2, contents.documents.size)
+        assertEquals(
+            listOf(document1.id, document2.id).sorted(),
+            contents.documents.map { it.id }.sorted()
+        )
+
+        // Clean up
+        db.deleteDocumentById(document1.id)
+        db.deleteDocumentById(document2.id)
     }
 }

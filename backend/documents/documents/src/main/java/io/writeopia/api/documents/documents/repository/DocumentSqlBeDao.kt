@@ -739,6 +739,13 @@ class DocumentSqlBeDao(
             ?: emptyList()
     }
 
+    fun loadFoldersByParentId(parentId: String): List<Folder> {
+        return foldersQueries?.selectChildrenFolder(parentId)
+            ?.executeAsList()
+            ?.map { it.toModel(0) }
+            ?: emptyList()
+    }
+
     fun deleteDocumentsByUserId(userId: String) {
         documentQueries?.deleteByUserId(Clock.System.now().toEpochMilliseconds(), userId)
     }

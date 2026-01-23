@@ -58,6 +58,9 @@ suspend fun WriteopiaDbBackend.getFolderById(id: String = "test", userId: String
 suspend fun WriteopiaDbBackend.getIdsByParentId(parentId: String = "root"): List<String> =
     getDocumentDaoFn().loadDocumentIdsByParentId(parentId)
 
+fun WriteopiaDbBackend.getFoldersByParentId(parentId: String = "root"): List<Folder> =
+    getDocumentDaoFn().loadFoldersByParentId(parentId)
+
 suspend fun WriteopiaDbBackend.deleteDocumentById(vararg documentIds: String) {
     val dao = getDocumentDaoFn()
     documentIds.forEach(dao::deleteDocumentById)
