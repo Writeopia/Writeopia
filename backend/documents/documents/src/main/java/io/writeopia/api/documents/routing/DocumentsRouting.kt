@@ -16,6 +16,7 @@ import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
 import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
 import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
+import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
 import io.writeopia.backend.models.ImageStorageService
 import io.writeopia.buckets.GcpBucketImageStorageService
@@ -28,6 +29,7 @@ import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
+import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
@@ -157,6 +159,34 @@ fun Routing.documentsRoute(
                     call.respond(
                         status = HttpStatusCode.NotFound,
                         message = "No lead with id: $id"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        get("/api/workspace/{workspaceId}/folder/{folderId}/contents") {
+            val folderId = call.pathParameters["folderId"]!!
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val folders = writeopiaDb.getFoldersByParentId(folderId)
+                    val documents = writeopiaDb.getDocumentsByParentId(folderId)
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = FolderContentResponse(
+                            folders = folders.map { it.toApi() },
+                            documents = documents.map { it.toApi() }
+                        )
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
                     )
                 }
             }
