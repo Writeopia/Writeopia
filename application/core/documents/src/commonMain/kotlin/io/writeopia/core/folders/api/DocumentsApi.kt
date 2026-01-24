@@ -25,6 +25,7 @@ import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
+import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
@@ -205,6 +206,42 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
             ResultData.Complete(Unit)
         } else {
             println("error moving folder: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun favoriteDocument(
+        documentId: String,
+        favorite: Boolean,
+        workspaceId: String,
+        token: String
+    ): ResultData<Unit> {
+        val response = client.post("$baseUrl/api/workspace/$workspaceId/document/$documentId/favorite") {
+            contentType(ContentType.Application.Json)
+            setBody(FavoriteDocumentRequest(favorite))
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            println("error favoriting document: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun getUserFavorites(
+        workspaceId: String,
+        token: String
+    ): ResultData<List<String>> {
+        val response = client.get("$baseUrl/api/workspace/$workspaceId/user/favorites") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<List<String>>())
+        } else {
+            println("error getting user favorites: $response")
             ResultData.Error()
         }
     }

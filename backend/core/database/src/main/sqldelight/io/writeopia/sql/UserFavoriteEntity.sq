@@ -1,0 +1,38 @@
+CREATE TABLE user_favorite_entity (
+  user_id TEXT NOT NULL,
+  document_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, document_id)
+);
+
+selectByUserAndWorkspace:
+SELECT document_id
+FROM user_favorite_entity
+WHERE user_id = ? AND workspace_id = ?;
+
+selectByUserAndDocument:
+SELECT *
+FROM user_favorite_entity
+WHERE user_id = ? AND document_id = ?;
+
+isFavorite:
+SELECT COUNT(*) > 0
+FROM user_favorite_entity
+WHERE user_id = ? AND document_id = ?;
+
+insert:
+INSERT INTO user_favorite_entity(user_id, document_id, workspace_id, created_at)
+VALUES (?, ?, ?, ?);
+
+delete:
+DELETE FROM user_favorite_entity
+WHERE user_id = ? AND document_id = ?;
+
+deleteByDocument:
+DELETE FROM user_favorite_entity
+WHERE document_id = ?;
+
+deleteByUser:
+DELETE FROM user_favorite_entity
+WHERE user_id = ?;

@@ -25,11 +25,13 @@ import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
+import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
+import junit.framework.TestCase.assertFalse
 import kotlin.time.Clock
 import kotlin.random.Random
 import kotlin.test.Test
@@ -1066,5 +1068,81 @@ class DocumentationIntegrationTests {
             setBody(MoveFolderRequest(folderB.id))
         }
         assertEquals(HttpStatusCode.BadRequest, moveResponse2.status)
+    }
+
+    @Test
+    fun `it should be possible to favorite and unfavorite a document for a user`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        // Create a document
+        val document = DocumentApi(
+            id = "favoriteDoc_${Random.nextInt()}",
+            title = "Favorite Test Document",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L,
+        )
+
+        val createResponse = client.post("/api/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        // Verify user has no favorites initially
+        val getInitialFavorites = client.get("/api/workspace/$workspaceId/user/favorites")
+        assertEquals(HttpStatusCode.OK, getInitialFavorites.status)
+        val initialFavorites = getInitialFavorites.body<List<String>>()
+        assertFalse(initialFavorites.contains(document.id))
+
+        // Favorite the document
+        val favoriteResponse = client.post("/api/workspace/$workspaceId/document/${document.id}/favorite") {
+            contentType(ContentType.Application.Json)
+            setBody(FavoriteDocumentRequest(true))
+        }
+        assertEquals(HttpStatusCode.OK, favoriteResponse.status)
+
+        // Verify document is now in user's favorites
+        val getAfterFavorite = client.get("/api/workspace/$workspaceId/user/favorites")
+        assertEquals(HttpStatusCode.OK, getAfterFavorite.status)
+        val favoritesAfter = getAfterFavorite.body<List<String>>()
+        assertTrue(favoritesAfter.contains(document.id))
+
+        // Unfavorite the document
+        val unfavoriteResponse = client.post("/api/workspace/$workspaceId/document/${document.id}/favorite") {
+            contentType(ContentType.Application.Json)
+            setBody(FavoriteDocumentRequest(false))
+        }
+        assertEquals(HttpStatusCode.OK, unfavoriteResponse.status)
+
+        // Verify document is no longer in user's favorites
+        val getAfterUnfavorite = client.get("/api/workspace/$workspaceId/user/favorites")
+        assertEquals(HttpStatusCode.OK, getAfterUnfavorite.status)
+        val favoritesAfterUnfavorite = getAfterUnfavorite.body<List<String>>()
+        assertFalse(favoritesAfterUnfavorite.contains(document.id))
+    }
+
+    @Test
+    fun `it should return 404 when favoriting a non-existent document`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        val favoriteResponse = client.post("/api/workspace/$workspaceId/document/nonExistentDoc/favorite") {
+            contentType(ContentType.Application.Json)
+            setBody(FavoriteDocumentRequest(true))
+        }
+        assertEquals(HttpStatusCode.NotFound, favoriteResponse.status)
     }
 }
