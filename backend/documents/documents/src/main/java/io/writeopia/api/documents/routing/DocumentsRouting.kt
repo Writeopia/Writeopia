@@ -31,6 +31,7 @@ import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
+import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
@@ -496,6 +497,47 @@ fun Routing.documentsRoute(
                         status = HttpStatusCode.OK,
                         message = "Documents deleted successfully"
                     )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<MoveFolderRequest>("/api/workspace/{workspaceId}/folder/{folderId}/move") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val folderId = call.pathParameters["folderId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    // Verify folder exists and belongs to workspace
+                    val folder = DocumentsService.getFolderById(folderId, userId, writeopiaDb)
+                    if (folder == null || folder.workspaceId != workspaceId) {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Folder not found"
+                        )
+                        return@runIfMember
+                    }
+
+                    val moved = DocumentsService.moveFolder(folderId, request.targetParentId, writeopiaDb)
+
+                    if (moved) {
+                        call.respond(
+                            status = HttpStatusCode.OK,
+                            message = "Folder moved successfully"
+                        )
+                    } else {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = "Cannot move a folder into itself"
+                        )
+                    }
                 } catch (e: Exception) {
                     call.respond(
                         status = HttpStatusCode.InternalServerError,

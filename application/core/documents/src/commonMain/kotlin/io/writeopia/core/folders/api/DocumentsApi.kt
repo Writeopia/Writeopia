@@ -25,6 +25,7 @@ import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
+import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
@@ -184,6 +185,26 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
             ResultData.Complete(Unit)
         } else {
             println("error deleting documents: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun moveFolder(
+        folderId: String,
+        targetParentId: String,
+        workspaceId: String,
+        token: String
+    ): ResultData<Unit> {
+        val response = client.post("$baseUrl/api/workspace/$workspaceId/folder/$folderId/move") {
+            contentType(ContentType.Application.Json)
+            setBody(MoveFolderRequest(targetParentId))
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            println("error moving folder: $response")
             ResultData.Error()
         }
     }

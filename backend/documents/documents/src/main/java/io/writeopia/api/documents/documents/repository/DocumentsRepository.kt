@@ -74,6 +74,10 @@ fun WriteopiaDbBackend.deleteDocumentsByFolderId(folderId: String) {
     getDocumentDaoFn().deleteDocumentsByFolderId(folderId)
 }
 
+fun WriteopiaDbBackend.moveFolderToFolder(folderId: String, parentId: String) {
+    getDocumentDaoFn().moveFolderToFolder(folderId, parentId)
+}
+
 suspend fun WriteopiaDbBackend.deleteDocumentsByIds(documentIds: List<String>) {
     val dao = getDocumentDaoFn()
     dao.deleteDocumentByIds(documentIds.toSet())

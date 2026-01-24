@@ -773,6 +773,14 @@ class DocumentSqlBeDao(
     fun deleteFolder(folderId: String) {
         foldersQueries?.deleteFolder(folderId)
     }
+
+    fun moveFolderToFolder(folderId: String, parentId: String) {
+        foldersQueries?.moveToFolder(
+            parentId,
+            Clock.System.now().toEpochMilliseconds(),
+            folderId
+        )
+    }
 }
 
 fun Folder_entity.toModel(count: Long) =

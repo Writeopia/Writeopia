@@ -14,6 +14,7 @@ import io.writeopia.api.documents.documents.repository.deleteFolder
 import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.getFolderById
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
+import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.search.SearchDocument
@@ -140,6 +141,20 @@ object DocumentsService {
         writeopiaDb: WriteopiaDbBackend
     ) {
         writeopiaDb.deleteDocumentsByIds(documentIds)
+    }
+
+    suspend fun moveFolder(
+        folderId: String,
+        targetParentId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Boolean {
+        // Prevent moving a folder into itself
+        if (folderId == targetParentId) {
+            return false
+        }
+
+        writeopiaDb.moveFolderToFolder(folderId, targetParentId)
+        return true
     }
 
     private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String,) =

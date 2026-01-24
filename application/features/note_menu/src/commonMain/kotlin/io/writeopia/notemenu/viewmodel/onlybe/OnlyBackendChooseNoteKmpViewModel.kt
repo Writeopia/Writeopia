@@ -417,7 +417,23 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun moveToFolder(menuItemUi: MenuItemUi, parentId: String) {
-        // Would need a move API endpoint
+        if (menuItemUi.documentId == parentId) return
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+
+            when (menuItemUi) {
+                is MenuItemUi.FolderUi -> {
+                    documentsApi.moveFolder(menuItemUi.documentId, parentId, workspace.id, token)
+                }
+                is MenuItemUi.DocumentUi -> {
+                    // Would need a move document API endpoint
+                }
+            }
+
+            loadFolderContents()
+        }
     }
 
     override fun changeIcons(menuItemId: String, icon: String, tint: Int, iconChange: IconChange) {
