@@ -992,4 +992,79 @@ class DocumentationIntegrationTests {
         }
         assertEquals(HttpStatusCode.BadRequest, moveResponse.status)
     }
+
+    @Test
+    fun `it should not be possible to move a folder into its descendant (prevent cycle)`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        // Create folder structure:
+        // root
+        // └── folderA
+        //     └── folderB
+        //         └── folderC
+        //
+        // Trying to move folderA into folderC should fail (would create cycle)
+
+        val folderA = FolderApi(
+            id = "cycleTestA_${Random.nextInt()}",
+            title = "Folder A",
+            parentId = "root",
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val folderB = FolderApi(
+            id = "cycleTestB_${Random.nextInt()}",
+            title = "Folder B",
+            parentId = folderA.id,
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val folderC = FolderApi(
+            id = "cycleTestC_${Random.nextInt()}",
+            title = "Folder C",
+            parentId = folderB.id,
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        // Create all folders
+        val createResponse = client.post("/api/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(listOf(folderA, folderB, folderC), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        // Try to move folderA into folderC (its grandchild) - should fail
+        val moveResponse = client.post("/api/workspace/$workspaceId/folder/${folderA.id}/move") {
+            contentType(ContentType.Application.Json)
+            setBody(MoveFolderRequest(folderC.id))
+        }
+        assertEquals(HttpStatusCode.BadRequest, moveResponse.status)
+
+        // Verify folderA is still under root (not moved)
+        val folderAAfter = client.get("/api/workspace/$workspaceId/folder/${folderA.id}")
+        assertEquals(HttpStatusCode.OK, folderAAfter.status)
+        val folderAData = folderAAfter.body<FolderApi>()
+        assertEquals("root", folderAData.parentId)
+
+        // Try to move folderA into folderB (its child) - should also fail
+        val moveResponse2 = client.post("/api/workspace/$workspaceId/folder/${folderA.id}/move") {
+            contentType(ContentType.Application.Json)
+            setBody(MoveFolderRequest(folderB.id))
+        }
+        assertEquals(HttpStatusCode.BadRequest, moveResponse2.status)
+    }
 }

@@ -159,8 +159,8 @@ class DocumentSqlBeDao(
                 )
             }
 
-    fun loadFolderById(id: String): Folder? =
-        foldersQueries?.selectFolderById(id)
+    fun loadFolderById(id: String, workspaceId: String): Folder? =
+        foldersQueries?.selectFolderById(id, workspaceId)
             ?.executeAsOneOrNull()
             ?.toModel(0)
 

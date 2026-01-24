@@ -153,7 +153,7 @@ fun Routing.documentsRoute(
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
             runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                val folder = DocumentsService.getFolderById(id, userId, writeopiaDb)
+                val folder = DocumentsService.getFolderById(id, workspaceId, writeopiaDb)
 
                 if (folder != null) {
                     call.respond(
@@ -451,8 +451,8 @@ fun Routing.documentsRoute(
             runIfMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     // Verify folder exists and belongs to workspace
-                    val folder = DocumentsService.getFolderById(folderId, userId, writeopiaDb)
-                    if (folder == null || folder.workspaceId != workspaceId) {
+                    val folder = DocumentsService.getFolderById(folderId, workspaceId, writeopiaDb)
+                    if (folder == null) {
                         call.respond(
                             status = HttpStatusCode.NotFound,
                             message = "Folder not found"
@@ -516,8 +516,8 @@ fun Routing.documentsRoute(
             runIfMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     // Verify folder exists and belongs to workspace
-                    val folder = DocumentsService.getFolderById(folderId, userId, writeopiaDb)
-                    if (folder == null || folder.workspaceId != workspaceId) {
+                    val folder = DocumentsService.getFolderById(folderId, workspaceId, writeopiaDb)
+                    if (folder == null) {
                         call.respond(
                             status = HttpStatusCode.NotFound,
                             message = "Folder not found"
@@ -525,7 +525,12 @@ fun Routing.documentsRoute(
                         return@runIfMember
                     }
 
-                    val moved = DocumentsService.moveFolder(folderId, request.targetParentId, writeopiaDb)
+                    val moved = DocumentsService.moveFolder(
+                        folderId,
+                        request.targetParentId,
+                        workspaceId,
+                        writeopiaDb
+                    )
 
                     if (moved) {
                         call.respond(
