@@ -639,6 +639,156 @@ class DocumentationIntegrationTests {
     }
 
     @Test
+    fun `it should recursively delete nested folders and documents when deleting a parent folder`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        // Create folder structure:
+        // parentFolder
+        // ├── childFolder1
+        // │   ├── grandchildFolder
+        // │   │   └── deepDocument
+        // │   └── childDocument1
+        // ├── childFolder2
+        // │   └── childDocument2
+        // └── parentDocument
+
+        val parentFolder = FolderApi(
+            id = "parentFolder_${Random.nextInt()}",
+            title = "Parent Folder",
+            parentId = "root",
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val childFolder1 = FolderApi(
+            id = "childFolder1_${Random.nextInt()}",
+            title = "Child Folder 1",
+            parentId = parentFolder.id,
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val childFolder2 = FolderApi(
+            id = "childFolder2_${Random.nextInt()}",
+            title = "Child Folder 2",
+            parentId = parentFolder.id,
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val grandchildFolder = FolderApi(
+            id = "grandchildFolder_${Random.nextInt()}",
+            title = "Grandchild Folder",
+            parentId = childFolder1.id,
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val parentDocument = DocumentApi(
+            id = "parentDoc_${Random.nextInt()}",
+            title = "Parent Document",
+            workspaceId = workspaceId,
+            parentId = parentFolder.id,
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val childDocument1 = DocumentApi(
+            id = "childDoc1_${Random.nextInt()}",
+            title = "Child Document 1",
+            workspaceId = workspaceId,
+            parentId = childFolder1.id,
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val childDocument2 = DocumentApi(
+            id = "childDoc2_${Random.nextInt()}",
+            title = "Child Document 2",
+            workspaceId = workspaceId,
+            parentId = childFolder2.id,
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val deepDocument = DocumentApi(
+            id = "deepDoc_${Random.nextInt()}",
+            title = "Deep Document",
+            workspaceId = workspaceId,
+            parentId = grandchildFolder.id,
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        // Create all folders
+        val folderResponse = client.post("/api/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(
+                listOf(parentFolder, childFolder1, childFolder2, grandchildFolder),
+                workspaceId
+            ))
+        }
+        assertEquals(HttpStatusCode.OK, folderResponse.status)
+
+        // Create all documents
+        val documentResponse = client.post("/api/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(
+                listOf(parentDocument, childDocument1, childDocument2, deepDocument),
+                workspaceId
+            ))
+        }
+        assertEquals(HttpStatusCode.OK, documentResponse.status)
+
+        // Verify all items exist before deletion
+        assertEquals(HttpStatusCode.OK, client.get("/api/workspace/$workspaceId/folder/${parentFolder.id}").status)
+        assertEquals(HttpStatusCode.OK, client.get("/api/workspace/$workspaceId/folder/${childFolder1.id}").status)
+        assertEquals(HttpStatusCode.OK, client.get("/api/workspace/$workspaceId/folder/${childFolder2.id}").status)
+        assertEquals(HttpStatusCode.OK, client.get("/api/workspace/$workspaceId/folder/${grandchildFolder.id}").status)
+        assertEquals(HttpStatusCode.OK, client.get("/api/workspace/$workspaceId/document/${parentDocument.id}").status)
+        assertEquals(HttpStatusCode.OK, client.get("/api/workspace/$workspaceId/document/${childDocument1.id}").status)
+        assertEquals(HttpStatusCode.OK, client.get("/api/workspace/$workspaceId/document/${childDocument2.id}").status)
+        assertEquals(HttpStatusCode.OK, client.get("/api/workspace/$workspaceId/document/${deepDocument.id}").status)
+
+        // Delete the parent folder - should recursively delete everything
+        val deleteResponse = client.delete("/api/workspace/$workspaceId/folder/${parentFolder.id}")
+        assertEquals(HttpStatusCode.OK, deleteResponse.status)
+
+        // Verify all folders are deleted
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/workspace/$workspaceId/folder/${parentFolder.id}").status)
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/workspace/$workspaceId/folder/${childFolder1.id}").status)
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/workspace/$workspaceId/folder/${childFolder2.id}").status)
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/workspace/$workspaceId/folder/${grandchildFolder.id}").status)
+
+        // Verify all documents are deleted
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/workspace/$workspaceId/document/${parentDocument.id}").status)
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/workspace/$workspaceId/document/${childDocument1.id}").status)
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/workspace/$workspaceId/document/${childDocument2.id}").status)
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/workspace/$workspaceId/document/${deepDocument.id}").status)
+    }
+
+    @Test
     fun `it should be possible to delete a list of documents`() = testApplication {
         application {
             module(db, debugMode = true)
