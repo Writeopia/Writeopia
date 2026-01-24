@@ -18,8 +18,10 @@ import io.writeopia.connection.Urls
 import io.writeopia.connection.wrWebClient
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sql.WriteopiaDbBackend
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 object DocumentsService {
@@ -64,6 +66,48 @@ object DocumentsService {
         userId: String,
         writeopiaDb: WriteopiaDbBackend
     ): Folder? = writeopiaDb.getFolderById(id, userId)
+
+    suspend fun createFolder(
+        parentFolderId: String,
+        title: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Folder {
+        val now = Clock.System.now()
+        val folder = Folder(
+            id = GenerateId.generate(),
+            parentId = parentFolderId,
+            title = title,
+            createdAt = now,
+            lastUpdatedAt = now,
+            workspaceId = workspaceId,
+            itemCount = 0
+        )
+        
+        writeopiaDb.saveFolder(folder)
+        return folder
+    }
+
+    suspend fun upsertDocument(
+        document: Document,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend,
+        useAi: Boolean
+    ): Document {
+        val documentWithWorkspace = document.copy(
+            workspaceId = workspaceId,
+            lastUpdatedAt = Clock.System.now(),
+            lastSyncedAt = Clock.System.now()
+        )
+        
+        writeopiaDb.saveDocument(documentWithWorkspace)
+        
+        if (useAi) {
+            sendToAiHub(listOf(documentWithWorkspace), workspaceId)
+        }
+        
+        return documentWithWorkspace
+    }
 
     private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String,) =
         wrWebClient.post("${Urls.AI_HUB}/documents/") {

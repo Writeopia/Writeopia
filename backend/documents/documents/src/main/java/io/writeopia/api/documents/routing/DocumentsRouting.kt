@@ -27,7 +27,9 @@ import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
+import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
+import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
@@ -194,6 +196,35 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
+        post<CreateFolderRequest>("/api/workspace/{workspaceId}/folder/{parentFolderId}/create") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val parentFolderId = call.pathParameters["parentFolderId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val folder = DocumentsService.createFolder(
+                        parentFolderId = parentFolderId,
+                        title = request.title,
+                        workspaceId = workspaceId,
+                        writeopiaDb = writeopiaDb
+                    )
+
+                    call.respond(
+                        status = HttpStatusCode.Created,
+                        message = folder.toApi()
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
         post<SendDocumentsRequest>("/api/workspace/document") { request ->
             val userId = getUserId() ?: ""
             val workspaceId = request.workspaceId
@@ -232,6 +263,38 @@ fun Routing.documentsRoute(
                             message = "Empty documents"
                         )
                     }
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<UpsertDocumentRequest>("/api/workspace/{workspaceId}/document/upsert") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val documentModel = request.document
+                        .copy(workspaceId = workspaceId)
+                        .toModel()
+
+                    val upsertedDocument = DocumentsService.upsertDocument(
+                        document = documentModel,
+                        workspaceId = workspaceId,
+                        writeopiaDb = writeopiaDb,
+                        useAi = useAi
+                    )
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = upsertedDocument.toApi()
+                    )
                 } catch (e: Exception) {
                     call.respond(
                         status = HttpStatusCode.InternalServerError,
