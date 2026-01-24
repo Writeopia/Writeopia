@@ -338,10 +338,10 @@ class DocumentationIntegrationTests {
 
         val client = defaultClient()
         val workspaceId = Random.nextInt().toString()
-        val parentFolderId = "parentFolderId"
+        val parentFolderId = "parentFolderId_${Random.nextInt()}"
 
         val childFolder1 = FolderApi(
-            id = "childFolder1",
+            id = "childFolder1_${Random.nextInt()}",
             title = "Child Folder 1",
             parentId = parentFolderId,
             createdAt = Clock.System.now(),
@@ -351,7 +351,7 @@ class DocumentationIntegrationTests {
         )
 
         val childFolder2 = FolderApi(
-            id = "childFolder2",
+            id = "childFolder2_${Random.nextInt()}",
             title = "Child Folder 2",
             parentId = parentFolderId,
             createdAt = Clock.System.now(),
@@ -361,7 +361,7 @@ class DocumentationIntegrationTests {
         )
 
         val document1 = DocumentApi(
-            id = "document1",
+            id = "document1_${Random.nextInt()}",
             title = "Document 1",
             workspaceId = workspaceId,
             parentId = parentFolderId,
@@ -372,7 +372,7 @@ class DocumentationIntegrationTests {
         )
 
         val document2 = DocumentApi(
-            id = "document2",
+            id = "document2_${Random.nextInt()}",
             title = "Document 2",
             workspaceId = workspaceId,
             parentId = parentFolderId,
