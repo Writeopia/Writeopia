@@ -225,14 +225,13 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         }
     }
 
-    override fun handleMenuItemTap(id: String): Boolean {
-        return if (_selectedNotes.value.isNotEmpty()) {
+    override fun handleMenuItemTap(id: String): Boolean =
+        if (_selectedNotes.value.isNotEmpty()) {
             toggleSelection(id)
             true
         } else {
             false
         }
-    }
 
     override fun showEditMenu() {
         _editState.value = true
@@ -327,7 +326,26 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun favoriteSelectedNotes() {
-        // Not supported in backend-only mode without additional API endpoints
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+            val selectedIds = _selectedNotes.value
+
+            // Check if all selected notes are already favorited
+            val currentItems = (_menuItemsState.value as? ResultData.Complete)?.data ?: emptyList()
+            val allFavorites = currentItems
+                .filter { selectedIds.contains(it.id) }
+                .all { it.favorite }
+
+            // Toggle: if all are favorites, unfavorite them; otherwise favorite them
+            val newFavoriteState = !allFavorites
+
+            selectedIds.forEach { id ->
+                documentsApi.favoriteDocument(id, newFavoriteState, workspace.id, token)
+            }
+
+            loadFolderContents()
+        }
     }
 
     override fun summarizeDocuments() {
