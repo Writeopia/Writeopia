@@ -769,6 +769,10 @@ class DocumentSqlBeDao(
             documentId
         )
     }
+
+    fun deleteFolder(folderId: String) {
+        foldersQueries?.deleteFolder(folderId)
+    }
 }
 
 fun Folder_entity.toModel(count: Long) =

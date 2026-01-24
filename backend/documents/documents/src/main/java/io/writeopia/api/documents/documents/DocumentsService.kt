@@ -8,8 +8,12 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
+import io.writeopia.api.documents.documents.repository.deleteDocumentsByFolderId
+import io.writeopia.api.documents.documents.repository.deleteDocumentsByIds
+import io.writeopia.api.documents.documents.repository.deleteFolder
 import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.getFolderById
+import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.search.SearchDocument
@@ -107,6 +111,35 @@ object DocumentsService {
         }
         
         return documentWithWorkspace
+    }
+
+    /**
+     * Recursively deletes a folder and all its contents (child folders and documents).
+     * This follows the same pattern as NotesUseCase.deleteFolderById.
+     */
+    suspend fun deleteFolder(
+        folderId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ) {
+        val childFolders = writeopiaDb.getFoldersByParentId(folderId)
+
+        // Recursively delete all child folders
+        childFolders.forEach { childFolder ->
+            deleteFolder(childFolder.id, writeopiaDb)
+        }
+
+        // Delete all documents in this folder
+        writeopiaDb.deleteDocumentsByFolderId(folderId)
+
+        // Finally delete the folder itself
+        writeopiaDb.deleteFolder(folderId)
+    }
+
+    suspend fun deleteDocuments(
+        documentIds: List<String>,
+        writeopiaDb: WriteopiaDbBackend
+    ) {
+        writeopiaDb.deleteDocumentsByIds(documentIds)
     }
 
     private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String,) =
