@@ -203,8 +203,17 @@ class NotesUseCase private constructor(
     }
 
     suspend fun deleteFolderById(folderId: String) {
+        val folder = folderRepository.getFolderById(folderId)
+        val workspaceId = folder?.workspaceId ?: return
+
+        val childFolders = folderRepository.getFolderByParentId(folderId, workspaceId)
+
+        // Recursively delete all child folders
+        childFolders.forEach { childFolder ->
+            deleteFolderById(childFolder.id)
+        }
+
         documentRepository.deleteDocumentByFolder(folderId)
-        folderRepository.deleteFolderByParent(folderId)
         folderRepository.deleteFolderById(folderId)
     }
 
