@@ -22,6 +22,8 @@ import io.writeopia.sdk.serialization.data.StoryStepApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
+import io.writeopia.sdk.serialization.request.CreateFolderRequest
+import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
@@ -29,6 +31,7 @@ import kotlin.time.Clock
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
 class DocumentationIntegrationTests {
@@ -419,5 +422,176 @@ class DocumentationIntegrationTests {
         // Clean up
         db.deleteDocumentById(document1.id)
         db.deleteDocumentById(document2.id)
+    }
+
+    @Test
+    fun `it should be possible to create a folder inside another folder`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+        val parentFolderId = "parentFolderId"
+
+        // First, create a parent folder
+        val parentFolder = FolderApi(
+            id = parentFolderId,
+            title = "Parent Folder",
+            parentId = "root",
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val parentFolderResponse = client.post("/api/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(listOf(parentFolder), workspaceId))
+        }
+
+        assertEquals(HttpStatusCode.OK, parentFolderResponse.status)
+
+        // Create a child folder inside the parent folder
+        val createFolderRequest = CreateFolderRequest(title = "Child Folder")
+
+        val createResponse = client.post("/api/workspace/$workspaceId/folder/$parentFolderId/create") {
+            contentType(ContentType.Application.Json)
+            setBody(createFolderRequest)
+        }
+
+        assertEquals(HttpStatusCode.Created, createResponse.status)
+
+        val createdFolder = createResponse.body<FolderApi>()
+
+        // Verify the folder was created with correct properties
+        assertEquals(createFolderRequest.title, createdFolder.title)
+        assertEquals(parentFolderId, createdFolder.parentId)
+        assertEquals(workspaceId, createdFolder.workspaceId)
+        assertEquals(0L, createdFolder.itemCount)
+        assertEquals(false, createdFolder.favorite)
+        // Verify ID was generated (not empty)
+        assertTrue(createdFolder.id.isNotEmpty())
+        assertTrue(createdFolder.id != parentFolderId)
+
+        // Verify the folder appears in the parent folder's contents
+        val contentsResponse = client.get("/api/workspace/$workspaceId/folder/$parentFolderId/contents")
+        assertEquals(HttpStatusCode.OK, contentsResponse.status)
+
+        val contents = contentsResponse.body<FolderContentResponse>()
+        assertTrue(contents.folders.any { it.id == createdFolder.id })
+        assertEquals(createFolderRequest.title, contents.folders.first { it.id == createdFolder.id }.title)
+
+        // Clean up
+        db.deleteDocumentById(createdFolder.id)
+    }
+
+    @Test
+    fun `it should be possible to upsert a new document`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        val documentApi = DocumentApi(
+            id = "upsertTestDocument",
+            title = "New Document",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val upsertRequest = UpsertDocumentRequest(document = documentApi)
+
+        val response = client.post("/api/workspace/$workspaceId/document/upsert") {
+            contentType(ContentType.Application.Json)
+            setBody(upsertRequest)
+        }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val upsertedDocument = response.body<DocumentApi>()
+
+        // Verify the document was created
+        assertEquals(documentApi.id, upsertedDocument.id)
+        assertEquals(documentApi.title, upsertedDocument.title)
+        assertEquals(workspaceId, upsertedDocument.workspaceId)
+        assertEquals(documentApi.parentId, upsertedDocument.parentId)
+
+        // Verify the document can be retrieved
+        val getResponse = client.get("/api/workspace/$workspaceId/document/${documentApi.id}")
+        assertEquals(HttpStatusCode.OK, getResponse.status)
+        val retrievedDocument = getResponse.body<DocumentApi>()
+        assertEquals(documentApi.id, retrievedDocument.id)
+        assertEquals(documentApi.title, retrievedDocument.title)
+
+        // Clean up
+        db.deleteDocumentById(documentApi.id)
+    }
+
+    @Test
+    fun `it should be possible to upsert an existing document to update it`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        // First, create a document
+        val originalDocument = DocumentApi(
+            id = "upsertUpdateTestDocument",
+            title = "Original Title",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val createResponse = client.post("/api/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(originalDocument), workspaceId))
+        }
+
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        // Now update the document via upsert
+        val updatedDocument = originalDocument.copy(
+            title = "Updated Title",
+            lastUpdatedAt = 3000L
+        )
+
+        val upsertRequest = UpsertDocumentRequest(document = updatedDocument)
+
+        val upsertResponse = client.post("/api/workspace/$workspaceId/document/upsert") {
+            contentType(ContentType.Application.Json)
+            setBody(upsertRequest)
+        }
+
+        assertEquals(HttpStatusCode.OK, upsertResponse.status)
+
+        val upsertedDocument = upsertResponse.body<DocumentApi>()
+
+        // Verify the document was updated
+        assertEquals(originalDocument.id, upsertedDocument.id)
+        assertEquals("Updated Title", upsertedDocument.title)
+        assertEquals(workspaceId, upsertedDocument.workspaceId)
+
+        // Verify the updated document can be retrieved
+        val getResponse = client.get("/api/workspace/$workspaceId/document/${originalDocument.id}")
+        assertEquals(HttpStatusCode.OK, getResponse.status)
+        val retrievedDocument = getResponse.body<DocumentApi>()
+        assertEquals(originalDocument.id, retrievedDocument.id)
+        assertEquals("Updated Title", retrievedDocument.title)
+
+        // Clean up
+        db.deleteDocumentById(originalDocument.id)
     }
 }

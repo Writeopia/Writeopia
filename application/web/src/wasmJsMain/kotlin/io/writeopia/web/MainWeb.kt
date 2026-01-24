@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    ComposeViewport {
+    ComposeViewport("composeApp") {
         ImageLoadConfig.configImageLoad()
         CreateAppInMemory()
     }
