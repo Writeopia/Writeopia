@@ -3,4 +3,7 @@
     <file name="src/commonMain/kotlin/io/writeopia/notemenu/viewmodel/FolderStateController.kt">
         <error line="34" column="17" source="standard:backing-property-naming" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/notemenu/viewmodel/onlybe/OnlyBackendChooseNoteKmpViewModel.kt">
+        <error line="107" column="17" source="standard:backing-property-naming" />
+    </file>
 </baseline>

@@ -45,7 +45,7 @@ WHERE folder_entity.parent_id = ?;
 selectFolderById:
 SELECT *
 FROM folder_entity
-WHERE folder_entity.id = ?;
+WHERE folder_entity.id = ? AND workspace_id = ?;
 
 countAllFolderItems:
 SELECT parent_id, COUNT(id)

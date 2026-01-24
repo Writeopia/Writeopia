@@ -159,8 +159,8 @@ class DocumentSqlBeDao(
                 )
             }
 
-    fun loadFolderById(id: String): Folder? =
-        foldersQueries?.selectFolderById(id)
+    fun loadFolderById(id: String, workspaceId: String): Folder? =
+        foldersQueries?.selectFolderById(id, workspaceId)
             ?.executeAsOneOrNull()
             ?.toModel(0)
 
@@ -772,6 +772,14 @@ class DocumentSqlBeDao(
 
     fun deleteFolder(folderId: String) {
         foldersQueries?.deleteFolder(folderId)
+    }
+
+    fun moveFolderToFolder(folderId: String, parentId: String) {
+        foldersQueries?.moveToFolder(
+            parentId,
+            Clock.System.now().toEpochMilliseconds(),
+            folderId
+        )
     }
 }
 

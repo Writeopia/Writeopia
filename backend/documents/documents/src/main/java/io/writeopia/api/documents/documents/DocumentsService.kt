@@ -14,6 +14,7 @@ import io.writeopia.api.documents.documents.repository.deleteFolder
 import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.getFolderById
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
+import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.search.SearchDocument
@@ -67,9 +68,9 @@ object DocumentsService {
 
     suspend fun getFolderById(
         id: String,
-        userId: String,
+        workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
-    ): Folder? = writeopiaDb.getFolderById(id, userId)
+    ): Folder? = writeopiaDb.getFolderById(id, workspaceId)
 
     suspend fun createFolder(
         parentFolderId: String,
@@ -87,7 +88,7 @@ object DocumentsService {
             workspaceId = workspaceId,
             itemCount = 0
         )
-        
+
         writeopiaDb.saveFolder(folder)
         return folder
     }
@@ -103,13 +104,13 @@ object DocumentsService {
             lastUpdatedAt = Clock.System.now(),
             lastSyncedAt = Clock.System.now()
         )
-        
+
         writeopiaDb.saveDocument(documentWithWorkspace)
-        
+
         if (useAi) {
             sendToAiHub(listOf(documentWithWorkspace), workspaceId)
         }
-        
+
         return documentWithWorkspace
     }
 
@@ -142,7 +143,57 @@ object DocumentsService {
         writeopiaDb.deleteDocumentsByIds(documentIds)
     }
 
-    private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String,) =
+    suspend fun moveFolder(
+        folderId: String,
+        targetParentId: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Boolean {
+        // Prevent moving a folder into itself
+        if (folderId == targetParentId) {
+            return false
+        }
+
+        // Prevent creating a cycle by checking if targetParentId is a descendant of folderId
+        // Traverse up from targetParentId to root, if we encounter folderId, it would create a cycle
+        if (wouldCreateCycle(folderId, targetParentId, workspaceId = workspaceId, writeopiaDb)) {
+            return false
+        }
+
+        writeopiaDb.moveFolderToFolder(folderId, targetParentId)
+        return true
+    }
+
+    /**
+     * Checks if moving folderId to targetParentId would create a cycle.
+     * This happens when targetParentId is a descendant of folderId.
+     * We traverse up from targetParentId to root, and if we encounter folderId, it would create a cycle.
+     */
+    private suspend fun wouldCreateCycle(
+        folderId: String,
+        targetParentId: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Boolean {
+        var currentId = targetParentId
+
+        while (currentId != Folder.ROOT_PATH && currentId.isNotEmpty()) {
+            if (currentId == folderId) {
+                // Found the folder we're trying to move in the ancestor chain
+                // Moving it here would create a cycle
+                return true
+            }
+
+            val folder = writeopiaDb.getFolderById(currentId, workspaceId)
+                ?: break // Folder not found, assume no cycle (or it's at root level)
+
+            currentId = folder.parentId
+        }
+
+        return false
+    }
+
+    private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String) =
         wrWebClient.post("${Urls.AI_HUB}/documents/") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(documents.map { it.toApi() }, workspaceId))

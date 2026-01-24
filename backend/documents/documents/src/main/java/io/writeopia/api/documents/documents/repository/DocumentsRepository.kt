@@ -52,8 +52,8 @@ suspend fun WriteopiaDbBackend.getDocumentById(
     workspaceId: String
 ): Document? = getDocumentDaoFn().loadDocumentById(id, workspaceId)
 
-suspend fun WriteopiaDbBackend.getFolderById(id: String = "test", userId: String): Folder? =
-    getDocumentDaoFn().loadFolderById(id)
+suspend fun WriteopiaDbBackend.getFolderById(id: String = "test", workspaceId: String): Folder? =
+    getDocumentDaoFn().loadFolderById(id, workspaceId)
 
 suspend fun WriteopiaDbBackend.getIdsByParentId(parentId: String = "root"): List<String> =
     getDocumentDaoFn().loadDocumentIdsByParentId(parentId)
@@ -72,6 +72,10 @@ fun WriteopiaDbBackend.deleteFolder(folderId: String) {
 
 fun WriteopiaDbBackend.deleteDocumentsByFolderId(folderId: String) {
     getDocumentDaoFn().deleteDocumentsByFolderId(folderId)
+}
+
+fun WriteopiaDbBackend.moveFolderToFolder(folderId: String, parentId: String) {
+    getDocumentDaoFn().moveFolderToFolder(folderId, parentId)
 }
 
 suspend fun WriteopiaDbBackend.deleteDocumentsByIds(documentIds: List<String>) {
