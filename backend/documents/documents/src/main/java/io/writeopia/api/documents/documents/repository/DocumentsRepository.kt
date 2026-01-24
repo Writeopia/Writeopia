@@ -11,7 +11,8 @@ private fun WriteopiaDbBackend.getDocumentDaoFn(): DocumentSqlBeDao =
         DocumentSqlBeDao(
             documentEntityQueries,
             storyStepEntityQueries,
-            folderEntityQueries
+            folderEntityQueries,
+            userFavoriteEntityQueries
         ).also {
             documentSqlDao = it
         }
@@ -81,4 +82,20 @@ fun WriteopiaDbBackend.moveFolderToFolder(folderId: String, parentId: String) {
 suspend fun WriteopiaDbBackend.deleteDocumentsByIds(documentIds: List<String>) {
     val dao = getDocumentDaoFn()
     dao.deleteDocumentByIds(documentIds.toSet())
+}
+
+fun WriteopiaDbBackend.addUserFavorite(userId: String, documentId: String, workspaceId: String) {
+    getDocumentDaoFn().addUserFavorite(userId, documentId, workspaceId)
+}
+
+fun WriteopiaDbBackend.removeUserFavorite(userId: String, documentId: String) {
+    getDocumentDaoFn().removeUserFavorite(userId, documentId)
+}
+
+fun WriteopiaDbBackend.isUserFavorite(userId: String, documentId: String): Boolean {
+    return getDocumentDaoFn().isUserFavorite(userId, documentId)
+}
+
+fun WriteopiaDbBackend.getUserFavoriteDocumentIds(userId: String, workspaceId: String): List<String> {
+    return getDocumentDaoFn().getUserFavoriteDocumentIds(userId, workspaceId)
 }

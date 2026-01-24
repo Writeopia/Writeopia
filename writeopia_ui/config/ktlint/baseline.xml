@@ -194,9 +194,6 @@
         <error line="13" column="82" source="standard:function-return-type-spacing" />
         <error line="13" column="83" source="standard:colon-spacing" />
     </file>
-    <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/factory/CommonDrawers.kt">
-        <error line="324" column="15" source="standard:function-expression-body" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/drawer/factory/KeyEventListenerFactory.kt">
         <error line="21" column="90" source="standard:function-expression-body" />
         <error line="72" column="90" source="standard:function-expression-body" />

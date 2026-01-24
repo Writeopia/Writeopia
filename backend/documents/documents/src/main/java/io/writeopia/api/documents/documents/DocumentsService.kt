@@ -8,13 +8,17 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
+import io.writeopia.api.documents.documents.repository.addUserFavorite
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByFolderId
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByIds
 import io.writeopia.api.documents.documents.repository.deleteFolder
 import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.getFolderById
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
+import io.writeopia.api.documents.documents.repository.getUserFavoriteDocumentIds
+import io.writeopia.api.documents.documents.repository.isUserFavorite
 import io.writeopia.api.documents.documents.repository.moveFolderToFolder
+import io.writeopia.api.documents.documents.repository.removeUserFavorite
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.search.SearchDocument
@@ -141,6 +145,39 @@ object DocumentsService {
         writeopiaDb: WriteopiaDbBackend
     ) {
         writeopiaDb.deleteDocumentsByIds(documentIds)
+    }
+
+    suspend fun favoriteDocument(
+        userId: String,
+        documentId: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ) {
+        writeopiaDb.addUserFavorite(userId, documentId, workspaceId)
+    }
+
+    suspend fun unFavoriteDocument(
+        userId: String,
+        documentId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ) {
+        writeopiaDb.removeUserFavorite(userId, documentId)
+    }
+
+    suspend fun isDocumentFavorited(
+        userId: String,
+        documentId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Boolean {
+        return writeopiaDb.isUserFavorite(userId, documentId)
+    }
+
+    suspend fun getUserFavoriteDocumentIds(
+        userId: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): List<String> {
+        return writeopiaDb.getUserFavoriteDocumentIds(userId, workspaceId)
     }
 
     suspend fun moveFolder(

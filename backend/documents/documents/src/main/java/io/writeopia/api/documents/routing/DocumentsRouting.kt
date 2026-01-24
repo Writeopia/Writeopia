@@ -30,6 +30,7 @@ import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
+import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
@@ -543,6 +544,71 @@ fun Routing.documentsRoute(
                             message = "Cannot move a folder into itself"
                         )
                     }
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<FavoriteDocumentRequest>("/api/workspace/{workspaceId}/document/{documentId}/favorite") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val documentId = call.pathParameters["documentId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    // Verify document exists and belongs to workspace
+                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                    if (document == null) {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Document not found"
+                        )
+                        return@runIfMember
+                    }
+
+                    if (request.favorite) {
+                        DocumentsService.favoriteDocument(userId, documentId, workspaceId, writeopiaDb)
+                    } else {
+                        DocumentsService.unFavoriteDocument(userId, documentId, writeopiaDb)
+                    }
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = if (request.favorite) "Document favorited" else "Document unfavorited"
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        get("/api/workspace/{workspaceId}/user/favorites") {
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val favoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                        userId,
+                        workspaceId,
+                        writeopiaDb
+                    )
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = favoriteIds
+                    )
                 } catch (e: Exception) {
                     call.respond(
                         status = HttpStatusCode.InternalServerError,

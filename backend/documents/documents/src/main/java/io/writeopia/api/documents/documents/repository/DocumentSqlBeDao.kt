@@ -18,6 +18,7 @@ import io.writeopia.sql.DocumentEntityQueries
 import io.writeopia.sql.FolderEntityQueries
 import io.writeopia.sql.Folder_entity
 import io.writeopia.sql.StoryStepEntityQueries
+import io.writeopia.sql.UserFavoriteEntityQueries
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -26,6 +27,7 @@ class DocumentSqlBeDao(
     private val documentQueries: DocumentEntityQueries?,
     private val storyStepQueries: StoryStepEntityQueries?,
     private val foldersQueries: FolderEntityQueries?,
+    private val userFavoriteQueries: UserFavoriteEntityQueries? = null,
 ) : DocumentSearch {
 
     override suspend fun search(query: String, workspaceId: String): List<Document> =
@@ -754,12 +756,27 @@ class DocumentSqlBeDao(
         documentQueries?.deleteByFolderId(Clock.System.now().toEpochMilliseconds(), folderId)
     }
 
-    fun favoriteById(documentId: String) {
-        documentQueries?.favoriteById(documentId)
+    fun addUserFavorite(userId: String, documentId: String, workspaceId: String) {
+        userFavoriteQueries?.insert(
+            userId,
+            documentId,
+            workspaceId,
+            Clock.System.now().toEpochMilliseconds().toInt()
+        )
     }
 
-    fun unFavoriteById(documentId: String) {
-        documentQueries?.unFavoriteById(documentId)
+    fun removeUserFavorite(userId: String, documentId: String) {
+        userFavoriteQueries?.delete(userId, documentId)
+    }
+
+    fun isUserFavorite(userId: String, documentId: String): Boolean {
+        return userFavoriteQueries?.isFavorite(userId, documentId)
+            ?.executeAsOneOrNull() ?: false
+    }
+
+    fun getUserFavoriteDocumentIds(userId: String, workspaceId: String): List<String> {
+        return userFavoriteQueries?.selectByUserAndWorkspace(userId, workspaceId)
+            ?.executeAsList() ?: emptyList()
     }
 
     fun moveToFolder(documentId: String, parentId: String) {
