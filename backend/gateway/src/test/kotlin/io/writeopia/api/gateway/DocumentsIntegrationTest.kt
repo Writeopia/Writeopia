@@ -3,6 +3,7 @@
 package io.writeopia.api.gateway
 
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -23,6 +24,7 @@ import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
+import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
@@ -593,5 +595,132 @@ class DocumentationIntegrationTests {
 
         // Clean up
         db.deleteDocumentById(originalDocument.id)
+    }
+
+    @Test
+    fun `it should be possible to delete a folder`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        // First, create a folder
+        val folder = FolderApi(
+            id = "folderToDelete_${Random.nextInt()}",
+            title = "Folder To Delete",
+            parentId = "root",
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val createResponse = client.post("/api/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(listOf(folder), workspaceId))
+        }
+
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        // Verify folder exists
+        val getResponse = client.get("/api/workspace/$workspaceId/folder/${folder.id}")
+        assertEquals(HttpStatusCode.OK, getResponse.status)
+
+        // Delete the folder
+        val deleteResponse = client.delete("/api/workspace/$workspaceId/folder/${folder.id}")
+
+        assertEquals(HttpStatusCode.OK, deleteResponse.status)
+
+        // Verify folder is deleted
+        val getAfterDeleteResponse = client.get("/api/workspace/$workspaceId/folder/${folder.id}")
+        assertEquals(HttpStatusCode.NotFound, getAfterDeleteResponse.status)
+    }
+
+    @Test
+    fun `it should be possible to delete a list of documents`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        // Create documents
+        val document1 = DocumentApi(
+            id = "docToDelete1_${Random.nextInt()}",
+            title = "Document 1",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val document2 = DocumentApi(
+            id = "docToDelete2_${Random.nextInt()}",
+            title = "Document 2",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val document3 = DocumentApi(
+            id = "docToKeep_${Random.nextInt()}",
+            title = "Document 3",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        // Save documents
+        val createResponse = client.post("/api/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document1, document2, document3), workspaceId))
+        }
+
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        // Verify documents exist
+        val getResponse1 = client.get("/api/workspace/$workspaceId/document/${document1.id}")
+        assertEquals(HttpStatusCode.OK, getResponse1.status)
+
+        val getResponse2 = client.get("/api/workspace/$workspaceId/document/${document2.id}")
+        assertEquals(HttpStatusCode.OK, getResponse2.status)
+
+        val getResponse3 = client.get("/api/workspace/$workspaceId/document/${document3.id}")
+        assertEquals(HttpStatusCode.OK, getResponse3.status)
+
+        // Delete documents 1 and 2
+        val deleteRequest = DeleteDocumentsRequest(documentIds = listOf(document1.id, document2.id))
+
+        val deleteResponse = client.post("/api/workspace/$workspaceId/document/delete") {
+            contentType(ContentType.Application.Json)
+            setBody(deleteRequest)
+        }
+
+        assertEquals(HttpStatusCode.OK, deleteResponse.status)
+
+        // Verify documents 1 and 2 are deleted
+        val getAfterDelete1 = client.get("/api/workspace/$workspaceId/document/${document1.id}")
+        assertEquals(HttpStatusCode.NotFound, getAfterDelete1.status)
+
+        val getAfterDelete2 = client.get("/api/workspace/$workspaceId/document/${document2.id}")
+        assertEquals(HttpStatusCode.NotFound, getAfterDelete2.status)
+
+        // Verify document 3 still exists
+        val getAfterDelete3 = client.get("/api/workspace/$workspaceId/document/${document3.id}")
+        assertEquals(HttpStatusCode.OK, getAfterDelete3.status)
+
+        // Clean up
+        db.deleteDocumentById(document3.id)
     }
 }

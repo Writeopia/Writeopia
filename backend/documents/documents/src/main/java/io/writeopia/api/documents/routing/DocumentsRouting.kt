@@ -7,6 +7,7 @@ import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.writeopia.api.core.auth.routing.getUserId
@@ -28,6 +29,7 @@ import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
+import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
@@ -434,6 +436,71 @@ fun Routing.documentsRoute(
                     call.respond(HttpStatusCode.Created, ImageUploadRequest(imageUrl))
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "No image found in request")
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        delete("/api/workspace/{workspaceId}/folder/{folderId}") {
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val folderId = call.pathParameters["folderId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    // Verify folder exists and belongs to workspace
+                    val folder = DocumentsService.getFolderById(folderId, userId, writeopiaDb)
+                    if (folder == null || folder.workspaceId != workspaceId) {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Folder not found"
+                        )
+                        return@runIfMember
+                    }
+
+                    DocumentsService.deleteFolder(folderId, writeopiaDb)
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = "Folder deleted successfully"
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<DeleteDocumentsRequest>("/api/workspace/{workspaceId}/document/delete") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    if (request.documentIds.isEmpty()) {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = "Document IDs list cannot be empty"
+                        )
+                        return@runIfMember
+                    }
+
+                    DocumentsService.deleteDocuments(request.documentIds, writeopiaDb)
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = "Documents deleted successfully"
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
                 }
             }
         }

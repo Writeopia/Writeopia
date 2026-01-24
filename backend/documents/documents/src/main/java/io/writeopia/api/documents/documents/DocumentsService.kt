@@ -8,6 +8,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
+import io.writeopia.api.documents.documents.repository.deleteDocumentsByIds
+import io.writeopia.api.documents.documents.repository.deleteFolder
 import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.getFolderById
 import io.writeopia.api.documents.documents.repository.saveDocument
@@ -107,6 +109,20 @@ object DocumentsService {
         }
         
         return documentWithWorkspace
+    }
+
+    suspend fun deleteFolder(
+        folderId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ) {
+        writeopiaDb.deleteFolder(folderId)
+    }
+
+    suspend fun deleteDocuments(
+        documentIds: List<String>,
+        writeopiaDb: WriteopiaDbBackend
+    ) {
+        writeopiaDb.deleteDocumentsByIds(documentIds)
     }
 
     private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String,) =

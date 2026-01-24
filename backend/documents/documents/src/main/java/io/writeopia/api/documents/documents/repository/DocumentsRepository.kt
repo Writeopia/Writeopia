@@ -65,3 +65,12 @@ suspend fun WriteopiaDbBackend.deleteDocumentById(vararg documentIds: String) {
     val dao = getDocumentDaoFn()
     documentIds.forEach(dao::deleteDocumentById)
 }
+
+fun WriteopiaDbBackend.deleteFolder(folderId: String) {
+    getDocumentDaoFn().deleteFolder(folderId)
+}
+
+suspend fun WriteopiaDbBackend.deleteDocumentsByIds(documentIds: List<String>) {
+    val dao = getDocumentDaoFn()
+    dao.deleteDocumentByIds(documentIds.toSet())
+}
