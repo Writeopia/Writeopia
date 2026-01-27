@@ -595,8 +595,8 @@ class DocumentSqlBeDao(
         storyStepQueries?.deleteByDocumentIds(ids)
     }
 
-    fun loadDocumentWithContentById(documentId: String): Document? =
-        documentQueries?.selectWithContentById(documentId)
+    fun loadDocumentWithContentById(documentId: String, workspaceId: String): Document? =
+        documentQueries?.selectWithContentById(documentId, workspaceId)
             ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->

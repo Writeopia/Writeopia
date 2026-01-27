@@ -28,6 +28,7 @@ import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
+import io.writeopia.sdk.serialization.request.CloneDocumentsRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
@@ -544,6 +545,42 @@ fun Routing.documentsRoute(
                             message = "Cannot move a folder into itself"
                         )
                     }
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<CloneDocumentsRequest>("/api/workspace/{workspaceId}/document/clone") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    if (request.documentIds.isEmpty()) {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = "Document IDs list cannot be empty"
+                        )
+                        return@runIfMember
+                    }
+
+                    val clonedDocuments = DocumentsService.cloneDocuments(
+                        documentIds = request.documentIds,
+                        workspaceId = workspaceId,
+                        writeopiaDb = writeopiaDb,
+                        useAi = useAi
+                    )
+
+                    call.respond(
+                        status = HttpStatusCode.Created,
+                        message = clonedDocuments.map { it.toApi() }
+                    )
                 } catch (e: Exception) {
                     call.respond(
                         status = HttpStatusCode.InternalServerError,

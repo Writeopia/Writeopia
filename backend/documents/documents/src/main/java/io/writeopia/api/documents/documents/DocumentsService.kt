@@ -19,6 +19,7 @@ import io.writeopia.api.documents.documents.repository.getUserFavoriteDocumentId
 import io.writeopia.api.documents.documents.repository.isUserFavorite
 import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.removeUserFavorite
+import io.writeopia.api.documents.documents.repository.getDocumentWithContentById
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.search.SearchDocument
@@ -28,6 +29,7 @@ import io.writeopia.connection.wrWebClient
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
@@ -116,6 +118,56 @@ object DocumentsService {
         }
 
         return documentWithWorkspace
+    }
+
+    suspend fun cloneDocuments(
+        documentIds: List<String>,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend,
+        useAi: Boolean
+    ): List<Document> {
+        val now = Clock.System.now()
+        val clonedDocuments = mutableListOf<Document>()
+
+        for (documentId in documentIds) {
+            val originalDocument = writeopiaDb.getDocumentWithContentById(documentId, workspaceId)
+                ?: continue
+
+            // Skip if document doesn't belong to the workspace
+            if (originalDocument.workspaceId != workspaceId) continue
+
+            // Clone the content with new IDs for each StoryStep
+            val clonedContent = originalDocument.content.mapValues { (_, storyStep) ->
+                cloneStoryStep(storyStep)
+            }
+
+            val clonedDocument = originalDocument.copy(
+                id = GenerateId.generate(),
+                title = "${originalDocument.title} (Copy)",
+                content = clonedContent,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                favorite = false
+            )
+
+            writeopiaDb.saveDocument(clonedDocument)
+            clonedDocuments.add(clonedDocument)
+        }
+
+        if (useAi && clonedDocuments.isNotEmpty()) {
+            sendToAiHub(clonedDocuments, workspaceId)
+        }
+
+        return clonedDocuments
+    }
+
+    private fun cloneStoryStep(storyStep: StoryStep): StoryStep {
+        return storyStep.copy(
+            id = GenerateId.generate(),
+            localId = GenerateId.generate(),
+            steps = storyStep.steps.map { cloneStoryStep(it) }
+        )
     }
 
     /**

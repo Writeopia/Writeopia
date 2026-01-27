@@ -1,13 +1,17 @@
 package io.writeopia.mobile
 
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.common.utils.ALLOW_BACKEND
 import io.writeopia.common.utils.Destinations
@@ -189,6 +193,51 @@ fun AppMobile(
                 navController = navController,
                 colorThemeOption = colorThemeState
             ) {
+                navController.navigate(Destinations.MAIN_APP.id)
+            }
+
+            composable(route = Destinations.SEARCH.id) {
+                navController.navigate(Destinations.MAIN_APP.id)
+            }
+
+            composable(route = Destinations.NOTIFICATIONS.id) {
+                navController.navigate(Destinations.MAIN_APP.id)
+            }
+
+            composable(route = Destinations.ACCOUNT.id) {
+                navController.navigate(Destinations.MAIN_APP.id)
+            }
+
+            composable(
+                route = "${Destinations.EDITOR.id}/{noteId}/{noteTitle}",
+                arguments = listOf(navArgument("noteId") { type = NavType.StringType }),
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { intSize -> intSize }
+                    )
+                },
+                exitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { intSize -> intSize }
+                    )
+                }
+            ) { backStackEntry ->
+                navController.navigate(Destinations.MAIN_APP.id)
+            }
+
+            composable(
+                route = "${Destinations.EDITOR.id}/{parentFolderId}",
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { intSize -> intSize }
+                    )
+                },
+                exitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { intSize -> intSize }
+                    )
+                }
+            ) { backStackEntry ->
                 navController.navigate(Destinations.MAIN_APP.id)
             }
         }
