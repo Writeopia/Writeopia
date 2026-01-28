@@ -96,7 +96,7 @@ selectWithContentById:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.id = ? AND deleted = FALSE
+WHERE document_entity.id = ? AND deleted = FALSE AND workspace_id = ?
 ORDER BY position;
 
 selectWithContentByParentId:

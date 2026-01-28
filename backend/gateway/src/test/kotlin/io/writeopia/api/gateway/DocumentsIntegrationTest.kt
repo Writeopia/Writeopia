@@ -23,6 +23,7 @@ import io.writeopia.sdk.serialization.data.StoryStepApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
+import io.writeopia.sdk.serialization.request.CloneDocumentsRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
@@ -1144,5 +1145,167 @@ class DocumentationIntegrationTests {
             setBody(FavoriteDocumentRequest(true))
         }
         assertEquals(HttpStatusCode.NotFound, favoriteResponse.status)
+    }
+
+    @Test
+    fun `it should be possible to clone multiple documents`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        // Create content for documents
+        val content1: Map<Int, StoryStepApi> = mapOf(
+            0 to StoryStep(id = "step1", type = StoryTypes.TEXT.type, text = "message1"),
+            1 to StoryStep(id = "step2", type = StoryTypes.TEXT.type, text = "message2"),
+        ).mapValues { (position, step) ->
+            step.toApi(position)
+        }
+
+        val content2: Map<Int, StoryStepApi> = mapOf(
+            0 to StoryStep(id = "step3", type = StoryTypes.TEXT.type, text = "content A"),
+        ).mapValues { (position, step) ->
+            step.toApi(position)
+        }
+
+        // Create documents to clone
+        val document1 = DocumentApi(
+            id = "docToClone1_${Random.nextInt()}",
+            title = "Document To Clone 1",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L,
+            content = content1.values.toList()
+        )
+
+        val document2 = DocumentApi(
+            id = "docToClone2_${Random.nextInt()}",
+            title = "Document To Clone 2",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L,
+            content = content2.values.toList()
+        )
+
+        // Save documents
+        val createResponse = client.post("/api/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document1, document2), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        // Clone the documents
+        val cloneRequest = CloneDocumentsRequest(documentIds = listOf(document1.id, document2.id))
+
+        val cloneResponse = client.post("/api/workspace/$workspaceId/document/clone") {
+            contentType(ContentType.Application.Json)
+            setBody(cloneRequest)
+        }
+        assertEquals(HttpStatusCode.Created, cloneResponse.status)
+
+        val clonedDocuments = cloneResponse.body<List<DocumentApi>>()
+
+        // Verify we got 2 cloned documents
+        assertEquals(2, clonedDocuments.size)
+
+        // Find cloned documents by their original titles
+        val clonedDoc1 = clonedDocuments.find { it.title == "Document To Clone 1 (Copy)" }
+        val clonedDoc2 = clonedDocuments.find { it.title == "Document To Clone 2 (Copy)" }
+
+        // Verify cloned documents exist and have correct properties
+        assertTrue(clonedDoc1 != null)
+        assertTrue(clonedDoc2 != null)
+
+        // Verify cloned documents have different IDs from originals
+        assertTrue(clonedDoc1!!.id != document1.id)
+        assertTrue(clonedDoc2!!.id != document2.id)
+
+        // Verify cloned documents have the same parentId and workspaceId
+        assertEquals(document1.parentId, clonedDoc1.parentId)
+        assertEquals(document2.parentId, clonedDoc2.parentId)
+        assertEquals(workspaceId, clonedDoc1.workspaceId)
+        assertEquals(workspaceId, clonedDoc2.workspaceId)
+
+        // Verify cloned document 1 has content with new IDs
+        assertEquals(2, clonedDoc1.content.size)
+        val clonedStep1 = clonedDoc1.content.find { it.text == "message1" }
+        val clonedStep2 = clonedDoc1.content.find { it.text == "message2" }
+        assertTrue(clonedStep1 != null)
+        assertTrue(clonedStep2 != null)
+        assertTrue(clonedStep1!!.id != "step1") // ID should be different
+        assertTrue(clonedStep2!!.id != "step2") // ID should be different
+
+        // Verify cloned document 2 has content with new IDs
+        assertEquals(1, clonedDoc2.content.size)
+        val clonedStep3 = clonedDoc2.content.find { it.text == "content A" }
+        assertTrue(clonedStep3 != null)
+        assertTrue(clonedStep3!!.id != "step3") // ID should be different
+
+        // Verify cloned documents can be retrieved
+        val getCloned1 = client.get("/api/workspace/$workspaceId/document/${clonedDoc1.id}")
+        assertEquals(HttpStatusCode.OK, getCloned1.status)
+
+        val getCloned2 = client.get("/api/workspace/$workspaceId/document/${clonedDoc2.id}")
+        assertEquals(HttpStatusCode.OK, getCloned2.status)
+
+        // Verify original documents still exist
+        val getOriginal1 = client.get("/api/workspace/$workspaceId/document/${document1.id}")
+        assertEquals(HttpStatusCode.OK, getOriginal1.status)
+
+        val getOriginal2 = client.get("/api/workspace/$workspaceId/document/${document2.id}")
+        assertEquals(HttpStatusCode.OK, getOriginal2.status)
+
+        // Clean up
+        db.deleteDocumentById(document1.id)
+        db.deleteDocumentById(document2.id)
+        db.deleteDocumentById(clonedDoc1.id)
+        db.deleteDocumentById(clonedDoc2.id)
+    }
+
+    @Test
+    fun `it should return empty list when cloning non-existent documents`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        val cloneRequest = CloneDocumentsRequest(documentIds = listOf("nonExistent1", "nonExistent2"))
+
+        val cloneResponse = client.post("/api/workspace/$workspaceId/document/clone") {
+            contentType(ContentType.Application.Json)
+            setBody(cloneRequest)
+        }
+        assertEquals(HttpStatusCode.Created, cloneResponse.status)
+
+        val clonedDocuments = cloneResponse.body<List<DocumentApi>>()
+        assertEquals(0, clonedDocuments.size)
+    }
+
+    @Test
+    fun `it should return bad request when cloning with empty document list`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        val cloneRequest = CloneDocumentsRequest(documentIds = emptyList())
+
+        val cloneResponse = client.post("/api/workspace/$workspaceId/document/clone") {
+            contentType(ContentType.Application.Json)
+            setBody(cloneRequest)
+        }
+        assertEquals(HttpStatusCode.BadRequest, cloneResponse.status)
     }
 }
