@@ -1,39 +1,46 @@
-@file:OptIn(ExperimentalTime::class)
-
 package io.writeopia.account.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.manager.AuthRepository
-import io.writeopia.core.folders.sync.WorkspaceSync
+import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.sdk.models.utils.toBoolean
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 internal class AccountMenuKmpViewModel(
     private val authRepository: AuthRepository,
-    private val workspaceSync: WorkspaceSync,
+    private val workspaceHandler: WorkspaceHandler,
 ) : AccountMenuViewModel, ViewModel() {
 
-    private val _lastWorkspaceSync = MutableStateFlow<ResultData<String>>(ResultData.Idle())
-    override val lastWorkspaceSync: StateFlow<ResultData<String>> = _lastWorkspaceSync.asStateFlow()
+    override val lastWorkspaceSync: StateFlow<ResultData<String>> = workspaceHandler.lastWorkspaceSync
+
+    override val availableWorkspaces: StateFlow<ResultData<List<Workspace>>> =
+        workspaceHandler.availableWorkspaces
+
+    override val selectedWorkspace: Flow<Workspace?> = workspaceHandler.selectedWorkspace
+
+    override val usersOfSelectedWorkspace: Flow<ResultData<List<String>>> =
+        workspaceHandler.usersOfSelectedWorkspace
 
     override val isLoggedIn: StateFlow<ResultData<Boolean>> by lazy {
         authRepository.listenForUser().map {
             ResultData.Complete(it.id != WriteopiaUser.DISCONNECTED)
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Loading())
+    }
+
+    init {
+        workspaceHandler.initScope(viewModelScope)
+        workspaceHandler.loadAvailableWorkspaces()
     }
 
     override fun logout(onLogOutSuccess: () -> Unit) {
@@ -50,24 +57,14 @@ internal class AccountMenuKmpViewModel(
     }
 
     override fun syncWorkspace() {
-        viewModelScope.launch(Dispatchers.Default) {
-            _lastWorkspaceSync.value = ResultData.Loading()
+        workspaceHandler.syncWorkspace()
+    }
 
-            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-            val workspaceId = workspace.id
-            val result = workspaceSync.syncWorkspace(workspaceId, force = true)
+    override fun selectWorkspace(workspaceId: String) {
+        workspaceHandler.selectWorkspaceToManage(workspaceId)
+    }
 
-            _lastWorkspaceSync.value = if (result is ResultData.Complete) {
-                val lastSync = Clock.System
-                    .now()
-//                    .toLocalDateTime(TimeZone.currentSystemDefault())
-                    .toString()
-
-                ResultData.Complete("Last sync: $lastSync")
-            } else {
-                println("result error: $result")
-                ResultData.Error(RuntimeException("Error in sync"))
-            }
-        }
+    override fun addUserToWorkspace(userEmail: String) {
+        workspaceHandler.addUserToWorkspace(userEmail)
     }
 }

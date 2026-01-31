@@ -1,27 +1,23 @@
-package io.writeopia.account.viewmodel
+package io.writeopia.auth.core.manager
 
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
-interface AccountMenuViewModel {
-
-    val isLoggedIn: StateFlow<ResultData<Boolean>>
-
+interface WorkspaceHandler {
     val availableWorkspaces: StateFlow<ResultData<List<Workspace>>>
-
     val selectedWorkspace: Flow<Workspace?>
-
     val usersOfSelectedWorkspace: Flow<ResultData<List<String>>>
-
     val lastWorkspaceSync: StateFlow<ResultData<String>>
+    val workspaceLocalPath: StateFlow<String>
 
-    fun logout(onLogOutSuccess: () -> Unit)
-
+    fun initScope(coroutineScope: CoroutineScope)
+    fun loadAvailableWorkspaces()
+    fun selectWorkspaceToManage(workspaceId: String)
     fun syncWorkspace()
-
-    fun selectWorkspace(workspaceId: String)
-
     fun addUserToWorkspace(userEmail: String)
+    fun changeWorkspaceLocalPath(path: String)
+    fun initWorkspacePath()
 }

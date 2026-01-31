@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
@@ -117,6 +118,7 @@ private fun BoxScope.ResetPasswordContent(
     Column(
         modifier = modifier
             .padding(horizontal = 50.dp)
+            .widthIn(max = 430.dp)
             .align(Alignment.Center),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
