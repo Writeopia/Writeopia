@@ -1,5 +1,6 @@
 package io.writeopia.account.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -69,6 +70,8 @@ import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.utils.toBoolean
+import io.writeopia.commonui.buttons.AccentButton
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.Flow
@@ -89,7 +92,7 @@ fun SettingsDialog(
     showDeleteConfirmation: StateFlow<Boolean>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
-    workspaceToEdit: StateFlow<Workspace?>,
+    workspaceToEdit: Flow<Workspace?>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectWorkplacePath: (String) -> Unit,
@@ -107,7 +110,7 @@ fun SettingsDialog(
     syncWorkspace: () -> Unit,
     addUserToTeam: (String) -> Unit,
     selectWorkspaceToManage: (String) -> Unit,
-    usersInSelectedWorkspace: StateFlow<ResultData<List<String>>>
+    usersInSelectedWorkspace: Flow<ResultData<List<String>>>
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -200,7 +203,29 @@ fun SettingsScreen(
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     syncWorkspace: () -> Unit,
+    workspacesState: StateFlow<ResultData<List<Workspace>>>,
+    selectedWorkspaceState: Flow<Workspace?>,
+    selectWorkspace: (String) -> Unit,
+    addUserToTeam: (String) -> Unit,
+    usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
+    isLoggedInState: StateFlow<ResultData<Boolean>>,
+    goToRegister: () -> Unit,
+    logout: () -> Unit,
 ) {
+    Connect(isLoggedInState, goToRegister, logout)
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    TeamsSection(
+        workspacesState = workspacesState,
+        selectedWorkspaceState = selectedWorkspaceState,
+        selectWorkspace = selectWorkspace,
+        addUserToTeam = addUserToTeam,
+        usersInSelectedWorkspace = usersInSelectedWorkspace,
+    )
+
+    Spacer(modifier = Modifier.height(20.dp))
+
     ColorThemeOptions(
         selectedThemePosition = selectedThemePosition,
         selectColorTheme = selectColorTheme
@@ -236,6 +261,42 @@ fun SettingsScreen(
 }
 
 @Composable
+private fun Connect(
+    isLoggedInState: StateFlow<ResultData<Boolean>>,
+    goToRegister: () -> Unit,
+    logout: () -> Unit,
+) {
+    val isLoggedIn = isLoggedInState.collectAsState().value.toBoolean()
+
+    val titleStyle = MaterialTheme.typography.titleLarge
+    val titleColor = MaterialTheme.colorScheme.onBackground
+
+    Text(WrStrings.account(), style = titleStyle, color = titleColor)
+
+    if (!isLoggedIn) {
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            modifier = Modifier,
+            text = WrStrings.youAreOffline(),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+
+    Spacer(modifier = Modifier.height(4.dp))
+
+    AccentButton(text = if (isLoggedIn) WrStrings.logout() else WrStrings.singIn()) {
+        if (isLoggedIn) {
+            logout()
+        } else {
+            goToRegister()
+        }
+    }
+}
+
+@Composable
 private fun AccountScreen(
     userOnlineState: StateFlow<WriteopiaUser>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
@@ -258,7 +319,7 @@ private fun AccountScreen(
 
         val userOnline by userOnlineState.collectAsState()
 
-        if (userOnline.id != WriteopiaUser.DISCONNECTED || true) {
+        if (userOnline.id != WriteopiaUser.DISCONNECTED) {
             Text(
                 "${WrStrings.account()}: ${userOnline.name} - ${userOnline.tier.tierName()}",
                 style = MaterialTheme.typography.bodySmall,
@@ -846,13 +907,14 @@ fun DownloadModels(
     }
 }
 
+//
 @Composable
 private fun TeamsSection(
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
-    selectedWorkspaceState: StateFlow<Workspace?>,
+    selectedWorkspaceState: Flow<Workspace?>,
     selectWorkspace: (String) -> Unit,
     addUserToTeam: (String) -> Unit,
-    usersInSelectedWorkspace: StateFlow<ResultData<List<String>>>
+    usersInSelectedWorkspace: Flow<ResultData<List<String>>>
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -878,10 +940,14 @@ private fun TeamsSection(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                val selected = selectedWorkspaceState.collectAsState().value
+                val selected = selectedWorkspaceState.collectAsState(null).value
 
-                if (selected != null) {
-                    AddUserToWorkspace(selected, usersInSelectedWorkspace, addUserToTeam)
+                AnimatedVisibility(selected != null) {
+                    if (selected != null) {
+                        Column {
+                            AddUserToWorkspace(selected, usersInSelectedWorkspace, addUserToTeam)
+                        }
+                    }
                 }
             }
 
@@ -913,7 +979,7 @@ private fun TeamsSection(
 @Composable
 private fun AddUserToWorkspace(
     selected: Workspace,
-    usersInSelectedWorkspace: StateFlow<ResultData<List<String>>>,
+    usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
     addUserToTeam: (String) -> Unit
 ) {
     if (selected.role == "ADMIN") {
@@ -961,42 +1027,46 @@ private fun AddUserToWorkspace(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        val usersResult = usersInSelectedWorkspace.collectAsState().value
+        when (val usersResult = usersInSelectedWorkspace.collectAsState(ResultData.Idle()).value) {
+            is ResultData.Complete -> {
+                val users = usersResult.data
 
-        if (usersResult is ResultData.Complete) {
-            val users = usersResult.data
-
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (users.isNotEmpty()) {
-                    users.forEach { userName ->
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (users.isNotEmpty()) {
+                        users.forEach { userName ->
+                            BasicText(
+                                text = userName,
+                                style = MaterialTheme
+                                    .typography
+                                    .bodySmall
+                                    .copy(MaterialTheme.colorScheme.onBackground)
+                            )
+                        }
+                    } else {
                         BasicText(
-                            text = userName,
+                            text = "No users in this team",
                             style = MaterialTheme
                                 .typography
                                 .bodySmall
                                 .copy(MaterialTheme.colorScheme.onBackground)
                         )
                     }
-                } else {
-                    BasicText(
-                        text = "No users in this team",
-                        style = MaterialTheme
-                            .typography
-                            .bodySmall
-                            .copy(MaterialTheme.colorScheme.onBackground)
-                    )
                 }
             }
-        } else if (usersResult is ResultData.Error) {
-            BasicText(
-                text = "Error loading users",
-                style = MaterialTheme
-                    .typography
-                    .bodySmall
-                    .copy(MaterialTheme.colorScheme.onBackground)
-            )
-        } else {
-            CircularProgressIndicator()
+
+            is ResultData.Error -> {
+                BasicText(
+                    text = "Error loading users",
+                    style = MaterialTheme
+                        .typography
+                        .bodySmall
+                        .copy(MaterialTheme.colorScheme.onBackground)
+                )
+            }
+
+            else -> {
+                CircularProgressIndicator()
+            }
         }
     } else {
         BasicText(

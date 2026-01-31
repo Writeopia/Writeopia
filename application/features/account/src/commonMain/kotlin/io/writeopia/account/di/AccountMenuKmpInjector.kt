@@ -9,17 +9,17 @@ import io.writeopia.core.folders.di.WorkspaceInjection
 
 class AccountMenuKmpInjector private constructor(
     private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
+    private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
 ) {
-
-    private fun provideAccountMenuKmpViewModel(): AccountMenuKmpViewModel =
-        AccountMenuKmpViewModel(
-            authRepository = AuthCoreInjectionNeo.singleton().provideAuthRepository(),
-            workspaceSync = workspaceInjection.provideWorkspaceSync()
-        )
 
     @Composable
     fun provideAccountMenuViewModel(): AccountMenuViewModel =
-        viewModel { provideAccountMenuKmpViewModel() }
+        viewModel {
+            AccountMenuKmpViewModel(
+                authRepository = authCoreInjection.provideAuthRepository(),
+                workspaceHandler = workspaceInjection.provideWorkspaceHandler()
+            )
+        }
 
     companion object {
         private var instance: AccountMenuKmpInjector? = null

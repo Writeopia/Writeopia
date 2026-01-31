@@ -1,6 +1,9 @@
 package io.writeopia.core.folders.di
 
+import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
+import io.writeopia.auth.core.manager.WorkspaceHandler
+import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.sync.DocumentConflictHandler
 import io.writeopia.core.folders.sync.ImageSync
@@ -15,7 +18,20 @@ class WorkspaceInjection private constructor(
     private val connectionInjector: WriteopiaConnectionInjector =
         WriteopiaConnectionInjector.singleton(),
     private val repositoryInjection: RepositoryInjector = RepositoryInjector.singleton(),
+    private val appConfigurationInjector: AppConfigurationInjector =
+        AppConfigurationInjector.singleton(),
 ) {
+
+    private fun provideWorkspaceApi() =
+        WorkspaceApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+
+    fun provideWorkspaceHandler(): WorkspaceHandler =
+        WorkspaceHandlerImpl(
+            authRepository = authCoreInjection.provideAuthRepository(),
+            workspaceApi = provideWorkspaceApi(),
+            workspaceSync = provideWorkspaceSync(),
+            workspaceConfigRepository = appConfigurationInjector.provideNotesConfigurationRepository()
+        )
 
     fun provideWorkspaceSync(): WorkspaceSync {
         val documentRepo = repositoryInjection.provideDocumentRepository()

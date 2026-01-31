@@ -9,6 +9,7 @@ import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 interface GlobalShellViewModel : FolderController, OllamaConfigController {
@@ -38,9 +39,9 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     val availableWorkspaces: StateFlow<ResultData<List<Workspace>>>
 
-    val workspaceToEdit: StateFlow<Workspace?>
+    val workspaceToEdit: Flow<Workspace?>
 
-    val usersOfWorkspaceToEdit: StateFlow<ResultData<List<String>>>
+    val usersOfWorkspaceToEdit: Flow<ResultData<List<String>>>
 
     override val ollamaSelectedModelState: StateFlow<String>
 

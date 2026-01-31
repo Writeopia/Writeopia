@@ -7,8 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
 import io.writeopia.auth.core.data.AuthApi
-import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.common.utils.collections.traverse
@@ -20,10 +20,8 @@ import io.writeopia.commonui.buttons.sideMenuDefaultWidth
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.folders.repository.folder.NotesUseCase
-import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
-import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.notemenu.viewmodel.FolderStateController
@@ -49,7 +47,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
@@ -67,10 +64,8 @@ class GlobalShellKmpViewModel(
     private val notesNavigationUseCase: NotesNavigationUseCase,
     private val folderStateController: FolderStateController =
         FolderStateController.singleton(notesUseCase, authRepository),
-    private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val ollamaRepository: OllamaRepository,
-    private val workspaceSync: WorkspaceSync,
-    private val workspaceApi: WorkspaceApi,
+    private val workspaceHandler: WorkspaceHandler,
     private val keyboardEventFlow: Flow<KeyboardEvent>?,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
@@ -85,15 +80,13 @@ class GlobalShellKmpViewModel(
     private val _showSearchDialog = MutableStateFlow(false)
     override val showSearchDialog: StateFlow<Boolean> = _showSearchDialog.asStateFlow()
 
-    private val _workspaceLocalPath = MutableStateFlow("")
-    override val workspaceLocalPath: StateFlow<String> = _workspaceLocalPath.asStateFlow()
+    override val workspaceLocalPath: StateFlow<String> = workspaceHandler.workspaceLocalPath
 
     private val retryModels = MutableStateFlow(0)
 
     private val loginStateTrigger = MutableStateFlow(GenerateId.generate())
 
-    private val _lastWorkspaceSync = MutableStateFlow<ResultData<String>>(ResultData.Idle())
-    override val lastWorkspaceSync: StateFlow<ResultData<String>> = _lastWorkspaceSync.asStateFlow()
+    override val lastWorkspaceSync: StateFlow<ResultData<String>> = workspaceHandler.lastWorkspaceSync
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val ollamaConfigState = authRepository.listenForUser().flatMapLatest { user ->
@@ -260,35 +253,17 @@ class GlobalShellKmpViewModel(
     private val _showDeleteConfirmation = MutableStateFlow(false)
     override val showDeleteConfirmation: StateFlow<Boolean> = _showDeleteConfirmation.asStateFlow()
 
-    private val _availableWorkspaces: MutableStateFlow<ResultData<List<Workspace>>> =
-        MutableStateFlow(ResultData.Idle())
-    override val availableWorkspaces: StateFlow<ResultData<List<Workspace>>> = _availableWorkspaces
+    override val availableWorkspaces: StateFlow<ResultData<List<Workspace>>> =
+        workspaceHandler.availableWorkspaces
 
-    private val _workspaceToEdit = MutableStateFlow<String?>(null)
-    override val workspaceToEdit: StateFlow<Workspace?> =
-        combine(_availableWorkspaces, _workspaceToEdit) { workspacesResult, selectedId ->
-            if (workspacesResult is ResultData.Complete) {
-                workspacesResult.data.firstOrNull { it.id == selectedId }
-            } else {
-                null
-            }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+    override val workspaceToEdit: Flow<Workspace?> = workspaceHandler.selectedWorkspace
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override val usersOfWorkspaceToEdit: StateFlow<ResultData<List<String>>> =
-        workspaceToEdit.flatMapLatest { workspace ->
-            val token = authRepository.getAuthToken()
-            val workspaceId = workspace?.id
-
-            if (token != null && workspaceId != null) {
-                workspaceApi.getUsersOfWorkspace(workspaceId, token, forceRefresh = false)
-            } else {
-                flow { emit(ResultData.Error()) }
-            }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ResultData.Idle())
+    override val usersOfWorkspaceToEdit: Flow<ResultData<List<String>>> =
+        workspaceHandler.usersOfSelectedWorkspace
 
     init {
         folderStateController.initCoroutine(viewModelScope)
+        workspaceHandler.initScope(viewModelScope)
 
         viewModelScope.launch {
             keyboardEventFlow
@@ -304,22 +279,11 @@ class GlobalShellKmpViewModel(
                 }
         }
 
-        viewModelScope.launch {
-            val result = authRepository.getAuthToken()?.let { token ->
-                workspaceApi.getAvailableWorkspaces(token)
-            }
-
-            if (result != null) {
-                _availableWorkspaces.value = result
-            }
-        }
+        workspaceHandler.loadAvailableWorkspaces()
     }
 
     override fun init() {
-        viewModelScope.launch {
-            _workspaceLocalPath.value =
-                workspaceConfigRepository.loadWorkspacePath(authRepository.getUser().id) ?: ""
-        }
+        workspaceHandler.initWorkspacePath()
     }
 
     override fun expandFolder(id: String) {
@@ -411,12 +375,7 @@ class GlobalShellKmpViewModel(
     }
 
     override fun changeWorkspaceLocalPath(path: String) {
-        viewModelScope.launch(Dispatchers.Default) {
-            val userId = authRepository.getUser().id
-
-            workspaceConfigRepository.saveWorkspacePath(path, userId)
-            _workspaceLocalPath.value = workspaceConfigRepository.loadWorkspacePath(userId) ?: ""
-        }
+        workspaceHandler.changeWorkspaceLocalPath(path)
     }
 
     override fun changeOllamaUrl(url: String) {
@@ -527,45 +486,15 @@ class GlobalShellKmpViewModel(
     }
 
     override fun syncWorkspace() {
-        viewModelScope.launch {
-            _lastWorkspaceSync.value = ResultData.Loading()
-
-            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-            val workspaceId = workspace.id
-            val result = workspaceSync.syncWorkspace(workspaceId, force = true)
-
-            _lastWorkspaceSync.value = if (result is ResultData.Complete) {
-                val lastSync = Clock.System
-                    .now()
-//                    .toLocalDateTime(TimeZone.currentSystemDefault())
-                    .toString()
-
-                ResultData.Complete("Last sync: $lastSync")
-            } else {
-                println("result error: $result")
-                ResultData.Error(RuntimeException("Error in sync"))
-            }
-        }
+        workspaceHandler.syncWorkspace()
     }
 
     override fun addUserToTeam(userEmail: String) {
-        viewModelScope.launch {
-            val workspace = workspaceToEdit.value
-
-            if (workspace != null) {
-                authRepository.getAuthToken()?.let { token ->
-                    val result = workspaceApi.addUserToWorkspace(workspace.id, userEmail, token)
-
-                    if (result is ResultData.Complete) {
-                        workspaceApi.refreshUsersInWorkspace(workspace.id, token)
-                    }
-                }
-            }
-        }
+        workspaceHandler.addUserToWorkspace(userEmail)
     }
 
     override fun selectWorkspaceToManage(workspaceId: String) {
-        _workspaceToEdit.value = workspaceId
+        workspaceHandler.selectWorkspaceToManage(workspaceId)
     }
 
     private suspend fun getUserId(): String =
