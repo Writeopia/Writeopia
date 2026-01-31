@@ -3,6 +3,9 @@
     <file name="src/androidMain/kotlin/io/writeopia/core/folders/di/InDocumentSearchInjection.android.kt">
         <error line="7" column="74" source="standard:function-expression-body" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/core/folders/di/WorkspaceHandlerImpl.kt">
+        <error line="43" column="17" source="standard:backing-property-naming" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/core/folders/repository/InDocumentSearchSqlRepository.kt">
         <error line="10" column="80" source="standard:function-expression-body" />
     </file>

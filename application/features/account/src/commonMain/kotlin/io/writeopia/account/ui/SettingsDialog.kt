@@ -226,7 +226,6 @@ fun SettingsScreen(
 
     Spacer(modifier = Modifier.height(20.dp))
 
-
     ColorThemeOptions(
         selectedThemePosition = selectedThemePosition,
         selectColorTheme = selectColorTheme
