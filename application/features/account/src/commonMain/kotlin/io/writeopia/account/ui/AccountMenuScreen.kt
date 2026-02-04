@@ -20,6 +20,8 @@ fun AccountMenuScreen(
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     onLogout: () -> Unit,
     goToRegister: () -> Unit,
+    changeAccount: () -> Unit,
+    resetPassword: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -53,6 +55,8 @@ fun AccountMenuScreen(
             usersInSelectedWorkspace = accountMenuViewModel.usersOfSelectedWorkspace,
             isLoggedInState = isLoggedInState,
             goToRegister = goToRegister,
+            changeAccount = changeAccount,
+            resetPassword = resetPassword,
             logout = {
                 accountMenuViewModel.logout {
                     onLogout()
