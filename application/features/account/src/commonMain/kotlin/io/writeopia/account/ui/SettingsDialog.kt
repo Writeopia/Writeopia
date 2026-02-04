@@ -64,14 +64,12 @@ import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SettingsPanel
 import io.writeopia.commonui.buttons.CommonButton
-import io.writeopia.commonui.buttons.CommonTextButton
 import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.toBoolean
-import io.writeopia.commonui.buttons.AccentButton
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.Flow
