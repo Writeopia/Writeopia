@@ -64,14 +64,12 @@ import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SettingsPanel
 import io.writeopia.commonui.buttons.CommonButton
-import io.writeopia.commonui.buttons.CommonTextButton
 import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.toBoolean
-import io.writeopia.commonui.buttons.AccentButton
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.Flow
@@ -210,12 +208,10 @@ fun SettingsScreen(
     usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     goToRegister: () -> Unit,
+    changeAccount: () -> Unit,
+    resetPassword: () -> Unit,
     logout: () -> Unit,
 ) {
-    Connect(isLoggedInState, goToRegister, logout)
-
-    Spacer(modifier = Modifier.height(16.dp))
-
     TeamsSection(
         workspacesState = workspacesState,
         selectedWorkspaceState = selectedWorkspaceState,
@@ -232,6 +228,10 @@ fun SettingsScreen(
     )
 
     Spacer(modifier = Modifier.height(20.dp))
+
+    Connect(isLoggedInState, goToRegister, changeAccount, resetPassword, logout)
+
+    Spacer(modifier = Modifier.height(16.dp))
 
     WorkspaceSection(
         workplacePathState,
@@ -264,6 +264,8 @@ fun SettingsScreen(
 private fun Connect(
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     goToRegister: () -> Unit,
+    changeAccount: () -> Unit,
+    resetPassword: () -> Unit,
     logout: () -> Unit,
 ) {
     val isLoggedIn = isLoggedInState.collectAsState().value.toBoolean()
@@ -283,15 +285,40 @@ private fun Connect(
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
         )
-    }
 
-    Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
-    AccentButton(text = if (isLoggedIn) WrStrings.logout() else WrStrings.singIn()) {
-        if (isLoggedIn) {
-            logout()
-        } else {
+        CommonButton(text = WrStrings.singIn()) {
             goToRegister()
+        }
+    } else {
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Column(modifier = Modifier.width(IntrinsicSize.Max)) {
+            CommonButton(
+                text = WrStrings.changeAccount(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                changeAccount()
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            CommonButton(
+                text = WrStrings.resetPassword(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                resetPassword()
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            CommonButton(
+                text = WrStrings.logout(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                logout()
+            }
         }
     }
 }
@@ -333,7 +360,7 @@ private fun AccountScreen(
             Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
 
             Column(modifier = Modifier.width(IntrinsicSize.Max)) {
-                CommonTextButton(
+                CommonButton(
                     text = WrStrings.changeAccount(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -342,7 +369,7 @@ private fun AccountScreen(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                CommonTextButton(
+                CommonButton(
                     text = WrStrings.resetPassword(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -351,7 +378,7 @@ private fun AccountScreen(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                CommonTextButton(text = WrStrings.logout(), modifier = Modifier.fillMaxWidth()) {
+                CommonButton(text = WrStrings.logout(), modifier = Modifier.fillMaxWidth()) {
                     logout()
                 }
 
@@ -365,11 +392,13 @@ private fun AccountScreen(
 
                 Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
 
-                CommonTextButton(
+                CommonButton(
                     text = WrStrings.deleteAccount(),
                     modifier = Modifier.fillMaxWidth(),
                     defaultColor = Color.Red,
-                    textColor = MaterialTheme.colorScheme.onPrimary,
+                    textStyle =  MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.onPrimary
+                    ),
                     clickListener = showDeleteConfirm
                 )
 

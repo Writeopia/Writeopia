@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
@@ -115,9 +116,11 @@ private fun BoxScope.ResetPasswordContent(
     var showRepeatPassword by remember { mutableStateOf(false) }
     val shape = MaterialTheme.shapes.large
 
+    val currentPlatform = LocalPlatform.current
+
     Column(
         modifier = modifier
-            .padding(horizontal = 50.dp)
+            .padding(horizontal = 20.dp)
             .widthIn(max = 430.dp)
             .align(Alignment.Center),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -144,7 +147,7 @@ private fun BoxScope.ResetPasswordContent(
 
         OutlinedTextField(
             password,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            modifier = Modifier.fillMaxWidth(),
             onValueChange = passwordChanged,
             shape = shape,
             singleLine = true,
@@ -182,7 +185,7 @@ private fun BoxScope.ResetPasswordContent(
 
         OutlinedTextField(
             repeatPassword,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            modifier = Modifier.fillMaxWidth(),
             onValueChange = repeatPasswordChanged,
             shape = shape,
             singleLine = true,
@@ -220,13 +223,12 @@ private fun BoxScope.ResetPasswordContent(
 
         TextButton(
             modifier = Modifier
-                .padding(horizontal = 24.dp)
                 .background(MaterialTheme.colorScheme.primary, shape = shape)
                 .fillMaxWidth(),
             onClick = onPasswordResetRequest
         ) {
             Text(
-                text = WrStrings.createAccount(),
+                text = WrStrings.resetPassword(),
                 color = MaterialTheme.colorScheme.onPrimary
             )
         }

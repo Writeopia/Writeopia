@@ -3,6 +3,7 @@ package io.writeopia.notemenu.ui.screen.menu
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -29,8 +31,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.RenderVectorGroup
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
@@ -167,49 +167,29 @@ private fun TopBar(
                 modifier = Modifier.clickable(onClick = accountClick),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val userIcon = WrIcons.person
-
-                val fallbackPainter = rememberVectorPainter(
-                    defaultWidth = userIcon.defaultWidth,
-                    defaultHeight = userIcon.defaultHeight,
-                    viewportWidth = userIcon.viewportWidth,
-                    viewportHeight = userIcon.viewportHeight,
-                    name = userIcon.name,
-                    tintColor = MaterialTheme.colorScheme.onPrimary,
-                    tintBlendMode = userIcon.tintBlendMode,
-                    autoMirror = userIcon.autoMirror,
-                ) { _, _ ->
-                    RenderVectorGroup(group = userIcon.root)
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondary)
+                        .clickable(onClick = accountClick),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = getUserInitials(title),
+                        color = MaterialTheme.colorScheme.onSecondary,
+                        style = MaterialTheme.typography.labelLarge,
+                        maxLines = 1
+                    )
                 }
-
-//                AsyncImage(
-//                    modifier = Modifier
-//                        .clip(shape = CircleShape)
-//                        .background(MaterialTheme.colorScheme.secondary)
-//                        .size(48.dp)
-//                        .padding(10.dp),
-//                    model = ImageRequest.Builder(LocalContext.current)
-//                        .data("")
-//                        .build(),
-//                    contentScale = ContentScale.Crop,
-//                    contentDescription = "",
-//                    placeholder = fallbackPainter,
-//                    error = fallbackPainter
-//                )
 
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
                     modifier = Modifier,
-//                        .let { modifierLet ->
-//                        if (title is UserState.Loading) {
-//                            modifierLet.shimmer()
-//                        } else {
-//                            modifierLet
-//                        }
-//                    },
                     text = getUserName(title),
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    maxLines = 1
                 )
             }
         },
@@ -240,6 +220,27 @@ private fun getUserName(userNameState: UserState<String>): String =
         is UserState.Loading -> ""
         is UserState.UserNotReturned -> "Disconnected"
 //            stringResource(id = R.string.disconnected)
+    }
+
+private fun getUserInitials(userNameState: UserState<String>): String =
+    when (userNameState) {
+        is UserState.ConnectedUser -> {
+            val name = userNameState.data
+            if (name.isNotEmpty()) {
+                name.split(" ")
+                    .filter { it.isNotEmpty() }
+                    .take(2)
+                    .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                    .joinToString("")
+                    .ifEmpty { "U" }
+            } else {
+                "U"
+            }
+        }
+        is UserState.DisconnectedUser -> "OF"
+        is UserState.Idle -> ""
+        is UserState.Loading -> ""
+        is UserState.UserNotReturned -> "D"
     }
 
 @Composable

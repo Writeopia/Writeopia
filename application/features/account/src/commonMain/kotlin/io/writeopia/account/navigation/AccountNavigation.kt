@@ -2,6 +2,7 @@ package io.writeopia.account.navigation
 
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -25,10 +26,12 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
+import io.writeopia.theme.WriteopiaTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 fun NavGraphBuilder.accountMenuNavigation(
     navigateToAuthMenu: () -> Unit,
+    resetPassword: () -> Unit,
     navigationClick: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
 ) {
@@ -77,11 +80,14 @@ fun NavGraphBuilder.accountMenuNavigation(
             }
         ) { paddingValues ->
             AccountMenuScreen(
-                modifier = Modifier.padding(paddingValues),
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                    .padding(paddingValues),
                 accountMenuViewModel = accountMenuViewModel,
                 isLoggedInState = accountMenuViewModel.isLoggedIn,
                 onLogout = navigateToAuthMenu,
                 goToRegister = navigateToAuthMenu,
+                changeAccount = navigateToAuthMenu,
+                resetPassword = resetPassword,
                 selectColorTheme = selectColorTheme
             )
         }

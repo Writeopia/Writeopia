@@ -87,7 +87,13 @@ class WorkspaceHandlerImpl(
     }
 
     override fun selectWorkspaceToManage(workspaceId: String) {
-        _selectedWorkspaceId.value = workspaceId
+        val currentSelected = _selectedWorkspaceId.value
+
+        if (currentSelected == workspaceId) {
+            _selectedWorkspaceId.value = null
+        } else {
+            _selectedWorkspaceId.value = workspaceId
+        }
     }
 
     override fun syncWorkspace() {

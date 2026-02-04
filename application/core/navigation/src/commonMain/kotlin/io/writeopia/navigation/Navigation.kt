@@ -80,6 +80,9 @@ fun Navigation(
                 navigateToAuthMenu = {
                     navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
                 },
+                resetPassword = {
+                    navController.navigate(Destinations.AUTH_RESET_PASSWORD.id)
+                },
                 navigationClick = navController::navigateUp,
                 selectColorTheme = selectColorTheme
             )
