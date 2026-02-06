@@ -1,6 +1,5 @@
 package io.writeopia.ui.drawer.factory
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
@@ -10,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.text.TextStyle
@@ -33,10 +31,13 @@ import io.writeopia.ui.drawer.content.ImageDrawer
 import io.writeopia.ui.drawer.content.LastEmptySpace
 import io.writeopia.ui.drawer.content.LoadingDrawer
 import io.writeopia.ui.drawer.content.RowGroupDrawer
+import io.writeopia.ui.drawer.content.SlashCommand
 import io.writeopia.ui.drawer.content.SpaceDrawer
 import io.writeopia.ui.drawer.content.TextDrawer
 import io.writeopia.ui.drawer.content.checkItemDrawer
 import io.writeopia.ui.drawer.content.defaultImageShape
+import io.writeopia.ui.drawer.content.defaultSlashCommands
+import io.writeopia.ui.drawer.content.createTypeCommands
 import io.writeopia.ui.drawer.content.headerDrawer
 import io.writeopia.ui.drawer.content.swipeTextDrawer
 import io.writeopia.ui.drawer.content.unOrderedListItemDrawer
@@ -70,7 +71,12 @@ object CommonDrawers {
         onDocumentLinkClick: (String) -> Unit,
         linkLeadingIcon: ImageVector? = null,
         equationToImageUrl: String? = null,
-        textToolbox: @Composable (Boolean) -> Unit = {}
+        textToolbox: @Composable (Boolean) -> Unit = {},
+        slashCommands: List<SlashCommand> = defaultSlashCommands + createTypeCommands(
+            onTypeChange = manager::changeStoryType,
+            onTagToggle = manager::toggleTagForPosition
+        ),
+        slashCommandsEnabled: Boolean = true
     ): Map<Int, StoryStepDrawer> {
         val commonTextModifier = Modifier.padding(
             start = drawConfig.codeBlockStartPadding.dp,
@@ -91,7 +97,9 @@ object CommonDrawers {
                     isDarkTheme = isDarkTheme,
                     onSelectionLister = manager::toggleSelection,
                     textStyle = { defaultTextStyle(it, fontFamily) },
-                    textToolbox = textToolbox
+                    textToolbox = textToolbox,
+                    slashCommands = slashCommands,
+                    slashCommandsEnabled = slashCommandsEnabled
                 )
             }
 
@@ -121,7 +129,9 @@ object CommonDrawers {
                     isDarkTheme = isDarkTheme,
                     aiExplanation = aiExplanation,
                     onSelectionLister = manager::toggleSelection,
-                    textToolbox = textToolbox
+                    textToolbox = textToolbox,
+                    slashCommands = slashCommands,
+                    slashCommandsEnabled = slashCommandsEnabled
                 )
             }
         )
@@ -319,7 +329,9 @@ private fun RowScope.messageDrawer(
     emptyErase: EmptyErase,
     eventListener: (KeyEvent, TextFieldValue, StoryStep, Int, EmptyErase, Int, EndOfText) -> Boolean,
     onSelectionLister: (Int) -> Unit,
-    textToolbox: @Composable (Boolean) -> Unit
+    textToolbox: @Composable (Boolean) -> Unit,
+    slashCommands: List<SlashCommand> = defaultSlashCommands,
+    slashCommandsEnabled: Boolean = true
 ): TextDrawer =
     TextDrawer(
         modifier = modifier.weight(1F),
@@ -336,5 +348,7 @@ private fun RowScope.messageDrawer(
         onSelectionLister = onSelectionLister,
         isDarkTheme = isDarkTheme,
         aiExplanation = aiExplanation,
-        textToolbox = textToolbox
+        textToolbox = textToolbox,
+        slashCommands = slashCommands,
+        slashCommandsEnabled = slashCommandsEnabled
     )

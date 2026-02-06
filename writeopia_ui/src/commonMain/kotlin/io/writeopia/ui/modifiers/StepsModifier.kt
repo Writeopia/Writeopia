@@ -8,7 +8,9 @@ import io.writeopia.ui.model.DrawStory
 
 object StepsModifier {
 
-    private const val CODE_BLOCK_POSITION_KEY = "codeBlockPosition"
+    const val CODE_BLOCK_POSITION_KEY = "codeBlockPosition"
+    const val CODE_BLOCK_LINE_NUMBER_KEY = "codeBlockLineNumber"
+    const val IS_INSIDE_CODE_BLOCK_KEY = "isInsideCodeBlock"
 
     fun modify(stories: List<DrawStory>, dragPosition: Int): List<DrawStory> {
         val space = { StoryStep(type = StoryTypes.SPACE.type, localId = GenerateId.generate()) }
@@ -25,24 +27,27 @@ object StepsModifier {
             val currentTags = drawStory.storyStep.tags
             val newTags = mergeTags(lastTags, currentTags)
 
-            // Skip space between consecutive CODE_BLOCK items
+            // Mark space between consecutive CODE_BLOCK items
             val lastIsCodeBlock = lastStep?.type == StoryTypes.CODE_BLOCK.type
             val currentIsCodeBlock = drawStory.storyStep.type == StoryTypes.CODE_BLOCK.type
-            val skipSpace = lastIsCodeBlock && currentIsCodeBlock
+            val isSpaceInsideCodeBlock = lastIsCodeBlock && currentIsCodeBlock
 
-            if (skipSpace) {
-                acc + drawStory
+            val spaceStory =
+                if (index - 1 == dragPosition) onDragSpace else space()
+
+            val spaceExtraInfo = if (isSpaceInsideCodeBlock) {
+                mapOf(IS_INSIDE_CODE_BLOCK_KEY to true)
             } else {
-                val spaceStory =
-                    if (index - 1 == dragPosition) onDragSpace else space()
-
-                val spaceDraw = DrawStory(
-                    storyStep = spaceStory.copy(tags = newTags),
-                    position = index - 1
-                )
-
-                acc + spaceDraw + drawStory
+                emptyMap()
             }
+
+            val spaceDraw = DrawStory(
+                storyStep = spaceStory.copy(tags = newTags),
+                position = index - 1,
+                extraInfo = spaceExtraInfo
+            )
+
+            acc + spaceDraw + drawStory
         }
 
         val lastIndex = parsed.lastIndex
@@ -120,25 +125,60 @@ object StepsModifier {
             draw.storyStep.type == StoryTypes.CODE_BLOCK.type
         }
 
+        val isSpaceFn: (DrawStory) -> Boolean = { draw ->
+            draw.storyStep.type == StoryTypes.SPACE.type ||
+                draw.storyStep.type == StoryTypes.ON_DRAG_SPACE.type
+        }
+
+        // Find previous non-space item
+        fun findPreviousContent(index: Int): DrawStory? {
+            for (j in (index - 1) downTo 0) {
+                if (!isSpaceFn(stories[j])) return stories[j]
+            }
+            return null
+        }
+
+        // Find next non-space item
+        fun findNextContent(index: Int): DrawStory? {
+            for (j in (index + 1)..stories.lastIndex) {
+                if (!isSpaceFn(stories[j])) return stories[j]
+            }
+            return null
+        }
+
+        var lineNumber = 1
+
         return stories.mapIndexed { i, draw ->
             if (!isCodeBlockFn(draw)) {
+                // Reset line number when we hit a non-code-block content item
+                if (!isSpaceFn(draw)) {
+                    lineNumber = 1
+                }
                 draw
             } else {
-                val previousIsCodeBlock = if (i > 0) isCodeBlockFn(stories[i - 1]) else false
-                val nextIsCodeBlock =
-                    if (i < stories.lastIndex) isCodeBlockFn(stories[i + 1]) else false
+                val previousContent = findPreviousContent(i)
+                val nextContent = findNextContent(i)
+
+                val previousIsCodeBlock = previousContent?.let { isCodeBlockFn(it) } ?: false
+                val nextIsCodeBlock = nextContent?.let { isCodeBlockFn(it) } ?: false
 
                 val position = when {
-                    i == 0 -> -1
-                    i == stories.lastIndex -> 1
-                    previousIsCodeBlock && !nextIsCodeBlock -> 1
-                    previousIsCodeBlock && nextIsCodeBlock -> 0
-                    !previousIsCodeBlock && nextIsCodeBlock -> -1
-                    !previousIsCodeBlock && !nextIsCodeBlock -> 2
+                    !previousIsCodeBlock && !nextIsCodeBlock -> 2 // single
+                    !previousIsCodeBlock && nextIsCodeBlock -> -1 // first
+                    previousIsCodeBlock && nextIsCodeBlock -> 0   // middle
+                    previousIsCodeBlock && !nextIsCodeBlock -> 1  // last
                     else -> 2
                 }
 
-                draw.copy(extraInfo = draw.extraInfo + (CODE_BLOCK_POSITION_KEY to position))
+                val currentLineNumber = if (!previousIsCodeBlock) 1 else lineNumber
+                lineNumber = currentLineNumber + 1
+
+                draw.copy(
+                    extraInfo = draw.extraInfo + mapOf(
+                        CODE_BLOCK_POSITION_KEY to position,
+                        CODE_BLOCK_LINE_NUMBER_KEY to currentLineNumber
+                    )
+                )
             }
         }
     }

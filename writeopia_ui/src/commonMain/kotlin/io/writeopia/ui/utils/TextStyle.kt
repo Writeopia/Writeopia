@@ -38,8 +38,8 @@ fun previewTextStyle(storyStep: StoryStep, fontFamily: FontFamily? = null) =
 fun codeBlockStyle() =
     TextStyle(
         color = MaterialTheme.colorScheme.onBackground,
-        fontSize = 16.sp,
-        fontFamily = FontFamily.Serif
+        fontSize = 12.sp,
+        fontFamily = FontFamily.Monospace
     )
 
 private fun textSizeFromTags(tags: Iterable<Tag>) =

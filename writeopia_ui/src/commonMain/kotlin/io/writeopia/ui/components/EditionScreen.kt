@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.outlined.FormatBold
@@ -67,6 +68,7 @@ fun EditionScreen(
     onSpanClick: (Span) -> Unit = {},
     checkboxClick: () -> Unit = {},
     listItemClick: () -> Unit = {},
+    codeBlockClick: () -> Unit = {},
     onHighlight: () -> Unit = {},
     onDelete: () -> Unit = {},
     onCopy: () -> Unit = {},
@@ -175,12 +177,24 @@ fun EditionScreen(
                 Icon(
                     modifier = Modifier
                         .clip(clipShape)
+                        .clickable(onClick = codeBlockClick)
+                        .size(iconSize)
+                        .padding(iconPadding),
+                    imageVector = Icons.Default.Code,
+                    contentDescription = "Code block",
+                    tint = tint
+                )
+
+                Spacer(modifier = Modifier.width(spaceWidth))
+
+                Icon(
+                    modifier = Modifier
+                        .clip(clipShape)
                         .clickable(onClick = onHighlight)
                         .size(iconSize)
                         .padding(iconPadding),
                     imageVector = WrSdkIcons.highlight,
-                    contentDescription = "List item",
-//            contentDescription = stringResource(R.string.delete),
+                    contentDescription = "Highlight",
                     tint = tint
                 )
 
