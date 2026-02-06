@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.text.TextStyle
@@ -24,6 +25,7 @@ import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.drawer.content.AddButtonDrawer
 import io.writeopia.ui.drawer.content.AiAnswerDrawer
+import io.writeopia.ui.drawer.content.CodeBlockDrawer
 import io.writeopia.ui.drawer.content.DividerDrawer
 import io.writeopia.ui.drawer.content.DocumentLinkDrawer
 import io.writeopia.ui.drawer.content.EquationDrawer
@@ -93,13 +95,14 @@ object CommonDrawers {
                 )
             }
 
-        val codeBlockDrawer = swipeTextDrawer(
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.medium),
+        val codeBlockDrawer = CodeBlockDrawer(
             dragIconWidth = dragIconWidth,
             config = drawConfig,
             onDragHover = manager::onDragHover,
             onSelected = manager::onSelected,
+            onDragStart = manager::onDragStart,
+            onDragStop = manager::onDragStop,
+            moveRequest = manager::moveRequest,
             enabled = editable,
             isDesktop = isDesktop,
             receiveExternalFile = receiveExternalFile,
@@ -107,16 +110,9 @@ object CommonDrawers {
                 messageDrawer(
                     manager = manager,
                     modifier = Modifier.padding(
-                        start = drawConfig.codeBlockStartPadding.dp,
-                        top = drawConfig.textVerticalPadding.dp,
-                        bottom = drawConfig.textVerticalPadding.dp
-                    )
-                        .clip(MaterialTheme.shapes.large)
-                        .background(Color.Gray)
-                        .padding(
-                            horizontal = drawConfig.codeBlockHorizontalInnerPadding.dp,
-                            vertical = drawConfig.codeBlockVerticalInnerPadding.dp
-                        ),
+                        horizontal = drawConfig.codeBlockHorizontalInnerPadding.dp,
+                        vertical = drawConfig.codeBlockVerticalInnerPadding.dp
+                    ),
                     eventListener = eventListener,
                     textStyle = { codeBlockStyle() },
                     lineBreakByContent = lineBreakByContent,

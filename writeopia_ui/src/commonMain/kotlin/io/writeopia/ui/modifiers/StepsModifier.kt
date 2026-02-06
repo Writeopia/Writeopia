@@ -8,6 +8,8 @@ import io.writeopia.ui.model.DrawStory
 
 object StepsModifier {
 
+    private const val CODE_BLOCK_POSITION_KEY = "codeBlockPosition"
+
     fun modify(stories: List<DrawStory>, dragPosition: Int): List<DrawStory> {
         val space = { StoryStep(type = StoryTypes.SPACE.type, localId = GenerateId.generate()) }
         val onDragSpace = StoryStep(type = StoryTypes.ON_DRAG_SPACE.type, localId = "onDragSpace")
@@ -23,22 +25,32 @@ object StepsModifier {
             val currentTags = drawStory.storyStep.tags
             val newTags = mergeTags(lastTags, currentTags)
 
-            val spaceStory =
-                if (index - 1 == dragPosition) onDragSpace else space()
+            // Skip space between consecutive CODE_BLOCK items
+            val lastIsCodeBlock = lastStep?.type == StoryTypes.CODE_BLOCK.type
+            val currentIsCodeBlock = drawStory.storyStep.type == StoryTypes.CODE_BLOCK.type
+            val skipSpace = lastIsCodeBlock && currentIsCodeBlock
 
-            val spaceDraw = DrawStory(
-                storyStep = spaceStory.copy(tags = newTags),
-                position = index - 1
-            )
+            if (skipSpace) {
+                acc + drawStory
+            } else {
+                val spaceStory =
+                    if (index - 1 == dragPosition) onDragSpace else space()
 
-            acc + spaceDraw + drawStory
+                val spaceDraw = DrawStory(
+                    storyStep = spaceStory.copy(tags = newTags),
+                    position = index - 1
+                )
+
+                acc + spaceDraw + drawStory
+            }
         }
 
         val lastIndex = parsed.lastIndex
         val fullStory = parsed + DrawStory(storyStep = lastSpace, position = lastIndex)
 
         val fixedPositions = addPositionToTags(fullStory)
-        return fixedPositions
+        val fixedCodeBlockPositions = addPositionToCodeBlocks(fixedPositions)
+        return fixedCodeBlockPositions
     }
 
     private fun mergeTags(tags1: Set<TagInfo>, tags2: Set<TagInfo>): Set<TagInfo> {
@@ -101,5 +113,33 @@ object StepsModifier {
         }
 
         return resultList
+    }
+
+    private fun addPositionToCodeBlocks(stories: List<DrawStory>): List<DrawStory> {
+        val isCodeBlockFn: (DrawStory) -> Boolean = { draw ->
+            draw.storyStep.type == StoryTypes.CODE_BLOCK.type
+        }
+
+        return stories.mapIndexed { i, draw ->
+            if (!isCodeBlockFn(draw)) {
+                draw
+            } else {
+                val previousIsCodeBlock = if (i > 0) isCodeBlockFn(stories[i - 1]) else false
+                val nextIsCodeBlock =
+                    if (i < stories.lastIndex) isCodeBlockFn(stories[i + 1]) else false
+
+                val position = when {
+                    i == 0 -> -1
+                    i == stories.lastIndex -> 1
+                    previousIsCodeBlock && !nextIsCodeBlock -> 1
+                    previousIsCodeBlock && nextIsCodeBlock -> 0
+                    !previousIsCodeBlock && nextIsCodeBlock -> -1
+                    !previousIsCodeBlock && !nextIsCodeBlock -> 2
+                    else -> 2
+                }
+
+                draw.copy(extraInfo = draw.extraInfo + (CODE_BLOCK_POSITION_KEY to position))
+            }
+        }
     }
 }
