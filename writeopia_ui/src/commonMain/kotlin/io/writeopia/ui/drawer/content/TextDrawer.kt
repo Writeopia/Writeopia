@@ -242,52 +242,41 @@ class TextDrawer(
                             val text = value.text
                             val cursorPos = value.selection.start
 
-                            println("Detecting slash")
-
                             if (sizeDifference > 0) {
-                                println("Detecting slash 1")
                                 // Character was added
                                 val addedChar =
                                     if (cursorPos > 0) text.getOrNull(cursorPos - 1) else null
 
                                 if (addedChar == '/') {
-                                    println("Detecting slash 2")
                                     // Check if '/' is at the start of the line or after a space
                                     val charBefore =
                                         if (cursorPos > 1) text.getOrNull(cursorPos - 2) else null
                                     if (charBefore == null || charBefore == ' ' || charBefore == '\n') {
-                                        println("Detecting slash 3")
                                         showSlashCommandPopup = true
                                         slashStartPosition = cursorPos - 1
                                         slashCommandFilter = ""
                                     }
                                 } else if (showSlashCommandPopup && slashStartPosition >= 0) {
-                                    println("Detecting slash 3.1")
                                     // Update filter with text after '/'
                                     val filterText =
                                         text.substring(slashStartPosition + 1, cursorPos)
                                     if (filterText.contains(' ') || filterText.contains('\n')) {
-                                        println("Detecting slash 4")
                                         // Space or newline typed, close popup
                                         showSlashCommandPopup = false
                                         slashStartPosition = -1
                                         slashCommandFilter = ""
                                     } else {
-                                        println("Detecting slash 5")
                                         slashCommandFilter = filterText
                                     }
                                 }
                             } else if (sizeDifference < 0 && showSlashCommandPopup) {
-                                println("Detecting slash 6")
                                 // Character was deleted
                                 if (cursorPos <= slashStartPosition) {
-                                    println("Detecting slash 7")
                                     // Deleted the '/' or before it
                                     showSlashCommandPopup = false
                                     slashStartPosition = -1
                                     slashCommandFilter = ""
                                 } else {
-                                    println("Detecting slash 8")
                                     // Update filter
                                     slashCommandFilter =
                                         text.substring(slashStartPosition + 1, cursorPos)
