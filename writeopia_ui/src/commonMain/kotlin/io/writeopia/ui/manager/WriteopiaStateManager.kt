@@ -559,12 +559,17 @@ class WriteopiaStateManager(
     }
 
     /**
-     * Click lister when user clicks in the menu to add a code block
+     * Click listener when user clicks in the menu to add a code block
      */
     fun onCodeBlockClicked() {
-        // Todo: This change needs to take into account that code block is a multi line block and then
-        // it needs to be have the relation N -> 1 and 1 -> N when transforming.
-//        changeCurrentStoryType(StoryTypes.CODE_BLOCK)
+        if (!isEditable) return
+        val onEdit = _onEditPositions.value
+
+        if (onEdit.isNotEmpty()) {
+            toggleStateForStories(onEdit, StoryTypes.CODE_BLOCK)
+        } else {
+            changeCurrentStoryType(StoryTypes.CODE_BLOCK)
+        }
     }
 
     fun toggleCollapseItem(position: Int) {

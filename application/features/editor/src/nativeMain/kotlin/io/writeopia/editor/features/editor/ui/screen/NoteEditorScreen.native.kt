@@ -135,6 +135,7 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::clearSelections,
                     noteEditorViewModel::onAddCheckListClick,
                     noteEditorViewModel::onAddListItemClick,
+                    noteEditorViewModel::onAddCodeBlockClick,
                     noteEditorViewModel::addPage,
                     noteEditorViewModel::toggleHighLightBlock,
                     noteEditorViewModel::titleClick
@@ -280,6 +281,7 @@ private fun BottomScreen(
     onClose: () -> Unit = {},
     onCheckItem: () -> Unit = {},
     onListItem: () -> Unit = {},
+    onCodeBlock: () -> Unit = {},
     onAddPage: () -> Unit = {},
     onHighlight: () -> Unit = {},
     titleClick: (Tag) -> Unit
@@ -332,6 +334,7 @@ private fun BottomScreen(
                     onClose = onClose,
                     checkboxClick = onCheckItem,
                     listItemClick = onListItem,
+                    codeBlockClick = onCodeBlock,
                     onAddPage = onAddPage,
                     titleClick = titleClick
                 )

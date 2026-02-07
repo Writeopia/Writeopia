@@ -23,6 +23,7 @@ enum class SelectionMetadata {
                 StoryTypes.CHECK_ITEM -> CHECK_ITEM
                 StoryTypes.UNORDERED_LIST_ITEM -> UNORDERED_LIST_ITEM
                 StoryTypes.DOCUMENT_LINK -> DOCUMENT_LINK
+                StoryTypes.CODE_BLOCK -> CODE_BLOCK
                 else -> null
             }
         }

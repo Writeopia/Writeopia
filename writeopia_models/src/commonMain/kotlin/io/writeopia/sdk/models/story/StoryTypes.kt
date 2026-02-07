@@ -46,7 +46,7 @@ enum class StoryTypes(val type: StoryType) {
     CODE_BLOCK(
         StoryType(
             "code_block",
-            1
+            23
         )
     ),
     ON_DRAG_SPACE(StoryType("on_drag_space", 17)),

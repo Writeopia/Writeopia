@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -43,7 +44,9 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
@@ -82,7 +85,9 @@ class TextDrawer(
     override var onFocusChanged: (Int, FocusState) -> Unit = { _, _ -> },
     private val selectionState: StateFlow<Boolean>,
     private val onSelectionLister: (Int) -> Unit,
-    private val textToolbox: @Composable (Boolean) -> Unit = {}
+    private val textToolbox: @Composable (Boolean) -> Unit = {},
+    private val slashCommands: List<SlashCommand> = defaultSlashCommands,
+    private val slashCommandsEnabled: Boolean = true
 ) : SimpleTextDrawer {
 
     @Composable
@@ -120,6 +125,11 @@ class TextDrawer(
             }
         }
 
+        // Slash command popup state
+        var showSlashCommandPopup by remember { mutableStateOf(false) }
+        var slashCommandFilter by remember { mutableStateOf("") }
+        var slashStartPosition by remember { mutableIntStateOf(-1) }
+
         val selection by remember {
             derivedStateOf {
                 inputText.selection
@@ -133,7 +143,7 @@ class TextDrawer(
                 spans
                     .filter { spanInfo -> spanInfo.span == Span.LINK }
                     .firstOrNull { (start, end, _, _) ->
-                        selection.start >= start && selection.start <= end
+                        selection.start in start..end
                     }
                     ?.extra
             }
@@ -227,6 +237,53 @@ class TextDrawer(
                             spans = Spans.recalculateSpans(spans, previousStart, sizeDifference)
                         }
 
+                        // Detect slash command
+                        if (slashCommandsEnabled) {
+                            val text = value.text
+                            val cursorPos = value.selection.start
+
+                            if (sizeDifference > 0) {
+                                // Character was added
+                                val addedChar =
+                                    if (cursorPos > 0) text.getOrNull(cursorPos - 1) else null
+
+                                if (addedChar == '/') {
+                                    // Check if '/' is at the start of the line or after a space
+                                    val charBefore =
+                                        if (cursorPos > 1) text.getOrNull(cursorPos - 2) else null
+                                    if (charBefore == null || charBefore == ' ' || charBefore == '\n') {
+                                        showSlashCommandPopup = true
+                                        slashStartPosition = cursorPos - 1
+                                        slashCommandFilter = ""
+                                    }
+                                } else if (showSlashCommandPopup && slashStartPosition >= 0) {
+                                    // Update filter with text after '/'
+                                    val filterText =
+                                        text.substring(slashStartPosition + 1, cursorPos)
+                                    if (filterText.contains(' ') || filterText.contains('\n')) {
+                                        // Space or newline typed, close popup
+                                        showSlashCommandPopup = false
+                                        slashStartPosition = -1
+                                        slashCommandFilter = ""
+                                    } else {
+                                        slashCommandFilter = filterText
+                                    }
+                                }
+                            } else if (sizeDifference < 0 && showSlashCommandPopup) {
+                                // Character was deleted
+                                if (cursorPos <= slashStartPosition) {
+                                    // Deleted the '/' or before it
+                                    showSlashCommandPopup = false
+                                    slashStartPosition = -1
+                                    slashCommandFilter = ""
+                                } else {
+                                    // Update filter
+                                    slashCommandFilter =
+                                        text.substring(slashStartPosition + 1, cursorPos)
+                                }
+                            }
+                        }
+
                         val edit = {
                             inputText = value.copy(
                                 Spans.createStringWithSpans(
@@ -270,7 +327,101 @@ class TextDrawer(
                     LinkHandler(selectedLink ?: "")
                 }
             }
+
+            if (showSlashCommandPopup) {
+                SlashCommandPopup(
+                    slashCommandFilter = slashCommandFilter,
+                    slashCommands = slashCommands,
+                    inputText = inputText,
+                    slashStartPosition = slashStartPosition,
+                    spans = spans,
+                    position = drawInfo.position,
+                    lineBreakByContent = lineBreakByContent,
+                    onTextEdit = onTextEdit,
+                    onInputTextChange = { inputText = it },
+                    onDismiss = {
+                        showSlashCommandPopup = false
+                        slashStartPosition = -1
+                        slashCommandFilter = ""
+                    }
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun SlashCommandPopup(
+    slashCommandFilter: String,
+    slashCommands: List<SlashCommand>,
+    inputText: TextFieldValue,
+    slashStartPosition: Int,
+    spans: Set<SpanInfo>,
+    position: Int,
+    lineBreakByContent: Boolean,
+    onTextEdit: (TextInput, Int, Boolean) -> Unit,
+    onInputTextChange: (TextFieldValue) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Popup(
+        offset = IntOffset(0, 24),
+        onDismissRequest = onDismiss,
+        properties = PopupProperties(focusable = false)
+    ) {
+        SlashCommandPopup(
+            filter = slashCommandFilter,
+            commands = slashCommands,
+            onCommandSelected = { command ->
+                val textToInsert = command.action(position)
+
+                if (textToInsert != null) {
+                    val currentText = inputText.text
+                    val cursorPos = inputText.selection.start
+
+                    // Remove the "/" and any filter text, then insert the command result
+                    val beforeSlash = currentText.take(slashStartPosition)
+                    val afterCursor = currentText.substring(cursorPos)
+                    val newText = beforeSlash + textToInsert + afterCursor
+                    val newCursorPos = slashStartPosition + textToInsert.length
+
+                    onInputTextChange(
+                        TextFieldValue(
+                            text = newText,
+                            selection = TextRange(newCursorPos)
+                        )
+                    )
+
+                    onTextEdit(
+                        TextInput(newText, newCursorPos, newCursorPos, spans),
+                        position,
+                        lineBreakByContent,
+                    )
+                } else {
+                    // Action handled everything, just clear the slash command text
+                    val currentText = inputText.text
+                    val cursorPos = inputText.selection.start
+
+                    val beforeSlash = currentText.take(slashStartPosition)
+                    val afterCursor = currentText.substring(cursorPos)
+                    val newText = beforeSlash + afterCursor
+
+                    onInputTextChange(
+                        TextFieldValue(
+                            text = newText,
+                            selection = TextRange(slashStartPosition)
+                        )
+                    )
+
+                    onTextEdit(
+                        TextInput(newText, slashStartPosition, slashStartPosition, spans),
+                        position,
+                        lineBreakByContent,
+                    )
+                }
+
+                onDismiss()
+            }
+        )
     }
 }
 

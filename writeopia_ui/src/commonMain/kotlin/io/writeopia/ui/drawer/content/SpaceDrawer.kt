@@ -18,6 +18,7 @@ import io.writeopia.ui.drawer.decorations.DefaultTagDecoration
 import io.writeopia.ui.drawer.decorations.TagDecoration
 import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
+import io.writeopia.ui.modifiers.StepsModifier
 
 /**
  * Draws a white space. This Drawer is very important for accepting drop os other Composables for
@@ -34,6 +35,8 @@ class SpaceDrawer(
 
     @Composable
     override fun Step(step: StoryStep, drawInfo: DrawInfo) {
+        val isInsideCodeBlock = drawInfo.extraData[StepsModifier.IS_INSIDE_CODE_BLOCK_KEY] == true
+
         DropTarget(
             modifier = Modifier
         ) { inBound, data ->
@@ -47,19 +50,36 @@ class SpaceDrawer(
                 )
             }
 
+            val bgColor = if (isInsideCodeBlock) {
+                config.codeBlockBackgroundColor()
+            } else {
+                tagDecoration.background(
+                    Color.Transparent,
+                    step.tags.map { it.tag },
+                    config
+                )
+            }
+
             Box(
                 modifier = modifier
-                    .background(
-                        tagDecoration.background(
-                            Color.Transparent,
-                            step.tags.map { it.tag },
-                            config
-                        )
-                    )
-                    .height(10.dp)
-                    .fillMaxWidth()
-                    .padding(top = 3.dp, bottom = 3.dp, start = 12.dp)
-                    .background(backgroundColor, MaterialTheme.shapes.medium)
+                    .background(bgColor)
+                    .let { mod ->
+                        if (isInsideCodeBlock) {
+                            mod.padding(start = config.textDrawerStartPadding.dp)
+                        } else {
+                            mod.height(10.dp)
+                                .fillMaxWidth()
+                                .padding(top = 3.dp, bottom = 3.dp, start = 12.dp)
+                                .background(backgroundColor, MaterialTheme.shapes.medium)
+                        }
+                    }
+                    .let { mod ->
+                        if (isInsideCodeBlock) {
+                            mod.height(4.dp).fillMaxWidth()
+                        } else {
+                            mod
+                        }
+                    }
             )
         }
     }
