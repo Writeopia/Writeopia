@@ -129,6 +129,12 @@ kotlin {
             dependencies {
             }
         }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
     }
 }
 
