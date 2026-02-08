@@ -63,23 +63,10 @@ class SpaceDrawer(
             Box(
                 modifier = modifier
                     .background(bgColor)
-                    .let { mod ->
-                        if (isInsideCodeBlock) {
-                            mod.padding(start = config.textDrawerStartPadding.dp)
-                        } else {
-                            mod.height(10.dp)
-                                .fillMaxWidth()
-                                .padding(top = 3.dp, bottom = 3.dp, start = 12.dp)
-                                .background(backgroundColor, MaterialTheme.shapes.medium)
-                        }
-                    }
-                    .let { mod ->
-                        if (isInsideCodeBlock) {
-                            mod.height(4.dp).fillMaxWidth()
-                        } else {
-                            mod
-                        }
-                    }
+                    .height(10.dp)
+                    .fillMaxWidth()
+                    .padding(top = 3.dp, bottom = 3.dp, start = 12.dp)
+                    .background(backgroundColor, MaterialTheme.shapes.medium)
             )
         }
     }
