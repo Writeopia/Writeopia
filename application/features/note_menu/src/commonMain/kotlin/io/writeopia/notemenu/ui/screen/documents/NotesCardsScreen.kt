@@ -21,10 +21,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
@@ -70,6 +68,8 @@ import io.writeopia.sdk.model.draganddrop.DropInfo
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.theme.WriteopiaTheme
+import io.writeopia.ui.components.AutoScrollLazyVerticalGrid
+import io.writeopia.ui.components.AutoScrollLazyVerticalStaggeredGrid
 import io.writeopia.ui.components.SwipeBox
 import io.writeopia.ui.components.multiselection.SelectableByDrag
 import io.writeopia.ui.draganddrop.target.DragCardTarget
@@ -284,7 +284,7 @@ private fun LazyStaggeredGridNotes(
 ) {
     val spacing = 6.dp
 
-    LazyVerticalStaggeredGrid(
+    AutoScrollLazyVerticalStaggeredGrid(
         modifier = modifier,
         columns = StaggeredGridCells.Adaptive(minSize = minimalNoteWidth),
         horizontalArrangement = Arrangement.spacedBy(spacing),
@@ -367,7 +367,7 @@ private fun LazyGridNotes(
 ) {
     val spacing = Arrangement.spacedBy(6.dp)
 
-    LazyVerticalGrid(
+    AutoScrollLazyVerticalGrid(
         modifier = modifier,
         columns = GridCells.Adaptive(minSize = minimalNoteWidth),
         horizontalArrangement = spacing,

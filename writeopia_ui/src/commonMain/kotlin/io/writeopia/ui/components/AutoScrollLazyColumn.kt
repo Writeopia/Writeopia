@@ -1,5 +1,6 @@
 package io.writeopia.ui.components
 
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
@@ -51,7 +52,7 @@ fun AutoScrollLazyColumn(
 
     AutoScrollEffect(
         dragInfo = dragInfo,
-        listState = state,
+        scrollableState = state,
         columnTop = columnTop,
         columnBottom = columnBottom,
         edgeThreshold = edgeThreshold,
@@ -75,15 +76,15 @@ fun AutoScrollLazyColumn(
 }
 
 @Composable
-private fun AutoScrollEffect(
+internal fun AutoScrollEffect(
     dragInfo: DragTargetInfo,
-    listState: LazyListState,
+    scrollableState: ScrollableState,
     columnTop: Float,
     columnBottom: Float,
     edgeThreshold: Dp,
     scrollSpeed: Float
 ) {
-    LaunchedEffect(dragInfo, listState, columnTop, columnBottom, edgeThreshold, scrollSpeed) {
+    LaunchedEffect(dragInfo, scrollableState, columnTop, columnBottom, edgeThreshold, scrollSpeed) {
         snapshotFlow {
             AutoScrollData(
                 isDragging = dragInfo.isDragging,
@@ -117,7 +118,7 @@ private fun AutoScrollEffect(
                     }
 
                     if (scrollAmount != 0f) {
-                        listState.scrollBy(scrollAmount)
+                        scrollableState.dispatchRawDelta(scrollAmount)
                     }
 
                     delay(16) // ~60fps
@@ -131,7 +132,3 @@ private data class AutoScrollData(
     val isDragging: Boolean,
     val dragY: Float
 )
-
-private suspend fun LazyListState.scrollBy(amount: Float) {
-    dispatchRawDelta(amount)
-}
