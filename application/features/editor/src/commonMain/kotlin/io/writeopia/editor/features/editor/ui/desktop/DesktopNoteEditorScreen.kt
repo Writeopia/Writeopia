@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
+import io.writeopia.editor.features.editor.ui.folders.EditFolderDialog
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
@@ -273,9 +274,22 @@ fun DesktopNoteEditorScreen(
                     noteEditorViewModel.moveToFolder(folderId)
                 },
                 expandFolder = noteEditorViewModel::expandFolder,
+                createFolder = noteEditorViewModel::createFolder,
+                editFolder = noteEditorViewModel::editFolder,
                 onDismissRequest = {
                     showFolderSelection = false
                 }
+            )
+        }
+
+        val editingFolder by noteEditorViewModel.editingFolderState.collectAsState()
+
+        editingFolder?.let { folder ->
+            EditFolderDialog(
+                folder = folder,
+                onDismissRequest = noteEditorViewModel::stopEditingFolder,
+                editFolder = noteEditorViewModel::updateFolder,
+                deleteFolder = noteEditorViewModel::deleteFolder
             )
         }
 

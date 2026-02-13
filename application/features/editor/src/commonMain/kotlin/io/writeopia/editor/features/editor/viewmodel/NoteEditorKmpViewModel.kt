@@ -15,6 +15,7 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toFolderUi
 import io.writeopia.core.folders.repository.InDocumentSearchRepository
 import io.writeopia.core.folders.repository.folder.FolderRepository
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.search.FindInText
 import io.writeopia.editor.model.EditState
@@ -237,6 +238,15 @@ class NoteEditorKmpViewModel(
 
     private val expandedFolders = MutableStateFlow(setOf<String>())
 
+    private val _editingFolder = MutableStateFlow<MenuItemUi.FolderUi?>(null)
+
+    override val editingFolderState: StateFlow<Folder?> =
+        _editingFolder.map { folderUi ->
+            folderUi?.let {
+                folderRepository.getFolderById(it.documentId)
+            }
+        }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+
     override val isEditState: StateFlow<EditState> by lazy {
         writeopiaManager.onEditPositions.map { set ->
             when {
@@ -381,13 +391,13 @@ class NoteEditorKmpViewModel(
 
                     folderUiMap
                         .toNodeTree(
-                            MenuItemUi.FolderUi.root(),
+                            MenuItemUi.FolderUi.root("root:${workspace.id}"),
                             filterPredicate = { menuItemUi ->
                                 menuItemUi.expanded
                             }
                         )
                         .toList()
-                        .filter { it.id != "root" }
+                        .filter { !it.id.split(":", limit = 2).contains("root") }
                 }
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
@@ -615,6 +625,38 @@ class NoteEditorKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             documentRepository.moveToFolder(documentId = documentId.value, parentId = "root")
         }
+    }
+
+    override fun createFolder(parentId: String) {
+        viewModelScope.launch(Dispatchers.Default) {
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            val folder = Folder.fromName("Untitled", workspace.id).copy(parentId = parentId)
+            folderRepository.createFolder(folder)
+            folderRepository.refreshFolders()
+        }
+    }
+
+    override fun editFolder(folder: MenuItemUi.FolderUi) {
+        _editingFolder.value = folder
+    }
+
+    override fun updateFolder(folder: Folder) {
+        viewModelScope.launch(Dispatchers.Default) {
+            folderRepository.updateFolder(folder)
+            folderRepository.refreshFolders()
+        }
+    }
+
+    override fun deleteFolder(id: String) {
+        viewModelScope.launch(Dispatchers.Default) {
+            folderRepository.deleteFolderById(id)
+            stopEditingFolder()
+            folderRepository.refreshFolders()
+        }
+    }
+
+    override fun stopEditingFolder() {
+        _editingFolder.value = null
     }
 
     override fun askAiBySelection() {
