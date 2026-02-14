@@ -13,6 +13,7 @@ import io.writeopia.ui.icons.all.SquareCheck
 import io.writeopia.ui.icons.all.WandSparkles
 import io.writeopia.ui.icons.all.aLargeSmall
 import io.writeopia.ui.icons.all.pencil
+import io.writeopia.ui.icons.all.spotlight
 import io.writeopia.ui.icons.all.textSelect
 
 object WrSdkIcons {
@@ -42,4 +43,6 @@ object WrSdkIcons {
     val highlight = textSelect
 
     val titleChange = aLargeSmall
+
+    val spotlightIcon = spotlight
 }

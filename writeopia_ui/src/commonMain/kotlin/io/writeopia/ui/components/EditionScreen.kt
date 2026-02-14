@@ -193,7 +193,7 @@ fun EditionScreen(
                         .clickable(onClick = onHighlight)
                         .size(iconSize)
                         .padding(iconPadding),
-                    imageVector = WrSdkIcons.highlight,
+                    imageVector = WrSdkIcons.spotlightIcon,
                     contentDescription = "Highlight",
                     tint = tint
                 )
@@ -218,6 +218,19 @@ fun EditionScreen(
                         .padding(iconPadding),
                     imageVector = WrSdkIcons.titleChange,
                     contentDescription = "Font Options",
+                    tint = tint
+                )
+
+                Spacer(modifier = Modifier.width(spaceWidth))
+
+                Icon(
+                    modifier = Modifier
+                        .clip(clipShape)
+                        .clickable(onClick = onAddPage)
+                        .size(iconSize)
+                        .padding(iconPadding),
+                    imageVector = WrSdkIcons.linkPage,
+                    contentDescription = "Link to page",
                     tint = tint
                 )
 
@@ -261,18 +274,7 @@ fun EditionScreen(
                     tint = tint
                 )
 
-                Spacer(modifier = Modifier.width(spaceWidth))
-
-                Icon(
-                    modifier = Modifier
-                        .clip(clipShape)
-                        .clickable(onClick = onAddPage)
-                        .size(iconSize)
-                        .padding(iconPadding),
-                    imageVector = WrSdkIcons.linkPage,
-                    contentDescription = "Link to page",
-                    tint = tint
-                )
+                Spacer(modifier = Modifier.width(20.dp))
             }
 
             Icon(
@@ -325,7 +327,9 @@ private fun TitleChanges(
         verticalAlignment = Alignment.CenterVertically
     ) {
         val textAlign = TextAlign.Center
-        val textStyle = MaterialTheme.typography.bodyMedium
+        val textStyle = MaterialTheme.typography.bodyMedium.copy(
+            color = MaterialTheme.colorScheme.onPrimary
+        )
         val fontWeight = FontWeight.Bold
         val padding = PaddingValues(vertical = 10.dp)
 
