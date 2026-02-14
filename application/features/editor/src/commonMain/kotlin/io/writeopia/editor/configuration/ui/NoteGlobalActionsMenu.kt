@@ -38,6 +38,7 @@ internal fun NoteGlobalActionsMenu(
     setEditable: () -> Unit,
     onShareJson: () -> Unit = {},
     onShareMd: () -> Unit = {},
+    onMoveToFolder: () -> Unit = {},
     changeFontFamily: (Font) -> Unit,
     selectedState: StateFlow<Font>,
 ) {
@@ -97,6 +98,18 @@ internal fun NoteGlobalActionsMenu(
                     onClick = onShareMd
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Title(WrStrings.moveTo())
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ShareButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = WrStrings.folder(),
+                onClick = onMoveToFolder
+            )
         }
     }
 }
