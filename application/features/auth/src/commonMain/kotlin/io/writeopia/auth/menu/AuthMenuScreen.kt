@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -42,6 +45,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import io.writeopia.auth.utils.arrowPadding
+import io.writeopia.common.utils.icons.PlatformIcons
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
@@ -63,19 +68,12 @@ fun AuthMenuScreen(
     navigateUp: () -> Unit,
     navigateNext: () -> Unit,
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
-        Icon(
-            modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp)
-                .clip(CircleShape)
-                .clickable {
-                    navigateUp()
-                }
-                .padding(6.dp),
-            imageVector = WrIcons.backArrowDesktop,
-            contentDescription = "Arrow back",
-            tint = MaterialTheme.colorScheme.onBackground
-        )
-
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .imePadding(),
+        contentAlignment = Alignment.TopCenter
+    ) {
         val authScreen = @Composable { modifier: Modifier ->
             AuthMenuContentScreen(
                 emailState,
@@ -113,6 +111,20 @@ fun AuthMenuScreen(
                 authScreen(Modifier)
             }
         }
+
+        Icon(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .arrowPadding()
+                .clip(CircleShape)
+                .clickable {
+                    navigateUp()
+                }
+                .padding(6.dp),
+            imageVector = PlatformIcons.backArrowMobile,
+            contentDescription = "Arrow back",
+            tint = MaterialTheme.colorScheme.onBackground
+        )
     }
 }
 
@@ -138,9 +150,13 @@ private fun AuthMenuContentScreen(
     val password by passwordState.collectAsState()
     var showPassword by remember { mutableStateOf(false) }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(
-            modifier = Modifier.align(Alignment.Center).widthIn(max = 430.dp),
+            modifier = Modifier
+                .widthIn(max = 430.dp)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 100.dp, bottom = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val shape = MaterialTheme.shapes.large
