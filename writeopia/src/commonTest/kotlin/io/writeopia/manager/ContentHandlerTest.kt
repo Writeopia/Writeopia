@@ -44,7 +44,7 @@ class ContentHandlerTest {
     }
 
     @Test
-    fun `when a line break happens, the text should be divided correctly`() {
+    fun `when a line break happens the text should be divided correctly`() {
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
         val storyStep = StoryStep(
             type = StoryTypes.TEXT.type,
@@ -61,7 +61,7 @@ class ContentHandlerTest {
     }
 
     @Test
-    fun `when a line break happens, the text should be divided correctly for multiple line`() {
+    fun `when a line break happens the text should be divided correctly for multiple lines`() {
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
         val storyStep = StoryStep(
             type = StoryTypes.TEXT.type,
@@ -80,7 +80,7 @@ class ContentHandlerTest {
     }
 
     @Test
-    fun `when check item command is WRITTEN, the command should be removed for the story text`() {
+    fun `when check item command is WRITTEN the command should be removed from the story text`() {
         val input = MapStoryData.messagesInLine()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
         val text = "Lalala"
@@ -108,7 +108,7 @@ class ContentHandlerTest {
     }
 
     @Test
-    fun `when deleting stories, the focus should move correctly`() {
+    fun `when deleting stories the focus should move correctly`() {
         val input = MapStoryData.messagesInLine()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
         val text = "Lalala"
@@ -145,7 +145,7 @@ class ContentHandlerTest {
     }
 
     @Test
-    fun `when deleting stories, empty spaces should NOT be allowed`() {
+    fun `when deleting stories empty spaces should NOT be allowed`() {
         val input = MapStoryData.simpleMessages()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
 
@@ -155,7 +155,7 @@ class ContentHandlerTest {
     }
 
     @Test
-    fun `when erasing stories, is should move text correctly`() {
+    fun `when erasing stories it should move text correctly`() {
         val input = MapStoryData.simpleMessages()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
 
@@ -169,7 +169,7 @@ class ContentHandlerTest {
     }
 
     @Test
-    fun `when erasing stories, empty spaces should NOT be allowed`() {
+    fun `when erasing stories empty spaces should NOT be allowed`() {
         val input = MapStoryData.simpleMessages()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
 
@@ -179,7 +179,7 @@ class ContentHandlerTest {
     }
 
     @Test
-    fun `when a header is collapsed, all text bellow it should be hidden`() {
+    fun `when a header is collapsed all text below it should be hidden`() {
         val input = MapStoryData.messagesWithHeader()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
 
@@ -190,7 +190,7 @@ class ContentHandlerTest {
     }
 
     @Test
-    fun `when changing the type of a story, it should not change the position of the box highlight`() {
+    fun `when changing the type of a story it should not change the position of the box highlight`() {
         val input = MapStoryData.messagesWithHighlight()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
         val position = 1

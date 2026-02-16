@@ -34,7 +34,7 @@ class StepsModifierTest {
     }
 
     @Test
-    fun `tags should be merged correctly, with multiple types`() {
+    fun `tags should be merged correctly with multiple types`() {
         val input = listOf(
             StoryStep(
                 text = "Title",
@@ -103,7 +103,7 @@ class StepsModifierTest {
     }
 
     @Test
-    fun `three consecutive code blocks should have positions -1, 0, and 1`() {
+    fun `three consecutive code blocks should have positions -1 and 0 and 1`() {
         val input = listOf(
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "line 1"),
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "line 2"),
