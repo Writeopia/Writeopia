@@ -70,7 +70,7 @@ class StepsModifierTest {
     // Code Block Tests
 
     @Test
-    fun `single code block should have position 2 (single)`() {
+    fun `single code block should have position 2 - single`() {
         val input = listOf(
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "code line")
         ).mapIndexed { index, step ->
