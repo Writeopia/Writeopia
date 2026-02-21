@@ -67,6 +67,8 @@
   <string name="lock_document">Lock document</string>
   <string name="move_to">Move to...</string>
   <string name="move_to_home">Move home</string>
+  <string name="no_folders">You don\'t have any folders</string>
+  <string name="create_folder">Create folder</string>
   <string name="text">Text</string>
   <string name="insert">Insert</string>
   <string name="decoration">Decoration</string>

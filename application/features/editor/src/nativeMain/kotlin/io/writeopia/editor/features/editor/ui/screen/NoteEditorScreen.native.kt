@@ -35,6 +35,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +51,8 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.colors.ColorUtils
 import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
+import io.writeopia.editor.features.editor.ui.folders.EditFolderDialog
+import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.ui.TextEditor
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
@@ -85,6 +90,8 @@ internal fun NoteEditorScreen(
 //            stringResource(R.string.untitled)
         )
     }
+
+    var showFolderSelection by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier,
@@ -172,8 +179,34 @@ internal fun NoteEditorScreen(
                     setEditable = noteEditorViewModel::toggleEditable,
                     onShareJson = { noteEditorViewModel.shareDocumentInJson() },
                     onShareMd = { noteEditorViewModel.shareDocumentInMarkdown() },
+                    onMoveToFolder = { showFolderSelection = true },
                     changeFontFamily = noteEditorViewModel::changeFontFamily,
                     selectedState = noteEditorViewModel.fontFamily
+                )
+            }
+
+            if (showFolderSelection) {
+                FolderSelectionDialog(
+                    menuItemsState = noteEditorViewModel.listenForFolders,
+                    selectedFolder = { folderId ->
+                        showFolderSelection = false
+                        noteEditorViewModel.moveToFolder(folderId)
+                    },
+                    expandFolder = noteEditorViewModel::expandFolder,
+                    createFolder = noteEditorViewModel::createFolder,
+                    editFolder = noteEditorViewModel::editFolder,
+                    onDismissRequest = { showFolderSelection = false }
+                )
+            }
+
+            val editingFolder by noteEditorViewModel.editingFolderState.collectAsState()
+
+            editingFolder?.let { folder ->
+                EditFolderDialog(
+                    folder = folder,
+                    onDismissRequest = noteEditorViewModel::stopEditingFolder,
+                    editFolder = noteEditorViewModel::updateFolder,
+                    deleteFolder = noteEditorViewModel::deleteFolder
                 )
             }
         }

@@ -28,6 +28,7 @@ import writeopia.application.core.resources.generated.resources.confirmation_del
 import writeopia.application.core.resources.generated.resources.content
 import writeopia.application.core.resources.generated.resources.copy_note
 import writeopia.application.core.resources.generated.resources.create_account
+import writeopia.application.core.resources.generated.resources.create_folder
 import writeopia.application.core.resources.generated.resources.create_your_account
 import writeopia.application.core.resources.generated.resources.dark_theme
 import writeopia.application.core.resources.generated.resources.decoration
@@ -72,6 +73,7 @@ import writeopia.application.core.resources.generated.resources.markdown
 import writeopia.application.core.resources.generated.resources.move_to
 import writeopia.application.core.resources.generated.resources.move_to_home
 import writeopia.application.core.resources.generated.resources.name
+import writeopia.application.core.resources.generated.resources.no_folders
 import writeopia.application.core.resources.generated.resources.new_password
 import writeopia.application.core.resources.generated.resources.no_models
 import writeopia.application.core.resources.generated.resources.notes_will_be_deleted
@@ -214,6 +216,12 @@ object WrStrings {
 
     @Composable
     fun moveToHome() = stringResource(Res.string.move_to_home)
+
+    @Composable
+    fun noFolders() = stringResource(Res.string.no_folders)
+
+    @Composable
+    fun createFolder() = stringResource(Res.string.create_folder)
 
     @Composable
     fun text() = stringResource(Res.string.text)

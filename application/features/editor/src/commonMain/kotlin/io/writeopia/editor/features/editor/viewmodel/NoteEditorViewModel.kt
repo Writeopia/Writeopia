@@ -1,6 +1,7 @@
 package io.writeopia.editor.features.editor.viewmodel
 
 import io.writeopia.commonui.dtos.MenuItemUi
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
 import io.writeopia.sdk.models.files.ExternalFile
@@ -43,6 +44,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     val fontFamily: StateFlow<Font>
 
     val listenForFolders: StateFlow<List<MenuItemUi.FolderUi>>
+
+    val editingFolderState: StateFlow<Folder?>
 
     val loadingState: StateFlow<Boolean>
 
@@ -123,6 +126,16 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun moveToFolder(folderId: String)
 
     fun moveToRootFolder()
+
+    fun createFolder(parentId: String)
+
+    fun editFolder(folder: MenuItemUi.FolderUi)
+
+    fun updateFolder(folder: Folder)
+
+    fun deleteFolder(id: String)
+
+    fun stopEditingFolder()
 
     fun askAiBySelection()
 

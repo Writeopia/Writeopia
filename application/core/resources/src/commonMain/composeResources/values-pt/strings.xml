@@ -65,6 +65,8 @@
   <string name="lock_document">Bloquear edição</string>
   <string name="move_to">Move para...</string>
   <string name="move_to_home">Move home</string>
+  <string name="no_folders">Você não tem nenhuma pasta</string>
+  <string name="create_folder">Criar pasta</string>
   <string name="text">Texto</string>
   <string name="insert">Inserir</string>
   <string name="box">Caixa</string>
