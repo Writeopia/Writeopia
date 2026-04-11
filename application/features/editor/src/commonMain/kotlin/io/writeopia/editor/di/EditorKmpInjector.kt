@@ -116,7 +116,7 @@ class EditorKmpInjector private constructor(
             val json = Json.encodeToString(drawingData)
 
             // Load the document to get current content size
-            val workspaceId = authCoreInjection.provideAccountManager().getWorkspace()
+            val workspaceId = authCoreInjection.provideAuthRepository().getWorkspace()?.id ?: ""
             val document = documentRepository.loadDocumentById(documentId, workspaceId)
 
             val storyStep = if (storyStepId.isNotEmpty()) {
