@@ -49,6 +49,7 @@ import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
 import io.writeopia.resources.WrStrings
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.drawer.factory.DrawersFactory
 import io.writeopia.ui.drawer.factory.isEnterKey
@@ -61,6 +62,8 @@ fun DesktopNoteEditorScreen(
     drawersFactory: DrawersFactory,
     onPresentationClick: () -> Unit,
     onDocumentLinkClick: (String) -> Unit,
+    onDrawingClick: (StoryStep, Int) -> Unit = { _, _ -> },
+    onNewDrawingClick: () -> Unit = {},
     onDocumentDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -93,6 +96,7 @@ fun DesktopNoteEditorScreen(
                     drawersFactory = drawersFactory,
                     loadNoteId = documentId,
                     onDocumentLinkClick = onDocumentLinkClick,
+                    onDrawingClick = onDrawingClick,
                     modifier = Modifier.padding(start = 30.dp, end = 30.dp)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -239,7 +243,8 @@ fun DesktopNoteEditorScreen(
             aiTags = noteEditorViewModel::aiTags,
             selectModel = noteEditorViewModel::selectModel,
             changeSideMenuTab = noteEditorViewModel::changeSideMenu,
-            titleClick = noteEditorViewModel::titleClick
+            titleClick = noteEditorViewModel::titleClick,
+            onDrawingClick = onNewDrawingClick
         )
 
         if (showDeleteConfirmation) {

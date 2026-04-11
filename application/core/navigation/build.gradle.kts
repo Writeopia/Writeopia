@@ -49,6 +49,8 @@ kotlin {
                 implementation(project(":application:features:notifications"))
                 implementation(project(":application:features:search"))
                 implementation(project(":application:features:documents_graph"))
+                implementation(project(":application:features:drawing"))
+                implementation(project(":writeopia_models"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:models"))

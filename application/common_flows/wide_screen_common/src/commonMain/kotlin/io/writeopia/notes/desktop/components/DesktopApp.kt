@@ -34,6 +34,7 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
+import io.writeopia.drawing.di.DrawingInjection
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.KmpSearchInjection
 import io.writeopia.features.search.ui.SearchDialog
@@ -94,6 +95,8 @@ fun DesktopApp(
     val sideMenuInjector = remember {
         SideMenuKmpInjector()
     }
+
+    val drawingInjection = remember { DrawingInjection() }
 
     val documentsGraphInjection =
         DocumentsGraphInjection(repositoryInjection = RepositoryInjector.singleton())
@@ -193,7 +196,15 @@ fun DesktopApp(
                                 sideMenuKmpInjector = sideMenuInjector,
                                 documentsGraphInjection = documentsGraphInjection,
                                 editorInjector = editorInjector,
+                                drawingInjection = drawingInjection,
                                 selectColorTheme = selectColorTheme,
+                                onDrawingSaved = { documentId, storyStepId, drawingData ->
+                                    editorInjector.addDrawingToDocument(
+                                        documentId,
+                                        storyStepId,
+                                        drawingData
+                                    )
+                                },
                                 navigationBar = {},
                                 navController = navigationController
                             ) {}

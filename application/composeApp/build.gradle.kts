@@ -63,6 +63,7 @@ kotlin {
                 implementation(project(":application:features:search"))
                 implementation(project(":application:features:global_shell"))
                 implementation(project(":application:features:auth"))
+                implementation(project(":application:features:drawing"))
 
                 implementation(libs.room.runtime)
 

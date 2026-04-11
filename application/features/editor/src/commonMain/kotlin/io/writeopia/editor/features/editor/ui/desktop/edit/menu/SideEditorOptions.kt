@@ -105,7 +105,8 @@ fun SideEditorOptions(
     toggleFavorite: () -> Unit,
     selectModel: (String) -> Unit,
     changeSideMenuTab: (SideMenuTab) -> Unit,
-    titleClick: (Tag) -> Unit
+    titleClick: (Tag) -> Unit,
+    onDrawingClick: () -> Unit = {}
 ) {
     val menuType by sideMenuTabState.collectAsState()
 
@@ -189,6 +190,10 @@ fun SideEditorOptions(
                                 aiTags = aiTags,
                                 selectModel = selectModel
                             )
+                        }
+
+                        SideMenuTab.DRAWING -> {
+                            DrawingOptions(onStartDrawing = onDrawingClick)
                         }
                     }
                 }
@@ -289,6 +294,27 @@ fun SideEditorOptions(
                 )
 
                 Spacer(modifier = Modifier.height(spacing))
+
+                Icon(
+                    imageVector = WrIcons.drawing,
+                    contentDescription = "Drawing",
+                    modifier = Modifier
+                        .padding(horizontal = spacing)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(background(SideMenuTab.DRAWING))
+                        .clickable {
+                            val menuType = if (menuType != SideMenuTab.DRAWING) {
+                                SideMenuTab.DRAWING
+                            } else {
+                                SideMenuTab.NONE
+                            }
+
+                            changeSideMenuTab(menuType)
+                        }
+                        .size(40.dp)
+                        .padding(9.dp),
+                    tint = tint(SideMenuTab.DRAWING)
+                )
 
                 Spacer(modifier = Modifier.height(spacing))
 
@@ -1014,6 +1040,33 @@ private fun AiOptions(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
+    }
+}
+
+@Composable
+private fun DrawingOptions(
+    onStartDrawing: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.border(
+            1.dp,
+            MaterialTheme.colorScheme.surfaceVariant,
+            MaterialTheme.shapes.medium
+        ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
+            .width(MENU_WIDTH.dp)
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
+    ) {
+        Title(WrStrings.drawing())
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        TextButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = WrStrings.newDrawing(),
+            paddingValues = smallButtonPadding(),
+            onClick = onStartDrawing
+        )
     }
 }
 

@@ -49,6 +49,7 @@ internal fun MobileInputScreen(
     onForwardPress: () -> Unit = {},
     canUndoState: StateFlow<Boolean>,
     canRedoState: StateFlow<Boolean>,
+    onDrawingClick: () -> Unit = {},
 ) {
     val canUndo by canUndoState.collectAsState()
     val canRedo by canRedoState.collectAsState()
@@ -169,6 +170,18 @@ internal fun MobileInputScreen(
                         imageVector = WrIcons.highlight,
                         contentDescription = "Underline",
 //                    stringResource(R.string.undo),
+                        tint = buttonColor
+                    )
+
+                    Spacer(modifier = Modifier.width(15.dp))
+
+                    Icon(
+                        modifier = Modifier
+                            .clip(buttonShape)
+                            .clickable { onDrawingClick() }
+                            .padding(iconPadding),
+                        imageVector = WrIcons.drawing,
+                        contentDescription = "Drawing",
                         tint = buttonColor
                     )
 

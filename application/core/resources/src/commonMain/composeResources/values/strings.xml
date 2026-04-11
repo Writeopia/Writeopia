@@ -137,4 +137,6 @@
   <string name="choose_workspace">Choose your workspace</string>
   <string name="your_teams">Your teams</string>
   <string name="teams">Teams</string>
+  <string name="drawing">Drawing</string>
+  <string name="new_drawing">New Drawing</string>
 </resources>

@@ -162,5 +162,6 @@ public enum class SideMenuTab {
     PAGE_STYLE,
     TEXT_OPTIONS,
     EXPORT,
-    AI
+    AI,
+    DRAWING
 }

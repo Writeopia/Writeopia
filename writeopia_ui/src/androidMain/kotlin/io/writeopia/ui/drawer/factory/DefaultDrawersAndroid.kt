@@ -37,7 +37,8 @@ object DefaultDrawersAndroid : DrawersFactory {
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
         linkLeadingIcon: ImageVector?,
-        equationToImageUrl: String?
+        equationToImageUrl: String?,
+        customDrawers: Map<Int, StoryStepDrawer>
     ): Map<Int, StoryStepDrawer> {
         val commonDrawers = CommonDrawers.create(
             manager,
@@ -86,7 +87,7 @@ object DefaultDrawersAndroid : DrawersFactory {
 
         return mapOf(
             StoryTypes.VIDEO.type.number to VideoDrawer(),
-        ) + commonDrawers
+        ) + commonDrawers + customDrawers
     }
 
     private fun emptyErase(

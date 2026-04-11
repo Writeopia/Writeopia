@@ -55,6 +55,7 @@ enum class StoryTypes(val type: StoryType) {
     DOCUMENT_LINK(StoryType("document_link", 20)),
     DIVIDER(StoryType("divider", 21)),
     EQUATION(StoryType("equation", 22)),
+    DRAWING(StoryType("drawing", 100)),
     ;
 
     companion object {

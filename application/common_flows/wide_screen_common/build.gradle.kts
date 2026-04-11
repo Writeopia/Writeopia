@@ -63,6 +63,7 @@ kotlin {
                 implementation(project(":application:features:account"))
                 implementation(project(":application:features:search"))
                 implementation(project(":application:features:documents_graph"))
+                implementation(project(":application:features:drawing"))
 
                 implementation(libs.ktor.client.logging)
                 implementation(libs.ktor.client.core)

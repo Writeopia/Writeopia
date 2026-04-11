@@ -116,6 +116,8 @@ import writeopia.application.core.resources.generated.resources.you_are_offline
 import writeopia.application.core.resources.generated.resources.use_offline
 import writeopia.application.core.resources.generated.resources.user_email
 import writeopia.application.core.resources.generated.resources.your_teams
+import writeopia.application.core.resources.generated.resources.drawing
+import writeopia.application.core.resources.generated.resources.new_drawing
 
 object WrStrings {
 
@@ -463,4 +465,10 @@ object WrStrings {
 
     @Composable
     fun teams() = stringResource(Res.string.teams)
+
+    @Composable
+    fun drawing() = stringResource(Res.string.drawing)
+
+    @Composable
+    fun newDrawing() = stringResource(Res.string.new_drawing)
 }
