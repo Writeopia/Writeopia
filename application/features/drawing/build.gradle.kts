@@ -24,10 +24,14 @@ kotlin {
         binaries.library()
     }
 
+    val iosX64 = iosX64()
+    val iosArm64 = iosArm64()
+    val iosSimulatorArm64 = iosSimulatorArm64()
+
     listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
+        iosX64,
+        iosArm64,
+        iosSimulatorArm64
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "WriteopiaFeaturesDrawing"
@@ -58,6 +62,18 @@ kotlin {
             }
         }
 
+        val nativeMain by creating {
+            dependsOn(commonMain)
+        }
+
+        val iosMain by creating {
+            dependsOn(nativeMain)
+        }
+
+        iosX64Main.get().dependsOn(iosMain)
+        iosArm64Main.get().dependsOn(iosMain)
+        iosSimulatorArm64Main.get().dependsOn(iosMain)
+
         val androidMain by getting {
             dependencies {
                 implementation("com.google.mlkit:digital-ink-recognition:18.1.0")
@@ -67,22 +83,6 @@ kotlin {
         val jvmMain by getting {
             dependencies {
             }
-        }
-
-        val nativeMain by creating {
-            dependsOn(commonMain)
-        }
-
-        val iosX64Main by getting {
-            dependsOn(nativeMain)
-        }
-
-        val iosArm64Main by getting {
-            dependsOn(nativeMain)
-        }
-
-        val iosSimulatorArm64Main by getting {
-            dependsOn(nativeMain)
         }
 
         val webMain by creating {
