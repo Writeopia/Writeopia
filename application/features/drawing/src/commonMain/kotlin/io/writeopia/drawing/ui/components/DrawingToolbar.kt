@@ -44,7 +44,7 @@ fun DrawingToolbar(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.background)
             .padding(8.dp)
     ) {
         // Tool selection row

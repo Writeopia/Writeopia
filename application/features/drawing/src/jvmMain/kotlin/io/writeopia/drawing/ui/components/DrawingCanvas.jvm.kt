@@ -3,6 +3,7 @@ package io.writeopia.drawing.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +36,7 @@ actual fun DrawingCanvas(
 
     Canvas(
         modifier = modifier
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .pointerInput(currentTool, currentColor, strokeWidth) {
                 detectDragGestures(
                     onDragStart = { offset ->

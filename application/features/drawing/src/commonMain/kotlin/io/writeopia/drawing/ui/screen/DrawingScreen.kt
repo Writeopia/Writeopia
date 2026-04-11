@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -73,13 +74,14 @@ fun DrawingScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(8.dp)
+
+                .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(12.dp))
+                .padding(vertical = 4.dp)
         ) {
             DrawingCanvas(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(paddingValues)
                     .onSizeChanged { size ->
                         viewModel.setCanvasSize(size.width, size.height)
                     },
@@ -102,7 +104,7 @@ private fun DrawingTopBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
