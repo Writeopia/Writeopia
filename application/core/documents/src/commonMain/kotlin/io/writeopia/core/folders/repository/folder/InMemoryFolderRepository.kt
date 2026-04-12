@@ -35,9 +35,7 @@ class InMemoryFolderRepository : FolderRepository {
     override suspend fun listenForFoldersByParentId(
         parentId: String,
         workspaceId: String
-    ): Flow<Map<String, List<Folder>>> {
-        return foldersStateFlow.asStateFlow()
-    }
+    ): Flow<Map<String, List<Folder>>> = foldersStateFlow.asStateFlow()
 
     override suspend fun deleteFolderById(folderId: String) {
         mutableMap.remove(folderId)
@@ -71,11 +69,9 @@ class InMemoryFolderRepository : FolderRepository {
     companion object {
         private var instance: InMemoryFolderRepository? = null
 
-        fun singleton(): InMemoryFolderRepository {
-            return instance ?: run {
-                instance = InMemoryFolderRepository()
-                instance!!
-            }
+        fun singleton(): InMemoryFolderRepository = instance ?: run {
+            instance = InMemoryFolderRepository()
+            instance!!
         }
     }
 

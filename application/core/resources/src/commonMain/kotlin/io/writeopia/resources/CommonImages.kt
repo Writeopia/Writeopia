@@ -13,5 +13,4 @@ object CommonImages {
 
     @Composable
     fun logo() = painterResource(Res.drawable.logo)
-
 }

@@ -14,10 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.drawing.ui.drawer.DrawingPreviewDrawer
 import io.writeopia.editor.configuration.ui.DrawConfigFactory
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
+import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.ui.WriteopiaEditor
 import io.writeopia.ui.drawer.factory.DrawersFactory
 import io.writeopia.ui.model.DrawStory
@@ -33,6 +36,7 @@ internal fun TextEditor(
         drawStory.desktopKey + (drawStory.cursor?.position ?: 0)
     },
     onDocumentLinkClick: (String) -> Unit,
+    onDrawingClick: (StoryStep, Int) -> Unit = { _, _ -> },
     listState: LazyListState = rememberLazyListState(),
 ) {
     val storyState by noteEditorViewModel.toDrawWithDecoration.collectAsState()
@@ -63,6 +67,18 @@ internal fun TextEditor(
         }
     }
     val isEditable by noteEditorViewModel.isEditable.collectAsState()
+    val drawConfig = remember { DrawConfigFactory.getDrawConfig() }
+
+    val drawingPreviewDrawer = remember(onDrawingClick) {
+        DrawingPreviewDrawer(
+            onDrawingClick = onDrawingClick,
+            onDelete = noteEditorViewModel.writeopiaManager::onDelete,
+            drawConfig = drawConfig,
+            onSelected = noteEditorViewModel.writeopiaManager::onSelected,
+            onDragStart = noteEditorViewModel.writeopiaManager::onDragStart,
+            onDragStop = noteEditorViewModel.writeopiaManager::onDragStop
+        )
+    }
 
     WriteopiaEditor(
         modifier = modifier.widthIn(max = 850.dp),
@@ -75,13 +91,16 @@ internal fun TextEditor(
             editable = isEditable,
             aiExplanation = WrStrings.aiExplanation(),
             isDarkTheme = isDarkTheme,
-            drawConfig = DrawConfigFactory.getDrawConfig(),
+            drawConfig = drawConfig,
             fontFamily = fontFamily,
             generateSection = noteEditorViewModel::aiSection,
             receiveExternalFile = noteEditorViewModel::receiveExternalFile,
             onDocumentLinkClick = onDocumentLinkClick,
             linkLeadingIcon = WrIcons.pageStyle,
-            equationToImageUrl = "https://latex.codecogs.com/png.latex?\\Large&space;x="
+            equationToImageUrl = "https://latex.codecogs.com/png.latex?\\Large&space;x=",
+            customDrawers = mapOf(
+                StoryTypes.DRAWING.type.number to drawingPreviewDrawer
+            )
         ),
         storyState = storyState,
     )

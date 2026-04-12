@@ -100,21 +100,19 @@ class SnapshotBackstackManager(
     /**
      * This is a hash code that contains information that don't change very often, like localId.
      */
-    private fun StoryStep.persistentHashcode(): Int {
-        return listOf(
-            id,
-            type,
-            parentId,
-            url,
-            path,
-            text,
-            checked,
-            steps,
-            tags,
-            spans,
-            decoration,
-            ephemeral,
-            documentLink
-        ).hashCode()
-    }
+    private fun StoryStep.persistentHashcode(): Int = listOf(
+        id,
+        type,
+        parentId,
+        url,
+        path,
+        text,
+        checked,
+        steps,
+        tags,
+        spans,
+        decoration,
+        ephemeral,
+        documentLink
+    ).hashCode()
 }

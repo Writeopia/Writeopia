@@ -71,9 +71,11 @@ class MovementHandler {
         return moveStories(stories, move.positionFrom.let(::setOf), move.positionTo)
     }
 
-    fun move(stories: Map<Int, StoryStep>, move: Action.BulkMove): Map<Int, StoryStep> {
-        return moveStories(stories, move.positionFrom, move.positionTo)
-    }
+    fun move(stories: Map<Int, StoryStep>, move: Action.BulkMove): Map<Int, StoryStep> = moveStories(
+        stories,
+        move.positionFrom,
+        move.positionTo
+    )
 
     private fun moveStories(stories: Map<Int, StoryStep>, from: Set<Int>, to: Int): Map<Int, StoryStep> {
         val mutable = stories.toMutableMap()

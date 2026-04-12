@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import io.writeopia.editor.features.editor.ui.desktop.DesktopNoteEditorScreen
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.ui.drawer.factory.DefaultDrawersJs
 
 @Composable
@@ -15,6 +16,8 @@ actual fun TextEditorScreen(
     navigateBack: () -> Unit,
     playPresentation: () -> Unit,
     onDocumentLinkClick: (String) -> Unit,
+    onNewDrawingClick: () -> Unit,
+    onDrawingClick: (StoryStep, Int) -> Unit,
     modifier: Modifier,
 ) {
     DesktopNoteEditorScreen(
@@ -24,6 +27,8 @@ actual fun TextEditorScreen(
         drawersFactory = DefaultDrawersJs,
         onPresentationClick = playPresentation,
         onDocumentLinkClick = onDocumentLinkClick,
+        onDrawingClick = onDrawingClick,
+        onNewDrawingClick = onNewDrawingClick,
         onDocumentDelete = navigateBack,
         modifier = modifier
     )

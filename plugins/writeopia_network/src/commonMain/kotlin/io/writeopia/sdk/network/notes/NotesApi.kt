@@ -23,15 +23,11 @@ class NotesApi(private val client: HttpClient, private val baseUrl: String) {
     /**
      * The introductory notes of the app. The first notes after login.
      */
-    suspend fun introNotes(): List<Document> {
-        return client.get("$baseUrl/${EndPoints.introNotes()}")
-            .body<List<DocumentApi>>()
-            .map { documentApi -> documentApi.toModel() }
-    }
+    suspend fun introNotes(): List<Document> = client.get("$baseUrl/${EndPoints.introNotes()}")
+        .body<List<DocumentApi>>()
+        .map { documentApi -> documentApi.toModel() }
 
-    suspend fun createDocument(document: Document): Boolean {
-        return client.post("$baseUrl/${EndPoints.documents()}") {
-            setBody(document.toApi())
-        }.status.isSuccess()
-    }
+    suspend fun createDocument(document: Document): Boolean = client.post("$baseUrl/${EndPoints.documents()}") {
+        setBody(document.toApi())
+    }.status.isSuccess()
 }

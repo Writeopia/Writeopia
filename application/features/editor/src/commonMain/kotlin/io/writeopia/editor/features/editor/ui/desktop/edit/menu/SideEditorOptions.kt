@@ -105,7 +105,8 @@ fun SideEditorOptions(
     toggleFavorite: () -> Unit,
     selectModel: (String) -> Unit,
     changeSideMenuTab: (SideMenuTab) -> Unit,
-    titleClick: (Tag) -> Unit
+    titleClick: (Tag) -> Unit,
+    onDrawingClick: () -> Unit = {}
 ) {
     val menuType by sideMenuTabState.collectAsState()
 
@@ -167,7 +168,11 @@ fun SideEditorOptions(
                                 highLightBlockClick,
                                 addImage,
                                 addPage,
-                                titleClick
+                                titleClick,
+                                onDrawingClick = {
+                                    changeSideMenuTab(SideMenuTab.NONE)
+                                    onDrawingClick()
+                                }
                             )
                         }
 
@@ -189,6 +194,10 @@ fun SideEditorOptions(
                                 aiTags = aiTags,
                                 selectModel = selectModel
                             )
+                        }
+
+                        SideMenuTab.DRAWING -> {
+                            // Drawing is now in TextOptions under Content
                         }
                     }
                 }
@@ -287,8 +296,6 @@ fun SideEditorOptions(
                         .padding(9.dp),
                     tint = tint(SideMenuTab.AI)
                 )
-
-                Spacer(modifier = Modifier.height(spacing))
 
                 Spacer(modifier = Modifier.height(spacing))
 
@@ -533,9 +540,14 @@ private fun HighlightText(isDarkTheme: Boolean, spanClick: (Span) -> Unit) {
 }
 
 @Composable
-private fun IconAndText(text: String, iconImage: ImageVector, click: () -> Unit) {
+private fun IconAndText(
+    text: String,
+    iconImage: ImageVector,
+    modifier: Modifier = Modifier,
+    click: () -> Unit = {}
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .padding(start = 2.dp, end = 2.dp, bottom = 3.dp)
             .clip(MaterialTheme.shapes.medium)
             .clickable(onClick = click)
@@ -793,6 +805,7 @@ private fun TextOptions(
     addImage: (String) -> Unit,
     addPage: () -> Unit,
     titleClick: (Tag) -> Unit,
+    onDrawingClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -845,15 +858,27 @@ private fun TextOptions(
 
         Title(WrStrings.content())
         Spacer(modifier = Modifier.height(4.dp))
-        IconAndText(WrStrings.image(), WrIcons.image) {
-            fileChooserLoad("")?.let(addImage)
+        Row {
+            IconAndText(
+                WrStrings.image(),
+                WrIcons.image,
+                modifier = Modifier.weight(1F)
+            ) {
+                fileChooserLoad("")?.let(addImage)
+            }
+            IconAndText(
+                WrStrings.drawing(),
+                WrIcons.drawing,
+                modifier = Modifier.weight(1F),
+                onDrawingClick
+            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Title(WrStrings.links())
         Spacer(modifier = Modifier.height(4.dp))
-        IconAndText(WrStrings.page(), WrSdkIcons.linkPage, addPage)
+        IconAndText(WrStrings.page(), WrSdkIcons.linkPage, click = addPage)
     }
 }
 
@@ -1014,6 +1039,33 @@ private fun AiOptions(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
+    }
+}
+
+@Composable
+private fun DrawingOptions(
+    onStartDrawing: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.border(
+            1.dp,
+            MaterialTheme.colorScheme.surfaceVariant,
+            MaterialTheme.shapes.medium
+        ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
+            .width(MENU_WIDTH.dp)
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
+    ) {
+        Title(WrStrings.drawing())
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        TextButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = WrStrings.newDrawing(),
+            paddingValues = smallButtonPadding(),
+            onClick = onStartDrawing
+        )
     }
 }
 

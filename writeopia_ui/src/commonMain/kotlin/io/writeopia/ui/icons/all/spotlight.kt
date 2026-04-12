@@ -77,4 +77,3 @@ internal val spotlight: ImageVector
     }
 
 private var _spotlight: ImageVector? = null
-

@@ -12,7 +12,11 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.documents.graph.navigation.documentsGraphNavigation
 import io.writeopia.documents.graph.navigation.navigateToForceGraph
+import io.writeopia.drawing.di.DrawingInjection
+import io.writeopia.drawing.navigation.drawingNavigation
+import io.writeopia.drawing.navigation.navigateToDrawing
 import io.writeopia.editor.di.TextEditorInjector
+import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.editor.navigation.editorNavigation
 import io.writeopia.features.notifications.navigation.notificationsNavigation
 import io.writeopia.features.search.di.SearchInjection
@@ -37,8 +41,10 @@ fun Navigation(
     documentsGraphInjection: DocumentsGraphInjection? = null,
     sideMenuKmpInjector: SideMenuKmpInjector? = null,
     editorInjector: TextEditorInjector,
+    drawingInjection: DrawingInjection? = null,
     searchInjection: SearchInjection? = null,
     selectColorTheme: (ColorThemeOption) -> Unit,
+    onDrawingSaved: (String, String, DrawingData) -> Unit = { _, _, _ -> },
     navigationBar: @Composable () -> Unit,
     builder: NavGraphBuilder.() -> Unit
 ) {
@@ -74,7 +80,25 @@ fun Navigation(
                 navigateToNote = { id ->
                     navController.navigateToNote(id, title = "")
                 },
+                navigateToNewDrawing = { documentId ->
+                    navController.navigateToDrawing(documentId)
+                },
+                navigateToEditDrawing = { documentId, storyStep ->
+                    navController.navigateToDrawing(
+                        documentId = documentId,
+                        storyStepId = storyStep.id,
+                        drawingJson = storyStep.text
+                    )
+                }
             )
+
+            if (drawingInjection != null) {
+                drawingNavigation(
+                    drawingInjection = drawingInjection,
+                    navigateBack = navController::navigateUp,
+                    onDrawingSaved = onDrawingSaved
+                )
+            }
 
             accountMenuNavigation(
                 navigateToAuthMenu = {

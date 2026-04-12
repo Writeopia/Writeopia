@@ -33,7 +33,8 @@ object DefaultDrawersNative : DrawersFactory {
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
         linkLeadingIcon: ImageVector?,
-        equationToImageUrl: String?
+        equationToImageUrl: String?,
+        customDrawers: Map<Int, StoryStepDrawer>
     ): Map<Int, StoryStepDrawer> {
         val commonDrawers = CommonDrawers.create(
             manager,
@@ -80,6 +81,6 @@ object DefaultDrawersNative : DrawersFactory {
             onDocumentLinkClick = onDocumentLinkClick,
         )
 
-        return commonDrawers
+        return commonDrawers + customDrawers
     }
 }

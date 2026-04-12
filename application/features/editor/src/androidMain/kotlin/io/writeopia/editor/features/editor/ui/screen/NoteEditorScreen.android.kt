@@ -64,6 +64,7 @@ import io.writeopia.editor.input.InputScreen
 import io.writeopia.editor.model.EditState
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.components.EditionScreen
@@ -83,6 +84,7 @@ internal fun NoteEditorScreen(
     noteEditorViewModel: NoteEditorViewModel,
     navigateBack: () -> Unit,
     onDocumentLinkClick: (String) -> Unit,
+    onDrawingClick: (StoryStep, Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     BackHandler {
@@ -144,7 +146,8 @@ internal fun NoteEditorScreen(
                         .weight(1F)
                         .padding(horizontal = 6.dp),
                     keyFn = { drawStory -> drawStory.mobileKey },
-                    onDocumentLinkClick = onDocumentLinkClick
+                    onDocumentLinkClick = onDocumentLinkClick,
+                    onDrawingClick = onDrawingClick
                 )
 
                 BottomScreen(

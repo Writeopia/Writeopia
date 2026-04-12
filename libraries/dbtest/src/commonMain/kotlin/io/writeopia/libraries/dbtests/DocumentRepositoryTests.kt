@@ -32,7 +32,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
                         text = "text",
                         tags = setOf(TagInfo(Tag.H1))
                     )
-                    )
+                )
             ).toMap(),
             createdAt = now,
             lastUpdatedAt = now,

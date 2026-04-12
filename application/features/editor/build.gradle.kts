@@ -60,6 +60,7 @@ kotlin {
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:configuration"))
+                implementation(project(":application:features:drawing"))
 
                 implementation(libs.kotlinx.serialization.json)
                 //

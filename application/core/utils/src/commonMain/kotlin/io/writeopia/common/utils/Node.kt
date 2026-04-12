@@ -15,9 +15,10 @@ interface Node {
         fun <T : Node> anyNode(node: T, predicate: (T) -> Boolean): Boolean {
             val match = predicate(node)
 
-            return match || node.getNodes()
-                .map { it as T }
-                .any { innerNode -> anyNode(innerNode, predicate) }
+            return match ||
+                node.getNodes()
+                    .map { it as T }
+                    .any { innerNode -> anyNode(innerNode, predicate) }
         }
 
         fun <T : Node> toList(node: T): List<T> =
@@ -52,7 +53,7 @@ internal fun <T : Node> createNodeTree(
         }?.let(node::addNotes)
 
     nextNodes?.filter(filterPredicate)
-        ?.forEach { nextCode -> createNodeTree(map, nextCode,depth + 1) }
+        ?.forEach { nextCode -> createNodeTree(map, nextCode, depth + 1) }
 
     return node
 }

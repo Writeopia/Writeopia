@@ -19,12 +19,14 @@ import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.drawing.di.DrawingInjection
 import io.writeopia.editor.di.TextEditorInjector
 import io.writeopia.features.search.di.SearchInjection
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.NavItemName
 import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.NavigationViewModel
+import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.navigation.notes.navigateToNoteMenu
 import io.writeopia.navigation.notifications.navigateToNotifications
 import io.writeopia.navigation.search.navigateToSearch
@@ -41,6 +43,8 @@ fun PortraitMobile(
     notesMenuInjection: NotesMenuInjection,
     editorInjector: TextEditorInjector,
     navigationViewModel: NavigationViewModel,
+    drawingInjection: DrawingInjection? = null,
+    onDrawingSaved: (String, String, DrawingData) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
     builder: NavGraphBuilder.() -> Unit
 ) {
@@ -54,7 +58,9 @@ fun PortraitMobile(
                 notesMenuInjection = notesMenuInjection,
                 navController = navController,
                 editorInjector = editorInjector,
+                drawingInjection = drawingInjection,
                 selectColorTheme = uiConfigViewModel::changeColorTheme,
+                onDrawingSaved = onDrawingSaved,
                 searchInjection = searchInjector,
                 navigationBar = {
                     NavigationBar(

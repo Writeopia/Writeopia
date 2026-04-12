@@ -19,19 +19,17 @@ import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
 class AuthApi(private val client: HttpClient, private val baseUrl: String) {
-    suspend fun login(email: String, password: String): ResultData<AuthResponse> {
-        return try {
-            val response = client.post("$baseUrl/api/login") {
-                contentType(ContentType.Application.Json)
-                setBody(LoginRequest(email, password))
-            }.body<AuthResponse>()
+    suspend fun login(email: String, password: String): ResultData<AuthResponse> = try {
+        val response = client.post("$baseUrl/api/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest(email, password))
+        }.body<AuthResponse>()
 
-            ResultData.Complete(response)
-        } catch (e: Exception) {
-            println("login error: ${e.message}")
-            e.printStackTrace()
-            ResultData.Error(e)
-        }
+        ResultData.Complete(response)
+    } catch (e: Exception) {
+        println("login error: ${e.message}")
+        e.printStackTrace()
+        ResultData.Error(e)
     }
 
     suspend fun register(
@@ -39,48 +37,42 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         email: String,
         workspaceName: String,
         password: String
-    ): ResultData<AuthResponse> {
-        return try {
-            val response = client.post("$baseUrl/api/register") {
-                contentType(ContentType.Application.Json)
-                setBody(RegisterRequest(name, email, workspaceName, password))
-            }.body<AuthResponse>()
+    ): ResultData<AuthResponse> = try {
+        val response = client.post("$baseUrl/api/register") {
+            contentType(ContentType.Application.Json)
+            setBody(RegisterRequest(name, email, workspaceName, password))
+        }.body<AuthResponse>()
 
-            ResultData.Complete(response)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            ResultData.Error(e)
-        }
+        ResultData.Complete(response)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
     }
 
-    suspend fun resetPassword(newPassword: String, token: String): ResultData<Unit> {
-        return try {
-            val response = client.put("$baseUrl/api/password/reset") {
-                contentType(ContentType.Application.Json)
-                setBody(ResetPasswordRequest(newPassword))
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
-
-            if (response.status.isSuccess()) {
-                ResultData.Complete(Unit)
-            } else {
-                ResultData.Error()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            ResultData.Error(e)
+    suspend fun resetPassword(newPassword: String, token: String): ResultData<Unit> = try {
+        val response = client.put("$baseUrl/api/password/reset") {
+            contentType(ContentType.Application.Json)
+            setBody(ResetPasswordRequest(newPassword))
+            header(HttpHeaders.Authorization, "Bearer $token")
         }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            ResultData.Error()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
     }
 
-    suspend fun deleteAccount(token: String): ResultData<Boolean> {
-        return try {
-            val response = client.delete("$baseUrl/api/account") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }.body<DeleteAccountResponse>()
+    suspend fun deleteAccount(token: String): ResultData<Boolean> = try {
+        val response = client.delete("$baseUrl/api/account") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }.body<DeleteAccountResponse>()
 
-            ResultData.Complete(response.deleted)
-        } catch (e: Exception) {
-            ResultData.Error(e)
-        }
+        ResultData.Complete(response.deleted)
+    } catch (e: Exception) {
+        ResultData.Error(e)
     }
 }

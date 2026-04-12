@@ -20,6 +20,7 @@ import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
+import io.writeopia.drawing.di.DrawingInjection
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.SearchInjection
 import io.writeopia.model.ColorThemeOption
@@ -249,6 +250,8 @@ fun AppMobile(
                 landspaceModileFn()
             }
         } else {
+            val drawingInjection = DrawingInjection()
+
             CompositionLocalProvider(LocalPlatform provides PlatformType.MOBILE_PORTRAIT) {
                 PortraitMobile(
                     startDestination = Destinations.START_APP.id,
@@ -258,6 +261,10 @@ fun AppMobile(
                     notesMenuInjection = notesMenuInjection,
                     editorInjector = editorInjector,
                     navigationViewModel = navigationViewModel,
+                    drawingInjection = drawingInjection,
+                    onDrawingSaved = { documentId, storyStepId, drawingData ->
+                        editorInjector.addDrawingToDocument(documentId, storyStepId, drawingData)
+                    }
                 ) {
                     startScreen(navController, colorThemeState)
 

@@ -41,131 +41,129 @@ class TextCommandHandler(
     companion object {
         fun noCommands(): TextCommandHandler = TextCommandHandler(emptyMap())
 
-        fun defaultCommands(manager: WriteopiaStateManager): TextCommandHandler {
-            return TextCommandHandler(
-                mapOf(
-                    CommandFactory.checkItem().commandText to { _, position ->
-                        manager.changeStoryType(
-                            position,
-                            TypeInfo(StoryTypes.CHECK_ITEM.type),
-                            CommandInfo(
-                                CommandFactory.checkItem(),
-                                CommandTrigger.WRITTEN
-                            )
+        fun defaultCommands(manager: WriteopiaStateManager): TextCommandHandler = TextCommandHandler(
+            mapOf(
+                CommandFactory.checkItem().commandText to { _, position ->
+                    manager.changeStoryType(
+                        position,
+                        TypeInfo(StoryTypes.CHECK_ITEM.type),
+                        CommandInfo(
+                            CommandFactory.checkItem(),
+                            CommandTrigger.WRITTEN
                         )
-                    },
-                    CommandFactory.checkItem2().commandText to { _, position ->
-                        manager.changeStoryType(
-                            position,
-                            TypeInfo(StoryTypes.CHECK_ITEM.type),
-                            CommandInfo(
-                                CommandFactory.checkItem2(),
-                                CommandTrigger.WRITTEN
-                            )
+                    )
+                },
+                CommandFactory.checkItem2().commandText to { _, position ->
+                    manager.changeStoryType(
+                        position,
+                        TypeInfo(StoryTypes.CHECK_ITEM.type),
+                        CommandInfo(
+                            CommandFactory.checkItem2(),
+                            CommandTrigger.WRITTEN
                         )
-                    },
-                    CommandFactory.box().commandText to { _, position ->
-                        manager.toggleTagForPosition(
-                            position,
-                            TagInfo(Tag.HIGH_LIGHT_BLOCK),
-                            CommandInfo(CommandFactory.box(), CommandTrigger.WRITTEN)
+                    )
+                },
+                CommandFactory.box().commandText to { _, position ->
+                    manager.toggleTagForPosition(
+                        position,
+                        TagInfo(Tag.HIGH_LIGHT_BLOCK),
+                        CommandInfo(CommandFactory.box(), CommandTrigger.WRITTEN)
+                    )
+                },
+                CommandFactory.unOrderedList().commandText to { _, position ->
+                    manager.changeStoryType(
+                        position,
+                        TypeInfo(StoryTypes.UNORDERED_LIST_ITEM.type),
+                        CommandInfo(
+                            CommandFactory.unOrderedList(),
+                            CommandTrigger.WRITTEN
                         )
-                    },
-                    CommandFactory.unOrderedList().commandText to { _, position ->
-                        manager.changeStoryType(
-                            position,
-                            TypeInfo(StoryTypes.UNORDERED_LIST_ITEM.type),
-                            CommandInfo(
-                                CommandFactory.unOrderedList(),
-                                CommandTrigger.WRITTEN
-                            )
+                    )
+                },
+                CommandFactory.h1().commandText to { _, position ->
+                    manager.changeStoryType(
+                        position,
+                        TypeInfo(
+                            StoryTypes.TEXT.type,
+                            Decoration()
+                        ),
+                        CommandInfo(
+                            CommandFactory.h1(),
+                            CommandTrigger.WRITTEN,
+                            tags = setOf(TagInfo(Tag.H1))
                         )
-                    },
-                    CommandFactory.h1().commandText to { _, position ->
-                        manager.changeStoryType(
-                            position,
-                            TypeInfo(
-                                StoryTypes.TEXT.type,
-                                Decoration()
-                            ),
-                            CommandInfo(
-                                CommandFactory.h1(),
-                                CommandTrigger.WRITTEN,
-                                tags = setOf(TagInfo(Tag.H1))
-                            )
+                    )
+                },
+                CommandFactory.h2().commandText to { _, position ->
+                    manager.changeStoryType(
+                        position,
+                        TypeInfo(
+                            StoryTypes.TEXT.type,
+                            Decoration()
+                        ),
+                        CommandInfo(
+                            CommandFactory.h2(),
+                            CommandTrigger.WRITTEN,
+                            tags = setOf(TagInfo(Tag.H2))
                         )
-                    },
-                    CommandFactory.h2().commandText to { _, position ->
-                        manager.changeStoryType(
-                            position,
-                            TypeInfo(
-                                StoryTypes.TEXT.type,
-                                Decoration()
-                            ),
-                            CommandInfo(
-                                CommandFactory.h2(),
-                                CommandTrigger.WRITTEN,
-                                tags = setOf(TagInfo(Tag.H2))
-                            )
+                    )
+                },
+                CommandFactory.h3().commandText to { _, position ->
+                    manager.changeStoryType(
+                        position,
+                        TypeInfo(
+                            StoryTypes.TEXT.type,
+                            Decoration()
+                        ),
+                        CommandInfo(
+                            CommandFactory.h3(),
+                            CommandTrigger.WRITTEN,
+                            tags = setOf(TagInfo(Tag.H3))
                         )
-                    },
-                    CommandFactory.h3().commandText to { _, position ->
-                        manager.changeStoryType(
-                            position,
-                            TypeInfo(
-                                StoryTypes.TEXT.type,
-                                Decoration()
-                            ),
-                            CommandInfo(
-                                CommandFactory.h3(),
-                                CommandTrigger.WRITTEN,
-                                tags = setOf(TagInfo(Tag.H3))
-                            )
+                    )
+                },
+                CommandFactory.h4().commandText to { _, position ->
+                    manager.changeStoryType(
+                        position,
+                        TypeInfo(
+                            StoryTypes.TEXT.type,
+                            Decoration()
+                        ),
+                        CommandInfo(
+                            CommandFactory.h4(),
+                            CommandTrigger.WRITTEN,
+                            tags = setOf(TagInfo(Tag.H4))
                         )
-                    },
-                    CommandFactory.h4().commandText to { _, position ->
-                        manager.changeStoryType(
-                            position,
-                            TypeInfo(
-                                StoryTypes.TEXT.type,
-                                Decoration()
-                            ),
-                            CommandInfo(
-                                CommandFactory.h4(),
-                                CommandTrigger.WRITTEN,
-                                tags = setOf(TagInfo(Tag.H4))
-                            )
+                    )
+                },
+                CommandFactory.codeBlock().commandText to { _, position ->
+                    manager.changeStoryType(
+                        position,
+                        TypeInfo(
+                            StoryTypes.CODE_BLOCK.type,
+                            Decoration()
+                        ),
+                        CommandInfo(
+                            CommandFactory.codeBlock(),
+                            CommandTrigger.WRITTEN
                         )
-                    },
-                    CommandFactory.codeBlock().commandText to { _, position ->
-                        manager.changeStoryType(
-                            position,
-                            TypeInfo(
-                                StoryTypes.CODE_BLOCK.type,
-                                Decoration()
-                            ),
-                            CommandInfo(
-                                CommandFactory.codeBlock(),
-                                CommandTrigger.WRITTEN
-                            )
+                    )
+                },
+                CommandFactory.divider().commandText to { _, position ->
+                    manager.changeStoryType(
+                        position,
+                        TypeInfo(
+                            StoryTypes.DIVIDER.type,
+                            Decoration()
+                        ),
+                        CommandInfo(
+                            CommandFactory.divider(),
+                            CommandTrigger.WRITTEN
                         )
-                    },
-                    CommandFactory.divider().commandText to { _, position ->
-                        manager.changeStoryType(
-                            position,
-                            TypeInfo(
-                                StoryTypes.DIVIDER.type,
-                                Decoration()
-                            ),
-                            CommandInfo(
-                                CommandFactory.divider(),
-                                CommandTrigger.WRITTEN
-                            )
-                        )
-                    }
-                )
+                    )
+                }
             )
-        }
+        )
     }
 }
 

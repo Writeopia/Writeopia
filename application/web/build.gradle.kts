@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.targets.js.WASM
-
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.compose.multiplatform)

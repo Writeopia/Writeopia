@@ -43,7 +43,8 @@ object DefaultDrawersJs : DrawersFactory {
         receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
         linkLeadingIcon: ImageVector?,
-        equationToImageUrl: String?
+        equationToImageUrl: String?,
+        customDrawers: Map<Int, StoryStepDrawer>
     ): Map<Int, StoryStepDrawer> =
         CommonDrawers.create(
             manager,
@@ -93,5 +94,5 @@ object DefaultDrawersJs : DrawersFactory {
             },
             linkLeadingIcon = linkLeadingIcon,
             onDocumentLinkClick = onDocumentLinkClick
-        )
+        ) + customDrawers
 }

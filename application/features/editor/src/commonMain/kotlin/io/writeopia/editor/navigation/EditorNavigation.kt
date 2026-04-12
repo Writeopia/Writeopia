@@ -21,6 +21,7 @@ import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.editor.ui.screen.TextEditorScreen
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.presentation.ui.PresentationScreen
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.theme.WriteopiaTheme
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -30,7 +31,9 @@ fun NavGraphBuilder.editorNavigation(
     sharedTransitionScope: SharedTransitionScope,
     editorInjector: TextEditorInjector,
     navigateToNote: (String) -> Unit,
-    navigateToPresentation: (String) -> Unit
+    navigateToPresentation: (String) -> Unit,
+    navigateToNewDrawing: (String) -> Unit = {},
+    navigateToEditDrawing: (String, StoryStep) -> Unit = { _, _ -> }
 ) {
     sharedTransitionScope.run {
         composable(
@@ -71,6 +74,10 @@ fun NavGraphBuilder.editorNavigation(
                     },
                     navigateBack = navigateBack,
                     onDocumentLinkClick = navigateToNote,
+                    onNewDrawingClick = { navigateToNewDrawing(noteId) },
+                    onDrawingClick = { storyStep, _ ->
+                        navigateToEditDrawing(noteId, storyStep)
+                    },
                     modifier = sharedModifier(this, noteId)
                 )
             } else {
@@ -88,6 +95,8 @@ fun NavGraphBuilder.editorNavigation(
                     setTheme(isDarkTheme)
                 }
 
+            val documentId = notesDetailsViewModel.writeopiaManager.documentInfo.value.id
+
             TextEditorScreen(
                 documentId = null,
                 title = null,
@@ -95,13 +104,13 @@ fun NavGraphBuilder.editorNavigation(
                 noteEditorViewModel = notesDetailsViewModel,
                 navigateBack = navigateBack,
                 playPresentation = {
-                    notesDetailsViewModel.writeopiaManager
-                        .documentInfo
-                        .value
-                        .id
-                        .let(navigateToPresentation)
+                    navigateToPresentation(documentId)
                 },
                 onDocumentLinkClick = navigateToNote,
+                onNewDrawingClick = { navigateToNewDrawing(documentId) },
+                onDrawingClick = { storyStep, _ ->
+                    navigateToEditDrawing(documentId, storyStep)
+                },
                 modifier = sharedModifier(this),
             )
         }

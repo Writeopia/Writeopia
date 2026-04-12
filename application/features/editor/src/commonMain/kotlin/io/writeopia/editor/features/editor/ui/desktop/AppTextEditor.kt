@@ -21,6 +21,7 @@ import io.writeopia.editor.configuration.ui.HeaderEditionOptions
 import io.writeopia.editor.features.editor.ui.TextEditor
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.ui.drawer.factory.DrawersFactory
 import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.flow.collectLatest
@@ -34,6 +35,7 @@ fun AppTextEditor(
     drawersFactory: DrawersFactory,
     loadNoteId: String? = null,
     onDocumentLinkClick: (String) -> Unit,
+    onDrawingClick: (StoryStep, Int) -> Unit = { _, _ -> },
     listState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier
 ) {
@@ -57,6 +59,7 @@ fun AppTextEditor(
             viewModel,
             drawersFactory,
             onDocumentLinkClick = onDocumentLinkClick,
+            onDrawingClick = onDrawingClick,
             listState = listState
         )
 

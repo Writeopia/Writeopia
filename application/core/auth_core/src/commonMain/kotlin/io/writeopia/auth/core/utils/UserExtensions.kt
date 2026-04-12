@@ -4,11 +4,9 @@ import io.writeopia.app.sql.Writeopia_user_entity
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 
-fun Writeopia_user_entity.toModel(): WriteopiaUser {
-    return WriteopiaUser(
-        id = this.id,
-        email = this.email,
-        name = this.name,
-        tier = Tier.valueOf(this.tier),
-    )
-}
+fun Writeopia_user_entity.toModel(): WriteopiaUser = WriteopiaUser(
+    id = this.id,
+    email = this.email,
+    name = this.name,
+    tier = Tier.valueOf(this.tier),
+)

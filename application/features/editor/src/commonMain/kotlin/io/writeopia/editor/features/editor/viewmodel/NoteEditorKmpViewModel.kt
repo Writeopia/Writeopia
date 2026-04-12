@@ -43,6 +43,7 @@ import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.serialization.request.wrapInRequest
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.extensions.noContent
+import io.writeopia.editor.di.DrawingSaveEvent
 import io.writeopia.ui.backstack.BackstackHandler
 import io.writeopia.ui.backstack.BackstackInform
 import io.writeopia.ui.keyboard.KeyboardEvent
@@ -56,6 +57,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -86,7 +88,8 @@ class NoteEditorKmpViewModel(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val copyManager: CopyManager,
     private val authRepository: AuthRepository,
-    private val inDocumentSearchRepository: InDocumentSearchRepository
+    private val inDocumentSearchRepository: InDocumentSearchRepository,
+    private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -144,6 +147,32 @@ class NoteEditorKmpViewModel(
 
         viewModelScope.launch {
             ollamaRepository?.refreshConfiguration(authRepository.getUser().id)
+        }
+
+        // Subscribe to drawing save events to update in-memory state
+        drawingSaveEvents?.let { events ->
+            viewModelScope.launch(Dispatchers.Default) {
+                events.collect { event ->
+                    handleDrawingSaveEvent(event)
+                }
+            }
+        }
+    }
+
+    private fun handleDrawingSaveEvent(event: DrawingSaveEvent) {
+        // Only handle events for the current document
+        val currentDocId = writeopiaManager.documentInfo.value.id
+        if (currentDocId != event.documentId) return
+
+        val existingStory = writeopiaManager.currentStory.value.stories[event.position]
+
+        if (existingStory != null && existingStory.id == event.storyStep.id) {
+            // Update existing story
+            val stateChange = Action.StoryStateChange(event.storyStep, event.position)
+            writeopiaManager.changeStoryState(stateChange)
+        } else {
+            // Add new story at position
+            writeopiaManager.addAtPosition(event.storyStep, event.position)
         }
     }
 

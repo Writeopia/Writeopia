@@ -155,8 +155,10 @@ class StepsModifierTest {
 
         // Find spaces between code blocks (both SPACE and ON_DRAG_SPACE types)
         val spacesInsideCodeBlock = result.filter {
-            (it.storyStep.type == StoryTypes.SPACE.type ||
-                it.storyStep.type == StoryTypes.ON_DRAG_SPACE.type) &&
+            (
+                it.storyStep.type == StoryTypes.SPACE.type ||
+                    it.storyStep.type == StoryTypes.ON_DRAG_SPACE.type
+            ) &&
                 it.extraInfo[StepsModifier.IS_INSIDE_CODE_BLOCK_KEY] == true
         }
 
@@ -280,16 +282,20 @@ class StepsModifierTest {
 
         // Space between code blocks should be marked as inside code block
         val spaceBetweenCodeBlocks = result.filter {
-            (it.storyStep.type == StoryTypes.SPACE.type ||
-                it.storyStep.type == StoryTypes.ON_DRAG_SPACE.type) &&
+            (
+                it.storyStep.type == StoryTypes.SPACE.type ||
+                    it.storyStep.type == StoryTypes.ON_DRAG_SPACE.type
+            ) &&
                 it.extraInfo[StepsModifier.IS_INSIDE_CODE_BLOCK_KEY] == true
         }
         assertEquals(1, spaceBetweenCodeBlocks.size)
 
         // Spaces NOT between code blocks should not be marked
         val regularSpaces = result.filter {
-            (it.storyStep.type == StoryTypes.SPACE.type ||
-                it.storyStep.type == StoryTypes.ON_DRAG_SPACE.type) &&
+            (
+                it.storyStep.type == StoryTypes.SPACE.type ||
+                    it.storyStep.type == StoryTypes.ON_DRAG_SPACE.type
+            ) &&
                 it.extraInfo[StepsModifier.IS_INSIDE_CODE_BLOCK_KEY] != true
         }
         // Should have spaces: before intro, between intro and code1, between code2 and outro

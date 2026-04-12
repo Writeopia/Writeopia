@@ -998,7 +998,7 @@ class WriteopiaStateManager(
     /**
      * Adds a story in a position.
      */
-    private fun addAtPosition(storyStep: StoryStep, position: Int) {
+    fun addAtPosition(storyStep: StoryStep, position: Int) {
         if (!isEditable) return
         _currentStory.value = writeopiaManager.addAtPosition(
             _currentStory.value,

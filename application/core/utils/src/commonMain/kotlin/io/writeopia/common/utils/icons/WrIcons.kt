@@ -60,6 +60,7 @@ import io.writeopia.common.utils.icons.all.WandSparkles
 import io.writeopia.common.utils.icons.all.X
 import io.writeopia.common.utils.icons.all.Zap
 import io.writeopia.common.utils.icons.all.highlighter
+import io.writeopia.common.utils.icons.all.PencilLine
 
 object WrIcons {
     val settings: ImageVector = Bolt
@@ -180,6 +181,8 @@ object WrIcons {
 
     val highlight = highlighter
 
+    val drawing: ImageVector = PencilLine
+
     val allIcons: Map<String, ImageVector> =
         mapOf(
             "settings" to settings,
@@ -238,6 +241,7 @@ object WrIcons {
             "chart" to chart,
             "link" to link,
             "highlight" to highlighter,
+            "drawing" to drawing,
         )
 
     fun fromName(name: String): ImageVector? = allIcons[name]
