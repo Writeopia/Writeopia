@@ -168,7 +168,8 @@ fun SideEditorOptions(
                                 highLightBlockClick,
                                 addImage,
                                 addPage,
-                                titleClick
+                                titleClick,
+                                onDrawingClick
                             )
                         }
 
@@ -193,7 +194,7 @@ fun SideEditorOptions(
                         }
 
                         SideMenuTab.DRAWING -> {
-                            DrawingOptions(onStartDrawing = onDrawingClick)
+                            // Drawing is now in TextOptions under Content
                         }
                     }
                 }
@@ -291,29 +292,6 @@ fun SideEditorOptions(
                         .size(40.dp)
                         .padding(9.dp),
                     tint = tint(SideMenuTab.AI)
-                )
-
-                Spacer(modifier = Modifier.height(spacing))
-
-                Icon(
-                    imageVector = WrIcons.drawing,
-                    contentDescription = "Drawing",
-                    modifier = Modifier
-                        .padding(horizontal = spacing)
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(background(SideMenuTab.DRAWING))
-                        .clickable {
-                            val menuType = if (menuType != SideMenuTab.DRAWING) {
-                                SideMenuTab.DRAWING
-                            } else {
-                                SideMenuTab.NONE
-                            }
-
-                            changeSideMenuTab(menuType)
-                        }
-                        .size(40.dp)
-                        .padding(9.dp),
-                    tint = tint(SideMenuTab.DRAWING)
                 )
 
                 Spacer(modifier = Modifier.height(spacing))
@@ -559,9 +537,14 @@ private fun HighlightText(isDarkTheme: Boolean, spanClick: (Span) -> Unit) {
 }
 
 @Composable
-private fun IconAndText(text: String, iconImage: ImageVector, click: () -> Unit) {
+private fun IconAndText(
+    text: String,
+    iconImage: ImageVector,
+    modifier: Modifier = Modifier,
+    click: () -> Unit = {}
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .padding(start = 2.dp, end = 2.dp, bottom = 3.dp)
             .clip(MaterialTheme.shapes.medium)
             .clickable(onClick = click)
@@ -819,6 +802,7 @@ private fun TextOptions(
     addImage: (String) -> Unit,
     addPage: () -> Unit,
     titleClick: (Tag) -> Unit,
+    onDrawingClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -871,15 +855,27 @@ private fun TextOptions(
 
         Title(WrStrings.content())
         Spacer(modifier = Modifier.height(4.dp))
-        IconAndText(WrStrings.image(), WrIcons.image) {
-            fileChooserLoad("")?.let(addImage)
+        Row {
+            IconAndText(
+                WrStrings.image(),
+                WrIcons.image,
+                modifier = Modifier.weight(1F)
+            ) {
+                fileChooserLoad("")?.let(addImage)
+            }
+            IconAndText(
+                WrStrings.drawing(),
+                WrIcons.drawing,
+                modifier = Modifier.weight(1F),
+                onDrawingClick
+            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Title(WrStrings.links())
         Spacer(modifier = Modifier.height(4.dp))
-        IconAndText(WrStrings.page(), WrSdkIcons.linkPage, addPage)
+        IconAndText(WrStrings.page(), WrSdkIcons.linkPage, click = addPage)
     }
 }
 
