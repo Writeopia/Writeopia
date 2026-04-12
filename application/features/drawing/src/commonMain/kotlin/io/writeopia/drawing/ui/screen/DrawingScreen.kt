@@ -74,8 +74,10 @@ fun DrawingScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-
-                .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(12.dp))
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(12.dp)
+                )
                 .padding(vertical = 4.dp)
         ) {
             DrawingCanvas(

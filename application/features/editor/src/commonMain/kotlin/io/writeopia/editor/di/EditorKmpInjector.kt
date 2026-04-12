@@ -29,11 +29,23 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+
+/**
+ * Event emitted when a drawing is saved, to notify the active ViewModel.
+ */
+data class DrawingSaveEvent(
+    val documentId: String,
+    val storyStep: StoryStep,
+    val position: Int
+)
 
 class EditorKmpInjector private constructor(
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
@@ -47,6 +59,10 @@ class EditorKmpInjector private constructor(
     private val inDocumentSearchInjection: InDocumentSearchInjection =
         InDocumentSearchInjection.singleton(),
 ) : TextEditorInjector {
+
+    // SharedFlow for drawing save events - ViewModel subscribes to this
+    private val _drawingSaveEvents = MutableSharedFlow<DrawingSaveEvent>(replay = 0)
+    val drawingSaveEvents: SharedFlow<DrawingSaveEvent> = _drawingSaveEvents.asSharedFlow()
 
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
@@ -87,7 +103,8 @@ class EditorKmpInjector private constructor(
             copyManager = copyManager,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             authRepository = authCoreInjection.provideAuthRepository(),
-            inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo()
+            inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo(),
+            drawingSaveEvents = drawingSaveEvents
         )
 
     @Composable
@@ -144,7 +161,11 @@ class EditorKmpInjector private constructor(
                 document?.content?.size ?: 0
             }
 
+            // Save to database
             documentRepository.saveStoryStep(storyStep, position, documentId)
+
+            // Emit event to notify ViewModel to update in-memory state
+            _drawingSaveEvents.emit(DrawingSaveEvent(documentId, storyStep, position))
         }
     }
 

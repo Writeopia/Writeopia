@@ -28,6 +28,7 @@ import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.sdk.models.drawing.DrawingTool
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.model.DrawInfo
@@ -79,14 +80,14 @@ class DrawingPreviewDrawer(
                         .align(Alignment.TopEnd)
                         .padding(8.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+                        .background(WriteopiaTheme.colorScheme.lightBackground)
                         .clickable {
                             onDelete(Action.DeleteStory(step, drawInfo.position))
                         }
                         .padding(4.dp),
                     imageVector = WrSdkIcons.close,
                     contentDescription = "Delete drawing",
-                    tint = MaterialTheme.colorScheme.onSurface
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             } else {
                 // Empty or invalid drawing placeholder
@@ -108,7 +109,7 @@ private fun DrawingPreview(
     modifier: Modifier = Modifier
 ) {
     Canvas(
-        modifier = modifier.background(Color.White)
+        modifier = modifier.background(MaterialTheme.colorScheme.background)
     ) {
         // Calculate scale to fit the drawing in the preview
         val scaleX = if (drawingData.width > 0) size.width / drawingData.width else 1f
