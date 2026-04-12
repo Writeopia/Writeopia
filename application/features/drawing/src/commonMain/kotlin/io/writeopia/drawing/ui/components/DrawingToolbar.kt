@@ -57,46 +57,52 @@ fun DrawingToolbar(
             .background(MaterialTheme.colorScheme.background)
             .padding(8.dp)
     ) {
+        val buttonModifier = Modifier.weight(1f)
+
         // Tool selection row
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Drawing tools group
             ToolButton(
                 icon = { Icon(WrIcons.file, contentDescription = "Pen", tint = it) },
                 label = "Pen",
                 isSelected = currentTool == DrawingTool.PEN,
-                onClick = { onToolSelected(DrawingTool.PEN) }
+                onClick = { onToolSelected(DrawingTool.PEN) },
+                modifier = buttonModifier
             )
 
             ToolButton(
                 icon = { Icon(WrIcons.highlight, contentDescription = "Highlighter", tint = it) },
                 label = "Highlight",
                 isSelected = currentTool == DrawingTool.HIGHLIGHTER,
-                onClick = { onToolSelected(DrawingTool.HIGHLIGHTER) }
+                onClick = { onToolSelected(DrawingTool.HIGHLIGHTER) },
+                modifier = buttonModifier
             )
 
             ToolButton(
                 icon = { Icon(WrIcons.transparent, contentDescription = "Eraser", tint = it) },
                 label = "Eraser",
                 isSelected = currentTool == DrawingTool.ERASER,
-                onClick = { onToolSelected(DrawingTool.ERASER) }
+                onClick = { onToolSelected(DrawingTool.ERASER) },
+                modifier = buttonModifier
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-            // Color toggle button with current color indicator
+            // Style options group
             ColorToggleButton(
                 currentColor = currentColor,
                 isExpanded = showColors,
                 onClick = {
                     showColors = !showColors
                     if (showColors) showStrokeWidths = false
-                }
+                },
+                modifier = buttonModifier
             )
 
-            // Stroke width toggle button
             StrokeWidthToggleButton(
                 currentStrokeWidth = strokeWidth,
                 currentColor = currentColor,
@@ -104,24 +110,28 @@ fun DrawingToolbar(
                 onClick = {
                     showStrokeWidths = !showStrokeWidths
                     if (showStrokeWidths) showColors = false
-                }
+                },
+                modifier = buttonModifier
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
+            // Actions group
             ToolButton(
                 icon = { Icon(WrIcons.undo, contentDescription = "Undo", tint = it) },
                 label = "Undo",
                 isSelected = false,
                 enabled = canUndo,
-                onClick = onUndo
+                onClick = onUndo,
+                modifier = buttonModifier
             )
 
             ToolButton(
                 icon = { Icon(WrIcons.delete, contentDescription = "Clear", tint = it) },
                 label = "Clear",
                 isSelected = false,
-                onClick = onClear
+                onClick = onClear,
+                modifier = buttonModifier
             )
         }
 
@@ -184,7 +194,8 @@ private fun ToolButton(
     label: String,
     isSelected: Boolean,
     enabled: Boolean = true,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val backgroundColor = if (isSelected) {
         MaterialTheme.colorScheme.surfaceVariant
@@ -200,11 +211,11 @@ private fun ToolButton(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
+        modifier = modifier
             .clip(MaterialTheme.shapes.medium)
             .background(backgroundColor)
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(8.dp)
+            .padding(vertical = 8.dp)
     ) {
         Box(modifier = Modifier.size(24.dp)) {
             icon(contentColor)
@@ -212,7 +223,8 @@ private fun ToolButton(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = contentColor
+            color = contentColor,
+            maxLines = 1
         )
     }
 }
@@ -284,7 +296,8 @@ private fun StrokeWidthButton(
 private fun ColorToggleButton(
     currentColor: Int,
     isExpanded: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val backgroundColor = if (isExpanded) {
         MaterialTheme.colorScheme.surfaceVariant
@@ -300,11 +313,11 @@ private fun ColorToggleButton(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
+        modifier = modifier
             .clip(MaterialTheme.shapes.medium)
             .background(backgroundColor)
             .clickable(onClick = onClick)
-            .padding(8.dp)
+            .padding(vertical = 8.dp)
     ) {
         Box(
             modifier = Modifier
@@ -316,7 +329,8 @@ private fun ColorToggleButton(
         Text(
             text = "Color",
             style = MaterialTheme.typography.labelSmall,
-            color = contentColor
+            color = contentColor,
+            maxLines = 1
         )
     }
 }
@@ -326,7 +340,8 @@ private fun StrokeWidthToggleButton(
     currentStrokeWidth: Float,
     currentColor: Int,
     isExpanded: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val backgroundColor = if (isExpanded) {
         MaterialTheme.colorScheme.surfaceVariant
@@ -342,11 +357,11 @@ private fun StrokeWidthToggleButton(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
+        modifier = modifier
             .clip(MaterialTheme.shapes.medium)
             .background(backgroundColor)
             .clickable(onClick = onClick)
-            .padding(8.dp)
+            .padding(vertical = 8.dp)
     ) {
         Box(
             modifier = Modifier.size(24.dp),
@@ -363,7 +378,8 @@ private fun StrokeWidthToggleButton(
         Text(
             text = "Size",
             style = MaterialTheme.typography.labelSmall,
-            color = contentColor
+            color = contentColor,
+            maxLines = 1
         )
     }
 }
