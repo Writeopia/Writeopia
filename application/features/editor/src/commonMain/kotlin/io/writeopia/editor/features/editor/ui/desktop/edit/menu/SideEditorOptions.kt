@@ -169,7 +169,10 @@ fun SideEditorOptions(
                                 addImage,
                                 addPage,
                                 titleClick,
-                                onDrawingClick
+                                onDrawingClick = {
+                                    changeSideMenuTab(SideMenuTab.NONE)
+                                    onDrawingClick()
+                                }
                             )
                         }
 

@@ -108,8 +108,9 @@ private fun DrawingPreview(
     drawingData: DrawingData,
     modifier: Modifier = Modifier
 ) {
+    val canvasBg = MaterialTheme.colorScheme.background
     Canvas(
-        modifier = modifier.background(MaterialTheme.colorScheme.background)
+        modifier = modifier.background(canvasBg)
     ) {
         // Calculate scale to fit the drawing in the preview
         val scaleX = if (drawingData.width > 0) size.width / drawingData.width else 1f
@@ -149,7 +150,7 @@ private fun DrawingPreview(
 
                 val strokeColor = when (stroke.tool) {
                     DrawingTool.HIGHLIGHTER -> Color(stroke.color).copy(alpha = 0.4f)
-                    DrawingTool.ERASER -> Color.White
+                    DrawingTool.ERASER -> canvasBg
                     else -> Color(stroke.color)
                 }
 

@@ -10,7 +10,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -34,9 +33,10 @@ actual fun DrawingCanvas(
     var currentPoints by remember { mutableStateOf<List<DrawPoint>>(emptyList()) }
     var isDrawing by remember { mutableStateOf(false) }
 
+    val canvasBg = MaterialTheme.colorScheme.background
     Canvas(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.background)
+            .background(canvasBg)
             .pointerInput(currentTool, currentColor, strokeWidth) {
                 detectDragGestures(
                     onDragStart = { offset ->
@@ -106,7 +106,7 @@ actual fun DrawingCanvas(
 
                 val strokeColor = when (stroke.tool) {
                     DrawingTool.HIGHLIGHTER -> Color(stroke.color).copy(alpha = 0.4f)
-                    DrawingTool.ERASER -> Color.White
+                    DrawingTool.ERASER -> canvasBg
                     else -> Color(stroke.color)
                 }
 
@@ -145,7 +145,7 @@ actual fun DrawingCanvas(
 
             val strokeColor = when (currentTool) {
                 DrawingTool.HIGHLIGHTER -> Color(currentColor).copy(alpha = 0.4f)
-                DrawingTool.ERASER -> Color.White
+                DrawingTool.ERASER -> canvasBg
                 else -> Color(currentColor)
             }
 

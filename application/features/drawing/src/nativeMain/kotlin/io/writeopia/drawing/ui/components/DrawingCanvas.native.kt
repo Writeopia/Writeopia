@@ -3,6 +3,7 @@ package io.writeopia.drawing.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,10 +34,11 @@ actual fun DrawingCanvas(
 ) {
     var currentPoints by remember { mutableStateOf<List<DrawPoint>>(emptyList()) }
     var isDrawing by remember { mutableStateOf(false) }
+    val canvasBackground = MaterialTheme.colorScheme.surface
 
     Canvas(
         modifier = modifier
-            .background(Color.White)
+            .background(canvasBackground)
             .pointerInput(currentTool, currentColor, strokeWidth) {
                 detectDragGestures(
                     onDragStart = { offset ->
@@ -106,7 +108,7 @@ actual fun DrawingCanvas(
 
                 val strokeColor = when (stroke.tool) {
                     DrawingTool.HIGHLIGHTER -> Color(stroke.color).copy(alpha = 0.4f)
-                    DrawingTool.ERASER -> Color.White
+                    DrawingTool.ERASER -> canvasBackground
                     else -> Color(stroke.color)
                 }
 
@@ -145,7 +147,7 @@ actual fun DrawingCanvas(
 
             val strokeColor = when (currentTool) {
                 DrawingTool.HIGHLIGHTER -> Color(currentColor).copy(alpha = 0.4f)
-                DrawingTool.ERASER -> Color.White
+                DrawingTool.ERASER -> canvasBackground
                 else -> Color(currentColor)
             }
 
