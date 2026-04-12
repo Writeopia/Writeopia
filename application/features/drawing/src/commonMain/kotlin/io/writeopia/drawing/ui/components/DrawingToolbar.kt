@@ -1,5 +1,8 @@
 package io.writeopia.drawing.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +21,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +48,9 @@ fun DrawingToolbar(
     onClear: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showColors by remember { mutableStateOf(false) }
+    var showStrokeWidths by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -74,7 +84,30 @@ fun DrawingToolbar(
                 onClick = { onToolSelected(DrawingTool.ERASER) }
             )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Color toggle button with current color indicator
+            ColorToggleButton(
+                currentColor = currentColor,
+                isExpanded = showColors,
+                onClick = {
+                    showColors = !showColors
+                    if (showColors) showStrokeWidths = false
+                }
+            )
+
+            // Stroke width toggle button
+            StrokeWidthToggleButton(
+                currentStrokeWidth = strokeWidth,
+                currentColor = currentColor,
+                isExpanded = showStrokeWidths,
+                onClick = {
+                    showStrokeWidths = !showStrokeWidths
+                    if (showStrokeWidths) showColors = false
+                }
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
 
             ToolButton(
                 icon = { Icon(WrIcons.undo, contentDescription = "Undo", tint = it) },
@@ -92,38 +125,54 @@ fun DrawingToolbar(
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        val columnVerticalPadding = 8.dp
 
-        // Color palette
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+        // Color palette (animated visibility)
+        AnimatedVisibility(
+            visible = showColors,
+            enter = expandVertically(),
+            exit = shrinkVertically()
         ) {
-            colors.forEach { color ->
-                ColorButton(
-                    color = color,
-                    isSelected = currentColor == color,
-                    onClick = { onColorSelected(color) }
-                )
+            Column {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = columnVerticalPadding),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    colors.forEach { color ->
+                        ColorButton(
+                            color = color,
+                            isSelected = currentColor == color,
+                            onClick = { onColorSelected(color) }
+                        )
+                    }
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Stroke width selector
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+        // Stroke width selector (animated visibility)
+        AnimatedVisibility(
+            visible = showStrokeWidths,
+            enter = expandVertically(),
+            exit = shrinkVertically()
         ) {
-            strokeWidths.forEach { width ->
-                StrokeWidthButton(
-                    strokeWidth = width,
-                    isSelected = strokeWidth == width,
-                    currentColor = currentColor,
-                    onClick = { onStrokeWidthSelected(width) }
-                )
+            Column {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = columnVerticalPadding),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    strokeWidths.forEach { width ->
+                        StrokeWidthButton(
+                            strokeWidth = width,
+                            isSelected = strokeWidth == width,
+                            currentColor = currentColor,
+                            onClick = { onStrokeWidthSelected(width) }
+                        )
+                    }
+                }
             }
         }
     }
@@ -199,11 +248,19 @@ private fun StrokeWidthButton(
     currentColor: Int,
     onClick: () -> Unit
 ) {
+    val borderColor = if (isSelected) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+
     val backgroundColor = if (isSelected) {
         MaterialTheme.colorScheme.surfaceVariant
     } else {
         Color.Transparent
     }
+
+    val borderWidth = if (isSelected) 1.5.dp else 1.dp
 
     Box(
         modifier = Modifier
@@ -218,6 +275,95 @@ private fun StrokeWidthButton(
                 .size(strokeWidth.dp.coerceAtLeast(4.dp))
                 .clip(CircleShape)
                 .background(Color(currentColor))
+                .border(borderWidth, borderColor, CircleShape)
+        )
+    }
+}
+
+@Composable
+private fun ColorToggleButton(
+    currentColor: Int,
+    isExpanded: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = if (isExpanded) {
+        MaterialTheme.colorScheme.surfaceVariant
+    } else {
+        Color.Transparent
+    }
+
+    val contentColor = if (isExpanded) {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.medium)
+            .background(backgroundColor)
+            .clickable(onClick = onClick)
+            .padding(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(Color(currentColor))
+                .border(1.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+        )
+        Text(
+            text = "Color",
+            style = MaterialTheme.typography.labelSmall,
+            color = contentColor
+        )
+    }
+}
+
+@Composable
+private fun StrokeWidthToggleButton(
+    currentStrokeWidth: Float,
+    currentColor: Int,
+    isExpanded: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = if (isExpanded) {
+        MaterialTheme.colorScheme.surfaceVariant
+    } else {
+        Color.Transparent
+    }
+
+    val contentColor = if (isExpanded) {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.medium)
+            .background(backgroundColor)
+            .clickable(onClick = onClick)
+            .padding(8.dp)
+    ) {
+        Box(
+            modifier = Modifier.size(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(currentStrokeWidth.dp.coerceIn(4.dp, 20.dp))
+                    .clip(CircleShape)
+                    .background(Color(currentColor))
+                    .border(1.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+            )
+        }
+        Text(
+            text = "Size",
+            style = MaterialTheme.typography.labelSmall,
+            color = contentColor
         )
     }
 }

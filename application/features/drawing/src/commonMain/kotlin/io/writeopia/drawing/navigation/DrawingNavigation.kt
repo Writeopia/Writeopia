@@ -1,5 +1,6 @@
 package io.writeopia.drawing.navigation
 
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -35,11 +36,12 @@ fun NavGraphBuilder.drawingNavigation(
             }
         )
     ) { backStackEntry ->
-        val documentId = backStackEntry.savedStateHandle.get<String?>(DRAWING_DOCUMENT_ID_ARG) ?: ""
-        val storyStepId = backStackEntry.savedStateHandle.get<String?>(DRAWING_STEP_ID_ARG)
-        val initialJson = backStackEntry.savedStateHandle.get<String?>(DRAWING_JSON_ARG)
+        val documentId = backStackEntry.savedStateHandle.get<String>(DRAWING_DOCUMENT_ID_ARG) ?: ""
+        val storyStepId = backStackEntry.savedStateHandle.get<String>(DRAWING_STEP_ID_ARG)
+        val initialJson = backStackEntry.savedStateHandle.get<String>(DRAWING_JSON_ARG)?.decodeDrawingJson()
 
-        val viewModel = drawingInjection.provideDrawingViewModel()
+        // Use viewModel to retain across recompositions
+        val viewModel = viewModel { drawingInjection.provideDrawingViewModel() }
 
         DrawingScreen(
             viewModel = viewModel,
@@ -64,18 +66,55 @@ fun NavController.navigateToDrawing(documentId: String) {
  * Navigate to the drawing screen to edit an existing drawing.
  */
 fun NavController.navigateToDrawing(documentId: String, storyStepId: String, drawingJson: String?) {
-    val encodedJson = drawingJson?.let {
-        // URL encode special characters
-        it.replace("%", "%25")
-            .replace("/", "%2F")
-            .replace("?", "%3F")
-            .replace("&", "%26")
-            .replace("=", "%3D")
-    }
+    val encodedJson = drawingJson?.encodeDrawingJson()
     val route = if (encodedJson != null) {
         "$DRAWING_ROUTE/$documentId?$DRAWING_STEP_ID_ARG=$storyStepId&$DRAWING_JSON_ARG=$encodedJson"
     } else {
         "$DRAWING_ROUTE/$documentId?$DRAWING_STEP_ID_ARG=$storyStepId"
     }
     navigate(route)
+}
+
+/**
+ * Encode drawing JSON for URL navigation.
+ */
+private fun String.encodeDrawingJson(): String {
+    return this
+        .replace("%", "%25")
+        .replace(" ", "%20")
+        .replace("\"", "%22")
+        .replace("#", "%23")
+        .replace("&", "%26")
+        .replace("'", "%27")
+        .replace("+", "%2B")
+        .replace("/", "%2F")
+        .replace(":", "%3A")
+        .replace("=", "%3D")
+        .replace("?", "%3F")
+        .replace("{", "%7B")
+        .replace("}", "%7D")
+        .replace("[", "%5B")
+        .replace("]", "%5D")
+}
+
+/**
+ * Decode drawing JSON from URL navigation.
+ */
+private fun String.decodeDrawingJson(): String {
+    return this
+        .replace("%7D", "}")
+        .replace("%7B", "{")
+        .replace("%5D", "]")
+        .replace("%5B", "[")
+        .replace("%3F", "?")
+        .replace("%3D", "=")
+        .replace("%3A", ":")
+        .replace("%2F", "/")
+        .replace("%2B", "+")
+        .replace("%27", "'")
+        .replace("%26", "&")
+        .replace("%23", "#")
+        .replace("%22", "\"")
+        .replace("%20", " ")
+        .replace("%25", "%")
 }

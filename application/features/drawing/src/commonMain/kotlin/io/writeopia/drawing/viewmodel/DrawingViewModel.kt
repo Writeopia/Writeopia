@@ -111,6 +111,7 @@ class DrawingViewModel : ViewModel() {
     companion object {
         val PRESET_COLORS = listOf(
             0xFF000000.toInt(), // Black
+            0xFFFFFFFF.toInt(), // White
             0xFFFF0000.toInt(), // Red
             0xFF00FF00.toInt(), // Green
             0xFF0000FF.toInt(), // Blue
@@ -122,6 +123,6 @@ class DrawingViewModel : ViewModel() {
             0xFF808080.toInt()  // Gray
         )
 
-        val STROKE_WIDTHS = listOf(2f, 4f, 8f, 12f, 16f)
+        val STROKE_WIDTHS = listOf(4f, 8f, 12f, 16f, 20f)
     }
 }
