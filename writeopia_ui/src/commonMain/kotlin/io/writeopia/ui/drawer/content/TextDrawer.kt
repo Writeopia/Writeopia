@@ -119,6 +119,18 @@ class TextDrawer(
         var textLayoutResult by remember {
             mutableStateOf<TextLayoutResult?>(null)
         }
+
+        // Recalculate selection for last-line positioning when layout becomes available
+        LaunchedEffect(textLayoutResult, drawInfo.selection) {
+            val selection = drawInfo.selection
+            if (selection != null && selection.fromEnd && textLayoutResult != null) {
+                val newRange = selection.toTextRange(step.text ?: "", textLayoutResult)
+                if (inputText.selection != newRange) {
+                    inputText = inputText.copy(selection = newRange)
+                }
+            }
+        }
+
         val cursorLine by remember {
             derivedStateOf {
                 textLayoutResult?.getLineForOffset(inputText.selection.end)

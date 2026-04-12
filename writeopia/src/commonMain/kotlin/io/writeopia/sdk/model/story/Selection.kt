@@ -7,7 +7,12 @@ package io.writeopia.sdk.model.story
  * @property end the end of the cursor in the paragraph
  * @property position the position of the paragraph (which line the cursor is)
  */
-data class Selection(val start: Int, val end: Int, val position: Int) {
+data class Selection(
+    val start: Int,
+    val end: Int,
+    val position: Int,
+    val fromEnd: Boolean = false
+) {
     fun key() = if (start == end) hashCode() else 0
 
     fun sortedPositions(): Pair<Int, Int> = if (start < end) start to end else end to start
@@ -19,5 +24,8 @@ data class Selection(val start: Int, val end: Int, val position: Int) {
 
         fun fromPosition(cursorPosition: Int, stepPosition: Int) =
             Selection(cursorPosition, cursorPosition, stepPosition)
+
+        fun fromLastLine(cursorPosition: Int, stepPosition: Int) =
+            Selection(cursorPosition, cursorPosition, stepPosition, fromEnd = true)
     }
 }
