@@ -19,15 +19,17 @@ internal fun InputScreen(
     onForwardPress: () -> Unit = {},
     canUndoState: StateFlow<Boolean>,
     canRedoState: StateFlow<Boolean>,
+    onDrawingClick: () -> Unit = {},
 ) {
     MobileInputScreen(
-        modifier,
-        isDarkTheme,
-        metadataState,
-        onAddSpan,
-        onBackPress,
-        onForwardPress,
-        canUndoState,
-        canRedoState,
+        modifier = modifier,
+        isDarkTheme = isDarkTheme,
+        metadataState = metadataState,
+        onAddSpan = onAddSpan,
+        onBackPress = onBackPress,
+        onForwardPress = onForwardPress,
+        canUndoState = canUndoState,
+        canRedoState = canRedoState,
+        onDrawingClick = onDrawingClick,
     )
 }

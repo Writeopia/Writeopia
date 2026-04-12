@@ -82,6 +82,7 @@ fun DrawingScreen(
     ) { paddingValues ->
         Box(
             modifier = Modifier
+                .padding(paddingValues)
                 .fillMaxSize()
                 .background(
                     MaterialTheme.colorScheme.surfaceVariant,

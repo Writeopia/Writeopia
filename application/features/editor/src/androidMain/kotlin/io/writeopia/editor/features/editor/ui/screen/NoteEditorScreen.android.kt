@@ -84,6 +84,7 @@ internal fun NoteEditorScreen(
     noteEditorViewModel: NoteEditorViewModel,
     navigateBack: () -> Unit,
     onDocumentLinkClick: (String) -> Unit,
+    onNewDrawingClick: () -> Unit = {},
     onDrawingClick: (StoryStep, Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
@@ -168,7 +169,8 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::onAddCodeBlockClick,
                     noteEditorViewModel::addPage,
                     noteEditorViewModel::toggleHighLightBlock,
-                    noteEditorViewModel::titleClick
+                    noteEditorViewModel::titleClick,
+                    onDrawingClick = onNewDrawingClick
                 )
             }
 
@@ -331,7 +333,8 @@ private fun BottomScreen(
     onCodeBlock: () -> Unit = {},
     onAddPage: () -> Unit = {},
     onHighlight: () -> Unit,
-    titleClick: (Tag) -> Unit
+    titleClick: (Tag) -> Unit,
+    onDrawingClick: () -> Unit = {}
 ) {
     val edit by editState.collectAsState()
 
@@ -364,7 +367,8 @@ private fun BottomScreen(
                     onBackPress = unDo,
                     onForwardPress = reDo,
                     canUndoState = canUndo,
-                    canRedoState = canRedo
+                    canRedoState = canRedo,
+                    onDrawingClick = onDrawingClick
                 )
             }
 

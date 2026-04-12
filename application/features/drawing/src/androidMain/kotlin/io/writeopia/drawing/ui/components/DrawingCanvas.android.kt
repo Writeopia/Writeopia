@@ -32,7 +32,7 @@ actual fun DrawingCanvas(
 ) {
     var currentPoints by remember { mutableStateOf<List<DrawPoint>>(emptyList()) }
     var isDrawing by remember { mutableStateOf(false) }
-    val canvasBackground = MaterialTheme.colorScheme.surface
+    val canvasBackground = MaterialTheme.colorScheme.background
 
     Canvas(
         modifier = modifier
