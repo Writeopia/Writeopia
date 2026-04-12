@@ -1282,7 +1282,7 @@ class WriteopiaStateManager(
 
                     _currentStory.value = storyState.copy(
                         focus = newPosition,
-                        selection = Selection.fromPosition(cursor, newPosition),
+                        selection = Selection.fromLastLine(cursor, newPosition),
                         stories = mutable
                     )
                 }
