@@ -283,7 +283,8 @@ class WriteopiaManager(
             storyState.copy(
                 stories = newStories,
                 lastEdit = LastEdit.LineEdition(
-                    position = position, storyStep = newStory
+                    position = position,
+                    storyStep = newStory
                 )
             )
         } ?: storyState

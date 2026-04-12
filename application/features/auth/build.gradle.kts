@@ -75,7 +75,6 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.serialization.json)
                 implementation(libs.lifecycle.viewmodel.compose)
-
             }
         }
 

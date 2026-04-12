@@ -1,12 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="src/commonMain/kotlin/io/writeopia/features/search/api/SearchApi.kt">
-        <error line="15" column="58" source="standard:function-expression-body" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/features/search/repository/SearchRepository.kt">
-        <error line="9" column="1" source="standard:no-unused-imports" />
-        <error line="28" column="30" source="standard:if-else-wrapping" />
-        <error line="28" column="30" source="standard:multiline-if-else" />
-        <error line="53" column="78" source="standard:function-expression-body" />
-    </file>
 </baseline>

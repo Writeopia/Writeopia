@@ -72,27 +72,25 @@ fun swipeTextDrawer(
     endContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
     receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
     messageDrawer: @Composable RowScope.() -> SimpleTextDrawer,
-): StoryStepDrawer {
-    return swipeTextDrawer(
-        modifier = modifier,
-        onSelected = manager::onSelected,
-        dragIconWidth = dragIconWidth,
-        config = config,
-        onDragHover = manager::onDragHover,
-        onDragStart = manager::onDragStart,
-        onDragStop = manager::onDragStop,
-        moveRequest = manager::moveRequest,
-        customBackgroundColor = customBackgroundColor,
-        endContent = endContent,
-        isDesktop = isDesktop,
-        enabled = enabled,
-        receiveExternalFile = receiveExternalFile,
-        messageDrawer = {
-            messageDrawer()
-        },
-        paddingValues = paddingValues
-    )
-}
+): StoryStepDrawer = swipeTextDrawer(
+    modifier = modifier,
+    onSelected = manager::onSelected,
+    dragIconWidth = dragIconWidth,
+    config = config,
+    onDragHover = manager::onDragHover,
+    onDragStart = manager::onDragStart,
+    onDragStop = manager::onDragStop,
+    moveRequest = manager::moveRequest,
+    customBackgroundColor = customBackgroundColor,
+    endContent = endContent,
+    isDesktop = isDesktop,
+    enabled = enabled,
+    receiveExternalFile = receiveExternalFile,
+    messageDrawer = {
+        messageDrawer()
+    },
+    paddingValues = paddingValues
+)
 
 @Preview
 @Composable

@@ -59,7 +59,9 @@ fun DropTargetVerticalDivision(
 }
 
 enum class InBounds {
-    OUTSIDE, INSIDE_UP, INSIDE_DOWN;
+    OUTSIDE,
+    INSIDE_UP,
+    INSIDE_DOWN;
 
     fun isInside() = this == INSIDE_UP || this == INSIDE_DOWN
 }

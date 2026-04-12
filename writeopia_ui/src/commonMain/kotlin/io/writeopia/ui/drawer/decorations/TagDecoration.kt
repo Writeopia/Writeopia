@@ -10,7 +10,7 @@ import io.writeopia.ui.model.DrawConfig
 interface TagDecoration {
 
     @Composable
-    fun decorate(modifier: Modifier, tags: Iterable<TagInfo>, config: DrawConfig) : Modifier
+    fun decorate(modifier: Modifier, tags: Iterable<TagInfo>, config: DrawConfig): Modifier
 
     @Composable
     fun background(defaultColor: Color, tags: Iterable<Tag>, config: DrawConfig): Color

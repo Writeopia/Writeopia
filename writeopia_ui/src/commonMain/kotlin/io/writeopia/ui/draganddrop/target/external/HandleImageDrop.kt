@@ -9,4 +9,3 @@ expect fun handleImageDrop(
 ): Boolean
 
 expect fun shouldAcceptImageDrop(event: DragAndDropEvent): Boolean
-

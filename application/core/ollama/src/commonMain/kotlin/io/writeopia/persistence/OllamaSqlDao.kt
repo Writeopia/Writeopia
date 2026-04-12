@@ -32,9 +32,7 @@ class OllamaSqlDao(private val ollamaQueries: OllamaEntityQueries?) : OllamaDao 
         saveConfiguration(id, ollamaConfigFn(config))
     }
 
-    override fun listenForConfiguration(id: String): StateFlow<OllamaConfig?> {
-        return _ollamaConfigState
-    }
+    override fun listenForConfiguration(id: String): StateFlow<OllamaConfig?> = _ollamaConfigState
 
     override suspend fun refreshStateOfId(id: String) {
         _ollamaConfigState.value = getConfiguration(id)

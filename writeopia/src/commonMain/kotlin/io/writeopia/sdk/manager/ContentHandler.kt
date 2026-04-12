@@ -45,14 +45,12 @@ class ContentHandler(
         currentStory: Map<Int, StoryStep>,
         newState: StoryStep,
         position: Int
-    ): StoryState? {
-        return if (currentStory[position] != null) {
-            val newMap = currentStory.toMutableMap()
-            newMap[position] = newState
-            StoryState(newMap, LastEdit.LineEdition(position, newState), position)
-        } else {
-            null
-        }
+    ): StoryState? = if (currentStory[position] != null) {
+        val newMap = currentStory.toMutableMap()
+        newMap[position] = newState
+        StoryState(newMap, LastEdit.LineEdition(position, newState), position)
+    } else {
+        null
     }
 
     /**

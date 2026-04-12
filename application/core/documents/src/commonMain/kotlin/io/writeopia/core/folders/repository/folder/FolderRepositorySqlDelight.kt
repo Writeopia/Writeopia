@@ -21,12 +21,10 @@ class FolderRepositorySqlDelight(
     override suspend fun getFoldersForWorkspaceAfterTime(
         workspaceId: String,
         instant: Instant
-    ): List<Folder> {
-        return folderDao.selectByUserIdAfterTime(
-            workspaceId,
-            instant.toEpochMilliseconds()
-        )
-    }
+    ): List<Folder> = folderDao.selectByUserIdAfterTime(
+        workspaceId,
+        instant.toEpochMilliseconds()
+    )
 
     override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> =
         folderDao.selectByWorkspaceId(workspaceId)
@@ -66,16 +64,14 @@ class FolderRepositorySqlDelight(
     override suspend fun listenForFoldersByParentId(
         parentId: String,
         workspaceId: String
-    ): Flow<Map<String, List<Folder>>> {
-        return folderDao.listenForFolderByParentId(parentId, workspaceId)
-            .map { folderEntityMap ->
-                folderEntityMap.mapValues { (_, folderEntityListWithCount) ->
-                    folderEntityListWithCount.map { (folderEntity, count) ->
-                        folderEntity.toModel(count)
-                    }
+    ): Flow<Map<String, List<Folder>>> = folderDao.listenForFolderByParentId(parentId, workspaceId)
+        .map { folderEntityMap ->
+            folderEntityMap.mapValues { (_, folderEntityListWithCount) ->
+                folderEntityListWithCount.map { (folderEntity, count) ->
+                    folderEntity.toModel(count)
                 }
             }
-    }
+        }
 
     override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
         folderDao.removeListening(parentId, workspaceId)

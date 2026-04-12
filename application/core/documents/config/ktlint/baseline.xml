@@ -1,23 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="src/androidMain/kotlin/io/writeopia/core/folders/di/InDocumentSearchInjection.android.kt">
-        <error line="7" column="74" source="standard:function-expression-body" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/core/folders/di/WorkspaceHandlerImpl.kt">
         <error line="43" column="17" source="standard:backing-property-naming" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/core/folders/repository/InDocumentSearchSqlRepository.kt">
-        <error line="10" column="80" source="standard:function-expression-body" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/core/folders/repository/folder/FolderRepositorySqlDelight.kt">
-        <error line="24" column="21" source="standard:function-expression-body" />
-        <error line="69" column="40" source="standard:function-expression-body" />
-    </file>
-    <file name="src/commonMain/kotlin/io/writeopia/core/folders/repository/folder/InMemoryFolderRepository.kt">
-        <error line="38" column="40" source="standard:function-expression-body" />
-        <error line="74" column="51" source="standard:function-expression-body" />
-    </file>
-    <file name="src/webMain/kotlin/io/writeopia/core/folders/di/InDocumentSearchInjection.web.kt">
-        <error line="7" column="74" source="standard:function-expression-body" />
     </file>
 </baseline>

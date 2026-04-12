@@ -50,4 +50,3 @@ internal val highlighter: ImageVector
     }
 
 private var _highlighter: ImageVector? = null
-

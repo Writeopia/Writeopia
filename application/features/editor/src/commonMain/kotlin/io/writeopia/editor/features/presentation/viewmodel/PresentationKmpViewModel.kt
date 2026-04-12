@@ -1,14 +1,12 @@
 package io.writeopia.editor.features.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.presentation.model.SlidePage
 import io.writeopia.sdk.presentation.parse.PresentationParser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 class PresentationKmpViewModel(
     private val documentRepository: DocumentRepository,

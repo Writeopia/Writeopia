@@ -72,8 +72,8 @@ actual fun DragCardTarget(
         }
 
         val showDragIcon = showIcon ||
-            currentState.isDragging
-            && position == currentState.dataToDrop?.positionFrom
+            currentState.isDragging &&
+            position == currentState.dataToDrop?.positionFrom
 
         Crossfade(
             targetState = showDragIcon,
@@ -122,4 +122,3 @@ actual fun DragCardTarget(
         }
     }
 }
-

@@ -53,9 +53,11 @@ class OllamaRepository(
         }
     }
 
-    suspend fun generateReply(model: String, prompt: String, url: String): String {
-        return ollamaApi.generateReply(model, prompt, url).response ?: ""
-    }
+    suspend fun generateReply(model: String, prompt: String, url: String): String = ollamaApi.generateReply(
+        model,
+        prompt,
+        url
+    ).response ?: ""
 
     suspend fun generateCompleteSummary(
         model: String,

@@ -52,21 +52,19 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         }
     }
 
-    suspend fun getAvailableWorkspaces(token: String): ResultData<List<Workspace>> {
-        return try {
-            val response = client.get("$baseUrl/api/workspace/user") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }.body<List<WorkspaceApi>>()
+    suspend fun getAvailableWorkspaces(token: String): ResultData<List<Workspace>> = try {
+        val response = client.get("$baseUrl/api/workspace/user") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }.body<List<WorkspaceApi>>()
 
-            val now = Clock.System.now()
+        val now = Clock.System.now()
 
-            ResultData.Complete(
-                response.map { workspaceApi -> workspaceApi.toModel(now) }
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-            ResultData.Error(e)
-        }
+        ResultData.Complete(
+            response.map { workspaceApi -> workspaceApi.toModel(now) }
+        )
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
     }
 
     suspend fun getUsersOfWorkspace(

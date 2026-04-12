@@ -254,4 +254,3 @@ private fun HighlightText(isDarkTheme: Boolean, spanClick: (Span) -> Unit) {
         }
     }
 }
-

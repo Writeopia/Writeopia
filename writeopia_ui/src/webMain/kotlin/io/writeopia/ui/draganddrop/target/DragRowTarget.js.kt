@@ -72,7 +72,8 @@ actual fun DragRowTarget(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val showDragIcon = showIcon ||
-            currentState.isDragging && position == currentState.dataToDrop?.positionFrom
+            currentState.isDragging &&
+            position == currentState.dataToDrop?.positionFrom
 
         var active by remember { mutableStateOf(false) }
         val tintColor by derivedStateOf {

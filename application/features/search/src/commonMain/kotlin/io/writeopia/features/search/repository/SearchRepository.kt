@@ -6,7 +6,6 @@ import io.writeopia.models.interfaces.search.FolderSearch
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
-import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.search.DocumentSearch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -25,8 +24,10 @@ class SearchRepository(
     fun searchNotesAndFoldersLocally(query: String): Flow<List<SearchItem>> {
         val workspaceFlow = authRepository.listenForWorkspace()
 
-        if (query.isEmpty()) return workspaceFlow.flatMapLatest { workspace ->
-            flow { emit(getNotesAndFolders(workspace.id)) }
+        if (query.isEmpty()) {
+            return workspaceFlow.flatMapLatest { workspace ->
+                flow { emit(getNotesAndFolders(workspace.id)) }
+            }
         }
 
         val foldersFlow: Flow<List<Folder>> = workspaceFlow.flatMapLatest { workspace ->
@@ -50,13 +51,11 @@ class SearchRepository(
         }
     }
 
-    fun searchNotesAndFoldersRemotely(query: String): Flow<List<SearchItem>> {
-        return flow {
+    fun searchNotesAndFoldersRemotely(query: String): Flow<List<SearchItem>> = flow {
 //            println("triggering documentsApiFlow")
 //            emit(emptyList())
 //            println("calling api")
-            emit(searchApi.searchApi(query).toSearchItems())
-        }
+        emit(searchApi.searchApi(query).toSearchItems())
     }
 
     private suspend fun getNotesAndFolders(workspaceId: String): List<SearchItem> {

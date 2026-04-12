@@ -20,24 +20,22 @@ class MergeNormalization(private val stepMergers: List<StepsMergerCoordinator>) 
      * Note that it may happen that some elements in the same position may not be able to be
      * merged, that's why this method returns a List<StoryStep]> instead of StoryStep].
      */
-    private fun reducePossibleSteps(steps: List<StoryStep>): List<StoryStep> {
-        return steps.fold(mutableListOf()) { acc, storyStep ->
-            val lastStep = acc.lastOrNull()
+    private fun reducePossibleSteps(steps: List<StoryStep>): List<StoryStep> = steps.fold(mutableListOf()) { acc, storyStep ->
+        val lastStep = acc.lastOrNull()
 
-            if (lastStep?.type != null &&
-                stepMergers.any { it.canMerge(lastStep, storyStep) }
-            ) {
-                acc.apply {
-                    acc.removeLast()
-                    acc.add(
-                        stepMergers
-                            .first { merger -> merger.canMerge(lastStep, storyStep) }
-                            .merge(lastStep, storyStep)
-                    )
-                }
-            } else {
-                acc.apply { add(storyStep) }
+        if (lastStep?.type != null &&
+            stepMergers.any { it.canMerge(lastStep, storyStep) }
+        ) {
+            acc.apply {
+                acc.removeLast()
+                acc.add(
+                    stepMergers
+                        .first { merger -> merger.canMerge(lastStep, storyStep) }
+                        .merge(lastStep, storyStep)
+                )
             }
+        } else {
+            acc.apply { add(storyStep) }
         }
     }
 

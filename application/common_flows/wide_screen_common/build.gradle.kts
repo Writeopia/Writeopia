@@ -74,7 +74,6 @@ kotlin {
                 implementation(compose.material3)
                 implementation(libs.material.icons.core)
 
-
                 implementation(libs.compose.navigation)
             }
         }

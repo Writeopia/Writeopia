@@ -31,7 +31,6 @@ actual fun DrawingCanvas(
     onStrokeAdded: (Stroke) -> Unit
 ) {
     var currentPoints by remember { mutableStateOf<List<DrawPoint>>(emptyList()) }
-    var isDrawing by remember { mutableStateOf(false) }
 
     val canvasBg = MaterialTheme.colorScheme.background
     Canvas(
@@ -40,7 +39,6 @@ actual fun DrawingCanvas(
             .pointerInput(currentTool, currentColor, strokeWidth) {
                 detectDragGestures(
                     onDragStart = { offset ->
-                        isDrawing = true
                         currentPoints = listOf(
                             DrawPoint(
                                 x = offset.x,
@@ -58,7 +56,6 @@ actual fun DrawingCanvas(
                         )
                     },
                     onDragEnd = {
-                        isDrawing = false
                         if (currentPoints.isNotEmpty()) {
                             val stroke = Stroke(
                                 id = GenerateId.generate(),
@@ -72,7 +69,6 @@ actual fun DrawingCanvas(
                         }
                     },
                     onDragCancel = {
-                        isDrawing = false
                         currentPoints = emptyList()
                     }
                 )

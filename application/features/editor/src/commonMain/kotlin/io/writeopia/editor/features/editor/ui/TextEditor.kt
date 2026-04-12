@@ -19,7 +19,6 @@ import io.writeopia.editor.configuration.ui.DrawConfigFactory
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
-import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.ui.WriteopiaEditor
