@@ -25,6 +25,7 @@ actual fun TextEditorScreen(
         noteEditorViewModel = noteEditorViewModel,
         navigateBack = navigateBack,
         onDocumentLinkClick = onDocumentLinkClick,
+        onNewDrawingClick = onNewDrawingClick,
         onDrawingClick = onDrawingClick,
         modifier = modifier
     )

@@ -178,7 +178,9 @@ internal fun MobileInputScreen(
                     Icon(
                         modifier = Modifier
                             .clip(buttonShape)
-                            .clickable { onDrawingClick() }
+                            .clickable {
+                                onDrawingClick()
+                            }
                             .padding(iconPadding),
                         imageVector = WrIcons.drawing,
                         contentDescription = "Drawing",
