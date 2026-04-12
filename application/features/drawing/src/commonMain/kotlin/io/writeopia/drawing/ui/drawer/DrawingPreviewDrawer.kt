@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,12 +29,17 @@ import androidx.compose.ui.graphics.drawscope.Stroke as ComposeStroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.model.action.Action
+import io.writeopia.sdk.model.draganddrop.DropInfo
 import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.sdk.models.drawing.DrawingTool
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.theme.WriteopiaTheme
+import io.writeopia.ui.components.SwipeBox
+import io.writeopia.ui.components.multiselection.SelectableByDrag
+import io.writeopia.ui.draganddrop.target.DragCardTarget
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.icons.WrSdkIcons
+import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
 import kotlinx.serialization.json.Json
 
@@ -42,7 +48,11 @@ import kotlinx.serialization.json.Json
  */
 class DrawingPreviewDrawer(
     private val onDrawingClick: (StoryStep, Int) -> Unit,
-    private val onDelete: (Action.DeleteStory) -> Unit
+    private val onDelete: (Action.DeleteStory) -> Unit,
+    private val drawConfig: DrawConfig,
+    private val onSelected: (Boolean, Int) -> Unit = { _, _ -> },
+    private val onDragStart: () -> Unit = {},
+    private val onDragStop: () -> Unit = {},
 ) : StoryStepDrawer {
 
     @Composable
@@ -79,59 +89,87 @@ class DrawingPreviewDrawer(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 4.dp)
-        ) {
-            if (drawingData != null && drawingData.strokes.isNotEmpty() && bounds != null) {
-                val density = LocalDensity.current
-
-                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                    val maxWidthPx = constraints.maxWidth.toFloat()
-                    val scale = (maxWidthPx / bounds.width).coerceAtMost(1f)
-                    val heightDp = with(density) { (bounds.height * scale).toDp() }
-
-                    DrawingPreview(
-                        drawingData = drawingData,
-                        bounds = bounds,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(heightDp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.outline,
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .clickable { onDrawingClick(step, drawInfo.position) }
-                    )
-
-                    // Delete button
-                    Icon(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                            .clip(CircleShape)
-                            .background(WriteopiaTheme.colorScheme.lightBackground)
-                            .clickable {
-                                onDelete(Action.DeleteStory(step, drawInfo.position))
-                            }
-                            .padding(4.dp),
-                        imageVector = WrSdkIcons.close,
-                        contentDescription = "Delete drawing",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
+        SelectableByDrag { isInsideDrag ->
+            if (isInsideDrag != null) {
+                LaunchedEffect(isInsideDrag) {
+                    onSelected(isInsideDrag, drawInfo.position)
                 }
-            } else {
-                // Empty or invalid drawing placeholder
-                EmptyDrawingPlaceholder(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable { onDrawingClick(step, drawInfo.position) }
-                )
+            }
+
+            SwipeBox(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                defaultColor = Color.Transparent,
+                activeColor = drawConfig.selectedColor(),
+                activeBorderColor = drawConfig.selectedBorderColor(),
+                isOnEditState = drawInfo.selectMode,
+                swipeListener = { isSelected ->
+                    onSelected(isSelected, drawInfo.position)
+                }
+            ) {
+                val dropInfo = DropInfo(step, drawInfo.position)
+
+                DragCardTarget(
+                    modifier = Modifier.fillMaxWidth(),
+                    dataToDrop = dropInfo,
+                    position = drawInfo.position,
+                    onDragStart = onDragStart,
+                    onDragStop = onDragStop,
+                    onIconClick = {
+                        onSelected(!drawInfo.selectMode, drawInfo.position)
+                    }
+                ) {
+                    if (drawingData != null && drawingData.strokes.isNotEmpty() && bounds != null) {
+                        val density = LocalDensity.current
+
+                        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                            val maxWidthPx = constraints.maxWidth.toFloat()
+                            val scale = (maxWidthPx / bounds.width).coerceAtMost(1f)
+                            val heightDp = with(density) { (bounds.height * scale).toDp() }
+
+                            DrawingPreview(
+                                drawingData = drawingData,
+                                bounds = bounds,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(heightDp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .border(
+                                        width = 1.dp,
+                                        color = MaterialTheme.colorScheme.outline,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .clickable { onDrawingClick(step, drawInfo.position) }
+                            )
+
+                            // Delete button
+                            Icon(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .clip(CircleShape)
+                                    .background(WriteopiaTheme.colorScheme.lightBackground)
+                                    .clickable {
+                                        onDelete(Action.DeleteStory(step, drawInfo.position))
+                                    }
+                                    .padding(4.dp),
+                                imageVector = WrSdkIcons.close,
+                                contentDescription = "Delete drawing",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    } else {
+                        // Empty or invalid drawing placeholder
+                        EmptyDrawingPlaceholder(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(16f / 9f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onDrawingClick(step, drawInfo.position) }
+                        )
+                    }
+                }
             }
         }
     }

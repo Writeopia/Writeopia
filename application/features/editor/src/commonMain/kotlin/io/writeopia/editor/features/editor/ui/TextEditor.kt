@@ -67,11 +67,16 @@ internal fun TextEditor(
         }
     }
     val isEditable by noteEditorViewModel.isEditable.collectAsState()
+    val drawConfig = remember { DrawConfigFactory.getDrawConfig() }
 
     val drawingPreviewDrawer = remember(onDrawingClick) {
         DrawingPreviewDrawer(
             onDrawingClick = onDrawingClick,
-            onDelete = noteEditorViewModel.writeopiaManager::onDelete
+            onDelete = noteEditorViewModel.writeopiaManager::onDelete,
+            drawConfig = drawConfig,
+            onSelected = noteEditorViewModel.writeopiaManager::onSelected,
+            onDragStart = noteEditorViewModel.writeopiaManager::onDragStart,
+            onDragStop = noteEditorViewModel.writeopiaManager::onDragStop
         )
     }
 
@@ -86,7 +91,7 @@ internal fun TextEditor(
             editable = isEditable,
             aiExplanation = WrStrings.aiExplanation(),
             isDarkTheme = isDarkTheme,
-            drawConfig = DrawConfigFactory.getDrawConfig(),
+            drawConfig = drawConfig,
             fontFamily = fontFamily,
             generateSection = noteEditorViewModel::aiSection,
             receiveExternalFile = noteEditorViewModel::receiveExternalFile,
