@@ -7,6 +7,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 interface WorkspaceHandler {
+
+    val isAutoSyncEnabled: StateFlow<Boolean>
+
+    /**
+     * Emits when local workspace files have changed and should be re-read into the database.
+     */
+    val localSyncRequired: Flow<Unit>
     val availableWorkspaces: StateFlow<ResultData<List<Workspace>>>
 
     val selectedWorkspace: Flow<Workspace?>
@@ -30,4 +37,8 @@ interface WorkspaceHandler {
     fun changeWorkspaceLocalPath(path: String)
 
     fun initWorkspacePath()
+
+    fun startAutoSync()
+
+    fun stopAutoSync()
 }

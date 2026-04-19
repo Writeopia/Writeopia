@@ -25,6 +25,7 @@ import io.writeopia.model.UiConfiguration
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.notemenu.viewmodel.FolderStateController
+import io.writeopia.sdk.`import`.json.WriteopiaJsonParser
 import io.writeopia.repository.UiConfigurationRepository
 import io.writeopia.responses.DownloadModelResponse
 import io.writeopia.sdk.models.document.Folder
@@ -67,6 +68,7 @@ class GlobalShellKmpViewModel(
     private val ollamaRepository: OllamaRepository,
     private val workspaceHandler: WorkspaceHandler,
     private val keyboardEventFlow: Flow<KeyboardEvent>?,
+    private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     private var localUserId: String? = null
@@ -279,7 +281,25 @@ class GlobalShellKmpViewModel(
                 }
         }
 
+        // Listen for local workspace file changes and trigger local sync
+        viewModelScope.launch(Dispatchers.Default) {
+            workspaceHandler.localSyncRequired.collect {
+                syncLocalWorkspace()
+            }
+        }
+
         workspaceHandler.loadAvailableWorkspaces()
+    }
+
+    private suspend fun syncLocalWorkspace() {
+        val path = workspaceHandler.workspaceLocalPath.value
+        if (path.isBlank()) return
+
+        writeopiaJsonParser.readAllFolders(path)
+            .collect(notesUseCase::updateFolder)
+
+        writeopiaJsonParser.readAllDocuments(path)
+            .collect(notesUseCase::saveDocumentDb)
     }
 
     override fun init() {
