@@ -90,6 +90,8 @@ class GlobalShellKmpViewModel(
 
     override val lastWorkspaceSync: StateFlow<ResultData<String>> = workspaceHandler.lastWorkspaceSync
 
+    override val isAutoSyncEnabled: StateFlow<Boolean> = workspaceHandler.isAutoSyncEnabled
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private val ollamaConfigState = authRepository.listenForUser().flatMapLatest { user ->
         ollamaRepository.listenForConfiguration(user.id)
@@ -507,6 +509,14 @@ class GlobalShellKmpViewModel(
 
     override fun syncWorkspace() {
         workspaceHandler.syncWorkspace()
+    }
+
+    override fun toggleAutoSync(enabled: Boolean) {
+        if (enabled) {
+            workspaceHandler.startAutoSync()
+        } else {
+            workspaceHandler.stopAutoSync()
+        }
     }
 
     override fun addUserToTeam(userEmail: String) {

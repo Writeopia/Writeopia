@@ -37,6 +37,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     val lastWorkspaceSync: StateFlow<ResultData<String>>
 
+    val isAutoSyncEnabled: StateFlow<Boolean>
+
     val availableWorkspaces: StateFlow<ResultData<List<Workspace>>>
 
     val workspaceToEdit: Flow<Workspace?>
@@ -78,6 +80,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
     fun showDeleteConfirm()
 
     fun syncWorkspace()
+
+    fun toggleAutoSync(enabled: Boolean)
 
     fun deleteAccount(sideEffect: () -> Unit)
 

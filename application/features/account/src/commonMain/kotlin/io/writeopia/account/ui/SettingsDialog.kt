@@ -34,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -89,6 +90,7 @@ fun SettingsDialog(
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
+    isAutoSyncEnabled: StateFlow<Boolean>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
     workspaceToEdit: Flow<Workspace?>,
     onDismissRequest: () -> Unit,
@@ -106,6 +108,7 @@ fun SettingsDialog(
     dismissDeleteConfirm: () -> Unit,
     deleteAccount: () -> Unit,
     syncWorkspace: () -> Unit,
+    onAutoSyncToggle: (Boolean) -> Unit,
     addUserToTeam: (String) -> Unit,
     selectWorkspaceToManage: (String) -> Unit,
     usersInSelectedWorkspace: Flow<ResultData<List<String>>>
@@ -152,7 +155,9 @@ fun SettingsDialog(
                         showPath = true,
                         selectWorkplacePath = selectWorkplacePath,
                         syncWorkspace = syncWorkspace,
-                        syncWorkspaceState = syncWorkspaceState
+                        syncWorkspaceState = syncWorkspaceState,
+                        isAutoSyncEnabled = isAutoSyncEnabled,
+                        onAutoSyncToggle = onAutoSyncToggle
                     )
                 },
                 aiScreen = {
@@ -189,6 +194,7 @@ fun SettingsScreen(
     selectedThemePosition: StateFlow<Int>,
     workplacePathState: StateFlow<String>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
+    isAutoSyncEnabled: StateFlow<Boolean>,
     ollamaUrl: String,
     ollamaAvailableModels: Flow<ResultData<List<String>>>,
     ollamaSelectedModel: StateFlow<String>,
@@ -201,6 +207,7 @@ fun SettingsScreen(
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     syncWorkspace: () -> Unit,
+    onAutoSyncToggle: (Boolean) -> Unit,
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
     selectedWorkspaceState: Flow<Workspace?>,
     selectWorkspace: (String) -> Unit,
@@ -238,7 +245,9 @@ fun SettingsScreen(
         syncWorkspaceState,
         showPath,
         selectWorkplacePath,
-        syncWorkspace
+        syncWorkspace,
+        isAutoSyncEnabled,
+        onAutoSyncToggle
     )
 
     Spacer(modifier = Modifier.height(20.dp))
@@ -540,6 +549,8 @@ private fun WorkspaceSection(
     showPath: Boolean = true,
     selectWorkplacePath: (String) -> Unit,
     syncWorkspace: () -> Unit,
+    isAutoSyncEnabled: StateFlow<Boolean>,
+    onAutoSyncToggle: (Boolean) -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -579,6 +590,27 @@ private fun WorkspaceSection(
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
         Text(text = "Sync", style = titleStyle, color = titleColor)
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        val autoSyncEnabled by isAutoSyncEnabled.collectAsState()
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Auto sync",
+                style = MaterialTheme.typography.bodyMedium,
+                color = titleColor,
+                modifier = Modifier.weight(1F)
+            )
+
+            Switch(
+                checked = autoSyncEnabled,
+                onCheckedChange = onAutoSyncToggle
+            )
+        }
 
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
