@@ -25,6 +25,7 @@ import io.writeopia.model.UiConfiguration
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.notemenu.viewmodel.FolderStateController
+import io.writeopia.sdk.`import`.json.WriteopiaJsonParser
 import io.writeopia.repository.UiConfigurationRepository
 import io.writeopia.responses.DownloadModelResponse
 import io.writeopia.sdk.models.document.Folder
@@ -67,6 +68,7 @@ class GlobalShellKmpViewModel(
     private val ollamaRepository: OllamaRepository,
     private val workspaceHandler: WorkspaceHandler,
     private val keyboardEventFlow: Flow<KeyboardEvent>?,
+    private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     private var localUserId: String? = null
@@ -87,6 +89,8 @@ class GlobalShellKmpViewModel(
     private val loginStateTrigger = MutableStateFlow(GenerateId.generate())
 
     override val lastWorkspaceSync: StateFlow<ResultData<String>> = workspaceHandler.lastWorkspaceSync
+
+    override val isAutoSyncEnabled: StateFlow<Boolean> = workspaceHandler.isAutoSyncEnabled
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val ollamaConfigState = authRepository.listenForUser().flatMapLatest { user ->
@@ -190,7 +194,7 @@ class GlobalShellKmpViewModel(
             sideMenuWidthState.asStateFlow()
         ) { configuration, width ->
             width ?: configuration.sideMenuWidth
-        }.stateIn(viewModelScope, SharingStarted.Lazily, 280F)
+        }.stateIn(viewModelScope, SharingStarted.Lazily, sideMenuDefaultWidth())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -279,7 +283,25 @@ class GlobalShellKmpViewModel(
                 }
         }
 
+        // Listen for local workspace file changes and trigger local sync
+        viewModelScope.launch(Dispatchers.Default) {
+            workspaceHandler.localSyncRequired.collect {
+                syncLocalWorkspace()
+            }
+        }
+
         workspaceHandler.loadAvailableWorkspaces()
+    }
+
+    private suspend fun syncLocalWorkspace() {
+        val path = workspaceHandler.workspaceLocalPath.value
+        if (path.isBlank()) return
+
+        writeopiaJsonParser.readAllFolders(path)
+            .collect(notesUseCase::updateFolder)
+
+        writeopiaJsonParser.readAllDocuments(path)
+            .collect(notesUseCase::saveDocumentDb)
     }
 
     override fun init() {
@@ -487,6 +509,14 @@ class GlobalShellKmpViewModel(
 
     override fun syncWorkspace() {
         workspaceHandler.syncWorkspace()
+    }
+
+    override fun toggleAutoSync(enabled: Boolean) {
+        if (enabled) {
+            workspaceHandler.startAutoSync()
+        } else {
+            workspaceHandler.stopAutoSync()
+        }
     }
 
     override fun addUserToTeam(userEmail: String) {

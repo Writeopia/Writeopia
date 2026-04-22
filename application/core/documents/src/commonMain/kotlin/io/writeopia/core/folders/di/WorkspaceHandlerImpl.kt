@@ -5,6 +5,7 @@ package io.writeopia.core.folders.di
 import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.WorkspaceHandler
+import io.writeopia.core.folders.sync.ConfigFileWatcher
 import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.sdk.models.utils.ResultData
@@ -13,8 +14,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -27,7 +30,8 @@ class WorkspaceHandlerImpl(
     private val authRepository: AuthRepository,
     private val workspaceApi: WorkspaceApi,
     private val workspaceSync: WorkspaceSync,
-    private val workspaceConfigRepository: WorkspaceConfigRepository
+    private val workspaceConfigRepository: WorkspaceConfigRepository,
+    private val configFileWatcher: ConfigFileWatcher
 ) : WorkspaceHandler {
 
     private val _availableWorkspaces: MutableStateFlow<ResultData<List<Workspace>>> =
@@ -38,6 +42,15 @@ class WorkspaceHandlerImpl(
 
     override fun initScope(coroutineScope: CoroutineScope) {
         this.coroutineScope = coroutineScope
+
+        // Collect config file changes and trigger local sync when lastUpdateTable increases
+        coroutineScope.launch {
+            configFileWatcher.configChanges.collect { newTimestamp ->
+                if (newTimestamp != null) {
+                    _localSyncRequired.emit(Unit)
+                }
+            }
+        }
     }
 
     private val _selectedWorkspaceId = MutableStateFlow<String?>(null)
@@ -73,6 +86,12 @@ class WorkspaceHandlerImpl(
 
     private val _workspaceLocalPath = MutableStateFlow("")
     override val workspaceLocalPath: StateFlow<String> = _workspaceLocalPath.asStateFlow()
+
+    private val _isAutoSyncEnabled = MutableStateFlow(false)
+    override val isAutoSyncEnabled: StateFlow<Boolean> = _isAutoSyncEnabled.asStateFlow()
+
+    private val _localSyncRequired = MutableSharedFlow<Unit>(replay = 0)
+    override val localSyncRequired: Flow<Unit> = _localSyncRequired.asSharedFlow()
 
     override fun loadAvailableWorkspaces() {
         coroutineScope.launch {
@@ -136,16 +155,45 @@ class WorkspaceHandlerImpl(
     override fun changeWorkspaceLocalPath(path: String) {
         coroutineScope.launch(Dispatchers.Default) {
             val userId = authRepository.getUser().id
+            val wasAutoSyncEnabled = _isAutoSyncEnabled.value
+
+            // Stop watching old path
+            if (wasAutoSyncEnabled) {
+                stopAutoSync()
+            }
 
             workspaceConfigRepository.saveWorkspacePath(path, userId)
             _workspaceLocalPath.value = workspaceConfigRepository.loadWorkspacePath(userId) ?: ""
+
+            // Restart watching new path if auto-sync was enabled
+            if (wasAutoSyncEnabled && _workspaceLocalPath.value.isNotBlank()) {
+                startAutoSync()
+            }
         }
     }
 
     override fun initWorkspacePath() {
         coroutineScope.launch {
-            _workspaceLocalPath.value =
-                workspaceConfigRepository.loadWorkspacePath(authRepository.getUser().id) ?: ""
+            val path = workspaceConfigRepository.loadWorkspacePath(authRepository.getUser().id) ?: ""
+            _workspaceLocalPath.value = path
+
+            // Auto-start watching if a path is configured
+            if (path.isNotBlank()) {
+                startAutoSync()
+            }
         }
+    }
+
+    override fun startAutoSync() {
+        val path = _workspaceLocalPath.value
+        if (path.isNotBlank()) {
+            configFileWatcher.startWatching(path)
+            _isAutoSyncEnabled.value = configFileWatcher.isWatching
+        }
+    }
+
+    override fun stopAutoSync() {
+        configFileWatcher.stopWatching()
+        _isAutoSyncEnabled.value = false
     }
 }
