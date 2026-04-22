@@ -593,26 +593,28 @@ private fun WorkspaceSection(
 
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
-        val autoSyncEnabled by isAutoSyncEnabled.collectAsState()
+        if (workplacePath.isNotBlank()) {
+            val autoSyncEnabled by isAutoSyncEnabled.collectAsState()
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Auto sync",
-                style = MaterialTheme.typography.bodyMedium,
-                color = titleColor,
-                modifier = Modifier.weight(1F)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Auto sync",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = titleColor,
+                    modifier = Modifier.weight(1F)
+                )
 
-            Switch(
-                checked = autoSyncEnabled,
-                onCheckedChange = onAutoSyncToggle
-            )
+                Switch(
+                    checked = autoSyncEnabled,
+                    onCheckedChange = onAutoSyncToggle
+                )
+            }
+
+            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
         }
-
-        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
         CommonButton(
             text = "Sync workspace",
