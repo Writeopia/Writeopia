@@ -25,7 +25,8 @@ class UiConfigurationSqlDelightDao(database: WriteopiaDb?) {
                 user_id = user_id,
                 color_theme_option = color_theme_option,
                 side_menu_width = side_menu_width,
-                font_family = font_family
+                font_family = font_family,
+                persistence_mode = persistence_mode
             )
         }
 

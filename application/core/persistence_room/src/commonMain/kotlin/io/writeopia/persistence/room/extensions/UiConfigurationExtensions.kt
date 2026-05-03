@@ -8,6 +8,7 @@ fun UiConfigurationEntity.toRoom() =
         userId = userId,
         colorThemeOption = colorThemeOption,
         font = font,
+        persistenceMode = persistenceMode
     )
 
 fun UiConfigurationRoomEntity.toCommon() =
@@ -15,4 +16,5 @@ fun UiConfigurationRoomEntity.toCommon() =
         userId = userId,
         colorThemeOption = colorThemeOption,
         font = font,
+        persistenceMode = persistenceMode
     )

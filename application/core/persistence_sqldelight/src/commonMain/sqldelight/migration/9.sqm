@@ -1,0 +1,1 @@
+ALTER TABLE uiConfigurationEntity ADD COLUMN persistence_mode TEXT DEFAULT 'LOCAL_DATABASE';
