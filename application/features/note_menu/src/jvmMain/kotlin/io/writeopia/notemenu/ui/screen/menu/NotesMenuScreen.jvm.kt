@@ -43,6 +43,8 @@ actual fun NotesMenuScreen(
     onNoteClick: (String, String) -> Unit,
     onAccountClick: () -> Unit,
     onForceGraphSelected: () -> Unit,
+    showDebugBackendDocuments: Boolean,
+    navigateToDebugBackendDocuments: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     navigateToFolders: (NotesNavigation) -> Unit,
     addFolder: () -> Unit,
@@ -77,6 +79,8 @@ actual fun NotesMenuScreen(
         onNoteClick = onNoteClick,
         navigateToNotes = navigateToFolders,
         navigateToForceGraph = onForceGraphSelected,
+        showDebugBackendDocuments = showDebugBackendDocuments,
+        navigateToDebugBackendDocuments = navigateToDebugBackendDocuments,
 //        addFolder = addFolder,
 //        editFolder = editFolder,
         modifier = modifier.background(background).dragAndDropTarget(

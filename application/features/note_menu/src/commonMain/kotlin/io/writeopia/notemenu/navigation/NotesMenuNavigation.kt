@@ -17,11 +17,13 @@ import io.writeopia.model.ColorThemeOption
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.notemenu.di.NotesMenuInjection
+import io.writeopia.notemenu.ui.screen.DebugBackendDocumentsScreen
 import io.writeopia.notemenu.ui.screen.menu.NotesMenuScreen
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 
 const val NAVIGATION_TYPE = "type"
 const val NAVIGATION_PATH = "path"
+const val DEBUG_BACKEND_DOCUMENTS_ROUTE = "debug_backend_documents"
 
 object NoteMenuDestiny {
     fun noteMenu() = "${Destinations.CHOOSE_NOTE.id}/{$NAVIGATION_TYPE}/{$NAVIGATION_PATH}"
@@ -39,6 +41,8 @@ fun NavGraphBuilder.notesMenuNavigation(
     navigateToNewNote: () -> Unit,
     navigateToAccount: () -> Unit,
     navigateToForceGraph: () -> Unit,
+    showDebugBackendDocuments: Boolean = false,
+    navigateToDebugBackendDocument: (String, String) -> Unit = { _, _ -> },
     navigateToFolders: (NotesNavigation) -> Unit,
     navigationBar: @Composable () -> Unit,
 ) {
@@ -82,6 +86,10 @@ fun NavGraphBuilder.notesMenuNavigation(
             onNoteClick = navigateToNote,
             onAccountClick = navigateToAccount,
             selectColorTheme = selectColorTheme,
+            showDebugBackendDocuments = showDebugBackendDocuments,
+            navigateToDebugBackendDocuments = {
+                navigationController.navigate(DEBUG_BACKEND_DOCUMENTS_ROUTE)
+            },
             navigateToFolders = navigateToFolders,
             addFolder = chooseNoteViewModel::addFolder,
             editFolder = chooseNoteViewModel::editFolder,
@@ -110,11 +118,23 @@ fun NavGraphBuilder.notesMenuNavigation(
             onNoteClick = navigateToNote,
             onAccountClick = navigateToAccount,
             selectColorTheme = selectColorTheme,
+            showDebugBackendDocuments = showDebugBackendDocuments,
+            navigateToDebugBackendDocuments = {
+                navigationController.navigate(DEBUG_BACKEND_DOCUMENTS_ROUTE)
+            },
             navigateToFolders = navigateToFolders,
             addFolder = chooseNoteViewModel::addFolder,
             editFolder = chooseNoteViewModel::editFolder,
             onForceGraphSelected = navigateToForceGraph,
             navigationBar = navigationBar,
+            modifier = Modifier.background(MaterialTheme.colorScheme.background)
+        )
+    }
+
+    composable(route = DEBUG_BACKEND_DOCUMENTS_ROUTE) {
+        DebugBackendDocumentsScreen(
+            viewModel = notesMenuInjection.provideDebugBackendDocumentsViewModel(),
+            navigateToDocument = navigateToDebugBackendDocument,
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
     }

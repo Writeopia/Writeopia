@@ -76,6 +76,7 @@ fun DesktopApp(
     navigateToResetPassword: () -> Unit,
     modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
+    showDebugBackendDocuments: Boolean = false,
     startDestination: String = startDestination(),
 ) {
     val editorInjector = remember {
@@ -205,6 +206,7 @@ fun DesktopApp(
                                         drawingData
                                     )
                                 },
+                                showDebugBackendDocuments = showDebugBackendDocuments,
                                 navigationBar = {},
                                 navController = navigationController
                             ) {}

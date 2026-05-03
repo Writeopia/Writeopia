@@ -63,6 +63,7 @@ kotlin {
                 implementation(project(":application:features:drawing"))
 
                 implementation(libs.kotlinx.serialization.json)
+                implementation(libs.ktor.client.core)
                 //
 
                 implementation(compose.runtime)

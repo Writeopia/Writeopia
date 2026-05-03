@@ -14,6 +14,7 @@ import io.writeopia.common.utils.toList
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toFolderUi
 import io.writeopia.core.folders.repository.InDocumentSearchRepository
+import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.search.FindInText
@@ -89,6 +90,7 @@ class NoteEditorKmpViewModel(
     private val copyManager: CopyManager,
     private val authRepository: AuthRepository,
     private val inDocumentSearchRepository: InDocumentSearchRepository,
+    private val documentsApi: DocumentsApi,
     private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null
 ) : NoteEditorViewModel,
     ViewModel(),
@@ -492,6 +494,20 @@ class NoteEditorKmpViewModel(
                         }
                     )
                 )
+            }
+        }
+    }
+
+    override fun loadBackendReadOnlyDocument(documentId: String) {
+        if (writeopiaManager.isInitialized()) return
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+
+            val documentResult = documentsApi.getDocument(documentId, workspace.id, token)
+            if (documentResult is ResultData.Complete) {
+                writeopiaManager.loadDocument(documentResult.data.copy(isLocked = true))
             }
         }
     }

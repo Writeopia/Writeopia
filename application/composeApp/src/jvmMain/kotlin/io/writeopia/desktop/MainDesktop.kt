@@ -260,7 +260,9 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                         navigationController.navigate(
                                             Destinations.AUTH_RESET_PASSWORD.id
                                         )
-                                    }
+                                    },
+                                    showDebugBackendDocuments =
+                                        System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() == true
                                 )
                             }
 

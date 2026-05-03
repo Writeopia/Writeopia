@@ -86,6 +86,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun loadDocument(documentId: String)
 
+    fun loadBackendReadOnlyDocument(documentId: String)
+
     fun onHeaderColorSelection(color: Int?)
 
     fun onHeaderEditionCancel()

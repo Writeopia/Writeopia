@@ -65,6 +65,7 @@ fun DesktopNoteEditorScreen(
     onDrawingClick: (StoryStep, Int) -> Unit = { _, _ -> },
     onNewDrawingClick: () -> Unit = {},
     onDocumentDelete: () -> Unit,
+    initializeDocument: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -95,6 +96,7 @@ fun DesktopNoteEditorScreen(
                     noteEditorViewModel,
                     drawersFactory = drawersFactory,
                     loadNoteId = documentId,
+                    initializeDocument = initializeDocument,
                     onDocumentLinkClick = onDocumentLinkClick,
                     onDrawingClick = onDrawingClick,
                     modifier = Modifier.padding(start = 30.dp, end = 30.dp)

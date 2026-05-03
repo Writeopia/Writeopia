@@ -37,7 +37,9 @@ fun DesktopNoteActionsMenu(
     syncInProgressState: StateFlow<SyncState>,
     onSyncLocallySelected: () -> Unit,
     onWriteLocallySelected: () -> Unit,
-    onForceGraphSelected: () -> Unit
+    onForceGraphSelected: () -> Unit,
+    showDebugBackendDocuments: Boolean = false,
+    onDebugBackendDocumentsSelected: () -> Unit = {}
 ) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         val showSyncLoading by syncInProgressState.collectAsState()
@@ -79,7 +81,9 @@ fun DesktopNoteActionsMenu(
             hideExtraOptionsRequest,
             exportAsMarkdownClick,
             exportAsTxtClick,
-            importClick
+            importClick,
+            showDebugBackendDocuments,
+            onDebugBackendDocumentsSelected
         )
     }
 }
@@ -92,6 +96,8 @@ private fun MoreOptions(
     exportAsMarkdownClick: () -> Unit,
     exportAsTxtClick: () -> Unit,
     importClick: () -> Unit,
+    showDebugBackendDocuments: Boolean,
+    onDebugBackendDocumentsSelected: () -> Unit,
 ) {
     Box {
         Icon(
@@ -147,6 +153,25 @@ private fun MoreOptions(
                     Text(WrStrings.importFile(), color = MaterialTheme.colorScheme.onBackground)
                 }
             )
+
+            if (showDebugBackendDocuments) {
+                DropdownMenuItem(
+                    leadingIcon = {
+                        Icon(
+                            imageVector = WrIcons.sync,
+                            contentDescription = "Backend documents",
+                            tint = iconTintColor
+                        )
+                    },
+                    onClick = {
+                        hideExtraOptionsRequest()
+                        onDebugBackendDocumentsSelected()
+                    },
+                    text = {
+                        Text("Backend documents", color = MaterialTheme.colorScheme.onBackground)
+                    }
+                )
+            }
         }
     }
 }

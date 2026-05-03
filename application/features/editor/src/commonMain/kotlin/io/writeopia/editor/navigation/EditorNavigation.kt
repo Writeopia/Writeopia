@@ -8,14 +8,17 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.encoding.decodeFromNavigation
+import io.writeopia.common.utils.encoding.encodeForNavigation
 import io.writeopia.editor.di.TextEditorInjector
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.editor.ui.screen.TextEditorScreen
@@ -85,6 +88,54 @@ fun NavGraphBuilder.editorNavigation(
             }
         }
 
+        composable(
+            route = "$BACKEND_READ_ONLY_EDITOR_ROUTE/{noteId}/{noteTitle}",
+            arguments = listOf(navArgument("noteId") { type = NavType.StringType }),
+            enterTransition = {
+                slideInHorizontally(
+                    initialOffsetX = { intSize -> intSize }
+                )
+            },
+            exitTransition = {
+                slideOutHorizontally(
+                    targetOffsetX = { intSize -> intSize }
+                )
+            }
+        ) { backStackEntry ->
+            val noteId = backStackEntry.savedStateHandle.get<String?>("noteId")
+            val noteTitle = backStackEntry.savedStateHandle.get<String?>("noteTitle")
+                ?.decodeFromNavigation()
+
+            if (noteId != null && noteTitle != null) {
+                val noteDetailsViewModel =
+                    editorInjector.provideNoteDetailsViewModel(
+                        "root",
+                        copyManager = CopyManager(LocalClipboardManager.current)
+                    )
+
+                noteDetailsViewModel.setTheme(isDarkTheme)
+                LaunchedEffect(noteId) {
+                    noteDetailsViewModel.loadBackendReadOnlyDocument(noteId)
+                }
+
+                TextEditorScreen(
+                    documentId = noteId,
+                    title = noteTitle,
+                    isDarkTheme = isDarkTheme,
+                    noteEditorViewModel = noteDetailsViewModel,
+                    playPresentation = {},
+                    navigateBack = navigateBack,
+                    onDocumentLinkClick = navigateToNote,
+                    onNewDrawingClick = {},
+                    onDrawingClick = { _, _ -> },
+                    initializeDocument = false,
+                    modifier = sharedModifier(this, noteId)
+                )
+            } else {
+                throw IllegalArgumentException("The arguments for this route are wrong!")
+            }
+        }
+
         composable(route = "${Destinations.EDITOR.id}/{parentFolderId}") { backStackEntry ->
             val parentFolderId = backStackEntry.savedStateHandle.get<String?>("parentFolderId")
             val notesDetailsViewModel: NoteEditorViewModel =
@@ -126,6 +177,12 @@ fun NavGraphBuilder.editorNavigation(
             PresentationScreen(viewModel)
         }
     }
+}
+
+const val BACKEND_READ_ONLY_EDITOR_ROUTE = "backend_read_only_editor"
+
+fun NavController.navigateToBackendReadOnlyEditor(id: String, title: String) {
+    navigate("$BACKEND_READ_ONLY_EDITOR_ROUTE/$id/${title.encodeForNavigation()}")
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)

@@ -16,5 +16,6 @@ expect fun TextEditorScreen(
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit = {},
     onDrawingClick: (StoryStep, Int) -> Unit = { _, _ -> },
+    initializeDocument: Boolean = true,
     modifier: Modifier = Modifier,
 )

@@ -27,6 +27,7 @@ import io.writeopia.navigation.notes.navigateToAccount
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNewNote
 import io.writeopia.navigation.notes.navigateToNote
+import io.writeopia.editor.navigation.navigateToBackendReadOnlyEditor
 import io.writeopia.navigation.presentation.navigateToPresentation
 import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.notemenu.navigation.notesMenuNavigation
@@ -45,6 +46,7 @@ fun Navigation(
     searchInjection: SearchInjection? = null,
     selectColorTheme: (ColorThemeOption) -> Unit,
     onDrawingSaved: (String, String, DrawingData) -> Unit = { _, _, _ -> },
+    showDebugBackendDocuments: Boolean = false,
     navigationBar: @Composable () -> Unit,
     builder: NavGraphBuilder.() -> Unit
 ) {
@@ -62,6 +64,8 @@ fun Navigation(
                 navigateToNewNote = navController::navigateToNewNote,
                 navigateToFolders = navController::navigateToFolder,
                 navigateToForceGraph = navController::navigateToForceGraph,
+                showDebugBackendDocuments = showDebugBackendDocuments,
+                navigateToDebugBackendDocument = navController::navigateToBackendReadOnlyEditor,
                 navigationBar = navigationBar
             )
 
