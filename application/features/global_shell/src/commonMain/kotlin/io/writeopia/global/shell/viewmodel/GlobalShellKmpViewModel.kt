@@ -527,9 +527,10 @@ class GlobalShellKmpViewModel(
     }
 
     override fun changePersistenceMode(mode: PersistenceMode) {
+        val currentWidth = showSideMenuState.value
         viewModelScope.launch(Dispatchers.Default) {
             uiConfigurationRepo.updateConfiguration(authRepository.getUser().id) { config ->
-                config.copy(persistenceMode = mode)
+                config.copy(persistenceMode = mode, sideMenuWidth = currentWidth)
             }
         }
     }
