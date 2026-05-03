@@ -36,6 +36,7 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.persistence.core.repository.BackendSyncDocumentRepository
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -89,7 +90,8 @@ class NoteEditorKmpViewModel(
     private val copyManager: CopyManager,
     private val authRepository: AuthRepository,
     private val inDocumentSearchRepository: InDocumentSearchRepository,
-    private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null
+    private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
+    private val backendSyncRepository: BackendSyncDocumentRepository? = null
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -443,7 +445,10 @@ class NoteEditorKmpViewModel(
             }
 
             else -> {
-                removeNoteIfEmpty(navigateBack)
+                viewModelScope.launch {
+                    backendSyncRepository?.flushSync()
+                    removeNoteIfEmpty(navigateBack)
+                }
             }
         }
     }
@@ -551,6 +556,9 @@ class NoteEditorKmpViewModel(
     }
 
     override fun onViewModelCleared() {
+        viewModelScope.launch {
+            backendSyncRepository?.flushSync()
+        }
         writeopiaManager.onClear()
     }
 

@@ -21,6 +21,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
+import io.writeopia.sdk.persistence.core.repository.BackendSyncDocumentRepository
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.ui.keyboard.KeyboardEvent
@@ -58,6 +59,7 @@ class EditorKmpInjector private constructor(
     private val ollamaInjection: OllamaInjection? = null,
     private val inDocumentSearchInjection: InDocumentSearchInjection =
         InDocumentSearchInjection.singleton(),
+    private val backendSyncRepository: BackendSyncDocumentRepository? = null,
 ) : TextEditorInjector {
 
     // SharedFlow for drawing save events - ViewModel subscribes to this
@@ -104,7 +106,8 @@ class EditorKmpInjector private constructor(
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             authRepository = authCoreInjection.provideAuthRepository(),
             inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo(),
-            drawingSaveEvents = drawingSaveEvents
+            drawingSaveEvents = drawingSaveEvents,
+            backendSyncRepository = backendSyncRepository
         )
 
     @Composable
@@ -174,12 +177,14 @@ class EditorKmpInjector private constructor(
             connectionInjector: WriteopiaConnectionInjector =
                 WriteopiaConnectionInjector.singleton(),
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
+            backendSyncRepository: BackendSyncDocumentRepository? = null,
         ) = EditorKmpInjector(
             authCoreInjection,
             RepositoryInjector.singleton(),
             connectionInjector,
             MutableStateFlow(false),
             MutableStateFlow(KeyboardEvent.IDLE),
+            backendSyncRepository = backendSyncRepository,
         )
 
         fun desktop(
@@ -190,6 +195,7 @@ class EditorKmpInjector private constructor(
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
             ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
+            backendSyncRepository: BackendSyncDocumentRepository? = null,
         ) = EditorKmpInjector(
             authCoreInjection,
             repositoryInjection,
@@ -197,6 +203,7 @@ class EditorKmpInjector private constructor(
             selectionState,
             keyboardEventFlow,
             ollamaInjection = ollamaInjection,
+            backendSyncRepository = backendSyncRepository,
         )
     }
 }

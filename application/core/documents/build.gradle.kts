@@ -50,6 +50,7 @@ kotlin {
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:core:connection"))
+                implementation(project(":application:core:theme"))
                 implementation(project(":common:endpoints"))
 
                 implementation(libs.kotlinx.coroutines.core)

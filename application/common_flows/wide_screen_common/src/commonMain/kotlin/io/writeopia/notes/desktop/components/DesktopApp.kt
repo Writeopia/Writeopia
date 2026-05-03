@@ -229,6 +229,7 @@ fun DesktopApp(
                                 SettingsDialog(
                                     workplacePathState = globalShellViewModel.workspaceLocalPath,
                                     selectedThemePosition = MutableStateFlow(2),
+                                    persistenceModeState = globalShellViewModel.persistenceModeState,
                                     ollamaUrlState = globalShellViewModel.ollamaUrl,
                                     ollamaAvailableModels = globalShellViewModel.modelsForUrl,
                                     ollamaSelectedModel = globalShellViewModel.ollamaSelectedModelState,
@@ -240,6 +241,7 @@ fun DesktopApp(
                                     workspaceToEdit = globalShellViewModel.workspaceToEdit,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
+                                    selectPersistenceMode = globalShellViewModel::changePersistenceMode,
                                     workspaces = globalShellViewModel.availableWorkspaces,
                                     selectWorkplacePath = globalShellViewModel::changeWorkspaceLocalPath,
                                     ollamaUrlChange = globalShellViewModel::changeOllamaUrl,

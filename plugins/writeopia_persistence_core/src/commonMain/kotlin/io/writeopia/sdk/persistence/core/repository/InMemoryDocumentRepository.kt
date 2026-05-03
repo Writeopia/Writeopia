@@ -32,7 +32,7 @@ class InMemoryDocumentRepository : DocumentRepository {
         folderId: String,
         workspaceId: String
     ): List<Document> =
-        documentsMap.values.toList()
+        documentsMap.values.filter { it.parentId == folderId }
 
     override suspend fun loadFavDocumentsForWorkspace(
         orderBy: String,
@@ -47,7 +47,7 @@ class InMemoryDocumentRepository : DocumentRepository {
     ): List<Document> = documentsMap.values.toList()
 
     override suspend fun loadDocumentById(id: String, workspaceId: String): Document? =
-        documentsMap["root"]
+        documentsMap[id]
 
     override suspend fun loadDocumentByIds(ids: List<String>, workspaceId: String): List<Document> =
         ids.mapNotNull { id ->
@@ -77,19 +77,22 @@ class InMemoryDocumentRepository : DocumentRepository {
     }
 
     override suspend fun saveDocument(document: Document) {
-        documentsMap["root"] = document
+        documentsMap[document.id] = document
+        refreshState()
     }
 
     override suspend fun saveDocumentMetadata(document: Document) {
-        documentsMap["root"]?.let { currentDocument ->
-            documentsMap["root"] = currentDocument.copy(title = document.title)
+        documentsMap[document.id]?.let { currentDocument ->
+            documentsMap[document.id] = currentDocument.copy(title = document.title)
+            refreshState()
         }
     }
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
-        documentsMap["root"]?.let { document ->
+        documentsMap[documentId]?.let { document ->
             val newContent = document.content + (position to storyStep)
-            documentsMap["root"] = document.copy(content = newContent)
+            documentsMap[documentId] = document.copy(content = newContent)
+            refreshState()
         }
     }
 
@@ -130,10 +133,11 @@ class InMemoryDocumentRepository : DocumentRepository {
 
     private fun setFavorite(ids: Set<String>, isFavorite: Boolean) {
         ids.forEach { id ->
-            documentsMap["root"]?.copy(favorite = isFavorite)?.let { document ->
-                documentsMap["root"] = document
+            documentsMap[id]?.copy(favorite = isFavorite)?.let { document ->
+                documentsMap[id] = document
             }
         }
+        refreshState()
     }
 
     override suspend fun deleteDocumentByFolder(folderId: String) {
@@ -143,7 +147,35 @@ class InMemoryDocumentRepository : DocumentRepository {
     }
 
     override suspend fun refreshDocuments() {
-        _documentsMapState.value = documentsMap
+        refreshState()
+    }
+
+    private fun refreshState() {
+        _documentsMapState.value = documentsMap.toMutableMap()
+    }
+
+    /**
+     * Load all documents from the in-memory store.
+     * Used by BackendSyncDocumentRepository for syncing.
+     */
+    fun getAllDocuments(): List<Document> = documentsMap.values.toList()
+
+    /**
+     * Clear all documents from the in-memory store.
+     */
+    fun clearAll() {
+        documentsMap.clear()
+        refreshState()
+    }
+
+    /**
+     * Load multiple documents into memory (e.g., from backend).
+     */
+    suspend fun loadDocuments(documents: List<Document>) {
+        documents.forEach { document ->
+            documentsMap[document.id] = document
+        }
+        refreshState()
     }
 
     override suspend fun queryUnsyncedImagesSteps(): List<StoryStep> = emptyList()
@@ -157,5 +189,5 @@ class InMemoryDocumentRepository : DocumentRepository {
         emptyList()
 
     override suspend fun loadDocumentsByParentId(parentId: String, workspaceId: String): List<Document> =
-        documentsMap.values.toList()
+        documentsMap.values.filter { it.parentId == parentId }
 }

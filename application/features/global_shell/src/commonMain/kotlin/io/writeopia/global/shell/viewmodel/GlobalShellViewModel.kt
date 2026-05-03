@@ -3,6 +3,7 @@ package io.writeopia.global.shell.viewmodel
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.controller.OllamaConfigController
+import io.writeopia.model.PersistenceMode
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.sdk.models.document.MenuItem
@@ -38,6 +39,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
     val lastWorkspaceSync: StateFlow<ResultData<String>>
 
     val isAutoSyncEnabled: StateFlow<Boolean>
+
+    val persistenceModeState: StateFlow<PersistenceMode>
 
     val availableWorkspaces: StateFlow<ResultData<List<Workspace>>>
 
@@ -82,6 +85,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
     fun syncWorkspace()
 
     fun toggleAutoSync(enabled: Boolean)
+
+    fun changePersistenceMode(mode: PersistenceMode)
 
     fun deleteAccount(sideEffect: () -> Unit)
 

@@ -30,7 +30,8 @@ class InMemoryFolderRepository : FolderRepository {
         instant: Instant
     ): List<Folder> = emptyList()
 
-    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> = emptyList()
+    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> =
+        mutableMap.values.flatten()
 
     override suspend fun listenForFoldersByParentId(
         parentId: String,
@@ -56,14 +57,27 @@ class InMemoryFolderRepository : FolderRepository {
 
     override suspend fun unFavoriteDocumentByIds(ids: Set<String>) {}
 
-    override suspend fun getFolderById(id: String): Folder =
-        Folder.fromName("folder", "disconnecter_user").copy(id = id)
+    override suspend fun getFolderById(id: String): Folder? =
+        mutableMap[id]?.firstOrNull()
 
     override suspend fun getFolderByParentId(parentId: String, workspaceId: String): List<Folder> =
-        emptyList()
+        mutableMap.values.flatten().filter { it.parentId == parentId }
 
     private fun refreshState() {
-        foldersStateFlow.value = mutableMap
+        foldersStateFlow.value = mutableMap.toMutableMap()
+    }
+
+    /**
+     * Get all folders from the in-memory store.
+     */
+    fun getAllFolders(): List<Folder> = mutableMap.values.flatten()
+
+    /**
+     * Clear all folders from the in-memory store.
+     */
+    fun clearAll() {
+        mutableMap.clear()
+        refreshState()
     }
 
     companion object {

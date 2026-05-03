@@ -21,6 +21,7 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.model.ColorThemeOption
+import io.writeopia.model.PersistenceMode
 import io.writeopia.model.UiConfiguration
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.viewmodel.FolderController
@@ -195,6 +196,12 @@ class GlobalShellKmpViewModel(
         ) { configuration, width ->
             width ?: configuration.sideMenuWidth
         }.stateIn(viewModelScope, SharingStarted.Lazily, sideMenuDefaultWidth())
+    }
+
+    override val persistenceModeState: StateFlow<PersistenceMode> by lazy {
+        uiConfiguration.map { config ->
+            config.persistenceMode
+        }.stateIn(viewModelScope, SharingStarted.Lazily, PersistenceMode.LOCAL_DATABASE)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -516,6 +523,14 @@ class GlobalShellKmpViewModel(
             workspaceHandler.startAutoSync()
         } else {
             workspaceHandler.stopAutoSync()
+        }
+    }
+
+    override fun changePersistenceMode(mode: PersistenceMode) {
+        viewModelScope.launch(Dispatchers.Default) {
+            uiConfigurationRepo.updateConfiguration(authRepository.getUser().id) { config ->
+                config.copy(persistenceMode = mode)
+            }
         }
     }
 

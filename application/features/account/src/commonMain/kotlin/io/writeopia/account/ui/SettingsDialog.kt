@@ -67,6 +67,7 @@ import io.writeopia.commonui.SettingsPanel
 import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
 import io.writeopia.model.ColorThemeOption
+import io.writeopia.model.PersistenceMode
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
@@ -83,6 +84,7 @@ private const val SPACE_AFTER_SUB_TITLE = 6
 fun SettingsDialog(
     workplacePathState: StateFlow<String>,
     selectedThemePosition: StateFlow<Int>,
+    persistenceModeState: StateFlow<PersistenceMode>,
     ollamaUrlState: StateFlow<String>,
     ollamaAvailableModels: Flow<ResultData<List<String>>>,
     ollamaSelectedModel: StateFlow<String>,
@@ -95,6 +97,7 @@ fun SettingsDialog(
     workspaceToEdit: Flow<Workspace?>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
+    selectPersistenceMode: (PersistenceMode) -> Unit,
     selectWorkplacePath: (String) -> Unit,
     ollamaUrlChange: (String) -> Unit,
     ollamaModelChange: (String) -> Unit,
@@ -144,10 +147,19 @@ fun SettingsDialog(
                     )
                 },
                 appearanceScreen = {
-                    ColorThemeOptions(
-                        selectedThemePosition = selectedThemePosition,
-                        selectColorTheme = selectColorTheme
-                    )
+                    Column {
+                        ColorThemeOptions(
+                            selectedThemePosition = selectedThemePosition,
+                            selectColorTheme = selectColorTheme
+                        )
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        PersistenceModeOptions(
+                            persistenceModeState = persistenceModeState,
+                            selectPersistenceMode = selectPersistenceMode
+                        )
+                    }
                 },
                 directoryScreen = {
                     WorkspaceSection(
@@ -1239,3 +1251,96 @@ private fun transparentTextInputColors() =
         disabledIndicatorColor = Color.Transparent,
         cursorColor = MaterialTheme.colorScheme.primary
     )
+
+@Composable
+private fun PersistenceModeOptions(
+    persistenceModeState: StateFlow<PersistenceMode>,
+    selectPersistenceMode: (PersistenceMode) -> Unit
+) {
+    val titleStyle = MaterialTheme.typography.titleLarge
+    val titleColor = MaterialTheme.colorScheme.onBackground
+
+    val currentMode by persistenceModeState.collectAsState()
+
+    Column {
+        Text("Storage Mode", style = titleStyle, color = titleColor)
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        Text(
+            "Choose how documents are stored",
+            style = MaterialTheme.typography.bodySmall,
+            color = titleColor.copy(alpha = 0.7f)
+        )
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
+
+        val spaceWidth = 10.dp
+
+        Row(modifier = Modifier.fillMaxWidth().height(80.dp)) {
+            PersistenceModeOption(
+                text = "Local Database",
+                description = "Offline-first",
+                imageVector = WrIcons.folder,
+                isSelected = currentMode == PersistenceMode.LOCAL_DATABASE,
+                onClick = { selectPersistenceMode(PersistenceMode.LOCAL_DATABASE) }
+            )
+
+            Spacer(modifier = Modifier.width(spaceWidth))
+
+            PersistenceModeOption(
+                text = "Cloud Sync",
+                description = "Memory + Backend",
+                imageVector = WrIcons.sync,
+                isSelected = currentMode == PersistenceMode.MEMORY_WITH_SYNC,
+                onClick = { selectPersistenceMode(PersistenceMode.MEMORY_WITH_SYNC) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.PersistenceModeOption(
+    text: String,
+    description: String,
+    imageVector: ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val typography = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
+    val descTypography = MaterialTheme.typography.labelSmall
+    val color = MaterialTheme.colorScheme.onPrimary
+
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .let { mod ->
+                if (isSelected) {
+                    mod.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                } else {
+                    mod.border(1.dp, MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(8.dp))
+                }
+            }
+            .clickable(onClick = onClick)
+            .fillMaxHeight()
+            .weight(1F)
+    ) {
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                modifier = Modifier.size(24.dp),
+                imageVector = imageVector,
+                contentDescription = text,
+                tint = if (isSelected) MaterialTheme.colorScheme.primary else color
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(text, style = typography, color = if (isSelected) MaterialTheme.colorScheme.primary else color)
+
+            Text(description, style = descTypography, color = color.copy(alpha = 0.7f))
+        }
+    }
+}
