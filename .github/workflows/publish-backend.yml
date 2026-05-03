@@ -15,6 +15,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write  # Required for Workload Identity Federation
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -25,12 +26,21 @@ jobs:
           distribution: adopt
           java-version: '21'
 
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/640912732949/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
+          service_account: 'github-actions-deployer@writeopia.iam.gserviceaccount.com'
+          token_format: 'access_token'
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
             ghcr.io/writeopia/writeopia-backend
+            europe-west4-docker.pkg.dev/writeopia/writeopia-images/writeopia-backend
           tags: |
             type=semver,pattern={{version}}
             type=sha
@@ -44,6 +54,13 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Google Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: europe-west4-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
