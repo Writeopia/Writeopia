@@ -165,6 +165,14 @@ class WriteopiaStateManager(
                                 }
                             }
 
+                            KeyboardEvent.SHIFT_ARROW_UP -> {
+                                extendSelectionUp()
+                            }
+
+                            KeyboardEvent.SHIFT_ARROW_DOWN -> {
+                                extendSelectionDown()
+                            }
+
                             else -> {}
                         }
                     }
@@ -213,6 +221,13 @@ class WriteopiaStateManager(
 
     private val _onEditPositions = MutableStateFlow(setOf<Int>())
     val onEditPositions = _onEditPositions.asStateFlow()
+
+    /**
+     * Tracks the anchor position for keyboard-based multi-line selection.
+     * This is the position from which the selection extends when using shift+arrows.
+     * It's null when the selection was made with mouse (unknown keyboard position).
+     */
+    private var keyboardSelectionAnchor: Int? = null
 
     private var sharedEditionManager: SharedEditionManager? = null
 
@@ -708,6 +723,8 @@ class WriteopiaStateManager(
     private fun selected(isSelected: Boolean, position: Int) {
         if (!isEditable) return
         if (_currentStory.value.stories[position] != null) {
+            // Reset keyboard selection anchor when selection is modified via mouse/drag
+            keyboardSelectionAnchor = null
             if (isSelected) {
                 _onEditPositions.value += position
             } else {
@@ -727,6 +744,8 @@ class WriteopiaStateManager(
 
     fun onSectionSelected(position: Int) {
         if (!isEditable) return
+        // Reset keyboard selection anchor when selection is modified via section select
+        keyboardSelectionAnchor = null
         val isSelected = _onEditPositions.value.contains(position)
         val stories = getStories()
 
@@ -1060,6 +1079,80 @@ class WriteopiaStateManager(
      */
     fun clearSelection() {
         _onEditPositions.value = emptySet()
+        keyboardSelectionAnchor = null
+    }
+
+    /**
+     * Extends the multi-line selection upward using keyboard.
+     * Only works when at least one line is selected.
+     * Returns true if the event was handled, false if normal OS behavior should occur.
+     */
+    fun extendSelectionUp(): Boolean {
+        val currentSelection = _onEditPositions.value
+        if (currentSelection.isEmpty()) return false
+
+        val minPosition = currentSelection.min()
+        val maxPosition = currentSelection.max()
+
+        // If anchor is unknown (mouse selection), set it to the bottom of selection
+        val anchor = keyboardSelectionAnchor ?: maxPosition
+        keyboardSelectionAnchor = anchor
+
+        return if (anchor == maxPosition) {
+            // Extending upward from anchor at bottom: add position above current min
+            val newPosition = minPosition - 1
+            if (newPosition >= 1) { // Don't select position 0 (title)
+                _onEditPositions.value = currentSelection + newPosition
+                true
+            } else {
+                false
+            }
+        } else {
+            // Anchor is at top, contracting from bottom
+            if (maxPosition > anchor) {
+                _onEditPositions.value = currentSelection - maxPosition
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    /**
+     * Extends the multi-line selection downward using keyboard.
+     * Only works when at least one line is selected.
+     * Returns true if the event was handled, false if normal OS behavior should occur.
+     */
+    fun extendSelectionDown(): Boolean {
+        val currentSelection = _onEditPositions.value
+        if (currentSelection.isEmpty()) return false
+
+        val minPosition = currentSelection.min()
+        val maxPosition = currentSelection.max()
+        val lastIndex = _currentStory.value.stories.size - 1
+
+        // If anchor is unknown (mouse selection), set it to the top of selection
+        val anchor = keyboardSelectionAnchor ?: minPosition
+        keyboardSelectionAnchor = anchor
+
+        return if (anchor == minPosition) {
+            // Extending downward from anchor at top: add position below current max
+            val newPosition = maxPosition + 1
+            if (newPosition <= lastIndex) {
+                _onEditPositions.value = currentSelection + newPosition
+                true
+            } else {
+                false
+            }
+        } else {
+            // Anchor is at bottom, contracting from top
+            if (minPosition < anchor) {
+                _onEditPositions.value = currentSelection - minPosition
+                true
+            } else {
+                false
+            }
+        }
     }
 
     fun receiveExternalFiles(files: List<ExternalFile>, position: Int) {
@@ -1411,6 +1504,7 @@ class WriteopiaStateManager(
     private fun getCurrentStory(): StoryStep? = currentPosition().let(::getStory)
 
     private fun selectAll() {
+        keyboardSelectionAnchor = null
         _onEditPositions.value = getStories().keys - setOf(0)
     }
 

@@ -97,4 +97,14 @@ object KeyboardCommands {
         keyEvent.isCommandTrigger() &&
             keyEvent.key.keyCode == Key.Minus.keyCode &&
             keyEvent.type == KeyEventType.KeyUp
+
+    fun isShiftArrowUpEvent(keyEvent: KeyEvent) =
+        keyEvent.isShiftPressed &&
+            keyEvent.key.keyCode == Key.DirectionUp.keyCode &&
+            keyEvent.type == KeyEventType.KeyDown
+
+    fun isShiftArrowDownEvent(keyEvent: KeyEvent) =
+        keyEvent.isShiftPressed &&
+            keyEvent.key.keyCode == Key.DirectionDown.keyCode &&
+            keyEvent.type == KeyEventType.KeyDown
 }
