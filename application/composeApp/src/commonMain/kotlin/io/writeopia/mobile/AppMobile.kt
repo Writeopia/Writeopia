@@ -161,6 +161,16 @@ fun AppMobile(
                         false
                     }
 
+                    KeyboardCommands.isShiftArrowUpEvent(keyEvent) -> {
+                        sendEvent(KeyboardEvent.SHIFT_ARROW_UP)
+                        false
+                    }
+
+                    KeyboardCommands.isShiftArrowDownEvent(keyEvent) -> {
+                        sendEvent(KeyboardEvent.SHIFT_ARROW_DOWN)
+                        false
+                    }
+
                     else -> false
                 }
             }
