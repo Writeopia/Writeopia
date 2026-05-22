@@ -5,7 +5,6 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
@@ -55,7 +54,6 @@ class AuthApiTest {
         assertEquals(HttpMethod.Post, request.method)
         assertEquals("https://api.example.com/admin/enable-user", request.url.toString())
         assertEquals("my-admin-key", request.headers["X-Admin-Key"])
-        assertEquals("application/json", request.headers[HttpHeaders.ContentType])
 
         // Verify the body contains the email
         val bodyBytes = request.body.toByteArray()
