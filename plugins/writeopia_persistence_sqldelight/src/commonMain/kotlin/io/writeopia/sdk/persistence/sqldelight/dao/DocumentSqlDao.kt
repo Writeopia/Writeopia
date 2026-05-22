@@ -122,6 +122,10 @@ class DocumentSqlDao(
         }
     }
 
+    suspend fun deleteStoryStepById(storyStepId: String) {
+        storyStepQueries?.deleteById(storyStepId)
+    }
+
     suspend fun loadDocumentById(id: String): Document? =
         documentQueries?.selectById(id)
             ?.awaitAsOneOrNull()

@@ -138,7 +138,8 @@ class ContentHandlerTest {
 
         val newState2 = contentHandler.deleteStory(
             Action.DeleteStory(newState.stories[deletePosition]!!, deletePosition),
-            newState.stories
+            newState.stories,
+            "test-document-id"
         )
 
         assertEquals(1, newState2?.focus)
@@ -149,7 +150,7 @@ class ContentHandlerTest {
         val input = MapStoryData.simpleMessages()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
 
-        val newState = contentHandler.deleteStory(Action.DeleteStory(input[1]!!, 1), input)
+        val newState = contentHandler.deleteStory(Action.DeleteStory(input[1]!!, 1), input, "test-document-id")
 
         assertEquals(setOf(0, 1, 2, 3, 4), newState!!.stories.keys)
     }

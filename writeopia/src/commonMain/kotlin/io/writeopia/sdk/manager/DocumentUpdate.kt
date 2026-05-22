@@ -32,4 +32,9 @@ interface DocumentUpdate {
      * Used for efficient line break saves where only affected lines need to be persisted.
      */
     suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String)
+
+    /**
+     * Deletes a single [StoryStep] from a document by its ID.
+     */
+    suspend fun deleteStoryStep(storyStepId: String, documentId: String)
 }

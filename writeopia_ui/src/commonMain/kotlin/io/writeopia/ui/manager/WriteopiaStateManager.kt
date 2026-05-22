@@ -713,7 +713,9 @@ class WriteopiaStateManager(
         if (!hasFocus) return
         val story = currentStory.value
 
-        _currentStory.value = story.copy(focus = position)
+        // Don't preserve lastEdit on focus change - it would cause the save to be
+        // cancelled and re-triggered, potentially interrupting in-progress saves
+        _currentStory.value = story.copy(focus = position, lastEdit = LastEdit.Nothing)
     }
 
     fun scrollToPosition(position: Int) {
@@ -863,7 +865,11 @@ class WriteopiaStateManager(
         backStackManager.addState(_currentStory.value)
 
         coroutineScope.launch(dispatcher) {
-            writeopiaManager.onDelete(deleteStory, _currentStory.value)?.let { newState ->
+            writeopiaManager.onDelete(
+                deleteStory,
+                _currentStory.value,
+                _documentInfo.value.id
+            )?.let { newState ->
                 _currentStory.value = newState
             }
         }

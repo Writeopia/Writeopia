@@ -103,6 +103,14 @@ class InMemoryDocumentRepository : DocumentRepository {
         }
     }
 
+    override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {
+        documentsMap["root"]?.let { document ->
+            val newContent = document.content.filterNot { (_, step) -> step.id == storyStepId }
+                .values.mapIndexed { index, step -> index to step }.toMap()
+            documentsMap["root"] = document.copy(content = newContent)
+        }
+    }
+
     override suspend fun updateStoryStepUrl(url: String, id: String) {
     }
 

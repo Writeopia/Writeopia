@@ -128,6 +128,10 @@ class SqlDelightDocumentRepository(
         documentSqlDao.insertStorySteps(steps, documentId)
     }
 
+    override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {
+        documentSqlDao.deleteStoryStepById(storyStepId)
+    }
+
     override suspend fun updateStoryStepUrl(url: String, id: String) {
         documentSqlDao.updateStoryStepUrl(url, id)
     }

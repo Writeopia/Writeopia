@@ -218,9 +218,14 @@ class WriteopiaManager(
      * Deletes a [StoryStep]
      *
      * @param deleteStory [Action.DeleteStory]
+     * @param documentId The ID of the document containing the story step
      */
-    fun onDelete(deleteStory: Action.DeleteStory, storyState: StoryState): StoryState? =
-        contentHandler.deleteStory(deleteStory, storyState.stories)
+    fun onDelete(
+        deleteStory: Action.DeleteStory,
+        storyState: StoryState,
+        documentId: String
+    ): StoryState? =
+        contentHandler.deleteStory(deleteStory, storyState.stories, documentId)
 
     /**
      * Erases a [StoryStep]

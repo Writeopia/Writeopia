@@ -45,4 +45,34 @@ sealed class LastEdit {
         val originalStep: Pair<Double, StoryStep>,
         val newStep: Pair<Double, StoryStep>
     ) : LastEdit()
+
+    /**
+     * Multiple lines were edited (e.g., bulk type change).
+     * Only the affected lines need to be saved.
+     * @param steps List of position to StoryStep pairs for all changed lines
+     */
+    data class BulkEdition(
+        val steps: List<Pair<Double, StoryStep>>
+    ) : LastEdit()
+
+    /**
+     * A single line was deleted from the document.
+     * @param deletedId The ID of the deleted story step
+     * @param documentId The document ID (needed for deletion query)
+     */
+    data class DeleteEdition(
+        val deletedId: String,
+        val documentId: String
+    ) : LastEdit()
+
+    /**
+     * A line was erased and its content merged with the previous line.
+     * The deleted line is removed and the previous line is updated.
+     * @param deletedId The ID of the deleted story step
+     * @param updatedStep The previous line with merged content
+     */
+    data class EraseEdition(
+        val deletedId: String,
+        val updatedStep: Pair<Double, StoryStep>
+    ) : LastEdit()
 }

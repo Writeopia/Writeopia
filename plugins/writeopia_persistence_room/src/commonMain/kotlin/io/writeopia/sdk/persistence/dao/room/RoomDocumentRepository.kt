@@ -173,6 +173,10 @@ class RoomDocumentRepository(
         }
     }
 
+    override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {
+        storyUnitEntityDao?.deleteById(storyStepId)
+    }
+
     override suspend fun updateStoryStepUrl(url: String, id: String) {
         storyUnitEntityDao?.updateUrl(url, id)
     }

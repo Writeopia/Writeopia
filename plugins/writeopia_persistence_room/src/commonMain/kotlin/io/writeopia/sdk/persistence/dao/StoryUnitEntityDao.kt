@@ -44,4 +44,7 @@ interface StoryUnitEntityDao {
             "AND (url IS NULL OR url = '')"
     )
     suspend fun getUnsyncedSteps(): List<StoryStepEntity>
+
+    @Query("DELETE FROM $STORY_UNIT_ENTITY WHERE $STORY_UNIT_ENTITY.id = :id")
+    suspend fun deleteById(id: String)
 }

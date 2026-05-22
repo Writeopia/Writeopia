@@ -81,13 +81,20 @@ class ContentHandler(
         commandInfo: CommandInfo?
     ): StoryState {
         val newMap = changeType(currentStory, typeInfo, position, commandInfo)
-        return StoryState(newMap, LastEdit.Whole, position)
+        val changedStep = newMap[position]
+        val lastEdit = if (changedStep != null) {
+            LastEdit.LineEdition(position, changedStep)
+        } else {
+            LastEdit.Nothing
+        }
+        return StoryState(newMap, lastEdit, position)
     }
 
     fun bulkChangeStoryType(
         currentStory: Map<Int, StoryStep>,
         change: Iterable<Pair<Int, TypeInfo>>
     ): StoryState {
+        val positions = change.map { it.first }.toSet()
         val newMap = change.fold(currentStory) { acc, (position, typeInfo) ->
             changeType(
                 currentStory = acc,
@@ -97,7 +104,21 @@ class ContentHandler(
             )
         }
 
-        return StoryState(newMap, LastEdit.Whole)
+        // Collect only the changed steps with their db positions
+        val changedSteps = positions.mapNotNull { position ->
+            newMap[position]?.let { step ->
+                val dbPos = step.dbPosition ?: position.toDouble()
+                dbPos to step
+            }
+        }
+
+        val lastEdit = if (changedSteps.isNotEmpty()) {
+            LastEdit.BulkEdition(changedSteps)
+        } else {
+            LastEdit.Nothing
+        }
+
+        return StoryState(newMap, lastEdit)
     }
 
     private fun changeType(
@@ -280,7 +301,11 @@ class ContentHandler(
     /**
      * Deletes one story steps.
      */
-    fun deleteStory(deleteInfo: Action.DeleteStory, history: Map<Int, StoryStep>): StoryState? {
+    fun deleteStory(
+        deleteInfo: Action.DeleteStory,
+        history: Map<Int, StoryStep>,
+        documentId: String
+    ): StoryState? {
         val step = deleteInfo.storyStep
         val parentId = step.parentId
         val mutableSteps = history.toMutableMap()
@@ -296,7 +321,11 @@ class ContentHandler(
 
             val normalized = stepsNormalizer(mutableSteps.toEditState())
             val positionsFixed = normalized.values.associateWithPosition()
-            StoryState(positionsFixed, lastEdit = LastEdit.Whole, focus = previousFocus)
+            StoryState(
+                positionsFixed,
+                lastEdit = LastEdit.DeleteEdition(deletedId = step.id, documentId = documentId),
+                focus = previousFocus
+            )
         } else {
             mutableSteps[deleteInfo.position]?.let { group ->
                 val newSteps = group.steps.filter { storyUnit ->
@@ -312,13 +341,18 @@ class ContentHandler(
                 mutableSteps[deleteInfo.position] = newStoryUnit.copy(parentId = null)
                 val normalized = stepsNormalizer(mutableSteps.toEditState())
                 val positionsFixed = normalized.values.associateWithPosition()
-                StoryState(positionsFixed, lastEdit = LastEdit.Whole)
+                // For group deletion, use the group's id
+                StoryState(
+                    positionsFixed,
+                    lastEdit = LastEdit.DeleteEdition(deletedId = step.id, documentId = documentId)
+                )
             }
         }
     }
 
     fun eraseStory(deleteInfo: Action.EraseStory, history: Map<Int, StoryStep>): StoryState {
         val mutableSteps = history.toMutableMap()
+        val deletedStep = deleteInfo.storyStep
 
         mutableSteps.remove(deleteInfo.position)
         val previousFocus: Int? =
@@ -328,17 +362,34 @@ class ContentHandler(
                 focusableTypes
             )
 
+        var updatedPrevious: StoryStep? = null
+        var previousPosition: Int? = null
+
         history.previousTextStory(deleteInfo.position, isTextStory)?.let { (previous, position) ->
-            mutableSteps[position] = previous.copy(
+            val updated = previous.copy(
                 text = previous.text + deleteInfo.storyStep.text,
                 localId = GenerateId.generate()
             )
+            mutableSteps[position] = updated
+            updatedPrevious = updated
+            previousPosition = position
         }
 
         val normalized = stepsNormalizer(mutableSteps.toEditState())
         val positionsFixed = normalized.values.associateWithPosition()
 
-        return StoryState(positionsFixed, lastEdit = LastEdit.Whole, focus = previousFocus)
+        val lastEdit = if (updatedPrevious != null && previousPosition != null) {
+            val dbPos = updatedPrevious.dbPosition ?: previousPosition.toDouble()
+            LastEdit.EraseEdition(
+                deletedId = deletedStep.id,
+                updatedStep = dbPos to updatedPrevious
+            )
+        } else {
+            // No previous text story found, just delete
+            LastEdit.DeleteEdition(deletedId = deletedStep.id, documentId = "")
+        }
+
+        return StoryState(positionsFixed, lastEdit = lastEdit, focus = previousFocus)
     }
 
     /**
