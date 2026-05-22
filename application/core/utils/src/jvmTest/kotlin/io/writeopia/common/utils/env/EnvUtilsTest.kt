@@ -2,7 +2,6 @@ package io.writeopia.common.utils.env
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class EnvUtilsTest {
 
