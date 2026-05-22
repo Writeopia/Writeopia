@@ -37,10 +37,10 @@ class OnUpdateDocumentTracker(
             workspaceIdFlow
         ) { (storyState, documentInfo), workspaceId ->
             Triple(storyState, documentInfo, workspaceId)
-        }.collectLatest { (storyState, documentInfo, workspaceId) ->
+        }.collect { (storyState, documentInfo, workspaceId) ->
             when (val lastEdit = storyState.lastEdit) {
                 is LastEdit.LineEdition -> {
-                    if (lastEdit.storyStep.ephemeral) return@collectLatest
+                    if (lastEdit.storyStep.ephemeral) return@collect
 
                     withContext(NonCancellable) {
                         documentUpdate.saveStoryStep(
