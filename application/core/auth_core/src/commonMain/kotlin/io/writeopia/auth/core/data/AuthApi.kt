@@ -15,6 +15,7 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
+import io.writeopia.sdk.serialization.data.auth.ManageUserRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
@@ -73,6 +74,24 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
 
         ResultData.Complete(response.deleted)
     } catch (e: Exception) {
+        ResultData.Error(e)
+    }
+
+    suspend fun enableUser(email: String, adminKey: String): ResultData<Unit> = try {
+        val response = client.post("$baseUrl/admin/enable-user") {
+            contentType(ContentType.Application.Json)
+            header("X-Admin-Key", adminKey)
+            setBody(ManageUserRequest(email))
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            ResultData.Error()
+        }
+    } catch (e: Exception) {
+        println("enableUser error: ${e.message}")
+        e.printStackTrace()
         ResultData.Error(e)
     }
 }
