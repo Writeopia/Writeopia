@@ -38,7 +38,13 @@ data class StoryStep(
     val spans: Set<SpanInfo> = emptySet(),
     val decoration: Decoration = Decoration(),
     val ephemeral: Boolean = false,
-    val documentLink: DocumentLink? = null
+    val documentLink: DocumentLink? = null,
+    /**
+     * The position of this StoryStep in the database. This is a Double to support intermediate
+     * values (e.g., 1.5 between 1 and 2) for efficient line break saves. When null, the UI
+     * position should be used as the default.
+     */
+    val dbPosition: Double? = null
 ) {
 
     val key: Int = localId.hashCode()

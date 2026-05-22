@@ -157,6 +157,38 @@ class OnUpdateDocumentTracker(
                         )
                     )
                 }
+
+                is LastEdit.LineBreakEdition -> {
+                    val originalStep = lastEdit.originalStep
+                    val newStep = lastEdit.newStep
+
+                    if (!originalStep.second.ephemeral && !newStep.second.ephemeral) {
+                        documentUpdate.saveStorySteps(
+                            steps = listOf(originalStep, newStep),
+                            documentId = documentInfo.id
+                        )
+                    }
+
+                    val stories = storyState.stories
+                    val titleFromContent = stories.values
+                        .firstOrNull { storyStep ->
+                            storyStep.type == StoryTypes.TITLE.type
+                        }?.text
+
+                    documentUpdate.saveDocumentMetadata(
+                        Document(
+                            id = documentInfo.id,
+                            title = titleFromContent ?: documentInfo.title,
+                            createdAt = documentInfo.createdAt,
+                            lastUpdatedAt = Clock.System.now(),
+                            lastSyncedAt = documentInfo.lastSyncedAt,
+                            workspaceId = workspaceId,
+                            parentId = documentInfo.parentId,
+                            icon = documentInfo.icon,
+                            isLocked = documentInfo.isLocked
+                        )
+                    )
+                }
             }
         }
     }

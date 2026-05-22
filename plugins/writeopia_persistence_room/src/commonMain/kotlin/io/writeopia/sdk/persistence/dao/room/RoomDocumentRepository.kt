@@ -163,7 +163,14 @@ class RoomDocumentRepository(
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
         println("saving story steps: ${storyStep.spans.joinToString { it.toText() }}")
-        storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(position, documentId))
+        val dbPos = storyStep.dbPosition ?: position.toDouble()
+        storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(dbPos, documentId))
+    }
+
+    override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
+        steps.forEach { (position, storyStep) ->
+            storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(position, documentId))
+        }
     }
 
     override suspend fun updateStoryStepUrl(url: String, id: String) {
@@ -171,7 +178,8 @@ class RoomDocumentRepository(
     }
 
     override suspend fun updateStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
-        storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(position, documentId))
+        val dbPos = storyStep.dbPosition ?: position.toDouble()
+        storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(dbPos, documentId))
     }
 
     override suspend fun deleteByWorkspace(userId: String) {
@@ -201,7 +209,9 @@ class RoomDocumentRepository(
      */
     private suspend fun loadInnerSteps(storyEntities: List<StoryStepEntity>): Map<Int, StoryStep> =
         storyEntities.filter { entity -> entity.parentId == null }
-            .associateBy { entity -> entity.position }
+            .sortedBy { it.position }
+            .mapIndexed { index, entity -> index to entity }
+            .toMap()
             .mapValues { (_, entity) ->
                 if (entity.linkToDocument != null) {
                     val title = documentEntityDao.getDocumentTitleById(entity.linkToDocument)

@@ -121,7 +121,11 @@ class SqlDelightDocumentRepository(
     }
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
-        documentSqlDao.insertStoryStep(storyStep, position.toLong(), documentId)
+        documentSqlDao.insertStoryStep(storyStep, position.toDouble(), documentId)
+    }
+
+    override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
+        documentSqlDao.insertStorySteps(steps, documentId)
     }
 
     override suspend fun updateStoryStepUrl(url: String, id: String) {

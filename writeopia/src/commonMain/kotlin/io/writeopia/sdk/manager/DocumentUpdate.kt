@@ -26,4 +26,10 @@ interface DocumentUpdate {
      * Updates one [StoryStep] of a document.
      */
     suspend fun updateStoryStep(storyStep: StoryStep, position: Int, documentId: String)
+
+    /**
+     * Saves multiple [StoryStep]s with their database positions (as Double for intermediate values).
+     * Used for efficient line break saves where only affected lines need to be persisted.
+     */
+    suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String)
 }

@@ -30,7 +30,7 @@ object MarkdownParser {
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(1).trimStart(),
-                    position = acc
+                    position = acc.toDouble()
                 )
             }
 
@@ -39,7 +39,7 @@ object MarkdownParser {
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
                     text = "",
-                    position = acc
+                    position = acc.toDouble()
                 )
             }
 
@@ -49,7 +49,7 @@ object MarkdownParser {
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(4).trimStart(),
                     tags = setOf(TagInfoApi(Tag.H4.name, 0)),
-                    position = acc
+                    position = acc.toDouble()
                 )
             }
 
@@ -59,7 +59,7 @@ object MarkdownParser {
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(3).trimStart(),
                     tags = setOf(TagInfoApi(Tag.H3.name, 0)),
-                    position = acc
+                    position = acc.toDouble()
                 )
             }
 
@@ -69,7 +69,7 @@ object MarkdownParser {
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(2).trimStart(),
                     tags = setOf(TagInfoApi(Tag.H2.name, 0)),
-                    position = acc
+                    position = acc.toDouble()
                 )
             }
 
@@ -79,7 +79,7 @@ object MarkdownParser {
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(1).trimStart(),
                     tags = setOf(TagInfoApi(Tag.H1.name, 0)),
-                    position = acc
+                    position = acc.toDouble()
                 )
             }
 
@@ -91,7 +91,7 @@ object MarkdownParser {
                 val type = StoryTypes.DIVIDER.type
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
-                    position = acc
+                    position = acc.toDouble()
                 )
             }
 
@@ -100,7 +100,7 @@ object MarkdownParser {
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(3).trimStart(),
-                    position = acc
+                    position = acc.toDouble()
                 )
             }
 
@@ -109,7 +109,7 @@ object MarkdownParser {
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(2).trimStart(),
-                    position = acc
+                    position = acc.toDouble()
                 )
             }
 
@@ -118,7 +118,7 @@ object MarkdownParser {
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed,
-                    position = acc
+                    position = acc.toDouble()
                 )
             }
         }

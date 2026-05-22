@@ -6,5 +6,5 @@ interface InDocumentSearchRepository {
 
     fun searchInDocument(query: String, documentId: String): Set<Int>
 
-    suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: Int)
+    suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: Double)
 }

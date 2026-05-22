@@ -93,6 +93,16 @@ class InMemoryDocumentRepository : DocumentRepository {
         }
     }
 
+    override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
+        documentsMap["root"]?.let { document ->
+            val newContent = document.content.toMutableMap()
+            steps.forEach { (position, storyStep) ->
+                newContent[position.toInt()] = storyStep
+            }
+            documentsMap["root"] = document.copy(content = newContent)
+        }
+    }
+
     override suspend fun updateStoryStepUrl(url: String, id: String) {
     }
 

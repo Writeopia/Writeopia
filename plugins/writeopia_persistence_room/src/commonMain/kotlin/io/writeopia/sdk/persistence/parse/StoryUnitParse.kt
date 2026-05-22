@@ -11,12 +11,13 @@ import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
 
 fun Map<Int, StoryStep>.toEntity(documentId: String): List<StoryStepEntity> =
     flatMap { (position, storyUnit) ->
+        val dbPos = storyUnit.dbPosition ?: position.toDouble()
         if (storyUnit.isGroup) {
-            listOf(storyUnit.toEntity(position, documentId)) + storyUnit.steps.map { innerStory ->
-                innerStory.copy(parentId = storyUnit.id).toEntity(position, documentId)
+            listOf(storyUnit.toEntity(dbPos, documentId)) + storyUnit.steps.map { innerStory ->
+                innerStory.copy(parentId = storyUnit.id).toEntity(dbPos, documentId)
             }
         } else {
-            listOf(storyUnit.toEntity(position, documentId))
+            listOf(storyUnit.toEntity(dbPos, documentId))
         }
     }
 
@@ -50,10 +51,11 @@ fun StoryStepEntity.toModel(
             .filter { it.isNotEmpty() }
             .map(SpanInfo::fromString)
             .toSet(),
-        documentLink = documentLink
+        documentLink = documentLink,
+        dbPosition = position
     )
 
-fun StoryStep.toEntity(position: Int, documentId: String): StoryStepEntity =
+fun StoryStep.toEntity(position: Double, documentId: String): StoryStepEntity =
     StoryStepEntity(
         id = id,
         localId = localId,

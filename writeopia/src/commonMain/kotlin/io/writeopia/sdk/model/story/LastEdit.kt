@@ -34,4 +34,15 @@ sealed class LastEdit {
      * Metadata was edited
      */
     data object Metadata : LastEdit()
+
+    /**
+     * A line break was made, creating a new line. This is more efficient than a Whole edit
+     * because only the two affected story steps need to be saved.
+     * @param originalStep The updated original line with its database position
+     * @param newStep The newly created line with its intermediate database position
+     */
+    data class LineBreakEdition(
+        val originalStep: Pair<Double, StoryStep>,
+        val newStep: Pair<Double, StoryStep>
+    ) : LastEdit()
 }

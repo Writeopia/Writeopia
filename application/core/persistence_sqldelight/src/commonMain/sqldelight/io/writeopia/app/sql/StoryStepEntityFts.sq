@@ -2,7 +2,7 @@ CREATE VIRTUAL TABLE storyStepEntityFts USING fts4(
   text TEXT,
   id TEXT,
   document_id TEXT UNINDEXED,
-  position INTEGER UNINDEXED
+  position REAL UNINDEXED
 );
 
 searchFts:
