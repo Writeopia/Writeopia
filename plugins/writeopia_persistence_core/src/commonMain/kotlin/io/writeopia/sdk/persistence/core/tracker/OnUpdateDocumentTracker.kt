@@ -38,8 +38,6 @@ class OnUpdateDocumentTracker(
         ) { (storyState, documentInfo), workspaceId ->
             Triple(storyState, documentInfo, workspaceId)
         }.collect { (storyState, documentInfo, workspaceId) ->
-            println("collected save. lastEdit: ${storyState.lastEdit} \n\n")
-
             when (val lastEdit = storyState.lastEdit) {
                 is LastEdit.LineEdition -> {
                     if (lastEdit.storyStep.ephemeral) return@collect
@@ -165,8 +163,6 @@ class OnUpdateDocumentTracker(
                 is LastEdit.LineBreakEdition -> {
                     val originalStep = lastEdit.originalStep
                     val newStep = lastEdit.newStep
-
-                    println("line break edition. original $originalStep, new step: $newStep \n\n")
 
                     if (!originalStep.second.ephemeral && !newStep.second.ephemeral) {
                         documentUpdate.saveStorySteps(
