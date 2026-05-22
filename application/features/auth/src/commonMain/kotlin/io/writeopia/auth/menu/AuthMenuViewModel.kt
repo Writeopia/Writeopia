@@ -9,6 +9,7 @@ import io.writeopia.api.OllamaApi
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.LoginStatus
+import io.writeopia.common.utils.env.EnvUtils
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.sdk.models.user.Tier
@@ -121,6 +122,10 @@ class AuthMenuViewModel(
         viewModelScope.launch {
             try {
                 val result = authApi.login(_email.value, _password.value)
+
+                EnvUtils.getAdminKey()?.let { adminKey ->
+                    authApi.enableUser(_email.value, adminKey)
+                }
 
                 _loginState.value = when (result) {
                     is ResultData.Complete -> {
