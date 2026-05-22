@@ -33,10 +33,10 @@ internal fun TextEditor(
     drawersFactory: DrawersFactory,
     modifier: Modifier = Modifier,
     keyFn: (DrawStory) -> Int = { drawStory ->
-        drawStory.desktopKey + (drawStory.cursor?.position ?: 0)
+        drawStory.desktopKey + (drawStory.cursor?.position?.toInt() ?: 0)
     },
     onDocumentLinkClick: (String) -> Unit,
-    onDrawingClick: (StoryStep, Int) -> Unit = { _, _ -> },
+    onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
     listState: LazyListState = rememberLazyListState(),
 ) {
     val storyState by noteEditorViewModel.toDrawWithDecoration.collectAsState()

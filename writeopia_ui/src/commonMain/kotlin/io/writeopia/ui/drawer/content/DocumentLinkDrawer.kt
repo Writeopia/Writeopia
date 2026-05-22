@@ -49,17 +49,17 @@ import io.writeopia.ui.model.DrawInfo
  */
 class DocumentLinkDrawer(
     private val modifier: Modifier = Modifier,
-    private val onSelected: (Boolean, Int) -> Unit,
+    private val onSelected: (Boolean, Double) -> Unit,
     private val dragIconWidth: Dp,
     private val config: DrawConfig,
-    private val onDragHover: (Int) -> Unit,
+    private val onDragHover: (Double) -> Unit,
     private val onDragStart: () -> Unit,
     private val onDragStop: () -> Unit,
     private val moveRequest: (Action.Move) -> Unit,
     private val endContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
     private val enabled: Boolean,
     private val paddingValues: PaddingValues = PaddingValues(0.dp),
-    private val receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
+    private val receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
     private val leadingIcon: ImageVector? = null,
     private val onClick: (String) -> Unit
 ) : StoryStepDrawer {
@@ -96,7 +96,7 @@ class DocumentLinkDrawer(
                 when (inBound) {
                     InBounds.OUTSIDE -> {}
                     InBounds.INSIDE_UP -> {
-                        val position = drawInfo.position - 1
+                        val position = drawInfo.position - 1.0
                         handleDrag(position, data)
                     }
 
@@ -171,7 +171,7 @@ class DocumentLinkDrawer(
         }
     }
 
-    private fun handleDrag(position: Int, data: DropInfo?) {
+    private fun handleDrag(position: Double, data: DropInfo?) {
         onDragHover(position)
 
         if (data != null) {

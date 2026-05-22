@@ -26,7 +26,7 @@ fun WriteopiaEditor(
     drawers: Map<Int, StoryStepDrawer>,
     storyState: DrawState,
     keyFn: (DrawStory) -> Int = { drawStory ->
-        drawStory.desktopKey + (drawStory.cursor?.position ?: 0)
+        drawStory.desktopKey + (drawStory.cursor?.position ?: 0).toInt()
     }
 ) {
     val content = storyState.stories

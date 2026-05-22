@@ -13,8 +13,8 @@ import io.writeopia.sdk.model.story.Selection
  */
 data class DrawInfo(
     val editable: Boolean = true,
-    val focus: Int? = null,
-    val position: Int = 0,
+    val focus: Double? = null,
+    val position: Double = 0.0,
     val selectMode: Boolean = false,
     val selection: Selection? = null,
     val extraData: Map<String, Any> = emptyMap()

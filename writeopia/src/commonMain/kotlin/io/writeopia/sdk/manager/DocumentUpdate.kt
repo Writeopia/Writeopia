@@ -20,12 +20,12 @@ interface DocumentUpdate {
     /**
      * Saves of [StoryStep] of a document
      */
-    suspend fun saveStoryStep(storyStep: StoryStep, position: Int, documentId: String)
+    suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String)
 
     /**
      * Updates one [StoryStep] of a document.
      */
-    suspend fun updateStoryStep(storyStep: StoryStep, position: Int, documentId: String)
+    suspend fun updateStoryStep(storyStep: StoryStep, position: Double, documentId: String)
 
     /**
      * Saves multiple [StoryStep]s with their database positions (as Double for intermediate values).

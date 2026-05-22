@@ -9,13 +9,20 @@ import io.writeopia.sdk.models.story.StoryStep
 object FindStory {
 
     fun previousFocus(
-        storyList: List<StoryStep>,
-        localPosition: Int,
+        storyMap: Map<Double, StoryStep>,
+        localPosition: Double,
         focusableTypes: Set<Int>
-    ): Int? {
-        for (i in (localPosition - 1) downTo 0) {
-            if (focusableTypes.contains(storyList[i].type.number)) {
-                return i
+    ): Double? {
+        val sortedKeys = storyMap.keys.sorted()
+        val currentIndex = sortedKeys.indexOf(localPosition)
+
+        if (currentIndex <= 0) return null
+
+        for (i in (currentIndex - 1) downTo 0) {
+            val position = sortedKeys[i]
+            val step = storyMap[position]
+            if (step != null && focusableTypes.contains(step.type.number)) {
+                return position
             }
         }
 

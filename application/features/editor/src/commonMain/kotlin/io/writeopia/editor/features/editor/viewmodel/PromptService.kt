@@ -60,7 +60,7 @@ object PromptService {
         prompt: String?,
         writeopiaManager: WriteopiaStateManager,
         ollamaRepository: OllamaRepository,
-        promptPosition: Int? = null
+        promptPosition: Double? = null
     ) {
         val position = promptPosition ?: writeopiaManager.getNextPosition()
 
@@ -89,7 +89,7 @@ object PromptService {
 
     private suspend fun Flow<ResultData<String>>.handleStream(
         writeopiaManager: WriteopiaStateManager,
-        position: Int
+        position: Double
     ) {
         this.onStart {
             writeopiaManager.loadingAtPosition(position)

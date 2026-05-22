@@ -12,7 +12,7 @@ import io.writeopia.sdk.utils.extensions.toEditState
  */
 class MovementHandler {
 
-    fun merge(stories: Map<Int, StoryStep>, info: Action.Merge): Map<Int, List<StoryStep>> {
+    fun merge(stories: Map<Double, StoryStep>, info: Action.Merge): Map<Double, List<StoryStep>> {
         val sender = info.sender
         val receiver = info.receiver
         val positionTo = info.positionTo
@@ -42,7 +42,7 @@ class MovementHandler {
         return mutableHistory
     }
 
-    fun move(stories: Map<Int, StoryStep>, move: Action.Move): Map<Int, StoryStep> {
+    fun move(stories: Map<Double, StoryStep>, move: Action.Move): Map<Double, StoryStep> {
 //        val mutable = stories.toMutableMap()
 //
 //        val movedStories = mutable[move.positionFrom]?.let { moveStory ->
@@ -68,16 +68,16 @@ class MovementHandler {
 
         if (move.positionFrom == move.positionTo + 1) return stories
 
-        return moveStories(stories, move.positionFrom.let(::setOf), move.positionTo)
+        return moveStories(stories, setOf(move.positionFrom), move.positionTo)
     }
 
-    fun move(stories: Map<Int, StoryStep>, move: Action.BulkMove): Map<Int, StoryStep> = moveStories(
+    fun move(stories: Map<Double, StoryStep>, move: Action.BulkMove): Map<Double, StoryStep> = moveStories(
         stories,
         move.positionFrom,
         move.positionTo
     )
 
-    private fun moveStories(stories: Map<Int, StoryStep>, from: Set<Int>, to: Int): Map<Int, StoryStep> {
+    private fun moveStories(stories: Map<Double, StoryStep>, from: Set<Double>, to: Double): Map<Double, StoryStep> {
         val mutable = stories.toMutableMap()
         val storiesToMove = from.mapNotNull { position -> mutable[position] }
         val moveAfter = mutable[to + 1]?.id ?: mutable

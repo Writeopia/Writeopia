@@ -11,7 +11,7 @@ import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.utils.files.useKmp
 
 /**
- * This class parses a document as a Map<Int, [StoryStep]> to a String following the Markdown
+ * This class parses a document as a Map<Double, [StoryStep]> to a String following the Markdown
  * syntax.
  */
 object DocumentToMarkdown : DocumentWriter {
@@ -46,7 +46,7 @@ object DocumentToMarkdown : DocumentWriter {
     }
 
     fun parse(
-        document: Map<Int, StoryStep>,
+        document: Map<Double, StoryStep>,
         parseStep: (StoryStep) -> Pair<ContentAdd, String?> = ::parseStep,
         prettyPrint: Boolean = false,
     ): String =
@@ -61,7 +61,7 @@ object DocumentToMarkdown : DocumentWriter {
         }
 
     private fun writeToWriter(
-        content: Map<Int, StoryStep>,
+        content: Map<Double, StoryStep>,
         kmpFileWriter: KmpFileWriter,
         parseStep: (StoryStep) -> Pair<ContentAdd, String?> = ::parseStep,
         prettyPrint: Boolean = false
@@ -70,7 +70,7 @@ object DocumentToMarkdown : DocumentWriter {
     }
 
     private fun writeTo(
-        content: Map<Int, StoryStep>,
+        content: Map<Double, StoryStep>,
         parseStep: (StoryStep) -> Pair<ContentAdd, String?> = ::parseStep,
         prettyPrint: Boolean = false,
         writeFn: (String?) -> Unit

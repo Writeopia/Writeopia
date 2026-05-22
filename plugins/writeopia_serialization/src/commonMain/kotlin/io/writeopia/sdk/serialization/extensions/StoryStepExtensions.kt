@@ -16,7 +16,7 @@ import io.writeopia.sdk.serialization.data.StoryTypeApi
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-fun StoryStep.toApi(position: Int): StoryStepApi =
+fun StoryStep.toApi(position: Double): StoryStepApi =
     StoryStepApi(
         id = this.id,
         type = this.type.toApi(),
@@ -29,7 +29,7 @@ fun StoryStep.toApi(position: Int): StoryStepApi =
         tags = this.tags.mapTo(mutableSetOf()) { it.toApi() },
         spans = this.spans.mapTo(mutableSetOf()) { it.toApi() },
         decoration = this.decoration.toApi(),
-        position = this.dbPosition ?: position.toDouble(),
+        position = this.dbPosition ?: position,
         documentLink = this.documentLink?.toApi()
     )
 
@@ -94,8 +94,7 @@ fun DocumentApi.toModel(): Document =
         title = title,
         content = content
             .sortedBy { it.position }
-            .mapIndexed { index, story -> index to story.toModel() }
-            .toMap(),
+            .associate { story -> story.position to story.toModel() },
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
         lastSyncedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),

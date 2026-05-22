@@ -24,7 +24,7 @@ import kotlin.time.ExperimentalTime
 class OnUpdateDocumentTracker(
     private val documentUpdate: DocumentUpdate,
     private val documentFilter: DocumentFilter = DocumentFilterObject,
-    private val onStoryStepUpdate: suspend (StoryStep, Int) -> Unit = { _, _ -> },
+    private val onStoryStepUpdate: suspend (StoryStep, Double) -> Unit = { _, _ -> },
     private val onDocumentUpdate: suspend (Document) -> Unit = {}
 ) : DocumentTracker {
 
@@ -38,43 +38,43 @@ class OnUpdateDocumentTracker(
         ) { (storyState, documentInfo), workspaceId ->
             Triple(storyState, documentInfo, workspaceId)
         }.collect { (storyState, documentInfo, workspaceId) ->
+            println("collected save. lastEdit: ${storyState.lastEdit} \n\n")
+
             when (val lastEdit = storyState.lastEdit) {
                 is LastEdit.LineEdition -> {
                     if (lastEdit.storyStep.ephemeral) return@collect
 
-                    withContext(NonCancellable) {
-                        documentUpdate.saveStoryStep(
-                            storyStep = lastEdit.storyStep.copy(
-                                localId = GenerateId.generate()
-                            ),
-                            position = lastEdit.position,
-                            documentId = documentInfo.id,
+                    documentUpdate.saveStoryStep(
+                        storyStep = lastEdit.storyStep.copy(
+                            localId = GenerateId.generate()
+                        ),
+                        position = lastEdit.position,
+                        documentId = documentInfo.id,
+                    )
+
+                    onStoryStepUpdate(lastEdit.storyStep, lastEdit.position)
+
+                    val stories = storyState.stories
+                    val titleFromContent = stories.values
+                        .firstOrNull { storyStep ->
+                            // Todo: Change the type of change to allow different types. The client code should decide what is a title
+                            // It is also interesting to inv
+                            storyStep.type == StoryTypes.TITLE.type
+                        }?.text
+
+                    documentUpdate.saveDocumentMetadata(
+                        Document(
+                            id = documentInfo.id,
+                            title = titleFromContent ?: documentInfo.title,
+                            createdAt = documentInfo.createdAt,
+                            lastUpdatedAt = Clock.System.now(),
+                            lastSyncedAt = documentInfo.lastSyncedAt,
+                            workspaceId = workspaceId,
+                            parentId = documentInfo.parentId,
+                            icon = documentInfo.icon,
+                            isLocked = documentInfo.isLocked,
                         )
-
-                        onStoryStepUpdate(lastEdit.storyStep, lastEdit.position)
-
-                        val stories = storyState.stories
-                        val titleFromContent = stories.values
-                            .firstOrNull { storyStep ->
-                                // Todo: Change the type of change to allow different types. The client code should decide what is a title
-                                // It is also interesting to inv
-                                storyStep.type == StoryTypes.TITLE.type
-                            }?.text
-
-                        documentUpdate.saveDocumentMetadata(
-                            Document(
-                                id = documentInfo.id,
-                                title = titleFromContent ?: documentInfo.title,
-                                createdAt = documentInfo.createdAt,
-                                lastUpdatedAt = Clock.System.now(),
-                                lastSyncedAt = documentInfo.lastSyncedAt,
-                                workspaceId = workspaceId,
-                                parentId = documentInfo.parentId,
-                                icon = documentInfo.icon,
-                                isLocked = documentInfo.isLocked,
-                            )
-                        )
-                    }
+                    )
                 }
 
                 LastEdit.Nothing -> {}
@@ -162,9 +162,11 @@ class OnUpdateDocumentTracker(
                     )
                 }
 
-                is LastEdit.LineBreakEdition -> withContext(NonCancellable) {
+                is LastEdit.LineBreakEdition -> {
                     val originalStep = lastEdit.originalStep
                     val newStep = lastEdit.newStep
+
+                    println("line break edition. original $originalStep, new step: $newStep \n\n")
 
                     if (!originalStep.second.ephemeral && !newStep.second.ephemeral) {
                         documentUpdate.saveStorySteps(

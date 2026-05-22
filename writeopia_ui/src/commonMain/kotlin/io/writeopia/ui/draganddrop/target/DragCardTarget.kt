@@ -14,7 +14,7 @@ expect fun DragCardTarget(
     modifier: Modifier = Modifier,
     dataToDrop: DropInfo,
     showIcon: Boolean = true,
-    position: Int,
+    position: Double,
     dragIconWidth: Dp = 16.dp,
     iconTintColor: Color = Color.LightGray,
     iconTintOnHover: Color = MaterialTheme.colorScheme.onBackground,

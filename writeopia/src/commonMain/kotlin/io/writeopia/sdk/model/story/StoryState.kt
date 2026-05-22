@@ -7,8 +7,8 @@ import io.writeopia.sdk.models.story.StoryStep
  * updated state and which one has the current focus.
  */
 data class StoryState(
-    val stories: Map<Int, StoryStep>,
+    val stories: Map<Double, StoryStep>,
     val lastEdit: LastEdit = LastEdit.Nothing,
-    val focus: Int? = null,
+    val focus: Double? = null,
     val selection: Selection = Selection.start()
 )

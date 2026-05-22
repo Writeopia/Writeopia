@@ -15,6 +15,6 @@ expect fun TextEditorScreen(
     playPresentation: () -> Unit,
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit = {},
-    onDrawingClick: (StoryStep, Int) -> Unit = { _, _ -> },
+    onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 )

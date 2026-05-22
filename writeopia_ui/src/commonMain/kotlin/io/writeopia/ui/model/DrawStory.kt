@@ -9,7 +9,7 @@ import io.writeopia.sdk.models.story.StoryStep
  */
 data class DrawStory(
     val storyStep: StoryStep,
-    val position: Int,
+    val position: Double,
     val isSelected: Boolean = false,
     val cursor: Selection? = null,
     val extraInfo: Map<String, Any> = emptyMap()

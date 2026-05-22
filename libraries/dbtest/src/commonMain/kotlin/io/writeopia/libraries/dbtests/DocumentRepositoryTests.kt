@@ -13,7 +13,6 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.random.Random
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
 class DocumentRepositoryTests(private val documentRepository: DocumentRepository) {
@@ -27,7 +26,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             title = "Document1",
             content = listOf(
                 (
-                    0 to StoryStep(
+                    0.0 to StoryStep(
                         type = StoryTypes.TEXT.type,
                         text = "text",
                         tags = setOf(TagInfo(Tag.H1))
@@ -111,7 +110,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         documentRepository.saveDocument(document)
         val loadedDocument = documentRepository.loadDocumentById(id, "workspaceId")
 
-        assertTrue(loadedDocument?.content?.isNotEmpty() == true)
+        assertEquals(loadedDocument?.content?.isNotEmpty(), true)
         assertEquals(document, loadedDocument)
     }
 
@@ -158,15 +157,15 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         documentRepository.saveDocument(document)
 
         val loadedDocument0 = documentRepository.loadDocumentById(id, workspaceId)
-        assertTrue(loadedDocument0?.favorite == false)
+        assertEquals(loadedDocument0?.favorite, false)
 
         documentRepository.favoriteDocumentByIds(setOf(id))
         val loadedDocument1 = documentRepository.loadDocumentById(id, workspaceId)
-        assertTrue(loadedDocument1?.favorite == true)
+        assertEquals(loadedDocument1?.favorite, true)
 
         documentRepository.unFavoriteDocumentByIds(setOf(id))
         val loadedDocument2 = documentRepository.loadDocumentById(id, workspaceId)
-        assertTrue(loadedDocument2?.favorite == false)
+        assertEquals(loadedDocument2?.favorite, false)
     }
 
     suspend fun saveSimpleDocumentAndLoadByParentId() {
@@ -200,33 +199,33 @@ fun simpleText(): Map<Int, StoryStep> = mapOf(
     )
 )
 
-fun simpleImage(): Map<Int, StoryStep> = mapOf(
-    0 to StoryStep(
+fun simpleImage(): Map<Double, StoryStep> = mapOf(
+    0.0 to StoryStep(
         localId = "0",
         type = StoryTypes.IMAGE.type,
     )
 )
 
-fun imageStepsList(): Map<Int, StoryStep> = mapOf(
-    0 to StoryStep(
+fun imageStepsList(): Map<Double, StoryStep> = mapOf(
+    0.0 to StoryStep(
         localId = "0",
         type = StoryTypes.IMAGE.type,
     ),
-    1 to StoryStep(
+    1.0 to StoryStep(
         localId = "1",
         type = StoryTypes.IMAGE.type,
     ),
-    2 to StoryStep(
+    2.0 to StoryStep(
         localId = "2",
         type = StoryTypes.IMAGE.type,
     ),
 )
 
-fun imageGroup(): Map<Int, StoryStep> {
+fun imageGroup(): Map<Double, StoryStep> {
     val groupId = GenerateId.generate()
 
     return mapOf(
-        0 to StoryStep(
+        0.0 to StoryStep(
             id = groupId,
             localId = "1",
             type = StoryTypes.GROUP_IMAGE.type,

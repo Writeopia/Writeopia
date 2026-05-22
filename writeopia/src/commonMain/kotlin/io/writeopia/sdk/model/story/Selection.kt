@@ -10,7 +10,7 @@ package io.writeopia.sdk.model.story
 data class Selection(
     val start: Int,
     val end: Int,
-    val position: Int,
+    val position: Double,
     val fromEnd: Boolean = false
 ) {
     fun key() = if (start == end) hashCode() else 0
@@ -18,14 +18,14 @@ data class Selection(
     fun sortedPositions(): Pair<Int, Int> = if (start < end) start to end else end to start
 
     companion object {
-        fun start(): Selection = Selection(0, 0, 0)
+        fun start(): Selection = Selection(0, 0, 0.0)
 
-        fun end(position: Int): Selection = Selection(Int.MAX_VALUE, Int.MAX_VALUE, position)
+        fun end(position: Double): Selection = Selection(Int.MAX_VALUE, Int.MAX_VALUE, position)
 
-        fun fromPosition(cursorPosition: Int, stepPosition: Int) =
+        fun fromPosition(cursorPosition: Int, stepPosition: Double) =
             Selection(cursorPosition, cursorPosition, stepPosition)
 
-        fun fromLastLine(cursorPosition: Int, stepPosition: Int) =
+        fun fromLastLine(cursorPosition: Int, stepPosition: Double) =
             Selection(cursorPosition, cursorPosition, stepPosition, fromEnd = true)
     }
 }

@@ -4,16 +4,16 @@ import io.writeopia.sdk.model.story.Section
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 
-fun Map<Int, StoryStep>.toEditState(): MutableMap<Int, List<StoryStep>> =
+fun Map<Double, StoryStep>.toEditState(): MutableMap<Double, List<StoryStep>> =
     mapValues { (_, story) -> listOf(story) }.toMutableMap()
 
-fun <T> Iterable<T>.associateWithPosition(): Map<Int, T> {
-    var acc = -1
+fun <T> Iterable<T>.associateWithPosition(): Map<Double, T> {
+    var acc = -1.0
 
     return associateBy { ++acc }
 }
 
-fun Map<Int, StoryStep>.noContent(): Boolean =
+fun Map<Double, StoryStep>.noContent(): Boolean =
     this.values.all { storyStep ->
         storyStep.run {
             url.isNullOrBlank() &&
@@ -23,10 +23,10 @@ fun Map<Int, StoryStep>.noContent(): Boolean =
         }
     }
 
-fun Map<Int, StoryStep>.previousTextStory(
-    position: Int,
+fun Map<Double, StoryStep>.previousTextStory(
+    position: Double,
     isTextStory: (StoryStep) -> Boolean
-): Pair<StoryStep, Int>? {
+): Pair<StoryStep, Double>? {
     var acc = position
     while (position > 0) {
         acc -= 1
@@ -66,9 +66,9 @@ fun Iterable<StoryStep>.toSections(): List<Section> {
         }
 }
 
-fun Map<Int, StoryStep>.toSections(): List<Section> = this.values.toSections()
+fun Map<Double, StoryStep>.toSections(): List<Section> = this.values.toSections()
 
-fun Map<Int, StoryStep>.previousTextStoryPosition(
-    position: Int,
+fun Map<Double, StoryStep>.previousTextStoryPosition(
+    position: Double,
     isTextStory: (StoryStep) -> Boolean
-): Int? = previousTextStory(position, isTextStory)?.second
+): Double? = previousTextStory(position, isTextStory)?.second

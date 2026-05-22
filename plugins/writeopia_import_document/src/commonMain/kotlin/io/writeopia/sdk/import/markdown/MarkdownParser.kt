@@ -18,7 +18,7 @@ object MarkdownParser {
                 acc++
                 val stepApi = parseLine(acc, i, trimmed)
 
-                InTextMarkdownHandler.handleMarkdown(stepApi.toModel()).toApi(acc)
+                InTextMarkdownHandler.handleMarkdown(stepApi.toModel()).toApi(acc.toDouble())
             }
     }
 

@@ -26,9 +26,9 @@ sealed class LastEdit {
      * A edition in the line was made, but the positions were not affected. In this case it is
      * possible to update just one line.
      */
-    data class LineEdition(val position: Int, val storyStep: StoryStep) : LastEdit()
+    data class LineEdition(val position: Double, val storyStep: StoryStep) : LastEdit()
 
-    data class InfoEdition(val position: Int, val storyStep: StoryStep) : LastEdit()
+    data class InfoEdition(val position: Double, val storyStep: StoryStep) : LastEdit()
 
     /**
      * Metadata was edited

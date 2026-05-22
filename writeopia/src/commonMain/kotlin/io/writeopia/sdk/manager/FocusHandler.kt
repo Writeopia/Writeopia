@@ -17,11 +17,16 @@ class FocusHandler(
     }
 ) {
 
-    fun findNextFocus(position: Int, stories: Map<Int, StoryStep>): Pair<Int, StoryStep>? {
-        for (i in position..stories.keys.last()) {
-            val storyStep = stories[i]
+    fun findNextFocus(position: Double, stories: Map<Double, StoryStep>): Pair<Double, StoryStep>? {
+        val sortedKeys = stories.keys.sorted()
+        val startIndex = sortedKeys.indexOfFirst { it >= position }
+        if (startIndex == -1) return null
+
+        for (i in startIndex until sortedKeys.size) {
+            val key = sortedKeys[i]
+            val storyStep = stories[key]
             if (storyStep != null && isMessageFn(storyStep.type.number)) {
-                return i to storyStep.copy(localId = GenerateId.generate())
+                return key to storyStep.copy(localId = GenerateId.generate())
             }
         }
 

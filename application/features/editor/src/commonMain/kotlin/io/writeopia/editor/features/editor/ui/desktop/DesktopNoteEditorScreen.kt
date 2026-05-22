@@ -62,7 +62,7 @@ fun DesktopNoteEditorScreen(
     drawersFactory: DrawersFactory,
     onPresentationClick: () -> Unit,
     onDocumentLinkClick: (String) -> Unit,
-    onDrawingClick: (StoryStep, Int) -> Unit = { _, _ -> },
+    onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
     onNewDrawingClick: () -> Unit = {},
     onDocumentDelete: () -> Unit,
     modifier: Modifier = Modifier,

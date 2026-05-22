@@ -63,7 +63,7 @@ fun LazyListScope.documentList(
             is MenuItemUi.DocumentUi -> {
                 DocumentItem(
                     item,
-                    position = i,
+                    position = i.toDouble(),
                     selectedDocument,
                     changeIcon = { id, icon, tint ->
                         changeIcon(id, icon, tint, IconChange.DOCUMENT)
@@ -75,7 +75,7 @@ fun LazyListScope.documentList(
             is MenuItemUi.FolderUi -> {
                 FolderItem(
                     item,
-                    position = i,
+                    position = i.toDouble(),
                     editFolder,
                     selectedFolder,
                     moveRequest,
@@ -93,7 +93,7 @@ fun LazyListScope.documentList(
 @Composable
 private fun FolderItem(
     folder: MenuItemUi.FolderUi,
-    position: Int,
+    position: Double,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
     navigateToFolder: (String) -> Unit,
     moveRequest: (MenuItemUi, String) -> Unit,
@@ -221,7 +221,7 @@ private fun FolderItem(
 @Composable
 private fun DocumentItem(
     document: MenuItemUi.DocumentUi,
-    position: Int,
+    position: Double,
     navigateToEditDocument: (String, String) -> Unit,
     changeIcon: (String, String, Int) -> Unit,
     modifier: Modifier = Modifier,

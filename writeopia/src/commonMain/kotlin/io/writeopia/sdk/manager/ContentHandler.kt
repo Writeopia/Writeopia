@@ -42,9 +42,9 @@ class ContentHandler(
 ) {
 
     fun changeStoryStepState(
-        currentStory: Map<Int, StoryStep>,
+        currentStory: Map<Double, StoryStep>,
         newState: StoryStep,
-        position: Int
+        position: Double
     ): StoryState? = if (currentStory[position] != null) {
         val newMap = currentStory.toMutableMap()
         newMap[position] = newState
@@ -56,7 +56,7 @@ class ContentHandler(
     /**
      * Removes tags from a StoryStep at a certain position
      */
-    fun removeTags(currentStory: Map<Int, StoryStep>, position: Int): StoryState {
+    fun removeTags(currentStory: Map<Double, StoryStep>, position: Double): StoryState {
         val newMap = currentStory.toMutableMap()
         val storyStep = newMap[position]
 
@@ -75,9 +75,9 @@ class ContentHandler(
     }
 
     fun changeStoryType(
-        currentStory: Map<Int, StoryStep>,
+        currentStory: Map<Double, StoryStep>,
         typeInfo: TypeInfo,
-        position: Int,
+        position: Double,
         commandInfo: CommandInfo?
     ): StoryState {
         val newMap = changeType(currentStory, typeInfo, position, commandInfo)
@@ -91,8 +91,8 @@ class ContentHandler(
     }
 
     fun bulkChangeStoryType(
-        currentStory: Map<Int, StoryStep>,
-        change: Iterable<Pair<Int, TypeInfo>>
+        currentStory: Map<Double, StoryStep>,
+        change: Iterable<Pair<Double, TypeInfo>>
     ): StoryState {
         val positions = change.map { it.first }.toSet()
         val newMap = change.fold(currentStory) { acc, (position, typeInfo) ->
@@ -107,7 +107,7 @@ class ContentHandler(
         // Collect only the changed steps with their db positions
         val changedSteps = positions.mapNotNull { position ->
             newMap[position]?.let { step ->
-                val dbPos = step.dbPosition ?: position.toDouble()
+                val dbPos = step.dbPosition ?: position
                 dbPos to step
             }
         }
@@ -122,11 +122,11 @@ class ContentHandler(
     }
 
     private fun changeType(
-        currentStory: Map<Int, StoryStep>,
+        currentStory: Map<Double, StoryStep>,
         typeInfo: TypeInfo,
-        position: Int,
+        position: Double,
         commandInfo: CommandInfo?
-    ): Map<Int, StoryStep> {
+    ): Map<Double, StoryStep> {
         val newMap = currentStory.toMutableMap()
         val storyStep = newMap[position]
         val commandTrigger = commandInfo?.commandTrigger
@@ -178,30 +178,30 @@ class ContentHandler(
 
     // Todo: Add unit test
     fun addNewContent(
-        currentStory: Map<Int, StoryStep>,
+        currentStory: Map<Double, StoryStep>,
         newStoryUnit: StoryStep,
-        position: Int
-    ): Map<Int, StoryStep> = currentStory.addElementInPosition(newStoryUnit, position)
+        position: Double
+    ): Map<Double, StoryStep> = currentStory.addElementInPosition(newStoryUnit, position)
 
     fun removeContent(
-        currentStory: Map<Int, StoryStep>,
-        position: Int
-    ): Map<Int, StoryStep> = currentStory.removeElementInPosition(position)
+        currentStory: Map<Double, StoryStep>,
+        position: Double
+    ): Map<Double, StoryStep> = currentStory.removeElementInPosition(position)
 
     fun removeBy(
-        currentStory: Map<Int, StoryStep>,
+        currentStory: Map<Double, StoryStep>,
         predicate: (StoryStep) -> Boolean
-    ): Map<Int, StoryStep> = currentStory.removeBy(predicate)
+    ): Map<Double, StoryStep> = currentStory.removeBy(predicate)
 
     /**
      * Adds a link to a new document inside a document
      */
     fun addPage(
-        currentStory: Map<Int, StoryStep>,
-        position: Int,
+        currentStory: Map<Double, StoryStep>,
+        position: Double,
         documentId: String,
         text: String
-    ): Map<Int, StoryStep> {
+    ): Map<Double, StoryStep> {
         val mutable = currentStory.toMutableMap()
         mutable[position] =
             StoryStep(
@@ -213,12 +213,12 @@ class ContentHandler(
     }
 
     fun addNewContentBulk(
-        currentStory: Map<Int, StoryStep>,
-        newStory: Map<Int, StoryStep>,
-    ): Map<Int, StoryStep> = currentStory.mergeSortedMaps(newStory)
+        currentStory: Map<Double, StoryStep>,
+        newStory: Map<Double, StoryStep>,
+    ): Map<Double, StoryStep> = currentStory.mergeSortedMaps(newStory)
 
     fun onLineBreak(
-        currentStory: Map<Int, StoryStep>,
+        currentStory: Map<Double, StoryStep>,
         lineBreakInfo: Action.LineBreak
     ): Pair<Int, StoryState> {
         val storyStep = lineBreakInfo.storyStep
@@ -228,7 +228,7 @@ class ContentHandler(
         val split = storyStep.text?.split("\n")
 
         // Get the current DB position (or use UI position as fallback)
-        val currentDbPos = storyStep.dbPosition ?: position.toDouble()
+        val currentDbPos = storyStep.dbPosition ?: position
 
         // Get the next line's DB position (or current + 1 if this is the last line)
         val nextDbPos = currentStory[position + 1]?.dbPosition ?: (currentDbPos + 1.0)
@@ -262,7 +262,7 @@ class ContentHandler(
             val newMutable = mutable.addElementsInPosition(listOf(newStory), position + 1)
             val insertElementLastPosition = position + 1
 
-            return insertElementLastPosition to StoryState(
+            return insertElementLastPosition.toInt() to StoryState(
                 stories = newMutable,
                 lastEdit = LastEdit.LineBreakEdition(
                     originalStep = currentDbPos to updatedOriginalStep,
@@ -291,7 +291,7 @@ class ContentHandler(
 
         val insertElementLastPosition = position + (split?.lastIndex ?: 0)
 
-        return insertElementLastPosition to StoryState(
+        return insertElementLastPosition.toInt() to StoryState(
             stories = newMutable,
             lastEdit = LastEdit.Whole,
             focus = insertElementLastPosition
@@ -303,7 +303,7 @@ class ContentHandler(
      */
     fun deleteStory(
         deleteInfo: Action.DeleteStory,
-        history: Map<Int, StoryStep>,
+        history: Map<Double, StoryStep>,
         documentId: String
     ): StoryState? {
         val step = deleteInfo.storyStep
@@ -312,9 +312,9 @@ class ContentHandler(
 
         return if (parentId == null) {
             mutableSteps.remove(deleteInfo.position)
-            val previousFocus: Int? =
+            val previousFocus: Double? =
                 FindStory.previousFocus(
-                    mutableSteps.values.toList(),
+                    mutableSteps,
                     deleteInfo.position,
                     focusableTypes
                 )
@@ -350,20 +350,20 @@ class ContentHandler(
         }
     }
 
-    fun eraseStory(deleteInfo: Action.EraseStory, history: Map<Int, StoryStep>): StoryState {
+    fun eraseStory(deleteInfo: Action.EraseStory, history: Map<Double, StoryStep>): StoryState {
         val mutableSteps = history.toMutableMap()
         val deletedStep = deleteInfo.storyStep
 
         mutableSteps.remove(deleteInfo.position)
-        val previousFocus: Int? =
+        val previousFocus: Double? =
             FindStory.previousFocus(
-                mutableSteps.values.toList(),
+                mutableSteps,
                 deleteInfo.position,
                 focusableTypes
             )
 
         var updatedPrevious: StoryStep? = null
-        var previousPosition: Int? = null
+        var previousPosition: Double? = null
 
         history.previousTextStory(deleteInfo.position, isTextStory)?.let { (previous, position) ->
             val updated = previous.copy(
@@ -379,10 +379,10 @@ class ContentHandler(
         val positionsFixed = normalized.values.associateWithPosition()
 
         val lastEdit = if (updatedPrevious != null && previousPosition != null) {
-            val dbPos = updatedPrevious.dbPosition ?: previousPosition.toDouble()
+            val dbPos = updatedPrevious!!.dbPosition ?: previousPosition!!
             LastEdit.EraseEdition(
                 deletedId = deletedStep.id,
-                updatedStep = dbPos to updatedPrevious
+                updatedStep = dbPos to updatedPrevious!!
             )
         } else {
             // No previous text story found, just delete
@@ -397,10 +397,10 @@ class ContentHandler(
      * the deleted stories.
      */
     fun bulkDeletion(
-        positions: Iterable<Int>,
-        stories: Map<Int, StoryStep>
-    ): Pair<Map<Int, StoryStep>, Map<Int, StoryStep>> {
-        val deleted = mutableMapOf<Int, StoryStep>()
+        positions: Iterable<Double>,
+        stories: Map<Double, StoryStep>
+    ): Pair<Map<Double, StoryStep>, Map<Double, StoryStep>> {
+        val deleted = mutableMapOf<Double, StoryStep>()
         val newState = stories.toMutableMap()
 
         positions.forEach { position ->
@@ -413,13 +413,13 @@ class ContentHandler(
     }
 
     fun previousTextStory(
-        storyMap: Map<Int, StoryStep>,
-        position: Int
-    ): Pair<StoryStep, Int>? = storyMap.previousTextStory(position, isTextStory)
+        storyMap: Map<Double, StoryStep>,
+        position: Double
+    ): Pair<StoryStep, Double>? = storyMap.previousTextStory(position, isTextStory)
 
     fun collapseItem(
-        storyMap: Map<Int, StoryStep>,
-        position: Int
+        storyMap: Map<Double, StoryStep>,
+        position: Double
     ): StoryState {
         val mutable = storyMap.toMutableMap()
         storyMap[position]?.let { step ->
@@ -427,22 +427,21 @@ class ContentHandler(
             mutable[position] = step.copy(tags = step.tags.merge(tagInfo))
         }
 
-        var i = position + 1
+        val sortedPositions = storyMap.keys.sorted().filter { it > position }
         var nextHeaderFound = false
 
-        while (!nextHeaderFound && storyMap.containsKey(i)) {
-            val step = storyMap[i]
+        for (pos in sortedPositions) {
+            if (nextHeaderFound) break
+            val step = storyMap[pos]
 
             if (step != null) {
                 if (step.tags.any { it.tag.isTitle() }) {
                     nextHeaderFound = true
                 } else {
                     val tagInfo = setOf(TagInfo(tag = Tag.HIDDEN_HX))
-                    mutable[i] = step.copy(tags = step.tags.merge(tagInfo))
+                    mutable[pos] = step.copy(tags = step.tags.merge(tagInfo))
                 }
             }
-
-            i += 1
         }
 
         return StoryState(
@@ -456,8 +455,8 @@ class ContentHandler(
      * This method expands a section of the document like a subtitle.
      */
     fun expandItem(
-        storyMap: Map<Int, StoryStep>,
-        position: Int
+        storyMap: Map<Double, StoryStep>,
+        position: Double
     ): StoryState {
         val mutable = storyMap.toMutableMap()
         storyMap[position]?.let { step ->
@@ -465,22 +464,21 @@ class ContentHandler(
                 step.copy(tags = step.tags.filterNotTo(mutableSetOf()) { it.tag == Tag.COLLAPSED })
         }
 
-        var i = position + 1
+        val sortedPositions = storyMap.keys.sorted().filter { it > position }
         var nextHeaderFound = false
 
-        while (!nextHeaderFound && storyMap.containsKey(i)) {
-            val step = storyMap[i]
+        for (pos in sortedPositions) {
+            if (nextHeaderFound) break
+            val step = storyMap[pos]
 
             if (step != null) {
                 if (step.tags.any { it.tag.isTitle() }) {
                     nextHeaderFound = true
                 } else {
                     val tagInfo = step.tags.filterNotTo(mutableSetOf()) { it.tag == Tag.HIDDEN_HX }
-                    mutable[i] = step.copy(tags = tagInfo)
+                    mutable[pos] = step.copy(tags = tagInfo)
                 }
             }
-
-            i += 1
         }
 
         return StoryState(

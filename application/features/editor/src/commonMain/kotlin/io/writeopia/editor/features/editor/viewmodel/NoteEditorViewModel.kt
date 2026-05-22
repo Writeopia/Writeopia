@@ -134,7 +134,7 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun aiTags()
 
-    fun aiSection(position: Int)
+    fun aiSection(position: Double)
 
     fun addPage()
 
@@ -146,7 +146,7 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun toggleFavorite()
 
-    fun receiveExternalFile(files: List<ExternalFile>, position: Int)
+    fun receiveExternalFile(files: List<ExternalFile>, position: Double)
 
     fun setTheme(isDarkTheme: Boolean)
 

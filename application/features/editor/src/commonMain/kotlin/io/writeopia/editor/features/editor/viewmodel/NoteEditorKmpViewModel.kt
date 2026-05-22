@@ -501,14 +501,14 @@ class NoteEditorKmpViewModel(
 
         onHeaderEditionCancel()
 
-        writeopiaManager.currentStory.value.stories[0]?.let { storyStep ->
+        writeopiaManager.currentStory.value.stories[0.0]?.let { storyStep ->
             val action = Action.StoryStateChange(
                 storyStep = storyStep.copy(
                     decoration = storyStep.decoration.copy(
                         backgroundColor = color
                     )
                 ),
-                position = 0
+                position = 0.0
             )
             writeopiaManager.changeStoryState(action)
         }
@@ -682,7 +682,7 @@ class NoteEditorKmpViewModel(
         documentPrompt(ollamaRepository::streamTags)
     }
 
-    override fun aiSection(position: Int) {
+    override fun aiSection(position: Double) {
         if (ollamaRepository == null) return
 
         val sectionText = writeopiaManager.getStory(position)?.text ?: return
@@ -703,7 +703,7 @@ class NoteEditorKmpViewModel(
                 prompt = prompt,
                 writeopiaManager,
                 ollamaRepository,
-                position + 1
+                position + 0.001
             )
         }
     }
@@ -743,7 +743,7 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun receiveExternalFile(files: List<ExternalFile>, position: Int) {
+    override fun receiveExternalFile(files: List<ExternalFile>, position: Double) {
         viewModelScope.launch(Dispatchers.Default) {
             val newFiles = workspaceConfigRepository
                 .loadWorkspacePath(authRepository.getUser().id)

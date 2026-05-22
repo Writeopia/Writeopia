@@ -52,13 +52,13 @@ class EquationDrawer(
     private val config: DrawConfig,
     private val dragIconWidth: Dp,
     private val enabled: Boolean,
-    private val onDragHover: (Int) -> Unit,
+    private val onDragHover: (Double) -> Unit,
     private val onDragStart: () -> Unit,
     private val onDragStop: () -> Unit,
     private val moveRequest: (Action.Move) -> Unit,
-    private val onSelected: (Boolean, Int) -> Unit,
-    private val receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
-    private val onEditClick: (Int) -> Unit,
+    private val onSelected: (Boolean, Double) -> Unit,
+    private val receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
+    private val onEditClick: (Double) -> Unit,
 ) : StoryStepDrawer {
 
     @Composable
@@ -172,7 +172,7 @@ class EquationDrawer(
         }
     }
 
-    private fun handleDrag(position: Int, data: DropInfo?) {
+    private fun handleDrag(position: Double, data: DropInfo?) {
         onDragHover(position)
 
         if (data != null) {

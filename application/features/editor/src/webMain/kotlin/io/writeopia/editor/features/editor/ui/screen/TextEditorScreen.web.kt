@@ -17,7 +17,7 @@ actual fun TextEditorScreen(
     playPresentation: () -> Unit,
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit,
-    onDrawingClick: (StoryStep, Int) -> Unit,
+    onDrawingClick: (StoryStep, Double) -> Unit,
     modifier: Modifier,
 ) {
     DesktopNoteEditorScreen(
