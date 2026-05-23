@@ -227,36 +227,27 @@ class ContentHandler(
         val mutable = currentStory.toMutableMap()
         val split = storyStep.text?.split("\n")
 
-        // Get the current DB position (or use UI position as fallback)
-        val currentDbPos = storyStep.dbPosition ?: position
-
-        // Get the next line's DB position (or current + 1 if this is the last line)
-        val nextDbPos = currentStory[position + 1]?.dbPosition ?: (currentDbPos + 1.0)
+        val nextPosition = storyStep.nextPosition ?: (position + 1.0)
 
         // Update the original line with the first part of the split text
         val updatedOriginalStep = if (split?.isNotEmpty() == true) {
             lineBreakInfo.storyStep.copy(
                 text = split[0],
                 localId = GenerateId.generate(),
-                dbPosition = currentDbPos
             )
         } else {
-            storyStep.copy(dbPosition = currentDbPos)
+            storyStep
         }
+
         mutable[position] = updatedOriginalStep
 
-        // Handle the case with exactly one new line (most common case)
-        // For single line break, we can use LineBreakEdition for efficiency
         if (split?.size == 2) {
-            // Calculate intermediate DB position for the new line
-            val newDbPos = (currentDbPos + nextDbPos) / 2.0
-
             val newStory = StoryStep(
                 localId = GenerateId.generate(),
                 type = lineBreakMap(storyStep.type),
                 text = split[1],
                 tags = carryOverTags,
-                dbPosition = newDbPos
+                dbPosition = nextPosition
             )
 
             val newMutable = mutable.addElementsInPosition(listOf(newStory), position + 1)
@@ -265,25 +256,21 @@ class ContentHandler(
             return insertElementLastPosition.toInt() to StoryState(
                 stories = newMutable,
                 lastEdit = LastEdit.LineBreakEdition(
-                    originalStep = currentDbPos to updatedOriginalStep,
-                    newStep = newDbPos to newStory
+                    originalStep = position to updatedOriginalStep,
+                    newStep = nextPosition to newStory
                 ),
                 focus = insertElementLastPosition
             )
         }
 
         // For multiple line breaks (pasting text with multiple newlines), fall back to Whole
-        val newMutable = split?.drop(1)?.mapIndexed { index, text ->
+        val newMutable = split?.drop(1)?.map { text ->
             // Calculate intermediate positions for each new line
-            val fraction = (index + 1).toDouble() / (split.size)
-            val intermediateDbPos = currentDbPos + (nextDbPos - currentDbPos) * fraction
-
             StoryStep(
                 localId = GenerateId.generate(),
                 type = lineBreakMap(storyStep.type),
                 text = text,
                 tags = carryOverTags,
-                dbPosition = intermediateDbPos
             )
         }?.let { stories ->
             mutable.addElementsInPosition(stories, position + 1)
