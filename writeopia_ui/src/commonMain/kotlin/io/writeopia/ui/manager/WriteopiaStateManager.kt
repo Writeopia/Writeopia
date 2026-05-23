@@ -647,10 +647,11 @@ class WriteopiaStateManager(
 
         if (listTypes.contains(typeInfo.storyType.number)) {
             coroutineScope.launch {
+                val nextPosition = getStory(position)?.nextPosition ?: (position + 1)
                 val newState = writeopiaManager.generateSuggestionsList(
                     storyState = { _currentStory.value },
                     storyType = typeInfo.storyType,
-                    position = position + 1,
+                    position = nextPosition,
                     context = getDocumentText(),
                     userId = getUserId(),
                 )
@@ -1202,14 +1203,10 @@ class WriteopiaStateManager(
     fun getNextPosition(): Double? =
         if (isOnSelection) {
             val maxSelected = _onEditPositions.value.maxOrNull() ?: return null
-            val sortedPositions = getStories().keys.sorted()
-            val maxIndex = sortedPositions.indexOf(maxSelected)
-            if (maxIndex < sortedPositions.lastIndex) sortedPositions[maxIndex + 1] else null
+            getStory(maxSelected)?.nextPosition
         } else {
-            val sortedPositions = getStories().keys.sorted()
             val currentPos = currentStory.value.selection.position
-            val currentIndex = sortedPositions.indexOf(currentPos)
-            if (currentIndex < sortedPositions.lastIndex) sortedPositions[currentIndex + 1] else null
+            getStory(currentPos)?.nextPosition
         }
 
     fun positionAfterSelection(): Double? =
