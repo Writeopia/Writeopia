@@ -32,6 +32,7 @@ import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.repository.UserRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
+import io.writeopia.sdk.utils.NextPositionCalculator
 import io.writeopia.sdk.utils.extensions.toEditState
 import io.writeopia.ui.backstack.BackstackHandler
 import io.writeopia.ui.backstack.BackstackInform
@@ -380,10 +381,14 @@ class WriteopiaStateManager(
             parentFolder = parentFolder
         )
 
-        backStackManager.addState(storyState)
+        val withNextPositions = storyState.copy(
+            stories = NextPositionCalculator.calculate(storyState.stories)
+        )
+
+        backStackManager.addState(withNextPositions)
 
         _documentInfo.value = documentInfo
-        _currentStory.value = storyState
+        _currentStory.value = withNextPositions
     }
 
     /**
@@ -404,8 +409,9 @@ class WriteopiaStateManager(
         _currentStory.value = state
         backStackManager.addState(state)
         val normalized = stepsNormalizer(stories.toEditState())
+        val withNextPositions = NextPositionCalculator.calculate(normalized)
 
-        _currentStory.value = StoryState(normalized, LastEdit.Nothing)
+        _currentStory.value = StoryState(withNextPositions, LastEdit.Nothing)
         _documentInfo.value = document.info()
     }
 
@@ -1093,7 +1099,7 @@ class WriteopiaStateManager(
         val currentSelection = _onEditPositions.value
         if (currentSelection.isEmpty()) return false
 
-        val sortedPositions = getStories().keys.sorted()
+        val stories = getStories()
         val minPosition = currentSelection.min()
         val maxPosition = currentSelection.max()
 
@@ -1103,10 +1109,9 @@ class WriteopiaStateManager(
 
         return if (anchor == maxPosition) {
             // Extending upward from anchor at bottom: add position above current min
-            val minIndex = sortedPositions.indexOf(minPosition)
-            if (minIndex > 1) { // Don't select position 0 (title)
-                val newPosition = sortedPositions[minIndex - 1]
-                _onEditPositions.value = currentSelection + newPosition
+            val previousPosition = stories[minPosition]?.previousPosition
+            if (previousPosition != null && previousPosition > 0.0) { // Don't select position 0 (title)
+                _onEditPositions.value = currentSelection + previousPosition
                 true
             } else {
                 false
@@ -1131,10 +1136,9 @@ class WriteopiaStateManager(
         val currentSelection = _onEditPositions.value
         if (currentSelection.isEmpty()) return false
 
-        val sortedPositions = getStories().keys.sorted()
+        val stories = getStories()
         val minPosition = currentSelection.min()
         val maxPosition = currentSelection.max()
-        val lastIndex = sortedPositions.lastIndex
 
         // If anchor is unknown (mouse selection), set it to the top of selection
         val anchor = keyboardSelectionAnchor ?: minPosition
@@ -1142,10 +1146,9 @@ class WriteopiaStateManager(
 
         return if (anchor == minPosition) {
             // Extending downward from anchor at top: add position below current max
-            val maxIndex = sortedPositions.indexOf(maxPosition)
-            if (maxIndex < lastIndex) {
-                val newPosition = sortedPositions[maxIndex + 1]
-                _onEditPositions.value = currentSelection + newPosition
+            val nextPosition = stories[maxPosition]?.nextPosition
+            if (nextPosition != null) {
+                _onEditPositions.value = currentSelection + nextPosition
                 true
             } else {
                 false

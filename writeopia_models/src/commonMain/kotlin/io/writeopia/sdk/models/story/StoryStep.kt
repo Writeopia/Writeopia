@@ -44,7 +44,19 @@ data class StoryStep(
      * values (e.g., 1.5 between 1 and 2) for efficient line break saves. When null, the UI
      * position should be used as the default.
      */
-    val dbPosition: Double? = null
+    val dbPosition: Double? = null,
+    /**
+     * The position of the next StoryStep in the document. This is used to efficiently calculate
+     * intermediate positions when inserting new content. It starts as null and is populated
+     * when the document is loaded or created.
+     */
+    val nextPosition: Double? = null,
+    /**
+     * The position of the previous StoryStep in the document. This is used to efficiently calculate
+     * intermediate positions when inserting new content. It starts as null and is populated
+     * when the document is loaded or created.
+     */
+    val previousPosition: Double? = null
 ) {
 
     val key: Int = localId.hashCode()
