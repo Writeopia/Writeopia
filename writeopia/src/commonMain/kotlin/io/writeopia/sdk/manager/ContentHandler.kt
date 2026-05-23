@@ -229,28 +229,44 @@ class ContentHandler(
         val next = storyStep.nextPosition
         val nextPosition = if (next != null) (next + position) / 2 else position + 1
 
+        println("online break. next $next, position: $position")
+
         // Update the original line with the first part of the split text
+        // The original step now points to the new step as its next
         val updatedOriginalStep = if (split?.isNotEmpty() == true) {
             lineBreakInfo.storyStep.copy(
                 text = split[0],
                 localId = GenerateId.generate(),
+                nextPosition = nextPosition
             )
         } else {
-            storyStep
+            storyStep.copy(nextPosition = nextPosition)
         }
 
         mutable[position] = updatedOriginalStep
 
         if (split?.size == 2) {
+            // The new story has:
+            // - previousPosition pointing to the original
+            // - nextPosition pointing to the original's old next
             val newStory = StoryStep(
                 localId = GenerateId.generate(),
                 type = lineBreakMap(storyStep.type),
                 text = split[1],
                 tags = carryOverTags,
-                dbPosition = nextPosition
+                dbPosition = nextPosition,
+                previousPosition = position,
+                nextPosition = next
             )
 
             mutable[nextPosition] = newStory
+
+            // Update the story that was after the original to point back to the new story
+            if (next != null) {
+                mutable[next]?.let { nextStory ->
+                    mutable[next] = nextStory.copy(previousPosition = nextPosition)
+                }
+            }
 
             println("next focus: $nextPosition")
 

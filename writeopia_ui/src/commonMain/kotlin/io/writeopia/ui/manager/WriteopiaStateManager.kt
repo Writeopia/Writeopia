@@ -265,6 +265,7 @@ class WriteopiaStateManager(
                     )
                 }
                 .values
+                // Todo: Consider changing insertion order instead of sorting
                 .sortedBy { drawStory -> drawStory.position }
                 .let { drawStories -> drawStateModify(drawStories, dragPosition).drop(1) }
 
@@ -953,11 +954,11 @@ class WriteopiaStateManager(
         }
     }
 
-    fun moveToNext(cursor: Int, positions: Int = 1) {
+    fun moveToNext(cursor: Int, position: Int = 1) {
         val lastIndex = (_currentStory.value.stories.size - 1).toDouble()
 
         val focusPosition = currentFocus()?.let { (position, _) -> position } ?: 0.0
-        nextFocusOrCreate(min(focusPosition + positions, lastIndex), cursor)
+        nextFocusOrCreate(min(focusPosition, lastIndex), cursor)
     }
 
     fun moveToPrevious(cursor: Int, positions: Int = 1) {
