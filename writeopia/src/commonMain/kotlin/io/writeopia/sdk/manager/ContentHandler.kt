@@ -14,7 +14,6 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
-import io.writeopia.sdk.utils.extensions.associateWithPosition
 import io.writeopia.sdk.utils.extensions.previousTextStory
 import io.writeopia.sdk.utils.extensions.toEditState
 import io.writeopia.sdk.utils.iterables.addElementInPosition
@@ -227,7 +226,8 @@ class ContentHandler(
         val mutable = currentStory.toMutableMap()
         val split = storyStep.text?.split("\n")
 
-        val nextPosition = storyStep.nextPosition ?: (position + 1.0)
+        val next = storyStep.nextPosition
+        val nextPosition = if (next != null) (next + position) / 2 else position + 1
 
         // Update the original line with the first part of the split text
         val updatedOriginalStep = if (split?.isNotEmpty() == true) {
@@ -250,16 +250,17 @@ class ContentHandler(
                 dbPosition = nextPosition
             )
 
-            val newMutable = mutable.addElementsInPosition(listOf(newStory), position + 1)
-            val insertElementLastPosition = position + 1
+            mutable[nextPosition] = newStory
 
-            return insertElementLastPosition.toInt() to StoryState(
-                stories = newMutable,
+            println("next focus: $nextPosition")
+
+            return nextPosition.toInt() to StoryState(
+                stories = mutable,
                 lastEdit = LastEdit.LineBreakEdition(
                     originalStep = position to updatedOriginalStep,
                     newStep = nextPosition to newStory
                 ),
-                focus = insertElementLastPosition
+                focus = nextPosition
             )
         }
 
@@ -307,9 +308,8 @@ class ContentHandler(
                 )
 
             val normalized = stepsNormalizer(mutableSteps.toEditState())
-            val positionsFixed = normalized.values.associateWithPosition()
             StoryState(
-                positionsFixed,
+                normalized,
                 lastEdit = LastEdit.DeleteEdition(deletedId = step.id, documentId = documentId),
                 focus = previousFocus
             )
@@ -327,10 +327,9 @@ class ContentHandler(
 
                 mutableSteps[deleteInfo.position] = newStoryUnit.copy(parentId = null)
                 val normalized = stepsNormalizer(mutableSteps.toEditState())
-                val positionsFixed = normalized.values.associateWithPosition()
                 // For group deletion, use the group's id
                 StoryState(
-                    positionsFixed,
+                    normalized,
                     lastEdit = LastEdit.DeleteEdition(deletedId = step.id, documentId = documentId)
                 )
             }
@@ -363,20 +362,19 @@ class ContentHandler(
         }
 
         val normalized = stepsNormalizer(mutableSteps.toEditState())
-        val positionsFixed = normalized.values.associateWithPosition()
 
         val lastEdit = if (updatedPrevious != null && previousPosition != null) {
-            val dbPos = updatedPrevious!!.dbPosition ?: previousPosition!!
+            val dbPos = updatedPrevious.dbPosition ?: previousPosition
             LastEdit.EraseEdition(
                 deletedId = deletedStep.id,
-                updatedStep = dbPos to updatedPrevious!!
+                updatedStep = dbPos to updatedPrevious
             )
         } else {
             // No previous text story found, just delete
             LastEdit.DeleteEdition(deletedId = deletedStep.id, documentId = "")
         }
 
-        return StoryState(positionsFixed, lastEdit = lastEdit, focus = previousFocus)
+        return StoryState(normalized, lastEdit = lastEdit, focus = previousFocus)
     }
 
     /**

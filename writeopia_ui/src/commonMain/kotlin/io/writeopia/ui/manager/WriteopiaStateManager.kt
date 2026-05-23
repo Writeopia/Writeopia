@@ -265,7 +265,7 @@ class WriteopiaStateManager(
                     )
                 }
                 .values
-                .toList()
+                .sortedBy { drawStory -> drawStory.position }
                 .let { drawStories -> drawStateModify(drawStories, dragPosition).drop(1) }
 
             DrawState(toDrawStories, focus)
