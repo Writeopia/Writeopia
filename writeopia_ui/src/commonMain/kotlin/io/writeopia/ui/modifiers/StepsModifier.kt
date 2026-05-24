@@ -17,7 +17,8 @@ object StepsModifier {
         val onDragSpace = StoryStep(type = StoryTypes.ON_DRAG_SPACE.type, localId = "onDragSpace")
         val lastSpace = StoryStep(type = StoryTypes.LAST_SPACE.type)
 
-        val parsed = stories.foldIndexed(emptyList<DrawStory>()) { index, acc, drawStory ->
+        val parsed = stories.fold(emptyList<DrawStory>()) { acc, drawStory ->
+            val index = drawStory.position
             val lastStep = acc.lastOrNull { draw ->
                 draw.storyStep.type != StoryTypes.SPACE.type &&
                     draw.storyStep.type != StoryTypes.ON_DRAG_SPACE.type
@@ -32,9 +33,11 @@ object StepsModifier {
             val currentIsCodeBlock = drawStory.storyStep.type == StoryTypes.CODE_BLOCK.type
             val isSpaceInsideCodeBlock = lastIsCodeBlock && currentIsCodeBlock
 
+            println("dragPosition: $dragPosition")
+
             //Todo: Fix this!
             val spaceStory =
-                if (index - 1 == dragPosition.toInt()) onDragSpace else space()
+                if (index == dragPosition) onDragSpace else space()
 
             val spaceExtraInfo = if (isSpaceInsideCodeBlock) {
                 mapOf(IS_INSIDE_CODE_BLOCK_KEY to true)
@@ -44,7 +47,7 @@ object StepsModifier {
 
             val spaceDraw = DrawStory(
                 storyStep = spaceStory.copy(tags = newTags),
-                position = (index - 1).toDouble(),
+                position = (index - 1),
                 extraInfo = spaceExtraInfo
             )
 
