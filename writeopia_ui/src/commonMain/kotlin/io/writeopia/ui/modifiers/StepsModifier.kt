@@ -24,6 +24,8 @@ object StepsModifier {
                     draw.storyStep.type != StoryTypes.ON_DRAG_SPACE.type
             }?.storyStep
 
+            println("dragPosition: $dragPosition")
+
             val lastTags = lastStep?.tags ?: emptySet()
             val currentTags = drawStory.storyStep.tags
             val newTags = mergeTags(lastTags, currentTags)
@@ -32,8 +34,7 @@ object StepsModifier {
             val lastIsCodeBlock = lastStep?.type == StoryTypes.CODE_BLOCK.type
             val currentIsCodeBlock = drawStory.storyStep.type == StoryTypes.CODE_BLOCK.type
             val isSpaceInsideCodeBlock = lastIsCodeBlock && currentIsCodeBlock
-            
-            //Todo: Fix this!
+
             val spaceStory =
                 if (index == dragPosition) onDragSpace else space()
 
@@ -52,8 +53,16 @@ object StepsModifier {
             acc + spaceDraw + drawStory
         }
 
+        // Add space after the last story that can be highlighted when dragging
+        // When dragPosition is -10, it means we're dragging to the end (no nextPosition)
+        val lastSpaceStory = if (dragPosition == -10.0) {
+            onDragSpace
+        } else {
+            lastSpace
+        }
+
         val lastIndex = parsed.lastIndex
-        val fullStory = parsed + DrawStory(storyStep = lastSpace, position = lastIndex.toDouble())
+        val fullStory = parsed + DrawStory(storyStep = lastSpaceStory, position = lastIndex.toDouble())
 
         val fixedPositions = addPositionToTags(fullStory)
         val fixedCodeBlockPositions = addPositionToCodeBlocks(fixedPositions)

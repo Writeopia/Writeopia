@@ -116,7 +116,7 @@ class AiAnswerDrawer(
                     }
 
                     InBounds.INSIDE_DOWN -> {
-                        handleDrag(drawInfo.nextPosition ?: drawInfo.position, data)
+                        handleDrag(drawInfo.nextPosition ?: -10.0, data)
                     }
                 }
 
