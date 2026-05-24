@@ -32,9 +32,7 @@ object StepsModifier {
             val lastIsCodeBlock = lastStep?.type == StoryTypes.CODE_BLOCK.type
             val currentIsCodeBlock = drawStory.storyStep.type == StoryTypes.CODE_BLOCK.type
             val isSpaceInsideCodeBlock = lastIsCodeBlock && currentIsCodeBlock
-
-            println("dragPosition: $dragPosition")
-
+            
             //Todo: Fix this!
             val spaceStory =
                 if (index == dragPosition) onDragSpace else space()

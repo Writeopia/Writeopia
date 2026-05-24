@@ -89,12 +89,11 @@ class DividerDrawer(
                 when (inBound) {
                     InBounds.OUTSIDE -> {}
                     InBounds.INSIDE_UP -> {
-                        val position = drawInfo.previousPosition ?: drawInfo.position
-                        handleDrag(position, data)
+                        handleDrag(drawInfo.position, data)
                     }
 
                     InBounds.INSIDE_DOWN -> {
-                        handleDrag(drawInfo.position, data)
+                        handleDrag(drawInfo.nextPosition ?: drawInfo.position, data)
                     }
                 }
 

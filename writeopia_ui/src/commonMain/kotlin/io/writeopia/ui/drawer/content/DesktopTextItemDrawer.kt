@@ -104,12 +104,12 @@ class DesktopTextItemDrawer(
                 when (inBound) {
                     InBounds.OUTSIDE -> {}
                     InBounds.INSIDE_UP -> {
-                        val position = drawInfo.previousPosition ?: drawInfo.position
+                        val position = drawInfo.position
                         handleDrag(position, data)
                     }
 
                     InBounds.INSIDE_DOWN -> {
-                        handleDrag(drawInfo.position, data)
+                        handleDrag(drawInfo.nextPosition ?: drawInfo.position, data)
                     }
                 }
 

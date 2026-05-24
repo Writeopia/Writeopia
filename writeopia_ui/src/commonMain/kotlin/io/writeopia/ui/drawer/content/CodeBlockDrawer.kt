@@ -110,12 +110,11 @@ class CodeBlockDrawer(
                 when (inBound) {
                     InBounds.OUTSIDE -> {}
                     InBounds.INSIDE_UP -> {
-                        val pos = drawInfo.previousPosition ?: drawInfo.position
-                        handleDrag(pos, data)
+                        handleDrag(drawInfo.position, data)
                     }
 
                     InBounds.INSIDE_DOWN -> {
-                        handleDrag(drawInfo.position, data)
+                        handleDrag(drawInfo.nextPosition ?: drawInfo.position, data)
                     }
                 }
 
