@@ -112,13 +112,12 @@ class AiAnswerDrawer(
                 when (inBound) {
                     InBounds.OUTSIDE -> {}
                     InBounds.INSIDE_UP -> {
-                        val position = drawInfo.position - 1
+                        val position = drawInfo.previousPosition ?: drawInfo.position
                         handleDrag(position, data)
                     }
 
                     InBounds.INSIDE_DOWN -> {
-                        val position = drawInfo.position
-                        handleDrag(position, data)
+                        handleDrag(drawInfo.position, data)
                     }
                 }
 
