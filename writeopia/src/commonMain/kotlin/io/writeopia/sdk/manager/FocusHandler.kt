@@ -25,4 +25,13 @@ class FocusHandler(
             }
             ?.key
     }
+
+    fun findPreviousFocus(position: Double, stories: Map<Double, StoryStep>): Double? {
+        return stories.entries
+            .sortedByDescending { (key, _) -> key }
+            .find { (key, storyStep) ->
+                key < position && isMessageFn(storyStep.type.number)
+            }
+            ?.key
+    }
 }

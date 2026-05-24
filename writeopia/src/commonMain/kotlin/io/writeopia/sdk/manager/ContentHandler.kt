@@ -14,7 +14,6 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
-import io.writeopia.sdk.utils.extensions.previousTextStory
 import io.writeopia.sdk.utils.extensions.toEditState
 import io.writeopia.sdk.utils.iterables.addElementInPosition
 import io.writeopia.sdk.utils.iterables.addElementsInPosition
@@ -37,6 +36,9 @@ class ContentHandler(
     private val lineBreakMap: (StoryType) -> StoryType = ::defaultLineBreakMap,
     private val isTextStory: (StoryStep) -> Boolean = { story ->
         focusableTypes.contains(story.type.number)
+    },
+    private val focusHandler: FocusHandler = FocusHandler { typeNumber ->
+        focusableTypes.contains(typeNumber)
     }
 ) {
 
@@ -315,13 +317,28 @@ class ContentHandler(
         val mutableSteps = history.toMutableMap()
 
         return if (parentId == null) {
+            // Update position references before removing
+            val prevPos = step.previousPosition
+            val nextPos = step.nextPosition
+
             mutableSteps.remove(deleteInfo.position)
+
+            // Update the previous story's nextPosition to skip the deleted story
+            if (prevPos != null) {
+                mutableSteps[prevPos]?.let { prevStory ->
+                    mutableSteps[prevPos] = prevStory.copy(nextPosition = nextPos)
+                }
+            }
+
+            // Update the next story's previousPosition to skip the deleted story
+            if (nextPos != null) {
+                mutableSteps[nextPos]?.let { nextStory ->
+                    mutableSteps[nextPos] = nextStory.copy(previousPosition = prevPos)
+                }
+            }
+
             val previousFocus: Double? =
-                FindStory.previousFocus(
-                    mutableSteps,
-                    deleteInfo.position,
-                    focusableTypes
-                )
+                focusHandler.findPreviousFocus(deleteInfo.position, mutableSteps)
 
             val normalized = stepsNormalizer(mutableSteps.toEditState())
             StoryState(
@@ -356,34 +373,44 @@ class ContentHandler(
         val mutableSteps = history.toMutableMap()
         val deletedStep = deleteInfo.storyStep
 
+        // Get position references before removing
+        val prevPos = deletedStep.previousPosition
+        val nextPos = deletedStep.nextPosition
+
         mutableSteps.remove(deleteInfo.position)
+
+        // Update the next story's previousPosition to skip the deleted story
+        if (nextPos != null) {
+            mutableSteps[nextPos]?.let { nextStory ->
+                mutableSteps[nextPos] = nextStory.copy(previousPosition = prevPos)
+            }
+        }
+
         val previousFocus: Double? =
-            FindStory.previousFocus(
-                mutableSteps,
-                deleteInfo.position,
-                focusableTypes
-            )
+            focusHandler.findPreviousFocus(deleteInfo.position, mutableSteps)
 
         var updatedPrevious: StoryStep? = null
-        var previousPosition: Double? = null
 
-        history.previousTextStory(deleteInfo.position, isTextStory)?.let { (previous, position) ->
-            val updated = previous.copy(
-                text = previous.text + deleteInfo.storyStep.text,
-                localId = GenerateId.generate()
-            )
-            mutableSteps[position] = updated
-            updatedPrevious = updated
-            previousPosition = position
+        if (previousFocus != null) {
+            mutableSteps[previousFocus]?.let { previous ->
+                // Update the previous story's nextPosition to skip the deleted story
+                // and merge the text from the deleted story
+                val updated = previous.copy(
+                    text = previous.text + deleteInfo.storyStep.text,
+                    localId = GenerateId.generate(),
+                    nextPosition = nextPos
+                )
+                mutableSteps[previousFocus] = updated
+                updatedPrevious = updated
+            }
         }
 
         val normalized = stepsNormalizer(mutableSteps.toEditState())
 
-        val lastEdit = if (updatedPrevious != null && previousPosition != null) {
-            val dbPos = updatedPrevious.dbPosition ?: previousPosition
+        val lastEdit = if (updatedPrevious != null && previousFocus != null) {
             LastEdit.EraseEdition(
                 deletedId = deletedStep.id,
-                updatedStep = dbPos to updatedPrevious
+                updatedStep = previousFocus to updatedPrevious
             )
         } else {
             // No previous text story found, just delete
@@ -416,7 +443,11 @@ class ContentHandler(
     fun previousTextStory(
         storyMap: Map<Double, StoryStep>,
         position: Double
-    ): Pair<StoryStep, Double>? = storyMap.previousTextStory(position, isTextStory)
+    ): Pair<StoryStep, Double>? {
+        val prevPosition = focusHandler.findPreviousFocus(position, storyMap) ?: return null
+        val prevStory = storyMap[prevPosition] ?: return null
+        return prevStory.copy(localId = GenerateId.generate()) to prevPosition
+    }
 
     fun collapseItem(
         storyMap: Map<Double, StoryStep>,

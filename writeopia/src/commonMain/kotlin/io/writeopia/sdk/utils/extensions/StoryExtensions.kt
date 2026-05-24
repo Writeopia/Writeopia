@@ -1,7 +1,6 @@
 package io.writeopia.sdk.utils.extensions
 
 import io.writeopia.sdk.model.story.Section
-import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 
 fun Map<Double, StoryStep>.toEditState(): MutableMap<Double, List<StoryStep>> =
@@ -22,24 +21,6 @@ fun Map<Double, StoryStep>.noContent(): Boolean =
                 steps.isEmpty()
         }
     }
-
-fun Map<Double, StoryStep>.previousTextStory(
-    position: Double,
-    isTextStory: (StoryStep) -> Boolean
-): Pair<StoryStep, Double>? {
-    var acc = position
-    while (position > 0) {
-        acc -= 1
-
-        val storyStep = this[acc]
-
-        if (storyStep?.let(isTextStory) == true) {
-            return storyStep.copy(localId = GenerateId.generate()) to acc
-        }
-    }
-
-    return null
-}
 
 fun Iterable<StoryStep>.toSections(): List<Section> {
     if (this.toList().isEmpty()) return emptyList()
@@ -67,8 +48,3 @@ fun Iterable<StoryStep>.toSections(): List<Section> {
 }
 
 fun Map<Double, StoryStep>.toSections(): List<Section> = this.values.toSections()
-
-fun Map<Double, StoryStep>.previousTextStoryPosition(
-    position: Double,
-    isTextStory: (StoryStep) -> Boolean
-): Double? = previousTextStory(position, isTextStory)?.second

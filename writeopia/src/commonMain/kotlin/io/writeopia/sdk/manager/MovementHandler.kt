@@ -2,7 +2,6 @@ package io.writeopia.sdk.manager
 
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.story.StoryStep
-import io.writeopia.sdk.utils.extensions.associateWithPosition
 import io.writeopia.sdk.utils.extensions.toEditState
 
 /**
@@ -79,19 +78,81 @@ class MovementHandler {
 
     private fun moveStories(stories: Map<Double, StoryStep>, from: Set<Double>, to: Double): Map<Double, StoryStep> {
         val mutable = stories.toMutableMap()
-        val storiesToMove = from.mapNotNull { position -> mutable[position] }
-        val moveAfter = mutable[to + 1]?.id ?: mutable
 
-        from.forEach(mutable::remove)
+        // Collect stories to move and their data before removal
+        val storiesToMove = from.sorted().mapNotNull { position ->
+            mutable[position]?.let { position to it }
+        }
 
-        val storiesCollection = mutable.values
+        if (storiesToMove.isEmpty()) return stories
 
-        val firstPart = storiesCollection.takeWhile { story -> story.id != moveAfter }
-        val lastPart = storiesCollection.drop(firstPart.size)
+        // Step 1: Remove stories from original positions and update neighbors
+        for ((position, story) in storiesToMove) {
+            val prevPos = story.previousPosition
+            val nextPos = story.nextPosition
 
-        val resultAsList = firstPart + storiesToMove + lastPart
+            mutable.remove(position)
 
-        return resultAsList.associateWithPosition()
+            // Update the previous story's nextPosition to skip this story
+            if (prevPos != null) {
+                mutable[prevPos]?.let { prevStory ->
+                    mutable[prevPos] = prevStory.copy(nextPosition = nextPos)
+                }
+            }
+
+            // Update the next story's previousPosition to skip this story
+            if (nextPos != null) {
+                mutable[nextPos]?.let { nextStory ->
+                    mutable[nextPos] = nextStory.copy(previousPosition = prevPos)
+                }
+            }
+        }
+
+        // Step 2: Find insertion point and calculate new positions
+        val storyAtTo = mutable[to]
+        val nextAfterTo = storyAtTo?.nextPosition
+
+        // Calculate new positions for moved stories between 'to' and 'nextAfterTo'
+        val startPos = to
+        val endPos = nextAfterTo ?: (to + storiesToMove.size + 1)
+        val gap = (endPos - startPos) / (storiesToMove.size + 1)
+
+        // Step 3: Insert stories at new positions with updated references
+        var previousPosition: Double = to
+        val newPositions = mutableListOf<Double>()
+
+        for ((index, pair) in storiesToMove.withIndex()) {
+            val (_, story) = pair
+            val newPos = startPos + gap * (index + 1)
+            newPositions.add(newPos)
+
+            val newNextPos = if (index < storiesToMove.size - 1) {
+                startPos + gap * (index + 2)
+            } else {
+                nextAfterTo
+            }
+
+            mutable[newPos] = story.copy(
+                previousPosition = previousPosition,
+                nextPosition = newNextPos
+            )
+
+            previousPosition = newPos
+        }
+
+        // Step 4: Update the story at 'to' to point to the first moved story
+        if (storyAtTo != null && newPositions.isNotEmpty()) {
+            mutable[to] = storyAtTo.copy(nextPosition = newPositions.first())
+        }
+
+        // Step 5: Update the story after insertion to point back to the last moved story
+        if (nextAfterTo != null && newPositions.isNotEmpty()) {
+            mutable[nextAfterTo]?.let { nextStory ->
+                mutable[nextAfterTo] = nextStory.copy(previousPosition = newPositions.last())
+            }
+        }
+
+        return mutable
     }
 }
 
