@@ -110,11 +110,11 @@ class CodeBlockDrawer(
                 when (inBound) {
                     InBounds.OUTSIDE -> {}
                     InBounds.INSIDE_UP -> {
-                        handleDrag(drawInfo.position, data)
+                        handleDrag(drawInfo.previousPosition ?: drawInfo.position, data)
                     }
 
                     InBounds.INSIDE_DOWN -> {
-                        handleDrag(drawInfo.nextPosition ?: -10.0, data)
+                        handleDrag(drawInfo.position, data)
                     }
                 }
 

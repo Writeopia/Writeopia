@@ -17,14 +17,15 @@ object StepsModifier {
         val onDragSpace = StoryStep(type = StoryTypes.ON_DRAG_SPACE.type, localId = "onDragSpace")
         val lastSpace = StoryStep(type = StoryTypes.LAST_SPACE.type)
 
+        // Get the last story's position to check if we're dragging to the end
+        val lastStoryPosition = stories.lastOrNull()?.position
+
         val parsed = stories.fold(emptyList<DrawStory>()) { acc, drawStory ->
             val index = drawStory.position
             val lastStep = acc.lastOrNull { draw ->
                 draw.storyStep.type != StoryTypes.SPACE.type &&
                     draw.storyStep.type != StoryTypes.ON_DRAG_SPACE.type
             }?.storyStep
-
-            println("dragPosition: $dragPosition")
 
             val lastTags = lastStep?.tags ?: emptySet()
             val currentTags = drawStory.storyStep.tags
@@ -35,8 +36,11 @@ object StepsModifier {
             val currentIsCodeBlock = drawStory.storyStep.type == StoryTypes.CODE_BLOCK.type
             val isSpaceInsideCodeBlock = lastIsCodeBlock && currentIsCodeBlock
 
+            // Highlight space before this story if dragPosition + 1 == index
+            // (dragPosition is the position AFTER which we want to insert)
+            val previousPosition = drawStory.storyStep.previousPosition
             val spaceStory =
-                if (index == dragPosition) onDragSpace else space()
+                if (previousPosition == dragPosition) onDragSpace else space()
 
             val spaceExtraInfo = if (isSpaceInsideCodeBlock) {
                 mapOf(IS_INSIDE_CODE_BLOCK_KEY to true)
@@ -54,8 +58,8 @@ object StepsModifier {
         }
 
         // Add space after the last story that can be highlighted when dragging
-        // When dragPosition is -10, it means we're dragging to the end (no nextPosition)
-        val lastSpaceStory = if (dragPosition == -10.0) {
+        // Highlight if dragPosition equals the last story's position (INSIDE_DOWN on last story)
+        val lastSpaceStory = if (lastStoryPosition != null && dragPosition == lastStoryPosition) {
             onDragSpace
         } else {
             lastSpace

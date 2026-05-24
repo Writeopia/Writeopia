@@ -79,7 +79,7 @@ class MovementHandler {
     private fun moveStories(stories: Map<Double, StoryStep>, from: Set<Double>, to: Double): Map<Double, StoryStep> {
         val mutable = stories.toMutableMap()
 
-        // Collect stories to move and their data before removal
+        // Collect stories to move before removal
         val storiesToMove = from.sorted().mapNotNull { position ->
             mutable[position]?.let { position to it }
         }
@@ -93,63 +93,59 @@ class MovementHandler {
 
             mutable.remove(position)
 
-            // Update the previous story's nextPosition to skip this story
+            // Update neighbors to skip this story
             if (prevPos != null) {
-                mutable[prevPos]?.let { prevStory ->
-                    mutable[prevPos] = prevStory.copy(nextPosition = nextPos)
-                }
+                mutable[prevPos]?.let { mutable[prevPos] = it.copy(nextPosition = nextPos) }
             }
-
-            // Update the next story's previousPosition to skip this story
             if (nextPos != null) {
-                mutable[nextPos]?.let { nextStory ->
-                    mutable[nextPos] = nextStory.copy(previousPosition = prevPos)
-                }
+                mutable[nextPos]?.let { mutable[nextPos] = it.copy(previousPosition = prevPos) }
             }
         }
 
-        // Step 2: Find insertion point and calculate new positions
+        // Step 2: Calculate intermediate positions between 'to' and its next
         val storyAtTo = mutable[to]
         val nextAfterTo = storyAtTo?.nextPosition
-
-        // Calculate new positions for moved stories between 'to' and 'nextAfterTo'
-        val startPos = to
         val endPos = nextAfterTo ?: (to + storiesToMove.size + 1)
-        val gap = (endPos - startPos) / (storiesToMove.size + 1)
 
-        // Step 3: Insert stories at new positions with updated references
-        var previousPosition: Double = to
+        // Step 3: Insert stories at intermediate positions
+        var prevPos: Double = to
         val newPositions = mutableListOf<Double>()
 
         for ((index, pair) in storiesToMove.withIndex()) {
             val (_, story) = pair
-            val newPos = startPos + gap * (index + 1)
+            // Calculate intermediate position between previous and end
+            val newPos = (prevPos + endPos) / 2.0
             newPositions.add(newPos)
 
+            // Next position: either the next moved story's position or nextAfterTo
             val newNextPos = if (index < storiesToMove.size - 1) {
-                startPos + gap * (index + 2)
+                // Will be updated when we insert the next story
+                null
             } else {
                 nextAfterTo
             }
 
             mutable[newPos] = story.copy(
-                previousPosition = previousPosition,
+                previousPosition = prevPos,
                 nextPosition = newNextPos
             )
 
-            previousPosition = newPos
+            // Update previous story to point to this one
+            mutable[prevPos]?.let { mutable[prevPos] = it.copy(nextPosition = newPos) }
+
+            prevPos = newPos
         }
 
-        // Step 4: Update the story at 'to' to point to the first moved story
-        if (storyAtTo != null && newPositions.isNotEmpty()) {
-            mutable[to] = storyAtTo.copy(nextPosition = newPositions.first())
+        // Fix nextPosition for moved stories (except the last one)
+        for (i in 0 until newPositions.size - 1) {
+            val currentPos = newPositions[i]
+            val nextPos = newPositions[i + 1]
+            mutable[currentPos]?.let { mutable[currentPos] = it.copy(nextPosition = nextPos) }
         }
 
-        // Step 5: Update the story after insertion to point back to the last moved story
+        // Step 4: Update the story after insertion to point back to the last moved story
         if (nextAfterTo != null && newPositions.isNotEmpty()) {
-            mutable[nextAfterTo]?.let { nextStory ->
-                mutable[nextAfterTo] = nextStory.copy(previousPosition = newPositions.last())
-            }
+            mutable[nextAfterTo]?.let { mutable[nextAfterTo] = it.copy(previousPosition = newPositions.last()) }
         }
 
         return mutable
