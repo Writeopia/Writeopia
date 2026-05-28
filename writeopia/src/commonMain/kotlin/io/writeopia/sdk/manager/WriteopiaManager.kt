@@ -107,7 +107,7 @@ class WriteopiaManager(
     fun mergeRequest(info: Action.Merge, storyState: StoryState): StoryState {
         val oldStories = storyState.stories
         val movedStories = movementHandler.merge(oldStories, info)
-        val newStories = stepsNormalizer(movedStories).normalizePositions()
+        val newStories = stepsNormalizer(movedStories)
 
         // Find all changed stories
         val changedSteps = newStories.filter { (position, story) ->

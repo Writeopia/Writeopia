@@ -16,9 +16,7 @@ import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
 import io.writeopia.sdk.utils.extensions.toEditState
 import io.writeopia.sdk.utils.iterables.addElementInPosition
-import io.writeopia.sdk.utils.iterables.addElementsInPosition
 import io.writeopia.sdk.utils.iterables.mergeSortedMaps
-import io.writeopia.sdk.utils.iterables.normalizePositions
 import io.writeopia.sdk.utils.iterables.removeBy
 import io.writeopia.sdk.utils.iterables.removeElementInPosition
 
