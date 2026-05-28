@@ -26,8 +26,8 @@ class MergeNormalizationTest {
 
         val mergedStep = mergeNormalization.mergeSteps(MapStoryData.imageSimpleGroup())
 
-        assertEquals(mergedStep.size, 1)
-        assertTrue(mergedStep[0]?.isGroup ?: false)
+        assertEquals(1, mergedStep.size)
+        assertTrue(mergedStep[0.0]?.isGroup ?: false)
     }
 
     @Test
@@ -44,10 +44,10 @@ class MergeNormalizationTest {
         val mergedStep = mergeNormalization.mergeSteps(MapStoryData.stepsList())
 
         assertEquals(3, mergedStep.size)
-        assertTrue(mergedStep[0]?.isGroup ?: false)
-        assertTrue(mergedStep[1] is StoryStep)
-        assertTrue(mergedStep[2] is StoryStep)
-        assertEquals("group_image", mergedStep[0]!!.type.name)
+        assertTrue(mergedStep[0.0]?.isGroup ?: false)
+        assertTrue(mergedStep[1.0] is StoryStep)
+        assertTrue(mergedStep[2.0] is StoryStep)
+        assertEquals("group_image", mergedStep[0.0]!!.type.name)
     }
 
     @Test
@@ -66,12 +66,12 @@ class MergeNormalizationTest {
 
         assertEquals(1, mergedStep.size, "2 image groups should have been merged into one")
         assertTrue(
-            mergedStep[0]?.isGroup ?: false,
+            mergedStep[0.0]?.isGroup ?: false,
             "the first story unit should still be a GroupStep"
         )
         assertEquals(
             StoryTypes.GROUP_IMAGE.type,
-            mergedStep[0]!!.type,
+            mergedStep[0.0]!!.type,
             "the first story unit should still be a GroupImage"
         )
     }
@@ -99,8 +99,8 @@ class MergeNormalizationTest {
 
         val steps = MapStoryData.stepsList()
 
-        val mergedStep = mergeNormalization.mergeSteps(steps + Pair(steps.size, last))
-        assertEquals(last.first(), mergedStep[mergedStep.size - 1])
+        val mergedStep = mergeNormalization.mergeSteps(steps + Pair(steps.size.toDouble(), last))
+        assertEquals(last.first(), mergedStep[(mergedStep.size - 1).toDouble()])
     }
 //
 //    @Test
