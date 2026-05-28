@@ -161,9 +161,9 @@ class RoomDocumentRepository(
         )
     }
 
-    override suspend fun saveStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
+    override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
         println("saving story steps: ${storyStep.spans.joinToString { it.toText() }}")
-        val dbPos = storyStep.dbPosition ?: position.toDouble()
+        val dbPos = storyStep.dbPosition ?: position
         storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(dbPos, documentId))
     }
 
@@ -181,8 +181,8 @@ class RoomDocumentRepository(
         storyUnitEntityDao?.updateUrl(url, id)
     }
 
-    override suspend fun updateStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
-        val dbPos = storyStep.dbPosition ?: position.toDouble()
+    override suspend fun updateStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
+        val dbPos = storyStep.dbPosition ?: position
         storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(dbPos, documentId))
     }
 
@@ -211,11 +211,10 @@ class RoomDocumentRepository(
      * This method removes the story units that are not in the root level (they don't have parents)
      * and loads the inner steps of the steps that have children.
      */
-    private suspend fun loadInnerSteps(storyEntities: List<StoryStepEntity>): Map<Int, StoryStep> =
+    private suspend fun loadInnerSteps(storyEntities: List<StoryStepEntity>): Map<Double, StoryStep> =
         storyEntities.filter { entity -> entity.parentId == null }
             .sortedBy { it.position }
-            .mapIndexed { index, entity -> index to entity }
-            .toMap()
+            .associate { entity -> entity.position to entity }
             .mapValues { (_, entity) ->
                 if (entity.linkToDocument != null) {
                     val title = documentEntityDao.getDocumentTitleById(entity.linkToDocument)

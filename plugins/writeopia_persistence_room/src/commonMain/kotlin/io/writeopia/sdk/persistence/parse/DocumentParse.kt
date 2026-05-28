@@ -8,7 +8,7 @@ import io.writeopia.sdk.persistence.entity.document.DocumentEntity
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-fun DocumentEntity.toModel(content: Map<Int, StoryStep> = emptyMap()) = Document(
+fun DocumentEntity.toModel(content: Map<Double, StoryStep> = emptyMap()) = Document(
     id = id,
     title = title,
     content = content,
