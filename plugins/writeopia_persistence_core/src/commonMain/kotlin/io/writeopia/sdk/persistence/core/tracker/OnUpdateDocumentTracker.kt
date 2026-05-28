@@ -291,19 +291,12 @@ class OnUpdateDocumentTracker(
                 }
 
                 is LastEdit.BulkDeleteEdition -> withContext(NonCancellable) {
+                    println("bulk deleting... size: ${lastEdit.deletedIds.size}")
                     // Delete all the deleted story steps
+
                     lastEdit.deletedIds.forEach { deletedId ->
                         documentUpdate.deleteStoryStep(
                             storyStepId = deletedId,
-                            documentId = documentInfo.id
-                        )
-                    }
-
-                    // Save any updated steps (e.g., position references changed)
-                    val nonEphemeralSteps = lastEdit.updatedSteps.filter { (_, step) -> !step.ephemeral }
-                    if (nonEphemeralSteps.isNotEmpty()) {
-                        documentUpdate.saveStorySteps(
-                            steps = nonEphemeralSteps,
                             documentId = documentInfo.id
                         )
                     }

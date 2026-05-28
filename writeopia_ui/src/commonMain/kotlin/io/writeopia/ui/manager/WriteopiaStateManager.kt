@@ -930,7 +930,7 @@ class WriteopiaStateManager(
         if (!isEditable) return
         coroutineScope.launch(dispatcher) {
             val oldStories = _currentStory.value.stories
-            val (newStories, deletedStories) = writeopiaManager.bulkDelete(
+            val (newStories, toDeleteStories) = writeopiaManager.bulkDelete(
                 _onEditPositions.value,
                 oldStories
             )
@@ -938,7 +938,7 @@ class WriteopiaStateManager(
             _onEditPositions.value = emptySet()
 
             // Collect deleted IDs
-            val deletedIds = deletedStories.values.map { it.localId }
+            val deletedIds = toDeleteStories.values.map { it.id }
 
             // Find updated stories (those whose content changed, e.g., position references)
             val updatedSteps = newStories.filter { (position, story) ->

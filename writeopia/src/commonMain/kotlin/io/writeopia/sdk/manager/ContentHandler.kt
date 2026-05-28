@@ -498,7 +498,7 @@ class ContentHandler(
             }
         }
 
-        return newState.normalizePositions() to deleted
+        return newState to deleted
     }
 
     fun previousTextStory(
