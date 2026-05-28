@@ -282,25 +282,86 @@ class ContentHandler(
             )
         }
 
-        // For multiple line breaks (pasting text with multiple newlines), fall back to Whole
-        val newMutable = split?.drop(1)?.map { text ->
-            // Calculate intermediate positions for each new line
-            StoryStep(
+        // For multiple line breaks (pasting text with multiple newlines)
+        val newLines = split?.drop(1) ?: emptyList()
+        if (newLines.isEmpty()) {
+            return position.toInt() to StoryState(
+                stories = mutable,
+                lastEdit = LastEdit.LineEdition(position, updatedOriginalStep),
+                focus = position
+            )
+        }
+
+        // Calculate intermediate positions for each new line
+        val endPos = next ?: (position + newLines.size + 1)
+        val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
+
+        // Add the updated original step
+        changedSteps.add(position to updatedOriginalStep)
+
+        var prevPos = position
+        var lastNewPosition = position
+
+        for ((index, text) in newLines.withIndex()) {
+            val newPos = (prevPos + endPos) / 2.0
+            lastNewPosition = newPos
+
+            val newNextPos = if (index < newLines.size - 1) {
+                // Will be calculated in next iteration
+                null
+            } else {
+                next
+            }
+
+            val newStory = StoryStep(
                 localId = GenerateId.generate(),
                 type = lineBreakMap(storyStep.type),
                 text = text,
                 tags = carryOverTags,
+                dbPosition = newPos,
+                previousPosition = prevPos,
+                nextPosition = newNextPos
             )
-        }?.let { stories ->
-            mutable.addElementsInPosition(stories, position + 1)
-        } ?: mutable
 
-        val insertElementLastPosition = position + (split?.lastIndex ?: 0)
+            mutable[newPos] = newStory
+            changedSteps.add(newPos to newStory)
 
-        return insertElementLastPosition.toInt() to StoryState(
-            stories = newMutable,
-            lastEdit = LastEdit.Whole,
-            focus = insertElementLastPosition
+            // Update previous story to point to this one
+            mutable[prevPos]?.let { mutable[prevPos] = it.copy(nextPosition = newPos) }
+            // Update changedSteps with the corrected previous story
+            val prevIndex = changedSteps.indexOfFirst { it.first == prevPos }
+            if (prevIndex >= 0) {
+                changedSteps[prevIndex] = prevPos to mutable[prevPos]!!
+            }
+
+            prevPos = newPos
+        }
+
+        // Fix nextPosition for new stories (except the last one)
+        val newPositions = changedSteps.drop(1).map { it.first }
+        for (i in 0 until newPositions.size - 1) {
+            val currentPos = newPositions[i]
+            val nextPos = newPositions[i + 1]
+            mutable[currentPos]?.let { mutable[currentPos] = it.copy(nextPosition = nextPos) }
+            val idx = changedSteps.indexOfFirst { it.first == currentPos }
+            if (idx >= 0) {
+                changedSteps[idx] = currentPos to mutable[currentPos]!!
+            }
+        }
+
+        // Update the story that was after the original to point back to the last new story
+        if (next != null) {
+            mutable[next]?.let { nextStory ->
+                val updatedNextStory = nextStory.copy(previousPosition = lastNewPosition)
+                mutable[next] = updatedNextStory
+                changedSteps.add(next to updatedNextStory)
+            }
+        }
+
+        return lastNewPosition.toInt() to StoryState(
+            stories = mutable,
+            lastEdit = LastEdit.BulkEdition(changedSteps),
+            focus = lastNewPosition
         )
     }
 

@@ -75,4 +75,14 @@ sealed class LastEdit {
         val deletedId: String,
         val updatedStep: Pair<Double, StoryStep>
     ) : LastEdit()
+
+    /**
+     * Multiple lines were deleted from the document.
+     * @param deletedIds The IDs of the deleted story steps
+     * @param updatedSteps Any stories that were updated (e.g., position references changed)
+     */
+    data class BulkDeleteEdition(
+        val deletedIds: List<String>,
+        val updatedSteps: List<Pair<Double, StoryStep>> = emptyList()
+    ) : LastEdit()
 }

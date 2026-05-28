@@ -536,21 +536,25 @@ class WriteopiaStateManager(
     }
 
     fun acceptSuggestions() {
-        val newStories = getStories().mapValues { (_, storyStep) ->
+        val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
+
+        val newStories = getStories().mapValues { (position, storyStep) ->
             if (storyStep.tags.contains(TagInfo(Tag.AI_SUGGESTION))) {
-                storyStep.copy(
+                val updatedStep = storyStep.copy(
                     tags = storyStep.tags.filterNot { tagInfo ->
                         tagInfo.tag == Tag.AI_SUGGESTION || tagInfo.tag == Tag.FIRST_AI_SUGGESTION
                     }.toSet(),
                     ephemeral = false
                 )
+                changedSteps.add(position to updatedStep)
+                updatedStep
             } else {
                 storyStep
             }
         }
 
         _currentStory.value =
-            _currentStory.value.copy(stories = newStories, lastEdit = LastEdit.Whole)
+            _currentStory.value.copy(stories = newStories, lastEdit = LastEdit.BulkEdition(changedSteps))
     }
 
     fun toggleTagForPosition(position: Double, tag: TagInfo, commandInfo: CommandInfo? = null) {
@@ -803,17 +807,29 @@ class WriteopiaStateManager(
                 )
             )
         } else {
-            val newLastMessage = StoryStep(type = StoryTypes.TEXT.type)
-            val newStories = stories + mapOf(stories.size.toDouble() to newLastMessage)
+            val newPosition = stories.size.toDouble()
+            val newLastMessage = StoryStep(
+                type = StoryTypes.TEXT.type,
+                previousPosition = lastPosition
+            )
+
+            // Update the last content story to point to the new story
+            val updatedStories = stories.toMutableMap().apply {
+                lastContentStory?.let { lastStory ->
+                    this[lastPosition] = lastStory.copy(nextPosition = newPosition)
+                }
+                this[newPosition] = newLastMessage
+            }
+
             val cursor = newLastMessage.text?.length ?: 0
 
             StoryState(
-                newStories,
-                LastEdit.Whole,
-                lastPosition,
+                updatedStories,
+                LastEdit.LineEdition(newPosition, newLastMessage),
+                newPosition,
                 selection = Selection.fromPosition(
                     cursorPosition = cursor,
-                    stepPosition = lastPosition
+                    stepPosition = newPosition
                 )
             )
         }
@@ -913,15 +929,27 @@ class WriteopiaStateManager(
     fun deleteSelection() {
         if (!isEditable) return
         coroutineScope.launch(dispatcher) {
-            val (newStories, _) = writeopiaManager.bulkDelete(
+            val oldStories = _currentStory.value.stories
+            val (newStories, deletedStories) = writeopiaManager.bulkDelete(
                 _onEditPositions.value,
-                _currentStory.value.stories
+                oldStories
             )
 
             _onEditPositions.value = emptySet()
 
+            // Collect deleted IDs
+            val deletedIds = deletedStories.values.map { it.localId }
+
+            // Find updated stories (those whose content changed, e.g., position references)
+            val updatedSteps = newStories.filter { (position, story) ->
+                oldStories[position] != story
+            }.map { (position, story) -> position to story }
+
             backStackManager.addState(_currentStory.value)
-            val state = _currentStory.value.copy(stories = newStories, lastEdit = LastEdit.Whole)
+            val state = _currentStory.value.copy(
+                stories = newStories,
+                lastEdit = LastEdit.BulkDeleteEdition(deletedIds, updatedSteps)
+            )
             _currentStory.value = state
         }
     }
