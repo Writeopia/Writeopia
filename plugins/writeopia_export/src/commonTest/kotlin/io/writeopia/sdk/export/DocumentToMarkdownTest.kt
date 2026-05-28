@@ -12,13 +12,13 @@ class DocumentToMarkdownTest {
     @Test
     fun testMarkDown() {
         val content = mapOf(
-            0 to StoryStep(
+            0.0 to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Title!!",
                 tags = setOf(TagInfo(Tag.H1))
             ),
-            1 to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
-            2 to StoryStep(
+            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
+            2.0 to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Subtitle!!",
                 tags = setOf(TagInfo(Tag.H2))
@@ -42,22 +42,22 @@ class DocumentToMarkdownTest {
     @Test
     fun testMarkdownPrettyPrintFalse() {
         val content = mapOf(
-            0 to StoryStep(
+            0.0 to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Title!!",
                 tags = setOf(TagInfo(Tag.H1))
             ),
-            1 to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
-            2 to StoryStep(
+            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
+            2.0 to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Subtitle!!",
                 tags = setOf(TagInfo(Tag.H2))
             ),
-            3 to StoryStep(
+            3.0 to StoryStep(
                 type = StoryTypes.CHECK_ITEM.type,
                 text = "Check this"
             ),
-            4 to StoryStep(
+            4.0 to StoryStep(
                 type = StoryTypes.UNORDERED_LIST_ITEM.type,
                 text = "This is a list item"
             )
