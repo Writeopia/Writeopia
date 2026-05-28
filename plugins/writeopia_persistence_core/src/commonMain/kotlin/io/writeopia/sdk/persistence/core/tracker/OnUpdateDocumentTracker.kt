@@ -289,6 +289,45 @@ class OnUpdateDocumentTracker(
                         )
                     )
                 }
+
+                is LastEdit.BulkDeleteEdition -> withContext(NonCancellable) {
+                    // Delete all the deleted story steps
+                    lastEdit.deletedIds.forEach { deletedId ->
+                        documentUpdate.deleteStoryStep(
+                            storyStepId = deletedId,
+                            documentId = documentInfo.id
+                        )
+                    }
+
+                    // Save any updated steps (e.g., position references changed)
+                    val nonEphemeralSteps = lastEdit.updatedSteps.filter { (_, step) -> !step.ephemeral }
+                    if (nonEphemeralSteps.isNotEmpty()) {
+                        documentUpdate.saveStorySteps(
+                            steps = nonEphemeralSteps,
+                            documentId = documentInfo.id
+                        )
+                    }
+
+                    val stories = storyState.stories
+                    val titleFromContent = stories.values
+                        .firstOrNull { storyStep ->
+                            storyStep.type == StoryTypes.TITLE.type
+                        }?.text
+
+                    documentUpdate.saveDocumentMetadata(
+                        Document(
+                            id = documentInfo.id,
+                            title = titleFromContent ?: documentInfo.title,
+                            createdAt = documentInfo.createdAt,
+                            lastUpdatedAt = Clock.System.now(),
+                            lastSyncedAt = documentInfo.lastSyncedAt,
+                            workspaceId = workspaceId,
+                            parentId = documentInfo.parentId,
+                            icon = documentInfo.icon,
+                            isLocked = documentInfo.isLocked
+                        )
+                    )
+                }
             }
         }
     }
