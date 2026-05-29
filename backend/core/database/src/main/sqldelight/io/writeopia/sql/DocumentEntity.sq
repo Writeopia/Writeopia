@@ -156,3 +156,10 @@ UPDATE document_entity SET favorite = 0 WHERE id = ?;
 
 moveToFolder:
 UPDATE document_entity SET parent_document_id = ?, last_synced = ? WHERE id = ?;
+
+selectWithContentByTitle:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE document_entity.title = ? AND workspace_id = ? AND deleted = FALSE
+ORDER BY position;

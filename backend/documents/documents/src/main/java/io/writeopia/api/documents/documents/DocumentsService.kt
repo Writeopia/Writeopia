@@ -19,6 +19,7 @@ import io.writeopia.api.documents.documents.repository.getUserFavoriteDocumentId
 import io.writeopia.api.documents.documents.repository.isUserFavorite
 import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.removeUserFavorite
+import io.writeopia.api.documents.documents.repository.getDocumentByTitle
 import io.writeopia.api.documents.documents.repository.getDocumentWithContentById
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
@@ -71,6 +72,12 @@ object DocumentsService {
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
     ): Document? = writeopiaDb.getDocumentById(id, workspaceId)
+
+    suspend fun getDocumentByTitle(
+        title: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Document? = writeopiaDb.getDocumentByTitle(title, workspaceId)
 
     suspend fun getFolderById(
         id: String,
