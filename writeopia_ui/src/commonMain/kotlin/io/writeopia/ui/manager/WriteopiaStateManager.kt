@@ -955,9 +955,6 @@ class WriteopiaStateManager(
     }
 
     fun onDragHover(position: Double) {
-        //Todo: eu parei a qui. Eu tenho que atualizar o estado do dragPosition corretamente.
-        // Agora eu tenho o next e previous position, então fica mais fácil de fazer isso
-        // funcionar direito.
         dragPosition.value = position
     }
 

@@ -5,7 +5,6 @@ package io.writeopia.sdk.manager
 import io.writeopia.sdk.ai.AiClient
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.document.DocumentInfo
-import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.model.story.StoryState
@@ -13,6 +12,7 @@ import io.writeopia.sdk.models.command.CommandInfo
 import io.writeopia.sdk.models.command.TypeInfo
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
@@ -22,7 +22,6 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
 import io.writeopia.sdk.utils.extensions.toEditState
-import io.writeopia.sdk.utils.iterables.normalizePositions
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
