@@ -76,6 +76,30 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
+        get("/api/workspace/{workspaceId}/document/title/{title}") {
+            val userId = getUserId() ?: ""
+            val title = call.pathParameters["title"] ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                val document = DocumentsService.getDocumentByTitle(title, workspaceId, writeopiaDb)
+
+                if (document != null) {
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = document.toApi()
+                    )
+                } else {
+                    call.respond(
+                        status = HttpStatusCode.NotFound,
+                        message = "No document with title: $title"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
         get("/api/workspace/{workspaceId}/document/parent/{parentId}") {
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
