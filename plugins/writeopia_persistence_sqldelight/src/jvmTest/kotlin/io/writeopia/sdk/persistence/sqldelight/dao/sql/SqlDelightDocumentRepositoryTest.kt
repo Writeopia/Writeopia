@@ -41,18 +41,18 @@ class SqlDelightDocumentRepositoryTest {
     fun `when saving a document when less content, the exceeding content should be erased`() =
         runTest {
             val smallContent = mapOf(
-                0 to StoryStep(
+                0.0 to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "text"
                 ),
-                1 to StoryStep(
+                1.0 to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "text1"
                 )
             )
 
             val bigContent = smallContent + (
-                2 to StoryStep(type = StoryTypes.TEXT.type, text = "text2")
+                2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "text2")
                 )
 
             val instant = Instant.parse("2023-01-01T12:05:30Z")
