@@ -208,7 +208,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -274,7 +274,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -346,7 +346,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -418,7 +418,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -489,7 +489,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -559,7 +559,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -637,7 +637,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -704,7 +704,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toInt() to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
