@@ -37,8 +37,6 @@ class OnUpdateDocumentTracker(
         ) { (storyState, documentInfo), workspaceId ->
             Triple(storyState, documentInfo, workspaceId)
         }.collect { (storyState, documentInfo, workspaceId) ->
-            println("last edit: ${storyState.lastEdit}")
-
             when (val lastEdit = storyState.lastEdit) {
                 is LastEdit.LineEdition -> {
                     if (lastEdit.storyStep.ephemeral) return@collect
@@ -162,7 +160,6 @@ class OnUpdateDocumentTracker(
                 }
 
                 is LastEdit.LineBreakEdition -> {
-                    println("Saving LineBreakEdition")
                     val originalStep = lastEdit.originalStep
                     val newStep = lastEdit.newStep
 
@@ -290,9 +287,6 @@ class OnUpdateDocumentTracker(
                 }
 
                 is LastEdit.BulkDeleteEdition -> withContext(NonCancellable) {
-                    println("bulk deleting... size: ${lastEdit.deletedIds.size}")
-                    // Delete all the deleted story steps
-
                     lastEdit.deletedIds.forEach { deletedId ->
                         documentUpdate.deleteStoryStep(
                             storyStepId = deletedId,

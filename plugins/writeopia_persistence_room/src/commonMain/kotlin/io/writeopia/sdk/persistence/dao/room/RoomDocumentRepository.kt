@@ -162,7 +162,6 @@ class RoomDocumentRepository(
     }
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
-        println("saving story steps: ${storyStep.spans.joinToString { it.toText() }}")
         val dbPos = storyStep.dbPosition ?: position
         storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(dbPos, documentId))
     }
