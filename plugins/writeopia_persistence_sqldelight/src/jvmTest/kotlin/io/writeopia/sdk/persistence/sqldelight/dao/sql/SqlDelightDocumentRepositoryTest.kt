@@ -43,16 +43,18 @@ class SqlDelightDocumentRepositoryTest {
             val smallContent = mapOf(
                 0.0 to StoryStep(
                     type = StoryTypes.TEXT.type,
-                    text = "text"
+                    text = "text",
+                    dbPosition = 0.0,
                 ),
                 1.0 to StoryStep(
                     type = StoryTypes.TEXT.type,
-                    text = "text1"
+                    text = "text1",
+                    dbPosition = 1.0
                 )
             )
 
             val bigContent = smallContent + (
-                2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "text2")
+                2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "text2", dbPosition = 2.0)
                 )
 
             val instant = Instant.parse("2023-01-01T12:05:30Z")
@@ -64,7 +66,7 @@ class SqlDelightDocumentRepositoryTest {
                 lastSyncedAt = null,
                 workspaceId = workspaceId,
                 parentId = "",
-                content = bigContent
+                content = bigContent,
             )
 
             documentRepository.saveDocument(document)
