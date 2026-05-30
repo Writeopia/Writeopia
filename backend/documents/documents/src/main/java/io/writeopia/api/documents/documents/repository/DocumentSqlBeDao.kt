@@ -704,7 +704,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position?.toDouble())
                     }
 
                     Document(
