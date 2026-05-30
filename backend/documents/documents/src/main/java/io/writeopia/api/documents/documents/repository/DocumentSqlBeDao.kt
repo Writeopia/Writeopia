@@ -211,6 +211,7 @@ class DocumentSqlBeDao(
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
                     }
+                    
 
                     Document(
                         id = documentId,
