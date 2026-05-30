@@ -5,6 +5,14 @@ package io.writeopia.api.documents.documents.repository
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.extensions.sortWithOrderBy
+import io.writeopia.sdk.models.link.DocumentLink
+import io.writeopia.sdk.models.sorting.OrderBy
+import io.writeopia.sdk.models.span.SpanInfo
+import io.writeopia.sdk.models.story.Decoration
+import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sql.DocumentEntityQueries
 import io.writeopia.sql.FolderEntityQueries
@@ -159,15 +167,258 @@ class DocumentSqlBeDao(
             ?.executeAsOneOrNull()
             ?.toModel(0)
 
-    // Content loading methods - kept as no-op for debugging
-    fun loadDocumentWithContentByIds(id: List<String>): List<Document> = emptyList()
+    fun loadDocumentWithContentByIds(id: List<String>): List<Document> =
+        documentQueries?.selectWithContentByIds(id)
+            ?.executeAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (documentId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        !innerContent.id_.isNullOrEmpty()
+                    }.associate { innerContent ->
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked ?: false,
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color,
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { docId ->
+                                val title = documentQueries.selectTitleByDocumentId(docId)
+                                    .executeAsOneOrNull()
+                                DocumentLink(docId, title)
+                            }
+                        )
 
-    fun loadDocumentsWithContentByUserId(orderBy: String, userId: String): List<Document> = emptyList()
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                    }
 
-    fun loadFavDocumentsWithContentByUserId(orderBy: String, userId: String): List<Document> = emptyList()
+                    Document(
+                        id = documentId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
+                        workspaceId = document.workspace_id,
+                        favorite = document.favorite,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(it, document.icon_tint)
+                        },
+                        isLocked = document.is_locked
+                    )
+                }
+            } ?: emptyList()
 
-    fun loadDocumentsWithContentByUserIdAfterTime(userId: String, time: Long): List<Document> = emptyList()
+    fun loadDocumentsWithContentByUserId(orderBy: String, userId: String): List<Document> {
+        return documentQueries?.selectWithContentByUserId(userId)
+            ?.executeAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (documentId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        !innerContent.id_.isNullOrEmpty()
+                    }.associate { innerContent ->
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked ?: false,
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color,
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { docId ->
+                                val title = documentQueries.selectTitleByDocumentId(docId)
+                                    .executeAsOneOrNull()
+                                DocumentLink(docId, title)
+                            }
+                        )
 
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                    }
+
+                    Document(
+                        id = documentId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
+                        workspaceId = document.workspace_id,
+                        favorite = document.favorite,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(it, document.icon_tint)
+                        },
+                        isLocked = document.is_locked
+                    )
+                }
+            }
+            ?.sortWithOrderBy(OrderBy.fromString(orderBy))
+            ?: emptyList()
+    }
+
+    fun loadFavDocumentsWithContentByUserId(orderBy: String, userId: String): List<Document> {
+        return documentQueries?.selectFavoritesWithContentByUserId(userId)
+            ?.executeAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (documentId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        !innerContent.id_.isNullOrEmpty()
+                    }.associate { innerContent ->
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked ?: false,
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color,
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { docId ->
+                                val title = documentQueries.selectTitleByDocumentId(docId)
+                                    .executeAsOneOrNull()
+                                DocumentLink(docId, title)
+                            }
+                        )
+
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                    }
+
+                    Document(
+                        id = documentId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
+                        workspaceId = document.workspace_id,
+                        favorite = document.favorite,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(it, document.icon_tint)
+                        },
+                        isLocked = document.is_locked
+                    )
+                }
+            }
+            ?.sortWithOrderBy(OrderBy.fromString(orderBy))
+            ?: emptyList()
+    }
+
+    fun loadDocumentsWithContentByUserIdAfterTime(userId: String, time: Long): List<Document> {
+        return documentQueries?.selectWithContentByUserIdAfterTime(userId, time)
+            ?.executeAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (documentId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        !innerContent.id_.isNullOrEmpty()
+                    }.associate { innerContent ->
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked ?: false,
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color,
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { docId ->
+                                val title = documentQueries.selectTitleByDocumentId(docId)
+                                    .executeAsOneOrNull()
+                                DocumentLink(docId, title)
+                            }
+                        )
+
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                    }
+
+                    Document(
+                        id = documentId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
+                        workspaceId = document.workspace_id,
+                        favorite = document.favorite,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(it, document.icon_tint)
+                        },
+                        isLocked = document.is_locked
+                    )
+                }
+            } ?: emptyList()
+    }
+
+    // Remaining content loading methods - kept as no-op for debugging
     fun loadDocumentsWithContentFolderIdAfterTime(folderId: String, workspaceId: String, time: Long): List<Document> = emptyList()
 
     fun loadDocumentsWithContentByWorkspaceIdAfterTime(workspaceId: String, time: Long): List<Document> = emptyList()
