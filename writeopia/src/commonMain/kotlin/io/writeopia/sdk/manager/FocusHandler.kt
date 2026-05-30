@@ -1,6 +1,5 @@
 package io.writeopia.sdk.manager
 
-import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 
@@ -17,14 +16,19 @@ class FocusHandler(
     }
 ) {
 
-    fun findNextFocus(position: Int, stories: Map<Int, StoryStep>): Pair<Int, StoryStep>? {
-        for (i in position..stories.keys.last()) {
-            val storyStep = stories[i]
-            if (storyStep != null && isMessageFn(storyStep.type.number)) {
-                return i to storyStep.copy(localId = GenerateId.generate())
+    fun findNextFocus(position: Double, stories: Map<Double, StoryStep>): Double? =
+        stories.entries
+            .sortedBy { (key, _) -> key }
+            .find { (key, storyStep) ->
+                key > position && isMessageFn(storyStep.type.number)
             }
-        }
+            ?.key
 
-        return null
-    }
+    fun findPreviousFocus(position: Double, stories: Map<Double, StoryStep>): Double? =
+        stories.entries
+            .sortedByDescending { (key, _) -> key }
+            .find { (key, storyStep) ->
+                key < position && isMessageFn(storyStep.type.number)
+            }
+            ?.key
 }

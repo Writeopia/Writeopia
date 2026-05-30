@@ -12,12 +12,16 @@ object StepsModifier {
     const val CODE_BLOCK_LINE_NUMBER_KEY = "codeBlockLineNumber"
     const val IS_INSIDE_CODE_BLOCK_KEY = "isInsideCodeBlock"
 
-    fun modify(stories: List<DrawStory>, dragPosition: Int): List<DrawStory> {
+    fun modify(stories: List<DrawStory>, dragPosition: Double): List<DrawStory> {
         val space = { StoryStep(type = StoryTypes.SPACE.type, localId = GenerateId.generate()) }
         val onDragSpace = StoryStep(type = StoryTypes.ON_DRAG_SPACE.type, localId = "onDragSpace")
         val lastSpace = StoryStep(type = StoryTypes.LAST_SPACE.type)
 
-        val parsed = stories.foldIndexed(emptyList<DrawStory>()) { index, acc, drawStory ->
+        // Get the last story's position to check if we're dragging to the end
+        val lastStoryPosition = stories.lastOrNull()?.position
+
+        val parsed = stories.fold(emptyList<DrawStory>()) { acc, drawStory ->
+            val index = drawStory.position
             val lastStep = acc.lastOrNull { draw ->
                 draw.storyStep.type != StoryTypes.SPACE.type &&
                     draw.storyStep.type != StoryTypes.ON_DRAG_SPACE.type
@@ -32,8 +36,11 @@ object StepsModifier {
             val currentIsCodeBlock = drawStory.storyStep.type == StoryTypes.CODE_BLOCK.type
             val isSpaceInsideCodeBlock = lastIsCodeBlock && currentIsCodeBlock
 
+            // Highlight space before this story if dragPosition + 1 == index
+            // (dragPosition is the position AFTER which we want to insert)
+            val previousPosition = drawStory.storyStep.previousPosition
             val spaceStory =
-                if (index - 1 == dragPosition) onDragSpace else space()
+                if (previousPosition == dragPosition) onDragSpace else space()
 
             val spaceExtraInfo = if (isSpaceInsideCodeBlock) {
                 mapOf(IS_INSIDE_CODE_BLOCK_KEY to true)
@@ -43,15 +50,23 @@ object StepsModifier {
 
             val spaceDraw = DrawStory(
                 storyStep = spaceStory.copy(tags = newTags),
-                position = index - 1,
+                position = (index - 1),
                 extraInfo = spaceExtraInfo
             )
 
             acc + spaceDraw + drawStory
         }
 
+        // Add space after the last story that can be highlighted when dragging
+        // Highlight if dragPosition equals the last story's position (INSIDE_DOWN on last story)
+        val lastSpaceStory = if (lastStoryPosition != null && dragPosition == lastStoryPosition) {
+            onDragSpace
+        } else {
+            lastSpace
+        }
+
         val lastIndex = parsed.lastIndex
-        val fullStory = parsed + DrawStory(storyStep = lastSpace, position = lastIndex)
+        val fullStory = parsed + DrawStory(storyStep = lastSpaceStory, position = lastIndex.toDouble())
 
         val fixedPositions = addPositionToTags(fullStory)
         val fixedCodeBlockPositions = addPositionToCodeBlocks(fixedPositions)

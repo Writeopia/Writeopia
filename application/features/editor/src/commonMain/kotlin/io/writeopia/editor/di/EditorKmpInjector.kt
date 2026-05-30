@@ -44,7 +44,7 @@ import kotlinx.serialization.json.Json
 data class DrawingSaveEvent(
     val documentId: String,
     val storyStep: StoryStep,
-    val position: Int
+    val position: Double
 )
 
 class EditorKmpInjector private constructor(
@@ -155,10 +155,11 @@ class EditorKmpInjector private constructor(
             // Calculate position: end of document for new drawings
             val position = if (storyStepId.isNotEmpty()) {
                 // For updates, find the existing position
-                document?.content?.entries?.find { it.value.id == storyStepId }?.key ?: (document?.content?.size ?: 0)
+                document?.content?.entries?.find { it.value.id == storyStepId }?.key
+                    ?: (document?.content?.size ?: 0).toDouble()
             } else {
                 // For new drawings, add at the end
-                document?.content?.size ?: 0
+                (document?.content?.size ?: 0).toDouble()
             }
 
             // Save to database

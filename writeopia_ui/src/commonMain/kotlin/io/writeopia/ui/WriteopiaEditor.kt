@@ -26,7 +26,7 @@ fun WriteopiaEditor(
     drawers: Map<Int, StoryStepDrawer>,
     storyState: DrawState,
     keyFn: (DrawStory) -> Int = { drawStory ->
-        drawStory.desktopKey + (drawStory.cursor?.position ?: 0)
+        drawStory.desktopKey + (drawStory.cursor?.position ?: 0).toInt()
     }
 ) {
     val content = storyState.stories
@@ -63,6 +63,8 @@ fun WriteopiaEditor(
                                     editable = editable,
                                     focus = storyState.focus,
                                     position = drawStory.position,
+                                    previousPosition = drawStory.storyStep.previousPosition,
+                                    nextPosition = drawStory.storyStep.nextPosition,
                                     extraData = drawStory.extraInfo + mapOf("listSize" to size),
                                     selectMode = drawStory.isSelected,
                                     selection = drawStory.cursor ?: Selection.start()

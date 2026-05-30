@@ -47,10 +47,10 @@ import kotlinx.serialization.json.Json
  * Drawer that renders a saved drawing (stored as JSON in StoryStep.text) as a preview.
  */
 class DrawingPreviewDrawer(
-    private val onDrawingClick: (StoryStep, Int) -> Unit,
+    private val onDrawingClick: (StoryStep, Double) -> Unit,
     private val onDelete: (Action.DeleteStory) -> Unit,
     private val drawConfig: DrawConfig,
-    private val onSelected: (Boolean, Int) -> Unit = { _, _ -> },
+    private val onSelected: (Boolean, Double) -> Unit = { _, _ -> },
     private val onDragStart: () -> Unit = {},
     private val onDragStop: () -> Unit = {},
 ) : StoryStepDrawer {

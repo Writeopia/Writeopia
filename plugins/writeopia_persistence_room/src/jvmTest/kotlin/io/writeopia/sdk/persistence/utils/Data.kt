@@ -5,7 +5,7 @@ import io.writeopia.sdk.models.story.StoryTypes
 
 fun imageGroup() =
     mapOf(
-        0 to StoryStep(
+        0.0 to StoryStep(
             localId = "1",
             type = StoryTypes.GROUP_IMAGE.type,
             steps = listOf(

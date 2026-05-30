@@ -61,7 +61,7 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
      */
     override suspend fun saveDocumentMetadata(document: Document)
 
-    override suspend fun saveStoryStep(storyStep: StoryStep, position: Int, documentId: String)
+    override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String)
 
     suspend fun updateStoryStepUrl(url: String, id: String)
 

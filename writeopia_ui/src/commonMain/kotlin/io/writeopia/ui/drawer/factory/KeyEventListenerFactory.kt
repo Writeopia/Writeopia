@@ -22,7 +22,7 @@ object KeyEventListenerFactory {
         KeyEvent,
         TextFieldValue,
         StoryStep,
-        Int,
+        Double,
         EmptyErase,
         Int,
         EndOfText
@@ -79,7 +79,7 @@ object KeyEventListenerFactory {
         KeyEvent,
         TextFieldValue,
         StoryStep,
-        Int,
+        Double,
         EmptyErase,
         Int,
         EndOfText

@@ -26,6 +26,8 @@ fun WriteopiaEditorBox(
                             editable = editable,
                             focus = storyState.focus,
                             position = drawStory.position,
+                            previousPosition = drawStory.storyStep.previousPosition,
+                            nextPosition = drawStory.storyStep.nextPosition,
                             extraData = mapOf("listSize" to storyState.stories.size),
                             selectMode = drawStory.isSelected,
                             selection = drawStory.cursor

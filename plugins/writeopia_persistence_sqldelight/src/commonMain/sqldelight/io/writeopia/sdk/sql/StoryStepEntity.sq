@@ -7,7 +7,7 @@ CREATE TABLE storyStepEntity (
   path TEXT,
   text TEXT,
   checked INTEGER NOT NULL,
-  position INTEGER NOT NULL,
+  position REAL NOT NULL,
   document_id TEXT NOT NULL,
   is_group INTEGER NOT NULL,
   has_inner_steps INTEGER NOT NULL,
@@ -52,3 +52,8 @@ deleteByDocumentIds:
 DELETE
 FROM storyStepEntity
 WHERE document_id IN ?;
+
+deleteById:
+DELETE
+FROM storyStepEntity
+WHERE id = ?;

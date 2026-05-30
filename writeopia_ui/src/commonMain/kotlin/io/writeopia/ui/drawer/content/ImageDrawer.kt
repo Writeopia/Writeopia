@@ -53,7 +53,7 @@ class ImageDrawer(
     private val containerModifier: (Boolean) -> Modifier? = { null },
     private val onDragStart: () -> Unit,
     private val onDragStop: () -> Unit,
-    private val onSelected: (Boolean, Int) -> Unit,
+    private val onSelected: (Boolean, Double) -> Unit,
     private val mergeRequest: (Action.Merge) -> Unit = { },
     private val onDelete: (Action.DeleteStory) -> Unit
 ) : StoryStepDrawer {

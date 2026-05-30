@@ -161,17 +161,28 @@ class RoomDocumentRepository(
         )
     }
 
-    override suspend fun saveStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
-        println("saving story steps: ${storyStep.spans.joinToString { it.toText() }}")
-        storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(position, documentId))
+    override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
+        val dbPos = storyStep.dbPosition ?: position
+        storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(dbPos, documentId))
+    }
+
+    override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
+        steps.forEach { (position, storyStep) ->
+            storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(position, documentId))
+        }
+    }
+
+    override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {
+        storyUnitEntityDao?.deleteById(storyStepId)
     }
 
     override suspend fun updateStoryStepUrl(url: String, id: String) {
         storyUnitEntityDao?.updateUrl(url, id)
     }
 
-    override suspend fun updateStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
-        storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(position, documentId))
+    override suspend fun updateStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
+        val dbPos = storyStep.dbPosition ?: position
+        storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(dbPos, documentId))
     }
 
     override suspend fun deleteByWorkspace(userId: String) {
@@ -199,9 +210,10 @@ class RoomDocumentRepository(
      * This method removes the story units that are not in the root level (they don't have parents)
      * and loads the inner steps of the steps that have children.
      */
-    private suspend fun loadInnerSteps(storyEntities: List<StoryStepEntity>): Map<Int, StoryStep> =
+    private suspend fun loadInnerSteps(storyEntities: List<StoryStepEntity>): Map<Double, StoryStep> =
         storyEntities.filter { entity -> entity.parentId == null }
-            .associateBy { entity -> entity.position }
+            .sortedBy { it.position }
+            .associate { entity -> entity.position to entity }
             .mapValues { (_, entity) ->
                 if (entity.linkToDocument != null) {
                     val title = documentEntityDao.getDocumentTitleById(entity.linkToDocument)

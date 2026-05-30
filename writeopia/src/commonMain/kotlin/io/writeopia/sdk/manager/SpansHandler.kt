@@ -65,9 +65,9 @@ object SpansHandler {
     }
 
     fun toggleSpansForManyStories(
-        storySteps: Map<Int, StoryStep>,
+        storySteps: Map<Double, StoryStep>,
         newSpan: Span
-    ): Map<Int, StoryStep> =
+    ): Map<Double, StoryStep> =
         if (storySteps.all { (_, story) -> story.spans.any { it.span == newSpan } }) {
             storySteps.mapValues { (_, story) ->
                 val removedSpans = story.spans.filterTo(mutableSetOf()) { it.span != newSpan }

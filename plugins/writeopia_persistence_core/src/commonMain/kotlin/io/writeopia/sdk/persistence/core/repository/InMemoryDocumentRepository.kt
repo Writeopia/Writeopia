@@ -86,9 +86,27 @@ class InMemoryDocumentRepository : DocumentRepository {
         }
     }
 
-    override suspend fun saveStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
+    override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
         documentsMap["root"]?.let { document ->
             val newContent = document.content + (position to storyStep)
+            documentsMap["root"] = document.copy(content = newContent)
+        }
+    }
+
+    override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
+        documentsMap["root"]?.let { document ->
+            val newContent = document.content.toMutableMap()
+            steps.forEach { (position, storyStep) ->
+                newContent[position] = storyStep
+            }
+            documentsMap["root"] = document.copy(content = newContent)
+        }
+    }
+
+    override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {
+        documentsMap["root"]?.let { document ->
+            val newContent = document.content.filterNot { (_, step) -> step.id == storyStepId }
+                .values.mapIndexed { index, step -> index.toDouble() to step }.toMap()
             documentsMap["root"] = document.copy(content = newContent)
         }
     }
@@ -111,7 +129,7 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
     }
 
-    override suspend fun updateStoryStep(storyStep: StoryStep, position: Int, documentId: String) {
+    override suspend fun updateStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
     }
 
     override suspend fun search(query: String, workspaceId: String): List<Document> =

@@ -36,7 +36,7 @@ fun DragCardTargetMobile(
     modifier: Modifier,
     dataToDrop: DropInfo,
     showIcon: Boolean,
-    position: Int,
+    position: Double,
     dragIconWidth: Dp,
     iconTintColor: Color,
     iconTintOnHover: Color,

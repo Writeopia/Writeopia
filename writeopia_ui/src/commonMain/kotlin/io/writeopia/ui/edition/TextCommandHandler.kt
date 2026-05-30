@@ -12,7 +12,7 @@ import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.ui.manager.WriteopiaStateManager
 
 class TextCommandHandler(
-    private val commandsMap: Map<String, (StoryStep, Int) -> Unit>,
+    private val commandsMap: Map<String, (StoryStep, Double) -> Unit>,
     private val excludeTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number),
     private val trie: Trie = Trie()
 ) {
@@ -21,7 +21,7 @@ class TextCommandHandler(
         commandsMap.keys.forEach { trie.insert(it) }
     }
 
-    fun handleCommand(text: String, step: StoryStep, position: Int): Boolean {
+    fun handleCommand(text: String, step: StoryStep, position: Double): Boolean {
         if (excludeTypes.contains(step.type.number) || !text.contains(' ')) return false
 
         val textArray = text.split(" ")

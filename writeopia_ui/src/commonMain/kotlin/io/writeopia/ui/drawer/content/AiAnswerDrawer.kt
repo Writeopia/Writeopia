@@ -61,15 +61,15 @@ class AiAnswerDrawer(
     private val customBackgroundColor: Color,
     private val paddingValues: PaddingValues = PaddingValues(0.dp),
     private val enabled: Boolean,
-    private val onSelected: (Boolean, Int) -> Unit,
+    private val onSelected: (Boolean, Double) -> Unit,
     private val dragIconWidth: Dp,
     private val config: DrawConfig,
-    private val onDragHover: (Int) -> Unit,
+    private val onDragHover: (Double) -> Unit,
     private val onDragStart: () -> Unit,
     private val onDragStop: () -> Unit,
     private val moveRequest: (Action.Move) -> Unit,
-    private val receiveExternalFile: (List<ExternalFile>, Int) -> Unit,
-    private val acceptStoryStep: (Int) -> Unit
+    private val receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
+    private val acceptStoryStep: (Double) -> Unit
 ) : StoryStepDrawer {
 
     @Composable
@@ -112,13 +112,11 @@ class AiAnswerDrawer(
                 when (inBound) {
                     InBounds.OUTSIDE -> {}
                     InBounds.INSIDE_UP -> {
-                        val position = drawInfo.position - 1
-                        handleDrag(position, data)
+                        handleDrag(drawInfo.previousPosition ?: drawInfo.position, data)
                     }
 
                     InBounds.INSIDE_DOWN -> {
-                        val position = drawInfo.position
-                        handleDrag(position, data)
+                        handleDrag(drawInfo.position, data)
                     }
                 }
 
@@ -220,7 +218,7 @@ class AiAnswerDrawer(
         }
     }
 
-    private fun handleDrag(position: Int, data: DropInfo?) {
+    private fun handleDrag(position: Double, data: DropInfo?) {
         onDragHover(position)
 
         if (data != null) {

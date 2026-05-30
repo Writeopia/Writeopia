@@ -19,13 +19,13 @@ class TextCommandHandlerText {
         )
 
         assertTrue {
-            handler.handleCommand("## ", StoryStep(type = StoryTypes.TEXT.type), 0)
+            handler.handleCommand("## ", StoryStep(type = StoryTypes.TEXT.type), 0.0)
         }
         assertTrue {
-            handler.handleCommand("command ", StoryStep(type = StoryTypes.TEXT.type), 0)
+            handler.handleCommand("command ", StoryStep(type = StoryTypes.TEXT.type), 0.0)
         }
         assertFalse {
-            handler.handleCommand("notACommand ", StoryStep(type = StoryTypes.TEXT.type), 0)
+            handler.handleCommand("notACommand ", StoryStep(type = StoryTypes.TEXT.type), 0.0)
         }
     }
 }

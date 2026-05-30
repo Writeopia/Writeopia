@@ -10,7 +10,7 @@ import kotlin.time.Instant
 data class Document(
     override val id: String = GenerateId.generate(),
     override val title: String = "",
-    val content: Map<Int, StoryStep> = emptyMap(),
+    val content: Map<Double, StoryStep> = emptyMap(),
     override val createdAt: Instant,
     override val lastUpdatedAt: Instant,
     val lastSyncedAt: Instant?,

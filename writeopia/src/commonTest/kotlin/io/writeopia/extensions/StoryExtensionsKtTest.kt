@@ -17,7 +17,7 @@ class StoryExtensionsKtTest {
     fun `it should be able to recognize an empty document`() {
         val storyStepMap = buildList {
             repeat(5) {
-                add(it to StoryStep(type = StoryTypes.TEXT.type))
+                add(it.toDouble() to StoryStep(type = StoryTypes.TEXT.type))
             }
         }.toMap()
 
@@ -29,14 +29,14 @@ class StoryExtensionsKtTest {
         val storyStepMap = buildList {
             repeat(5) { index ->
                 add(
-                    index to StoryStep(
+                    index.toDouble() to StoryStep(
                         type = StoryTypes.TEXT.type
                     )
                 )
             }
         }.toMap().toMutableMap()
 
-        storyStepMap[5] = StoryStep(
+        storyStepMap[5.0] = StoryStep(
             type = StoryTypes.TEXT.type,
             text = "some text"
         )
@@ -48,7 +48,7 @@ class StoryExtensionsKtTest {
     fun `it should be possible to create sections from a list of story steps`() {
         val storyStepMap = buildList {
             add(
-                0 to StoryStep(
+                0.0 to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "Title",
                     tags = setOf(TagInfo(Tag.H1))
@@ -57,7 +57,7 @@ class StoryExtensionsKtTest {
 
             repeat(5) { i ->
                 val count = i + 1
-                add(count to StoryStep(type = StoryTypes.TEXT.type, text = "$count"))
+                add(count.toDouble() to StoryStep(type = StoryTypes.TEXT.type, text = "$count"))
             }
         }.toMap()
 
@@ -72,7 +72,7 @@ class StoryExtensionsKtTest {
 
         val sections = storyStepMap.toSections()
 
-        assertEquals(sections.size, 1)
+        assertEquals(1, sections.size)
         assertEquals(expectedText, sections.joinToString(separator = "\n") { it.asText() })
     }
 }

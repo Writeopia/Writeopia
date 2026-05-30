@@ -13,16 +13,17 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class OnUpdateDocumentTracker(
     private val documentUpdate: DocumentUpdate,
     private val documentFilter: DocumentFilter = DocumentFilterObject,
-    private val onStoryStepUpdate: suspend (StoryStep, Int) -> Unit = { _, _ -> },
+    private val onStoryStepUpdate: suspend (StoryStep, Double) -> Unit = { _, _ -> },
     private val onDocumentUpdate: suspend (Document) -> Unit = {}
 ) : DocumentTracker {
 
@@ -35,10 +36,10 @@ class OnUpdateDocumentTracker(
             workspaceIdFlow
         ) { (storyState, documentInfo), workspaceId ->
             Triple(storyState, documentInfo, workspaceId)
-        }.collectLatest { (storyState, documentInfo, workspaceId) ->
+        }.collect { (storyState, documentInfo, workspaceId) ->
             when (val lastEdit = storyState.lastEdit) {
                 is LastEdit.LineEdition -> {
-                    if (lastEdit.storyStep.ephemeral) return@collectLatest
+                    if (lastEdit.storyStep.ephemeral) return@collect
 
                     documentUpdate.saveStoryStep(
                         storyStep = lastEdit.storyStep.copy(
@@ -75,7 +76,7 @@ class OnUpdateDocumentTracker(
 
                 LastEdit.Nothing -> {}
 
-                LastEdit.Whole -> {
+                LastEdit.Whole -> withContext(NonCancellable) {
                     val stories = storyState.stories.filter { (_, story) -> !story.ephemeral }
                     val titleFromContent = stories.values
                         .firstOrNull { storyStep ->
@@ -101,7 +102,7 @@ class OnUpdateDocumentTracker(
                     onDocumentUpdate(document)
                 }
 
-                is LastEdit.InfoEdition -> {
+                is LastEdit.InfoEdition -> withContext(NonCancellable) {
                     val stories = storyState.stories
                     val titleFromContent = stories.values.firstOrNull { storyStep ->
                         // Todo: Change the type of change to allow different types. The client code should decide what is a title
@@ -134,7 +135,7 @@ class OnUpdateDocumentTracker(
                     }
                 }
 
-                LastEdit.Metadata -> {
+                LastEdit.Metadata -> withContext(NonCancellable) {
                     val stories = storyState.stories
                     val titleFromContent = stories.values.firstOrNull { storyStep ->
                         // Todo: Change the type of change to allow different types. The client code should decide what is a title
@@ -154,6 +155,162 @@ class OnUpdateDocumentTracker(
                             icon = documentInfo.icon,
                             isLocked = documentInfo.isLocked,
                             favorite = documentInfo.isFavorite
+                        )
+                    )
+                }
+
+                is LastEdit.LineBreakEdition -> {
+                    val originalStep = lastEdit.originalStep
+                    val newStep = lastEdit.newStep
+
+                    if (!originalStep.second.ephemeral && !newStep.second.ephemeral) {
+                        documentUpdate.saveStorySteps(
+                            steps = listOf(originalStep, newStep),
+                            documentId = documentInfo.id
+                        )
+                    }
+
+                    val stories = storyState.stories
+                    val titleFromContent = stories.values
+                        .firstOrNull { storyStep ->
+                            storyStep.type == StoryTypes.TITLE.type
+                        }?.text
+
+                    documentUpdate.saveDocumentMetadata(
+                        Document(
+                            id = documentInfo.id,
+                            title = titleFromContent ?: documentInfo.title,
+                            createdAt = documentInfo.createdAt,
+                            lastUpdatedAt = Clock.System.now(),
+                            lastSyncedAt = documentInfo.lastSyncedAt,
+                            workspaceId = workspaceId,
+                            parentId = documentInfo.parentId,
+                            icon = documentInfo.icon,
+                            isLocked = documentInfo.isLocked
+                        )
+                    )
+                }
+
+                is LastEdit.BulkEdition -> withContext(NonCancellable) {
+                    val nonEphemeralSteps = lastEdit.steps.filter { (_, step) -> !step.ephemeral }
+
+                    if (nonEphemeralSteps.isNotEmpty()) {
+                        documentUpdate.saveStorySteps(
+                            steps = nonEphemeralSteps,
+                            documentId = documentInfo.id
+                        )
+                    }
+
+                    val stories = storyState.stories
+                    val titleFromContent = stories.values
+                        .firstOrNull { storyStep ->
+                            storyStep.type == StoryTypes.TITLE.type
+                        }?.text
+
+                    documentUpdate.saveDocumentMetadata(
+                        Document(
+                            id = documentInfo.id,
+                            title = titleFromContent ?: documentInfo.title,
+                            createdAt = documentInfo.createdAt,
+                            lastUpdatedAt = Clock.System.now(),
+                            lastSyncedAt = documentInfo.lastSyncedAt,
+                            workspaceId = workspaceId,
+                            parentId = documentInfo.parentId,
+                            icon = documentInfo.icon,
+                            isLocked = documentInfo.isLocked
+                        )
+                    )
+                }
+
+                is LastEdit.DeleteEdition -> withContext(NonCancellable) {
+                    documentUpdate.deleteStoryStep(
+                        storyStepId = lastEdit.deletedId,
+                        documentId = documentInfo.id
+                    )
+
+                    val stories = storyState.stories
+                    val titleFromContent = stories.values
+                        .firstOrNull { storyStep ->
+                            storyStep.type == StoryTypes.TITLE.type
+                        }?.text
+
+                    documentUpdate.saveDocumentMetadata(
+                        Document(
+                            id = documentInfo.id,
+                            title = titleFromContent ?: documentInfo.title,
+                            createdAt = documentInfo.createdAt,
+                            lastUpdatedAt = Clock.System.now(),
+                            lastSyncedAt = documentInfo.lastSyncedAt,
+                            workspaceId = workspaceId,
+                            parentId = documentInfo.parentId,
+                            icon = documentInfo.icon,
+                            isLocked = documentInfo.isLocked
+                        )
+                    )
+                }
+
+                is LastEdit.EraseEdition -> withContext(NonCancellable) {
+                    // Delete the erased step
+                    documentUpdate.deleteStoryStep(
+                        storyStepId = lastEdit.deletedId,
+                        documentId = documentInfo.id
+                    )
+
+                    // Update the previous step with merged content
+                    val (dbPos, updatedStep) = lastEdit.updatedStep
+                    if (!updatedStep.ephemeral) {
+                        documentUpdate.saveStorySteps(
+                            steps = listOf(dbPos to updatedStep),
+                            documentId = documentInfo.id
+                        )
+                    }
+
+                    val stories = storyState.stories
+                    val titleFromContent = stories.values
+                        .firstOrNull { storyStep ->
+                            storyStep.type == StoryTypes.TITLE.type
+                        }?.text
+
+                    documentUpdate.saveDocumentMetadata(
+                        Document(
+                            id = documentInfo.id,
+                            title = titleFromContent ?: documentInfo.title,
+                            createdAt = documentInfo.createdAt,
+                            lastUpdatedAt = Clock.System.now(),
+                            lastSyncedAt = documentInfo.lastSyncedAt,
+                            workspaceId = workspaceId,
+                            parentId = documentInfo.parentId,
+                            icon = documentInfo.icon,
+                            isLocked = documentInfo.isLocked
+                        )
+                    )
+                }
+
+                is LastEdit.BulkDeleteEdition -> withContext(NonCancellable) {
+                    lastEdit.deletedIds.forEach { deletedId ->
+                        documentUpdate.deleteStoryStep(
+                            storyStepId = deletedId,
+                            documentId = documentInfo.id
+                        )
+                    }
+
+                    val stories = storyState.stories
+                    val titleFromContent = stories.values
+                        .firstOrNull { storyStep ->
+                            storyStep.type == StoryTypes.TITLE.type
+                        }?.text
+
+                    documentUpdate.saveDocumentMetadata(
+                        Document(
+                            id = documentInfo.id,
+                            title = titleFromContent ?: documentInfo.title,
+                            createdAt = documentInfo.createdAt,
+                            lastUpdatedAt = Clock.System.now(),
+                            lastSyncedAt = documentInfo.lastSyncedAt,
+                            workspaceId = workspaceId,
+                            parentId = documentInfo.parentId,
+                            icon = documentInfo.icon,
+                            isLocked = documentInfo.isLocked
                         )
                     )
                 }
