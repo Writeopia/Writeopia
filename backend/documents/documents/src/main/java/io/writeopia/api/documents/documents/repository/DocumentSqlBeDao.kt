@@ -666,8 +666,71 @@ class DocumentSqlBeDao(
             } ?: emptyList()
     }
 
-    // Remaining no-op method for debugging
-    fun loadDocumentWithContentByTitle(): Document? = null
+    fun loadDocumentWithContentByTitle(title: String, workspaceId: String): Document? =
+        documentQueries?.selectWithContentByTitle(title, workspaceId)
+            ?.executeAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (documentId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        !innerContent.id_.isNullOrEmpty()
+                    }.associate { innerContent ->
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked,
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color?.toInt(),
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { docId ->
+                                val docTitle = documentQueries.selectTitleByDocumentId(docId)
+                                    .executeAsOneOrNull()
+
+                                DocumentLink(docId, docTitle)
+                            }
+                        )
+
+                        innerContent.position!! to storyStep
+                    }
+
+                    Document(
+                        id = documentId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
+                        workspaceId = document.workspace_id,
+                        favorite = document.favorite,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(
+                                it,
+                                document.icon_tint
+                            )
+                        },
+                        isLocked = document.is_locked
+                    )
+                }
+            }
+            ?.firstOrNull()
 
     // Delete and other operations - with real implementation
     fun deleteDocumentById(documentId: String) {
