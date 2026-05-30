@@ -73,4 +73,6 @@ class DocumentSqlBeDao(
     fun deleteFolder(folderId: String) {}
 
     fun moveFolderToFolder(folderId: String, parentId: String) {}
+
+    fun loadDocumentWithContentByTitle(): Document? = null
 }
