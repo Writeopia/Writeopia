@@ -29,7 +29,8 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
                     0.0 to StoryStep(
                         type = StoryTypes.TEXT.type,
                         text = "text",
-                        tags = setOf(TagInfo(Tag.H1))
+                        tags = setOf(TagInfo(Tag.H1)),
+                        dbPosition = 0.0
                     )
                 )
             ).toMap(),
@@ -192,10 +193,11 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
 
 private fun now() = Instant.fromEpochMilliseconds(Clock.System.now().toEpochMilliseconds())
 
-fun simpleText(): Map<Int, StoryStep> = mapOf(
-    0 to StoryStep(
+fun simpleText(): Map<Double, StoryStep> = mapOf(
+    0.0 to StoryStep(
         type = StoryTypes.TEXT.type,
-        text = "text"
+        text = "text",
+        dbPosition = 0.0
     )
 )
 
@@ -203,6 +205,7 @@ fun simpleImage(): Map<Double, StoryStep> = mapOf(
     0.0 to StoryStep(
         localId = "0",
         type = StoryTypes.IMAGE.type,
+        dbPosition = 0.0
     )
 )
 
@@ -210,14 +213,17 @@ fun imageStepsList(): Map<Double, StoryStep> = mapOf(
     0.0 to StoryStep(
         localId = "0",
         type = StoryTypes.IMAGE.type,
+        dbPosition = 0.0
     ),
     1.0 to StoryStep(
         localId = "1",
         type = StoryTypes.IMAGE.type,
+        dbPosition = 1.0
     ),
     2.0 to StoryStep(
         localId = "2",
         type = StoryTypes.IMAGE.type,
+        dbPosition = 2.0
     ),
 )
 
@@ -229,6 +235,7 @@ fun imageGroup(): Map<Double, StoryStep> {
             id = groupId,
             localId = "1",
             type = StoryTypes.GROUP_IMAGE.type,
+            dbPosition = 0.0,
             steps = listOf(
                 StoryStep(
                     localId = "2",

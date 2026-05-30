@@ -4,6 +4,7 @@ package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
+import java.math.BigDecimal
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.extensions.sortWithOrderBy
 import io.writeopia.sdk.models.link.DocumentLink
@@ -110,7 +111,7 @@ class DocumentSqlBeDao(
                 path = path,
                 text = text,
                 checked = checked ?: false,
-                position = position,
+                position = BigDecimal.valueOf(position),
                 document_id = documentId,
                 is_group = isGroup,
                 has_inner_steps = steps.isNotEmpty(),
@@ -208,7 +209,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
                     }
 
                     Document(
@@ -274,7 +275,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
                     }
 
                     Document(
@@ -346,7 +347,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
                     }
 
                     Document(
@@ -418,7 +419,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
                     }
 
                     Document(
@@ -489,7 +490,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
                     }
 
                     Document(
@@ -559,7 +560,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
                     }
 
                     Document(
@@ -615,7 +616,7 @@ class DocumentSqlBeDao(
                             checked = innerContent.checked,
 //                                steps = emptyList(), // Todo: Fix!
                             decoration = Decoration(
-                                backgroundColor = innerContent.background_color?.toInt(),
+                                backgroundColor = innerContent.background_color,
                             ),
                             tags = innerContent.tags
                                 ?.split(",")
@@ -637,7 +638,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
                     }
 
                     Document(
@@ -704,7 +705,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
                     }
 
                     Document(
