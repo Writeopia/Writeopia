@@ -37,6 +37,7 @@ import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
+import io.writeopia.sdk.serialization.response.WorkspaceContentResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
@@ -51,6 +52,33 @@ fun Routing.documentsRoute(
     debug: Boolean = false,
     imageStorageService: ImageStorageService = GcpBucketImageStorageService
 ) {
+    authenticate("auth-jwt", optional = debug) {
+        get("/api/workspace/{workspaceId}/contents") {
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val documents = writeopiaDb.documentsDiffByWorkspace(workspaceId, 0L)
+                    val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceId)
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = WorkspaceContentResponse(
+                            folders = folders.map { it.toApi() },
+                            documents = documents.map { it.toApi() }
+                        )
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
     authenticate("auth-jwt", optional = debug) {
         get("/api/workspace/{workspaceId}/document/{id}") {
             val userId = getUserId() ?: ""
@@ -680,4 +708,3 @@ fun Routing.documentsRoute(
         }
     }
 }
-

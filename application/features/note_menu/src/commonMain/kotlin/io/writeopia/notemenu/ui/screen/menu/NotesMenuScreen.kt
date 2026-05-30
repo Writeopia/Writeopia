@@ -26,6 +26,8 @@ expect fun NotesMenuScreen(
     onNoteClick: (String, String) -> Unit,
     onAccountClick: () -> Unit,
     onForceGraphSelected: () -> Unit,
+    showDebugBackendDocuments: Boolean = false,
+    navigateToDebugBackendDocuments: () -> Unit = {},
     selectColorTheme: (ColorThemeOption) -> Unit,
     navigateToFolders: (NotesNavigation) -> Unit,
     addFolder: () -> Unit,

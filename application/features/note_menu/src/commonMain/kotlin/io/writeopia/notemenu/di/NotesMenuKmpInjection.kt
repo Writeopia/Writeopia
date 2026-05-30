@@ -17,6 +17,7 @@ import io.writeopia.di.AppConnectionInjection
 import io.writeopia.di.OllamaInjection
 import io.writeopia.notemenu.viewmodel.ChooseNoteKmpViewModel
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
+import io.writeopia.notemenu.viewmodel.DebugBackendDocumentsViewModel
 import io.writeopia.notemenu.viewmodel.FolderStateController
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
@@ -107,6 +108,15 @@ class NotesMenuKmpInjection private constructor(
     ): ChooseNoteViewModel =
         viewModel {
             provideChooseKmpNoteViewModel(notesNavigation)
+        }
+
+    @Composable
+    override fun provideDebugBackendDocumentsViewModel(): DebugBackendDocumentsViewModel =
+        viewModel {
+            DebugBackendDocumentsViewModel(
+                documentsApi = provideDocumentsApi(),
+                authRepository = authCoreInjection.provideAuthRepository()
+            )
         }
 
     companion object {

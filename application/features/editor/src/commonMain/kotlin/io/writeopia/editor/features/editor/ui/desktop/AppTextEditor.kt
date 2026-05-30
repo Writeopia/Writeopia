@@ -34,6 +34,7 @@ fun AppTextEditor(
     viewModel: NoteEditorViewModel,
     drawersFactory: DrawersFactory,
     loadNoteId: String? = null,
+    initializeDocument: Boolean = true,
     onDocumentLinkClick: (String) -> Unit,
     onDrawingClick: (StoryStep, Int) -> Unit = { _, _ -> },
     listState: LazyListState = rememberLazyListState(),
@@ -47,10 +48,12 @@ fun AppTextEditor(
         }
     }
 
-    if (loadNoteId == null) {
-        viewModel.createNewDocument(GenerateId.generate(), "")
-    } else {
-        viewModel.loadDocument(loadNoteId)
+    if (initializeDocument) {
+        if (loadNoteId == null) {
+            viewModel.createNewDocument(GenerateId.generate(), "")
+        } else {
+            viewModel.loadDocument(loadNoteId)
+        }
     }
 
     Box(modifier) {

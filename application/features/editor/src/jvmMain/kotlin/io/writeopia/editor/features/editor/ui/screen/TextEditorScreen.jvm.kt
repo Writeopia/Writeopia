@@ -18,6 +18,7 @@ actual fun TextEditorScreen(
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit,
     onDrawingClick: (StoryStep, Int) -> Unit,
+    initializeDocument: Boolean,
     modifier: Modifier,
 ) {
     DesktopNoteEditorScreen(
@@ -30,6 +31,7 @@ actual fun TextEditorScreen(
         onDrawingClick = onDrawingClick,
         onNewDrawingClick = onNewDrawingClick,
         onDocumentDelete = navigateBack,
+        initializeDocument = initializeDocument,
         modifier = modifier
     )
 }

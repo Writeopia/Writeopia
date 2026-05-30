@@ -6,9 +6,11 @@ import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
+import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.di.InDocumentSearchInjection
 import io.writeopia.di.OllamaInjection
+import io.writeopia.di.AppConnectionInjection
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorKmpViewModel
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
@@ -51,6 +53,7 @@ class EditorKmpInjector private constructor(
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
     private val repositoryInjection: RepositoryInjector,
     private val connectionInjection: WriteopiaConnectionInjector,
+    private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val appConfigurationInjector: AppConfigurationInjector =
@@ -66,6 +69,9 @@ class EditorKmpInjector private constructor(
 
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
+
+    private fun provideDocumentsApi() =
+        DocumentsApi(appConnectionInjection.provideHttpClient(), connectionInjection.baseUrl())
 
     private fun provideWriteopiaManager(): WriteopiaManager = WriteopiaManager(
         aiClient = ollamaInjection?.provideRepository()
@@ -104,6 +110,7 @@ class EditorKmpInjector private constructor(
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             authRepository = authCoreInjection.provideAuthRepository(),
             inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo(),
+            documentsApi = provideDocumentsApi(),
             drawingSaveEvents = drawingSaveEvents
         )
 
@@ -178,6 +185,7 @@ class EditorKmpInjector private constructor(
             authCoreInjection,
             RepositoryInjector.singleton(),
             connectionInjector,
+            AppConnectionInjection.singleton(),
             MutableStateFlow(false),
             MutableStateFlow(KeyboardEvent.IDLE),
         )
@@ -194,6 +202,7 @@ class EditorKmpInjector private constructor(
             authCoreInjection,
             repositoryInjection,
             connectionInjection,
+            AppConnectionInjection.singleton(),
             selectionState,
             keyboardEventFlow,
             ollamaInjection = ollamaInjection,

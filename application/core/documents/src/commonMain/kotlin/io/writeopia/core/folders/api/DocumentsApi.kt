@@ -29,6 +29,7 @@ import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
+import io.writeopia.sdk.serialization.response.WorkspaceContentResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -113,6 +114,39 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
             ResultData.Complete(Unit)
         } else {
             println("error sending folders: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun getWorkspaceContents(
+        workspaceId: String,
+        token: String
+    ): ResultData<WorkspaceContentResponse> {
+        val response = client.get("$baseUrl/api/workspace/$workspaceId/contents") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<WorkspaceContentResponse>())
+        } else {
+            println("error getting workspace contents: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun getDocument(
+        documentId: String,
+        workspaceId: String,
+        token: String
+    ): ResultData<Document> {
+        val response = client.get("$baseUrl/api/workspace/$workspaceId/document/$documentId") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<DocumentApi>().toModel())
+        } else {
+            println("error getting document: $response")
             ResultData.Error()
         }
     }
