@@ -163,6 +163,8 @@ jobs:
         env:
           PGPASSWORD: postgres
       - name: Build backend
+        run: ./gradlew :backend:gateway:assemble --no-daemon
+      - name: Test backend
         run: ./gradlew :backend:gateway:test --no-daemon
       - name: upload results
         uses: actions/upload-artifact@v4
