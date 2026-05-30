@@ -59,7 +59,7 @@ suspend fun WriteopiaDbBackend.getDocumentWithContentById(
 
 suspend fun WriteopiaDbBackend.getDocumentByTitle(
     title: String, workspaceId: String
-): Document? = getDocumentDaoFn().loadDocumentWithContentByTitle()
+): Document? = getDocumentDaoFn().loadDocumentWithContentByTitle(title, workspaceId)
 
 suspend fun WriteopiaDbBackend.getFolderById(id: String = "test", workspaceId: String): Folder? =
     getDocumentDaoFn().loadFolderById(id, workspaceId)
