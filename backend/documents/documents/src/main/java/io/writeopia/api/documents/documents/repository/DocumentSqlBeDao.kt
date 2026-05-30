@@ -707,7 +707,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!! to storyStep
+                        innerContent.position!!.toDouble() to storyStep
                     }
 
                     Document(
