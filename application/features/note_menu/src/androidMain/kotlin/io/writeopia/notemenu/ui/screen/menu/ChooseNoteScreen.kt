@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 
@@ -22,6 +23,8 @@ internal fun ChooseNoteScreen(
     newNote: () -> Unit,
     navigateToAccount: () -> Unit,
     navigateToNotes: (NotesNavigation) -> Unit,
+    nestedScrollConnection: NestedScrollConnection? = null,
+    isToolbarVisible: Boolean = true,
     navigationBar: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -49,6 +52,8 @@ internal fun ChooseNoteScreen(
         newNote = newNote,
         navigateToAccount = navigateToAccount,
         navigateToNotes = navigateToNotes,
+        nestedScrollConnection = nestedScrollConnection,
+        isToolbarVisible = isToolbarVisible,
         navigationBar = navigationBar,
         modifier = modifier,
     )

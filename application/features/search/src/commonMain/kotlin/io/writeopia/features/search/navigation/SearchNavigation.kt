@@ -1,5 +1,8 @@
 package io.writeopia.features.search.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -17,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
@@ -39,6 +44,8 @@ fun NavGraphBuilder.searchNavigation(
     navigateToDocument: (String, String) -> Unit,
     navigateToFolder: (NotesNavigation) -> Unit,
     navigationClick: () -> Unit,
+    nestedScrollConnection: NestedScrollConnection? = null,
+    isToolbarVisible: Boolean = true,
     navigationBar: @Composable () -> Unit,
 ) {
     composable(
@@ -63,35 +70,46 @@ fun NavGraphBuilder.searchNavigation(
             Scaffold(
                 contentWindowInsets = WindowInsets.systemBars,
                 topBar = {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                WrStrings.search(),
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        },
-                        navigationIcon = {
-                            Row(
-                                modifier = Modifier.fillMaxHeight(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .clickable(onClick = navigationClick)
-                                        .padding(10.dp),
-                                    imageVector = WrIcons.backArrowMobile,
-                                    contentDescription = "",
-//                    stringResource(R.string.back),
-                                    tint = MaterialTheme.colorScheme.onPrimary
+                    AnimatedVisibility(
+                        visible = isToolbarVisible,
+                        enter = slideInVertically { -it },
+                        exit = slideOutVertically { -it }
+                    ) {
+                        TopAppBar(
+                            title = {
+                                Text(
+                                    WrStrings.search(),
+                                    color = MaterialTheme.colorScheme.onPrimary
                                 )
+                            },
+                            navigationIcon = {
+                                Row(
+                                    modifier = Modifier.fillMaxHeight(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .clickable(onClick = navigationClick)
+                                            .padding(10.dp),
+                                        imageVector = WrIcons.backArrowMobile,
+                                        contentDescription = "",
+//                    stringResource(R.string.back),
+                                        tint = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 },
                 bottomBar = navigationBar
             ) { paddingValues ->
-                screen(Modifier.padding(paddingValues))
+                val scrollModifier = if (nestedScrollConnection != null) {
+                    Modifier.padding(paddingValues).nestedScroll(nestedScrollConnection)
+                } else {
+                    Modifier.padding(paddingValues)
+                }
+                screen(scrollModifier)
             }
         } else {
             screen(Modifier)

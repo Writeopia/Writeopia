@@ -1,5 +1,8 @@
 package io.writeopia.features.notifications
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -17,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
 
@@ -24,43 +29,56 @@ import io.writeopia.common.utils.icons.WrIcons
 @Composable
 fun NotificationsScreen(
     navigationClick: () -> Unit,
+    nestedScrollConnection: NestedScrollConnection? = null,
+    isToolbarVisible: Boolean = true,
     bottomBar: @Composable () -> Unit,
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            modifier = Modifier,
-                            text = "Notifications",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
+            AnimatedVisibility(
+                visible = isToolbarVisible,
+                enter = slideInVertically { -it },
+                exit = slideOutVertically { -it }
+            ) {
+                TopAppBar(
+                    title = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                modifier = Modifier,
+                                text = "Notifications",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        Row(
+                            modifier = Modifier.fillMaxHeight(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable(onClick = navigationClick)
+                                    .padding(10.dp),
+                                imageVector = WrIcons.backArrowMobile,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
                     }
-                },
-                navigationIcon = {
-                    Row(
-                        modifier = Modifier.fillMaxHeight(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .clickable(onClick = navigationClick)
-                                .padding(10.dp),
-                            imageVector = WrIcons.backArrowMobile,
-                            contentDescription = "",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                }
-            )
+                )
+            }
         },
         bottomBar = bottomBar
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        val scrollModifier = if (nestedScrollConnection != null) {
+            Modifier.fillMaxSize().nestedScroll(nestedScrollConnection)
+        } else {
+            Modifier.fillMaxSize()
+        }
+        Box(modifier = scrollModifier) {
             Text(
                 "No notifications",
                 modifier = Modifier.align(Alignment.Center),

@@ -5,6 +5,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.navigation.NavController
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.controller.OllamaConfigController
@@ -30,6 +31,8 @@ actual fun NotesMenuScreen(
     navigateToFolders: (NotesNavigation) -> Unit,
     addFolder: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
+    nestedScrollConnection: NestedScrollConnection?,
+    isToolbarVisible: Boolean,
     navigationBar: @Composable () -> Unit,
     modifier: Modifier
 ) {
@@ -42,6 +45,8 @@ actual fun NotesMenuScreen(
         newNote = onNewNoteClick,
         navigateToAccount = onAccountClick,
         navigateToNotes = navigateToFolders,
+        nestedScrollConnection = nestedScrollConnection,
+        isToolbarVisible = isToolbarVisible,
         navigationBar = navigationBar,
         modifier = modifier,
     )

@@ -3,6 +3,7 @@ package io.writeopia.navigation
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -45,6 +46,8 @@ fun Navigation(
     searchInjection: SearchInjection? = null,
     selectColorTheme: (ColorThemeOption) -> Unit,
     onDrawingSaved: (String, String, DrawingData) -> Unit = { _, _, _ -> },
+    nestedScrollConnection: NestedScrollConnection? = null,
+    isToolbarVisible: Boolean = true,
     navigationBar: @Composable () -> Unit,
     builder: NavGraphBuilder.() -> Unit
 ) {
@@ -62,6 +65,8 @@ fun Navigation(
                 navigateToNewNote = navController::navigateToNewNote,
                 navigateToFolders = navController::navigateToFolder,
                 navigateToForceGraph = navController::navigateToForceGraph,
+                nestedScrollConnection = nestedScrollConnection,
+                isToolbarVisible = isToolbarVisible,
                 navigationBar = navigationBar
             )
 
@@ -117,12 +122,16 @@ fun Navigation(
                     navigateToDocument = navController::navigateToNote,
                     navigateToFolder = navController::navigateToFolder,
                     navigationClick = navController::navigateUp,
+                    nestedScrollConnection = nestedScrollConnection,
+                    isToolbarVisible = isToolbarVisible,
                     navigationBar = navigationBar
                 )
             }
 
             notificationsNavigation(
                 navigationClick = navController::navigateUp,
+                nestedScrollConnection = nestedScrollConnection,
+                isToolbarVisible = isToolbarVisible,
                 navigationBar = navigationBar
             )
 
