@@ -74,7 +74,7 @@ internal class RegisterViewModel(
                         } ?: result.map { true }
                     }
 
-                    is Error -> {
+                    is ResultData.Error -> {
                         delay(300)
                         result.map { false }
                     }

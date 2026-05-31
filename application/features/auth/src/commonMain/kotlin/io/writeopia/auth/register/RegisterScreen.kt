@@ -20,6 +20,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -69,6 +72,16 @@ fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     navigateBack: () -> Unit,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val registrationErrorMessage = WrStrings.registrationFailed()
+    val registerStateValue by registerState.collectAsState()
+
+    LaunchedEffect(registerStateValue) {
+        if (registerStateValue is ResultData.Error) {
+            snackbarHostState.showSnackbar(registrationErrorMessage)
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -90,7 +103,7 @@ fun RegisterScreen(
             )
         }
 
-        when (val register = registerState.collectAsState().value) {
+        when (val register = registerStateValue) {
             is ResultData.Complete -> {
                 if (register.data) {
                     LaunchedEffect(key1 = "navigation") {
@@ -123,6 +136,17 @@ fun RegisterScreen(
             contentDescription = "Arrow back",
             tint = MaterialTheme.colorScheme.onBackground
         )
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp)
+        ) { data ->
+            Snackbar(
+                snackbarData = data,
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            )
+        }
     }
 }
 

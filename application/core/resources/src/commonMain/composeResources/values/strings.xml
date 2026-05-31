@@ -139,4 +139,6 @@
   <string name="teams">Teams</string>
   <string name="drawing">Drawing</string>
   <string name="new_drawing">New Drawing</string>
+  <string name="login_failed">Login failed. Please check your credentials.</string>
+  <string name="registration_failed">Registration failed. Please try again.</string>
 </resources>
