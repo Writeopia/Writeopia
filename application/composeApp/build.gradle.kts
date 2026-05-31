@@ -44,6 +44,7 @@ kotlin {
                 implementation(project(":application:core:navigation"))
                 implementation(project(":application:core:documents"))
                 implementation(project(":application:core:connection"))
+                implementation(project(":application:core:common_ui"))
 
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_serialization"))

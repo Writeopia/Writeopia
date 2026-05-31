@@ -8,6 +8,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
@@ -45,6 +46,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -86,6 +89,8 @@ internal fun NoteEditorScreen(
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit = {},
     onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
+    nestedScrollConnection: NestedScrollConnection? = null,
+    isToolbarVisible: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     BackHandler {
@@ -116,23 +121,41 @@ internal fun NoteEditorScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopBar(
-                titleState = noteEditorViewModel.currentTitle,
-                editableState = noteEditorViewModel.isEditable,
-                navigationClick = {
-                    noteEditorViewModel.handleBackAction(navigateBack = navigateBack)
-                },
-                shareDocument = noteEditorViewModel::onMoreOptionsClick
-            )
+            AnimatedVisibility(
+                visible = isToolbarVisible,
+                enter = slideInVertically { -it },
+                exit = slideOutVertically { -it }
+            ) {
+                TopBar(
+                    titleState = noteEditorViewModel.currentTitle,
+                    editableState = noteEditorViewModel.isEditable,
+                    navigationClick = {
+                        noteEditorViewModel.handleBackAction(navigateBack = navigateBack)
+                    },
+                    shareDocument = noteEditorViewModel::onMoreOptionsClick
+                )
+            }
         },
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
+        val bottomPadding by animateDpAsState(
+            targetValue = if (isToolbarVisible) 80.dp else 8.dp,
+            label = "bottomPadding"
+        )
+        val scrollModifier = if (nestedScrollConnection != null) {
+            Modifier
                 .padding(paddingValues)
-                .padding(bottom = 20.dp)
+                .padding(bottom = bottomPadding)
+                .fillMaxSize()
+                .nestedScroll(nestedScrollConnection)
+                .imePadding()
+        } else {
+            Modifier
+                .padding(paddingValues)
+                .padding(bottom = bottomPadding)
                 .fillMaxSize()
                 .imePadding()
-        ) {
+        }
+        Box(modifier = scrollModifier) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()

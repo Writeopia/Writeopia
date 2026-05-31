@@ -1,8 +1,11 @@
 package io.writeopia.notemenu.ui.screen.menu
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -31,6 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
@@ -59,6 +64,8 @@ internal fun MobileChooseNoteScreen(
     newNote: () -> Unit,
     navigateToAccount: () -> Unit,
     navigateToNotes: (NotesNavigation) -> Unit,
+    nestedScrollConnection: NestedScrollConnection? = null,
+    isToolbarVisible: Boolean = true,
     navigationBar: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -74,14 +81,26 @@ internal fun MobileChooseNoteScreen(
 
     val showFab by derivedStateOf { !editState && !hasSelectedNotes }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    val scrollModifier = if (nestedScrollConnection != null) {
+        modifier.fillMaxSize().nestedScroll(nestedScrollConnection)
+    } else {
+        modifier.fillMaxSize()
+    }
+
+    Box(modifier = scrollModifier) {
         Scaffold(
             topBar = {
-                TopBar(
-                    titleState = chooseNoteViewModel.userName,
-                    accountClick = navigateToAccount,
-                    menuClick = chooseNoteViewModel::showEditMenu
-                )
+                AnimatedVisibility(
+                    visible = isToolbarVisible,
+                    enter = slideInVertically { -it },
+                    exit = slideOutVertically { -it }
+                ) {
+                    TopBar(
+                        titleState = chooseNoteViewModel.userName,
+                        accountClick = navigateToAccount,
+                        menuClick = chooseNoteViewModel::showEditMenu
+                    )
+                }
             },
             floatingActionButton = {
                 if (showFab) {

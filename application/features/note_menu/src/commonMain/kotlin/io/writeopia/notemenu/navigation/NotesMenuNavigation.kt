@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -40,6 +41,8 @@ fun NavGraphBuilder.notesMenuNavigation(
     navigateToAccount: () -> Unit,
     navigateToForceGraph: () -> Unit,
     navigateToFolders: (NotesNavigation) -> Unit,
+    nestedScrollConnection: NestedScrollConnection? = null,
+    isToolbarVisible: Boolean = true,
     navigationBar: @Composable () -> Unit,
 ) {
     composable(
@@ -86,6 +89,8 @@ fun NavGraphBuilder.notesMenuNavigation(
             addFolder = chooseNoteViewModel::addFolder,
             editFolder = chooseNoteViewModel::editFolder,
             onForceGraphSelected = navigateToForceGraph,
+            nestedScrollConnection = nestedScrollConnection,
+            isToolbarVisible = isToolbarVisible,
             navigationBar = navigationBar,
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
@@ -114,6 +119,8 @@ fun NavGraphBuilder.notesMenuNavigation(
             addFolder = chooseNoteViewModel::addFolder,
             editFolder = chooseNoteViewModel::editFolder,
             onForceGraphSelected = navigateToForceGraph,
+            nestedScrollConnection = nestedScrollConnection,
+            isToolbarVisible = isToolbarVisible,
             navigationBar = navigationBar,
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )

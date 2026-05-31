@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -32,6 +33,8 @@ fun NavGraphBuilder.editorNavigation(
     editorInjector: TextEditorInjector,
     navigateToNote: (String) -> Unit,
     navigateToPresentation: (String) -> Unit,
+    nestedScrollConnection: NestedScrollConnection? = null,
+    isToolbarVisible: Boolean = true,
     navigateToNewDrawing: (String) -> Unit = {},
     navigateToEditDrawing: (String, StoryStep) -> Unit = { _, _ -> }
 ) {
@@ -78,6 +81,8 @@ fun NavGraphBuilder.editorNavigation(
                     onDrawingClick = { storyStep, _ ->
                         navigateToEditDrawing(noteId, storyStep)
                     },
+                    nestedScrollConnection = nestedScrollConnection,
+                    isToolbarVisible = isToolbarVisible,
                     modifier = sharedModifier(this, noteId)
                 )
             } else {
@@ -111,6 +116,8 @@ fun NavGraphBuilder.editorNavigation(
                 onDrawingClick = { storyStep, _ ->
                     navigateToEditDrawing(documentId, storyStep)
                 },
+                nestedScrollConnection = nestedScrollConnection,
+                isToolbarVisible = isToolbarVisible,
                 modifier = sharedModifier(this),
             )
         }

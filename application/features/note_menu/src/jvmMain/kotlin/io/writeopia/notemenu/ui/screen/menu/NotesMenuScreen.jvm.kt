@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.graphics.Color
@@ -47,6 +48,8 @@ actual fun NotesMenuScreen(
     navigateToFolders: (NotesNavigation) -> Unit,
     addFolder: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
+    nestedScrollConnection: NestedScrollConnection?,
+    isToolbarVisible: Boolean,
     navigationBar: @Composable () -> Unit,
     modifier: Modifier
 ) {
