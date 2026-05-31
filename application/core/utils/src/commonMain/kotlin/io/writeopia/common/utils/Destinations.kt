@@ -6,6 +6,7 @@ enum class Destinations(val id: String, val root: String) {
     CHOOSE_NOTE("choose_note", "Home"),
     MAIN_APP("main_app", "Home"),
     FORCE_GRAPH("force_graph", "Home"),
+    DRAWING("drawing", "Home"),
     SEARCH("search", "io.writeopia.common.utils.icons.all.getSearch"),
     NOTIFICATIONS("notifications", "Notifications"),
     EDIT_FOLDER("edit_folder", "Home"),
