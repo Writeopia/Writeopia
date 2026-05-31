@@ -17,6 +17,7 @@ import io.writeopia.core.folders.repository.InDocumentSearchRepository
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.search.FindInText
+import io.writeopia.editor.features.summarization.SummarizationService
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
@@ -32,6 +33,7 @@ import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.utils.ResultData
@@ -705,6 +707,43 @@ class NoteEditorKmpViewModel(
                 ollamaRepository,
                 position + 0.001
             )
+        }
+    }
+
+    override fun mlKitSummarize() {
+        viewModelScope.launch(Dispatchers.Default) {
+            val text = writeopiaManager.getDocumentText()
+            val position = writeopiaManager.lastPosition()
+
+            writeopiaManager.loadingAtPosition(position)
+
+            val summarizationService = SummarizationService()
+            try {
+                val result = summarizationService.summarize(text)
+                result.fold(
+                    onSuccess = { summary ->
+                        val storyStep = StoryStep(
+                            type = StoryTypes.AI_ANSWER.type,
+                            text = summary
+                        )
+                        val action = Action.StoryStateChange(storyStep, position)
+                        writeopiaManager.changeStoryState(action)
+                        writeopiaManager.trackState()
+                    },
+                    onFailure = { error ->
+                        val errorMessage = error.message ?: "Summarization failed"
+                        val storyStep = StoryStep(
+                            type = StoryTypes.AI_ANSWER.type,
+                            text = "Error: $errorMessage"
+                        )
+                        val action = Action.StoryStateChange(storyStep, position)
+                        writeopiaManager.changeStoryState(action)
+                        writeopiaManager.trackState()
+                    }
+                )
+            } finally {
+                summarizationService.close()
+            }
         }
     }
 

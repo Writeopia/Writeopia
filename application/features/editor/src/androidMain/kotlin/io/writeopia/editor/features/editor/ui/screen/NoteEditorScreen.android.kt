@@ -193,7 +193,8 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::addPage,
                     noteEditorViewModel::toggleHighLightBlock,
                     noteEditorViewModel::titleClick,
-                    onDrawingClick = onNewDrawingClick
+                    onDrawingClick = onNewDrawingClick,
+                    onSummarizeClick = noteEditorViewModel::mlKitSummarize
                 )
             }
 
@@ -357,7 +358,8 @@ private fun BottomScreen(
     onAddPage: () -> Unit = {},
     onHighlight: () -> Unit,
     titleClick: (Tag) -> Unit,
-    onDrawingClick: () -> Unit = {}
+    onDrawingClick: () -> Unit = {},
+    onSummarizeClick: () -> Unit = {}
 ) {
     val edit by editState.collectAsState()
 
@@ -391,7 +393,8 @@ private fun BottomScreen(
                     onForwardPress = reDo,
                     canUndoState = canUndo,
                     canRedoState = canRedo,
-                    onDrawingClick = onDrawingClick
+                    onDrawingClick = onDrawingClick,
+                    onSummarizeClick = onSummarizeClick
                 )
             }
 
