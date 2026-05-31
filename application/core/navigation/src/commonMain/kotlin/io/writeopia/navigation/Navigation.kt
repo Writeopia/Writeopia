@@ -82,6 +82,8 @@ fun Navigation(
                 editorInjector = editorInjector,
                 navigateToPresentation = navController::navigateToPresentation,
                 sharedTransitionScope = this@SharedTransitionLayout,
+                nestedScrollConnection = nestedScrollConnection,
+                isToolbarVisible = isToolbarVisible,
                 navigateToNote = { id ->
                     navController.navigateToNote(id, title = "")
                 },

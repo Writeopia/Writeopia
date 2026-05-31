@@ -2,6 +2,7 @@ package io.writeopia.editor.features.editor.ui.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import io.writeopia.editor.features.editor.ui.desktop.DesktopNoteEditorScreen
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.sdk.models.story.StoryStep
@@ -18,6 +19,8 @@ actual fun TextEditorScreen(
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit,
     onDrawingClick: (StoryStep, Double) -> Unit,
+    nestedScrollConnection: NestedScrollConnection?,
+    isToolbarVisible: Boolean,
     modifier: Modifier,
 ) {
     DesktopNoteEditorScreen(
