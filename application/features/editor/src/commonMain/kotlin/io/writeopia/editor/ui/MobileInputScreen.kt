@@ -50,6 +50,7 @@ internal fun MobileInputScreen(
     canUndoState: StateFlow<Boolean>,
     canRedoState: StateFlow<Boolean>,
     onDrawingClick: () -> Unit = {},
+    platformActionsSlot: @Composable () -> Unit = {},
 ) {
     val canUndo by canUndoState.collectAsState()
     val canRedo by canRedoState.collectAsState()
@@ -186,6 +187,8 @@ internal fun MobileInputScreen(
                         contentDescription = "Drawing",
                         tint = buttonColor
                     )
+
+                    platformActionsSlot()
 
                     Spacer(modifier = Modifier.weight(1F))
 

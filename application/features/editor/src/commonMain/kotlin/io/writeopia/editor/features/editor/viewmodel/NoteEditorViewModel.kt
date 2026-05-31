@@ -153,6 +153,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun selectModel(model: String)
 
     fun titleClick(tag: Tag)
+
+    fun mlKitSummarize()
 }
 
 data class ShareDocument(val content: String, val title: String, val type: String)
