@@ -24,6 +24,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
+import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.rememberScrollAwareState
@@ -82,52 +83,66 @@ fun PortraitMobile(
             val currentDestination = navBackStackEntry?.destination
             val navigationItems by navigationViewModel.selectedNavigation.collectAsState()
 
+            // Hide navigation bar on auth screens
+            val currentRoute = currentDestination?.route
+            val isAuthScreen = currentRoute?.let { route ->
+                route.startsWith(Destinations.AUTH_MENU.id) ||
+                    route.startsWith(Destinations.AUTH_MENU_INNER_NAVIGATION.id) ||
+                    route.startsWith(Destinations.AUTH_REGISTER.id) ||
+                    route.startsWith(Destinations.AUTH_RESET_PASSWORD.id) ||
+                    route.startsWith(Destinations.AUTH_LOGIN.id) ||
+                    route.startsWith(Destinations.CHOOSE_WORKSPACE.id) ||
+                    route.startsWith(Destinations.START_APP.id)
+            } ?: true
+
             val offsetY by animateDpAsState(
-                targetValue = if (scrollAwareState.isVisible) 0.dp else 100.dp,
+                targetValue = if (scrollAwareState.isVisible && !isAuthScreen) 0.dp else 100.dp,
                 animationSpec = tween(durationMillis = 300),
                 label = "navBarOffset"
             )
 
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset { IntOffset(0, offsetY.roundToPx()) }
-            ) {
-                navigationItems.forEach { item ->
-                    val isSelected =
-                        currentDestination?.hierarchy?.any { destination ->
-                            destination.route?.let {
-                                NavItemName.selectRoute(it)
-                            }?.value == item.navItemName.value
-                        } ?: false
+            if (!isAuthScreen) {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .offset { IntOffset(0, offsetY.roundToPx()) }
+                ) {
+                    navigationItems.forEach { item ->
+                        val isSelected =
+                            currentDestination?.hierarchy?.any { destination ->
+                                destination.route?.let {
+                                    NavItemName.selectRoute(it)
+                                }?.value == item.navItemName.value
+                            } ?: false
 
-                    NavigationBarItem(
-                        selected = isSelected,
-                        icon = {
-                            Icon(
-                                imageVector = item.navItemName.iconForNavItem(),
-                                contentDescription = item.navItemName.value
-                            )
-                        },
-                        onClick = {
-                            navController.navigateToItem(item.navItemName) {
-                                if (!isSelected) {
-                                    popUpTo(navController.graph.findStartDestination().route!!) {
-                                        saveState = true
+                        NavigationBarItem(
+                            selected = isSelected,
+                            icon = {
+                                Icon(
+                                    imageVector = item.navItemName.iconForNavItem(),
+                                    contentDescription = item.navItemName.value
+                                )
+                            },
+                            onClick = {
+                                navController.navigateToItem(item.navItemName) {
+                                    if (!isSelected) {
+                                        popUpTo(navController.graph.findStartDestination().route!!) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
                                 }
-                            }
-                        },
-                        colors = NavigationBarItemDefaults.colors()
-                            .copy(
-                                selectedIconColor = MaterialTheme.colorScheme.onSecondary,
-                                unselectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                                selectedIndicatorColor = MaterialTheme.colorScheme.secondary,
-                            )
-                    )
+                            },
+                            colors = NavigationBarItemDefaults.colors()
+                                .copy(
+                                    selectedIconColor = MaterialTheme.colorScheme.onSecondary,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                                    selectedIndicatorColor = MaterialTheme.colorScheme.secondary,
+                                )
+                        )
+                    }
                 }
             }
         }
