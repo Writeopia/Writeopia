@@ -4,7 +4,6 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.asJdbcDriver
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.writeopia.sql.WriteopiaDbBackend
 
 private val config = HikariConfig().apply {
     jdbcUrl = "jdbc:postgresql://localhost:5432/${System.getenv("DB_NAME") ?: "writeopia"}"

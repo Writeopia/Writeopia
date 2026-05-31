@@ -117,7 +117,9 @@ import writeopia.application.core.resources.generated.resources.use_offline
 import writeopia.application.core.resources.generated.resources.user_email
 import writeopia.application.core.resources.generated.resources.your_teams
 import writeopia.application.core.resources.generated.resources.drawing
+import writeopia.application.core.resources.generated.resources.login_failed
 import writeopia.application.core.resources.generated.resources.new_drawing
+import writeopia.application.core.resources.generated.resources.registration_failed
 
 object WrStrings {
 
@@ -471,4 +473,10 @@ object WrStrings {
 
     @Composable
     fun newDrawing() = stringResource(Res.string.new_drawing)
+
+    @Composable
+    fun loginFailed() = stringResource(Res.string.login_failed)
+
+    @Composable
+    fun registrationFailed() = stringResource(Res.string.registration_failed)
 }

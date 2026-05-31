@@ -22,6 +22,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -68,6 +71,17 @@ fun AuthMenuScreen(
     navigateUp: () -> Unit,
     navigateNext: () -> Unit,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val loginErrorMessage = WrStrings.loginFailed()
+    val loginStateValue by loginState.collectAsState()
+
+    LaunchedEffect(loginStateValue) {
+        println("showing snackbar")
+        if (loginStateValue is ResultData.Error) {
+            snackbarHostState.showSnackbar(loginErrorMessage)
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -87,7 +101,7 @@ fun AuthMenuScreen(
             )
         }
 
-        when (val isConnected = loginState.collectAsState().value) {
+        when (val isConnected = loginStateValue) {
             is ResultData.Complete -> {
                 if (isConnected.data) {
                     LaunchedEffect("navigateUp") {
@@ -98,6 +112,7 @@ fun AuthMenuScreen(
             }
 
             is ResultData.Error -> {
+                println("auth error")
                 authScreen(Modifier)
             }
 
@@ -125,6 +140,17 @@ fun AuthMenuScreen(
             contentDescription = "Arrow back",
             tint = MaterialTheme.colorScheme.onBackground
         )
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp)
+        ) { data ->
+            Snackbar(
+                snackbarData = data,
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            )
+        }
     }
 }
 
