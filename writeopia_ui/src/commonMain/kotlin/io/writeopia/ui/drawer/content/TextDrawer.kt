@@ -40,6 +40,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -57,6 +58,8 @@ import io.writeopia.ui.extensions.toTextRange
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.ui.model.EmptyErase
 import io.writeopia.ui.model.TextInput
+import io.writeopia.ui.spellcheck.SpellChecker
+import io.writeopia.ui.spellcheck.SpellCheckVisualTransformation
 import io.writeopia.ui.utils.Spans
 import io.writeopia.ui.utils.defaultTextStyle
 import kotlinx.coroutines.delay
@@ -87,7 +90,8 @@ class TextDrawer(
     private val onSelectionLister: (Double) -> Unit,
     private val textToolbox: @Composable (Boolean) -> Unit = {},
     private val slashCommands: List<SlashCommand> = defaultSlashCommands,
-    private val slashCommandsEnabled: Boolean = true
+    private val slashCommandsEnabled: Boolean = true,
+    private val spellChecker: SpellChecker? = null
 ) : SimpleTextDrawer {
 
     @Composable
@@ -118,6 +122,17 @@ class TextDrawer(
 
         var textLayoutResult by remember {
             mutableStateOf<TextLayoutResult?>(null)
+        }
+
+        // Spell checking state
+        var misspelledRanges by remember { mutableStateOf<List<IntRange>>(emptyList()) }
+
+        // Debounced spell checking
+        LaunchedEffect(inputText.text) {
+            if (spellChecker?.isAvailable() == true) {
+                delay(500) // Debounce
+                misspelledRanges = spellChecker.checkSpelling(inputText.text)
+            }
         }
 
         // Recalculate selection for last-line positioning when layout becomes available
@@ -331,6 +346,11 @@ class TextDrawer(
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     interactionSource = interactionSource,
                     decorationBox = decorationBox,
+                    visualTransformation = if (misspelledRanges.isNotEmpty()) {
+                        SpellCheckVisualTransformation(misspelledRanges)
+                    } else {
+                        VisualTransformation.None
+                    },
                 )
             }
 

@@ -30,6 +30,7 @@ import io.writeopia.ui.drawer.TextToolbox
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
+import io.writeopia.ui.spellcheck.SpellChecker
 
 object DefaultDrawersDesktop : DrawersFactory {
 
@@ -58,6 +59,9 @@ object DefaultDrawersDesktop : DrawersFactory {
             )
         }
 
+        // Create spell checker instance for macOS
+        val spellChecker = remember { SpellChecker() }
+
         return CommonDrawers.create(
             manager,
             300.dp,
@@ -76,6 +80,7 @@ object DefaultDrawersDesktop : DrawersFactory {
             equationToImageUrl = equationToImageUrl,
             textToolbox = textToolbox,
             linkLeadingIcon = linkLeadingIcon,
+            spellChecker = spellChecker,
             headerEndContent = { storyStep, drawInfo, isHovered ->
                 // Todo: This code needs to be fixed!
                 val isTitle = storyStep.tags.any { it.tag.isTitle() }
