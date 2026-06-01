@@ -45,6 +45,7 @@ import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.ui.model.EmptyErase
+import io.writeopia.ui.spellcheck.SpellChecker
 import io.writeopia.ui.utils.codeBlockStyle
 import io.writeopia.ui.utils.defaultTextStyle
 
@@ -76,7 +77,8 @@ object CommonDrawers {
             onTypeChange = manager::changeStoryType,
             onTagToggle = manager::toggleTagForPosition
         ),
-        slashCommandsEnabled: Boolean = true
+        slashCommandsEnabled: Boolean = true,
+        spellChecker: SpellChecker? = null
     ): Map<Int, StoryStepDrawer> {
         val commonTextModifier = Modifier.padding(
             start = drawConfig.codeBlockStartPadding.dp,
@@ -99,7 +101,8 @@ object CommonDrawers {
                     textStyle = { defaultTextStyle(it, fontFamily) },
                     textToolbox = textToolbox,
                     slashCommands = slashCommands,
-                    slashCommandsEnabled = slashCommandsEnabled
+                    slashCommandsEnabled = slashCommandsEnabled,
+                    spellChecker = spellChecker
                 )
             }
 
@@ -131,7 +134,8 @@ object CommonDrawers {
                     onSelectionLister = manager::toggleSelection,
                     textToolbox = textToolbox,
                     slashCommands = slashCommands,
-                    slashCommandsEnabled = slashCommandsEnabled
+                    slashCommandsEnabled = slashCommandsEnabled,
+                    spellChecker = null // Don't spell check code blocks
                 )
             }
         )
@@ -331,7 +335,8 @@ private fun RowScope.messageDrawer(
     onSelectionLister: (Double) -> Unit,
     textToolbox: @Composable (Boolean) -> Unit,
     slashCommands: List<SlashCommand> = defaultSlashCommands,
-    slashCommandsEnabled: Boolean = true
+    slashCommandsEnabled: Boolean = true,
+    spellChecker: SpellChecker? = null
 ): TextDrawer =
     TextDrawer(
         modifier = modifier.weight(1F),
@@ -350,5 +355,6 @@ private fun RowScope.messageDrawer(
         aiExplanation = aiExplanation,
         textToolbox = textToolbox,
         slashCommands = slashCommands,
-        slashCommandsEnabled = slashCommandsEnabled
+        slashCommandsEnabled = slashCommandsEnabled,
+        spellChecker = spellChecker
     )

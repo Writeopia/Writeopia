@@ -33,6 +33,7 @@ postgresql = "42.7.8"
 compose-navigation = "2.9.1"
 publish = "0.33.0"
 lifecycleViewmodelCompose = "2.9.6"
+jna = "5.14.0"
 compileSdk = "36"
 targetSdk = "36"
 minSdk = "26"
@@ -95,6 +96,7 @@ database-postgresql = { group = "org.postgresql", name = "postgresql", version.r
 compose-navigation = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "compose-navigation" }
 sqldelight-web-driver = { module = "app.cash.sqldelight:web-worker-driver", version.ref = "webWorkerDriver" }
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
+jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
 
 [plugins]
 application = { id = "com.android.application", version.ref = "agp" }
