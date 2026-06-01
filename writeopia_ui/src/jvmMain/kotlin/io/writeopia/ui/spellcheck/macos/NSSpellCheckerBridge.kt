@@ -149,6 +149,7 @@ class NSSpellCheckerBridge private constructor() {
  * JNA interface that captures just the first register (location) from NSRange return.
  * On ARM64, NSRange.location is returned in x0 register.
  */
+@Suppress("FunctionName")
 interface CheckSpellingSimple : Library {
     companion object {
         val INSTANCE: CheckSpellingSimple? by lazy {

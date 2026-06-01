@@ -22,7 +22,5 @@ actual class SpellChecker actual constructor() {
         }
     }
 
-    actual fun isAvailable(): Boolean {
-        return bridge != null
-    }
+    actual fun isAvailable(): Boolean = bridge != null
 }

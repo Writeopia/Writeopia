@@ -10,6 +10,7 @@ import com.sun.jna.Structure
  * JNA interface for Objective-C runtime functions.
  * Used to interact with macOS native APIs.
  */
+@Suppress("FunctionName")
 interface ObjCRuntime : Library {
     companion object {
         val INSTANCE: ObjCRuntime? by lazy {
