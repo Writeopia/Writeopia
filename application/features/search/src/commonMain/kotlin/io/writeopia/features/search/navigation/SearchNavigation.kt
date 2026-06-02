@@ -1,15 +1,20 @@
 package io.writeopia.features.search.navigation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -104,10 +109,23 @@ fun NavGraphBuilder.searchNavigation(
                 },
                 bottomBar = navigationBar
             ) { paddingValues ->
+                // Add extra bottom padding when navigation bar is visible
+                val contentBottomPadding by animateDpAsState(
+                    targetValue = if (isToolbarVisible) 96.dp else 0.dp,
+                    animationSpec = tween(durationMillis = 300),
+                    label = "contentBottomPadding"
+                )
+                val adjustedPaddingValues = PaddingValues(
+                    start = paddingValues.calculateLeftPadding(LayoutDirection.Ltr),
+                    top = paddingValues.calculateTopPadding(),
+                    end = paddingValues.calculateRightPadding(LayoutDirection.Ltr),
+                    bottom = paddingValues.calculateBottomPadding() + contentBottomPadding
+                )
+
                 val scrollModifier = if (nestedScrollConnection != null) {
-                    Modifier.padding(paddingValues).nestedScroll(nestedScrollConnection)
+                    Modifier.padding(adjustedPaddingValues).nestedScroll(nestedScrollConnection)
                 } else {
-                    Modifier.padding(paddingValues)
+                    Modifier.padding(adjustedPaddingValues)
                 }
                 screen(scrollModifier)
             }

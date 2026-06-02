@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,6 +41,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.icons.WrIcons
@@ -87,6 +91,14 @@ internal fun MobileChooseNoteScreen(
         modifier.fillMaxSize()
     }
 
+    // Animate FAB offset based on navigation bar visibility
+    // When nav bar is visible, FAB needs to be higher (negative offset to move up)
+    val fabOffsetY by animateDpAsState(
+        targetValue = if (isToolbarVisible) (-96).dp else 0.dp,
+        animationSpec = tween(durationMillis = 300),
+        label = "fabOffset"
+    )
+
     Box(modifier = scrollModifier) {
         Scaffold(
             topBar = {
@@ -104,11 +116,27 @@ internal fun MobileChooseNoteScreen(
             },
             floatingActionButton = {
                 if (showFab) {
-                    FloatingActionButton(onClick = chooseNoteViewModel::showAddMenu)
+                    FloatingActionButton(
+                        onClick = chooseNoteViewModel::showAddMenu,
+                        modifier = Modifier.offset { IntOffset(0, fabOffsetY.roundToPx()) }
+                    )
                 }
             },
             bottomBar = navigationBar
         ) { paddingValues ->
+            // Add extra bottom padding when navigation bar is visible
+            val contentBottomPadding by animateDpAsState(
+                targetValue = if (isToolbarVisible) 80.dp else 0.dp,
+                animationSpec = tween(durationMillis = 300),
+                label = "contentBottomPadding"
+            )
+            val adjustedPaddingValues = PaddingValues(
+                start = paddingValues.calculateLeftPadding(androidx.compose.ui.unit.LayoutDirection.Ltr),
+                top = paddingValues.calculateTopPadding(),
+                end = paddingValues.calculateRightPadding(androidx.compose.ui.unit.LayoutDirection.Ltr),
+                bottom = paddingValues.calculateBottomPadding() + contentBottomPadding
+            )
+
             DraggableScreen {
                 Content(
                     isDarkTheme = isDarkTheme,
@@ -117,7 +145,7 @@ internal fun MobileChooseNoteScreen(
                     animatedVisibilityScope = animatedVisibilityScope,
                     loadNote = navigateToNote,
                     selectionListener = chooseNoteViewModel::onDocumentSelected,
-                    paddingValues = paddingValues,
+                    paddingValues = adjustedPaddingValues,
                     newNote = newNote,
                     navigateToNotes = navigateToNotes,
                 )
@@ -133,6 +161,7 @@ internal fun MobileChooseNoteScreen(
                     listOptionClick = chooseNoteViewModel::listArrangementSelected,
                     sortingSelected = chooseNoteViewModel::sortingSelected,
                     sortingState = chooseNoteViewModel.orderByState,
+                    modifier = Modifier.padding(bottom = contentBottomPadding)
                 )
 
                 val titlesToDelete by chooseNoteViewModel.titlesToDelete.collectAsState()
@@ -156,7 +185,12 @@ internal fun MobileChooseNoteScreen(
                 NotesSelectionMenu(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(8.dp),
+                        .padding(
+                            start = 8.dp,
+                            end = 8.dp,
+                            top = 8.dp,
+                            bottom = contentBottomPadding
+                        ),
                     visibilityState = hasSelectedNotes,
                     onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
                     onCopy = chooseNoteViewModel::copySelectedNotes,
@@ -256,6 +290,7 @@ private fun getUserInitials(userNameState: UserState<String>): String =
                 "U"
             }
         }
+
         is UserState.DisconnectedUser -> "OF"
         is UserState.Idle -> ""
         is UserState.Loading -> ""
@@ -264,10 +299,11 @@ private fun getUserInitials(userNameState: UserState<String>): String =
 
 @Composable
 private fun FloatingActionButton(
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     FloatingActionButton(
-        modifier = Modifier.semantics {
+        modifier = modifier.semantics {
             testTag = ADD_NOTE_TEST_TAG
         },
         containerColor = MaterialTheme.colorScheme.primary,
