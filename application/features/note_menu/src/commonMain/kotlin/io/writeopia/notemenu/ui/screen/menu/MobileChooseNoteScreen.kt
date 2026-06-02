@@ -109,7 +109,7 @@ internal fun MobileChooseNoteScreen(
             },
             bottomBar = navigationBar
         ) { paddingValues ->
-            DraggableScreen(modifier = Modifier.padding(paddingValues)) {
+            DraggableScreen {
                 Content(
                     isDarkTheme = isDarkTheme,
                     chooseNoteViewModel = chooseNoteViewModel,
@@ -117,7 +117,7 @@ internal fun MobileChooseNoteScreen(
                     animatedVisibilityScope = animatedVisibilityScope,
                     loadNote = navigateToNote,
                     selectionListener = chooseNoteViewModel::onDocumentSelected,
-                    paddingValues = PaddingValues(),
+                    paddingValues = paddingValues,
                     newNote = newNote,
                     navigateToNotes = navigateToNotes,
                 )
