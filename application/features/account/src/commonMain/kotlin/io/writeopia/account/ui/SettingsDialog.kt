@@ -128,6 +128,9 @@ fun SettingsDialog(
 //                .padding(horizontal = 40.dp, vertical = 20.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
+            val userOnline by userOnlineState.collectAsState()
+            val isUserOnline = userOnline.id != WriteopiaUser.DISCONNECTED
+
             SettingsPanel(
                 modifier = Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
                 accountScreen = {
@@ -153,6 +156,7 @@ fun SettingsDialog(
                     WorkspaceSection(
                         workplacePathState = workplacePathState,
                         showPath = true,
+                        isOnline = isUserOnline,
                         selectWorkplacePath = selectWorkplacePath,
                         syncWorkspace = syncWorkspace,
                         syncWorkspaceState = syncWorkspaceState,
@@ -238,16 +242,19 @@ fun SettingsScreen(
 
     Connect(isLoggedInState, goToRegister, changeAccount, resetPassword, logout)
 
+    val isLoggedIn = isLoggedInState.collectAsState().value.toBoolean()
+
     Spacer(modifier = Modifier.height(16.dp))
 
     WorkspaceSection(
-        workplacePathState,
-        syncWorkspaceState,
-        showPath,
-        selectWorkplacePath,
-        syncWorkspace,
-        isAutoSyncEnabled,
-        onAutoSyncToggle
+        workplacePathState = workplacePathState,
+        syncWorkspaceState = syncWorkspaceState,
+        showPath = showPath,
+        isOnline = isLoggedIn,
+        selectWorkplacePath = selectWorkplacePath,
+        syncWorkspace = syncWorkspace,
+        isAutoSyncEnabled = isAutoSyncEnabled,
+        onAutoSyncToggle = onAutoSyncToggle
     )
 
     Spacer(modifier = Modifier.height(20.dp))
@@ -547,6 +554,7 @@ private fun WorkspaceSection(
     workplacePathState: StateFlow<String>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
     showPath: Boolean = true,
+    isOnline: Boolean = true,
     selectWorkplacePath: (String) -> Unit,
     syncWorkspace: () -> Unit,
     isAutoSyncEnabled: StateFlow<Boolean>,
@@ -587,66 +595,68 @@ private fun WorkspaceSection(
             )
         }
 
-        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+        if (isOnline) {
+            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
-        Text(text = "Sync", style = titleStyle, color = titleColor)
-
-        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-
-        if (workplacePath.isNotBlank()) {
-            val autoSyncEnabled by isAutoSyncEnabled.collectAsState()
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Auto sync",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = titleColor,
-                    modifier = Modifier.weight(1F)
-                )
-
-                Switch(
-                    checked = autoSyncEnabled,
-                    onCheckedChange = onAutoSyncToggle
-                )
-            }
+            Text(text = "Sync", style = titleStyle, color = titleColor)
 
             Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-        }
 
-        CommonButton(
-            text = "Sync workspace",
-            clickListener = syncWorkspace
-        )
+            if (workplacePath.isNotBlank()) {
+                val autoSyncEnabled by isAutoSyncEnabled.collectAsState()
 
-        val lastSync = syncWorkspaceState.collectAsState().value
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Auto sync",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = titleColor,
+                        modifier = Modifier.weight(1F)
+                    )
 
-        Spacer(modifier = Modifier.height(6.dp))
+                    Switch(
+                        checked = autoSyncEnabled,
+                        onCheckedChange = onAutoSyncToggle
+                    )
+                }
 
-        when (lastSync) {
-            is ResultData.Complete<String> -> {
-                Text(
-                    text = lastSync.data,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = titleColor
-                )
+                Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
             }
 
-            is ResultData.Error<*> -> {
-                Text(
-                    text = lastSync.exception?.message ?: "Error syncing workspace",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = titleColor
-                )
-            }
+            CommonButton(
+                text = "Sync workspace",
+                clickListener = syncWorkspace
+            )
 
-            is ResultData.Loading<*> -> {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-            }
+            val lastSync = syncWorkspaceState.collectAsState().value
 
-            else -> {}
+            Spacer(modifier = Modifier.height(6.dp))
+
+            when (lastSync) {
+                is ResultData.Complete<String> -> {
+                    Text(
+                        text = lastSync.data,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = titleColor
+                    )
+                }
+
+                is ResultData.Error<*> -> {
+                    Text(
+                        text = lastSync.exception?.message ?: "Error syncing workspace",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = titleColor
+                    )
+                }
+
+                is ResultData.Loading<*> -> {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                }
+
+                else -> {}
+            }
         }
 
         if (showEditPathDialog) {
