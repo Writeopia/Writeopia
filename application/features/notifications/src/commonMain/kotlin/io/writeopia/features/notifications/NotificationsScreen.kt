@@ -1,15 +1,20 @@
 package io.writeopia.features.notifications
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -72,11 +77,24 @@ fun NotificationsScreen(
             }
         },
         bottomBar = bottomBar
-    ) {
+    ) { paddingValues ->
+        // Add extra bottom padding when navigation bar is visible
+        val contentBottomPadding by animateDpAsState(
+            targetValue = if (isToolbarVisible) 96.dp else 0.dp,
+            animationSpec = tween(durationMillis = 300),
+            label = "contentBottomPadding"
+        )
+        val adjustedPaddingValues = PaddingValues(
+            start = paddingValues.calculateLeftPadding(LayoutDirection.Ltr),
+            top = paddingValues.calculateTopPadding(),
+            end = paddingValues.calculateRightPadding(LayoutDirection.Ltr),
+            bottom = paddingValues.calculateBottomPadding() + contentBottomPadding
+        )
+
         val scrollModifier = if (nestedScrollConnection != null) {
-            Modifier.fillMaxSize().nestedScroll(nestedScrollConnection)
+            Modifier.fillMaxSize().padding(adjustedPaddingValues).nestedScroll(nestedScrollConnection)
         } else {
-            Modifier.fillMaxSize()
+            Modifier.fillMaxSize().padding(adjustedPaddingValues)
         }
         Box(modifier = scrollModifier) {
             Text(

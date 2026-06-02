@@ -62,7 +62,7 @@ internal fun BoxScope.MobileConfigurationsMenu(
     modifier: Modifier = Modifier,
 ) {
     SlideInBox(
-        modifier = modifier.align(Alignment.BottomCenter),
+        modifier = modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp),
         editState = visibilityState,
         outsideClick = outsideClick,
         enterAnimationSpec = spring(
@@ -108,7 +108,7 @@ private fun SectionText(text: String) {
 }
 
 @Composable
-fun ArrangementOptions(
+private fun ArrangementOptions(
     selected: Flow<Int>,
     staggeredGridOptionClick: () -> Unit,
     gridOptionClick: () -> Unit,
