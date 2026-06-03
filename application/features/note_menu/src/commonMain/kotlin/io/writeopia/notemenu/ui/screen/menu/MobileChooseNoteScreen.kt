@@ -189,7 +189,7 @@ internal fun MobileChooseNoteScreen(
                             start = 8.dp,
                             end = 8.dp,
                             top = 8.dp,
-                            bottom = contentBottomPadding
+                            bottom = contentBottomPadding + 32.dp
                         ),
                     visibilityState = hasSelectedNotes,
                     onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
