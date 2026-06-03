@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -15,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -103,7 +105,7 @@ fun PortraitMobile(
 
             if (!isAuthScreen) {
                 NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.primary,
+                    containerColor = WriteopiaTheme.colorScheme.lightBackground,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .offset { IntOffset(0, offsetY.roundToPx()) }
@@ -116,12 +118,19 @@ fun PortraitMobile(
                                 }?.value == item.navItemName.value
                             } ?: false
 
+                        val iconSize by animateDpAsState(
+                            targetValue = if (isSelected) 28.dp else 24.dp,
+                            animationSpec = tween(durationMillis = 200),
+                            label = "iconSize"
+                        )
+
                         NavigationBarItem(
                             selected = isSelected,
                             icon = {
                                 Icon(
                                     imageVector = item.navItemName.iconForNavItem(),
-                                    contentDescription = item.navItemName.value
+                                    contentDescription = item.navItemName.value,
+                                    modifier = Modifier.size(iconSize)
                                 )
                             },
                             onClick = {
@@ -137,9 +146,9 @@ fun PortraitMobile(
                             },
                             colors = NavigationBarItemDefaults.colors()
                                 .copy(
-                                    selectedIconColor = MaterialTheme.colorScheme.onSecondary,
-                                    unselectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                                    selectedIndicatorColor = MaterialTheme.colorScheme.secondary,
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onBackground,
+                                    selectedIndicatorColor = Color.Transparent,
                                 )
                         )
                     }
