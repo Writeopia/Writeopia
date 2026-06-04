@@ -3,6 +3,7 @@ package io.writeopia.resources
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
+import writeopia.application.core.resources.generated.resources.accent_color
 import writeopia.application.core.resources.generated.resources.access_ollama_site
 import writeopia.application.core.resources.generated.resources.account
 import writeopia.application.core.resources.generated.resources.action_points
@@ -146,6 +147,9 @@ object WrStrings {
 
     @Composable
     fun colorTheme() = stringResource(Res.string.color_theme)
+
+    @Composable
+    fun accentColor() = stringResource(Res.string.accent_color)
 
     @Composable
     fun localFolder() = stringResource(Res.string.local_folder)

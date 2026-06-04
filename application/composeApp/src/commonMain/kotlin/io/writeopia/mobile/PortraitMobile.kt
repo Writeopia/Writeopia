@@ -33,6 +33,7 @@ import io.writeopia.commonui.rememberScrollAwareState
 import io.writeopia.drawing.di.DrawingInjection
 import io.writeopia.editor.di.TextEditorInjector
 import io.writeopia.features.search.di.SearchInjection
+import io.writeopia.model.AccentColor
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.NavItemName
 import io.writeopia.navigation.Navigation
@@ -61,9 +62,14 @@ fun PortraitMobile(
 ) {
     val colorThemeState = uiConfigViewModel.listenForColorTheme { "disconnected_user" }
     val colorTheme by colorThemeState.collectAsState()
+    val accentColorState = uiConfigViewModel.listenForAccentColor { "disconnected_user" }
+    val accentColor by accentColorState.collectAsState()
     val scrollAwareState = rememberScrollAwareState()
 
-    WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+    WriteopiaTheme(
+        darkTheme = colorTheme.isDarkTheme(),
+        accentColor = accentColor ?: AccentColor.PURPLE
+    ) {
         Box(modifier = modifier.fillMaxSize()) {
             Navigation(
                 isDarkTheme = colorTheme.isDarkTheme(),
@@ -73,7 +79,9 @@ fun PortraitMobile(
                 editorInjector = editorInjector,
                 drawingInjection = drawingInjection,
                 selectedColorTheme = colorThemeState,
+                selectedAccentColor = accentColorState,
                 selectColorTheme = uiConfigViewModel::changeColorTheme,
+                selectAccentColor = uiConfigViewModel::changeAccentColor,
                 onDrawingSaved = onDrawingSaved,
                 searchInjection = searchInjector,
                 nestedScrollConnection = scrollAwareState.nestedScrollConnection,

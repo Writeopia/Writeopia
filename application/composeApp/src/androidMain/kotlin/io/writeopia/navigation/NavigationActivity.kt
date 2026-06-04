@@ -86,6 +86,7 @@ fun NavigationGraph(
 
     val navigationViewModel = viewModel { MobileNavigationViewModel() }
     val colorThemeState = uiConfigViewModel.listenForColorTheme { "disconnected_user" }
+    val accentColorState = uiConfigViewModel.listenForAccentColor { "disconnected_user" }
     val color by colorThemeState.collectAsState()
 
     WindowCompat.getInsetsController(window, window.decorView)
@@ -98,6 +99,7 @@ fun NavigationGraph(
         searchInjector,
         uiConfigViewModel,
         colorThemeState,
+        accentColorState,
         navController
     )
 }

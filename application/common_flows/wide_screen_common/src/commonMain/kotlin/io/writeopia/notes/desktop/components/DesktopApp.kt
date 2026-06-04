@@ -41,6 +41,7 @@ import io.writeopia.features.search.ui.SearchDialog
 import io.writeopia.global.shell.SideGlobalMenu
 import io.writeopia.global.shell.di.SideMenuKmpInjector
 import io.writeopia.global.shell.viewmodel.GlobalShellViewModel
+import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.Navigation
@@ -69,8 +70,10 @@ fun DesktopApp(
     selectionState: StateFlow<Boolean>,
     keyboardEventFlow: Flow<KeyboardEvent>,
     colorThemeOption: StateFlow<ColorThemeOption?>,
+    accentColorOption: StateFlow<AccentColor?>,
     coroutineScope: CoroutineScope,
     selectColorTheme: (ColorThemeOption) -> Unit,
+    selectAccentColor: (AccentColor) -> Unit,
     toggleMaxScreen: () -> Unit,
     navigateToRegister: () -> Unit,
     navigateToResetPassword: () -> Unit,
@@ -198,7 +201,9 @@ fun DesktopApp(
                                 editorInjector = editorInjector,
                                 drawingInjection = drawingInjection,
                                 selectedColorTheme = colorThemeOption,
+                                selectedAccentColor = accentColorOption,
                                 selectColorTheme = selectColorTheme,
+                                selectAccentColor = selectAccentColor,
                                 onDrawingSaved = { documentId, storyStepId, drawingData ->
                                     editorInjector.addDrawingToDocument(
                                         documentId,
@@ -230,6 +235,7 @@ fun DesktopApp(
                                 SettingsDialog(
                                     workplacePathState = globalShellViewModel.workspaceLocalPath,
                                     selectedColorTheme = colorThemeOption,
+                                    selectedAccentColor = accentColorOption,
                                     ollamaUrlState = globalShellViewModel.ollamaUrl,
                                     ollamaAvailableModels = globalShellViewModel.modelsForUrl,
                                     ollamaSelectedModel = globalShellViewModel.ollamaSelectedModelState,
@@ -241,6 +247,7 @@ fun DesktopApp(
                                     workspaceToEdit = globalShellViewModel.workspaceToEdit,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
+                                    selectAccentColor = selectAccentColor,
                                     workspaces = globalShellViewModel.availableWorkspaces,
                                     selectWorkplacePath = globalShellViewModel::changeWorkspaceLocalPath,
                                     ollamaUrlChange = globalShellViewModel::changeOllamaUrl,

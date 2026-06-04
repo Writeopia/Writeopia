@@ -44,6 +44,7 @@
   <string name="folder">Pastas</string>
   <string name="recent">Recente</string>
   <string name="color_theme">Tema de cor</string>
+  <string name="accent_color">Cor de destaque</string>
   <string name="local_folder">Local Folder</string>
   <string name="available_models">Modelos disponíveis</string>
   <string name="no_models">Nenhum modelo encontrado</string>

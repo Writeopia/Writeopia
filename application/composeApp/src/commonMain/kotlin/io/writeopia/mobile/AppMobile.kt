@@ -23,6 +23,7 @@ import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.drawing.di.DrawingInjection
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.SearchInjection
+import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.navigation.MobileNavigationViewModel
 import io.writeopia.navigation.startScreen
@@ -46,6 +47,7 @@ fun AppMobile(
     searchInjection: SearchInjection,
     uiConfigurationViewModel: UiConfigurationViewModel,
     colorThemeState: StateFlow<ColorThemeOption?>,
+    accentColorState: StateFlow<AccentColor?>,
     navController: NavHostController,
 ) {
     val landspaceModileFn = @Composable {
@@ -184,8 +186,11 @@ fun AppMobile(
                     keyboardEventFlow = keyboardEventFlow.filterNotNull(),
                     coroutineScope = coroutineScope,
                     colorThemeOption = colorThemeState,
+                    accentColorOption = accentColorState,
                     selectColorTheme =
                         uiConfigurationViewModel::changeColorTheme,
+                    selectAccentColor =
+                        uiConfigurationViewModel::changeAccentColor,
                     toggleMaxScreen = {},
                     navigateToRegister = {
                         navController.navigate(

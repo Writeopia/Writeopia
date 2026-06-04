@@ -23,6 +23,7 @@ import io.writeopia.features.notifications.navigation.notificationsNavigation
 import io.writeopia.features.search.di.SearchInjection
 import io.writeopia.features.search.navigation.searchNavigation
 import io.writeopia.global.shell.di.SideMenuKmpInjector
+import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import kotlinx.coroutines.flow.StateFlow
 import io.writeopia.navigation.notes.navigateToAccount
@@ -46,7 +47,9 @@ fun Navigation(
     drawingInjection: DrawingInjection? = null,
     searchInjection: SearchInjection? = null,
     selectedColorTheme: StateFlow<ColorThemeOption?>,
+    selectedAccentColor: StateFlow<AccentColor?>,
     selectColorTheme: (ColorThemeOption) -> Unit,
+    selectAccentColor: (AccentColor) -> Unit,
     onDrawingSaved: (String, String, DrawingData) -> Unit = { _, _, _ -> },
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
@@ -118,7 +121,9 @@ fun Navigation(
                 },
                 navigationClick = navController::navigateUp,
                 selectedColorTheme = selectedColorTheme,
-                selectColorTheme = selectColorTheme
+                selectedAccentColor = selectedAccentColor,
+                selectColorTheme = selectColorTheme,
+                selectAccentColor = selectAccentColor
             )
 
             if (searchInjection != null) {

@@ -28,6 +28,7 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.common.utils.ui.GlobalToastBox
+import io.writeopia.model.AccentColor
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.ScreenLoading
 import io.writeopia.navigation.startScreen
@@ -234,10 +235,15 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
                 val colorTheme =
                     uiConfigurationViewModel.listenForColorTheme { "disconnected_user" }
+                val accentColor =
+                    uiConfigurationViewModel.listenForAccentColor { "disconnected_user" }
 
                 val navigationController = rememberNavController()
 
-                WriteopiaTheme(darkTheme = colorTheme.value.isDarkTheme()) {
+                WriteopiaTheme(
+                    darkTheme = colorTheme.value.isDarkTheme(),
+                    accentColor = accentColor.value ?: AccentColor.PURPLE
+                ) {
                     GlobalToastBox(
                         modifier = Modifier
                             .background(WriteopiaTheme.colorScheme.globalBackground)
@@ -258,8 +264,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                     keyboardEventFlow = keyboardEventFlow.filterNotNull(),
                                     coroutineScope = coroutineScope,
                                     colorThemeOption = colorTheme,
+                                    accentColorOption = accentColor,
                                     selectColorTheme =
                                         uiConfigurationViewModel::changeColorTheme,
+                                    selectAccentColor =
+                                        uiConfigurationViewModel::changeAccentColor,
                                     toggleMaxScreen = topDoubleBarClick,
                                     navigateToRegister = {
                                         navigationController.navigate(

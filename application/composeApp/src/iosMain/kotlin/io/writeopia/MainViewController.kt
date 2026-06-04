@@ -62,6 +62,7 @@ fun MainViewController() = ComposeUIViewController {
             val uiConfigInjection = UiConfigurationInjector.singleton()
             val uiConfigViewModel = uiConfigInjection.provideUiConfigurationViewModel()
             val colorThemeState = uiConfigViewModel.listenForColorTheme { "disconnected_user" }
+            val accentColorState = uiConfigViewModel.listenForAccentColor { "disconnected_user" }
 
             AppMobile(
                 navigationViewModel,
@@ -70,6 +71,7 @@ fun MainViewController() = ComposeUIViewController {
                 searchInjection,
                 uiConfigViewModel,
                 colorThemeState,
+                accentColorState,
                 navController
             )
         }

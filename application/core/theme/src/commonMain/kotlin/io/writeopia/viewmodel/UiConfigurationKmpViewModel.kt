@@ -2,6 +2,7 @@ package io.writeopia.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.repository.UiConfigurationRepository
 import kotlinx.coroutines.Dispatchers
@@ -24,11 +25,28 @@ class UiConfigurationKmpViewModel(
                 uiConfiguration?.colorThemeOption ?: ColorThemeOption.SYSTEM
             }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
+    override fun listenForAccentColor(
+        getUserId: suspend () -> String
+    ): StateFlow<AccentColor?> =
+        uiConfigurationSqlDelightRepository.listenForUiConfiguration("disconnected_user", viewModelScope)
+            .map { uiConfiguration ->
+                uiConfiguration?.accentColor ?: AccentColor.PURPLE
+            }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+
     override fun changeColorTheme(colorThemeOption: ColorThemeOption) {
         viewModelScope.launch(Dispatchers.Default) {
             uiConfigurationSqlDelightRepository
                 .updateConfiguration("disconnected_user") { config ->
                     config.copy(colorThemeOption = colorThemeOption)
+                }
+        }
+    }
+
+    override fun changeAccentColor(accentColor: AccentColor) {
+        viewModelScope.launch(Dispatchers.Default) {
+            uiConfigurationSqlDelightRepository
+                .updateConfiguration("disconnected_user") { config ->
+                    config.copy(accentColor = accentColor)
                 }
         }
     }

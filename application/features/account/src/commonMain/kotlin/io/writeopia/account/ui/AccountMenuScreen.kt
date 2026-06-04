@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.writeopia.account.viewmodel.AccountMenuViewModel
+import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,11 +20,13 @@ fun AccountMenuScreen(
     accountMenuViewModel: AccountMenuViewModel,
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     selectedColorTheme: StateFlow<ColorThemeOption?>,
+    selectedAccentColor: StateFlow<AccentColor?>,
     onLogout: () -> Unit,
     goToRegister: () -> Unit,
     changeAccount: () -> Unit,
     resetPassword: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
+    selectAccentColor: (AccentColor) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -35,7 +38,9 @@ fun AccountMenuScreen(
             showPath = false,
             showOllamaConfig = false,
             selectedColorTheme = selectedColorTheme,
+            selectedAccentColor = selectedAccentColor,
             selectColorTheme = selectColorTheme,
+            selectAccentColor = selectAccentColor,
             workplacePathState = MutableStateFlow(""),
             syncWorkspaceState = accountMenuViewModel.lastWorkspaceSync,
             isAutoSyncEnabled = MutableStateFlow(false),
