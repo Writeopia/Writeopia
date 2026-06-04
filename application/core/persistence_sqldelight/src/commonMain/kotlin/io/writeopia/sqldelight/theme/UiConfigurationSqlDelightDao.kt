@@ -24,6 +24,7 @@ class UiConfigurationSqlDelightDao(database: WriteopiaDb?) {
             uiConfigurationQueries?.insert(
                 user_id = user_id,
                 color_theme_option = color_theme_option,
+                accent_color = accent_color,
                 side_menu_width = side_menu_width,
                 font_family = font_family
             )

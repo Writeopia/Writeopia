@@ -41,6 +41,7 @@ import io.writeopia.features.search.ui.SearchDialog
 import io.writeopia.global.shell.SideGlobalMenu
 import io.writeopia.global.shell.di.SideMenuKmpInjector
 import io.writeopia.global.shell.viewmodel.GlobalShellViewModel
+import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.Navigation
@@ -60,7 +61,6 @@ import io.writeopia.ui.draganddrop.target.DraggableScreen
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -69,8 +69,10 @@ fun DesktopApp(
     selectionState: StateFlow<Boolean>,
     keyboardEventFlow: Flow<KeyboardEvent>,
     colorThemeOption: StateFlow<ColorThemeOption?>,
+    accentColorOption: StateFlow<AccentColor?>,
     coroutineScope: CoroutineScope,
     selectColorTheme: (ColorThemeOption) -> Unit,
+    selectAccentColor: (AccentColor) -> Unit,
     toggleMaxScreen: () -> Unit,
     navigateToRegister: () -> Unit,
     navigateToResetPassword: () -> Unit,
@@ -104,6 +106,7 @@ fun DesktopApp(
     val globalShellViewModel: GlobalShellViewModel =
         sideMenuInjector.provideSideMenuViewModel(keyboardEventFlow)
     val colorTheme by colorThemeOption.collectAsState()
+    val accentColor by accentColorOption.collectAsState()
     val navigationController: NavHostController = rememberNavController()
     val searchViewModel = KmpSearchInjection.singleton().provideViewModel()
 
@@ -124,7 +127,10 @@ fun DesktopApp(
         }
     }
 
-    WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+    WriteopiaTheme(
+        darkTheme = colorTheme.isDarkTheme(),
+        accentColor = accentColor ?: AccentColor.PURPLE
+    ) {
         val density = LocalDensity.current
         val globalBackground = WriteopiaTheme.colorScheme.globalBackground
         DragSelectionBox(modifier = modifier) {
@@ -197,7 +203,10 @@ fun DesktopApp(
                                 documentsGraphInjection = documentsGraphInjection,
                                 editorInjector = editorInjector,
                                 drawingInjection = drawingInjection,
+                                selectedColorTheme = colorThemeOption,
+                                selectedAccentColor = accentColorOption,
                                 selectColorTheme = selectColorTheme,
+                                selectAccentColor = selectAccentColor,
                                 onDrawingSaved = { documentId, storyStepId, drawingData ->
                                     editorInjector.addDrawingToDocument(
                                         documentId,
@@ -228,7 +237,8 @@ fun DesktopApp(
                             if (showSettingsState) {
                                 SettingsDialog(
                                     workplacePathState = globalShellViewModel.workspaceLocalPath,
-                                    selectedThemePosition = MutableStateFlow(2),
+                                    selectedColorTheme = colorThemeOption,
+                                    selectedAccentColor = accentColorOption,
                                     ollamaUrlState = globalShellViewModel.ollamaUrl,
                                     ollamaAvailableModels = globalShellViewModel.modelsForUrl,
                                     ollamaSelectedModel = globalShellViewModel.ollamaSelectedModelState,
@@ -240,6 +250,7 @@ fun DesktopApp(
                                     workspaceToEdit = globalShellViewModel.workspaceToEdit,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
+                                    selectAccentColor = selectAccentColor,
                                     workspaces = globalShellViewModel.availableWorkspaces,
                                     selectWorkplacePath = globalShellViewModel::changeWorkspaceLocalPath,
                                     ollamaUrlChange = globalShellViewModel::changeOllamaUrl,

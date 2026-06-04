@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +29,7 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.common.utils.ui.GlobalToastBox
+import io.writeopia.model.AccentColor
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.ScreenLoading
 import io.writeopia.navigation.startScreen
@@ -234,10 +236,16 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
                 val colorTheme =
                     uiConfigurationViewModel.listenForColorTheme { "disconnected_user" }
+                val accentColorState =
+                    uiConfigurationViewModel.listenForAccentColor { "disconnected_user" }
+                val accentColor by accentColorState.collectAsState()
 
                 val navigationController = rememberNavController()
 
-                WriteopiaTheme(darkTheme = colorTheme.value.isDarkTheme()) {
+                WriteopiaTheme(
+                    darkTheme = colorTheme.value.isDarkTheme(),
+                    accentColor = accentColor ?: AccentColor.PURPLE
+                ) {
                     GlobalToastBox(
                         modifier = Modifier
                             .background(WriteopiaTheme.colorScheme.globalBackground)
@@ -258,8 +266,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                     keyboardEventFlow = keyboardEventFlow.filterNotNull(),
                                     coroutineScope = coroutineScope,
                                     colorThemeOption = colorTheme,
+                                    accentColorOption = accentColorState,
                                     selectColorTheme =
                                         uiConfigurationViewModel::changeColorTheme,
+                                    selectAccentColor =
+                                        uiConfigurationViewModel::changeAccentColor,
                                     toggleMaxScreen = topDoubleBarClick,
                                     navigateToRegister = {
                                         navigationController.navigate(

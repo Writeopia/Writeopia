@@ -1,6 +1,8 @@
 package io.writeopia.account.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -66,6 +68,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SettingsPanel
 import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
+import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.user.WriteopiaUser
@@ -82,7 +85,8 @@ private const val SPACE_AFTER_SUB_TITLE = 6
 @Composable
 fun SettingsDialog(
     workplacePathState: StateFlow<String>,
-    selectedThemePosition: StateFlow<Int>,
+    selectedColorTheme: StateFlow<ColorThemeOption?>,
+    selectedAccentColor: StateFlow<AccentColor?>,
     ollamaUrlState: StateFlow<String>,
     ollamaAvailableModels: Flow<ResultData<List<String>>>,
     ollamaSelectedModel: StateFlow<String>,
@@ -95,6 +99,7 @@ fun SettingsDialog(
     workspaceToEdit: Flow<Workspace?>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
+    selectAccentColor: (AccentColor) -> Unit,
     selectWorkplacePath: (String) -> Unit,
     ollamaUrlChange: (String) -> Unit,
     ollamaModelChange: (String) -> Unit,
@@ -147,10 +152,19 @@ fun SettingsDialog(
                     )
                 },
                 appearanceScreen = {
-                    ColorThemeOptions(
-                        selectedThemePosition = selectedThemePosition,
-                        selectColorTheme = selectColorTheme
-                    )
+                    Column {
+                        ColorThemeOptions(
+                            selectedColorTheme = selectedColorTheme,
+                            selectColorTheme = selectColorTheme
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        AccentColorOptions(
+                            selectedAccentColor = selectedAccentColor,
+                            selectAccentColor = selectAccentColor
+                        )
+                    }
                 },
                 directoryScreen = {
                     WorkspaceSection(
@@ -195,7 +209,8 @@ fun SettingsDialog(
 fun SettingsScreen(
     showPath: Boolean = true,
     showOllamaConfig: Boolean,
-    selectedThemePosition: StateFlow<Int>,
+    selectedColorTheme: StateFlow<ColorThemeOption?>,
+    selectedAccentColor: StateFlow<AccentColor?>,
     workplacePathState: StateFlow<String>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
     isAutoSyncEnabled: StateFlow<Boolean>,
@@ -204,6 +219,7 @@ fun SettingsScreen(
     ollamaSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
     selectColorTheme: (ColorThemeOption) -> Unit,
+    selectAccentColor: (AccentColor) -> Unit,
     selectWorkplacePath: (String) -> Unit,
     ollamaUrlChange: (String) -> Unit,
     ollamaModelChange: (String) -> Unit,
@@ -234,8 +250,15 @@ fun SettingsScreen(
     Spacer(modifier = Modifier.height(20.dp))
 
     ColorThemeOptions(
-        selectedThemePosition = selectedThemePosition,
+        selectedColorTheme = selectedColorTheme,
         selectColorTheme = selectColorTheme
+    )
+
+    Spacer(modifier = Modifier.height(20.dp))
+
+    AccentColorOptions(
+        selectedAccentColor = selectedAccentColor,
+        selectAccentColor = selectAccentColor
     )
 
     Spacer(modifier = Modifier.height(20.dp))
@@ -1154,11 +1177,12 @@ private fun AddUserToWorkspace(
 
 @Composable
 private fun ColorThemeOptions(
-    selectedThemePosition: StateFlow<Int>,
+    selectedColorTheme: StateFlow<ColorThemeOption?>,
     selectColorTheme: (ColorThemeOption) -> Unit
 ) {
     val titleStyle = MaterialTheme.typography.titleLarge
     val titleColor = MaterialTheme.colorScheme.onBackground
+    val selectedTheme by selectedColorTheme.collectAsState()
 
     Column {
         Text(WrStrings.colorTheme(), style = titleStyle, color = titleColor)
@@ -1172,6 +1196,7 @@ private fun ColorThemeOptions(
                 text = WrStrings.lightTheme(),
                 imageVector = WrIcons.colorModeLight,
                 contextDescription = WrStrings.lightTheme(),
+                isSelected = selectedTheme == ColorThemeOption.LIGHT,
                 selectColorTheme = {
                     selectColorTheme(ColorThemeOption.LIGHT)
                 }
@@ -1183,6 +1208,7 @@ private fun ColorThemeOptions(
                 text = WrStrings.darkTheme(),
                 imageVector = WrIcons.colorModeDark,
                 contextDescription = WrStrings.darkTheme(),
+                isSelected = selectedTheme == ColorThemeOption.DARK,
                 selectColorTheme = {
                     selectColorTheme(ColorThemeOption.DARK)
                 }
@@ -1194,6 +1220,7 @@ private fun ColorThemeOptions(
                 text = WrStrings.systemTheme(),
                 imageVector = WrIcons.colorModeSystem,
                 contextDescription = WrStrings.systemTheme(),
+                isSelected = selectedTheme == ColorThemeOption.SYSTEM,
                 selectColorTheme = {
                     selectColorTheme(ColorThemeOption.SYSTEM)
                 }
@@ -1207,16 +1234,28 @@ private fun RowScope.Option(
     text: String,
     imageVector: ImageVector,
     contextDescription: String,
-    selectColorTheme: (ColorThemeOption) -> Unit
+    isSelected: Boolean,
+    selectColorTheme: () -> Unit
 ) {
     val typography = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
-    val color = MaterialTheme.colorScheme.onPrimary
+    val textColor = WriteopiaTheme.colorScheme.textLight
+
+    val iconTint = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        WriteopiaTheme.colorScheme.tintLight
+    }
+
+    val iconSize by animateDpAsState(
+        targetValue = if (isSelected) 30.dp else 24.dp,
+        animationSpec = tween(durationMillis = 200)
+    )
 
     Box(
         modifier = Modifier
-            .orderConfigModifierHorizontal {
-                selectColorTheme(ColorThemeOption.SYSTEM)
-            }
+            .clip(MaterialTheme.shapes.large)
+            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .clickable(onClick = selectColorTheme)
             .fillMaxHeight()
             .weight(1F)
     ) {
@@ -1225,16 +1264,121 @@ private fun RowScope.Option(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(iconSize),
                 imageVector = imageVector,
                 contentDescription = contextDescription,
-                //            stringResource(R.string.note_list),
-                tint = MaterialTheme.colorScheme.onPrimary
+                tint = iconTint
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Text(text, style = typography, color = color)
+            Text(text, style = typography, color = textColor)
+        }
+    }
+}
+
+@Composable
+private fun AccentColorOptions(
+    selectedAccentColor: StateFlow<AccentColor?>,
+    selectAccentColor: (AccentColor) -> Unit
+) {
+    val titleStyle = MaterialTheme.typography.titleLarge
+    val titleColor = MaterialTheme.colorScheme.onBackground
+    val selectedColor by selectedAccentColor.collectAsState()
+
+    Column {
+        Text(WrStrings.accentColor(), style = titleStyle, color = titleColor)
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        val spaceWidth = 10.dp
+
+        Row(modifier = Modifier.fillMaxWidth().height(70.dp)) {
+            AccentColorOption(
+                accentColor = AccentColor.PURPLE,
+                isSelected = selectedColor == AccentColor.PURPLE,
+                onClick = { selectAccentColor(AccentColor.PURPLE) }
+            )
+
+            Spacer(modifier = Modifier.width(spaceWidth))
+
+            AccentColorOption(
+                accentColor = AccentColor.BLUE,
+                isSelected = selectedColor == AccentColor.BLUE,
+                onClick = { selectAccentColor(AccentColor.BLUE) }
+            )
+
+            Spacer(modifier = Modifier.width(spaceWidth))
+
+            AccentColorOption(
+                accentColor = AccentColor.GREEN,
+                isSelected = selectedColor == AccentColor.GREEN,
+                onClick = { selectAccentColor(AccentColor.GREEN) }
+            )
+
+            Spacer(modifier = Modifier.width(spaceWidth))
+
+            AccentColorOption(
+                accentColor = AccentColor.ORANGE,
+                isSelected = selectedColor == AccentColor.ORANGE,
+                onClick = { selectAccentColor(AccentColor.ORANGE) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.AccentColorOption(
+    accentColor: AccentColor,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val typography = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
+    val textColor = WriteopiaTheme.colorScheme.textLight
+
+    val circleSize by animateDpAsState(
+        targetValue = if (isSelected) 30.dp else 24.dp,
+        animationSpec = tween(durationMillis = 200)
+    )
+
+    val borderWidth by animateDpAsState(
+        targetValue = if (isSelected) 2.dp else 0.dp,
+        animationSpec = tween(durationMillis = 200)
+    )
+
+    Box(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.large)
+            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .clickable(onClick = onClick)
+            .fillMaxHeight()
+            .weight(1F)
+    ) {
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(circleSize)
+                    .clip(CircleShape)
+                    .background(accentColor.lightColor)
+                    .then(
+                        if (isSelected) {
+                            Modifier.border(borderWidth, MaterialTheme.colorScheme.onBackground, CircleShape)
+                        } else {
+                            Modifier
+                        }
+                    )
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                accentColor.id.replaceFirstChar { it.uppercase() },
+                style = typography,
+                color = textColor
+            )
         }
     }
 }

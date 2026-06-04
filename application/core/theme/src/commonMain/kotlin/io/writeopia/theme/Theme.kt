@@ -9,25 +9,26 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
+import io.writeopia.model.AccentColor
 
-private val DarkColorPalette = darkColorScheme(
-    primary = LIGHT_PURPLE,
-    secondary = DARK_PURPLE,
+private fun darkColorPalette(accentColor: AccentColor) = darkColorScheme(
+    primary = accentColor.lightColor,
+    secondary = accentColor.darkColor,
     onPrimary = Color.White,
     onSecondary = Color.White,
     onBackground = Color.White,
-    surface = LIGHT_PURPLE,
-    inverseSurface = DARK_PURPLE
+    surface = accentColor.lightColor,
+    inverseSurface = accentColor.darkColor
 )
 
-private val LightColorPalette = lightColorScheme(
-    primary = LIGHT_PURPLE,
-    secondary = DARK_PURPLE,
+private fun lightColorPalette(accentColor: AccentColor) = lightColorScheme(
+    primary = accentColor.lightColor,
+    secondary = accentColor.darkColor,
     onPrimary = Color.White,
     onSecondary = Color.White,
     onBackground = Color(0xFF363636),
-    surface = LIGHT_PURPLE,
-    inverseSurface = DARK_PURPLE
+    surface = accentColor.lightColor,
+    inverseSurface = accentColor.darkColor
 )
 
 @Immutable
@@ -72,14 +73,15 @@ val LocalWriteopiaColors = staticCompositionLocalOf {
 @Composable
 fun WriteopiaTheme(
     darkTheme: Boolean = isSystemInDarkMode(),
+    accentColor: AccentColor = AccentColor.PURPLE,
     content: @Composable () -> Unit
 ) {
     val globalBackground = if (darkTheme) Color(0xFF252525) else Color(0xFFF8F0F9)
 
     val colors = if (darkTheme) {
-        DarkColorPalette
+        darkColorPalette(accentColor)
     } else {
-        LightColorPalette
+        lightColorPalette(accentColor)
     }.copy(surfaceVariant = globalBackground)
 
     val optionsSelector = if (darkTheme) Color(0x22FFFFFF) else Color(0x22000000)

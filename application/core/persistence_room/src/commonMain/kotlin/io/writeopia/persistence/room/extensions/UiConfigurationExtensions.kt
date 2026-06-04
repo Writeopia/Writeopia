@@ -7,6 +7,7 @@ fun UiConfigurationEntity.toRoom() =
     UiConfigurationRoomEntity(
         userId = userId,
         colorThemeOption = colorThemeOption,
+        accentColor = accentColor,
         font = font,
     )
 
@@ -14,5 +15,6 @@ fun UiConfigurationRoomEntity.toCommon() =
     UiConfigurationEntity(
         userId = userId,
         colorThemeOption = colorThemeOption,
+        accentColor = accentColor,
         font = font,
     )

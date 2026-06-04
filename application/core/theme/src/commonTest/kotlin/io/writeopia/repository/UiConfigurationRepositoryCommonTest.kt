@@ -1,5 +1,6 @@
 package io.writeopia.repository
 
+import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
 import kotlin.test.assertEquals
@@ -27,7 +28,7 @@ object UiConfigurationRepositoryCommonTest {
         val width = 200F
 
         repository.run {
-            insertUiConfiguration(UiConfiguration(userId, ColorThemeOption.SYSTEM, width))
+            insertUiConfiguration(UiConfiguration(userId, ColorThemeOption.SYSTEM, AccentColor.PURPLE, width))
             assertEquals(getUiConfigurationEntity(userId)?.sideMenuWidth, width)
         }
     }

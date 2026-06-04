@@ -46,6 +46,9 @@ fun CreateAppInMemory() {
     val colorTheme =
         uiConfigurationViewModel.listenForColorTheme { "disconnected_user" }
 
+    val accentColor =
+        uiConfigurationViewModel.listenForAccentColor { "disconnected_user" }
+
     val navigationController = rememberNavController()
 
 //    val databaseStateFlow = DatabaseFactory.createDatabaseAsState(
@@ -87,7 +90,9 @@ fun CreateAppInMemory() {
     DesktopApp(
         selectionState = selectionState,
         colorThemeOption = colorTheme,
+        accentColorOption = accentColor,
         selectColorTheme = uiConfigurationViewModel::changeColorTheme,
+        selectAccentColor = uiConfigurationViewModel::changeAccentColor,
         coroutineScope = coroutineScope,
         keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
         toggleMaxScreen = {},

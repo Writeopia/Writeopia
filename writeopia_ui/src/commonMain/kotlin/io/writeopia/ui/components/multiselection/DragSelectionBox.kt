@@ -17,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -77,6 +76,8 @@ fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScop
                     selectionBox = SelectionBox(x, y, width, height)
                 )
 
+                val dragBoxColor = MaterialTheme.colorScheme.primary
+
                 Box(
                     modifier = Modifier.offset(
                         x = density.run { x.toDp() },
@@ -96,5 +97,3 @@ fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScop
         }
     }
 }
-
-private val dragBoxColor = Color(0xFF64B5F6)

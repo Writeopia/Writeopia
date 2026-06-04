@@ -3,6 +3,7 @@ package io.writeopia.menu
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.sql.WriteopiaDb
@@ -25,7 +26,9 @@ fun ComposeUiTest.startApp(
         DesktopApp(
             coroutineScope = rememberCoroutineScope(),
             colorThemeOption = MutableStateFlow(ColorThemeOption.DARK),
+            accentColorOption = MutableStateFlow(AccentColor.PURPLE),
             selectColorTheme = {},
+            selectAccentColor = {},
             selectionState = MutableStateFlow(false),
             keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
             toggleMaxScreen = {},

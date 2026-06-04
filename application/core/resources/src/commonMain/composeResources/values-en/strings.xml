@@ -44,6 +44,7 @@
   <string name="folder">Folder</string>
   <string name="recent">Recent</string>
   <string name="color_theme">Color Theme</string>
+  <string name="accent_color">Accent Color</string>
   <string name="local_folder">Local Folder</string>
   <string name="ollama">Ollama</string>
   <string name="url">Url</string>

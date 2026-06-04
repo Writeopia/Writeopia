@@ -24,16 +24,21 @@ import io.writeopia.account.di.AccountMenuKmpInjector
 import io.writeopia.account.ui.AccountMenuScreen
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
+import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 fun NavGraphBuilder.accountMenuNavigation(
     navigateToAuthMenu: () -> Unit,
     resetPassword: () -> Unit,
     navigationClick: () -> Unit,
+    selectedColorTheme: StateFlow<ColorThemeOption?>,
+    selectedAccentColor: StateFlow<AccentColor?>,
     selectColorTheme: (ColorThemeOption) -> Unit,
+    selectAccentColor: (AccentColor) -> Unit,
 ) {
     composable(
         Destinations.ACCOUNT.id,
@@ -84,11 +89,14 @@ fun NavGraphBuilder.accountMenuNavigation(
                     .padding(paddingValues),
                 accountMenuViewModel = accountMenuViewModel,
                 isLoggedInState = accountMenuViewModel.isLoggedIn,
+                selectedColorTheme = selectedColorTheme,
+                selectedAccentColor = selectedAccentColor,
                 onLogout = navigateToAuthMenu,
                 goToRegister = navigateToAuthMenu,
                 changeAccount = navigateToAuthMenu,
                 resetPassword = resetPassword,
-                selectColorTheme = selectColorTheme
+                selectColorTheme = selectColorTheme,
+                selectAccentColor = selectAccentColor
             )
         }
     }

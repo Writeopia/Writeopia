@@ -234,7 +234,7 @@ private fun DocumentItem(
 
     val background =
         if (document.highlighted) {
-            Color.Blue
+            MaterialTheme.colorScheme.primary
         } else {
             WriteopiaTheme.colorScheme.globalBackground
         }
