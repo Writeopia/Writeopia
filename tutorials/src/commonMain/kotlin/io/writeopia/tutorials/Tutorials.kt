@@ -9,7 +9,8 @@ object Tutorials {
                     welcomeTutorial(),
                     aiTutorial(),
                     savingNotesTutorial(),
-                    commandsTutorial()
+                    commandsTutorial(),
+                    videoTutorial()
                 ).reversed()
             )
         }
