@@ -23,6 +23,7 @@ import io.writeopia.theme.WriteopiaTheme
 fun BoxScope.HeaderEdition(
     modifier: Modifier = Modifier,
     availableColors: List<Int>,
+    selectedColor: Int?,
     onColorSelection: (Int?) -> Unit,
     visibilityState: Boolean,
     outsideClick: () -> Unit,
@@ -50,7 +51,7 @@ fun BoxScope.HeaderEdition(
                 .background(WriteopiaTheme.colorScheme.lightBackground)
                 .padding(vertical = 16.dp)
         ) {
-            HeaderEditionOptions(availableColors, onColorSelection)
+            HeaderEditionOptions(availableColors, selectedColor, onColorSelection)
 
             Spacer(modifier = Modifier.height(12.dp))
         }

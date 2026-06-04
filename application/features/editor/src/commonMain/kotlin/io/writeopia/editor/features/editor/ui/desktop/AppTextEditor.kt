@@ -64,6 +64,8 @@ fun AppTextEditor(
         )
 
         val isEditionHeader by viewModel.editHeader.collectAsState()
+        val currentStory by viewModel.writeopiaManager.currentStory.collectAsState()
+        val selectedHeaderColor = currentStory.stories[0.0]?.decoration?.backgroundColor
 
         if (isEditionHeader) {
             Dialog(onDismissRequest = viewModel::onHeaderEditionCancel) {
@@ -75,6 +77,7 @@ fun AppTextEditor(
 
                     HeaderEditionOptions(
                         ColorUtils.headerColors(),
+                        selectedHeaderColor,
                         viewModel::onHeaderColorSelection
                     )
 

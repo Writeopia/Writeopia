@@ -26,7 +26,8 @@ sealed class Action {
         val storyStep: StoryStep,
         val position: Double,
         val selectionStart: Int? = null,
-        val selectionEnd: Int? = null
+        val selectionEnd: Int? = null,
+        val preserveFocus: Boolean = false
     ) : Action()
 
     data class Merge(
