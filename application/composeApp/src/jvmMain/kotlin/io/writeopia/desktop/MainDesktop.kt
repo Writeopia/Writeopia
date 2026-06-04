@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -235,14 +236,15 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
                 val colorTheme =
                     uiConfigurationViewModel.listenForColorTheme { "disconnected_user" }
-                val accentColor =
+                val accentColorState =
                     uiConfigurationViewModel.listenForAccentColor { "disconnected_user" }
+                val accentColor by accentColorState.collectAsState()
 
                 val navigationController = rememberNavController()
 
                 WriteopiaTheme(
                     darkTheme = colorTheme.value.isDarkTheme(),
-                    accentColor = accentColor.value ?: AccentColor.PURPLE
+                    accentColor = accentColor ?: AccentColor.PURPLE
                 ) {
                     GlobalToastBox(
                         modifier = Modifier
@@ -264,7 +266,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                     keyboardEventFlow = keyboardEventFlow.filterNotNull(),
                                     coroutineScope = coroutineScope,
                                     colorThemeOption = colorTheme,
-                                    accentColorOption = accentColor,
+                                    accentColorOption = accentColorState,
                                     selectColorTheme =
                                         uiConfigurationViewModel::changeColorTheme,
                                     selectAccentColor =
