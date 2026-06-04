@@ -499,8 +499,6 @@ class NoteEditorKmpViewModel(
     override fun onHeaderColorSelection(color: Int?) {
         if (!isEditable.value) return
 
-        onHeaderEditionCancel()
-
         writeopiaManager.currentStory.value.stories[0.0]?.let { storyStep ->
             val action = Action.StoryStateChange(
                 storyStep = storyStep.copy(

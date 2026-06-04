@@ -198,10 +198,13 @@ internal fun NoteEditorScreen(
             }
 
             val headerEdition by noteEditorViewModel.editHeader.collectAsState()
+            val currentStory by noteEditorViewModel.writeopiaManager.currentStory.collectAsState()
+            val selectedHeaderColor = currentStory.stories[0.0]?.decoration?.backgroundColor
 
             HeaderEdition(
                 modifier = Modifier.fillMaxWidth(),
                 availableColors = ColorUtils.headerColors(),
+                selectedColor = selectedHeaderColor,
                 onColorSelection = noteEditorViewModel::onHeaderColorSelection,
                 outsideClick = noteEditorViewModel::onHeaderEditionCancel,
                 visibilityState = headerEdition
