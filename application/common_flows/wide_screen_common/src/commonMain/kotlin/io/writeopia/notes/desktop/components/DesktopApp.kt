@@ -107,6 +107,7 @@ fun DesktopApp(
     val globalShellViewModel: GlobalShellViewModel =
         sideMenuInjector.provideSideMenuViewModel(keyboardEventFlow)
     val colorTheme by colorThemeOption.collectAsState()
+    val accentColor by accentColorOption.collectAsState()
     val navigationController: NavHostController = rememberNavController()
     val searchViewModel = KmpSearchInjection.singleton().provideViewModel()
 
@@ -127,7 +128,10 @@ fun DesktopApp(
         }
     }
 
-    WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+    WriteopiaTheme(
+        darkTheme = colorTheme.isDarkTheme(),
+        accentColor = accentColor ?: AccentColor.PURPLE
+    ) {
         val density = LocalDensity.current
         val globalBackground = WriteopiaTheme.colorScheme.globalBackground
         DragSelectionBox(modifier = modifier) {
