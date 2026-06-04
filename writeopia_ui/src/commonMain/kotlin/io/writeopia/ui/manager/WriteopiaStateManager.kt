@@ -1520,16 +1520,32 @@ class WriteopiaStateManager(
         if (lastStateChange == stateChange) return
         lastStateChange = stateChange
 
+        val currentFocusPosition = _currentStory.value.focus
+        val currentSelectionPosition = _currentStory.value.selection.position
+
         writeopiaManager.changeStoryState(stateChange, _currentStory.value).let { state ->
             if (trackIt) {
                 backStackManager.addState(_currentStory.value)
             }
 
+            val newSelectionPosition = if (stateChange.preserveFocus) {
+                currentSelectionPosition
+            } else {
+                stateChange.position
+            }
+
+            val newFocus = if (stateChange.preserveFocus) {
+                currentFocusPosition
+            } else {
+                state.focus
+            }
+
             _currentStory.value = state.copy(
+                focus = newFocus,
                 selection = Selection(
                     stateChange.selectionStart ?: state.selection.start,
                     stateChange.selectionEnd ?: state.selection.end,
-                    stateChange.position
+                    newSelectionPosition
                 )
             )
         }

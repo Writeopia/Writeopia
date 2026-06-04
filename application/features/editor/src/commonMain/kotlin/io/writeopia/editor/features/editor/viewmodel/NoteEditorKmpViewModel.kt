@@ -506,7 +506,8 @@ class NoteEditorKmpViewModel(
                         backgroundColor = color
                     )
                 ),
-                position = 0.0
+                position = 0.0,
+                preserveFocus = true
             )
             writeopiaManager.changeStoryState(action)
         }
