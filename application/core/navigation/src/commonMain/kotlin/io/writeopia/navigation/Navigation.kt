@@ -24,6 +24,7 @@ import io.writeopia.features.search.di.SearchInjection
 import io.writeopia.features.search.navigation.searchNavigation
 import io.writeopia.global.shell.di.SideMenuKmpInjector
 import io.writeopia.model.ColorThemeOption
+import kotlinx.coroutines.flow.StateFlow
 import io.writeopia.navigation.notes.navigateToAccount
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNewNote
@@ -44,6 +45,7 @@ fun Navigation(
     editorInjector: TextEditorInjector,
     drawingInjection: DrawingInjection? = null,
     searchInjection: SearchInjection? = null,
+    selectedColorTheme: StateFlow<ColorThemeOption?>,
     selectColorTheme: (ColorThemeOption) -> Unit,
     onDrawingSaved: (String, String, DrawingData) -> Unit = { _, _, _ -> },
     nestedScrollConnection: NestedScrollConnection? = null,
@@ -115,6 +117,7 @@ fun Navigation(
                     navController.navigate(Destinations.AUTH_RESET_PASSWORD.id)
                 },
                 navigationClick = navController::navigateUp,
+                selectedColorTheme = selectedColorTheme,
                 selectColorTheme = selectColorTheme
             )
 

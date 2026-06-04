@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 fun AccountMenuScreen(
     accountMenuViewModel: AccountMenuViewModel,
     isLoggedInState: StateFlow<ResultData<Boolean>>,
+    selectedColorTheme: StateFlow<ColorThemeOption?>,
     onLogout: () -> Unit,
     goToRegister: () -> Unit,
     changeAccount: () -> Unit,
@@ -33,7 +34,7 @@ fun AccountMenuScreen(
         SettingsScreen(
             showPath = false,
             showOllamaConfig = false,
-            selectedThemePosition = MutableStateFlow(0),
+            selectedColorTheme = selectedColorTheme,
             selectColorTheme = selectColorTheme,
             workplacePathState = MutableStateFlow(""),
             syncWorkspaceState = accountMenuViewModel.lastWorkspaceSync,

@@ -197,6 +197,7 @@ fun DesktopApp(
                                 documentsGraphInjection = documentsGraphInjection,
                                 editorInjector = editorInjector,
                                 drawingInjection = drawingInjection,
+                                selectedColorTheme = colorThemeOption,
                                 selectColorTheme = selectColorTheme,
                                 onDrawingSaved = { documentId, storyStepId, drawingData ->
                                     editorInjector.addDrawingToDocument(
@@ -228,7 +229,7 @@ fun DesktopApp(
                             if (showSettingsState) {
                                 SettingsDialog(
                                     workplacePathState = globalShellViewModel.workspaceLocalPath,
-                                    selectedThemePosition = MutableStateFlow(2),
+                                    selectedColorTheme = colorThemeOption,
                                     ollamaUrlState = globalShellViewModel.ollamaUrl,
                                     ollamaAvailableModels = globalShellViewModel.modelsForUrl,
                                     ollamaSelectedModel = globalShellViewModel.ollamaSelectedModelState,

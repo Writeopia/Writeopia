@@ -1,6 +1,8 @@
 package io.writeopia.account.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -82,7 +84,7 @@ private const val SPACE_AFTER_SUB_TITLE = 6
 @Composable
 fun SettingsDialog(
     workplacePathState: StateFlow<String>,
-    selectedThemePosition: StateFlow<Int>,
+    selectedColorTheme: StateFlow<ColorThemeOption?>,
     ollamaUrlState: StateFlow<String>,
     ollamaAvailableModels: Flow<ResultData<List<String>>>,
     ollamaSelectedModel: StateFlow<String>,
@@ -148,7 +150,7 @@ fun SettingsDialog(
                 },
                 appearanceScreen = {
                     ColorThemeOptions(
-                        selectedThemePosition = selectedThemePosition,
+                        selectedColorTheme = selectedColorTheme,
                         selectColorTheme = selectColorTheme
                     )
                 },
@@ -195,7 +197,7 @@ fun SettingsDialog(
 fun SettingsScreen(
     showPath: Boolean = true,
     showOllamaConfig: Boolean,
-    selectedThemePosition: StateFlow<Int>,
+    selectedColorTheme: StateFlow<ColorThemeOption?>,
     workplacePathState: StateFlow<String>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
     isAutoSyncEnabled: StateFlow<Boolean>,
@@ -234,7 +236,7 @@ fun SettingsScreen(
     Spacer(modifier = Modifier.height(20.dp))
 
     ColorThemeOptions(
-        selectedThemePosition = selectedThemePosition,
+        selectedColorTheme = selectedColorTheme,
         selectColorTheme = selectColorTheme
     )
 
@@ -1154,11 +1156,12 @@ private fun AddUserToWorkspace(
 
 @Composable
 private fun ColorThemeOptions(
-    selectedThemePosition: StateFlow<Int>,
+    selectedColorTheme: StateFlow<ColorThemeOption?>,
     selectColorTheme: (ColorThemeOption) -> Unit
 ) {
     val titleStyle = MaterialTheme.typography.titleLarge
     val titleColor = MaterialTheme.colorScheme.onBackground
+    val selectedTheme by selectedColorTheme.collectAsState()
 
     Column {
         Text(WrStrings.colorTheme(), style = titleStyle, color = titleColor)
@@ -1172,6 +1175,7 @@ private fun ColorThemeOptions(
                 text = WrStrings.lightTheme(),
                 imageVector = WrIcons.colorModeLight,
                 contextDescription = WrStrings.lightTheme(),
+                isSelected = selectedTheme == ColorThemeOption.LIGHT,
                 selectColorTheme = {
                     selectColorTheme(ColorThemeOption.LIGHT)
                 }
@@ -1183,6 +1187,7 @@ private fun ColorThemeOptions(
                 text = WrStrings.darkTheme(),
                 imageVector = WrIcons.colorModeDark,
                 contextDescription = WrStrings.darkTheme(),
+                isSelected = selectedTheme == ColorThemeOption.DARK,
                 selectColorTheme = {
                     selectColorTheme(ColorThemeOption.DARK)
                 }
@@ -1194,6 +1199,7 @@ private fun ColorThemeOptions(
                 text = WrStrings.systemTheme(),
                 imageVector = WrIcons.colorModeSystem,
                 contextDescription = WrStrings.systemTheme(),
+                isSelected = selectedTheme == ColorThemeOption.SYSTEM,
                 selectColorTheme = {
                     selectColorTheme(ColorThemeOption.SYSTEM)
                 }
@@ -1207,16 +1213,28 @@ private fun RowScope.Option(
     text: String,
     imageVector: ImageVector,
     contextDescription: String,
-    selectColorTheme: (ColorThemeOption) -> Unit
+    isSelected: Boolean,
+    selectColorTheme: () -> Unit
 ) {
     val typography = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
-    val color = MaterialTheme.colorScheme.onPrimary
+    val textColor = WriteopiaTheme.colorScheme.textLight
+
+    val iconTint = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        WriteopiaTheme.colorScheme.tintLight
+    }
+
+    val iconSize by animateDpAsState(
+        targetValue = if (isSelected) 30.dp else 24.dp,
+        animationSpec = tween(durationMillis = 200)
+    )
 
     Box(
         modifier = Modifier
-            .orderConfigModifierHorizontal {
-                selectColorTheme(ColorThemeOption.SYSTEM)
-            }
+            .clip(MaterialTheme.shapes.large)
+            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .clickable(onClick = selectColorTheme)
             .fillMaxHeight()
             .weight(1F)
     ) {
@@ -1225,16 +1243,15 @@ private fun RowScope.Option(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(iconSize),
                 imageVector = imageVector,
                 contentDescription = contextDescription,
-                //            stringResource(R.string.note_list),
-                tint = MaterialTheme.colorScheme.onPrimary
+                tint = iconTint
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Text(text, style = typography, color = color)
+            Text(text, style = typography, color = textColor)
         }
     }
 }

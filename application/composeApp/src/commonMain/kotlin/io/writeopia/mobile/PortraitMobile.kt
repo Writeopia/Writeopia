@@ -59,7 +59,8 @@ fun PortraitMobile(
     modifier: Modifier = Modifier,
     builder: NavGraphBuilder.() -> Unit
 ) {
-    val colorTheme by uiConfigViewModel.listenForColorTheme { "disconnected_user" }.collectAsState()
+    val colorThemeState = uiConfigViewModel.listenForColorTheme { "disconnected_user" }
+    val colorTheme by colorThemeState.collectAsState()
     val scrollAwareState = rememberScrollAwareState()
 
     WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
@@ -71,6 +72,7 @@ fun PortraitMobile(
                 navController = navController,
                 editorInjector = editorInjector,
                 drawingInjection = drawingInjection,
+                selectedColorTheme = colorThemeState,
                 selectColorTheme = uiConfigViewModel::changeColorTheme,
                 onDrawingSaved = onDrawingSaved,
                 searchInjection = searchInjector,

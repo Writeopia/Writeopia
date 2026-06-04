@@ -27,12 +27,14 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
+import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 fun NavGraphBuilder.accountMenuNavigation(
     navigateToAuthMenu: () -> Unit,
     resetPassword: () -> Unit,
     navigationClick: () -> Unit,
+    selectedColorTheme: StateFlow<ColorThemeOption?>,
     selectColorTheme: (ColorThemeOption) -> Unit,
 ) {
     composable(
@@ -84,6 +86,7 @@ fun NavGraphBuilder.accountMenuNavigation(
                     .padding(paddingValues),
                 accountMenuViewModel = accountMenuViewModel,
                 isLoggedInState = accountMenuViewModel.isLoggedIn,
+                selectedColorTheme = selectedColorTheme,
                 onLogout = navigateToAuthMenu,
                 goToRegister = navigateToAuthMenu,
                 changeAccount = navigateToAuthMenu,
