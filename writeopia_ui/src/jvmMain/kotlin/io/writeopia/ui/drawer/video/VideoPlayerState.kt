@@ -124,8 +124,6 @@ class VideoPlayerState(
 }
 
 @Composable
-fun rememberVideoPlayerState(videoUrl: String): VideoPlayerState {
-    return remember(videoUrl) {
-        VideoPlayerState(videoUrl)
-    }
+fun rememberVideoPlayerState(videoUrl: String): VideoPlayerState = remember(videoUrl) {
+    VideoPlayerState(videoUrl)
 }
