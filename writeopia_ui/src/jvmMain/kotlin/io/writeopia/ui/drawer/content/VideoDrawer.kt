@@ -36,7 +36,7 @@ import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
 
 /**
- * Draws a video player using ExoPlayer/Media3.
+ * Draws a video player using JavaFX MediaPlayer for desktop.
  */
 class VideoDrawer(
     private val config: DrawConfig,
