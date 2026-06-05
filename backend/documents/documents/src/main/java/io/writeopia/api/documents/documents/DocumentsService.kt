@@ -12,6 +12,7 @@ import io.writeopia.api.documents.documents.repository.addUserFavorite
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByFolderId
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByIds
 import io.writeopia.api.documents.documents.repository.deleteFolder
+import io.writeopia.api.documents.documents.repository.deleteStoryStepById
 import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.getFolderById
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
@@ -21,6 +22,8 @@ import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.removeUserFavorite
 import io.writeopia.api.documents.documents.repository.getDocumentByTitle
 import io.writeopia.api.documents.documents.repository.getDocumentWithContentById
+import io.writeopia.api.documents.documents.repository.getStoryStepsModifiedAfter
+import io.writeopia.api.documents.documents.repository.insertStoryStepIfNewer
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.search.SearchDocument
@@ -31,7 +34,10 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.serialization.data.StoryStepApi
 import io.writeopia.sdk.serialization.extensions.toApi
+import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -295,6 +301,70 @@ object DocumentsService {
             setBody(SendDocumentsRequest(documents.map { it.toApi() }, workspaceId))
         }.status
             .isSuccess()
+
+    /**
+     * Synchronizes story steps between client and server using last-writer-wins conflict resolution.
+     *
+     * @param documentId The document being synced
+     * @param lastSyncTimestamp Client's last sync timestamp
+     * @param modifiedSteps Steps modified by the client
+     * @param deletedStepIds Step IDs deleted by the client
+     * @param writeopiaDb Database backend
+     * @return StoryStepSyncResponse with server timestamp and any steps the client needs to update
+     */
+    suspend fun syncStorySteps(
+        documentId: String,
+        lastSyncTimestamp: Long,
+        modifiedSteps: List<StoryStepApi>,
+        deletedStepIds: List<String>,
+        writeopiaDb: WriteopiaDbBackend
+    ): StoryStepSyncResponse {
+        // Create a single server timestamp for all operations
+        val serverTimestamp = Clock.System.now().toEpochMilliseconds()
+
+        // Get server steps modified after client's last sync
+        val serverUpdatedSteps = writeopiaDb.getStoryStepsModifiedAfter(documentId, lastSyncTimestamp)
+
+        // Track which steps should be returned to the client (server wins)
+        val stepsToReturn = mutableListOf<Pair<Double, StoryStep>>()
+
+        // Process client's modified steps
+        modifiedSteps.forEach { stepApi ->
+            val step = stepApi.toModel()
+            val position = stepApi.position
+
+            // Check if server has a newer version
+            val serverStep = serverUpdatedSteps.find { it.second.id == step.id }
+            val serverTimestampForStep = serverStep?.second?.lastUpdatedAt
+
+            if (serverTimestampForStep != null && serverTimestampForStep > (step.lastUpdatedAt ?: 0L)) {
+                // Server wins - add to return list
+                stepsToReturn.add(serverStep)
+            } else {
+                // Client wins - save to database with server timestamp
+                writeopiaDb.insertStoryStepIfNewer(step, position, documentId, serverTimestamp)
+            }
+        }
+
+        // Process client's deletions
+        deletedStepIds.forEach { stepId ->
+            writeopiaDb.deleteStoryStepById(stepId)
+        }
+
+        // Add any server-updated steps that weren't in the client request
+        val clientModifiedIds = modifiedSteps.map { it.id }.toSet()
+        serverUpdatedSteps.forEach { (position, step) ->
+            if (!clientModifiedIds.contains(step.id) && !stepsToReturn.any { it.second.id == step.id }) {
+                stepsToReturn.add(position to step)
+            }
+        }
+
+        return StoryStepSyncResponse(
+            serverTimestamp = serverTimestamp,
+            updatedSteps = stepsToReturn.map { (position, step) -> step.toApi(position) },
+            deletedStepIds = emptyList() // TODO: Track server-side deletions if needed
+        )
+    }
 
     suspend fun getStoryStepsModifiedAfter(
         documentId: String,
