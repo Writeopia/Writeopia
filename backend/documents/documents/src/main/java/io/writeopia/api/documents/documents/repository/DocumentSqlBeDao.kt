@@ -118,7 +118,8 @@ class DocumentSqlBeDao(
                 background_color = decoration.backgroundColor,
                 tags = tags.joinToString(separator = ",") { it.tag.label },
                 spans = spans.joinToString(separator = ",") { it.toText() },
-                link_to_document = documentLink?.id
+                link_to_document = documentLink?.id,
+                last_updated_at = lastUpdatedAt
             )
         }
     }
@@ -853,12 +854,12 @@ class DocumentSqlBeDao(
     }
 
     /**
-     * Insert or update a story step with timestamp-based conflict resolution.
-     * Only updates if the incoming timestamp is newer than the existing one.
+     * Insert or update a story step with the given server timestamp.
+     * Timestamp comparison should be done in the service layer before calling this method.
      */
     fun insertStoryStepIfNewer(storyStep: StoryStep, position: Double, documentId: String, serverTimestamp: Long) {
         storyStep.run {
-            storyStepQueries?.insertIfNewer(
+            storyStepQueries?.insert(
                 id = id,
                 local_id = localId,
                 type = type.number,
