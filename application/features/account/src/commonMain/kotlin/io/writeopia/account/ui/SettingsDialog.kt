@@ -1353,7 +1353,7 @@ private fun RowScope.AccentColorOption(
         targetValue = if (isSelected) 30.dp else 24.dp,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            stiffness = Spring.StiffnessMediumLow
         )
     )
 
@@ -1361,7 +1361,7 @@ private fun RowScope.AccentColorOption(
         targetValue = if (isSelected) 2.dp else 0.dp,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            stiffness = Spring.StiffnessMediumLow
         )
     )
 
