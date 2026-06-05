@@ -35,8 +35,10 @@ import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
+import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
+import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
@@ -671,6 +673,100 @@ fun Routing.documentsRoute(
                         message = favoriteIds
                     )
                 } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<StoryStepSyncRequest>("/api/workspace/{workspaceId}/document/{documentId}/storysteps/sync") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val documentId = call.pathParameters["documentId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    // Verify document exists and belongs to workspace
+                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                    if (document == null) {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Document not found"
+                        )
+                        return@runIfMember
+                    }
+
+                    // Create a single server timestamp for all operations
+                    val serverTimestamp = Clock.System.now().toEpochMilliseconds()
+
+                    // Get server steps modified after client's last sync
+                    val serverUpdatedSteps = DocumentsService.getStoryStepsModifiedAfter(
+                        documentId = documentId,
+                        timestamp = request.lastSyncTimestamp,
+                        writeopiaDb = writeopiaDb
+                    )
+
+                    // Track which steps were updated by the server (to return to client)
+                    val stepsToReturn = mutableListOf<Pair<Double, io.writeopia.sdk.models.story.StoryStep>>()
+                    val serverStepIds = serverUpdatedSteps.map { it.second.id }.toSet()
+
+                    // Process client's modified steps
+                    request.modifiedSteps.forEach { stepApi ->
+                        val step = stepApi.toModel()
+                        val position = stepApi.position
+
+                        // Check if server has a newer version
+                        val serverStep = serverUpdatedSteps.find { it.second.id == step.id }
+                        val serverTimestampForStep = serverStep?.second?.lastUpdatedAt
+
+                        if (serverTimestampForStep != null &&
+                            serverTimestampForStep > (step.lastUpdatedAt ?: 0L)) {
+                            // Server wins - add to return list
+                            stepsToReturn.add(serverStep)
+                        } else {
+                            // Client wins - save to database with server timestamp
+                            DocumentsService.insertStoryStepIfNewer(
+                                storyStep = step,
+                                position = position,
+                                documentId = documentId,
+                                serverTimestamp = serverTimestamp,
+                                writeopiaDb = writeopiaDb
+                            )
+                        }
+                    }
+
+                    // Process client's deletions
+                    request.deletedStepIds.forEach { stepId ->
+                        DocumentsService.deleteStoryStepById(stepId, writeopiaDb)
+                    }
+
+                    // Add any server-updated steps that weren't in the client request
+                    serverUpdatedSteps.forEach { (position, step) ->
+                        val clientModifiedIds = request.modifiedSteps.map { it.id }.toSet()
+                        if (!clientModifiedIds.contains(step.id) && !stepsToReturn.any { it.second.id == step.id }) {
+                            stepsToReturn.add(position to step)
+                        }
+                    }
+
+                    // Build response
+                    val response = StoryStepSyncResponse(
+                        serverTimestamp = serverTimestamp,
+                        updatedSteps = stepsToReturn.map { (position, step) ->
+                            step.toApi(position)
+                        },
+                        deletedStepIds = emptyList() // TODO: Track server-side deletions if needed
+                    )
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = response
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
                     call.respond(
                         status = HttpStatusCode.InternalServerError,
                         message = "${e.message}"

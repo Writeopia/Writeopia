@@ -813,6 +813,117 @@ class DocumentSqlBeDao(
             folderId
         )
     }
+
+    /**
+     * Get story steps for a document that were modified after a given timestamp.
+     */
+    fun getStoryStepsModifiedAfter(documentId: String, timestamp: Long): List<Pair<Double, StoryStep>> {
+        return storyStepQueries?.selectModifiedAfterByDocumentId(documentId, timestamp)
+            ?.executeAsList()
+            ?.map { entity ->
+                val storyStep = StoryStep(
+                    id = entity.id,
+                    localId = entity.local_id,
+                    type = StoryTypes.fromNumber(entity.type.toInt()).type,
+                    parentId = entity.parent_id,
+                    url = entity.url,
+                    path = entity.path,
+                    text = entity.text,
+                    checked = entity.checked,
+                    decoration = Decoration(backgroundColor = entity.background_color?.toInt()),
+                    tags = entity.tags
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .mapNotNull(TagInfo.Companion::fromString)
+                        .toSet(),
+                    spans = entity.spans
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .map(SpanInfo::fromString)
+                        .toSet(),
+                    documentLink = entity.link_to_document?.let { docId ->
+                        val title = documentQueries?.selectTitleByDocumentId(docId)?.executeAsOneOrNull()
+                        DocumentLink(docId, title)
+                    },
+                    dbPosition = entity.position.toDouble(),
+                    lastUpdatedAt = entity.last_updated_at
+                )
+                entity.position.toDouble() to storyStep
+            } ?: emptyList()
+    }
+
+    /**
+     * Insert or update a story step with timestamp-based conflict resolution.
+     * Only updates if the incoming timestamp is newer than the existing one.
+     */
+    fun insertStoryStepIfNewer(storyStep: StoryStep, position: Double, documentId: String, serverTimestamp: Long) {
+        storyStep.run {
+            storyStepQueries?.insertIfNewer(
+                id = id,
+                local_id = localId,
+                type = type.number,
+                parent_id = parentId,
+                url = url,
+                path = path,
+                text = text,
+                checked = checked ?: false,
+                position = BigDecimal.valueOf(position),
+                document_id = documentId,
+                is_group = isGroup,
+                has_inner_steps = steps.isNotEmpty(),
+                background_color = decoration.backgroundColor,
+                tags = tags.joinToString(separator = ",") { it.tag.label },
+                spans = spans.joinToString(separator = ",") { it.toText() },
+                link_to_document = documentLink?.id,
+                last_updated_at = serverTimestamp
+            )
+        }
+    }
+
+    /**
+     * Get a single story step by ID.
+     */
+    fun getStoryStepById(stepId: String): Pair<Double, StoryStep>? {
+        return storyStepQueries?.selectById(stepId)
+            ?.executeAsOneOrNull()
+            ?.let { entity ->
+                val storyStep = StoryStep(
+                    id = entity.id,
+                    localId = entity.local_id,
+                    type = StoryTypes.fromNumber(entity.type.toInt()).type,
+                    parentId = entity.parent_id,
+                    url = entity.url,
+                    path = entity.path,
+                    text = entity.text,
+                    checked = entity.checked,
+                    decoration = Decoration(backgroundColor = entity.background_color?.toInt()),
+                    tags = entity.tags
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .mapNotNull(TagInfo.Companion::fromString)
+                        .toSet(),
+                    spans = entity.spans
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .map(SpanInfo::fromString)
+                        .toSet(),
+                    documentLink = entity.link_to_document?.let { docId ->
+                        val title = documentQueries?.selectTitleByDocumentId(docId)?.executeAsOneOrNull()
+                        DocumentLink(docId, title)
+                    },
+                    dbPosition = entity.position.toDouble(),
+                    lastUpdatedAt = entity.last_updated_at
+                )
+                entity.position.toDouble() to storyStep
+            }
+    }
+
+    /**
+     * Delete a story step by ID.
+     */
+    fun deleteStoryStepById(stepId: String) {
+        storyStepQueries?.deleteById(stepId)
+    }
 }
 
 fun Folder_entity.toModel(count: Long) =

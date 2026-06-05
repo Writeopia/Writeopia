@@ -295,4 +295,29 @@ object DocumentsService {
             setBody(SendDocumentsRequest(documents.map { it.toApi() }, workspaceId))
         }.status
             .isSuccess()
+
+    suspend fun getStoryStepsModifiedAfter(
+        documentId: String,
+        timestamp: Long,
+        writeopiaDb: WriteopiaDbBackend
+    ): List<Pair<Double, StoryStep>> {
+        return writeopiaDb.getStoryStepsModifiedAfter(documentId, timestamp)
+    }
+
+    suspend fun insertStoryStepIfNewer(
+        storyStep: StoryStep,
+        position: Double,
+        documentId: String,
+        serverTimestamp: Long,
+        writeopiaDb: WriteopiaDbBackend
+    ) {
+        writeopiaDb.insertStoryStepIfNewer(storyStep, position, documentId, serverTimestamp)
+    }
+
+    suspend fun deleteStoryStepById(
+        stepId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ) {
+        writeopiaDb.deleteStoryStepById(stepId)
+    }
 }
