@@ -82,6 +82,7 @@ import io.writeopia.ui.drawer.preview.HeaderPreviewDrawer
 import io.writeopia.ui.drawer.preview.ImagePreviewDrawer
 import io.writeopia.ui.drawer.preview.TextPreviewDrawer
 import io.writeopia.ui.drawer.preview.UnOrderedListItemPreviewDrawer
+import io.writeopia.ui.drawer.preview.VideoPreviewDrawer
 import io.writeopia.ui.model.DrawInfo
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -812,7 +813,8 @@ private fun previewDrawers(isDarkTheme: Boolean): Map<Int, StoryStepDrawer> {
         StoryTypes.DOCUMENT_LINK.type.number to DocumentLinkPreviewDrawer(),
         StoryTypes.UNORDERED_LIST_ITEM.type.number to unOrderedListItemPreviewDrawer,
         StoryTypes.IMAGE.type.number to ImagePreviewDrawer(),
-        StoryTypes.AI_ANSWER.type.number to AiAnswerPreviewDrawer()
+        StoryTypes.AI_ANSWER.type.number to AiAnswerPreviewDrawer(),
+        StoryTypes.VIDEO.type.number to VideoPreviewDrawer()
     )
 }
 
