@@ -11,24 +11,24 @@ import androidx.compose.ui.graphics.Color
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.writeopia.model.AccentColor
 
-private fun darkColorPalette(accentColor: AccentColor) = darkColorScheme(
-    primary = accentColor.lightColor,
-    secondary = accentColor.darkColor,
+private fun darkColorPalette(primary: Color, secondary: Color) = darkColorScheme(
+    primary = primary,
+    secondary = secondary,
     onPrimary = Color.White,
     onSecondary = Color.White,
     onBackground = Color.White,
-    surface = accentColor.lightColor,
-    inverseSurface = accentColor.darkColor
+    surface = primary,
+    inverseSurface = secondary
 )
 
-private fun lightColorPalette(accentColor: AccentColor) = lightColorScheme(
-    primary = accentColor.lightColor,
-    secondary = accentColor.darkColor,
+private fun lightColorPalette(primary: Color, secondary: Color) = lightColorScheme(
+    primary = primary,
+    secondary = secondary,
     onPrimary = Color.White,
     onSecondary = Color.White,
     onBackground = Color(0xFF363636),
-    surface = accentColor.lightColor,
-    inverseSurface = accentColor.darkColor
+    surface = primary,
+    inverseSurface = secondary
 )
 
 @Immutable
@@ -78,10 +78,31 @@ fun WriteopiaTheme(
 ) {
     val globalBackground = if (darkTheme) Color(0xFF252525) else Color(0xFFF8F0F9)
 
-    val colors = if (darkTheme) {
-        darkColorPalette(accentColor)
+    // Get dynamic colors if DYNAMIC is selected and available on this platform
+    val dynamicColors = if (accentColor == AccentColor.DYNAMIC) {
+        getDynamicAccentColors()
     } else {
-        lightColorPalette(accentColor)
+        null
+    }
+
+    // Determine the primary and secondary colors to use
+    val (primary, secondary) = when {
+        dynamicColors != null -> {
+            if (darkTheme) {
+                dynamicColors.darkPrimary to dynamicColors.darkSecondary
+            } else {
+                dynamicColors.lightPrimary to dynamicColors.lightSecondary
+            }
+        }
+        else -> {
+            accentColor.lightColor to accentColor.darkColor
+        }
+    }
+
+    val colors = if (darkTheme) {
+        darkColorPalette(primary, secondary)
+    } else {
+        lightColorPalette(primary, secondary)
     }.copy(surfaceVariant = globalBackground)
 
     val optionsSelector = if (darkTheme) Color(0x22FFFFFF) else Color(0x22000000)

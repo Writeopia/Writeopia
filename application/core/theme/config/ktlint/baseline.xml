@@ -1,3 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
+    <file name="src/androidMain/kotlin/io/writeopia/theme/DynamicColors.android.kt">
+        <error line="10" column="59" source="standard:function-expression-body" />
+    </file>
 </baseline>

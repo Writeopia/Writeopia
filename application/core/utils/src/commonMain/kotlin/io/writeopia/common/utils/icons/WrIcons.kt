@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 import io.writeopia.common.utils.icons.all.ALargeSmall
@@ -96,6 +97,8 @@ object WrIcons {
     val colorModeDark: ImageVector = Moon
 
     val colorModeSystem: ImageVector = Contrast
+
+    val dynamicColor: ImageVector = Icons.Outlined.Palette
 
     val bold: ImageVector = Bold
 

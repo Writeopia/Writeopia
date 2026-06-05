@@ -105,6 +105,7 @@ import writeopia.application.core.resources.generated.resources.subtitle
 import writeopia.application.core.resources.generated.resources.suggestions
 import writeopia.application.core.resources.generated.resources.summarize
 import writeopia.application.core.resources.generated.resources.system_theme
+import writeopia.application.core.resources.generated.resources.dynamic_color
 import writeopia.application.core.resources.generated.resources.tap_to_start
 import writeopia.application.core.resources.generated.resources.teams
 import writeopia.application.core.resources.generated.resources.text
@@ -192,6 +193,9 @@ object WrStrings {
 
     @Composable
     fun systemTheme() = stringResource(Res.string.system_theme)
+
+    @Composable
+    fun dynamicColor() = stringResource(Res.string.dynamic_color)
 
     @Composable
     fun exportMarkdown() = stringResource(Res.string.export_markdown)

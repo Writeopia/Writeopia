@@ -1324,17 +1324,76 @@ private fun AccentColorOptions(
             Spacer(modifier = Modifier.width(spaceWidth))
 
             AccentColorOption(
-                accentColor = AccentColor.GREEN,
-                isSelected = selectedColor == AccentColor.GREEN,
-                onClick = { selectAccentColor(AccentColor.GREEN) }
+                accentColor = AccentColor.ORANGE,
+                isSelected = selectedColor == AccentColor.ORANGE,
+                onClick = { selectAccentColor(AccentColor.ORANGE) }
             )
 
             Spacer(modifier = Modifier.width(spaceWidth))
 
-            AccentColorOption(
-                accentColor = AccentColor.ORANGE,
-                isSelected = selectedColor == AccentColor.ORANGE,
-                onClick = { selectAccentColor(AccentColor.ORANGE) }
+            DynamicColorOption(
+                isSelected = selectedColor == AccentColor.DYNAMIC,
+                onClick = { selectAccentColor(AccentColor.DYNAMIC) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.DynamicColorOption(
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val typography = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
+    val textColor = WriteopiaTheme.colorScheme.textLight
+
+    val iconSize by animateDpAsState(
+        targetValue = if (isSelected) 30.dp else 24.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        )
+    )
+
+    val weight by animateFloatAsState(
+        targetValue = if (isSelected) 1.5f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        )
+    )
+
+    val iconTint = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        WriteopiaTheme.colorScheme.tintLight
+    }
+
+    Box(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.large)
+            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .clickable(onClick = onClick)
+            .fillMaxHeight()
+            .weight(weight)
+    ) {
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                modifier = Modifier.size(iconSize),
+                imageVector = WrIcons.dynamicColor,
+                contentDescription = WrStrings.dynamicColor(),
+                tint = iconTint
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                WrStrings.dynamicColor(),
+                style = typography,
+                color = textColor
             )
         }
     }

@@ -163,10 +163,6 @@
         <error line="36" column="1" source="standard:indent" />
         <error line="37" column="1" source="standard:indent" />
     </file>
-    <file name="src/androidMain/kotlin/io/writeopia/ui/drawer/content/VideoDrawer.kt">
-        <error line="36" column="29" source="standard:wrapping" />
-        <error line="43" column="21" source="standard:wrapping" />
-    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Check.kt">
         <error line="43" column="13" source="standard:backing-property-naming" />
         <error line="43" column="13" source="standard:backing-property-naming" />

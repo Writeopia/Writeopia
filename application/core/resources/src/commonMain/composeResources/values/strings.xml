@@ -59,6 +59,7 @@
   <string name="light_theme">Light</string>
   <string name="dark_theme">Dark</string>
   <string name="system_theme">System</string>
+  <string name="dynamic_color">Dynamic</string>
   <string name="export_markdown">Export as Markdown</string>
   <string name="export_txt">Export as TXT</string>
   <string name="import_file">Import file</string>
