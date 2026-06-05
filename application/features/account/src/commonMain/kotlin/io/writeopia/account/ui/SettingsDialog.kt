@@ -1,8 +1,10 @@
 package io.writeopia.account.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -59,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -1248,7 +1251,18 @@ private fun RowScope.Option(
 
     val iconSize by animateDpAsState(
         targetValue = if (isSelected) 30.dp else 24.dp,
-        animationSpec = tween(durationMillis = 200)
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        )
+    )
+
+    val weight by animateFloatAsState(
+        targetValue = if (isSelected) 1.5f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        )
     )
 
     Box(
@@ -1257,7 +1271,7 @@ private fun RowScope.Option(
             .background(WriteopiaTheme.colorScheme.optionsSelector)
             .clickable(onClick = selectColorTheme)
             .fillMaxHeight()
-            .weight(1F)
+            .weight(weight)
     ) {
         Column(
             modifier = Modifier.align(Alignment.Center),
@@ -1338,12 +1352,26 @@ private fun RowScope.AccentColorOption(
 
     val circleSize by animateDpAsState(
         targetValue = if (isSelected) 30.dp else 24.dp,
-        animationSpec = tween(durationMillis = 200)
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        )
     )
 
     val borderWidth by animateDpAsState(
         targetValue = if (isSelected) 2.dp else 0.dp,
-        animationSpec = tween(durationMillis = 200)
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        )
+    )
+
+    val weight by animateFloatAsState(
+        targetValue = if (isSelected) 1.5f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        )
     )
 
     Box(
@@ -1352,7 +1380,7 @@ private fun RowScope.AccentColorOption(
             .background(WriteopiaTheme.colorScheme.optionsSelector)
             .clickable(onClick = onClick)
             .fillMaxHeight()
-            .weight(1F)
+            .weight(weight)
     ) {
         Column(
             modifier = Modifier.align(Alignment.Center),
