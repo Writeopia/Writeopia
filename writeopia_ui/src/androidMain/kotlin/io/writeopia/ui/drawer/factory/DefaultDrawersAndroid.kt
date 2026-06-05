@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import io.writeopia.sdk.drawer.content.VideoDrawer
+import io.writeopia.ui.drawer.content.VideoDrawer
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
@@ -85,8 +85,18 @@ object DefaultDrawersAndroid : DrawersFactory {
             onDocumentLinkClick = onDocumentLinkClick,
         )
 
+        val videoDrawer = VideoDrawer(
+            config = drawConfig,
+            onSelected = manager::onSelected,
+            containerModifier = { Modifier },
+            mergeRequest = manager::mergeRequest,
+            onDelete = manager::onDelete,
+            onDragStart = manager::onDragStart,
+            onDragStop = manager::onDragStop
+        )
+
         return mapOf(
-            StoryTypes.VIDEO.type.number to VideoDrawer(),
+            StoryTypes.VIDEO.type.number to videoDrawer,
         ) + commonDrawers + customDrawers
     }
 

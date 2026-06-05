@@ -43,5 +43,6 @@ private fun defaultTypes() = setOf(
     StoryTypes.UNORDERED_LIST_ITEM.type.number,
     StoryTypes.IMAGE.type.number,
     StoryTypes.AI_ANSWER.type.number,
-    StoryTypes.DOCUMENT_LINK.type.number
+    StoryTypes.DOCUMENT_LINK.type.number,
+    StoryTypes.VIDEO.type.number
 )
