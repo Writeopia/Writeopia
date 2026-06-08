@@ -1,9 +1,11 @@
 package io.writeopia.ui.drawer.decorations
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,18 +22,33 @@ object DefaultTagDecoration : TagDecoration {
         modifier: Modifier,
         tags: Iterable<TagInfo>,
         config: DrawConfig
-    ): Modifier =
-        if (tags.mapTo(mutableSetOf()) { it.tag }.contains(Tag.HIGH_LIGHT_BLOCK)) {
-            modifier
-                .background(config.selectedColor(), shapeForTagInfo(tags))
-                .padding(paddingForTagInfo(tags, config))
-        } else {
-            modifier.padding(start = config.textDrawerInnerStartPadding.dp)
+    ): Modifier {
+        val tagSet = tags.mapTo(mutableSetOf()) { it.tag }
+        return when {
+            tagSet.contains(Tag.HIGH_LIGHT_BLOCK) -> {
+                modifier
+                    .background(config.selectedColor(), shapeForTagInfo(tags))
+                    .padding(paddingForTagInfo(tags, config))
+            }
+            tagSet.contains(Tag.CARD) -> {
+                modifier
+                    .border(2.dp, MaterialTheme.colorScheme.primary, shapeForTagInfo(tags))
+                    .background(MaterialTheme.colorScheme.surface, shapeForTagInfo(tags))
+                    .padding(paddingForTagInfo(tags, config))
+            }
+            else -> {
+                modifier.padding(start = config.textDrawerInnerStartPadding.dp)
+            }
         }
+    }
 
     @Composable
     override fun background(defaultColor: Color, tags: Iterable<Tag>, config: DrawConfig): Color =
-        if (tags.contains(Tag.HIGH_LIGHT_BLOCK)) config.selectedColor() else defaultColor
+        when {
+            tags.contains(Tag.HIGH_LIGHT_BLOCK) -> config.selectedColor()
+            tags.contains(Tag.CARD) -> MaterialTheme.colorScheme.surface
+            else -> defaultColor
+        }
 
     private fun shapeForTagInfo(tagInfoList: Iterable<TagInfo>): Shape {
         val corner = 8.dp
