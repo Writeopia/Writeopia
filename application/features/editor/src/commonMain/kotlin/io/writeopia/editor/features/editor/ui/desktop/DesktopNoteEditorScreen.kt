@@ -222,6 +222,7 @@ fun DesktopNoteEditorScreen(
             listItemClick = noteEditorViewModel::onAddListItemClick,
             codeBlockClick = noteEditorViewModel::onAddCodeBlockClick,
             highLightBlockClick = noteEditorViewModel::toggleHighLightBlock,
+            cardBlockClick = noteEditorViewModel::toggleCardBlock,
             onPresentationClick = onPresentationClick,
             changeFontFamily = noteEditorViewModel::changeFontFamily,
             addImage = noteEditorViewModel::addImage,

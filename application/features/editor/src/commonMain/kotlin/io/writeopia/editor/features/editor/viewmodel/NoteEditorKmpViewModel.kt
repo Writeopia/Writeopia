@@ -533,6 +533,11 @@ class NoteEditorKmpViewModel(
         writeopiaManager.toggleHighLightBlock()
     }
 
+    override fun toggleCardBlock() {
+        if (!isEditable.value) return
+        writeopiaManager.toggleCardBlock()
+    }
+
     override fun onHeaderEditionCancel() {
         _editHeader.value = false
     }

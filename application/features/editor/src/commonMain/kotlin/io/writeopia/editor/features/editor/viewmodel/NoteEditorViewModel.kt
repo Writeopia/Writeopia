@@ -108,6 +108,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun toggleHighLightBlock()
 
+    fun toggleCardBlock()
+
     fun clearSelections()
 
     fun changeFontFamily(font: Font)

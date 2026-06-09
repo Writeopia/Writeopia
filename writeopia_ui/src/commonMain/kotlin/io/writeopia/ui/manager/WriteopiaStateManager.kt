@@ -292,6 +292,10 @@ class WriteopiaStateManager(
                             result.add(SelectionMetadata.BOX)
                         }
 
+                        Tag.CARD_BLOCK -> {
+                            result.add(SelectionMetadata.CARD)
+                        }
+
                         Tag.H1 -> {
                             result.add(SelectionMetadata.TITLE)
                         }
@@ -524,6 +528,19 @@ class WriteopiaStateManager(
         } else {
             currentFocus()?.first?.let { currentPosition ->
                 toggleTagForStories(setOf(currentPosition), TagInfo(Tag.HIGH_LIGHT_BLOCK))
+            }
+        }
+    }
+
+    fun toggleCardBlock() {
+        if (!isEditable) return
+        val onEdit = _onEditPositions.value
+
+        if (onEdit.isNotEmpty()) {
+            toggleTagForStories(onEdit, TagInfo(Tag.CARD_BLOCK))
+        } else {
+            currentFocus()?.first?.let { currentPosition ->
+                toggleTagForStories(setOf(currentPosition), TagInfo(Tag.CARD_BLOCK))
             }
         }
     }

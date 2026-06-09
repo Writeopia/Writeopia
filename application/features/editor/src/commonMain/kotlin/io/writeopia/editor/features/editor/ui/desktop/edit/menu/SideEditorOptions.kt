@@ -88,6 +88,7 @@ fun SideEditorOptions(
     listItemClick: () -> Unit,
     codeBlockClick: () -> Unit,
     highLightBlockClick: () -> Unit,
+    cardBlockClick: () -> Unit,
     onPresentationClick: () -> Unit,
     changeFontFamily: (Font) -> Unit,
     addImage: (String) -> Unit,
@@ -166,6 +167,7 @@ fun SideEditorOptions(
                                 listItemClick,
                                 codeBlockClick,
                                 highLightBlockClick,
+                                cardBlockClick,
                                 addImage,
                                 addPage,
                                 titleClick,
@@ -802,6 +804,7 @@ private fun TextOptions(
     listItemClick: () -> Unit,
     codeBlockClick: () -> Unit,
     highLightBlockClick: () -> Unit,
+    cardBlockClick: () -> Unit,
     addImage: (String) -> Unit,
     addPage: () -> Unit,
     titleClick: (Tag) -> Unit,
@@ -848,10 +851,12 @@ private fun TextOptions(
                     text = WrStrings.box(),
                     highlight = selectedMetadata.contains(SelectionMetadata.BOX),
                     onClick = highLightBlockClick
+                ),
+                DecorationButton(
+                    text = WrStrings.card(),
+                    highlight = selectedMetadata.contains(SelectionMetadata.CARD),
+                    onClick = cardBlockClick
                 )
-//                "Warning" to {},
-//                "Tip" to {},
-//                "Code" to {}
             )
         )
         Spacer(modifier = Modifier.height(8.dp))

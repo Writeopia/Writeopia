@@ -168,7 +168,7 @@ internal fun MobileInputScreen(
                             }
                             .padding(iconPadding),
                         imageVector = WrIcons.highlight,
-                        contentDescription = "Underline",
+                        contentDescription = "Highlight",
 //                    stringResource(R.string.undo),
                         tint = buttonColor
                     )

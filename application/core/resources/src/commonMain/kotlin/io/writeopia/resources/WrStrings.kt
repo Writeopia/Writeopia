@@ -17,6 +17,7 @@ import writeopia.application.core.resources.generated.resources.arrangement
 import writeopia.application.core.resources.generated.resources.ask_ai
 import writeopia.application.core.resources.generated.resources.available_models
 import writeopia.application.core.resources.generated.resources.box
+import writeopia.application.core.resources.generated.resources.card
 import writeopia.application.core.resources.generated.resources.cancel
 import writeopia.application.core.resources.generated.resources.change_account
 import writeopia.application.core.resources.generated.resources.choose_workspace
@@ -241,6 +242,9 @@ object WrStrings {
 
     @Composable
     fun box() = stringResource(Res.string.box)
+
+    @Composable
+    fun card() = stringResource(Res.string.card)
 
     @Composable
     fun content() = stringResource(Res.string.content)

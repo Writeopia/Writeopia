@@ -191,9 +191,10 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::onAddListItemClick,
                     noteEditorViewModel::onAddCodeBlockClick,
                     noteEditorViewModel::addPage,
-                    noteEditorViewModel::toggleHighLightBlock,
                     noteEditorViewModel::titleClick,
-                    onDrawingClick = onNewDrawingClick
+                    onDrawingClick = onNewDrawingClick,
+                    onBoxClick = noteEditorViewModel::toggleHighLightBlock,
+                    onCardClick = noteEditorViewModel::toggleCardBlock
                 )
             }
 
@@ -358,9 +359,10 @@ private fun BottomScreen(
     onListItem: () -> Unit = {},
     onCodeBlock: () -> Unit = {},
     onAddPage: () -> Unit = {},
-    onHighlight: () -> Unit,
     titleClick: (Tag) -> Unit,
-    onDrawingClick: () -> Unit = {}
+    onDrawingClick: () -> Unit = {},
+    onBoxClick: () -> Unit = {},
+    onCardClick: () -> Unit = {}
 ) {
     val edit by editState.collectAsState()
 
@@ -411,7 +413,8 @@ private fun BottomScreen(
                     checkboxClick = onCheckItem,
                     listItemClick = onListItem,
                     codeBlockClick = onCodeBlock,
-                    onHighlight = onHighlight,
+                    onBoxClick = onBoxClick,
+                    onCardClick = onCardClick,
                     onAddPage = onAddPage,
                     titleClick = titleClick
                 )

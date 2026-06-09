@@ -10,6 +10,7 @@ enum class SelectionMetadata {
     SUBTITLE,
     HEADING,
     BOX,
+    CARD,
     CHECK_ITEM,
     CODE_BLOCK,
     UNORDERED_LIST_ITEM,

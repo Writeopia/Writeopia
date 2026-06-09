@@ -13,6 +13,8 @@ object CommandFactory {
 
     fun box() = Command("/box", WhereToFind.START)
 
+    fun card() = Command("/card", WhereToFind.START)
+
     fun unOrderedList() = Command("-", WhereToFind.START)
 
     fun h1() = Command("#", WhereToFind.START)

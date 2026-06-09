@@ -69,7 +69,8 @@ fun EditionScreen(
     checkboxClick: () -> Unit = {},
     listItemClick: () -> Unit = {},
     codeBlockClick: () -> Unit = {},
-    onHighlight: () -> Unit = {},
+    onBoxClick: () -> Unit = {},
+    onCardClick: () -> Unit = {},
     onDelete: () -> Unit = {},
     onCopy: () -> Unit = {},
     onCut: () -> Unit = {},
@@ -82,6 +83,10 @@ fun EditionScreen(
     val spaceWidth = 8.dp
 
     var showFontOptions by remember {
+        mutableStateOf(false)
+    }
+
+    var showBoxCardOptions by remember {
         mutableStateOf(false)
     }
 
@@ -187,14 +192,29 @@ fun EditionScreen(
 
                 Spacer(modifier = Modifier.width(spaceWidth))
 
+                val metadata by metadataState.collectAsState(emptySet())
+                val boxCardColor = if (showBoxCardOptions ||
+                    metadata.contains(SelectionMetadata.BOX) ||
+                    metadata.contains(SelectionMetadata.CARD)
+                ) {
+                    highlightButtonColor
+                } else {
+                    Color.Unspecified
+                }
+
                 Icon(
                     modifier = Modifier
                         .clip(clipShape)
-                        .clickable(onClick = onHighlight)
+                        .background(color = boxCardColor, shape = clipShape)
+                        .border(1.dp, color = boxCardColor, shape = clipShape)
+                        .clickable {
+                            showBoxCardOptions = !showBoxCardOptions
+                            showFontOptions = false
+                        }
                         .size(iconSize)
                         .padding(iconPadding),
                     imageVector = WrSdkIcons.spotlightIcon,
-                    contentDescription = "Highlight",
+                    contentDescription = "Box/Card",
                     tint = tint
                 )
 
@@ -213,6 +233,7 @@ fun EditionScreen(
                         .border(1.dp, color = highlightColor, shape = clipShape)
                         .clickable {
                             showFontOptions = !showFontOptions
+                            showBoxCardOptions = false
                         }
                         .size(iconSize)
                         .padding(iconPadding),
@@ -293,6 +314,15 @@ fun EditionScreen(
         AnimatedVisibility(showFontOptions) {
             HeaderOptions(metadataState, highlightButtonColor, titleClick)
         }
+
+        AnimatedVisibility(showBoxCardOptions) {
+            BoxCardOptions(
+                metadataState = metadataState,
+                highlightButtonColor = highlightButtonColor,
+                onBoxClick = onBoxClick,
+                onCardClick = onCardClick
+            )
+        }
     }
 }
 
@@ -311,6 +341,60 @@ private fun HeaderOptions(
             metadataState = metadataState,
             highlightButtonColor = highlightButtonColor,
             titleClick = titleClick
+        )
+    }
+}
+
+@Composable
+private fun BoxCardOptions(
+    metadataState: Flow<Set<SelectionMetadata>>,
+    highlightButtonColor: Color,
+    onBoxClick: () -> Unit,
+    onCardClick: () -> Unit
+) {
+    val metadata by metadataState.collectAsState(emptySet())
+    val textStyle = MaterialTheme.typography.bodyMedium.copy(
+        color = MaterialTheme.colorScheme.onPrimary
+    )
+    val fontWeight = FontWeight.Bold
+    val padding = PaddingValues(vertical = 10.dp)
+    val shape = MaterialTheme.shapes.medium
+
+    val selectColor = { shouldHighlight: Boolean ->
+        if (shouldHighlight) highlightButtonColor else Color.Unspecified
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().height(50.dp).padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        val isBoxSelected = metadata.contains(SelectionMetadata.BOX)
+
+        Text(
+            modifier = Modifier.weight(1F)
+                .clip(shape)
+                .clickable { onBoxClick() }
+                .background(selectColor(isBoxSelected), shape)
+                .padding(padding),
+            text = "Box",
+            style = textStyle,
+            fontWeight = fontWeight,
+            textAlign = TextAlign.Center
+        )
+
+        val isCardSelected = metadata.contains(SelectionMetadata.CARD)
+
+        Text(
+            modifier = Modifier.weight(1F)
+                .clip(shape)
+                .clickable { onCardClick() }
+                .background(selectColor(isCardSelected), shape)
+                .padding(padding),
+            text = "Card",
+            style = textStyle,
+            fontWeight = fontWeight,
+            textAlign = TextAlign.Center
         )
     }
 }
