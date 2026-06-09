@@ -17,6 +17,8 @@ internal class SqlDelightAuthRepository(
     private val writeopiaDb: WriteopiaDb?
 ) : AuthRepository {
 
+    private var pendingConfirmationEmail: String? = null
+
     override suspend fun getUser(): WriteopiaUser =
         writeopiaDb?.writeopiaUserEntityQueries
             ?.selectCurrentUser()
@@ -105,5 +107,15 @@ internal class SqlDelightAuthRepository(
 
     override suspend fun unselectAllUsers() {
         writeopiaDb?.writeopiaUserEntityQueries?.unselectAllUsers()
+    }
+
+    override suspend fun savePendingConfirmationEmail(email: String) {
+        pendingConfirmationEmail = email
+    }
+
+    override suspend fun getPendingConfirmationEmail(): String? = pendingConfirmationEmail
+
+    override suspend fun clearPendingConfirmationEmail() {
+        pendingConfirmationEmail = null
     }
 }

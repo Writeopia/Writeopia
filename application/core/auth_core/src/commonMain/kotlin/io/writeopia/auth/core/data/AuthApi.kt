@@ -14,6 +14,9 @@ import io.ktor.http.isSuccess
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
+import io.writeopia.sdk.serialization.data.auth.EmailConfirmRequest
+import io.writeopia.sdk.serialization.data.auth.EmailConfirmResponse
+import io.writeopia.sdk.serialization.data.auth.EmailResendRequest
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.ManageUserRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
@@ -91,6 +94,40 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         }
     } catch (e: Exception) {
         println("enableUser error: ${e.message}")
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    suspend fun confirmEmail(email: String, code: String): ResultData<Boolean> = try {
+        val response = client.post("$baseUrl/api/email/confirm") {
+            contentType(ContentType.Application.Json)
+            setBody(EmailConfirmRequest(email, code))
+        }.body<EmailConfirmResponse>()
+
+        if (response.success) {
+            ResultData.Complete(true)
+        } else {
+            ResultData.Error(Exception(response.message ?: "Invalid code"))
+        }
+    } catch (e: Exception) {
+        println("confirmEmail error: ${e.message}")
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    suspend fun resendConfirmationEmail(email: String): ResultData<Boolean> = try {
+        val response = client.post("$baseUrl/api/email/resend") {
+            contentType(ContentType.Application.Json)
+            setBody(EmailResendRequest(email))
+        }.body<EmailConfirmResponse>()
+
+        if (response.success) {
+            ResultData.Complete(true)
+        } else {
+            ResultData.Error(Exception(response.message ?: "Failed to resend"))
+        }
+    } catch (e: Exception) {
+        println("resendConfirmationEmail error: ${e.message}")
         e.printStackTrace()
         ResultData.Error(e)
     }

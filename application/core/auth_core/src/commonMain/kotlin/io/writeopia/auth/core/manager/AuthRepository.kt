@@ -36,4 +36,10 @@ interface AuthRepository : UserRepository {
     suspend fun unselectAllWorkspaces()
 
     suspend fun unselectAllUsers()
+
+    suspend fun savePendingConfirmationEmail(email: String)
+
+    suspend fun getPendingConfirmationEmail(): String?
+
+    suspend fun clearPendingConfirmationEmail()
 }

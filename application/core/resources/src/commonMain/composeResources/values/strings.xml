@@ -144,4 +144,11 @@
   <string name="new_drawing">New Drawing</string>
   <string name="login_failed">Login failed. Please check your credentials.</string>
   <string name="registration_failed">Registration failed. Please try again.</string>
+  <string name="confirm_your_email">Confirm Your Email</string>
+  <string name="we_sent_code_to">We sent a confirmation code to %s</string>
+  <string name="enter_code">Enter 6-digit code</string>
+  <string name="resend_code">Resend Code</string>
+  <string name="invalid_code">Invalid or expired code. Please try again.</string>
+  <string name="email_confirmed">Email confirmed successfully!</string>
+  <string name="code_sent">Confirmation code sent!</string>
 </resources>
