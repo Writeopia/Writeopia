@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.CheckBox
+import androidx.compose.material.icons.outlined.CropSquare
 import androidx.compose.material.icons.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.HighlightAlt
 import io.writeopia.sdk.models.command.CommandFactory
@@ -121,6 +122,20 @@ fun createTypeCommands(
                 position,
                 TagInfo(Tag.HIGH_LIGHT_BLOCK),
                 CommandInfo(CommandFactory.box(), CommandTrigger.CLICKED)
+            )
+            null
+        }
+    ),
+    SlashCommand(
+        name = "Card",
+        description = "Change line to a card with borders",
+        icon = Icons.Outlined.CropSquare,
+        commandText = "/card",
+        action = { position ->
+            onTagToggle(
+                position,
+                TagInfo(Tag.CARD_BLOCK),
+                CommandInfo(CommandFactory.card(), CommandTrigger.CLICKED)
             )
             null
         }

@@ -12,6 +12,7 @@ enum class Tag(val label: String) {
     H3("H3"),
     H4("H4"),
     HIGH_LIGHT_BLOCK("HIGH_LIGHT_BLOCK"),
+    CARD_BLOCK("CARD_BLOCK"),
     CODE_BLOCK("CODE_BLOCK"),
     HIDDEN_HX("HIGH_LIGHT_BLOCK"),
     COLLAPSED("COLLAPSED"),
@@ -26,17 +27,17 @@ enum class Tag(val label: String) {
 
     fun hasPosition() = when (this) {
         H1, H2, H3, H4, HIDDEN_HX, COLLAPSED, AI_SUGGESTION, FIRST_AI_SUGGESTION, CODE_BLOCK -> false
-        HIGH_LIGHT_BLOCK -> true
+        HIGH_LIGHT_BLOCK, CARD_BLOCK -> true
     }
 
     fun isErasable() = when (this) {
         HIDDEN_HX, COLLAPSED, AI_SUGGESTION, FIRST_AI_SUGGESTION, CODE_BLOCK -> false
-        H1, H2, H3, H4, HIGH_LIGHT_BLOCK -> true
+        H1, H2, H3, H4, HIGH_LIGHT_BLOCK, CARD_BLOCK -> true
     }
 
     fun mustCarryOver() = when (this) {
         H1, H2, H3, H4, HIDDEN_HX, COLLAPSED, AI_SUGGESTION, FIRST_AI_SUGGESTION, CODE_BLOCK -> false
-        HIGH_LIGHT_BLOCK -> true
+        HIGH_LIGHT_BLOCK, CARD_BLOCK -> true
     }
 
     fun isHidden() = when (this) {

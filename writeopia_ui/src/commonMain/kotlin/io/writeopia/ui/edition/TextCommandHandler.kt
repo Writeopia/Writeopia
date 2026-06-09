@@ -70,6 +70,13 @@ class TextCommandHandler(
                         CommandInfo(CommandFactory.box(), CommandTrigger.WRITTEN)
                     )
                 },
+                CommandFactory.card().commandText to { _, position ->
+                    manager.toggleTagForPosition(
+                        position,
+                        TagInfo(Tag.CARD_BLOCK),
+                        CommandInfo(CommandFactory.card(), CommandTrigger.WRITTEN)
+                    )
+                },
                 CommandFactory.unOrderedList().commandText to { _, position ->
                     manager.changeStoryType(
                         position,
