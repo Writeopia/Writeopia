@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.CheckBox
 import androidx.compose.material.icons.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.HighlightAlt
+import androidx.compose.material.icons.outlined.CropSquare
 import io.writeopia.sdk.models.command.CommandFactory
 import io.writeopia.sdk.models.command.CommandInfo
 import io.writeopia.sdk.models.command.CommandTrigger
@@ -121,6 +122,20 @@ fun createTypeCommands(
                 position,
                 TagInfo(Tag.HIGH_LIGHT_BLOCK),
                 CommandInfo(CommandFactory.box(), CommandTrigger.CLICKED)
+            )
+            null
+        }
+    ),
+    SlashCommand(
+        name = "Card",
+        description = "Change line to a card",
+        icon = Icons.Outlined.CropSquare,
+        commandText = "/card",
+        action = { position ->
+            onTagToggle(
+                position,
+                TagInfo(Tag.CARD),
+                CommandInfo(CommandFactory.card(), CommandTrigger.CLICKED)
             )
             null
         }
