@@ -24,6 +24,7 @@ import io.writeopia.ui.model.DrawConfig
 object DefaultTagDecoration : TagDecoration {
 
     private val CORNER_RADIUS = 8.dp
+
     // Extension to cover gaps between drawers
     private val BORDER_EXTENSION = 16.dp
 
@@ -47,11 +48,13 @@ object DefaultTagDecoration : TagDecoration {
                     .cardBorder(position, borderColor, 1.dp, CORNER_RADIUS, BORDER_EXTENSION)
                     .padding(paddingForTagInfo(tags, config))
             }
+
             tagSet.contains(Tag.HIGH_LIGHT_BLOCK) -> {
                 modifier
                     .background(config.selectedColor(), shapeForTagInfo(tags))
                     .padding(paddingForTagInfo(tags, config))
             }
+
             else -> {
                 modifier.padding(start = config.textDrawerInnerStartPadding.dp)
             }
@@ -106,12 +109,18 @@ object DefaultTagDecoration : TagDecoration {
                         // Top edge
                         lineTo(size.width - radius - halfStroke, halfStroke)
                         // Top-right rounded corner
-                        quadraticTo(size.width - halfStroke, halfStroke, size.width - halfStroke, radius + halfStroke)
+                        quadraticTo(
+                            size.width - halfStroke,
+                            halfStroke,
+                            size.width - halfStroke,
+                            radius + halfStroke
+                        )
                         // Line down below bottom-right (extended)
                         lineTo(size.width - halfStroke, size.height + ext)
                     }
                     drawPath(path, color, style = Stroke(width = stroke))
                 }
+
                 0 -> {
                     // MIDDLE: left and right borders extended both up and down to cover gaps
                     // Left border - extended
@@ -129,6 +138,7 @@ object DefaultTagDecoration : TagDecoration {
                         strokeWidth = stroke
                     )
                 }
+
                 1 -> {
                     // BOTTOM: rounded bottom corners, extend borders up past top to cover gap
                     val path = Path().apply {
@@ -137,16 +147,27 @@ object DefaultTagDecoration : TagDecoration {
                         // Line down to bottom-left corner
                         lineTo(halfStroke, size.height - radius - halfStroke)
                         // Bottom-left rounded corner
-                        quadraticTo(halfStroke, size.height - halfStroke, radius + halfStroke, size.height - halfStroke)
+                        quadraticTo(
+                            halfStroke,
+                            size.height - halfStroke,
+                            radius + halfStroke,
+                            size.height - halfStroke
+                        )
                         // Bottom edge
                         lineTo(size.width - radius - halfStroke, size.height - halfStroke)
                         // Bottom-right rounded corner
-                        quadraticTo(size.width - halfStroke, size.height - halfStroke, size.width - halfStroke, size.height - radius - halfStroke)
+                        quadraticTo(
+                            size.width - halfStroke,
+                            size.height - halfStroke,
+                            size.width - halfStroke,
+                            size.height - radius - halfStroke
+                        )
                         // Line up above top-right (extended)
                         lineTo(size.width - halfStroke, -ext)
                     }
                     drawPath(path, color, style = Stroke(width = stroke))
                 }
+
                 2 -> {
                     // STANDALONE: all 4 borders with rounded corners
                     drawRoundRect(
