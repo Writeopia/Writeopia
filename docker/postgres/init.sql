@@ -40,7 +40,9 @@ CREATE TABLE user_entity (
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
-  enabled BOOLEAN NOT NULL
+  enabled BOOLEAN NOT NULL,
+  confirmation_code TEXT,
+  confirmation_code_expiry BIGINT
 );
 
 CREATE TABLE company_entity (
