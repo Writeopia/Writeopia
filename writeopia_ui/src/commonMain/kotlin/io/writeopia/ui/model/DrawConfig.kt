@@ -42,5 +42,5 @@ data class DrawConfig(
     val dividerColor: @Composable () -> Color = { MaterialTheme.colorScheme.surfaceVariant },
     val codeBlockBackgroundColor: @Composable () -> Color = { MaterialTheme.colorScheme.surfaceContainerHighest },
     val cardHighlightBackgroundColor: @Composable () -> Color = { MaterialTheme.colorScheme.surfaceContainerHigh },
-    val cardHighlightBorderColor: @Composable () -> Color = { MaterialTheme.colorScheme.outline },
+    val cardHighlightBorderColor: @Composable () -> Color = { MaterialTheme.colorScheme.surfaceVariant },
 )
