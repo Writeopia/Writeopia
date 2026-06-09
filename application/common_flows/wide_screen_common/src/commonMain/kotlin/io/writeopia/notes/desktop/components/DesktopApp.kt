@@ -27,12 +27,15 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import io.writeopia.account.ui.SettingsDialog
-import io.writeopia.common.utils.Destinations
+import io.writeopia.common.utils.ChooseNoteRoute
+import io.writeopia.common.utils.EditorRoute
+import io.writeopia.common.utils.MainAppRoute
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
+import io.writeopia.common.utils.Route
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.drawing.di.DrawingInjection
 import io.writeopia.editor.di.EditorKmpInjector
@@ -45,13 +48,9 @@ import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.Navigation
-import io.writeopia.navigation.notes.navigateToFolder
-import io.writeopia.navigation.notes.navigateToNoteMobile
+import io.writeopia.navigation.rememberWriteopiaNavBackStack
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
-import io.writeopia.notemenu.navigation.NAVIGATION_PATH
-import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
-import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.ui.screen.menu.EditFileDialog
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
@@ -78,7 +77,7 @@ fun DesktopApp(
     navigateToResetPassword: () -> Unit,
     modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
-    startDestination: String = startDestination(),
+    startDestination: Route = MainAppRoute,
 ) {
     val editorInjector = remember {
         EditorKmpInjector.desktop(
@@ -107,24 +106,34 @@ fun DesktopApp(
         sideMenuInjector.provideSideMenuViewModel(keyboardEventFlow)
     val colorTheme by colorThemeOption.collectAsState()
     val accentColor by accentColorOption.collectAsState()
-    val navigationController: NavHostController = rememberNavController()
     val searchViewModel = KmpSearchInjection.singleton().provideViewModel()
+
+    // Use Navigation 3's backStack
+    val backStack: NavBackStack<NavKey> = rememberWriteopiaNavBackStack(startDestination)
 
     LaunchedEffect("initGlobalShellViewModel") {
         globalShellViewModel.init()
     }
 
-    coroutineScope.launch {
-        navigationController.currentBackStackEntryFlow.collect { navEntry ->
-            val navigationType = navEntry.savedStateHandle.get<String?>(NAVIGATION_TYPE)
-            val navigationPath = navEntry.savedStateHandle.get<String?>(NAVIGATION_PATH)
-            if (navigationType != null && navigationPath != null) {
-                NotesNavigation.fromType(
-                    NotesNavigationType.fromType(navigationType),
-                    navigationPath
-                ).let(NotesNavigationUseCase.singleton()::setNoteNavigation)
+    // Observe backStack changes to update NotesNavigationUseCase
+    LaunchedEffect(backStack) {
+        // Use snapshotFlow to observe backStack changes
+        androidx.compose.runtime.snapshotFlow { backStack.lastOrNull() }
+            .collect { currentRoute ->
+                when (currentRoute) {
+                    is ChooseNoteRoute -> {
+                        val notesNavigation = NotesNavigation.fromType(
+                            NotesNavigationType.fromType(currentRoute.navigationType),
+                            currentRoute.navigationPath
+                        )
+                        NotesNavigationUseCase.singleton().setNoteNavigation(notesNavigation)
+                    }
+                    is MainAppRoute -> {
+                        NotesNavigationUseCase.singleton().setNoteNavigation(NotesNavigation.Root)
+                    }
+                    else -> { /* No-op for other routes */ }
+                }
             }
-        }
     }
 
     WriteopiaTheme(
@@ -143,33 +152,43 @@ fun DesktopApp(
                         foldersState = globalShellViewModel.sideMenuItems,
                         width = density.run { sideMenuWidth.toDp() },
                         homeClick = {
-                            val navType = navigationController.currentBackStackEntry
-                                ?.savedStateHandle
-                                ?.get<String>(NAVIGATION_TYPE)
-                                ?.let(NotesNavigationType::fromType)
+                            val currentRoute = backStack.lastOrNull()
+                            val isNotRoot = currentRoute !is MainAppRoute &&
+                                !(currentRoute is ChooseNoteRoute &&
+                                    currentRoute.navigationType == NotesNavigationType.ROOT.type)
 
-                            if (navType != NotesNavigationType.ROOT) {
-                                navigationController.navigateToNotes(NotesNavigation.Root)
+                            if (isNotRoot) {
+                                backStack.add(MainAppRoute)
                             }
                         },
                         favoritesClick = {
-                            val navType = navigationController.currentBackStackEntry
-                                ?.savedStateHandle
-                                ?.get<String?>(NAVIGATION_TYPE)
-                                ?.let(NotesNavigationType::fromType)
+                            val currentRoute = backStack.lastOrNull()
+                            val isNotFavorites = !(currentRoute is ChooseNoteRoute &&
+                                currentRoute.navigationType == NotesNavigationType.FAVORITES.type)
 
-                            if (navType != NotesNavigationType.FAVORITES) {
-                                navigationController.navigateToNotes(NotesNavigation.Favorites)
+                            if (isNotFavorites) {
+                                backStack.add(
+                                    ChooseNoteRoute(
+                                        navigationType = NotesNavigationType.FAVORITES.type,
+                                        navigationPath = ""
+                                    )
+                                )
                             }
                         },
                         settingsClick = globalShellViewModel::showSettings,
                         addFolder = globalShellViewModel::addFolder,
                         editFolder = globalShellViewModel::editFolder,
                         navigateToFolder = { id ->
-                            val navigation = NotesNavigation.Folder(id)
-                            navigationController.navigateToNotes(navigation)
+                            backStack.add(
+                                ChooseNoteRoute(
+                                    navigationType = NotesNavigationType.FOLDER.type,
+                                    navigationPath = id
+                                )
+                            )
                         },
-                        navigateToEditDocument = navigationController::navigateToNoteMobile,
+                        navigateToEditDocument = { id, title ->
+                            backStack.add(EditorRoute(noteId = id, noteTitle = title))
+                        },
                         moveRequest = globalShellViewModel::moveToFolder,
                         expandFolder = globalShellViewModel::expandFolder,
                         searchClick = globalShellViewModel::showSearch,
@@ -181,9 +200,10 @@ fun DesktopApp(
                     Column {
                         if (hasGlobalHeader) {
                             GlobalHeader(
-                                navigationController,
-                                globalShellViewModel.folderPath,
-                                toggleMaxScreen
+                                canNavigateBack = backStack.size > 1,
+                                onNavigateBack = { backStack.removeLastOrNull() },
+                                pathState = globalShellViewModel.folderPath,
+                                toggleMaxScreen = toggleMaxScreen
                             )
                         } else {
                             Spacer(modifier = Modifier.height(8.dp))
@@ -215,8 +235,8 @@ fun DesktopApp(
                                     )
                                 },
                                 navigationBar = {},
-                                navController = navigationController
-                            ) {}
+                                externalBackStack = backStack
+                            )
 
                             val folderEdit =
                                 globalShellViewModel.editFolderState.collectAsState().value
@@ -293,8 +313,17 @@ fun DesktopApp(
                                     searchResults = searchViewModel.queryResults,
                                     onSearchType = searchViewModel::onSearchType,
                                     onDismissRequest = globalShellViewModel::hideSearch,
-                                    documentClick = navigationController::navigateToNoteMobile,
-                                    onFolderClick = navigationController::navigateToFolder
+                                    documentClick = { id, title ->
+                                        backStack.add(EditorRoute(noteId = id, noteTitle = title))
+                                    },
+                                    onFolderClick = { navigation ->
+                                        backStack.add(
+                                            ChooseNoteRoute(
+                                                navigationType = navigation.navigationType.type,
+                                                navigationPath = if (navigation is NotesNavigation.Folder) navigation.id else ""
+                                            )
+                                        )
+                                    }
                                 )
                             }
 
@@ -347,6 +376,3 @@ fun DesktopApp(
         }
     }
 }
-
-fun startDestination() =
-    "${Destinations.CHOOSE_NOTE.id}/${NotesNavigationType.ROOT.type}/path"

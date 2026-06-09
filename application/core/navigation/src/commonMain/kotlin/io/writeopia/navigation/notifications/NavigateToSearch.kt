@@ -1,9 +1,13 @@
 package io.writeopia.navigation.notifications
 
-import androidx.navigation.NavController
-import androidx.navigation.NavOptionsBuilder
-import io.writeopia.features.notifications.navigation.NotificationsDestiny
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import io.writeopia.common.utils.NotificationsRoute
 
-fun NavController.navigateToNotifications(builder: NavOptionsBuilder.() -> Unit = {}) {
-    this.navigate(NotificationsDestiny.notifications(), builder = builder)
+/**
+ * Navigate to notifications screen.
+ * Updated for Navigation 3.
+ */
+fun NavBackStack<NavKey>.navigateToNotifications() {
+    add(NotificationsRoute)
 }

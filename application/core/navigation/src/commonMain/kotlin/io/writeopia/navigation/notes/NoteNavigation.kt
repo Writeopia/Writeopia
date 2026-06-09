@@ -1,100 +1,47 @@
 package io.writeopia.navigation.notes
 
-import androidx.navigation.NavController
-import io.writeopia.common.utils.Destinations
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import io.writeopia.common.utils.AccountRoute
+import io.writeopia.common.utils.ChooseNoteRoute
+import io.writeopia.common.utils.EditorRoute
 import io.writeopia.common.utils.NotesNavigation
-import io.writeopia.common.utils.encoding.encodeForNavigation
-import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
-import io.writeopia.notemenu.navigation.NAVIGATION_PATH
-import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
 
-fun NavController.navigateToNewNote() {
-    val folderId = NotesNavigationUseCase.singleton().navigationState.value.id
-    navigate("${Destinations.EDITOR.id}/$folderId")
-}
+/**
+ * Navigation helper class for Navigation 3.
+ * Provides type-safe navigation operations using Route objects.
+ */
+class NavigationActions(private val backStack: NavBackStack<NavKey>) {
 
-expect fun NavController.navigateToNote(id: String, title: String)
-
-fun NavController.navigateToNoteDesktop(id: String, title: String) {
-    val noteId = this.currentBackStackEntry?.savedStateHandle?.get<String?>("noteId")
-
-    if (noteId != id) {
-        navigate("${Destinations.EDITOR.id}/$id/${title.encodeForNavigation()}")
+    fun navigateToNote(id: String, title: String) {
+        backStack.add(EditorRoute(noteId = id, noteTitle = title))
     }
-}
 
-fun NavController.navigateToNoteMobile(id: String, title: String) {
-    val noteId = this.currentBackStackEntry?.savedStateHandle?.get<String?>("noteId")
-
-    if (noteId != id) {
-        navigate("${Destinations.EDITOR.id}/$id/${title.encodeForNavigation()}")
+    fun navigateToNewNote(parentFolderId: String = "root") {
+        backStack.add(EditorRoute(parentFolderId = parentFolderId))
     }
-}
 
-fun NavController.navigateToAccount() {
-    navigate(Destinations.ACCOUNT.id)
-}
-
-fun NavController.navigateToFolder(navigation: NotesNavigation) {
-    when (navigation) {
-        is NotesNavigation.Folder -> {
-            val id = this.currentBackStackEntry?.savedStateHandle?.get<String?>(NAVIGATION_PATH)
-
-            if (id != navigation.id) {
-                this.navigate(
-                    "${Destinations.CHOOSE_NOTE.id}/${navigation.navigationType.type}/${navigation.id}",
-                )
-            }
-        }
-
-        NotesNavigation.Favorites, NotesNavigation.Root -> {
-            val type = this.currentBackStackEntry?.savedStateHandle?.get<String?>(NAVIGATION_TYPE)
-
-            if (type != navigation.navigationType.type) {
-                this.navigate(
-                    "${Destinations.CHOOSE_NOTE.id}/${navigation.navigationType.type}/path",
-                )
-            }
-        }
+    fun navigateToAccount() {
+        backStack.add(AccountRoute)
     }
-}
 
-fun NavController.navigateToFolderDesktop(navigation: NotesNavigation) {
-    when (navigation) {
-        is NotesNavigation.Folder -> {
-            val id = this.currentBackStackEntry?.savedStateHandle?.get<String?>(NAVIGATION_PATH)
-
-            if (id != navigation.id) {
-                this.navigate(
-                    "${Destinations.CHOOSE_NOTE.id}/${navigation.navigationType.type}/${navigation.id}",
-                )
-            }
-        }
-
-        NotesNavigation.Favorites, NotesNavigation.Root -> {
-            val type = this.currentBackStackEntry?.savedStateHandle?.get<String?>(NAVIGATION_TYPE)
-
-            if (type != navigation.navigationType.type) {
-                this.navigate(
-                    "${Destinations.CHOOSE_NOTE.id}/${navigation.navigationType.type}/path",
-                )
-            }
-        }
-    }
-}
-
-fun NavController.navigateToFolderMobile(navigation: NotesNavigation) {
-    when (navigation) {
-        is NotesNavigation.Folder -> {
-            this.navigate(
-                "${Destinations.CHOOSE_NOTE.id}/${navigation.navigationType.type}/${navigation.id}",
+    fun navigateToFolder(navigation: NotesNavigation) {
+        backStack.add(
+            ChooseNoteRoute(
+                navigationType = navigation.navigationType.type,
+                navigationPath = if (navigation is NotesNavigation.Folder) navigation.id else ""
             )
-        }
-
-        NotesNavigation.Favorites, NotesNavigation.Root -> {
-            this.navigate(
-                "${Destinations.CHOOSE_NOTE.id}/${navigation.navigationType.type}/path",
-            )
-        }
+        )
     }
+
+    fun navigateBack(): NavKey? {
+        return backStack.removeLastOrNull()
+    }
+}
+
+/**
+ * Extension function to create NavigationActions from a backStack.
+ */
+fun NavBackStack<NavKey>.toNavigationActions(): NavigationActions {
+    return NavigationActions(this)
 }

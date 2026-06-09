@@ -68,7 +68,8 @@ kotlin {
 
                 implementation(libs.room.runtime)
 
-                implementation(libs.compose.navigation)
+                implementation(libs.navigation3.ui)
+                implementation(libs.lifecycle.viewmodel.compose)
                 implementation(libs.platformtools.darkmodedetector)
                 implementation(libs.coil.compose)
             }

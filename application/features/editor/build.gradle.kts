@@ -68,7 +68,7 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
-                implementation(libs.compose.navigation)
+                implementation(libs.navigation3.ui)
 
                 implementation(libs.kotlin.test)
                 implementation(libs.material.icons.core)

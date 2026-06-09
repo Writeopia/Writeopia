@@ -1,16 +1,17 @@
 package io.writeopia.navigation.notes
 
-import androidx.navigation.NavController
-import androidx.navigation.NavOptionsBuilder
-import io.writeopia.common.utils.Destinations
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import io.writeopia.common.utils.ChooseNoteRoute
 import io.writeopia.common.utils.NotesNavigation
 
-fun NavController.navigateToNoteMenu(
-    notesNavigation: NotesNavigation,
-    builder: NavOptionsBuilder.() -> Unit = {}
-) {
-    navigate(
-        "${Destinations.CHOOSE_NOTE.id}/${notesNavigation.navigationType.type}/path",
-        builder = builder
-    )
+/**
+ * Navigate to note menu with specific navigation.
+ * Updated for Navigation 3.
+ */
+fun NavBackStack<NavKey>.navigateToNoteMenu(notesNavigation: NotesNavigation) {
+    add(ChooseNoteRoute(
+        navigationType = notesNavigation.navigationType.type,
+        navigationPath = if (notesNavigation is NotesNavigation.Folder) notesNavigation.id else ""
+    ))
 }

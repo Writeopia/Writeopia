@@ -1,9 +1,13 @@
 package io.writeopia.navigation.search
 
-import androidx.navigation.NavController
-import androidx.navigation.NavOptionsBuilder
-import io.writeopia.features.search.navigation.SearchDestiny
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import io.writeopia.common.utils.SearchRoute
 
-fun NavController.navigateToSearch(builder: NavOptionsBuilder.() -> Unit = {}) {
-    this.navigate(SearchDestiny.search(), builder = builder)
+/**
+ * Navigate to search screen.
+ * Updated for Navigation 3.
+ */
+fun NavBackStack<NavKey>.navigateToSearch() {
+    add(SearchRoute)
 }

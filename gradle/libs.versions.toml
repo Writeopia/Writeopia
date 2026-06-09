@@ -24,7 +24,8 @@ webWorkerDriver = "2.2.1"
 mockk = "1.14.7"
 sqldelight = "2.2.1"
 ksp = "2.3.6"
-compose-multiplatform = "1.9.3"
+compose-multiplatform = "1.10.0"
+navigation3-ui = "1.0.0-alpha05"
 dag-command = "1.14.0"
 dokka = "2.1.0"
 google-services = "4.4.2"
@@ -98,6 +99,7 @@ logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.
 database-hikaricp = { group = "com.zaxxer", name = "HikariCP", version.ref = "hikaricp" }
 database-postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
 compose-navigation = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "compose-navigation" }
+navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3-ui" }
 sqldelight-web-driver = { module = "app.cash.sqldelight:web-worker-driver", version.ref = "webWorkerDriver" }
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
 jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }

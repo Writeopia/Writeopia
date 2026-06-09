@@ -5,141 +5,163 @@ package io.writeopia.auth.navigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.composable
-import androidx.navigation.navigation
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.menu.AuthMenuScreen
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterPasswordScreen
 import io.writeopia.auth.register.RegisterScreen
 import io.writeopia.auth.workspace.ChooseWorkspace
-import io.writeopia.common.utils.Destinations
+import io.writeopia.common.utils.AuthRegisterRoute
+import io.writeopia.common.utils.ChooseWorkspaceRoute
+import io.writeopia.common.utils.MainAppRoute
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.time.ExperimentalTime
 
-fun NavGraphBuilder.authNavigation(
-    navController: NavController,
+/**
+ * Auth Menu Screen content for Navigation 3.
+ */
+@Composable
+fun AuthMenuScreenContent(
+    backStack: NavBackStack<NavKey>,
     colorThemeOption: StateFlow<ColorThemeOption?>,
     authInjection: AuthInjection = AuthInjection.singleton(),
     toAppNavigation: () -> Unit,
 ) {
-    composable(Destinations.AUTH_RESET_PASSWORD.id) {
-        val viewModel = authInjection.provideResetPasswordViewModel()
-        val colorTheme by colorThemeOption.collectAsState()
+    val authMenuViewModel: AuthMenuViewModel = authInjection.provideAuthMenuViewModel()
+    val colorTheme by colorThemeOption.collectAsState()
 
-        WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
-            RegisterPasswordScreen(
-                modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
-                passwordState = viewModel.password,
-                repeatPasswordState = viewModel.repeatPassword,
-                resetPasswordState = viewModel.resetPassword,
-                passwordChanged = viewModel::passwordChanged,
-                repeatPasswordChanged = viewModel::repeatPasswordChanged,
-                onPasswordResetRequest = viewModel::onResetPassword,
-                onPasswordResetSuccess = {
-                    toAppNavigation()
-                },
-                navigateBack = {
-                    navController.navigateUp()
-                }
-            )
-        }
+    WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+        AuthMenuScreen(
+            modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+            emailState = authMenuViewModel.email,
+            passwordState = authMenuViewModel.password,
+            loginState = authMenuViewModel.loginState,
+            emailChanged = authMenuViewModel::emailChanged,
+            passwordChanged = authMenuViewModel::passwordChanged,
+            onLoginRequest = authMenuViewModel::onLoginRequest,
+            navigateToRegister = { backStack.add(AuthRegisterRoute) },
+            offlineUsage = {
+                authMenuViewModel.useOffline(toAppNavigation)
+            },
+            navigateUp = { backStack.removeLastOrNull() },
+            navigateNext = { backStack.add(ChooseWorkspaceRoute) }
+        )
+    }
+}
+
+/**
+ * Auth Register Screen content for Navigation 3.
+ */
+@Composable
+fun AuthRegisterScreenContent(
+    backStack: NavBackStack<NavKey>,
+    colorThemeOption: StateFlow<ColorThemeOption?>,
+    authInjection: AuthInjection = AuthInjection.singleton(),
+) {
+    val registerViewModel = authInjection.provideRegisterViewModel()
+    val colorTheme by colorThemeOption.collectAsState()
+
+    WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+        RegisterScreen(
+            modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+            nameState = registerViewModel.name,
+            companyState = registerViewModel.company,
+            emailState = registerViewModel.email,
+            passwordState = registerViewModel.password,
+            registerState = registerViewModel.register,
+            nameChanged = registerViewModel::nameChanged,
+            companyChanged = registerViewModel::workspaceChanged,
+            emailChanged = registerViewModel::emailChanged,
+            passwordChanged = registerViewModel::passwordChanged,
+            onRegisterRequest = registerViewModel::onRegister,
+            onRegisterSuccess = { backStack.add(ChooseWorkspaceRoute) },
+            navigateBack = { backStack.removeLastOrNull() }
+        )
+    }
+}
+
+/**
+ * Auth Reset Password Screen content for Navigation 3.
+ */
+@Composable
+fun AuthResetPasswordScreenContent(
+    backStack: NavBackStack<NavKey>,
+    colorThemeOption: StateFlow<ColorThemeOption?>,
+    authInjection: AuthInjection = AuthInjection.singleton(),
+    toAppNavigation: () -> Unit,
+) {
+    val viewModel = authInjection.provideResetPasswordViewModel()
+    val colorTheme by colorThemeOption.collectAsState()
+
+    WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+        RegisterPasswordScreen(
+            modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+            passwordState = viewModel.password,
+            repeatPasswordState = viewModel.repeatPassword,
+            resetPasswordState = viewModel.resetPassword,
+            passwordChanged = viewModel::passwordChanged,
+            repeatPasswordChanged = viewModel::repeatPasswordChanged,
+            onPasswordResetRequest = viewModel::onResetPassword,
+            onPasswordResetSuccess = toAppNavigation,
+            navigateBack = { backStack.removeLastOrNull() }
+        )
+    }
+}
+
+/**
+ * Choose Workspace Screen content for Navigation 3.
+ */
+@Composable
+fun ChooseWorkspaceScreenContent(
+    backStack: NavBackStack<NavKey>,
+    authInjection: AuthInjection = AuthInjection.singleton(),
+    toAppNavigation: () -> Unit,
+) {
+    val workspacesViewModel = authInjection.provideChooseWorkspaceViewModel()
+
+    LaunchedEffect(Unit) {
+        workspacesViewModel.loadWorkspaces()
     }
 
-    navigation(
-        startDestination = Destinations.AUTH_MENU.id,
-        route = Destinations.AUTH_MENU_INNER_NAVIGATION.id
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(WriteopiaTheme.colorScheme.globalBackground)
     ) {
-        composable(Destinations.AUTH_MENU.id) {
-            val authMenuViewModel: AuthMenuViewModel = authInjection.provideAuthMenuViewModel()
-            val colorTheme by colorThemeOption.collectAsState()
-
-            WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
-                AuthMenuScreen(
-                    modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
-                    emailState = authMenuViewModel.email,
-                    passwordState = authMenuViewModel.password,
-                    loginState = authMenuViewModel.loginState,
-                    emailChanged = authMenuViewModel::emailChanged,
-                    passwordChanged = authMenuViewModel::passwordChanged,
-                    onLoginRequest = authMenuViewModel::onLoginRequest,
-                    navigateToRegister = navController::navigateAuthRegister,
-                    offlineUsage = {
-                        authMenuViewModel.useOffline(toAppNavigation)
-                    },
-                    navigateUp = navController::navigateUp,
-                    navigateNext = navController::navigateToWorkspaceChoice
+        ChooseWorkspace(
+            workspacesState = workspacesViewModel.workspacesState,
+            onWorkspaceSelected = { workspace ->
+                workspacesViewModel.chooseWorkspace(
+                    workspace.copy(selected = true),
+                    sideEffect = toAppNavigation
                 )
-            }
-        }
-
-        composable(Destinations.CHOOSE_WORKSPACE.id) {
-            val workspacesViewModel = authInjection.provideChooseWorkspaceViewModel()
-
-            LaunchedEffect(Unit) {
-                workspacesViewModel.loadWorkspaces()
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(WriteopiaTheme.colorScheme.globalBackground)
-            ) {
-                ChooseWorkspace(
-                    workspacesState = workspacesViewModel.workspacesState,
-                    onWorkspaceSelected = { workspace ->
-                        workspacesViewModel.chooseWorkspace(
-                            workspace.copy(selected = true),
-                            sideEffect = toAppNavigation
-                        )
-                    },
-                    retry = workspacesViewModel::loadWorkspaces,
-                )
-            }
-        }
-
-        composable(Destinations.AUTH_REGISTER.id) {
-            val registerViewModel = authInjection.provideRegisterViewModel()
-            val colorTheme by colorThemeOption.collectAsState()
-
-            WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
-                RegisterScreen(
-                    modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
-                    nameState = registerViewModel.name,
-                    companyState = registerViewModel.company,
-                    emailState = registerViewModel.email,
-                    passwordState = registerViewModel.password,
-                    registerState = registerViewModel.register,
-                    nameChanged = registerViewModel::nameChanged,
-                    companyChanged = registerViewModel::workspaceChanged,
-                    emailChanged = registerViewModel::emailChanged,
-                    passwordChanged = registerViewModel::passwordChanged,
-                    onRegisterRequest = registerViewModel::onRegister,
-                    onRegisterSuccess = navController::navigateToWorkspaceChoice,
-                    navigateBack = navController::navigateUp
-                )
-            }
-        }
+            },
+            retry = workspacesViewModel::loadWorkspaces,
+        )
     }
 }
 
-fun NavController.navigateAuthRegister() {
-    navigate(Destinations.AUTH_REGISTER.id)
+/**
+ * Extension functions for navigation (backward compatibility).
+ */
+fun NavBackStack<NavKey>.navigateAuthRegister() {
+    add(AuthRegisterRoute)
 }
 
-fun NavController.navigateToApp() {
-    navigate(Destinations.MAIN_APP.id)
+fun NavBackStack<NavKey>.navigateToApp() {
+    add(MainAppRoute)
 }
 
-fun NavController.navigateToWorkspaceChoice() {
-    navigate(Destinations.CHOOSE_WORKSPACE.id)
+fun NavBackStack<NavKey>.navigateToWorkspaceChoice() {
+    add(ChooseWorkspaceRoute)
 }

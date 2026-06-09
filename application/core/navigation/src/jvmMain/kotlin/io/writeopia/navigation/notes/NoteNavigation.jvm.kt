@@ -1,10 +1,5 @@
 package io.writeopia.navigation.notes
 
-import androidx.navigation.NavController
-
-actual fun NavController.navigateToNote(
-    id: String,
-    title: String
-) {
-    this.navigateToNoteDesktop(id, title)
-}
+// Navigation 3 uses type-safe Route objects instead of NavController extensions.
+// Platform-specific navigation is now handled uniformly through NavigationActions class.
+// This file is kept for backward compatibility and can be removed after full migration.

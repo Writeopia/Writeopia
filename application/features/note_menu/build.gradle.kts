@@ -71,7 +71,8 @@ kotlin {
                 implementation(compose.material3)
                 implementation(compose.components.uiToolingPreview)
                 implementation(libs.kotlinx.serialization.json)
-                implementation(libs.compose.navigation)
+                implementation(libs.navigation3.ui)
+                implementation(libs.compose.navigation) // Keep for backward compatibility
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.ktor.client.core)
                 implementation(libs.material.icons.core)

@@ -20,14 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import io.writeopia.common.utils.icons.PlatformIcons
 import io.writeopia.notemenu.ui.screen.configuration.modifier.icon
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun GlobalHeader(
-    navigationController: NavHostController,
+    canNavigateBack: Boolean,
+    onNavigateBack: () -> Unit,
     pathState: StateFlow<List<String>>,
     toggleMaxScreen: () -> Unit,
 ) {
@@ -44,8 +44,8 @@ fun GlobalHeader(
     ) {
         Icon(
             modifier = Modifier.icon {
-                if (navigationController.previousBackStackEntry != null) {
-                    navigationController.navigateUp()
+                if (canNavigateBack) {
+                    onNavigateBack()
                 }
             },
             imageVector = PlatformIcons.backArrowMobile,

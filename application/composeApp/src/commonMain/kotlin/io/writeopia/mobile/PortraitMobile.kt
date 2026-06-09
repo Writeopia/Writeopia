@@ -1,5 +1,6 @@
 package io.writeopia.mobile
 
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -20,14 +21,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavHostController
-import androidx.navigation.NavOptionsBuilder
-import androidx.navigation.compose.currentBackStackEntryAsState
-import io.writeopia.common.utils.Destinations
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import io.writeopia.common.utils.ChooseNoteRoute
+import io.writeopia.common.utils.MainAppRoute
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.common.utils.NotificationsRoute
+import io.writeopia.common.utils.Route
+import io.writeopia.common.utils.SearchRoute
+import io.writeopia.common.utils.StartAppRoute
+import io.writeopia.common.utils.AuthMenuInnerNavigationRoute
+import io.writeopia.common.utils.AuthMenuRoute
+import io.writeopia.common.utils.AuthRegisterRoute
+import io.writeopia.common.utils.AuthResetPasswordRoute
+import io.writeopia.common.utils.ChooseWorkspaceRoute
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.rememberScrollAwareState
 import io.writeopia.drawing.di.DrawingInjection
@@ -38,18 +45,15 @@ import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.NavItemName
 import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.NavigationViewModel
+import io.writeopia.navigation.rememberWriteopiaNavBackStack
 import io.writeopia.sdk.models.drawing.DrawingData
-import io.writeopia.navigation.notes.navigateToNoteMenu
-import io.writeopia.navigation.notifications.navigateToNotifications
-import io.writeopia.navigation.search.navigateToSearch
 import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.viewmodel.UiConfigurationViewModel
 
 @Composable
 fun PortraitMobile(
-    startDestination: String,
-    navController: NavHostController,
+    startDestination: Route,
     searchInjector: SearchInjection,
     uiConfigViewModel: UiConfigurationViewModel,
     notesMenuInjection: NotesMenuInjection,
@@ -58,13 +62,16 @@ fun PortraitMobile(
     drawingInjection: DrawingInjection? = null,
     onDrawingSaved: (String, String, DrawingData) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
-    builder: NavGraphBuilder.() -> Unit
+    extraEntries: @Composable (NavBackStack<NavKey>, SharedTransitionScope) -> Unit = { _, _ -> }
 ) {
     val colorThemeState = uiConfigViewModel.listenForColorTheme { "disconnected_user" }
     val colorTheme by colorThemeState.collectAsState()
     val accentColorState = uiConfigViewModel.listenForAccentColor { "disconnected_user" }
     val accentColor by accentColorState.collectAsState()
     val scrollAwareState = rememberScrollAwareState()
+
+    // Use Navigation 3's backStack
+    val backStack: NavBackStack<NavKey> = rememberWriteopiaNavBackStack(startDestination)
 
     WriteopiaTheme(
         darkTheme = colorTheme.isDarkTheme(),
@@ -75,7 +82,6 @@ fun PortraitMobile(
                 isDarkTheme = colorTheme.isDarkTheme(),
                 startDestination = startDestination,
                 notesMenuInjection = notesMenuInjection,
-                navController = navController,
                 editorInjector = editorInjector,
                 drawingInjection = drawingInjection,
                 selectedColorTheme = colorThemeState,
@@ -87,24 +93,22 @@ fun PortraitMobile(
                 nestedScrollConnection = scrollAwareState.nestedScrollConnection,
                 isToolbarVisible = scrollAwareState.isVisible,
                 navigationBar = {},
-                builder = builder
+                externalBackStack = backStack,
+                extraEntries = extraEntries
             )
 
             // Overlay navigation bar on top of content
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry?.destination
+            val currentRoute = backStack.lastOrNull()
             val navigationItems by navigationViewModel.selectedNavigation.collectAsState()
 
             // Hide navigation bar on auth screens
-            val currentRoute = currentDestination?.route
             val isAuthScreen = currentRoute?.let { route ->
-                route.startsWith(Destinations.AUTH_MENU.id) ||
-                    route.startsWith(Destinations.AUTH_MENU_INNER_NAVIGATION.id) ||
-                    route.startsWith(Destinations.AUTH_REGISTER.id) ||
-                    route.startsWith(Destinations.AUTH_RESET_PASSWORD.id) ||
-                    route.startsWith(Destinations.AUTH_LOGIN.id) ||
-                    route.startsWith(Destinations.CHOOSE_WORKSPACE.id) ||
-                    route.startsWith(Destinations.START_APP.id)
+                route is AuthMenuRoute ||
+                    route is AuthMenuInnerNavigationRoute ||
+                    route is AuthRegisterRoute ||
+                    route is AuthResetPasswordRoute ||
+                    route is ChooseWorkspaceRoute ||
+                    route is StartAppRoute
             } ?: true
 
             val offsetY by animateDpAsState(
@@ -121,12 +125,7 @@ fun PortraitMobile(
                         .offset { IntOffset(0, offsetY.roundToPx()) }
                 ) {
                     navigationItems.forEach { item ->
-                        val isSelected =
-                            currentDestination?.hierarchy?.any { destination ->
-                                destination.route?.let {
-                                    NavItemName.selectRoute(it)
-                                }?.value == item.navItemName.value
-                            } ?: false
+                        val isSelected = isItemSelected(currentRoute, item.navItemName)
 
                         val iconSize by animateDpAsState(
                             targetValue = if (isSelected) 28.dp else 24.dp,
@@ -144,14 +143,8 @@ fun PortraitMobile(
                                 )
                             },
                             onClick = {
-                                navController.navigateToItem(item.navItemName) {
-                                    if (!isSelected) {
-                                        popUpTo(navController.graph.findStartDestination().route!!) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                if (!isSelected) {
+                                    backStack.navigateToItem(item.navItemName)
                                 }
                             },
                             colors = NavigationBarItemDefaults.colors()
@@ -168,14 +161,19 @@ fun PortraitMobile(
     }
 }
 
-fun NavHostController.navigateToItem(
-    navItem: NavItemName,
-    builder: NavOptionsBuilder.() -> Unit
-) {
+private fun isItemSelected(currentRoute: NavKey?, navItem: NavItemName): Boolean {
+    return when (navItem) {
+        NavItemName.HOME -> currentRoute is MainAppRoute || currentRoute is ChooseNoteRoute
+        NavItemName.SEARCH -> currentRoute is SearchRoute
+        NavItemName.NOTIFICATIONS -> currentRoute is NotificationsRoute
+    }
+}
+
+fun NavBackStack<NavKey>.navigateToItem(navItem: NavItemName) {
     when (navItem) {
-        NavItemName.HOME -> this.navigateToNoteMenu(NotesNavigation.Root, builder)
-        NavItemName.SEARCH -> this.navigateToSearch(builder)
-        NavItemName.NOTIFICATIONS -> this.navigateToNotifications(builder)
+        NavItemName.HOME -> add(MainAppRoute)
+        NavItemName.SEARCH -> add(SearchRoute)
+        NavItemName.NOTIFICATIONS -> add(NotificationsRoute)
     }
 }
 

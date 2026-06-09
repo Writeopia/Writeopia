@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.multiplatform.compiler)
     alias(libs.plugins.ktlint)
@@ -41,7 +42,12 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.compose.navigation)
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(libs.navigation3.ui)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.lifecycle.viewmodel.compose)
                 implementation(project(":application:features:note_menu"))
                 implementation(project(":application:features:editor"))
                 implementation(project(":application:features:account"))
@@ -50,11 +56,15 @@ kotlin {
                 implementation(project(":application:features:search"))
                 implementation(project(":application:features:documents_graph"))
                 implementation(project(":application:features:drawing"))
+                implementation(project(":writeopia"))
+                implementation(project(":writeopia_ui"))
                 implementation(project(":writeopia_models"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:ollama"))
+                implementation(project(":application:core:common_ui"))
+                implementation(project(":application:core:forcegraph"))
             }
         }
     }

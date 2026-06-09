@@ -1,30 +1,13 @@
 package io.writeopia.features.notifications.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.composable
-import io.writeopia.features.notifications.NotificationsScreen
-import io.writeopia.common.utils.Destinations
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import io.writeopia.common.utils.NotificationsRoute
 
-object NotificationsDestiny {
-    fun notifications() = Destinations.NOTIFICATIONS.id
-}
-
-fun NavGraphBuilder.notificationsNavigation(
-    navigationClick: () -> Unit,
-    nestedScrollConnection: NestedScrollConnection? = null,
-    isToolbarVisible: Boolean = true,
-    navigationBar: @Composable () -> Unit
-) {
-    composable(
-        route = NotificationsDestiny.notifications(),
-    ) { _ ->
-        NotificationsScreen(
-            navigationClick = navigationClick,
-            nestedScrollConnection = nestedScrollConnection,
-            isToolbarVisible = isToolbarVisible,
-            bottomBar = navigationBar
-        )
-    }
+/**
+ * Navigate to the notifications screen.
+ * Updated for Navigation 3.
+ */
+fun NavBackStack<NavKey>.navigateToNotifications() {
+    add(NotificationsRoute)
 }

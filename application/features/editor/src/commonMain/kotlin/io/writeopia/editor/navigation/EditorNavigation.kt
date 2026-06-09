@@ -1,150 +1,30 @@
 package io.writeopia.editor.navigation
 
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.background
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavType
-import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import io.writeopia.common.utils.Destinations
-import io.writeopia.common.utils.encoding.decodeFromNavigation
-import io.writeopia.editor.di.TextEditorInjector
-import io.writeopia.editor.features.editor.copy.CopyManager
-import io.writeopia.editor.features.editor.ui.screen.TextEditorScreen
-import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
-import io.writeopia.editor.features.presentation.ui.PresentationScreen
-import io.writeopia.sdk.models.story.StoryStep
-import io.writeopia.theme.WriteopiaTheme
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import io.writeopia.common.utils.EditorRoute
+import io.writeopia.common.utils.PresentationRoute
 
-@OptIn(ExperimentalSharedTransitionApi::class)
-fun NavGraphBuilder.editorNavigation(
-    isDarkTheme: Boolean,
-    navigateBack: () -> Unit = {},
-    sharedTransitionScope: SharedTransitionScope,
-    editorInjector: TextEditorInjector,
-    navigateToNote: (String) -> Unit,
-    navigateToPresentation: (String) -> Unit,
-    nestedScrollConnection: NestedScrollConnection? = null,
-    isToolbarVisible: Boolean = true,
-    navigateToNewDrawing: (String) -> Unit = {},
-    navigateToEditDrawing: (String, StoryStep) -> Unit = { _, _ -> }
-) {
-    sharedTransitionScope.run {
-        composable(
-            route = "${Destinations.EDITOR.id}/{noteId}/{noteTitle}",
-            arguments = listOf(navArgument("noteId") { type = NavType.StringType }),
-            enterTransition = {
-                slideInHorizontally(
-                    initialOffsetX = { intSize -> intSize }
-                )
-            },
-            exitTransition = {
-                slideOutHorizontally(
-                    targetOffsetX = { intSize -> intSize }
-                )
-            }
-        ) { backStackEntry ->
-            val noteId = backStackEntry.savedStateHandle.get<String?>("noteId")
-            val noteTitle = backStackEntry.savedStateHandle.get<String?>("noteTitle")
-                ?.decodeFromNavigation()
-            val parentFolderId = backStackEntry.savedStateHandle.get<String?>("parentFolderId")
-
-            if (noteId != null && noteTitle != null) {
-                val noteDetailsViewModel =
-                    editorInjector.provideNoteDetailsViewModel(
-                        parentFolderId ?: "root",
-                        copyManager = CopyManager(LocalClipboardManager.current)
-                    )
-
-                noteDetailsViewModel.setTheme(isDarkTheme)
-
-                TextEditorScreen(
-                    noteId.takeIf { it != "null" },
-                    noteTitle.takeIf { it != "null" },
-                    isDarkTheme,
-                    noteDetailsViewModel,
-                    playPresentation = {
-                        navigateToPresentation(noteId)
-                    },
-                    navigateBack = navigateBack,
-                    onDocumentLinkClick = navigateToNote,
-                    onNewDrawingClick = { navigateToNewDrawing(noteId) },
-                    onDrawingClick = { storyStep, _ ->
-                        navigateToEditDrawing(noteId, storyStep)
-                    },
-                    nestedScrollConnection = nestedScrollConnection,
-                    isToolbarVisible = isToolbarVisible,
-                    modifier = sharedModifier(this, noteId)
-                )
-            } else {
-                throw IllegalArgumentException("The arguments for this route are wrong!")
-            }
-        }
-
-        composable(route = "${Destinations.EDITOR.id}/{parentFolderId}") { backStackEntry ->
-            val parentFolderId = backStackEntry.savedStateHandle.get<String?>("parentFolderId")
-            val notesDetailsViewModel: NoteEditorViewModel =
-                editorInjector.provideNoteDetailsViewModel(
-                    parentFolderId ?: "root",
-                    copyManager = CopyManager(LocalClipboardManager.current)
-                ).apply {
-                    setTheme(isDarkTheme)
-                }
-
-            val documentId = notesDetailsViewModel.writeopiaManager.documentInfo.value.id
-
-            TextEditorScreen(
-                documentId = null,
-                title = null,
-                isDarkTheme = isDarkTheme,
-                noteEditorViewModel = notesDetailsViewModel,
-                navigateBack = navigateBack,
-                playPresentation = {
-                    navigateToPresentation(documentId)
-                },
-                onDocumentLinkClick = navigateToNote,
-                onNewDrawingClick = { navigateToNewDrawing(documentId) },
-                onDrawingClick = { storyStep, _ ->
-                    navigateToEditDrawing(documentId, storyStep)
-                },
-                nestedScrollConnection = nestedScrollConnection,
-                isToolbarVisible = isToolbarVisible,
-                modifier = sharedModifier(this),
-            )
-        }
-
-        composable(route = "${Destinations.PRESENTATION.id}/{documentId}") { backStackEntry ->
-            val documentId = backStackEntry.savedStateHandle.get<String?>("documentId")
-            val viewModel = editorInjector.providePresentationViewModel()
-
-            if (documentId != null) {
-                viewModel.loadDocument(documentId)
-            }
-
-            PresentationScreen(viewModel)
-        }
-    }
+/**
+ * Navigate to editor with an existing note.
+ * Updated for Navigation 3.
+ */
+fun NavBackStack<NavKey>.navigateToEditor(noteId: String, noteTitle: String? = null) {
+    add(EditorRoute(noteId = noteId, noteTitle = noteTitle))
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-private fun SharedTransitionScope.sharedModifier(
-    animatedVisibilityScope: AnimatedVisibilityScope,
-    documentId: String? = null
-) =
-    Modifier
-        .sharedBounds(
-            rememberSharedContentState(key = "noteInit${documentId ?: ""}"),
-            animatedVisibilityScope = animatedVisibilityScope,
-            resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
-        )
-        .background(WriteopiaTheme.colorScheme.cardBg, MaterialTheme.shapes.large)
+/**
+ * Navigate to editor to create a new note.
+ * Updated for Navigation 3.
+ */
+fun NavBackStack<NavKey>.navigateToNewNote(parentFolderId: String = "root") {
+    add(EditorRoute(parentFolderId = parentFolderId))
+}
+
+/**
+ * Navigate to presentation mode.
+ * Updated for Navigation 3.
+ */
+fun NavBackStack<NavKey>.navigateToPresentation(documentId: String) {
+    add(PresentationRoute(documentId = documentId))
+}

@@ -19,36 +19,32 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
-import io.writeopia.auth.navigation.authNavigation
-import io.writeopia.common.utils.Destinations
+import io.writeopia.common.utils.ALLOW_BACKEND
+import io.writeopia.common.utils.MainAppRoute
+import io.writeopia.common.utils.StartAppRoute
+import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.common.utils.ui.GlobalToastBox
 import io.writeopia.model.AccentColor
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.ScreenLoading
-import io.writeopia.navigation.startScreen
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.resources.CommonImages
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
+import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sqldelight.database.DatabaseCreation
 import io.writeopia.sqldelight.database.DatabaseFactory
 import io.writeopia.sqldelight.database.driver.DriverFactory
+import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
-import io.writeopia.common.utils.ALLOW_BACKEND
-import io.writeopia.common.utils.configuration.LocalPlatform
-import io.writeopia.common.utils.configuration.PlatformType
-import io.writeopia.sdk.persistence.core.di.RepositoryInjector
-import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -240,7 +236,8 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     uiConfigurationViewModel.listenForAccentColor { "disconnected_user" }
                 val accentColor by accentColorState.collectAsState()
 
-                val navigationController = rememberNavController()
+                // Use Navigation 3's DesktopApp with type-safe routes
+                val startDestination = if (ALLOW_BACKEND) StartAppRoute else MainAppRoute
 
                 WriteopiaTheme(
                     darkTheme = colorTheme.value.isDarkTheme(),
@@ -250,48 +247,25 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                         modifier = Modifier
                             .background(WriteopiaTheme.colorScheme.globalBackground)
                     ) {
-                        NavHost(
-                            navController = navigationController,
-                            startDestination = if (ALLOW_BACKEND) {
-                                Destinations.START_APP.id
-                            } else {
-                                Destinations.MAIN_APP.id
-                            }
-                        ) {
-                            startScreen(navigationController, colorTheme)
-
-                            composable(route = Destinations.MAIN_APP.id) {
-                                DesktopApp(
-                                    selectionState = selectionState,
-                                    keyboardEventFlow = keyboardEventFlow.filterNotNull(),
-                                    coroutineScope = coroutineScope,
-                                    colorThemeOption = colorTheme,
-                                    accentColorOption = accentColorState,
-                                    selectColorTheme =
-                                        uiConfigurationViewModel::changeColorTheme,
-                                    selectAccentColor =
-                                        uiConfigurationViewModel::changeAccentColor,
-                                    toggleMaxScreen = topDoubleBarClick,
-                                    navigateToRegister = {
-                                        navigationController.navigate(
-                                            Destinations.AUTH_MENU_INNER_NAVIGATION.id
-                                        )
-                                    },
-                                    navigateToResetPassword = {
-                                        navigationController.navigate(
-                                            Destinations.AUTH_RESET_PASSWORD.id
-                                        )
-                                    }
-                                )
-                            }
-
-                            authNavigation(
-                                navController = navigationController,
-                                colorThemeOption = colorTheme
-                            ) {
-                                navigationController.navigate(Destinations.MAIN_APP.id)
-                            }
-                        }
+                        DesktopApp(
+                            selectionState = selectionState,
+                            keyboardEventFlow = keyboardEventFlow.filterNotNull(),
+                            coroutineScope = coroutineScope,
+                            colorThemeOption = colorTheme,
+                            accentColorOption = accentColorState,
+                            selectColorTheme =
+                                uiConfigurationViewModel::changeColorTheme,
+                            selectAccentColor =
+                                uiConfigurationViewModel::changeAccentColor,
+                            toggleMaxScreen = topDoubleBarClick,
+                            navigateToRegister = {
+                                // Auth navigation is now handled internally via Navigation 3
+                            },
+                            navigateToResetPassword = {
+                                // Auth navigation is now handled internally via Navigation 3
+                            },
+                            startDestination = startDestination
+                        )
                     }
                 }
             }

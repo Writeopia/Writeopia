@@ -55,7 +55,7 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.material3)
                 @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-                implementation(libs.compose.navigation)
+                implementation(libs.navigation3.ui)
                 implementation(libs.lifecycle.viewmodel.compose)
             }
         }

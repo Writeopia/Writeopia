@@ -71,7 +71,7 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.material3)
                 implementation(compose.components.uiToolingPreview)
-                implementation(libs.compose.navigation)
+                implementation(libs.navigation3.ui)
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.serialization.json)
                 implementation(libs.lifecycle.viewmodel.compose)
