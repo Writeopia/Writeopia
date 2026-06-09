@@ -3,7 +3,6 @@
 package io.writeopia.api.core.auth.service
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.header
 import io.ktor.http.HttpStatusCode
@@ -15,7 +14,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
 object EmailService {
-    private val client = HttpClient(CIO)
+    private val client = HttpClient()
 
     private val mailgunApiKey: String?
         get() = System.getenv("MAILGUN_API_KEY")
