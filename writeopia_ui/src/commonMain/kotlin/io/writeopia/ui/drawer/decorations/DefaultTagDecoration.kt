@@ -13,6 +13,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
@@ -41,12 +42,21 @@ object DefaultTagDecoration : TagDecoration {
                 val shape = shapeForTagInfo(tags)
                 val position = getPositionFromTags(tags)
                 val borderColor = config.cardHighlightBorderColor()
+                val accentLineColor = config.cardAccentLineColor()
                 // Use graphicsLayer with clip=false to allow borders to extend beyond bounds
                 modifier
                     .graphicsLayer(clip = false)
                     .background(config.cardHighlightBackgroundColor(), shape)
-                    .cardBorder(position, borderColor, 1.dp, CORNER_RADIUS, BORDER_EXTENSION)
-                    .padding(paddingForTagInfo(tags, config))
+                    .cardBorder(
+                        position = position,
+                        color = borderColor,
+                        strokeWidth = 1.dp,
+                        cornerRadius = CORNER_RADIUS,
+                        extension = BORDER_EXTENSION,
+                        accentLineColor = accentLineColor,
+                        accentLineWidth = 3.dp
+                    )
+                    .padding(paddingForCard(tags, config))
             }
 
             tagSet.contains(Tag.HIGH_LIGHT_BLOCK) -> {
@@ -82,18 +92,25 @@ object DefaultTagDecoration : TagDecoration {
      * - Position 0 (MIDDLE): left, right borders extended both up and down to cover gaps
      * - Position 1 (BOTTOM): bottom, left, right borders with rounded bottom corners, extended up
      * - Position 2 (STANDALONE): all 4 borders with all corners rounded
+     *
+     * Also draws an accent line on the left side of the card.
      */
     private fun Modifier.cardBorder(
         position: Int,
         color: Color,
         strokeWidth: Dp,
         cornerRadius: Dp,
-        extension: Dp
+        extension: Dp,
+        accentLineColor: Color,
+        accentLineWidth: Dp
     ): Modifier = this.drawWithCache {
         val stroke = strokeWidth.toPx()
         val halfStroke = stroke / 2
         val radius = cornerRadius.toPx()
         val ext = extension.toPx()
+        val accentWidth = accentLineWidth.toPx()
+        val accentOffset = stroke + 18.dp.toPx()
+        val cornerMargin = 12.dp.toPx()
 
         onDrawBehind {
             when (position) {
@@ -119,6 +136,15 @@ object DefaultTagDecoration : TagDecoration {
                         lineTo(size.width - halfStroke, size.height + ext)
                     }
                     drawPath(path, color, style = Stroke(width = stroke))
+
+                    // Accent line for TOP: starts after the rounded corner with margin, extends down
+                    drawLine(
+                        color = accentLineColor,
+                        start = Offset(accentOffset, radius + halfStroke + cornerMargin),
+                        end = Offset(accentOffset, size.height + ext),
+                        strokeWidth = accentWidth,
+                        cap = StrokeCap.Round
+                    )
                 }
 
                 0 -> {
@@ -136,6 +162,14 @@ object DefaultTagDecoration : TagDecoration {
                         start = Offset(size.width - halfStroke, -ext),
                         end = Offset(size.width - halfStroke, size.height + ext),
                         strokeWidth = stroke
+                    )
+
+                    // Accent line for MIDDLE: full height extended (no rounded caps needed)
+                    drawLine(
+                        color = accentLineColor,
+                        start = Offset(accentOffset, -ext),
+                        end = Offset(accentOffset, size.height + ext),
+                        strokeWidth = accentWidth
                     )
                 }
 
@@ -166,6 +200,15 @@ object DefaultTagDecoration : TagDecoration {
                         lineTo(size.width - halfStroke, -ext)
                     }
                     drawPath(path, color, style = Stroke(width = stroke))
+
+                    // Accent line for BOTTOM: starts from top extended, stops before rounded corner
+                    drawLine(
+                        color = accentLineColor,
+                        start = Offset(accentOffset, -ext),
+                        end = Offset(accentOffset, size.height - radius - halfStroke - cornerMargin),
+                        strokeWidth = accentWidth,
+                        cap = StrokeCap.Round
+                    )
                 }
 
                 2 -> {
@@ -176,6 +219,15 @@ object DefaultTagDecoration : TagDecoration {
                         size = Size(size.width - stroke, size.height - stroke),
                         cornerRadius = CornerRadius(radius, radius),
                         style = Stroke(width = stroke)
+                    )
+
+                    // Accent line for STANDALONE: between rounded corners with margin and rounded caps
+                    drawLine(
+                        color = accentLineColor,
+                        start = Offset(accentOffset, radius + halfStroke + cornerMargin),
+                        end = Offset(accentOffset, size.height - radius - halfStroke - cornerMargin),
+                        strokeWidth = accentWidth,
+                        cap = StrokeCap.Round
                     )
                 }
             }
@@ -203,6 +255,29 @@ object DefaultTagDecoration : TagDecoration {
     ): PaddingValues {
         val padding = 8.dp
         val startPadding = drawConfig.textDrawerInnerStartPadding
+
+        val tagInfo = tagInfoList.firstOrNull { info ->
+            info.tag.hasPosition()
+        } ?: return PaddingValues(0.dp)
+
+        return when (tagInfo.position) {
+            -1 -> PaddingValues(start = startPadding.dp, top = padding)
+            1 -> PaddingValues(start = startPadding.dp, bottom = padding)
+            2 -> PaddingValues(start = startPadding.dp, top = padding, bottom = padding)
+            else -> PaddingValues(start = startPadding.dp)
+        }
+    }
+
+    /**
+     * Padding for card content - includes extra space for the accent bar on the left
+     */
+    private fun paddingForCard(
+        tagInfoList: Iterable<TagInfo>,
+        drawConfig: DrawConfig
+    ): PaddingValues {
+        val padding = 8.dp
+        // Extra padding for the accent bar: 14dp offset + 3dp width + 4dp margin = ~21dp extra
+        val startPadding = drawConfig.textDrawerInnerStartPadding + 18
 
         val tagInfo = tagInfoList.firstOrNull { info ->
             info.tag.hasPosition()
