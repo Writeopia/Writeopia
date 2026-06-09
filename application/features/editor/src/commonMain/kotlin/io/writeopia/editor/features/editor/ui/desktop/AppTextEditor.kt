@@ -10,9 +10,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -25,7 +25,6 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.ui.drawer.factory.DrawersFactory
 import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 @Composable
 fun AppTextEditor(
@@ -39,11 +38,11 @@ fun AppTextEditor(
     listState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier
 ) {
-    val coroutine = rememberCoroutineScope()
-
-    coroutine.launch {
-        manager.scrollToPosition.collectLatest {
-            listState.animateScrollBy(70F)
+    LaunchedEffect(Unit) {
+        manager.scrollToPosition.collectLatest { position ->
+            if (position == -1) {
+                listState.animateScrollBy(70F)
+            }
         }
     }
 
