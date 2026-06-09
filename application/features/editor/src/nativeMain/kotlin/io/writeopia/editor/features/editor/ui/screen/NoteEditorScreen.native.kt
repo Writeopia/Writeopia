@@ -165,9 +165,10 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::onAddListItemClick,
                     noteEditorViewModel::onAddCodeBlockClick,
                     noteEditorViewModel::addPage,
-                    noteEditorViewModel::toggleHighLightBlock,
                     noteEditorViewModel::titleClick,
-                    onDrawingClick = onNewDrawingClick
+                    onDrawingClick = onNewDrawingClick,
+                    onBoxClick = noteEditorViewModel::toggleHighLightBlock,
+                    onCardClick = noteEditorViewModel::toggleCardBlock
                 )
             }
 
@@ -315,9 +316,10 @@ private fun BottomScreen(
     onListItem: () -> Unit = {},
     onCodeBlock: () -> Unit = {},
     onAddPage: () -> Unit = {},
-    onHighlight: () -> Unit = {},
     titleClick: (Tag) -> Unit,
-    onDrawingClick: () -> Unit = {}
+    onDrawingClick: () -> Unit = {},
+    onBoxClick: () -> Unit = {},
+    onCardClick: () -> Unit = {}
 ) {
     val edit by editState.collectAsState()
 
@@ -361,7 +363,8 @@ private fun BottomScreen(
                     metadataState = metadataState,
                     highlightButtonColor = WriteopiaTheme.colorScheme.optionsSelector,
                     onSpanClick = onSpanSelected,
-                    onHighlight = onHighlight,
+                    onBoxClick = onBoxClick,
+                    onCardClick = onCardClick,
                     onDelete = deleteSelection,
                     onCopy = copySelection,
                     onCut = cutSelection,
