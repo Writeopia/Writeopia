@@ -43,8 +43,6 @@ dependencies {
     implementation(libs.ktor.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
 
-    implementation(libs.firebase.auth.provider)
-
     implementation(libs.sqldelight.jvm)
 
     testImplementation(libs.ktor.server.tests)
