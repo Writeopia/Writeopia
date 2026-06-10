@@ -83,8 +83,6 @@ kotlin {
             dependencies {
 
                 implementation(libs.coil.compose)
-
-                implementation(libs.compose.shimmer)
                 implementation(libs.room.runtime)
             }
         }
