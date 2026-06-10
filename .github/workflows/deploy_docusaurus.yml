@@ -41,7 +41,7 @@ jobs:
         working-directory: ./documentation/writeopia_docs
         run: npm run build
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
