@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.application)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.multiplatform.compiler)
-    alias(libs.plugins.google.services)
     alias(libs.plugins.ktlint)
 }
 
