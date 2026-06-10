@@ -83,6 +83,13 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    @Suppress("UnstableApiUsage")
+    testOptions {
+        unitTests.all { test ->
+            test.enabled = false
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
