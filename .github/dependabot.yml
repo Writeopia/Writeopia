@@ -1,0 +1,37 @@
+version: 2
+updates:
+  # Gradle dependencies
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "leandroBorgesFerreira"
+    labels:
+      - "dependencies"
+      - "gradle"
+    commit-message:
+      prefix: "build(deps):"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "leandroBorgesFerreira"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci(deps):"
+      include: "scope"
