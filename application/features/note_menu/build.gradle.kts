@@ -81,10 +81,7 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
-
                 implementation(libs.coil.compose)
-
-                implementation(libs.compose.shimmer)
                 implementation(libs.room.runtime)
             }
         }
