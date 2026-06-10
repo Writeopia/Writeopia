@@ -171,6 +171,10 @@ android {
     namespace = "io.writeopia"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         val baseUrl = "https://writeopia.dev"
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
