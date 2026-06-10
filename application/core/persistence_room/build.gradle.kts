@@ -1,7 +1,9 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 @Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     kotlin("multiplatform")
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidMultiplatformLibrary)
 //    alias(libs.plugins.ktlint)
     id("com.google.devtools.ksp")
 }
@@ -11,7 +13,19 @@ kotlin {
 
     jvm {}
 
-    androidTarget()
+    androidLibrary {
+        namespace = "io.writeopia.persistence"
+        compileSdk = libs.versions.compileSdk.get().toInt()
+        minSdk = libs.versions.minSdk.get().toInt()
+
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_21)
+        }
+
+        withDeviceTestBuilder {
+            sourceSetTreeName = "test"
+        }
+    }
 
     listOf(
         iosX64(),
@@ -54,42 +68,20 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.kotlinx.coroutines.android)
         }
-    }
-}
 
-android {
-    namespace = "io.writeopia.persistence"
-    compileSdk = libs.versions.compileSdk.get().toInt()
-
-    defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+        val androidDeviceTest by getting {
+            dependencies {
+                implementation(libs.androidx.junit)
+                implementation(libs.androidx.espresso.core)
+                implementation(libs.androidx.compose.test)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(project(":libraries:dbtest"))
+            }
         }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
 
-    testOptions {
-        managedDevices {
-            localDevices {
-                create("pixel7api33") {
-                    device = "Pixel 7"
-                    apiLevel = 33
-                    systemImageSource = "aosp"
-                }
+        val commonTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
             }
         }
     }
@@ -97,13 +89,4 @@ android {
 
 dependencies {
     add("kspAndroid", libs.room.compiler)
-
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.compose.test)
-    debugImplementation(libs.androidx.compose.test.manifest)
-    androidTestImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(project(":libraries:dbtest"))
-
-    testImplementation(libs.kotlin.test)
 }

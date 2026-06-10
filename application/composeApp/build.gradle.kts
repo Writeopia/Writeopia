@@ -1,11 +1,11 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.multiplatform.compiler)
-    alias(libs.plugins.application)
-    alias(libs.plugins.google.services)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.ktlint)
 }
 
@@ -14,7 +14,19 @@ kotlin {
 
     jvm {}
 
-    androidTarget()
+    androidLibrary {
+        namespace = "io.writeopia.composeapp"
+        compileSdk = libs.versions.compileSdk.get().toInt()
+        minSdk = libs.versions.minSdk.get().toInt()
+
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_21)
+        }
+
+        withDeviceTestBuilder {
+            sourceSetTreeName = "test"
+        }
+    }
 
     listOf(
         iosX64(),
@@ -83,7 +95,7 @@ kotlin {
             }
         }
 
-        val androidInstrumentedTest by getting {
+        val androidDeviceTest by getting {
             dependencies {
                 implementation(project(":application:core:common_ui_tests"))
                 implementation(project(":application:core:theme"))
@@ -162,64 +174,6 @@ compose.desktop {
                 version.set("7.5.0")
                 isEnabled = true
                 configurationFiles.from("proguard-rules-desktop.pro")
-            }
-        }
-    }
-}
-
-android {
-    namespace = "io.writeopia"
-    compileSdk = libs.versions.compileSdk.get().toInt()
-
-    defaultConfig {
-        val baseUrl = "https://writeopia.dev"
-        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
-
-        applicationId = "io.writeopia"
-        minSdk = libs.versions.minSdk.get().toInt()
-        targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 63
-        versionName = "0.50.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    signingConfigs {
-        create("release") {
-            storeFile = file("../../../upload-keystore.jks")
-            storePassword = System.getenv("WR_ANDROID_SIGNING_STORE_PASSWORD")
-            keyAlias = System.getenv("WR_ANDROID_SIGNING_KEY_ALIAS")
-            keyPassword = System.getenv("WR_ANDROID_SIGNING_KEY_PASSWORD")
-        }
-    }
-
-    buildTypes {
-        debug {
-            isMinifyEnabled = false
-        }
-        release {
-            // Todo: Re enable the minification and fix R8 bugs
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules-android.pro"
-            )
-            signingConfig = signingConfigs.getByName("release")
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-
-    testOptions {
-        managedDevices {
-            localDevices {
-                create("pixel7api33") {
-                    device = "Pixel 7"
-                    apiLevel = 33
-                    systemImageSource = "aosp"
-                }
             }
         }
     }
