@@ -1,6 +1,6 @@
 [versions]
 coilVersion = "3.0.4"
-media3 = "1.5.1"
+media3 = "1.10.1"
 espressoCore = "3.7.0"
 firebaseAdmin = "9.2.0"
 firebaseAuthProvider = "1.5.0"
