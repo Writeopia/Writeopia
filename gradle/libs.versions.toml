@@ -15,8 +15,8 @@ material = "1.12.0"
 materialIconsCore = "1.7.3"
 platformtools = "0.7.4"
 room = "2.8.4"
-agp = "8.13.2"
-kotlin = "2.3.20"
+agp = "9.2.1"
+kotlin = "2.4.0"
 composeTest = "1.11.2"
 webWorkerDriver = "2.2.1"
 mockk = "1.14.7"
@@ -101,6 +101,7 @@ jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
 [plugins]
 application = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
+androidMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 nativeCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
