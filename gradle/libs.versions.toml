@@ -1,5 +1,5 @@
 [versions]
-coilVersion = "3.4.0"
+coilVersion = "3.5.0"
 media3 = "1.10.1"
 espressoCore = "3.7.0"
 firebaseAdmin = "9.2.0"
