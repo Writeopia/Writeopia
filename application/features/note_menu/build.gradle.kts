@@ -1,6 +1,8 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     kotlin("multiplatform")
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.multiplatform.compiler)
     alias(libs.plugins.ktlint)
@@ -9,7 +11,19 @@ plugins {
 kotlin {
     jvmToolchain(21)
 
-    androidTarget()
+    androidLibrary {
+        namespace = "io.writeopia.note_menu"
+        compileSdk = libs.versions.compileSdk.get().toInt()
+        minSdk = libs.versions.minSdk.get().toInt()
+
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_21)
+        }
+
+        withDeviceTestBuilder {
+            sourceSetTreeName = "test"
+        }
+    }
 
     jvm()
 
@@ -83,13 +97,11 @@ kotlin {
             dependencies {
 
                 implementation(libs.coil.compose)
-
-                implementation(libs.compose.shimmer)
                 implementation(libs.room.runtime)
             }
         }
 
-        val androidInstrumentedTest by getting {
+        val androidDeviceTest by getting {
             dependencies {
                 implementation(project(":application:core:common_ui_tests"))
                 implementation(project(":application:core:theme"))
@@ -121,31 +133,5 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.room.runtime)
         }
-    }
-}
-
-android {
-    namespace = "io.writeopia.note_menu"
-    compileSdk = libs.versions.compileSdk.get().toInt()
-
-    defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
     }
 }

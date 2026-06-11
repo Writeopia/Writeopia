@@ -7,7 +7,6 @@ on:
 
 concurrency:
   group: ${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   kt_lint:
@@ -187,7 +186,9 @@ jobs:
           distribution: zulu
           java-version: '21'
       - name: Build web debug
-        run: ./gradlew jsBrowserDevelopmentWebpack --no-daemon
+        run: |
+          ./gradlew kotlinUpgradeYarnLock
+          ./gradlew jsBrowserDevelopmentWebpack --no-daemon
   test_docusaurus:
     name: Test docusaurus
     runs-on: ubuntu-latest
