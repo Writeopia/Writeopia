@@ -79,6 +79,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
 
       - name: Build and push Docker image (auth)
         uses: docker/build-push-action@v7
@@ -87,3 +88,4 @@ jobs:
           push: true
           tags: ${{ steps.meta-auth.outputs.tags }}
           labels: ${{ steps.meta-auth.outputs.labels }}
+          provenance: false
