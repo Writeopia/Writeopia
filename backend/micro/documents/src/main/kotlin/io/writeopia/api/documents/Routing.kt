@@ -19,6 +19,11 @@ fun Application.configureRouting(
             call.respondText("OK", status = HttpStatusCode.OK)
         }
 
+        // Health check accessible via load balancer
+        get("/api/documents/health") {
+            call.respondText("OK", status = HttpStatusCode.OK)
+        }
+
         if (writeopiaDb != null) {
             documentsRoute(writeopiaDb, useAi, debugMode)
         }
