@@ -41,7 +41,6 @@ import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.serialization.request.wrapInRequest
-import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.extensions.noContent
 import io.writeopia.editor.di.DrawingSaveEvent
 import io.writeopia.ui.backstack.BackstackHandler
@@ -77,7 +76,6 @@ import kotlin.time.ExperimentalTime
 class NoteEditorKmpViewModel(
     override val writeopiaManager: WriteopiaStateManager,
     private val documentRepository: DocumentRepository,
-    private val sharedEditionManager: SharedEditionManager,
     private val parentFolderId: String,
     private val uiConfigurationRepository: UiConfigurationRepository,
     private val documentToMarkdown: DocumentToMarkdown = DocumentToMarkdown,
@@ -460,7 +458,6 @@ class NoteEditorKmpViewModel(
 
         writeopiaManager.newDocument(documentId, title, parentFolder = parentFolderId)
         writeopiaManager.saveOnStoryChanges(OnUpdateDocumentTracker(documentRepository))
-        writeopiaManager.liveSync(sharedEditionManager)
     }
 
     override fun loadDocument(documentId: String) {

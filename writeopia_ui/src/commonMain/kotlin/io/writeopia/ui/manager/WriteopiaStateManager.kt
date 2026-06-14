@@ -31,7 +31,6 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.repository.UserRepository
-import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
 import io.writeopia.sdk.utils.NextPositionCalculator
 import io.writeopia.sdk.utils.extensions.toEditState
@@ -230,8 +229,6 @@ class WriteopiaStateManager(
      * It's null when the selection was made with mouse (unknown keyboard position).
      */
     private var keyboardSelectionAnchor: Double? = null
-
-    private var sharedEditionManager: SharedEditionManager? = null
 
     val currentStory: StateFlow<StoryState> = _currentStory.asStateFlow()
 
@@ -436,15 +433,6 @@ class WriteopiaStateManager(
 
     fun getDocument(): Document =
         parseDocument(_documentInfo.value, _currentStory.value)
-
-    fun liveSync(sharedEditionManager: SharedEditionManager) {
-        coroutineScope.launch(dispatcher) {
-            sharedEditionManager.startLiveEdition(
-                inFlow = documentEditionState,
-                outFlow = _currentStory,
-            )
-        }
-    }
 
     fun isInitialized(): Boolean = initialized
 
@@ -1075,11 +1063,7 @@ class WriteopiaStateManager(
      * Clears the [WriteopiaStateManager]. Use this in the onCleared of your ViewModel.
      */
     fun onClear() {
-        coroutineScope.launch {
-            sharedEditionManager?.stopLiveEdition()
-        }.invokeOnCompletion {
-            coroutineScope.cancel()
-        }
+        coroutineScope.cancel()
     }
 
     fun moveToNext(cursor: Int, position: Int = 1) {
