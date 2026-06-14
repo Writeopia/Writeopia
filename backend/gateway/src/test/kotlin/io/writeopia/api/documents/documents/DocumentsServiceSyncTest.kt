@@ -46,9 +46,11 @@ class DocumentsServiceSyncTest {
         // Sync with no changes
         val response = DocumentsService.syncStorySteps(
             documentId = documentId,
+            workspaceId = workspaceId,
             lastSyncTimestamp = now.toEpochMilliseconds(),
             modifiedSteps = emptyList(),
             deletedStepIds = emptyList(),
+            metadataUpdate = null,
             writeopiaDb = database
         )
 
@@ -88,9 +90,11 @@ class DocumentsServiceSyncTest {
 
         val response = DocumentsService.syncStorySteps(
             documentId = documentId,
+            workspaceId = workspaceId,
             lastSyncTimestamp = now.toEpochMilliseconds() - 1000, // Before any changes
             modifiedSteps = listOf(modifiedStep.toApi(0.0)),
             deletedStepIds = emptyList(),
+            metadataUpdate = null,
             writeopiaDb = database
         )
 
@@ -134,9 +138,11 @@ class DocumentsServiceSyncTest {
 
         val response = DocumentsService.syncStorySteps(
             documentId = documentId,
+            workspaceId = workspaceId,
             lastSyncTimestamp = serverTimestamp - 10000, // Before server change
             modifiedSteps = listOf(clientStep.toApi(0.0)),
             deletedStepIds = emptyList(),
+            metadataUpdate = null,
             writeopiaDb = database
         )
 
@@ -182,9 +188,11 @@ class DocumentsServiceSyncTest {
 
         val response = DocumentsService.syncStorySteps(
             documentId = documentId,
+            workspaceId = workspaceId,
             lastSyncTimestamp = oldTimestamp - 1000,
             modifiedSteps = listOf(clientStep.toApi(0.0)),
             deletedStepIds = emptyList(),
+            metadataUpdate = null,
             writeopiaDb = database
         )
 
@@ -222,9 +230,11 @@ class DocumentsServiceSyncTest {
         // Client deletes step2
         val response = DocumentsService.syncStorySteps(
             documentId = documentId,
+            workspaceId = workspaceId,
             lastSyncTimestamp = now.toEpochMilliseconds(),
             modifiedSteps = emptyList(),
             deletedStepIds = listOf(step2.id),
+            metadataUpdate = null,
             writeopiaDb = database
         )
 
@@ -263,9 +273,11 @@ class DocumentsServiceSyncTest {
         // Client syncs with old timestamp, not sending any changes
         val response = DocumentsService.syncStorySteps(
             documentId = documentId,
+            workspaceId = workspaceId,
             lastSyncTimestamp = oldTime, // Before the server step was created
             modifiedSteps = emptyList(),
             deletedStepIds = emptyList(),
+            metadataUpdate = null,
             writeopiaDb = database
         )
 
@@ -310,12 +322,14 @@ class DocumentsServiceSyncTest {
 
         val response = DocumentsService.syncStorySteps(
             documentId = documentId,
+            workspaceId = workspaceId,
             lastSyncTimestamp = now.toEpochMilliseconds(),
             modifiedSteps = listOf(
                 modifiedStep1.toApi(0.0),
                 modifiedStep3.toApi(2.0)
             ),
             deletedStepIds = listOf(step2.id),
+            metadataUpdate = null,
             writeopiaDb = database
         )
 
@@ -347,9 +361,11 @@ class DocumentsServiceSyncTest {
 
         val response = DocumentsService.syncStorySteps(
             documentId = documentId,
+            workspaceId = workspaceId,
             lastSyncTimestamp = 0L,
             modifiedSteps = emptyList(),
             deletedStepIds = emptyList(),
+            metadataUpdate = null,
             writeopiaDb = database
         )
 

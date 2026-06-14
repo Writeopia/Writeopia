@@ -3,8 +3,10 @@
 package io.writeopia.sdk.persistence.core.tracker
 
 import io.writeopia.sdk.manager.StoryStepSyncTracker
+import io.writeopia.sdk.manager.sync.MetadataChange
 import io.writeopia.sdk.manager.sync.StoryStepSyncBuffer
 import io.writeopia.sdk.manager.sync.SyncBatch
+import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.story.StoryStep
@@ -29,21 +31,24 @@ interface StoryStepSyncApi {
      * @param lastSyncTimestamp The timestamp of the last successful sync
      * @param modifiedSteps Steps that have been modified locally
      * @param deletedStepIds IDs of steps that have been deleted locally
-     * @return Triple of (serverTimestamp, updatedSteps from server, deletedStepIds from server)
+     * @param metadataUpdate Metadata changes to sync (title, icon, favorite, etc.)
+     * @return Sync result with server timestamp, updated steps, and any server-side changes
      */
     suspend fun syncStorySteps(
         documentId: String,
         workspaceId: String,
         lastSyncTimestamp: Long,
         modifiedSteps: List<Pair<StoryStep, Double>>,
-        deletedStepIds: List<String>
+        deletedStepIds: List<String>,
+        metadataUpdate: MetadataChange? = null
     ): StoryStepSyncResult?
 }
 
 data class StoryStepSyncResult(
     val serverTimestamp: Long,
     val updatedSteps: List<StoryStep>,
-    val deletedStepIds: List<String>
+    val deletedStepIds: List<String>,
+    val metadataUpdate: MetadataChange? = null
 )
 
 /**
@@ -64,18 +69,22 @@ class OnUpdateStoryStepTracker(
 
     private var syncBuffer: StoryStepSyncBuffer? = null
     private var stateCollectionJob: Job? = null
+    private var metadataCollectionJob: Job? = null
     private var batchSyncJob: Job? = null
     private var pollJob: Job? = null
 
     private var currentDocumentId: String? = null
     private var currentWorkspaceId: String? = null
     private var lastSyncTimestamp: Long = 0L
+    private var lastRemoteMetadataTimestamp: Long = 0L
 
     override suspend fun startSyncing(
         documentId: String,
         workspaceId: String,
         storyStateFlow: Flow<StoryState>,
-        onRemoteUpdate: suspend (List<StoryStep>, List<String>) -> Unit
+        documentInfoFlow: Flow<DocumentInfo>,
+        onRemoteUpdate: suspend (List<StoryStep>, List<String>) -> Unit,
+        onRemoteMetadataUpdate: suspend (MetadataChange) -> Unit
     ) {
         // Stop any existing sync
         stopSyncing()
@@ -94,10 +103,41 @@ class OnUpdateStoryStepTracker(
             }
         }
 
+        // Start collecting metadata changes
+        // Drop the first emission (initial load) to avoid syncing stale database data
+        // Skip emissions that match the last remote metadata timestamp (to avoid feedback loop)
+        metadataCollectionJob = coroutineScope.launch {
+            var isFirstEmission = true
+
+            documentInfoFlow
+                .collect { docInfo ->
+                    val currentTimestamp = docInfo.lastUpdatedAt.toEpochMilliseconds()
+
+                    // Skip first emission (initial document load)
+                    if (isFirstEmission) {
+                        isFirstEmission = false
+                        return@collect
+                    }
+
+                    // Skip if this timestamp matches the last remote update we applied
+                    // This prevents syncing back remote updates to the server
+                    if (currentTimestamp == lastRemoteMetadataTimestamp) {
+                        return@collect
+                    }
+
+                    syncBuffer?.trackMetadataChange(
+                        title = docInfo.title,
+                        icon = docInfo.icon?.label,
+                        iconTint = docInfo.icon?.tint,
+                        favorite = docInfo.isFavorite
+                    )
+                }
+        }
+
         // Start collecting batched changes and syncing
         batchSyncJob = coroutineScope.launch {
             syncBuffer?.syncBatch?.collect { batch ->
-                handleBatchSync(batch, onRemoteUpdate)
+                handleBatchSync(batch, onRemoteUpdate, onRemoteMetadataUpdate)
             }
         }
 
@@ -105,7 +145,7 @@ class OnUpdateStoryStepTracker(
         pollJob = coroutineScope.launch {
             while (isActive) {
                 delay(pollIntervalMs)
-                pollForRemoteChanges(onRemoteUpdate)
+                pollForRemoteChanges(onRemoteUpdate, onRemoteMetadataUpdate)
             }
         }
     }
@@ -115,10 +155,12 @@ class OnUpdateStoryStepTracker(
         syncBuffer?.forceFlush()
 
         stateCollectionJob?.cancel()
+        metadataCollectionJob?.cancel()
         batchSyncJob?.cancel()
         pollJob?.cancel()
 
         stateCollectionJob = null
+        metadataCollectionJob = null
         batchSyncJob = null
         pollJob = null
         syncBuffer = null
@@ -201,12 +243,13 @@ class OnUpdateStoryStepTracker(
 
     private suspend fun handleBatchSync(
         batch: SyncBatch,
-        onRemoteUpdate: suspend (List<StoryStep>, List<String>) -> Unit
+        onRemoteUpdate: suspend (List<StoryStep>, List<String>) -> Unit,
+        onRemoteMetadataUpdate: suspend (MetadataChange) -> Unit
     ) {
         val docId = currentDocumentId ?: return
         val wsId = currentWorkspaceId ?: return
 
-        if (batch.changes.isEmpty() && batch.deletions.isEmpty()) return
+        if (batch.changes.isEmpty() && batch.deletions.isEmpty() && batch.metadata == null) return
 
         val modifiedSteps = batch.changes.map { change ->
             change.storyStep to change.position
@@ -217,7 +260,8 @@ class OnUpdateStoryStepTracker(
             workspaceId = wsId,
             lastSyncTimestamp = lastSyncTimestamp,
             modifiedSteps = modifiedSteps,
-            deletedStepIds = batch.deletions.toList()
+            deletedStepIds = batch.deletions.toList(),
+            metadataUpdate = batch.metadata
         )
 
         if (result != null) {
@@ -227,11 +271,19 @@ class OnUpdateStoryStepTracker(
             if (result.updatedSteps.isNotEmpty() || result.deletedStepIds.isNotEmpty()) {
                 onRemoteUpdate(result.updatedSteps, result.deletedStepIds)
             }
+
+            // Notify about remote metadata updates if server won
+            result.metadataUpdate?.let { metadata ->
+                // Track this timestamp so we don't sync it back
+                lastRemoteMetadataTimestamp = metadata.lastUpdatedAt
+                onRemoteMetadataUpdate(metadata)
+            }
         }
     }
 
     private suspend fun pollForRemoteChanges(
-        onRemoteUpdate: suspend (List<StoryStep>, List<String>) -> Unit
+        onRemoteUpdate: suspend (List<StoryStep>, List<String>) -> Unit,
+        onRemoteMetadataUpdate: suspend (MetadataChange) -> Unit
     ) {
         val docId = currentDocumentId ?: return
         val wsId = currentWorkspaceId ?: return
@@ -242,7 +294,8 @@ class OnUpdateStoryStepTracker(
             workspaceId = wsId,
             lastSyncTimestamp = lastSyncTimestamp,
             modifiedSteps = emptyList(),
-            deletedStepIds = emptyList()
+            deletedStepIds = emptyList(),
+            metadataUpdate = null
         )
 
         if (result != null) {
@@ -250,6 +303,13 @@ class OnUpdateStoryStepTracker(
 
             if (result.updatedSteps.isNotEmpty() || result.deletedStepIds.isNotEmpty()) {
                 onRemoteUpdate(result.updatedSteps, result.deletedStepIds)
+            }
+
+            // Notify about remote metadata updates if any
+            result.metadataUpdate?.let { metadata ->
+                // Track this timestamp so we don't sync it back
+                lastRemoteMetadataTimestamp = metadata.lastUpdatedAt
+                onRemoteMetadataUpdate(metadata)
             }
         }
     }

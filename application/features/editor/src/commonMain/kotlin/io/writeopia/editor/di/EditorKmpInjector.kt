@@ -8,6 +8,8 @@ import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.di.InDocumentSearchInjection
+import io.writeopia.core.folders.di.WorkspaceInjection
+import io.writeopia.sdk.persistence.core.tracker.StoryStepSyncApi
 import io.writeopia.di.OllamaInjection
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorKmpViewModel
@@ -55,6 +57,8 @@ class EditorKmpInjector private constructor(
     private val ollamaInjection: OllamaInjection? = null,
     private val inDocumentSearchInjection: InDocumentSearchInjection =
         InDocumentSearchInjection.singleton(),
+    private val workspaceInjection: WorkspaceInjection =
+        WorkspaceInjection.singleton(),
 ) : TextEditorInjector {
 
     // SharedFlow for drawing save events - ViewModel subscribes to this
@@ -99,7 +103,8 @@ class EditorKmpInjector private constructor(
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             authRepository = authCoreInjection.provideAuthRepository(),
             inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo(),
-            drawingSaveEvents = drawingSaveEvents
+            drawingSaveEvents = drawingSaveEvents,
+            storyStepSyncApi = workspaceInjection.provideStoryStepSyncApi()
         )
 
     @Composable

@@ -25,11 +25,23 @@ data class StoryStepChange(
 )
 
 /**
+ * Represents a change to document metadata that needs to be synced.
+ */
+data class MetadataChange(
+    val title: String?,
+    val icon: String?,
+    val iconTint: Int?,
+    val favorite: Boolean?,
+    val lastUpdatedAt: Long
+)
+
+/**
  * Represents a batch of changes ready to be sent to the server.
  */
 data class SyncBatch(
     val changes: List<StoryStepChange>,
-    val deletions: Set<String>
+    val deletions: Set<String>,
+    val metadata: MetadataChange? = null
 )
 
 /**
@@ -46,6 +58,7 @@ class StoryStepSyncBuffer(
     private val mutex = Mutex()
     private val pendingChanges = mutableMapOf<String, StoryStepChange>()
     private val pendingDeletions = mutableSetOf<String>()
+    private var pendingMetadata: MetadataChange? = null
 
     private val _syncBatch = MutableSharedFlow<SyncBatch>(extraBufferCapacity = 64)
     val syncBatch: Flow<SyncBatch> = _syncBatch.asSharedFlow()
@@ -94,6 +107,29 @@ class StoryStepSyncBuffer(
     }
 
     /**
+     * Tracks a change to document metadata.
+     *
+     * @param title The new document title, or null if unchanged
+     * @param icon The new document icon, or null if unchanged
+     * @param iconTint The new icon tint color, or null if unchanged
+     * @param favorite The new favorite status, or null if unchanged
+     */
+    fun trackMetadataChange(
+        title: String? = null,
+        icon: String? = null,
+        iconTint: Int? = null,
+        favorite: Boolean? = null
+    ) {
+        scope.launch {
+            mutex.withLock {
+                val timestamp = Clock.System.now().toEpochMilliseconds()
+                pendingMetadata = MetadataChange(title, icon, iconTint, favorite, timestamp)
+                scheduleBatchFlush()
+            }
+        }
+    }
+
+    /**
      * Immediately flushes all pending changes without waiting for the batch window.
      * Useful when closing a document to ensure all changes are sent.
      */
@@ -114,14 +150,15 @@ class StoryStepSyncBuffer(
             flushJob = null
             pendingChanges.clear()
             pendingDeletions.clear()
+            pendingMetadata = null
         }
     }
 
     /**
-     * Returns true if there are pending changes or deletions.
+     * Returns true if there are pending changes, deletions, or metadata changes.
      */
     suspend fun hasPendingChanges(): Boolean = mutex.withLock {
-        pendingChanges.isNotEmpty() || pendingDeletions.isNotEmpty()
+        pendingChanges.isNotEmpty() || pendingDeletions.isNotEmpty() || pendingMetadata != null
     }
 
     private fun scheduleBatchFlush() {
@@ -136,15 +173,17 @@ class StoryStepSyncBuffer(
     }
 
     private suspend fun emitBatch() {
-        if (pendingChanges.isEmpty() && pendingDeletions.isEmpty()) return
+        if (pendingChanges.isEmpty() && pendingDeletions.isEmpty() && pendingMetadata == null) return
 
         val batch = SyncBatch(
             changes = pendingChanges.values.toList(),
-            deletions = pendingDeletions.toSet()
+            deletions = pendingDeletions.toSet(),
+            metadata = pendingMetadata
         )
 
         pendingChanges.clear()
         pendingDeletions.clear()
+        pendingMetadata = null
 
         _syncBatch.emit(batch)
     }

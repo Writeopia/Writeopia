@@ -1,5 +1,7 @@
 package io.writeopia.sdk.manager
 
+import io.writeopia.sdk.manager.sync.MetadataChange
+import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.story.StoryStep
 import kotlinx.coroutines.flow.Flow
@@ -16,13 +18,17 @@ interface StoryStepSyncTracker {
      * @param documentId The ID of the document being edited
      * @param workspaceId The workspace containing the document
      * @param storyStateFlow Flow emitting story state changes
+     * @param documentInfoFlow Flow emitting document info changes (title, icon, favorite, etc.)
      * @param onRemoteUpdate Callback invoked when remote updates are received from server
+     * @param onRemoteMetadataUpdate Callback invoked when remote metadata updates are received
      */
     suspend fun startSyncing(
         documentId: String,
         workspaceId: String,
         storyStateFlow: Flow<StoryState>,
-        onRemoteUpdate: suspend (List<StoryStep>, List<String>) -> Unit
+        documentInfoFlow: Flow<DocumentInfo>,
+        onRemoteUpdate: suspend (List<StoryStep>, List<String>) -> Unit,
+        onRemoteMetadataUpdate: suspend (MetadataChange) -> Unit
     )
 
     /**

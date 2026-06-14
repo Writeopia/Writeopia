@@ -9,9 +9,11 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.writeopia.sdk.manager.sync.MetadataChange
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.persistence.core.tracker.StoryStepSyncApi
 import io.writeopia.sdk.persistence.core.tracker.StoryStepSyncResult
+import io.writeopia.sdk.serialization.data.DocumentMetadataApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
@@ -31,7 +33,8 @@ class StoryStepSyncApiImpl(
         workspaceId: String,
         lastSyncTimestamp: Long,
         modifiedSteps: List<Pair<StoryStep, Double>>,
-        deletedStepIds: List<String>
+        deletedStepIds: List<String>,
+        metadataUpdate: MetadataChange?
     ): StoryStepSyncResult? {
         val token = tokenProvider() ?: return null
 
@@ -42,7 +45,16 @@ class StoryStepSyncApiImpl(
             modifiedSteps = modifiedSteps.map { (step, position) ->
                 step.toApi(position)
             },
-            deletedStepIds = deletedStepIds
+            deletedStepIds = deletedStepIds,
+            metadataUpdate = metadataUpdate?.let {
+                DocumentMetadataApi(
+                    title = it.title,
+                    icon = it.icon,
+                    iconTint = it.iconTint,
+                    favorite = it.favorite,
+                    lastUpdatedAt = it.lastUpdatedAt
+                )
+            }
         )
 
         return try {
@@ -59,7 +71,16 @@ class StoryStepSyncApiImpl(
                 StoryStepSyncResult(
                     serverTimestamp = syncResponse.serverTimestamp,
                     updatedSteps = syncResponse.updatedSteps.map { it.toModel() },
-                    deletedStepIds = syncResponse.deletedStepIds
+                    deletedStepIds = syncResponse.deletedStepIds,
+                    metadataUpdate = syncResponse.metadataUpdate?.let {
+                        MetadataChange(
+                            title = it.title,
+                            icon = it.icon,
+                            iconTint = it.iconTint,
+                            favorite = it.favorite,
+                            lastUpdatedAt = it.lastUpdatedAt
+                        )
+                    }
                 )
             } else {
                 println("StoryStep sync failed: ${response.status}")

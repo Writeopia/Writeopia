@@ -7,6 +7,7 @@ import io.writeopia.sdk.manager.InTextMarkdownHandler
 import io.writeopia.sdk.manager.StoryStepSyncTracker
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.manager.fixMove
+import io.writeopia.sdk.manager.sync.MetadataChange
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.document
@@ -18,6 +19,7 @@ import io.writeopia.sdk.models.command.CommandInfo
 import io.writeopia.sdk.models.command.CommandTrigger
 import io.writeopia.sdk.models.command.TypeInfo
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
@@ -362,8 +364,12 @@ class WriteopiaStateManager(
                 documentId = _documentInfo.value.id,
                 workspaceId = workspaceId,
                 storyStateFlow = _currentStory.asStateFlow(),
+                documentInfoFlow = _documentInfo.asStateFlow(),
                 onRemoteUpdate = { remoteSteps, deletedIds ->
                     applyRemoteUpdates(remoteSteps, deletedIds)
+                },
+                onRemoteMetadataUpdate = { metadata ->
+                    applyRemoteMetadata(metadata)
                 }
             )
         }
@@ -427,6 +433,30 @@ class WriteopiaStateManager(
             _currentStory.value = _currentStory.value.copy(
                 stories = updatedStories,
                 lastEdit = LastEdit.Nothing
+            )
+        }
+    }
+
+    /**
+     * Applies remote metadata updates received from the backend.
+     * Only updates if the remote timestamp is newer than local.
+     * Updates lastUpdatedAt to the server's timestamp to mark this as a remote update.
+     *
+     * @param metadata The metadata changes from the server
+     */
+    private fun applyRemoteMetadata(metadata: MetadataChange) {
+        val current = _documentInfo.value
+        val currentTimestamp = current.lastUpdatedAt.toEpochMilliseconds()
+
+        if (metadata.lastUpdatedAt > currentTimestamp) {
+            _documentInfo.value = current.copy(
+                title = metadata.title ?: current.title,
+                icon = metadata.icon?.let { icon ->
+                    MenuItem.Icon(icon, metadata.iconTint)
+                } ?: current.icon,
+                isFavorite = metadata.favorite ?: current.isFavorite,
+                // Update timestamp to server's timestamp - this marks it as a remote update
+                lastUpdatedAt = Instant.fromEpochMilliseconds(metadata.lastUpdatedAt)
             )
         }
     }

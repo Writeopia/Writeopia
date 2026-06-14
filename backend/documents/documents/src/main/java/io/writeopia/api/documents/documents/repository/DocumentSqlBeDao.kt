@@ -925,6 +925,25 @@ class DocumentSqlBeDao(
     fun deleteStoryStepById(stepId: String) {
         storyStepQueries?.deleteById(stepId)
     }
+
+    /**
+     * Update document metadata (title, icon, favorite).
+     */
+    fun updateDocumentMetadata(
+        documentId: String,
+        title: String?,
+        icon: String?,
+        iconTint: Int?,
+        favorite: Boolean?,
+        lastUpdatedAt: Long
+    ) {
+        // Only update fields that are not null
+        title?.let { documentQueries?.updateTitle(it, lastUpdatedAt, lastUpdatedAt, documentId) }
+        if (icon != null || iconTint != null) {
+            documentQueries?.updateIcon(icon, iconTint, lastUpdatedAt, lastUpdatedAt, documentId)
+        }
+        favorite?.let { documentQueries?.updateFavorite(it, lastUpdatedAt, lastUpdatedAt, documentId) }
+    }
 }
 
 fun Folder_entity.toModel(count: Long) =

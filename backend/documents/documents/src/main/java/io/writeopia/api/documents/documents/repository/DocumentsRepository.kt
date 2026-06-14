@@ -128,3 +128,14 @@ fun WriteopiaDbBackend.insertStoryStepIfNewer(
 fun WriteopiaDbBackend.deleteStoryStepById(stepId: String) {
     getDocumentDaoFn().deleteStoryStepById(stepId)
 }
+
+fun WriteopiaDbBackend.updateDocumentMetadata(
+    documentId: String,
+    title: String?,
+    icon: String?,
+    iconTint: Int?,
+    favorite: Boolean?,
+    lastUpdatedAt: Long
+) {
+    getDocumentDaoFn().updateDocumentMetadata(documentId, title, icon, iconTint, favorite, lastUpdatedAt)
+}

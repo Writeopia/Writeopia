@@ -701,9 +701,11 @@ fun Routing.documentsRoute(
 
                     val response = DocumentsService.syncStorySteps(
                         documentId = documentId,
+                        workspaceId = workspaceId,
                         lastSyncTimestamp = request.lastSyncTimestamp,
                         modifiedSteps = request.modifiedSteps,
                         deletedStepIds = request.deletedStepIds,
+                        metadataUpdate = request.metadataUpdate,
                         writeopiaDb = writeopiaDb
                     )
 
