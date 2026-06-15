@@ -9,7 +9,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -19,7 +19,7 @@ jobs:
         run: ./gradlew packageReleaseMsi
       - name: upload unsigned artifact
         id: upload-unsigned-artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Writeopia-windows
           path: application/composeApp/build/compose/binaries/main-release/msi
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -48,7 +48,7 @@ jobs:
       - name: Generate linux app
         run: ./gradlew packageReleaseDeb
       - name: Upload App
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Writeopia-deb
           path: application/composeApp/build/compose/binaries/main-release/deb/
@@ -57,7 +57,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -79,7 +79,7 @@ jobs:
           APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
           NOTARIZATION_PASSWORD: ${{ secrets.NOTARIZATION_PASSWORD }}
       - name: Upload App
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Writeopia-macos
           path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg
@@ -88,7 +88,7 @@ jobs:
     runs-on: macos-13
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -111,7 +111,7 @@ jobs:
           APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
           NOTARIZATION_PASSWORD: ${{ secrets.NOTARIZATION_PASSWORD }}
       - name: Upload App
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Writeopia-macos-intel
           path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg

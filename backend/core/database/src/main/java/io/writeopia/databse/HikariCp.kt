@@ -6,7 +6,10 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 
 private val config = HikariConfig().apply {
-    jdbcUrl = "jdbc:postgresql://localhost:5432/${System.getenv("DB_NAME") ?: "writeopia"}"
+    val dbHost = System.getenv("DB_HOST") ?: "localhost"
+    val dbPort = System.getenv("DB_PORT") ?: "5432"
+    val dbName = System.getenv("DB_NAME") ?: "writeopia"
+    jdbcUrl = System.getenv("JDBC_URL") ?: "jdbc:postgresql://$dbHost:$dbPort/$dbName"
     username = System.getenv("DB_USER") ?: "postgres"
     password = System.getenv("DB_PASS") ?: "postgres"
     maximumPoolSize = 10

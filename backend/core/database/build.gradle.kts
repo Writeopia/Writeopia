@@ -20,10 +20,11 @@ dependencies {
 
     implementation(libs.ktor.client.logging)
 
-    implementation(libs.sqldelight.jvm)
-    implementation(libs.sqldelight.jdbc.driver)
+    api(libs.sqldelight.jvm)
+    api(libs.sqldelight.jdbc.driver)
     implementation(libs.database.hikaricp)
     implementation(libs.database.postgresql)
+    implementation(libs.postgres.socket.factory)
 
     implementation(libs.kotlinx.serialization.json)
     //

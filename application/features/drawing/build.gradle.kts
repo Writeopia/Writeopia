@@ -34,12 +34,10 @@ kotlin {
         binaries.library()
     }
 
-    val iosX64 = iosX64()
     val iosArm64 = iosArm64()
     val iosSimulatorArm64 = iosSimulatorArm64()
 
     listOf(
-        iosX64,
         iosArm64,
         iosSimulatorArm64
     ).forEach { iosTarget ->
@@ -80,7 +78,6 @@ kotlin {
             dependsOn(nativeMain)
         }
 
-        iosX64Main.get().dependsOn(iosMain)
         iosArm64Main.get().dependsOn(iosMain)
         iosSimulatorArm64Main.get().dependsOn(iosMain)
 
