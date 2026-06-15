@@ -95,7 +95,7 @@ jobs:
       - name: Build development webpack
         run: ./gradlew jsBrowserDevelopmentWebpack
       - name: Upload JS webpack
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: writeopia-js-webpack
           path: ./application/web/build/kotlin-webpack/js/developmentExecutable
