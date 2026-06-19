@@ -37,7 +37,7 @@ import io.writeopia.sql.WriteopiaDbBackend
 
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
-    post("/api/login") {
+    post("/api/auth/login") {
         try {
             val credentials = call.receive<LoginRequest>()
             // Always get user by email first to check if they exist but are unconfirmed
@@ -78,7 +78,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         }
     }
 
-    post("/api/register") {
+    post("/api/auth/register") {
         try {
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
@@ -137,7 +137,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     }
 
     authenticate("auth-jwt", optional = debugMode) {
-        delete("/api/account") {
+        delete("/api/auth/account") {
             val userId = getUserId()
 
             if (userId != null) {
@@ -150,7 +150,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     }
 
     authenticate("auth-jwt", optional = debugMode) {
-        put("/api/password/reset") {
+        put("/api/auth/password/reset") {
             val request = call.receive<ResetPasswordRequest>()
             val userId = getUserId()
             val user = userId?.let(writeopiaDb::getUserById)
@@ -165,7 +165,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     }
 
     authenticate("auth-jwt", optional = debugMode) {
-        get("/api/user/current") {
+        get("/api/auth/user/current") {
             val userId = getUserId()
 
             val user = userId?.let(writeopiaDb::getUserById)
@@ -179,7 +179,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     }
 
     authenticate("auth-jwt", optional = debugMode) {
-        get("/api/hello-auth") {
+        get("/api/auth/hello-auth") {
             val principal = call.principal<JWTPrincipal>()
             val username = principal!!.payload.getClaim("username").asString()
             val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
