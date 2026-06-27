@@ -54,7 +54,7 @@ class AuthIntegrationTest {
 
         val client = defaultClient()
 
-        val response = client.post("/api/register") {
+        val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -79,7 +79,7 @@ class AuthIntegrationTest {
         val email = Random.nextInt().toString()
         val workspace = Random.nextInt().toString()
 
-        val response = client.post("/api/register") {
+        val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -91,7 +91,7 @@ class AuthIntegrationTest {
             )
         }
 
-        val response1 = client.post("/api/register") {
+        val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -116,7 +116,7 @@ class AuthIntegrationTest {
         val client = defaultClient()
         val password = "lasjbdalsdq08w9y&"
 
-        val response = client.post("/api/register") {
+        val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -130,7 +130,7 @@ class AuthIntegrationTest {
 
         assertEquals(response.status, HttpStatusCode.Created)
 
-        val response1 = client.post("api/login") {
+        val response1 = client.post("api/auth/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequest("email@gmail.com", password))
         }
@@ -139,7 +139,7 @@ class AuthIntegrationTest {
 
         val token = response1.body<AuthResponse>().token!!
 
-        val response2 = client.delete("api/account") {
+        val response2 = client.delete("api/auth/account") {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $token")
         }
@@ -154,7 +154,7 @@ class AuthIntegrationTest {
                 module(db, debugMode = true)
             }
 
-            val response2 = client.delete("api/account") {
+            val response2 = client.delete("api/auth/account") {
                 contentType(ContentType.Application.Json)
                 header(HttpHeaders.Authorization, "Bearer asdasdasd")
             }
@@ -172,7 +172,7 @@ class AuthIntegrationTest {
 
         val password = "lasjbdalsdq08w9y&"
 
-        val response = client.post("/api/register") {
+        val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -186,7 +186,7 @@ class AuthIntegrationTest {
 
         assertEquals(response.status, HttpStatusCode.Created)
 
-        val response1 = client.post("api/login") {
+        val response1 = client.post("api/auth/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequest("email@gmail.com", password))
         }
@@ -195,7 +195,7 @@ class AuthIntegrationTest {
 
         val token = response1.body<AuthResponse>().token!!
 
-        val response2 = client.put("api/password/reset") {
+        val response2 = client.put("api/auth/password/reset") {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $token")
             setBody(ResetPasswordRequest(newPassword = "newpassword"))
@@ -203,7 +203,7 @@ class AuthIntegrationTest {
 
         assertEquals(response2.status, HttpStatusCode.OK)
 
-        val response3 = client.get("api/user/current") {
+        val response3 = client.get("api/auth/user/current") {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $token")
         }
@@ -219,7 +219,7 @@ class AuthIntegrationTest {
 
         val client = defaultClient()
 
-        val response = client.post("admin/enable-user") {
+        val response = client.post("api/auth/admin/enable-user") {
             contentType(ContentType.Application.Json)
             setBody(ManageUserRequest(email = "lehen01@gmail.com"))
             headers {
@@ -238,7 +238,7 @@ class AuthIntegrationTest {
 
         val client = defaultClient()
 
-        val response = client.post("admin/disable-user") {
+        val response = client.post("api/auth/admin/api/auth/disable-user") {
             contentType(ContentType.Application.Json)
             setBody(ManageUserRequest(email = "lehen01@gmail.com"))
             headers {
@@ -257,7 +257,7 @@ class AuthIntegrationTest {
 
         val client = defaultClient()
 
-        val response = client.post("/api/register") {
+        val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -281,7 +281,7 @@ class AuthIntegrationTest {
 
         val client = defaultClient()
 
-        val response = client.post("/api/register") {
+        val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -296,7 +296,7 @@ class AuthIntegrationTest {
         assertEquals(HttpStatusCode.Created, response.status)
         assertNotNull(response.body<AuthResponse>().writeopiaUser)
 
-        val response1 = client.post("api/login") {
+        val response1 = client.post("api/auth/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequest("email@gmail.com", "lasjbdalsdq08w9y&"))
         }
@@ -315,7 +315,7 @@ class AuthIntegrationTest {
 
         val email1 = Random.nextInt().toString()
 
-        val response1 = client.post("/api/register") {
+        val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -331,7 +331,7 @@ class AuthIntegrationTest {
 
         val email2 = Random.nextInt().toString()
 
-        val response2 = client.post("/api/register") {
+        val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -383,7 +383,7 @@ class AuthIntegrationTest {
 
         val email1 = Random.nextInt().toString()
 
-        val response1 = client.post("/api/register") {
+        val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -399,7 +399,7 @@ class AuthIntegrationTest {
 
         val email2 = Random.nextInt().toString()
 
-        val response2 = client.post("/api/register") {
+        val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(

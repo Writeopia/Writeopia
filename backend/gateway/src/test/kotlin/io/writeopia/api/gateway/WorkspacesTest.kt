@@ -49,7 +49,7 @@ class WorkspacesTest {
         val email = Random.nextInt(10000).toString()
         val workspaceName1 = "workspace name"
 
-        val response = client.post("/api/register") {
+        val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -100,7 +100,7 @@ class WorkspacesTest {
         val email = Random.nextInt(10000).toString()
         val workspaceName1 = "workspace name"
 
-        val response = client.post("/api/register") {
+        val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
