@@ -59,6 +59,7 @@ fun EmailConfirmationScreen(
     codeState: StateFlow<String>,
     confirmState: StateFlow<ResultData<Boolean>>,
     resendState: StateFlow<ResultData<Boolean>>,
+    resendCooldownSeconds: StateFlow<Int>,
     codeChanged: (String) -> Unit,
     onConfirm: () -> Unit,
     onResend: () -> Unit,
@@ -103,6 +104,7 @@ fun EmailConfirmationScreen(
                 onConfirm = onConfirm,
                 onResend = onResend,
                 resendState = resendState,
+                resendCooldownSeconds = resendCooldownSeconds,
                 modifier = contentModifier
             )
         }
@@ -158,11 +160,13 @@ private fun BoxScope.EmailConfirmationContent(
     onConfirm: () -> Unit,
     onResend: () -> Unit,
     resendState: StateFlow<ResultData<Boolean>>,
+    resendCooldownSeconds: StateFlow<Int>,
     modifier: Modifier = Modifier,
 ) {
     val email by emailState.collectAsState()
     val code by codeState.collectAsState()
     val resendStateValue by resendState.collectAsState()
+    val cooldownSeconds by resendCooldownSeconds.collectAsState()
     val shape = MaterialTheme.shapes.large
 
     Column(
@@ -241,9 +245,11 @@ private fun BoxScope.EmailConfirmationContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        val isResendEnabled = resendStateValue !is ResultData.Loading && cooldownSeconds == 0
+
         TextButton(
             onClick = onResend,
-            enabled = resendStateValue !is ResultData.Loading
+            enabled = isResendEnabled
         ) {
             if (resendStateValue is ResultData.Loading) {
                 CircularProgressIndicator(
@@ -252,8 +258,16 @@ private fun BoxScope.EmailConfirmationContent(
                 )
             }
             Text(
-                text = WrStrings.resendCode(),
-                color = MaterialTheme.colorScheme.primary
+                text = if (cooldownSeconds > 0) {
+                    "${WrStrings.resendCode()} (${cooldownSeconds}s)"
+                } else {
+                    WrStrings.resendCode()
+                },
+                color = if (isResendEnabled) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                }
             )
         }
     }
@@ -267,6 +281,7 @@ fun EmailConfirmationScreenPreview() {
         codeState = MutableStateFlow(""),
         confirmState = MutableStateFlow(ResultData.Idle()),
         resendState = MutableStateFlow(ResultData.Idle()),
+        resendCooldownSeconds = MutableStateFlow(0),
         codeChanged = {},
         onConfirm = {},
         onResend = {},

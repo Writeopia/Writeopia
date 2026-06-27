@@ -72,6 +72,7 @@ fun NavGraphBuilder.authNavigation(
                 codeState = emailConfirmViewModel.code,
                 confirmState = emailConfirmViewModel.confirmState,
                 resendState = emailConfirmViewModel.resendState,
+                resendCooldownSeconds = emailConfirmViewModel.resendCooldownSeconds,
                 codeChanged = emailConfirmViewModel::codeChanged,
                 onConfirm = {
                     emailConfirmViewModel.onConfirm {

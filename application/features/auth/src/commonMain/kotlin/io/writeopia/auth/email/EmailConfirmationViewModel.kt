@@ -27,6 +27,13 @@ internal class EmailConfirmationViewModel(
     private val _resendState = MutableStateFlow<ResultData<Boolean>>(ResultData.Idle())
     val resendState = _resendState.asStateFlow()
 
+    private val _resendCooldownSeconds = MutableStateFlow(0)
+    val resendCooldownSeconds = _resendCooldownSeconds.asStateFlow()
+
+    companion object {
+        private const val RESEND_COOLDOWN_SECONDS = 30
+    }
+
     fun loadPendingEmail() {
         viewModelScope.launch {
             _email.value = authRepository.getPendingConfirmationEmail() ?: ""
@@ -74,6 +81,8 @@ internal class EmailConfirmationViewModel(
     }
 
     fun onResend() {
+        if (_resendCooldownSeconds.value > 0) return
+
         _resendState.value = ResultData.Loading()
 
         viewModelScope.launch {
@@ -83,6 +92,7 @@ internal class EmailConfirmationViewModel(
                 _resendState.value = when (result) {
                     is ResultData.Complete -> {
                         delay(300)
+                        startCooldownTimer()
                         result
                     }
                     is ResultData.Error -> {
@@ -97,6 +107,16 @@ internal class EmailConfirmationViewModel(
             } catch (e: Exception) {
                 delay(300)
                 _resendState.value = ResultData.Error(e)
+            }
+        }
+    }
+
+    private fun startCooldownTimer() {
+        viewModelScope.launch {
+            _resendCooldownSeconds.value = RESEND_COOLDOWN_SECONDS
+            while (_resendCooldownSeconds.value > 0) {
+                delay(1000)
+                _resendCooldownSeconds.value -= 1
             }
         }
     }
