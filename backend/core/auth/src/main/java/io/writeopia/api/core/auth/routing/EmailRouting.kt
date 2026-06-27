@@ -18,7 +18,7 @@ import io.writeopia.sdk.serialization.data.auth.EmailResendRequest
 import io.writeopia.sql.WriteopiaDbBackend
 
 fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
-    post("/api/email/confirm") {
+    post("/api/auth/email/confirm") {
         try {
             val request = call.receive<EmailConfirmRequest>()
             logger.info("Email confirmation request for: ${request.email}")
@@ -51,7 +51,7 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
         }
     }
 
-    post("/api/email/resend") {
+    post("/api/auth/email/resend") {
         try {
             val request = call.receive<EmailResendRequest>()
             logger.info("Resend confirmation email request for: ${request.email}")
