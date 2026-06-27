@@ -49,7 +49,7 @@ object EmailService {
 
         return try {
             val response = client.submitForm(
-                url = "https://api.mailgun.net/v3/$domain/messages",
+                url = "https://api.eu.mailgun.net/v3/$domain/messages",
                 formParameters = Parameters.build {
                     append("from", "Writeopia <$mailgunFromEmail>")
                     append("to", toEmail)
