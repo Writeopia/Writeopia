@@ -11,7 +11,9 @@ data class WriteopiaBeUser(
     val password: String,
     val salt: String,
     val enabled: Boolean,
-    val tier: Tier = Tier.FREE
+    val tier: Tier = Tier.FREE,
+    val confirmationCode: String? = null,
+    val confirmationCodeExpiry: Long? = null
 ) {
     companion object {
         const val DISCONNECTED = "disconnected_user"

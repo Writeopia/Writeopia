@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.database.hikaricp)
     implementation(libs.database.postgresql)
     implementation(libs.postgres.socket.factory)
+    implementation(libs.database.embedded.postgres)
 
     implementation(libs.kotlinx.serialization.json)
     //

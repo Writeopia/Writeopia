@@ -20,7 +20,9 @@ import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getWorkspaceById
+import io.writeopia.api.core.auth.repository.updateConfirmationCode
 import io.writeopia.api.core.auth.service.AuthService
+import io.writeopia.api.core.auth.service.EmailService
 import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.connection.logger
@@ -38,11 +40,8 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     post("/api/login") {
         try {
             val credentials = call.receive<LoginRequest>()
-            val user = if (debugMode) {
-                writeopiaDb.getUserByEmail(credentials.email)
-            } else {
-                writeopiaDb.getEnabledUserByEmail(credentials.email)
-            }
+            // Always get user by email first to check if they exist but are unconfirmed
+            val user = writeopiaDb.getUserByEmail(credentials.email)
 
             if (user != null) {
                 val hash = user.password
@@ -55,12 +54,19 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 )
 
                 if (isVerified) {
-                    val token = JwtConfig.generateToken(user.id)
-
-                    call.respond(
-                        HttpStatusCode.OK,
-                        AuthResponse(token, user.toApi())
-                    )
+                    if (user.enabled || debugMode) {
+                        val token = JwtConfig.generateToken(user.id)
+                        call.respond(
+                            HttpStatusCode.OK,
+                            AuthResponse(token, user.toApi(), enabled = true)
+                        )
+                    } else {
+                        // User exists but email not confirmed
+                        call.respond(
+                            HttpStatusCode.OK,
+                            AuthResponse(null, user.toApi(), enabled = false)
+                        )
+                    }
                 } else {
                     call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
                 }
@@ -76,15 +82,23 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         try {
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
-            val user = if (debugMode) {
-                writeopiaDb.getUserByEmail(request.email)
-            } else {
-                writeopiaDb.getEnabledUserByEmail(request.email)
-            }
+            val existingUser = writeopiaDb.getUserByEmail(request.email)
 
-            if (user == null) {
-                // Get user
-                val wUser = AuthService.createUser(writeopiaDb, request, enabled = debugMode)
+            if (existingUser == null) {
+                // Create user with enabled = false (always requires email confirmation)
+                val wUser = AuthService.createUser(writeopiaDb, request, enabled = false)
+
+                // Generate confirmation code and send email
+                val confirmationCode = EmailService.generateConfirmationCode()
+                val codeExpiry = EmailService.getCodeExpiry()
+                writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
+
+                EmailService.sendConfirmationEmail(
+                    toEmail = request.email,
+                    code = confirmationCode,
+                    userName = request.name
+                )
+
                 val workspaceId = GenerateId.generate()
                 // Every user has its own workspace.
                 WorkspaceService.createWorkspace(
@@ -103,12 +117,12 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 if (created) {
                     call.respond(
                         HttpStatusCode.Created,
-                        AuthResponse(null, wUser.toApi()),
+                        AuthResponse(null, wUser.toApi(), enabled = false),
                     )
                 } else {
                     call.respond(
                         HttpStatusCode.InternalServerError,
-                        AuthResponse(null, wUser.toApi()),
+                        AuthResponse(null, wUser.toApi(), enabled = false),
                     )
                 }
             } else {

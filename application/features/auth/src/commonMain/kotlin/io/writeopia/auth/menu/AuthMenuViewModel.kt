@@ -53,6 +53,9 @@ class AuthMenuViewModel(
         MutableStateFlow(ResultData.Idle())
     val loginState = _loginState.asStateFlow()
 
+    private val _emailConfirmationRequired = MutableStateFlow(false)
+    val emailConfirmationRequired = _emailConfirmationRequired.asStateFlow()
+
     fun emailChanged(name: String) {
         _email.value = name
     }
@@ -62,6 +65,13 @@ class AuthMenuViewModel(
     }
 
     fun isLoggedIn(): Flow<LoginStatus> = flow {
+        // Check if there's a pending email confirmation first
+        val pendingConfirmationEmail = authRepository.getPendingConfirmationEmail()
+        if (!pendingConfirmationEmail.isNullOrEmpty()) {
+            emit(LoginStatus.EMAIL_NOT_CONFIRMED)
+            return@flow
+        }
+
         val user = authRepository.getUser()
         val workspace = authRepository.getWorkspace()
         val loggedId = authRepository.isLoggedIn() || user.id != WriteopiaUser.DISCONNECTED
@@ -123,25 +133,33 @@ class AuthMenuViewModel(
             try {
                 val result = authApi.login(_email.value, _password.value)
 
-                EnvUtils.getAdminKey()?.let { adminKey ->
-                    authApi.enableUser(_email.value, adminKey)
-                }
-
                 _loginState.value = when (result) {
                     is ResultData.Complete -> {
                         val user = result.data.writeopiaUser.toModel()
 
-                        authRepository.unselectAllUsers()
-                        authRepository.saveUser(
-                            user = user.copy(tier = Tier.PREMIUM),
-                            selected = true
-                        )
-                        result.data.token?.let { token ->
-                            authRepository.saveToken(user.id, token)
-//                            AppConnectionInjection.singleton().setJwtToken(token)
-                        }
+                        // Check if user is enabled (email confirmed)
+                        if (!result.data.enabled) {
+                            // User exists but email not confirmed
+                            authRepository.savePendingConfirmationEmail(_email.value)
+                            _emailConfirmationRequired.value = true
+                            result.map { true }
+                        } else {
+                            _emailConfirmationRequired.value = false
+                            EnvUtils.getAdminKey()?.let { adminKey ->
+                                authApi.enableUser(_email.value, adminKey)
+                            }
 
-                        result.map { true }
+                            authRepository.unselectAllUsers()
+                            authRepository.saveUser(
+                                user = user.copy(tier = Tier.PREMIUM),
+                                selected = true
+                            )
+                            result.data.token?.let { token ->
+                                authRepository.saveToken(user.id, token)
+                            }
+
+                            result.map { true }
+                        }
                     }
 
                     is ResultData.Error -> {

@@ -4,5 +4,6 @@ enum class LoginStatus {
     OFFLINE_NOT_CHOSEN,
     OFFLINE_CHOSEN,
     CHOOSE_WORKSPACE,
-    ONLINE
+    ONLINE,
+    EMAIL_NOT_CONFIRMED
 }

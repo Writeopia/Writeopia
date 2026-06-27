@@ -68,10 +68,17 @@ internal class RegisterViewModel(
 
                         authRepository.saveUser(user = user, selected = true)
 
-                        EnvUtils.getAdminKey()?.let { adminKey ->
-                            authApi.enableUser(_email.value, adminKey)
-                                .map { true }
-                        } ?: result.map { true }
+                        // Check if email confirmation is required
+                        if (!result.data.enabled) {
+                            // Save pending confirmation email for the confirmation screen
+                            authRepository.savePendingConfirmationEmail(_email.value)
+                            result.map { true }
+                        } else {
+                            EnvUtils.getAdminKey()?.let { adminKey ->
+                                authApi.enableUser(_email.value, adminKey)
+                                    .map { true }
+                            } ?: result.map { true }
+                        }
                     }
 
                     is ResultData.Error -> {

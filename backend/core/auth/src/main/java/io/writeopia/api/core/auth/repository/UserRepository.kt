@@ -19,7 +19,9 @@ fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaBeUser? =
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
-                enabled = userEntity.enabled
+                enabled = userEntity.enabled,
+                confirmationCode = userEntity.confirmation_code,
+                confirmationCodeExpiry = userEntity.confirmation_code_expiry
             )
         }
 
@@ -34,7 +36,9 @@ fun WriteopiaDbBackend.getEnabledUserByEmail(email: String): WriteopiaBeUser? =
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
-                enabled = userEntity.enabled
+                enabled = userEntity.enabled,
+                confirmationCode = userEntity.confirmation_code,
+                confirmationCodeExpiry = userEntity.confirmation_code_expiry
             )
         }
 
@@ -49,7 +53,9 @@ fun WriteopiaDbBackend.getUserById(id: String): WriteopiaBeUser? =
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
-                enabled = userEntity.enabled
+                enabled = userEntity.enabled,
+                confirmationCode = userEntity.confirmation_code,
+                confirmationCodeExpiry = userEntity.confirmation_code_expiry
             )
         }
 
@@ -60,6 +66,8 @@ fun WriteopiaDbBackend.insertUser(
     password: String,
     salt: String,
     enabled: Boolean,
+    confirmationCode: String? = null,
+    confirmationCodeExpiry: Long? = null,
 ) {
     this.userEntityQueries.insertUser(
         id = id,
@@ -69,6 +77,8 @@ fun WriteopiaDbBackend.insertUser(
         salt = salt,
         name = name,
         enabled = enabled,
+        confirmation_code = confirmationCode,
+        confirmation_code_expiry = confirmationCodeExpiry,
     )
 }
 
@@ -82,6 +92,8 @@ fun WriteopiaDbBackend.insertUser(
         password = user.password,
         salt = user.salt,
         enabled = user.enabled,
+        confirmationCode = user.confirmationCode,
+        confirmationCodeExpiry = user.confirmationCodeExpiry,
     )
 }
 
@@ -99,4 +111,31 @@ fun WriteopiaDbBackend.enableUserByEmail(email: String) {
 
 fun WriteopiaDbBackend.disableUserByEmail(email: String) {
     this.userEntityQueries.disableUserByEmail(email)
+}
+
+fun WriteopiaDbBackend.updateConfirmationCode(email: String, code: String, expiry: Long) {
+    this.userEntityQueries.updateConfirmationCode(code, expiry, email)
+}
+
+fun WriteopiaDbBackend.clearConfirmationCode(email: String) {
+    this.userEntityQueries.clearConfirmationCode(email)
+}
+
+data class ConfirmationCodeData(val code: String?, val expiry: Long?)
+
+fun WriteopiaDbBackend.getConfirmationCode(email: String): ConfirmationCodeData? =
+    this.userEntityQueries
+        .selectConfirmationCodeByEmail(email)
+        .executeAsOneOrNull()
+        ?.let { result ->
+            ConfirmationCodeData(
+                code = result.confirmation_code,
+                expiry = result.confirmation_code_expiry
+            )
+        }
+
+fun WriteopiaDbBackend.isCodeValid(email: String, code: String): Boolean {
+    val data = getConfirmationCode(email) ?: return false
+    val currentTime = Clock.System.now().toEpochMilliseconds()
+    return data.code == code && (data.expiry ?: 0) > currentTime
 }
