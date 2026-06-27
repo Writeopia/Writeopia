@@ -18,6 +18,7 @@ class RoomAuthRepository(
 ) : AuthRepository {
 
     private var pendingConfirmationEmail: String? = null
+
     override suspend fun getUser(): WriteopiaUser = userDao.selectedCurrentUser()
 
     override suspend fun isLoggedIn(): Boolean = getAuthToken() != null
