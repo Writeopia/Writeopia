@@ -52,7 +52,7 @@ class AuthApiTest {
         // Verify the request
         val request = capturedRequest!!
         assertEquals(HttpMethod.Post, request.method)
-        assertEquals("https://api.example.com/admin/enable-user", request.url.toString())
+        assertEquals("https://api.example.com/api/auth/admin/enable-user", request.url.toString())
         assertEquals("my-admin-key", request.headers["X-Admin-Key"])
 
         // Verify the body contains the email
