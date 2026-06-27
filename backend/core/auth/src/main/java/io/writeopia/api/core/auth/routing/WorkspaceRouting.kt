@@ -91,7 +91,7 @@ fun Routing.workspaceRoute(
     }
 
     authenticate("auth-jwt", optional = debugMode) {
-        get("/api/workspace/{workspaceId}") {
+        get("/api/workspace/{workspaceId}/users") {
             val currentUserId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"]
                 ?: throw IllegalArgumentException("Workspace id is required")
