@@ -238,7 +238,7 @@ class AuthIntegrationTest {
 
         val client = defaultClient()
 
-        val response = client.post("api/auth/admin/api/auth/disable-user") {
+        val response = client.post("api/auth/admin/disable-user") {
             contentType(ContentType.Application.Json)
             setBody(ManageUserRequest(email = "lehen01@gmail.com"))
             headers {
