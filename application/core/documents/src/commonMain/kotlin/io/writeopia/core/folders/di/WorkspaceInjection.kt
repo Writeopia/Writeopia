@@ -5,15 +5,17 @@ import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.api.StoryStepSyncApiImpl
 import io.writeopia.core.folders.sync.ConfigFileWatcher
 import io.writeopia.core.folders.sync.DocumentConflictHandler
 import io.writeopia.core.folders.sync.ImageSync
 import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.core.folders.sync.createConfigFileWatcher
-import kotlinx.serialization.json.Json
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
+import io.writeopia.sdk.persistence.core.tracker.StoryStepSyncApi
+import kotlinx.serialization.json.Json
 
 class WorkspaceInjection private constructor(
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
@@ -64,6 +66,15 @@ class WorkspaceInjection private constructor(
                 connectionInjector.baseUrl(),
                 repositoryInjection.provideDocumentRepository()
             )
+        )
+    }
+
+    fun provideStoryStepSyncApi(): StoryStepSyncApi {
+        val authRepository = authCoreInjection.provideAuthRepository()
+        return StoryStepSyncApiImpl(
+            client = appConnectionInjection.provideHttpClient(),
+            baseUrl = connectionInjector.baseUrl(),
+            tokenProvider = { authRepository.getAuthToken() }
         )
     }
 

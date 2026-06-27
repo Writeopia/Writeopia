@@ -111,7 +111,8 @@ class DocumentSqlDao(
                 background_color = decoration.backgroundColor?.toLong(),
                 tags = tags.joinToString(separator = ",") { it.tag.label },
                 spans = spans.joinToString(separator = ",") { it.toText() },
-                link_to_document = documentLink?.id
+                link_to_document = documentLink?.id,
+                last_updated_at = lastUpdatedAt
             )
         }
     }

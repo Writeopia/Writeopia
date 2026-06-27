@@ -4,8 +4,10 @@ package io.writeopia.ui.manager
 
 import io.writeopia.sdk.manager.DocumentTracker
 import io.writeopia.sdk.manager.InTextMarkdownHandler
+import io.writeopia.sdk.manager.StoryStepSyncTracker
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.manager.fixMove
+import io.writeopia.sdk.manager.sync.MetadataChange
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.document
@@ -17,6 +19,7 @@ import io.writeopia.sdk.models.command.CommandInfo
 import io.writeopia.sdk.models.command.CommandTrigger
 import io.writeopia.sdk.models.command.TypeInfo
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
@@ -30,7 +33,6 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.repository.UserRepository
-import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
 import io.writeopia.sdk.utils.NextPositionCalculator
 import io.writeopia.sdk.utils.extensions.toEditState
@@ -230,8 +232,6 @@ class WriteopiaStateManager(
      */
     private var keyboardSelectionAnchor: Double? = null
 
-    private var sharedEditionManager: SharedEditionManager? = null
-
     val currentStory: StateFlow<StoryState> = _currentStory.asStateFlow()
 
     val textSelectionState: Flow<Selection> =
@@ -351,17 +351,118 @@ class WriteopiaStateManager(
         }
     }
 
-    fun getDocument(): Document =
-        parseDocument(_documentInfo.value, _currentStory.value)
-
-    fun liveSync(sharedEditionManager: SharedEditionManager) {
+    /**
+     * Starts real-time syncing of story steps with the backend.
+     * Similar to [saveOnStoryChanges] but operates at the step level for more granular sync.
+     *
+     * @param storyStepSyncTracker The tracker that handles step-level syncing
+     * @param workspaceId The workspace ID for the sync
+     */
+    fun syncStorySteps(storyStepSyncTracker: StoryStepSyncTracker, workspaceId: String) {
         coroutineScope.launch(dispatcher) {
-            sharedEditionManager.startLiveEdition(
-                inFlow = documentEditionState,
-                outFlow = _currentStory,
+            storyStepSyncTracker.startSyncing(
+                documentId = _documentInfo.value.id,
+                workspaceId = workspaceId,
+                storyStateFlow = _currentStory.asStateFlow(),
+                documentInfoFlow = _documentInfo.asStateFlow(),
+                onRemoteUpdate = { remoteSteps, deletedIds ->
+                    applyRemoteUpdates(remoteSteps, deletedIds)
+                },
+                onRemoteMetadataUpdate = { metadata ->
+                    applyRemoteMetadata(metadata)
+                }
             )
         }
     }
+
+    /**
+     * Applies remote updates received from the backend.
+     * Uses timestamp comparison to decide whether to apply updates (remote wins if newer).
+     *
+     * @param remoteSteps List of steps updated on the server
+     * @param deletedIds List of step IDs that were deleted on the server
+     */
+    private suspend fun applyRemoteUpdates(remoteSteps: List<StoryStep>, deletedIds: List<String>) {
+        val currentStories = _currentStory.value.stories.toMutableMap()
+        var hasChanges = false
+
+        // Process remote updates
+        for (remoteStep in remoteSteps) {
+            val remoteTimestamp = remoteStep.lastUpdatedAt ?: continue
+
+            // Find local step by ID
+            val localEntry = currentStories.entries.find { (_, step) -> step.id == remoteStep.id }
+
+            if (localEntry != null) {
+                val (position, localStep) = localEntry
+                val localTimestamp = localStep.lastUpdatedAt ?: 0L
+
+                // Only update if remote is newer
+                if (remoteTimestamp > localTimestamp) {
+                    currentStories[position] = remoteStep.copy(
+                        localId = GenerateId.generate()
+                    )
+                    hasChanges = true
+                }
+            } else {
+                // New step from remote - add at the appropriate position
+                val remotePosition = remoteStep.dbPosition
+                if (remotePosition != null) {
+                    currentStories[remotePosition] = remoteStep.copy(
+                        localId = GenerateId.generate()
+                    )
+                    hasChanges = true
+                }
+            }
+        }
+
+        // Process deletions
+        for (deletedId in deletedIds) {
+            val entryToRemove = currentStories.entries.find { (_, step) -> step.id == deletedId }
+            if (entryToRemove != null) {
+                currentStories.remove(entryToRemove.key)
+                hasChanges = true
+            }
+        }
+
+        if (hasChanges) {
+            // Recalculate next/previous positions
+            val updatedStories = NextPositionCalculator.calculate(currentStories)
+
+            // Update state without triggering save loop
+            _currentStory.value = _currentStory.value.copy(
+                stories = updatedStories,
+                lastEdit = LastEdit.Nothing
+            )
+        }
+    }
+
+    /**
+     * Applies remote metadata updates received from the backend.
+     * Only updates if the remote timestamp is newer than local.
+     * Updates lastUpdatedAt to the server's timestamp to mark this as a remote update.
+     *
+     * @param metadata The metadata changes from the server
+     */
+    private fun applyRemoteMetadata(metadata: MetadataChange) {
+        val current = _documentInfo.value
+        val currentTimestamp = current.lastUpdatedAt.toEpochMilliseconds()
+
+        if (metadata.lastUpdatedAt > currentTimestamp) {
+            _documentInfo.value = current.copy(
+                title = metadata.title ?: current.title,
+                icon = metadata.icon?.let { icon ->
+                    MenuItem.Icon(icon, metadata.iconTint)
+                } ?: current.icon,
+                isFavorite = metadata.favorite ?: current.isFavorite,
+                // Update timestamp to server's timestamp - this marks it as a remote update
+                lastUpdatedAt = Instant.fromEpochMilliseconds(metadata.lastUpdatedAt)
+            )
+        }
+    }
+
+    fun getDocument(): Document =
+        parseDocument(_documentInfo.value, _currentStory.value)
 
     fun isInitialized(): Boolean = initialized
 
@@ -992,11 +1093,7 @@ class WriteopiaStateManager(
      * Clears the [WriteopiaStateManager]. Use this in the onCleared of your ViewModel.
      */
     fun onClear() {
-        coroutineScope.launch {
-            sharedEditionManager?.stopLiveEdition()
-        }.invokeOnCompletion {
-            coroutineScope.cancel()
-        }
+        coroutineScope.cancel()
     }
 
     fun moveToNext(cursor: Int, position: Int = 1) {

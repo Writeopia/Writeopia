@@ -2,6 +2,7 @@ package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sql.WriteopiaDbBackend
 
 private var documentSqlDao: DocumentSqlBeDao? = null
@@ -106,4 +107,35 @@ fun WriteopiaDbBackend.isUserFavorite(userId: String, documentId: String): Boole
 
 fun WriteopiaDbBackend.getUserFavoriteDocumentIds(userId: String, workspaceId: String): List<String> {
     return getDocumentDaoFn().getUserFavoriteDocumentIds(userId, workspaceId)
+}
+
+fun WriteopiaDbBackend.getStoryStepsModifiedAfter(
+    documentId: String,
+    timestamp: Long
+): List<Pair<Double, StoryStep>> {
+    return getDocumentDaoFn().getStoryStepsModifiedAfter(documentId, timestamp)
+}
+
+fun WriteopiaDbBackend.insertStoryStepIfNewer(
+    storyStep: StoryStep,
+    position: Double,
+    documentId: String,
+    serverTimestamp: Long
+) {
+    getDocumentDaoFn().insertStoryStepIfNewer(storyStep, position, documentId, serverTimestamp)
+}
+
+fun WriteopiaDbBackend.deleteStoryStepById(stepId: String) {
+    getDocumentDaoFn().deleteStoryStepById(stepId)
+}
+
+fun WriteopiaDbBackend.updateDocumentMetadata(
+    documentId: String,
+    title: String?,
+    icon: String?,
+    iconTint: Int?,
+    favorite: Boolean?,
+    lastUpdatedAt: Long
+) {
+    getDocumentDaoFn().updateDocumentMetadata(documentId, title, icon, iconTint, favorite, lastUpdatedAt)
 }

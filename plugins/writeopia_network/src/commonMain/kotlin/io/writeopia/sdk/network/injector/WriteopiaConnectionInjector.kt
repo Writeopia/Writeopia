@@ -6,14 +6,10 @@ import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import io.writeopia.sdk.network.notes.NotesApi
-import io.writeopia.sdk.network.websocket.MockWebsocketEditionManager
-import io.writeopia.sdk.network.websocket.WebsocketEditionManager
 import io.writeopia.sdk.serialization.json.writeopiaJson
-import io.writeopia.sdk.sharededition.SharedEditionManager
 import kotlinx.serialization.json.Json
 
 class WriteopiaConnectionInjector private constructor(
@@ -25,18 +21,11 @@ class WriteopiaConnectionInjector private constructor(
 //            bearerTokenHandler = bearerTokenHandler,
             apiLogger = apiLogger
         ),
-    private val disableWebsocket: Boolean = false
 ) {
 
     fun baseUrl(): String = baseUrl
 
     fun notesApi(): NotesApi = NotesApi(client, baseUrl)
-
-    fun liveEditionManager(): SharedEditionManager = if (disableWebsocket) {
-        MockWebsocketEditionManager()
-    } else {
-        WebsocketEditionManager(host = "0.0.0.0", client = client, json = writeopiaJson)
-    }
 
     companion object {
         var instance: WriteopiaConnectionInjector? = null
@@ -64,8 +53,6 @@ private object ApiInjectorDefaults {
         install(ContentNegotiation) {
             json(json = json)
         }
-
-        install(WebSockets)
 
         install(Logging) {
             logger = apiLogger

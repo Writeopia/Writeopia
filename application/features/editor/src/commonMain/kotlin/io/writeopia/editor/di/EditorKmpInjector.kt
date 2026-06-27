@@ -8,6 +8,8 @@ import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.di.InDocumentSearchInjection
+import io.writeopia.core.folders.di.WorkspaceInjection
+import io.writeopia.sdk.persistence.core.tracker.StoryStepSyncApi
 import io.writeopia.di.OllamaInjection
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorKmpViewModel
@@ -19,10 +21,8 @@ import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
-import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
-import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.CoroutineScope
@@ -50,7 +50,6 @@ data class DrawingSaveEvent(
 class EditorKmpInjector private constructor(
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
     private val repositoryInjection: RepositoryInjector,
-    private val connectionInjection: WriteopiaConnectionInjector,
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val appConfigurationInjector: AppConfigurationInjector =
@@ -58,6 +57,8 @@ class EditorKmpInjector private constructor(
     private val ollamaInjection: OllamaInjection? = null,
     private val inDocumentSearchInjection: InDocumentSearchInjection =
         InDocumentSearchInjection.singleton(),
+    private val workspaceInjection: WorkspaceInjection =
+        WorkspaceInjection.singleton(),
 ) : TextEditorInjector {
 
     // SharedFlow for drawing save events - ViewModel subscribes to this
@@ -86,14 +87,12 @@ class EditorKmpInjector private constructor(
     private fun provideNoteEditorViewModel(
         documentRepository: DocumentRepository = provideDocumentRepository(),
         writeopiaManager: WriteopiaStateManager = provideWriteopiaStateManager(),
-        sharedEditionManager: SharedEditionManager = connectionInjection.liveEditionManager(),
         parentFolder: String,
         copyManager: CopyManager,
     ): NoteEditorKmpViewModel =
         NoteEditorKmpViewModel(
             writeopiaManager,
             documentRepository,
-            sharedEditionManager = sharedEditionManager,
             parentFolderId = parentFolder,
             uiConfigurationRepository = UiConfigurationCoreInjector.singleton()
                 .provideUiConfigurationRepository(),
@@ -104,7 +103,8 @@ class EditorKmpInjector private constructor(
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             authRepository = authCoreInjection.provideAuthRepository(),
             inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo(),
-            drawingSaveEvents = drawingSaveEvents
+            drawingSaveEvents = drawingSaveEvents,
+            storyStepSyncApi = workspaceInjection.provideStoryStepSyncApi()
         )
 
     @Composable
@@ -172,13 +172,10 @@ class EditorKmpInjector private constructor(
 
     companion object {
         fun mobile(
-            connectionInjector: WriteopiaConnectionInjector =
-                WriteopiaConnectionInjector.singleton(),
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
         ) = EditorKmpInjector(
             authCoreInjection,
             RepositoryInjector.singleton(),
-            connectionInjector,
             MutableStateFlow(false),
             MutableStateFlow(KeyboardEvent.IDLE),
         )
@@ -186,15 +183,12 @@ class EditorKmpInjector private constructor(
         fun desktop(
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
             repositoryInjection: RepositoryInjector = RepositoryInjector.singleton(),
-            connectionInjection: WriteopiaConnectionInjector =
-                WriteopiaConnectionInjector.singleton(),
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
             ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
         ) = EditorKmpInjector(
             authCoreInjection,
             repositoryInjection,
-            connectionInjection,
             selectionState,
             keyboardEventFlow,
             ollamaInjection = ollamaInjection,

@@ -35,6 +35,7 @@ import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
+import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
@@ -671,6 +672,49 @@ fun Routing.documentsRoute(
                         message = favoriteIds
                     )
                 } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<StoryStepSyncRequest>("/api/workspace/{workspaceId}/document/{documentId}/storysteps/sync") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val documentId = call.pathParameters["documentId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    // Verify document exists and belongs to workspace
+                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                    if (document == null) {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Document not found"
+                        )
+                        return@runIfMember
+                    }
+
+                    val response = DocumentsService.syncStorySteps(
+                        documentId = documentId,
+                        workspaceId = workspaceId,
+                        lastSyncTimestamp = request.lastSyncTimestamp,
+                        modifiedSteps = request.modifiedSteps,
+                        deletedStepIds = request.deletedStepIds,
+                        metadataUpdate = request.metadataUpdate,
+                        writeopiaDb = writeopiaDb
+                    )
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = response
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
                     call.respond(
                         status = HttpStatusCode.InternalServerError,
                         message = "${e.message}"

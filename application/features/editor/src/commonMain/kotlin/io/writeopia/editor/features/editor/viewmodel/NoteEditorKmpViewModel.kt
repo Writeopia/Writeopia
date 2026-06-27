@@ -37,11 +37,12 @@ import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
+import io.writeopia.sdk.persistence.core.tracker.OnUpdateStoryStepTracker
+import io.writeopia.sdk.persistence.core.tracker.StoryStepSyncApi
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.serialization.request.wrapInRequest
-import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.extensions.noContent
 import io.writeopia.editor.di.DrawingSaveEvent
 import io.writeopia.ui.backstack.BackstackHandler
@@ -77,7 +78,6 @@ import kotlin.time.ExperimentalTime
 class NoteEditorKmpViewModel(
     override val writeopiaManager: WriteopiaStateManager,
     private val documentRepository: DocumentRepository,
-    private val sharedEditionManager: SharedEditionManager,
     private val parentFolderId: String,
     private val uiConfigurationRepository: UiConfigurationRepository,
     private val documentToMarkdown: DocumentToMarkdown = DocumentToMarkdown,
@@ -89,7 +89,8 @@ class NoteEditorKmpViewModel(
     private val copyManager: CopyManager,
     private val authRepository: AuthRepository,
     private val inDocumentSearchRepository: InDocumentSearchRepository,
-    private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null
+    private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
+    private val storyStepSyncApi: StoryStepSyncApi? = null
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -460,7 +461,6 @@ class NoteEditorKmpViewModel(
 
         writeopiaManager.newDocument(documentId, title, parentFolder = parentFolderId)
         writeopiaManager.saveOnStoryChanges(OnUpdateDocumentTracker(documentRepository))
-        writeopiaManager.liveSync(sharedEditionManager)
     }
 
     override fun loadDocument(documentId: String) {
@@ -492,6 +492,15 @@ class NoteEditorKmpViewModel(
                         }
                     )
                 )
+
+                // Start real-time sync with backend if connected
+                if (storyStepSyncApi != null && !workspace.isDisconnected()) {
+                    val storyStepTracker = OnUpdateStoryStepTracker(
+                        syncApi = storyStepSyncApi,
+                        coroutineScope = viewModelScope
+                    )
+                    writeopiaManager.syncStorySteps(storyStepTracker, workspace.id)
+                }
             }
         }
     }

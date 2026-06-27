@@ -13,6 +13,8 @@ data class Workspace(
     val selected: Boolean,
     val role: String
 ) {
+    fun isDisconnected(): Boolean = id == "disconnected_user"
+
     companion object {
         fun disconnectedWorkspace() = Workspace(
             id = "disconnected_user",
