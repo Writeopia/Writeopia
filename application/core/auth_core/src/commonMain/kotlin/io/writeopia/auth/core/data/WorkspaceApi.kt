@@ -57,6 +57,8 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
             header(HttpHeaders.Authorization, "Bearer $token")
         }.body<List<WorkspaceApi>>()
 
+        println("Workspaces returned from API: $response")
+
         val now = Clock.System.now()
 
         ResultData.Complete(

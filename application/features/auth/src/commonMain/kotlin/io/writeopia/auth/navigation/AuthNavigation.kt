@@ -144,6 +144,11 @@ fun NavGraphBuilder.authNavigation(
                         )
                     },
                     retry = workspacesViewModel::loadWorkspaces,
+                    onBackClick = {
+                        navController.navigate(Destinations.AUTH_MENU.id) {
+                            popUpTo(Destinations.CHOOSE_WORKSPACE.id) { inclusive = true }
+                        }
+                    }
                 )
             }
         }

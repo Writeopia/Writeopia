@@ -1,5 +1,6 @@
 package io.writeopia.auth.workspace
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -11,15 +12,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.writeopia.auth.utils.arrowPadding
+import io.writeopia.common.utils.icons.PlatformIcons
 import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.commonui.buttons.LargeButton
 import io.writeopia.resources.WrStrings
@@ -31,8 +37,21 @@ import kotlinx.coroutines.flow.StateFlow
 fun BoxScope.ChooseWorkspace(
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
     onWorkspaceSelected: (Workspace) -> Unit,
-    retry: () -> Unit
+    retry: () -> Unit,
+    onBackClick: () -> Unit
 ) {
+    Icon(
+        modifier = Modifier
+            .align(Alignment.TopStart)
+            .arrowPadding()
+            .clip(CircleShape)
+            .clickable { onBackClick() }
+            .padding(6.dp),
+        imageVector = PlatformIcons.backArrowMobile,
+        contentDescription = "Arrow back",
+        tint = MaterialTheme.colorScheme.onBackground
+    )
+
     Column(
         modifier = Modifier.align(Alignment.Center).padding(horizontal = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally

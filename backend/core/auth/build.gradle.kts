@@ -18,6 +18,7 @@ kotlin {
 dependencies {
     implementation(project(":plugins:writeopia_serialization"))
     implementation(project(":writeopia_models"))
+    implementation(project(":backend:core:models"))
     implementation(project(":common:endpoints"))
     implementation(project(":application:core:models"))
 
