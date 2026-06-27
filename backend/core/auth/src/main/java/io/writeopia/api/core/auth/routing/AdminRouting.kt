@@ -26,7 +26,7 @@ fun Route.adminProtectedRoute(
             }
         }
 
-        post<ManageUserRequest>("/disable-user") { request ->
+        post<ManageUserRequest>("api/auth/disable-user") { request ->
             val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
             adminUserFn(apiKey, providedKey, debugMode) {
                 writeopiaDb.disableUserByEmail(request.email)
