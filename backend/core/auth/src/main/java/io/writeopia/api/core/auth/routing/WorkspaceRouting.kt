@@ -64,11 +64,7 @@ fun Routing.workspaceRoute(
             val workspaces = WorkspaceService.getWorkspacesByUserId(userId, writeopiaDb)
                 .map { it.toApi() }
 
-            if (workspaces.isNotEmpty()) {
-                call.respond(HttpStatusCode.OK, workspaces)
-            } else {
-                call.respond(HttpStatusCode.NotFound, ServerResponse("No workspaces found for user"))
-            }
+            call.respond(HttpStatusCode.OK, workspaces)
         }
     }
 
