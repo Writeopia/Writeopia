@@ -46,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import io.writeopia.auth.utils.arrowPadding
@@ -276,12 +277,13 @@ private fun AuthMenuContentScreen(
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier
-                    .align(Alignment.End)
+                    .fillMaxWidth()
                     .padding(horizontal = 24.dp)
                     .clip(MaterialTheme.shapes.small)
                     .clickable(onClick = navigateToForgotPassword)
-                    .padding(4.dp),
-                style = MaterialTheme.typography.bodySmall
+                    .padding(vertical = 8.dp),
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(8.dp))
