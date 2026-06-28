@@ -6,6 +6,7 @@ import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.email.EmailConfirmationViewModel
+import io.writeopia.auth.forgotpassword.ForgotPasswordViewModel
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterViewModel
 import io.writeopia.auth.register.ResetPasswordViewModel
@@ -56,6 +57,12 @@ class AuthInjection private constructor(
         authApi: AuthApi = authCoreInjection.provideAuthApi(),
         authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
     ): ResetPasswordViewModel = viewModel { ResetPasswordViewModel(authApi, authRepository) }
+
+    @Composable
+    internal fun provideForgotPasswordViewModel(
+        authApi: AuthApi = authCoreInjection.provideAuthApi(),
+        authRepository: AuthRepository = authCoreInjection.provideAuthRepository()
+    ): ForgotPasswordViewModel = viewModel { ForgotPasswordViewModel(authApi, authRepository) }
 
     @Composable
     fun provideAuthMenuViewModel(

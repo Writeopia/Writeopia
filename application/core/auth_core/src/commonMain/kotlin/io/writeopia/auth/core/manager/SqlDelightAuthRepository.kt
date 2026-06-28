@@ -18,6 +18,8 @@ internal class SqlDelightAuthRepository(
 ) : AuthRepository {
 
     private var pendingConfirmationEmail: String? = null
+    private var forgotPasswordEmail: String? = null
+    private var forgotPasswordCode: String? = null
 
     override suspend fun getUser(): WriteopiaUser =
         writeopiaDb?.writeopiaUserEntityQueries
@@ -117,5 +119,22 @@ internal class SqlDelightAuthRepository(
 
     override suspend fun clearPendingConfirmationEmail() {
         pendingConfirmationEmail = null
+    }
+
+    override suspend fun saveForgotPasswordEmail(email: String) {
+        forgotPasswordEmail = email
+    }
+
+    override suspend fun getForgotPasswordEmail(): String? = forgotPasswordEmail
+
+    override suspend fun saveForgotPasswordCode(code: String) {
+        forgotPasswordCode = code
+    }
+
+    override suspend fun getForgotPasswordCode(): String? = forgotPasswordCode
+
+    override suspend fun clearForgotPasswordData() {
+        forgotPasswordEmail = null
+        forgotPasswordCode = null
     }
 }

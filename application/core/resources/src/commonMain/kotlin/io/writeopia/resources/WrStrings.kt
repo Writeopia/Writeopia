@@ -130,6 +130,15 @@ import writeopia.application.core.resources.generated.resources.resend_code
 import writeopia.application.core.resources.generated.resources.invalid_code
 import writeopia.application.core.resources.generated.resources.email_confirmed
 import writeopia.application.core.resources.generated.resources.code_sent
+import writeopia.application.core.resources.generated.resources.forgot_password
+import writeopia.application.core.resources.generated.resources.forgot_password_title
+import writeopia.application.core.resources.generated.resources.enter_your_email
+import writeopia.application.core.resources.generated.resources.send_reset_code
+import writeopia.application.core.resources.generated.resources.enter_reset_code
+import writeopia.application.core.resources.generated.resources.we_sent_reset_code_to
+import writeopia.application.core.resources.generated.resources.set_new_password
+import writeopia.application.core.resources.generated.resources.password_reset_success
+import writeopia.application.core.resources.generated.resources.verify
 
 object WrStrings {
 
@@ -519,4 +528,31 @@ object WrStrings {
 
     @Composable
     fun codeSent() = stringResource(Res.string.code_sent)
+
+    @Composable
+    fun forgotPassword() = stringResource(Res.string.forgot_password)
+
+    @Composable
+    fun forgotPasswordTitle() = stringResource(Res.string.forgot_password_title)
+
+    @Composable
+    fun enterYourEmail() = stringResource(Res.string.enter_your_email)
+
+    @Composable
+    fun sendResetCode() = stringResource(Res.string.send_reset_code)
+
+    @Composable
+    fun enterResetCode() = stringResource(Res.string.enter_reset_code)
+
+    @Composable
+    fun weSentResetCodeTo(email: String) = stringResource(Res.string.we_sent_reset_code_to, email)
+
+    @Composable
+    fun setNewPassword() = stringResource(Res.string.set_new_password)
+
+    @Composable
+    fun passwordResetSuccess() = stringResource(Res.string.password_reset_success)
+
+    @Composable
+    fun verify() = stringResource(Res.string.verify)
 }
