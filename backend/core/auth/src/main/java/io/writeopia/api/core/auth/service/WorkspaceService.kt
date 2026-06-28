@@ -77,6 +77,15 @@ object WorkspaceService {
         }
     }
 
+    fun addUserToWorkspaceByUserId(
+        userId: String,
+        workspaceId: String,
+        role: String,
+        writeopiaDb: WriteopiaDbBackend
+    ) {
+        writeopiaDb.insertUserInWorkspace(workspaceId, userId, role)
+    }
+
 
     fun addUserToWorkspaceSecure(
         workspaceOwnerId: String,

@@ -141,12 +141,15 @@ fun NavGraphBuilder.authNavigation(
             ) {
                 ChooseWorkspace(
                     workspacesState = workspacesViewModel.workspacesState,
+                    createWorkspaceState = workspacesViewModel.createWorkspaceState,
                     onWorkspaceSelected = { workspace ->
                         workspacesViewModel.chooseWorkspace(
                             workspace.copy(selected = true),
                             sideEffect = toAppNavigation
                         )
                     },
+                    onCreateWorkspace = { name -> workspacesViewModel.createWorkspace(name) },
+                    onResetCreateWorkspaceState = workspacesViewModel::resetCreateWorkspaceState,
                     retry = workspacesViewModel::loadWorkspaces,
                     onBackClick = {
                         navController.navigate(Destinations.AUTH_MENU.id) {

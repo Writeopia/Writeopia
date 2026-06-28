@@ -14,6 +14,7 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.app.dto.WorkspaceUserApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
+import io.writeopia.app.requests.CreateWorkspaceRequest
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Role
 import io.writeopia.sdk.models.workspace.Workspace
@@ -64,6 +65,23 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         ResultData.Complete(
             response.map { workspaceApi -> workspaceApi.toModel(now) }
         )
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    suspend fun createWorkspace(workspaceName: String, token: String): ResultData<Unit> = try {
+        val response = client.post("$baseUrl/api/workspace/create") {
+            contentType(ContentType.Application.Json)
+            setBody(CreateWorkspaceRequest(workspaceName))
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            ResultData.Error()
+        }
     } catch (e: Exception) {
         e.printStackTrace()
         ResultData.Error(e)
