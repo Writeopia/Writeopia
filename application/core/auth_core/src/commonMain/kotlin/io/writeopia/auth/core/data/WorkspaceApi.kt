@@ -57,6 +57,8 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
             header(HttpHeaders.Authorization, "Bearer $token")
         }.body<List<WorkspaceApi>>()
 
+        println("Workspaces returned from API: $response")
+
         val now = Clock.System.now()
 
         ResultData.Complete(
@@ -81,7 +83,7 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         try {
             workspaceUsersCache.value = ResultData.Loading()
 
-            val response = client.get("$baseUrl/api/user/workspaces/$workspaceId") {
+            val response = client.get("$baseUrl/api/workspaces/$workspaceId/users") {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
 

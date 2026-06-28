@@ -16,6 +16,7 @@ import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.runIfAdmin
 import io.writeopia.app.mapping.toApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
+import io.writeopia.backend.models.ServerResponse
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sdk.serialization.request.WorkspaceNameChangeRequest
 import io.writeopia.sdk.serialization.request.WorkspaceRoleChangeRequest
@@ -46,7 +47,9 @@ fun Routing.workspaceRoute(
             if (workspaces.isNotEmpty()) {
                 call.respond(HttpStatusCode.OK, workspaces)
             } else {
-                call.respond(HttpStatusCode.NotFound, "No workspaces found for user")
+                call.respond(HttpStatusCode.NotFound,
+                    ServerResponse("No workspaces found for user")
+                )
             }
         }
     }
@@ -61,7 +64,7 @@ fun Routing.workspaceRoute(
             if (workspaces.isNotEmpty()) {
                 call.respond(HttpStatusCode.OK, workspaces)
             } else {
-                call.respond(HttpStatusCode.NotFound, "No workspaces found for user")
+                call.respond(HttpStatusCode.NotFound, ServerResponse("No workspaces found for user"))
             }
         }
     }
@@ -84,14 +87,14 @@ fun Routing.workspaceRoute(
                 if (user != null) {
                     call.respond(HttpStatusCode.OK, user.toApi())
                 } else {
-                    call.respond(HttpStatusCode.NotFound, "User not found")
+                    call.respond(HttpStatusCode.NotFound, ServerResponse("User not found"))
                 }
             }
         }
     }
 
     authenticate("auth-jwt", optional = debugMode) {
-        get("/api/user/workspaces/{workspaceId}") {
+        get("/api/workspace/{workspaceId}/users") {
             val currentUserId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"]
                 ?: throw IllegalArgumentException("Workspace id is required")
@@ -104,7 +107,7 @@ fun Routing.workspaceRoute(
                 if (workspaces.isNotEmpty()) {
                     call.respond(HttpStatusCode.OK, workspaces)
                 } else {
-                    call.respond(HttpStatusCode.NotFound, "No users found for workspace")
+                    call.respond(HttpStatusCode.NotFound, ServerResponse("No users found for workspace"))
                 }
             }
         }
@@ -126,9 +129,9 @@ fun Routing.workspaceRoute(
                 )
 
                 if (result) {
-                    call.respond(HttpStatusCode.OK, "User added to workspace")
+                    call.respond(HttpStatusCode.OK, ServerResponse("User added to workspace"))
                 } else {
-                    call.respond(HttpStatusCode.NotFound, "Not added")
+                    call.respond(HttpStatusCode.NotFound, ServerResponse("Not added"))
                 }
             }
         }
@@ -147,9 +150,9 @@ fun Routing.workspaceRoute(
             )
 
             if (result) {
-                call.respond(HttpStatusCode.OK, "User added to workspace")
+                call.respond(HttpStatusCode.OK, ServerResponse("User added to workspace"))
             } else {
-                call.respond(HttpStatusCode.NotFound, "Not added")
+                call.respond(HttpStatusCode.NotFound, ServerResponse("Not added"))
             }
         }
     }
@@ -165,7 +168,7 @@ fun Routing.workspaceRoute(
                     newName = newName
                 )
 
-                call.respond(status = HttpStatusCode.OK, "Name changed")
+                call.respond(status = HttpStatusCode.OK, ServerResponse("Name changed"))
             }
         }
     }
@@ -182,7 +185,7 @@ fun Routing.workspaceRoute(
                     newRole = newRole
                 )
 
-                call.respond(status = HttpStatusCode.OK, "Name changed")
+                call.respond(status = HttpStatusCode.OK, ServerResponse("Role changed"))
             }
         }
     }
@@ -195,7 +198,7 @@ fun Routing.workspaceRoute(
             val userToDelete = call.parameters["userId"] ?: ""
 
             if (workspaceId.isEmpty() || userToDelete.isEmpty()) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid request")
+                call.respond(HttpStatusCode.BadRequest, ServerResponse("Invalid request"))
             }
 
             val result = WorkspaceService.removeUserFromWorkspaceSecure(
@@ -206,9 +209,9 @@ fun Routing.workspaceRoute(
             )
 
             if (result) {
-                call.respond(HttpStatusCode.OK, "User added to workspace")
+                call.respond(HttpStatusCode.OK, ServerResponse("User removed from workspace"))
             } else {
-                call.respond(HttpStatusCode.NotFound, "Not added")
+                call.respond(HttpStatusCode.NotFound, ServerResponse("User not removed"))
             }
         }
     }
@@ -221,7 +224,7 @@ fun Routing.workspaceRoute(
             val userToDelete = call.parameters["userId"] ?: ""
 
             if (workspaceId.isEmpty() || userToDelete.isEmpty()) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid request")
+                call.respond(HttpStatusCode.BadRequest, ServerResponse("Invalid request"))
             }
 
             val result = WorkspaceService.removeUserFromWorkspace(
@@ -231,9 +234,9 @@ fun Routing.workspaceRoute(
             )
 
             if (result) {
-                call.respond(HttpStatusCode.OK, "User added to workspace")
+                call.respond(HttpStatusCode.OK, ServerResponse("User removed from workspace"))
             } else {
-                call.respond(HttpStatusCode.NotFound, "Not added")
+                call.respond(HttpStatusCode.NotFound, ServerResponse("User not removed"))
             }
         }
     }
@@ -246,7 +249,7 @@ fun Routing.workspaceRoute(
             val emailToDelete = call.parameters["email"] ?: ""
 
             if (workspaceId.isEmpty() || emailToDelete.isEmpty()) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid request")
+                call.respond(HttpStatusCode.BadRequest, ServerResponse("Invalid request"))
             }
 
             val result = WorkspaceService.removeUserFromWorkspaceByEmail(
@@ -256,9 +259,9 @@ fun Routing.workspaceRoute(
             )
 
             if (result) {
-                call.respond(HttpStatusCode.OK, "User added to workspace")
+                call.respond(HttpStatusCode.OK, ServerResponse("User removed from workspace"))
             } else {
-                call.respond(HttpStatusCode.NotFound, "Not added")
+                call.respond(HttpStatusCode.NotFound, ServerResponse("User not removed"))
             }
         }
     }

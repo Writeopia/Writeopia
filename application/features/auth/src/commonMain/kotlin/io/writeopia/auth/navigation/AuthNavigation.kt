@@ -14,6 +14,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import io.writeopia.auth.di.AuthInjection
+import io.writeopia.auth.email.EmailConfirmationScreen
 import io.writeopia.auth.menu.AuthMenuScreen
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterPasswordScreen
@@ -55,6 +56,39 @@ fun NavGraphBuilder.authNavigation(
         }
     }
 
+    // Email confirmation screen - placed outside nested navigation for direct access from StartUp
+    composable(Destinations.EMAIL_CONFIRM.id) {
+        val emailConfirmViewModel = authInjection.provideEmailConfirmationViewModel()
+        val colorTheme by colorThemeOption.collectAsState()
+
+        LaunchedEffect(Unit) {
+            emailConfirmViewModel.loadPendingEmail()
+        }
+
+        WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+            EmailConfirmationScreen(
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+                emailState = emailConfirmViewModel.email,
+                codeState = emailConfirmViewModel.code,
+                confirmState = emailConfirmViewModel.confirmState,
+                resendState = emailConfirmViewModel.resendState,
+                resendCooldownSeconds = emailConfirmViewModel.resendCooldownSeconds,
+                codeChanged = emailConfirmViewModel::codeChanged,
+                onConfirm = {
+                    emailConfirmViewModel.onConfirm {
+                        navController.navigateToWorkspaceChoice()
+                    }
+                },
+                onResend = emailConfirmViewModel::onResend,
+                navigateBack = {
+                    navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id) {
+                        popUpTo(Destinations.EMAIL_CONFIRM.id) { inclusive = true }
+                    }
+                }
+            )
+        }
+    }
+
     navigation(
         startDestination = Destinations.AUTH_MENU.id,
         route = Destinations.AUTH_MENU_INNER_NAVIGATION.id
@@ -62,6 +96,7 @@ fun NavGraphBuilder.authNavigation(
         composable(Destinations.AUTH_MENU.id) {
             val authMenuViewModel: AuthMenuViewModel = authInjection.provideAuthMenuViewModel()
             val colorTheme by colorThemeOption.collectAsState()
+            val emailConfirmationRequired by authMenuViewModel.emailConfirmationRequired.collectAsState()
 
             WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
                 AuthMenuScreen(
@@ -77,7 +112,13 @@ fun NavGraphBuilder.authNavigation(
                         authMenuViewModel.useOffline(toAppNavigation)
                     },
                     navigateUp = navController::navigateUp,
-                    navigateNext = navController::navigateToWorkspaceChoice
+                    navigateNext = {
+                        if (emailConfirmationRequired) {
+                            navController.navigateToEmailConfirm()
+                        } else {
+                            navController.navigateToWorkspaceChoice()
+                        }
+                    }
                 )
             }
         }
@@ -103,6 +144,11 @@ fun NavGraphBuilder.authNavigation(
                         )
                     },
                     retry = workspacesViewModel::loadWorkspaces,
+                    onBackClick = {
+                        navController.navigate(Destinations.AUTH_MENU.id) {
+                            popUpTo(Destinations.CHOOSE_WORKSPACE.id) { inclusive = true }
+                        }
+                    }
                 )
             }
         }
@@ -124,7 +170,7 @@ fun NavGraphBuilder.authNavigation(
                     emailChanged = registerViewModel::emailChanged,
                     passwordChanged = registerViewModel::passwordChanged,
                     onRegisterRequest = registerViewModel::onRegister,
-                    onRegisterSuccess = navController::navigateToWorkspaceChoice,
+                    onRegisterSuccess = navController::navigateToEmailConfirm,
                     navigateBack = navController::navigateUp
                 )
             }
@@ -142,4 +188,8 @@ fun NavController.navigateToApp() {
 
 fun NavController.navigateToWorkspaceChoice() {
     navigate(Destinations.CHOOSE_WORKSPACE.id)
+}
+
+fun NavController.navigateToEmailConfirm() {
+    navigate(Destinations.EMAIL_CONFIRM.id)
 }

@@ -14,6 +14,9 @@ import io.ktor.http.isSuccess
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
+import io.writeopia.sdk.serialization.data.auth.EmailConfirmRequest
+import io.writeopia.sdk.serialization.data.auth.EmailConfirmResponse
+import io.writeopia.sdk.serialization.data.auth.EmailResendRequest
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.ManageUserRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
@@ -21,7 +24,7 @@ import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
 class AuthApi(private val client: HttpClient, private val baseUrl: String) {
     suspend fun login(email: String, password: String): ResultData<AuthResponse> = try {
-        val response = client.post("$baseUrl/api/login") {
+        val response = client.post("$baseUrl/api/auth/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequest(email, password))
         }.body<AuthResponse>()
@@ -39,7 +42,7 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         workspaceName: String,
         password: String
     ): ResultData<AuthResponse> = try {
-        val response = client.post("$baseUrl/api/register") {
+        val response = client.post("$baseUrl/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(RegisterRequest(name, email, workspaceName, password))
         }.body<AuthResponse>()
@@ -51,7 +54,7 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
     }
 
     suspend fun resetPassword(newPassword: String, token: String): ResultData<Unit> = try {
-        val response = client.put("$baseUrl/api/password/reset") {
+        val response = client.put("$baseUrl/api/auth/password/reset") {
             contentType(ContentType.Application.Json)
             setBody(ResetPasswordRequest(newPassword))
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -68,7 +71,7 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
     }
 
     suspend fun deleteAccount(token: String): ResultData<Boolean> = try {
-        val response = client.delete("$baseUrl/api/account") {
+        val response = client.delete("$baseUrl/api/auth/account") {
             header(HttpHeaders.Authorization, "Bearer $token")
         }.body<DeleteAccountResponse>()
 
@@ -78,7 +81,7 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
     }
 
     suspend fun enableUser(email: String, adminKey: String): ResultData<Unit> = try {
-        val response = client.post("$baseUrl/admin/enable-user") {
+        val response = client.post("$baseUrl/api/auth/admin/enable-user") {
             contentType(ContentType.Application.Json)
             header("X-Admin-Key", adminKey)
             setBody(ManageUserRequest(email))
@@ -91,6 +94,40 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         }
     } catch (e: Exception) {
         println("enableUser error: ${e.message}")
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    suspend fun confirmEmail(email: String, code: String): ResultData<Boolean> = try {
+        val response = client.post("$baseUrl/api/auth/email/confirm") {
+            contentType(ContentType.Application.Json)
+            setBody(EmailConfirmRequest(email, code))
+        }.body<EmailConfirmResponse>()
+
+        if (response.success) {
+            ResultData.Complete(true)
+        } else {
+            ResultData.Error(Exception(response.message ?: "Invalid code"))
+        }
+    } catch (e: Exception) {
+        println("confirmEmail error: ${e.message}")
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    suspend fun resendConfirmationEmail(email: String): ResultData<Boolean> = try {
+        val response = client.post("$baseUrl/api/auth/email/resend") {
+            contentType(ContentType.Application.Json)
+            setBody(EmailResendRequest(email))
+        }.body<EmailConfirmResponse>()
+
+        if (response.success) {
+            ResultData.Complete(true)
+        } else {
+            ResultData.Error(Exception(response.message ?: "Failed to resend"))
+        }
+    } catch (e: Exception) {
+        println("resendConfirmationEmail error: ${e.message}")
         e.printStackTrace()
         ResultData.Error(e)
     }

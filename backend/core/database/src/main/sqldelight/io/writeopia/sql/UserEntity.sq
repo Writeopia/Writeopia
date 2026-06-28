@@ -5,7 +5,9 @@ CREATE TABLE user_entity (
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
-  enabled BOOLEAN NOT NULL
+  enabled BOOLEAN NOT NULL,
+  confirmation_code TEXT,
+  confirmation_code_expiry BIGINT
 );
 
 selectUserByEmail:
@@ -27,10 +29,10 @@ WHERE id = ?
 LIMIT 1;
 
 insertUser:
-INSERT INTO user_entity(id, name, created_at, email, password, salt, enabled)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO user_entity(id, name, created_at, email, password, salt, enabled, confirmation_code, confirmation_code_expiry)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
-UPDATE SET id=excluded.id, name=excluded.name, created_at=excluded.created_at, email=excluded.email, password=excluded.password, salt=excluded.salt, enabled=excluded.enabled;
+UPDATE SET id=excluded.id, name=excluded.name, created_at=excluded.created_at, email=excluded.email, password=excluded.password, salt=excluded.salt, enabled=excluded.enabled, confirmation_code=excluded.confirmation_code, confirmation_code_expiry=excluded.confirmation_code_expiry;
 
 deleteUser:
 DELETE
@@ -51,4 +53,20 @@ disableUserByEmail:
 UPDATE user_entity
 SET enabled = FALSE
 WHERE email = ?;
+
+updateConfirmationCode:
+UPDATE user_entity
+SET confirmation_code = ?, confirmation_code_expiry = ?
+WHERE email = ?;
+
+clearConfirmationCode:
+UPDATE user_entity
+SET confirmation_code = NULL, confirmation_code_expiry = NULL
+WHERE email = ?;
+
+selectConfirmationCodeByEmail:
+SELECT confirmation_code, confirmation_code_expiry
+FROM user_entity
+WHERE email = ?
+LIMIT 1;
 
