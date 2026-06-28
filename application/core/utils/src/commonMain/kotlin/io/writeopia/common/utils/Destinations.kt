@@ -16,6 +16,9 @@ enum class Destinations(val id: String, val root: String) {
     AUTH_REGISTER("auth_register", "Home"),
     AUTH_RESET_PASSWORD("auth_reset_password", "Home"),
     EMAIL_CONFIRM("email_confirm", "Home"),
+    FORGOT_PASSWORD_EMAIL("forgot_password_email", "Home"),
+    FORGOT_PASSWORD_CODE("forgot_password_code", "Home"),
+    FORGOT_PASSWORD_NEW_PASSWORD("forgot_password_new_password", "Home"),
 
     CHOOSE_WORKSPACE("choose_workspace", "Home"),
     AUTH_MENU("auth_menu", "Home"),

@@ -67,6 +67,7 @@ fun AuthMenuScreen(
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
     navigateToRegister: () -> Unit,
+    navigateToForgotPassword: () -> Unit,
     offlineUsage: () -> Unit,
     navigateUp: () -> Unit,
     navigateNext: () -> Unit,
@@ -96,6 +97,7 @@ fun AuthMenuScreen(
                 passwordChanged,
                 onLoginRequest,
                 navigateToRegister,
+                navigateToForgotPassword,
                 offlineUsage,
                 modifier,
             )
@@ -169,6 +171,7 @@ private fun AuthMenuContentScreen(
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
     navigateToRegister: () -> Unit,
+    navigateToForgotPassword: () -> Unit,
     offlineUsage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -266,7 +269,22 @@ private fun AuthMenuContentScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = WrStrings.forgotPassword(),
+                color = MaterialTheme.colorScheme.primary,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(horizontal = 24.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .clickable(onClick = navigateToForgotPassword)
+                    .padding(4.dp),
+                style = MaterialTheme.typography.bodySmall
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(
                 modifier = Modifier

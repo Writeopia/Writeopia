@@ -8,6 +8,7 @@ import io.ktor.server.routing.routing
 import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.emailRoute
+import io.writeopia.api.core.auth.routing.passwordResetRoute
 import io.writeopia.api.core.auth.routing.workspaceRoute
 import io.writeopia.connection.logger
 import io.writeopia.sql.WriteopiaDbBackend
@@ -44,6 +45,8 @@ fun Application.configureRouting(
             }
 
             emailRoute(writeopiaDb)
+
+            passwordResetRoute(writeopiaDb)
         }
 
         // Root endpoint
