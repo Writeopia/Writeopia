@@ -160,4 +160,7 @@
   <string name="set_new_password">Set New Password</string>
   <string name="password_reset_success">Password reset successfully!</string>
   <string name="verify">Verify</string>
+  <string name="create_workspace">Create workspace</string>
+  <string name="create">Create</string>
+  <string name="create_workspace_failed">Failed to create workspace</string>
 </resources>

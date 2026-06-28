@@ -19,6 +19,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,10 +40,25 @@ import kotlinx.coroutines.flow.StateFlow
 @Composable
 fun BoxScope.ChooseWorkspace(
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
+    createWorkspaceState: StateFlow<ResultData<Unit>>,
     onWorkspaceSelected: (Workspace) -> Unit,
+    onCreateWorkspace: (String) -> Unit,
+    onResetCreateWorkspaceState: () -> Unit,
     retry: () -> Unit,
     onBackClick: () -> Unit
 ) {
+    var showCreateDialog by remember { mutableStateOf(false) }
+
+    if (showCreateDialog) {
+        CreateWorkspaceDialog(
+            createWorkspaceState = createWorkspaceState,
+            onCreateWorkspace = onCreateWorkspace,
+            onDismiss = {
+                showCreateDialog = false
+                onResetCreateWorkspaceState()
+            }
+        )
+    }
     Icon(
         modifier = Modifier
             .align(Alignment.TopStart)
@@ -84,6 +103,15 @@ fun BoxScope.ChooseWorkspace(
                             clickListener = {
                                 onWorkspaceSelected(workspace)
                             }
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        CommonButton(
+                            text = WrStrings.createWorkspace(),
+                            clickListener = { showCreateDialog = true }
                         )
                     }
                 }

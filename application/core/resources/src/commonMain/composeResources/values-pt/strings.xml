@@ -136,4 +136,7 @@
   <string name="teams">Times</string>
   <string name="login_failed">Falha no login. Por favor, verifique suas credenciais.</string>
   <string name="registration_failed">Falha no registro. Por favor, tente novamente.</string>
+  <string name="create_workspace">Criar área de trabalho</string>
+  <string name="create">Criar</string>
+  <string name="create_workspace_failed">Falha ao criar área de trabalho</string>
 </resources>

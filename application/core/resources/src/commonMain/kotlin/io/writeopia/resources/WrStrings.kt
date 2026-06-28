@@ -139,6 +139,9 @@ import writeopia.application.core.resources.generated.resources.we_sent_reset_co
 import writeopia.application.core.resources.generated.resources.set_new_password
 import writeopia.application.core.resources.generated.resources.password_reset_success
 import writeopia.application.core.resources.generated.resources.verify
+import writeopia.application.core.resources.generated.resources.create_workspace
+import writeopia.application.core.resources.generated.resources.create
+import writeopia.application.core.resources.generated.resources.create_workspace_failed
 
 object WrStrings {
 
@@ -555,4 +558,13 @@ object WrStrings {
 
     @Composable
     fun verify() = stringResource(Res.string.verify)
+
+    @Composable
+    fun createWorkspace() = stringResource(Res.string.create_workspace)
+
+    @Composable
+    fun create() = stringResource(Res.string.create)
+
+    @Composable
+    fun createWorkspaceFailed() = stringResource(Res.string.create_workspace_failed)
 }

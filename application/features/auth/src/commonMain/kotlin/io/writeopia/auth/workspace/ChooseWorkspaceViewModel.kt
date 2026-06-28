@@ -38,6 +38,9 @@ class ChooseWorkspaceViewModel(
     private val _workspacesState = MutableStateFlow<ResultData<List<Workspace>>>(ResultData.Idle())
     val workspacesState: StateFlow<ResultData<List<Workspace>>> = _workspacesState.asStateFlow()
 
+    private val _createWorkspaceState = MutableStateFlow<ResultData<Unit>>(ResultData.Idle())
+    val createWorkspaceState: StateFlow<ResultData<Unit>> = _createWorkspaceState.asStateFlow()
+
     fun loadWorkspaces() {
         viewModelScope.launch {
             val token = authRepository.getAuthToken()
@@ -91,6 +94,28 @@ class ChooseWorkspaceViewModel(
 
             sideEffect()
         }
+    }
+
+    fun createWorkspace(workspaceName: String) {
+        viewModelScope.launch {
+            val token = authRepository.getAuthToken()
+
+            if (token != null) {
+                _createWorkspaceState.value = ResultData.Loading()
+                val result = workspaceApi.createWorkspace(workspaceName, token)
+                _createWorkspaceState.value = result
+
+                if (result is ResultData.Complete) {
+                    loadWorkspaces()
+                }
+            } else {
+                _createWorkspaceState.value = ResultData.Error(Exception("Not authenticated"))
+            }
+        }
+    }
+
+    fun resetCreateWorkspaceState() {
+        _createWorkspaceState.value = ResultData.Idle()
     }
 
     private suspend fun getUserId(): String = authRepository.getUser().id

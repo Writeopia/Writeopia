@@ -16,6 +16,9 @@ import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.runIfAdmin
 import io.writeopia.app.mapping.toApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
+import io.writeopia.app.requests.CreateWorkspaceRequest
+import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.workspace.Role
 import io.writeopia.backend.models.ServerResponse
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sdk.serialization.request.WorkspaceNameChangeRequest
@@ -66,6 +69,24 @@ fun Routing.workspaceRoute(
             } else {
                 call.respond(HttpStatusCode.NotFound, ServerResponse("No workspaces found for user"))
             }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debugMode) {
+        post<CreateWorkspaceRequest>("/api/workspace/create") { request ->
+            val userId = getUserId() ?: ""
+            val (workspaceName) = request
+
+            val workspaceId = GenerateId.generate()
+            WorkspaceService.createWorkspace(workspaceId, workspaceName, writeopiaDb)
+            WorkspaceService.addUserToWorkspaceByUserId(
+                userId = userId,
+                workspaceId = workspaceId,
+                role = Role.ADMIN.value,
+                writeopiaDb = writeopiaDb
+            )
+
+            call.respond(HttpStatusCode.Created, ServerResponse("Workspace created"))
         }
     }
 
