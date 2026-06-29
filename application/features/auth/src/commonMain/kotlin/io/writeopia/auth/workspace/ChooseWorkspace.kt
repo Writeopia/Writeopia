@@ -97,9 +97,14 @@ fun BoxScope.ChooseWorkspace(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     items(workspaces) { workspace ->
+                        val documentText = if (workspace.documentCount == 1) {
+                            "1 document"
+                        } else {
+                            "${workspace.documentCount} documents"
+                        }
                         LargeButton(
                             modifier = Modifier.fillMaxWidth(),
-                            text = workspace.name,
+                            text = "${workspace.name} ($documentText)",
                             clickListener = {
                                 onWorkspaceSelected(workspace)
                             }

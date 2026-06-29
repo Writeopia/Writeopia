@@ -14,6 +14,7 @@ import io.writeopia.api.core.auth.repository.changeWorkspaceRoleForUser
 import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.runIfAdmin
+import io.writeopia.api.documents.documents.DocumentsService
 import io.writeopia.app.mapping.toApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.app.requests.CreateWorkspaceRequest
@@ -62,7 +63,10 @@ fun Routing.workspaceRoute(
             val userId = getUserId() ?: ""
 
             val workspaces = WorkspaceService.getWorkspacesByUserId(userId, writeopiaDb)
-                .map { it.toApi() }
+                .map { workspace ->
+                    val count = DocumentsService.countDocumentsByWorkspaceId(workspace.id, writeopiaDb)
+                    workspace.toApi(documentCount = count.toInt())
+                }
 
             call.respond(HttpStatusCode.OK, workspaces)
         }
