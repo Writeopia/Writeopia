@@ -2,6 +2,9 @@ package io.writeopia.commonui.buttons
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion
 import androidx.compose.ui.Modifier
@@ -59,6 +63,7 @@ fun CommonButton(
     iconDescription: String? = null,
     text: String,
     defaultColor: Color = WriteopiaTheme.colorScheme.defaultButton,
+    hoverColor: Color = WriteopiaTheme.colorScheme.highlight,
     selectedColor: Color = WriteopiaTheme.colorScheme.highlight,
     isEnabledState: StateFlow<Boolean> = MutableStateFlow(true),
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
@@ -67,7 +72,14 @@ fun CommonButton(
     clickListener: () -> Unit,
 ) {
     val isEditable by isEnabledState.collectAsState()
-    val lockButtonColor = if (isEditable) defaultColor else selectedColor
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+
+    val buttonColor = when {
+        !isEditable -> selectedColor
+        isHovered -> hoverColor
+        else -> defaultColor
+    }
 
     val shape = MaterialTheme.shapes.medium
 
@@ -75,8 +87,9 @@ fun CommonButton(
         verticalAlignment = verticalAlignment,
         horizontalArrangement = horizontalArrangement,
         modifier = modifier
-            .background(lockButtonColor, shape)
             .clip(shape)
+            .hoverable(interactionSource)
+            .background(buttonColor, shape)
             .clickable(onClick = clickListener)
             .padding(horizontal = 10.dp, vertical = verticalPaddingCommonButton().dp)
     ) {
@@ -107,6 +120,7 @@ fun LargeButton(
     iconDescription: String? = null,
     text: String,
     defaultColor: Color = WriteopiaTheme.colorScheme.defaultButton,
+    hoverColor: Color = WriteopiaTheme.colorScheme.highlight,
     selectedColor: Color = WriteopiaTheme.colorScheme.highlight,
     isEnabledState: StateFlow<Boolean> = MutableStateFlow(true),
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
@@ -114,7 +128,14 @@ fun LargeButton(
     clickListener: () -> Unit,
 ) {
     val isEditable by isEnabledState.collectAsState()
-    val lockButtonColor = if (isEditable) defaultColor else selectedColor
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+
+    val buttonColor = when {
+        !isEditable -> selectedColor
+        isHovered -> hoverColor
+        else -> defaultColor
+    }
 
     val shape = MaterialTheme.shapes.medium
 
@@ -122,8 +143,9 @@ fun LargeButton(
         verticalAlignment = verticalAlignment,
         horizontalArrangement = horizontalArrangement,
         modifier = modifier
-            .background(lockButtonColor, shape)
             .clip(shape)
+            .hoverable(interactionSource)
+            .background(buttonColor, shape)
             .clickable(onClick = clickListener)
             .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
