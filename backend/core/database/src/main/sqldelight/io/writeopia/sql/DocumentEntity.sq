@@ -166,4 +166,4 @@ ORDER BY position;
 
 countByWorkspaceId:
 SELECT COUNT(*) FROM document_entity
-WHERE workspace_id = ? AND deleted = 0;
+WHERE workspace_id = ? AND deleted = FALSE;

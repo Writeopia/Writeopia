@@ -45,7 +45,12 @@ fun Routing.workspaceRoute(
                 ?: throw IllegalArgumentException("User email is required")
 
             val workspaces = WorkspaceService.getWorkspacesByUserEmail(userEmail, writeopiaDb)
-                .map { it.toApi() }
+                .map { workspace ->
+                    val count = writeopiaDb.documentEntityQueries
+                        .countByWorkspaceId(workspace.id)
+                        .executeAsOne()
+                    workspace.toApi(documentCount = count.toInt())
+                }
 
             if (workspaces.isNotEmpty()) {
                 call.respond(HttpStatusCode.OK, workspaces)
