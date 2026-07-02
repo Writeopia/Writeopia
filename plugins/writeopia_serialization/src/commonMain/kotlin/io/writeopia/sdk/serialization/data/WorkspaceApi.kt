@@ -14,6 +14,7 @@ data class WorkspaceApi(
     val userId: String,
     val name: String,
     val role: String,
+    val documentCount: Int = 0,
 )
 
 fun WorkspaceApi.toModel(lastSync: Instant = Clock.System.now()) =
@@ -23,8 +24,15 @@ fun WorkspaceApi.toModel(lastSync: Instant = Clock.System.now()) =
         this.name,
         lastSync = lastSync,
         selected = false,
-        role = role
+        role = role,
+        documentCount = documentCount,
     )
 
-fun Workspace.toApi() =
-    WorkspaceApi(id = this.id, userId = this.userId, name = this.name, role = role)
+fun Workspace.toApi(documentCount: Int = this.documentCount) =
+    WorkspaceApi(
+        id = this.id,
+        userId = this.userId,
+        name = this.name,
+        role = role,
+        documentCount = documentCount,
+    )
