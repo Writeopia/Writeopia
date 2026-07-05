@@ -163,3 +163,7 @@ FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.title = ? AND workspace_id = ? AND deleted = FALSE
 ORDER BY position;
+
+countByWorkspaceId:
+SELECT COUNT(*) FROM document_entity
+WHERE workspace_id = ? AND deleted = FALSE;

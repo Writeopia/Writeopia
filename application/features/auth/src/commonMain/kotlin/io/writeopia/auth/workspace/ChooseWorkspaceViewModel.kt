@@ -47,7 +47,14 @@ class ChooseWorkspaceViewModel(
 
             if (token != null) {
                 _workspacesState.value = ResultData.Loading()
-                _workspacesState.value = workspaceApi.getAvailableWorkspaces(token)
+                val result = workspaceApi.getAvailableWorkspaces(token)
+
+                _workspacesState.value = when (result) {
+                    is ResultData.Complete -> {
+                        ResultData.Complete(result.data + Workspace.disconnectedWorkspace())
+                    }
+                    else -> result
+                }
             } else {
                 _workspacesState.value = ResultData.Complete(
                     listOf(Workspace.disconnectedWorkspace())
