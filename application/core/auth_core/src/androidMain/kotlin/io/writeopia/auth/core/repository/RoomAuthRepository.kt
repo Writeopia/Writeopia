@@ -16,6 +16,11 @@ class RoomAuthRepository(
     private val tokenCommonDao: TokenCommonDao,
     private val workspaceCommonDao: WorkspaceCommonDao
 ) : AuthRepository {
+
+    private var pendingConfirmationEmail: String? = null
+    private var forgotPasswordEmail: String? = null
+    private var forgotPasswordCode: String? = null
+
     override suspend fun getUser(): WriteopiaUser = userDao.selectedCurrentUser()
 
     override suspend fun isLoggedIn(): Boolean = getAuthToken() != null
@@ -57,5 +62,32 @@ class RoomAuthRepository(
 
     override suspend fun unselectAllUsers() {
         userDao.unselectAllUsers()
+    }
+
+    override suspend fun savePendingConfirmationEmail(email: String) {
+        pendingConfirmationEmail = email
+    }
+
+    override suspend fun getPendingConfirmationEmail(): String? = pendingConfirmationEmail
+
+    override suspend fun clearPendingConfirmationEmail() {
+        pendingConfirmationEmail = null
+    }
+
+    override suspend fun saveForgotPasswordEmail(email: String) {
+        forgotPasswordEmail = email
+    }
+
+    override suspend fun getForgotPasswordEmail(): String? = forgotPasswordEmail
+
+    override suspend fun saveForgotPasswordCode(code: String) {
+        forgotPasswordCode = code
+    }
+
+    override suspend fun getForgotPasswordCode(): String? = forgotPasswordCode
+
+    override suspend fun clearForgotPasswordData() {
+        forgotPasswordEmail = null
+        forgotPasswordCode = null
     }
 }

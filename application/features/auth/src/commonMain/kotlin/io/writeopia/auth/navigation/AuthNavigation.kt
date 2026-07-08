@@ -14,6 +14,10 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import io.writeopia.auth.di.AuthInjection
+import io.writeopia.auth.email.EmailConfirmationScreen
+import io.writeopia.auth.forgotpassword.ForgotPasswordCodeScreen
+import io.writeopia.auth.forgotpassword.ForgotPasswordEmailScreen
+import io.writeopia.auth.forgotpassword.ForgotPasswordNewPasswordScreen
 import io.writeopia.auth.menu.AuthMenuScreen
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterPasswordScreen
@@ -55,6 +59,39 @@ fun NavGraphBuilder.authNavigation(
         }
     }
 
+    // Email confirmation screen - placed outside nested navigation for direct access from StartUp
+    composable(Destinations.EMAIL_CONFIRM.id) {
+        val emailConfirmViewModel = authInjection.provideEmailConfirmationViewModel()
+        val colorTheme by colorThemeOption.collectAsState()
+
+        LaunchedEffect(Unit) {
+            emailConfirmViewModel.loadPendingEmail()
+        }
+
+        WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+            EmailConfirmationScreen(
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+                emailState = emailConfirmViewModel.email,
+                codeState = emailConfirmViewModel.code,
+                confirmState = emailConfirmViewModel.confirmState,
+                resendState = emailConfirmViewModel.resendState,
+                resendCooldownSeconds = emailConfirmViewModel.resendCooldownSeconds,
+                codeChanged = emailConfirmViewModel::codeChanged,
+                onConfirm = {
+                    emailConfirmViewModel.onConfirm {
+                        navController.navigateToWorkspaceChoice()
+                    }
+                },
+                onResend = emailConfirmViewModel::onResend,
+                navigateBack = {
+                    navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id) {
+                        popUpTo(Destinations.EMAIL_CONFIRM.id) { inclusive = true }
+                    }
+                }
+            )
+        }
+    }
+
     navigation(
         startDestination = Destinations.AUTH_MENU.id,
         route = Destinations.AUTH_MENU_INNER_NAVIGATION.id
@@ -62,6 +99,7 @@ fun NavGraphBuilder.authNavigation(
         composable(Destinations.AUTH_MENU.id) {
             val authMenuViewModel: AuthMenuViewModel = authInjection.provideAuthMenuViewModel()
             val colorTheme by colorThemeOption.collectAsState()
+            val emailConfirmationRequired by authMenuViewModel.emailConfirmationRequired.collectAsState()
 
             WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
                 AuthMenuScreen(
@@ -73,11 +111,18 @@ fun NavGraphBuilder.authNavigation(
                     passwordChanged = authMenuViewModel::passwordChanged,
                     onLoginRequest = authMenuViewModel::onLoginRequest,
                     navigateToRegister = navController::navigateAuthRegister,
+                    navigateToForgotPassword = navController::navigateToForgotPasswordEmail,
                     offlineUsage = {
                         authMenuViewModel.useOffline(toAppNavigation)
                     },
                     navigateUp = navController::navigateUp,
-                    navigateNext = navController::navigateToWorkspaceChoice
+                    navigateNext = {
+                        if (emailConfirmationRequired) {
+                            navController.navigateToEmailConfirm()
+                        } else {
+                            navController.navigateToWorkspaceChoice()
+                        }
+                    }
                 )
             }
         }
@@ -96,13 +141,21 @@ fun NavGraphBuilder.authNavigation(
             ) {
                 ChooseWorkspace(
                     workspacesState = workspacesViewModel.workspacesState,
+                    createWorkspaceState = workspacesViewModel.createWorkspaceState,
                     onWorkspaceSelected = { workspace ->
                         workspacesViewModel.chooseWorkspace(
                             workspace.copy(selected = true),
                             sideEffect = toAppNavigation
                         )
                     },
+                    onCreateWorkspace = { name -> workspacesViewModel.createWorkspace(name) },
+                    onResetCreateWorkspaceState = workspacesViewModel::resetCreateWorkspaceState,
                     retry = workspacesViewModel::loadWorkspaces,
+                    onBackClick = {
+                        navController.navigate(Destinations.AUTH_MENU.id) {
+                            popUpTo(Destinations.CHOOSE_WORKSPACE.id) { inclusive = true }
+                        }
+                    }
                 )
             }
         }
@@ -124,7 +177,84 @@ fun NavGraphBuilder.authNavigation(
                     emailChanged = registerViewModel::emailChanged,
                     passwordChanged = registerViewModel::passwordChanged,
                     onRegisterRequest = registerViewModel::onRegister,
-                    onRegisterSuccess = navController::navigateToWorkspaceChoice,
+                    onRegisterSuccess = navController::navigateToEmailConfirm,
+                    navigateBack = navController::navigateUp
+                )
+            }
+        }
+
+        composable(Destinations.FORGOT_PASSWORD_EMAIL.id) {
+            val forgotPasswordViewModel = authInjection.provideForgotPasswordViewModel()
+            val colorTheme by colorThemeOption.collectAsState()
+
+            WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+                ForgotPasswordEmailScreen(
+                    modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+                    emailState = forgotPasswordViewModel.email,
+                    sendCodeState = forgotPasswordViewModel.sendCodeState,
+                    emailChanged = forgotPasswordViewModel::emailChanged,
+                    onSendCode = {
+                        forgotPasswordViewModel.onSendCode {
+                            navController.navigateToForgotPasswordCode()
+                        }
+                    },
+                    navigateBack = navController::navigateUp
+                )
+            }
+        }
+
+        composable(Destinations.FORGOT_PASSWORD_CODE.id) {
+            val forgotPasswordViewModel = authInjection.provideForgotPasswordViewModel()
+            val colorTheme by colorThemeOption.collectAsState()
+
+            LaunchedEffect(Unit) {
+                forgotPasswordViewModel.loadForgotPasswordData()
+            }
+
+            WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+                ForgotPasswordCodeScreen(
+                    modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+                    emailState = forgotPasswordViewModel.email,
+                    codeState = forgotPasswordViewModel.code,
+                    verifyCodeState = forgotPasswordViewModel.verifyCodeState,
+                    sendCodeState = forgotPasswordViewModel.sendCodeState,
+                    resendCooldownSeconds = forgotPasswordViewModel.resendCooldownSeconds,
+                    codeChanged = forgotPasswordViewModel::codeChanged,
+                    onVerifyCode = {
+                        forgotPasswordViewModel.onVerifyCode {
+                            navController.navigateToForgotPasswordNewPassword()
+                        }
+                    },
+                    onResendCode = forgotPasswordViewModel::onResendCode,
+                    navigateBack = navController::navigateUp
+                )
+            }
+        }
+
+        composable(Destinations.FORGOT_PASSWORD_NEW_PASSWORD.id) {
+            val forgotPasswordViewModel = authInjection.provideForgotPasswordViewModel()
+            val colorTheme by colorThemeOption.collectAsState()
+
+            LaunchedEffect(Unit) {
+                forgotPasswordViewModel.loadForgotPasswordData()
+            }
+
+            WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+                ForgotPasswordNewPasswordScreen(
+                    modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+                    passwordState = forgotPasswordViewModel.password,
+                    repeatPasswordState = forgotPasswordViewModel.repeatPassword,
+                    resetPasswordState = forgotPasswordViewModel.resetPasswordState,
+                    passwordChanged = forgotPasswordViewModel::passwordChanged,
+                    repeatPasswordChanged = forgotPasswordViewModel::repeatPasswordChanged,
+                    onResetPassword = {
+                        forgotPasswordViewModel.onResetPassword {
+                            // Navigate back to auth menu after successful password reset
+                            navController.navigate(Destinations.AUTH_MENU.id) {
+                                popUpTo(Destinations.AUTH_MENU_INNER_NAVIGATION.id) { inclusive = false }
+                            }
+                        }
+                    },
                     navigateBack = navController::navigateUp
                 )
             }
@@ -142,4 +272,20 @@ fun NavController.navigateToApp() {
 
 fun NavController.navigateToWorkspaceChoice() {
     navigate(Destinations.CHOOSE_WORKSPACE.id)
+}
+
+fun NavController.navigateToEmailConfirm() {
+    navigate(Destinations.EMAIL_CONFIRM.id)
+}
+
+fun NavController.navigateToForgotPasswordEmail() {
+    navigate(Destinations.FORGOT_PASSWORD_EMAIL.id)
+}
+
+fun NavController.navigateToForgotPasswordCode() {
+    navigate(Destinations.FORGOT_PASSWORD_CODE.id)
+}
+
+fun NavController.navigateToForgotPasswordNewPassword() {
+    navigate(Destinations.FORGOT_PASSWORD_NEW_PASSWORD.id)
 }

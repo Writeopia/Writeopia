@@ -123,6 +123,25 @@ import writeopia.application.core.resources.generated.resources.drawing
 import writeopia.application.core.resources.generated.resources.login_failed
 import writeopia.application.core.resources.generated.resources.new_drawing
 import writeopia.application.core.resources.generated.resources.registration_failed
+import writeopia.application.core.resources.generated.resources.confirm_your_email
+import writeopia.application.core.resources.generated.resources.we_sent_code_to
+import writeopia.application.core.resources.generated.resources.enter_code
+import writeopia.application.core.resources.generated.resources.resend_code
+import writeopia.application.core.resources.generated.resources.invalid_code
+import writeopia.application.core.resources.generated.resources.email_confirmed
+import writeopia.application.core.resources.generated.resources.code_sent
+import writeopia.application.core.resources.generated.resources.forgot_password
+import writeopia.application.core.resources.generated.resources.forgot_password_title
+import writeopia.application.core.resources.generated.resources.enter_your_email
+import writeopia.application.core.resources.generated.resources.send_reset_code
+import writeopia.application.core.resources.generated.resources.enter_reset_code
+import writeopia.application.core.resources.generated.resources.we_sent_reset_code_to
+import writeopia.application.core.resources.generated.resources.set_new_password
+import writeopia.application.core.resources.generated.resources.password_reset_success
+import writeopia.application.core.resources.generated.resources.verify
+import writeopia.application.core.resources.generated.resources.create_workspace
+import writeopia.application.core.resources.generated.resources.create
+import writeopia.application.core.resources.generated.resources.create_workspace_failed
 
 object WrStrings {
 
@@ -491,4 +510,61 @@ object WrStrings {
 
     @Composable
     fun registrationFailed() = stringResource(Res.string.registration_failed)
+
+    @Composable
+    fun confirmYourEmail() = stringResource(Res.string.confirm_your_email)
+
+    @Composable
+    fun weSentCodeTo(email: String) = stringResource(Res.string.we_sent_code_to, email)
+
+    @Composable
+    fun enterCode() = stringResource(Res.string.enter_code)
+
+    @Composable
+    fun resendCode() = stringResource(Res.string.resend_code)
+
+    @Composable
+    fun invalidCode() = stringResource(Res.string.invalid_code)
+
+    @Composable
+    fun emailConfirmed() = stringResource(Res.string.email_confirmed)
+
+    @Composable
+    fun codeSent() = stringResource(Res.string.code_sent)
+
+    @Composable
+    fun forgotPassword() = stringResource(Res.string.forgot_password)
+
+    @Composable
+    fun forgotPasswordTitle() = stringResource(Res.string.forgot_password_title)
+
+    @Composable
+    fun enterYourEmail() = stringResource(Res.string.enter_your_email)
+
+    @Composable
+    fun sendResetCode() = stringResource(Res.string.send_reset_code)
+
+    @Composable
+    fun enterResetCode() = stringResource(Res.string.enter_reset_code)
+
+    @Composable
+    fun weSentResetCodeTo(email: String) = stringResource(Res.string.we_sent_reset_code_to, email)
+
+    @Composable
+    fun setNewPassword() = stringResource(Res.string.set_new_password)
+
+    @Composable
+    fun passwordResetSuccess() = stringResource(Res.string.password_reset_success)
+
+    @Composable
+    fun verify() = stringResource(Res.string.verify)
+
+    @Composable
+    fun createWorkspace() = stringResource(Res.string.create_workspace)
+
+    @Composable
+    fun create() = stringResource(Res.string.create)
+
+    @Composable
+    fun createWorkspaceFailed() = stringResource(Res.string.create_workspace_failed)
 }

@@ -11,7 +11,8 @@ data class Workspace(
     val name: String,
     val lastSync: Instant,
     val selected: Boolean,
-    val role: String
+    val role: String,
+    val documentCount: Int = 0,
 ) {
     companion object {
         fun disconnectedWorkspace() = Workspace(
@@ -20,7 +21,8 @@ data class Workspace(
             name = "Offline workspace",
             lastSync = Instant.DISTANT_PAST,
             selected = true,
-            role = Role.ADMIN.value
+            role = Role.ADMIN.value,
+            documentCount = 0,
         )
     }
 }

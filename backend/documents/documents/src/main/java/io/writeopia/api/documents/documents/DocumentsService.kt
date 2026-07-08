@@ -295,4 +295,8 @@ object DocumentsService {
             setBody(SendDocumentsRequest(documents.map { it.toApi() }, workspaceId))
         }.status
             .isSuccess()
+
+    fun countDocumentsByWorkspaceId(workspaceId: String, writeopiaDb: WriteopiaDbBackend): Long {
+        return writeopiaDb.documentEntityQueries.countByWorkspaceId(workspaceId).executeAsOne()
+    }
 }

@@ -144,4 +144,23 @@
   <string name="new_drawing">New Drawing</string>
   <string name="login_failed">Login failed. Please check your credentials.</string>
   <string name="registration_failed">Registration failed. Please try again.</string>
+  <string name="confirm_your_email">Confirm Your Email</string>
+  <string name="we_sent_code_to">We sent a confirmation code to %s</string>
+  <string name="enter_code">Enter 6-digit code</string>
+  <string name="resend_code">Resend Code</string>
+  <string name="invalid_code">Invalid or expired code. Please try again.</string>
+  <string name="email_confirmed">Email confirmed successfully!</string>
+  <string name="code_sent">Confirmation code sent!</string>
+  <string name="forgot_password">Forgot password?</string>
+  <string name="forgot_password_title">Reset Your Password</string>
+  <string name="enter_your_email">Enter your email to receive a reset code</string>
+  <string name="send_reset_code">Send Reset Code</string>
+  <string name="enter_reset_code">Enter Reset Code</string>
+  <string name="we_sent_reset_code_to">We sent a password reset code to %s</string>
+  <string name="set_new_password">Set New Password</string>
+  <string name="password_reset_success">Password reset successfully!</string>
+  <string name="verify">Verify</string>
+  <string name="create_workspace">Create workspace</string>
+  <string name="create">Create</string>
+  <string name="create_workspace_failed">Failed to create workspace</string>
 </resources>

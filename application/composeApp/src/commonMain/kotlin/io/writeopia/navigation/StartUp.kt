@@ -45,6 +45,7 @@ fun NavGraphBuilder.startScreen(
                     when (loggedIn) {
                         LoginStatus.OFFLINE_NOT_CHOSEN -> Destinations.AUTH_MENU_INNER_NAVIGATION.id
                         LoginStatus.CHOOSE_WORKSPACE -> Destinations.CHOOSE_WORKSPACE.id
+                        LoginStatus.EMAIL_NOT_CONFIRMED -> Destinations.EMAIL_CONFIRM.id
                         LoginStatus.ONLINE, LoginStatus.OFFLINE_CHOSEN -> Destinations.MAIN_APP.id
                     }
                 )

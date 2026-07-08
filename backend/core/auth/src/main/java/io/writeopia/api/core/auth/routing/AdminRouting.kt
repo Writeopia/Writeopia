@@ -17,7 +17,7 @@ fun Route.adminProtectedRoute(
     writeopiaDb: WriteopiaDbBackend,
     debugMode: Boolean = false,
 ) {
-    route("/admin") {
+    route("api/auth/admin") {
         post<ManageUserRequest>("/enable-user") { request ->
             val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
             adminUserFn(apiKey, providedKey, debugMode) {

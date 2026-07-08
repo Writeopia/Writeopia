@@ -46,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import io.writeopia.auth.utils.arrowPadding
@@ -67,6 +68,7 @@ fun AuthMenuScreen(
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
     navigateToRegister: () -> Unit,
+    navigateToForgotPassword: () -> Unit,
     offlineUsage: () -> Unit,
     navigateUp: () -> Unit,
     navigateNext: () -> Unit,
@@ -96,6 +98,7 @@ fun AuthMenuScreen(
                 passwordChanged,
                 onLoginRequest,
                 navigateToRegister,
+                navigateToForgotPassword,
                 offlineUsage,
                 modifier,
             )
@@ -169,6 +172,7 @@ private fun AuthMenuContentScreen(
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
     navigateToRegister: () -> Unit,
+    navigateToForgotPassword: () -> Unit,
     offlineUsage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -266,7 +270,23 @@ private fun AuthMenuContentScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = WrStrings.forgotPassword(),
+                color = MaterialTheme.colorScheme.primary,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .clickable(onClick = navigateToForgotPassword)
+                    .padding(vertical = 8.dp),
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(
                 modifier = Modifier

@@ -11,11 +11,14 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.server.testing.testApplication
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
+import io.writeopia.api.documents.documents.repository.deleteDocumentById
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
 import io.writeopia.app.dto.WorkspaceUserApi
+import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
+import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.request.WorkspaceNameChangeRequest
 import io.writeopia.sdk.serialization.request.WorkspaceRoleChangeRequest
 import kotlin.random.Random
@@ -49,7 +52,7 @@ class WorkspacesTest {
         val email = Random.nextInt(10000).toString()
         val workspaceName1 = "workspace name"
 
-        val response = client.post("/api/register") {
+        val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -100,7 +103,7 @@ class WorkspacesTest {
         val email = Random.nextInt(10000).toString()
         val workspaceName1 = "workspace name"
 
-        val response = client.post("/api/register") {
+        val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
                 RegisterRequest(
@@ -147,5 +150,104 @@ class WorkspacesTest {
         }.body<WorkspaceUserApi>()
 
         assertEquals(newRole, getUserInWorkspace2.role)
+    }
+
+    @Test
+    fun `workspace should return document count`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val email = "doccount_${Random.nextInt(10000)}@test.com"
+        val workspaceName = "workspace_doccount_test"
+
+        // Register a user (which creates a workspace)
+        val registerResponse = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = workspaceName,
+                    name = "Test User",
+                    email = email,
+                    password = "testpassword123&",
+                )
+            )
+        }
+
+        assertEquals(HttpStatusCode.Created, registerResponse.status)
+
+        // Get the workspace
+        val getWorkspaceResponse = client.get("/api/workspace/user/email/$email") {
+            contentType(ContentType.Application.Json)
+        }
+
+        assertEquals(HttpStatusCode.OK, getWorkspaceResponse.status)
+        val workspaces = getWorkspaceResponse.body<List<WorkspaceApi>>()
+        assertTrue(workspaces.isNotEmpty())
+
+        val workspace = workspaces.first()
+
+        // Initially, workspace should have 0 documents
+        assertEquals(0, workspace.documentCount)
+
+        // Create some documents in the workspace
+        val document1 = DocumentApi(
+            id = "doccount_test_1_${Random.nextInt()}",
+            title = "Test Document 1",
+            workspaceId = workspace.id,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val document2 = DocumentApi(
+            id = "doccount_test_2_${Random.nextInt()}",
+            title = "Test Document 2",
+            workspaceId = workspace.id,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val document3 = DocumentApi(
+            id = "doccount_test_3_${Random.nextInt()}",
+            title = "Test Document 3",
+            workspaceId = workspace.id,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val createDocsResponse = client.post("/api/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document1, document2, document3), workspace.id))
+        }
+
+        assertEquals(HttpStatusCode.OK, createDocsResponse.status)
+
+        // Get the workspace again and verify document count
+        val getWorkspaceResponse2 = client.get("/api/workspace/user/email/$email") {
+            contentType(ContentType.Application.Json)
+        }
+
+        assertEquals(HttpStatusCode.OK, getWorkspaceResponse2.status)
+        val workspaces2 = getWorkspaceResponse2.body<List<WorkspaceApi>>()
+        val workspace2 = workspaces2.first()
+
+        // Now workspace should have 3 documents
+        assertEquals(3, workspace2.documentCount)
+
+        // Clean up
+        db.deleteDocumentById(document1.id)
+        db.deleteDocumentById(document2.id)
+        db.deleteDocumentById(document3.id)
+        db.deleteUserByEmail(email)
     }
 }
