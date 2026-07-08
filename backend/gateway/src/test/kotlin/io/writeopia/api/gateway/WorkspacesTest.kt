@@ -225,7 +225,7 @@ class WorkspacesTest {
             lastSyncedAt = 0L
         )
 
-        val createDocsResponse = client.post("/api/workspace/document") {
+        val createDocsResponse = client.post("/api/docs/workspace/document") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(listOf(document1, document2, document3), workspace.id))
         }
