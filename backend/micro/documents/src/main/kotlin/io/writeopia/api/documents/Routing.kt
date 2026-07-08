@@ -20,7 +20,7 @@ fun Application.configureRouting(
         }
 
         // Health check accessible via load balancer
-        get("/api/documents/health") {
+        get("/api/docs/health") {
             call.respondText("OK", status = HttpStatusCode.OK)
         }
 
