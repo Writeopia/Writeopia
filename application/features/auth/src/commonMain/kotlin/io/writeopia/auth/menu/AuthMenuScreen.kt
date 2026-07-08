@@ -78,7 +78,6 @@ fun AuthMenuScreen(
     val loginStateValue by loginState.collectAsState()
 
     LaunchedEffect(loginStateValue) {
-        println("showing snackbar")
         if (loginStateValue is ResultData.Error) {
             snackbarHostState.showSnackbar(loginErrorMessage)
         }

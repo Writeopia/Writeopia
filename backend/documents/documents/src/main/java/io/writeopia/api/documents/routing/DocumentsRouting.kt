@@ -52,7 +52,7 @@ fun Routing.documentsRoute(
     imageStorageService: ImageStorageService = GcpBucketImageStorageService
 ) {
     authenticate("auth-jwt", optional = debug) {
-        get("/api/workspace/{workspaceId}/document/{id}") {
+        get("/api/docs/workspace/{workspaceId}/document/{id}") {
             val userId = getUserId() ?: ""
             val id = call.pathParameters["id"] ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
@@ -76,7 +76,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        get("/api/workspace/{workspaceId}/document/title/{title}") {
+        get("/api/docs/workspace/{workspaceId}/document/title/{title}") {
             val userId = getUserId() ?: ""
             val title = call.pathParameters["title"] ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
@@ -100,7 +100,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        get("/api/workspace/{workspaceId}/document/parent/{parentId}") {
+        get("/api/docs/workspace/{workspaceId}/document/parent/{parentId}") {
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
@@ -124,7 +124,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        get("/api/workspace/{workspaceId}/document/parent/{id}") {
+        get("/api/docs/workspace/{workspaceId}/document/parent/{id}") {
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
             val id = call.pathParameters["id"]!!
@@ -148,7 +148,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        get("/api/workspace/{workspaceId}/document/search") {
+        get("/api/docs/workspace/{workspaceId}/document/search") {
             val userId = getUserId() ?: ""
             val query = call.queryParameters["q"]
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
@@ -173,7 +173,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        get("/api/workspace/{workspaceId}/folder/{id}") {
+        get("/api/docs/workspace/{workspaceId}/folder/{id}") {
             val id = call.pathParameters["id"]!!
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
@@ -197,7 +197,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        get("/api/workspace/{workspaceId}/folder/{folderId}/contents") {
+        get("/api/docs/workspace/{workspaceId}/folder/{folderId}/contents") {
             val folderId = call.pathParameters["folderId"]!!
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
@@ -225,7 +225,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<CreateFolderRequest>("/api/workspace/{workspaceId}/folder/{parentFolderId}/create") { request ->
+        post<CreateFolderRequest>("/api/docs/workspace/{workspaceId}/folder/{parentFolderId}/create") { request ->
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
             val parentFolderId = call.pathParameters["parentFolderId"] ?: ""
@@ -254,7 +254,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<SendDocumentsRequest>("/api/workspace/document") { request ->
+        post<SendDocumentsRequest>("/api/docs/workspace/document") { request ->
             val userId = getUserId() ?: ""
             val workspaceId = request.workspaceId
             val documentList = request.documents.map { document ->
@@ -303,7 +303,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<UpsertDocumentRequest>("/api/workspace/{workspaceId}/document/upsert") { request ->
+        post<UpsertDocumentRequest>("/api/docs/workspace/{workspaceId}/document/upsert") { request ->
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
@@ -335,7 +335,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<SendFoldersRequest>("/api/workspace/folder") { request ->
+        post<SendFoldersRequest>("/api/docs/workspace/folder") { request ->
             val userId = getUserId() ?: ""
             val workspaceId = request.workspaceId
 
@@ -380,7 +380,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<FolderDiffRequest>("/api/workspace/document/folder/diff") { folderDiff ->
+        post<FolderDiffRequest>("/api/docs/workspace/document/folder/diff") { folderDiff ->
             val userId = getUserId() ?: ""
             val workspaceId = folderDiff.workspaceId
 
@@ -414,7 +414,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<WorkspaceDiffRequest>("/api/workspace/diff") { workspaceDiff ->
+        post<WorkspaceDiffRequest>("/api/docs/workspace/diff") { workspaceDiff ->
             val userId = getUserId() ?: ""
             val workspaceId = workspaceDiff.workspaceId
 
@@ -450,7 +450,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post("/api/workspace/{workspaceId}/document/upload-image") {
+        post("/api/docs/workspace/{workspaceId}/document/upload-image") {
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
@@ -469,7 +469,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        delete("/api/workspace/{workspaceId}/folder/{folderId}") {
+        delete("/api/docs/workspace/{workspaceId}/folder/{folderId}") {
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
             val folderId = call.pathParameters["folderId"] ?: ""
@@ -503,7 +503,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<DeleteDocumentsRequest>("/api/workspace/{workspaceId}/document/delete") { request ->
+        post<DeleteDocumentsRequest>("/api/docs/workspace/{workspaceId}/document/delete") { request ->
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
@@ -534,7 +534,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<MoveFolderRequest>("/api/workspace/{workspaceId}/folder/{folderId}/move") { request ->
+        post<MoveFolderRequest>("/api/docs/workspace/{workspaceId}/folder/{folderId}/move") { request ->
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
             val folderId = call.pathParameters["folderId"] ?: ""
@@ -580,7 +580,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<CloneDocumentsRequest>("/api/workspace/{workspaceId}/document/clone") { request ->
+        post<CloneDocumentsRequest>("/api/docs/workspace/{workspaceId}/document/clone") { request ->
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
@@ -616,7 +616,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        post<FavoriteDocumentRequest>("/api/workspace/{workspaceId}/document/{documentId}/favorite") { request ->
+        post<FavoriteDocumentRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/favorite") { request ->
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
             val documentId = call.pathParameters["documentId"] ?: ""
@@ -654,7 +654,7 @@ fun Routing.documentsRoute(
     }
 
     authenticate("auth-jwt", optional = debug) {
-        get("/api/workspace/{workspaceId}/user/favorites") {
+        get("/api/docs/workspace/{workspaceId}/user/favorites") {
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
