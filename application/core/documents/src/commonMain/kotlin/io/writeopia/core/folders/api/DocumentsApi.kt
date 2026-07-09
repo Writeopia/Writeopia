@@ -41,7 +41,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         lastSync: Instant,
         token: String
     ): ResultData<List<Document>> {
-        val response = client.post("$baseUrl/api/workspace/document/folder/diff") {
+        val response = client.post("$baseUrl/api/docs/workspace/document/folder/diff") {
             contentType(ContentType.Application.Json)
             setBody(FolderDiffRequest(folderId, workspaceId, lastSync.toEpochMilliseconds()))
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -84,7 +84,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Unit> {
-        val response = client.post("$baseUrl/api/workspace/document") {
+        val response = client.post("$baseUrl/api/docs/workspace/document") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(documents.map { it.toApi() }, workspaceId))
             header(HttpHeaders.Authorization, "Bearer $token")
