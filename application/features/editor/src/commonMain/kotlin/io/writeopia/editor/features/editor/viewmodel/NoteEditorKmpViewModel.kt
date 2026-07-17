@@ -36,6 +36,7 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.persistence.core.sync.DocumentSyncManager
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -89,7 +90,8 @@ class NoteEditorKmpViewModel(
     private val copyManager: CopyManager,
     private val authRepository: AuthRepository,
     private val inDocumentSearchRepository: InDocumentSearchRepository,
-    private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null
+    private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
+    private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton()
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -459,7 +461,15 @@ class NoteEditorKmpViewModel(
         }
 
         writeopiaManager.newDocument(documentId, title, parentFolder = parentFolderId)
-        writeopiaManager.saveOnStoryChanges(OnUpdateDocumentTracker(documentRepository))
+
+        // Use global sync manager for syncing - continues even after ViewModel is cleared
+        documentSyncManager.registerForSync(
+            documentId = documentId,
+            documentEditionFlow = writeopiaManager.documentEditionState,
+            workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+            documentTracker = OnUpdateDocumentTracker(documentRepository)
+        )
+
         writeopiaManager.liveSync(sharedEditionManager)
     }
 
@@ -474,14 +484,19 @@ class NoteEditorKmpViewModel(
 
             if (document != null) {
                 writeopiaManager.loadDocument(document)
-                writeopiaManager.saveOnStoryChanges(
-                    OnUpdateDocumentTracker(
+
+                // Use global sync manager for syncing - continues even after ViewModel is cleared
+                documentSyncManager.registerForSync(
+                    documentId = documentId,
+                    documentEditionFlow = writeopiaManager.documentEditionState,
+                    workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                    documentTracker = OnUpdateDocumentTracker(
                         documentRepository,
                         onStoryStepUpdate = { storyStep, position ->
                             inDocumentSearchRepository.insertForFts(storyStep, documentId, position.toDouble())
                         },
-                        onDocumentUpdate = { document ->
-                            document.content
+                        onDocumentUpdate = { doc ->
+                            doc.content
                                 .forEach { (position, storyStep) ->
                                     inDocumentSearchRepository.insertForFts(
                                         storyStep,
