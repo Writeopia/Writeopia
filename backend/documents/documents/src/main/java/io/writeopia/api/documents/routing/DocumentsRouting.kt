@@ -389,12 +389,14 @@ fun Routing.documentsRoute(
                     println("loading folder diff")
                     println("user id: ${getUserId()}")
                     println("last sync: ${Instant.fromEpochMilliseconds(folderDiff.lastFolderSync)}")
+                    println("orderBy: ${folderDiff.orderBy}")
 
                     val documents =
                         writeopiaDb.documentsDiffByFolder(
                             folderDiff.folderId,
                             folderDiff.workspaceId,
-                            folderDiff.lastFolderSync
+                            folderDiff.lastFolderSync,
+                            folderDiff.orderBy
                         )
 
                     println("returning ${documents.count()} documents")
@@ -423,10 +425,12 @@ fun Routing.documentsRoute(
                     println("loading workspace diff")
                     println("user id: ${getUserId()}")
                     println("last sync: ${Instant.fromEpochMilliseconds(workspaceDiff.lastSync)}")
+                    println("orderBy: ${workspaceDiff.orderBy}")
 
                     val documents = writeopiaDb.documentsDiffByWorkspace(
                         workspaceDiff.workspaceId,
-                        workspaceDiff.lastSync
+                        workspaceDiff.lastSync,
+                        workspaceDiff.orderBy
                     )
                     val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceDiff.workspaceId)
 
