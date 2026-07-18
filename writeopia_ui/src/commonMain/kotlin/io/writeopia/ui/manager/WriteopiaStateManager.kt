@@ -244,8 +244,21 @@ class WriteopiaStateManager(
             parseDocument(info, state)
         }.stateIn(coroutineScope, SharingStarted.Lazily, null)
 
-    private val documentEditionState: Flow<Pair<StoryState, DocumentInfo>> =
+    /**
+     * Flow that emits the current document edition state, combining story state and document info.
+     * This can be used by external sync managers to track document changes.
+     */
+    val documentEditionState: Flow<Pair<StoryState, DocumentInfo>> =
         combine(currentStory, _documentInfo, ::Pair)
+
+    /**
+     * Flow that emits the current workspace ID.
+     * This can be used by external sync managers along with [documentEditionState].
+     */
+    val workspaceIdFlow: Flow<String> =
+        userRepository?.listenForWorkspace()?.map { workspace ->
+            workspace.id
+        } ?: MutableStateFlow(Workspace.disconnectedWorkspace().id)
 
     val toDraw: Flow<DrawState> =
         combine(
