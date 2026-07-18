@@ -107,9 +107,7 @@ class DocumentSyncManager(
          * Gets the singleton instance of DocumentSyncManager.
          * Creates one if it doesn't exist.
          */
-        fun singleton(): DocumentSyncManager {
-            return instance ?: DocumentSyncManager().also { instance = it }
-        }
+        fun singleton(): DocumentSyncManager = instance ?: DocumentSyncManager().also { instance = it }
 
         /**
          * Initializes the singleton with a custom instance.
