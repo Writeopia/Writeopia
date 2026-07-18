@@ -2,6 +2,8 @@ package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.extensions.sortWithOrderBy
+import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sql.WriteopiaDbBackend
 
 private var documentSqlDao: DocumentSqlBeDao? = null
@@ -31,15 +33,21 @@ suspend fun WriteopiaDbBackend.saveFolder(vararg folders: Folder) {
 suspend fun WriteopiaDbBackend.documentsDiffByFolder(
     folderId: String,
     workspaceId: String,
-    lastSync: Long
+    lastSync: Long,
+    orderBy: String = "last_updated_at"
 ): List<Document> =
-    getDocumentDaoFn().loadDocumentsWithContentFolderIdAfterTime(folderId, workspaceId, lastSync)
+    getDocumentDaoFn()
+        .loadDocumentsWithContentFolderIdAfterTime(folderId, workspaceId, lastSync)
+        .sortWithOrderBy(OrderBy.fromString(orderBy))
 
 suspend fun WriteopiaDbBackend.documentsDiffByWorkspace(
     workspaceId: String,
-    lastSync: Long
+    lastSync: Long,
+    orderBy: String = "last_updated_at"
 ): List<Document> =
-    getDocumentDaoFn().loadDocumentsWithContentByWorkspaceIdAfterTime(workspaceId, lastSync)
+    getDocumentDaoFn()
+        .loadDocumentsWithContentByWorkspaceIdAfterTime(workspaceId, lastSync)
+        .sortWithOrderBy(OrderBy.fromString(orderBy))
 
 suspend fun WriteopiaDbBackend.allFoldersByWorkspaceId(workspaceId: String): List<Folder> {
     return getDocumentDaoFn().loadAllFoldersByWorkspaceId(workspaceId)
