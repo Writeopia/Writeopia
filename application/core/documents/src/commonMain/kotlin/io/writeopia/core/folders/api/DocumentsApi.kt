@@ -247,4 +247,21 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
             ResultData.Error()
         }
     }
+
+    suspend fun getDocumentById(
+        documentId: String,
+        workspaceId: String,
+        token: String
+    ): ResultData<Document> {
+        val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/document/$documentId") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<DocumentApi>().toModel())
+        } else {
+            println("error getting document by id: $response")
+            ResultData.Error()
+        }
+    }
 }
