@@ -58,33 +58,21 @@ class DocumentMerger {
         val allStepIds = localById.keys + backendById.keys
         val mergedSteps = mutableListOf<Pair<Double, StoryStep>>()
 
-        println("DocumentMerger: Merging content - local steps=${localById.size}, backend steps=${backendById.size}, total unique IDs=${allStepIds.size}")
-
         for (stepId in allStepIds) {
             val localEntry = localById[stepId]
             val backendEntry = backendById[stepId]
 
             val (position, step) = when {
-                localEntry == null && backendEntry != null -> {
-                    println("DocumentMerger: Step $stepId only in backend, using backend")
-                    backendEntry
-                }
-                localEntry != null && backendEntry == null -> {
-                    println("DocumentMerger: Step $stepId only in local, using local")
-                    localEntry
-                }
+                localEntry == null && backendEntry != null -> backendEntry
+                localEntry != null && backendEntry == null -> localEntry
                 localEntry != null && backendEntry != null -> {
                     // Both exist - compare lastUpdatedAt, local wins on tie or null
                     val localTimestamp = localEntry.second.lastUpdatedAt ?: Long.MAX_VALUE
                     val backendTimestamp = backendEntry.second.lastUpdatedAt ?: 0L
 
-                    println("DocumentMerger: Step $stepId in both - localTimestamp=$localTimestamp, backendTimestamp=$backendTimestamp")
-
                     if (localTimestamp >= backendTimestamp) {
-                        println("DocumentMerger: Using local (newer or tie)")
                         localEntry
                     } else {
-                        println("DocumentMerger: Using backend (newer)")
                         backendEntry
                     }
                 }

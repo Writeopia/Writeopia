@@ -482,11 +482,8 @@ class NoteEditorKmpViewModel(
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
             val isDisconnected = workspace.id == Workspace.disconnectedWorkspace().id
 
-            println("NoteEditorKmpViewModel: loadDocument called, documentId=$documentId, isDisconnected=$isDisconnected")
-
             // Step 1: Load from local database immediately (fast path)
             val localDocument = documentRepository.loadDocumentById(documentId, workspace.id)
-            println("NoteEditorKmpViewModel: Local document loaded, exists=${localDocument != null}")
 
             if (localDocument != null) {
                 writeopiaManager.loadDocument(localDocument)
@@ -495,12 +492,10 @@ class NoteEditorKmpViewModel(
 
             // Step 2: If online, fetch from backend in background and merge
             if (!isDisconnected && documentLoadUseCase != null) {
-                println("NoteEditorKmpViewModel: Calling fetchAndMergeFromBackend")
                 documentLoadUseCase.fetchAndMergeFromBackend(
                     documentId = documentId,
                     workspaceId = workspace.id,
                     onMergeComplete = { mergedDocument ->
-                        println("NoteEditorKmpViewModel: onMergeComplete called, reloading document")
                         // Reload the document in the manager with merged content
                         writeopiaManager.loadDocument(mergedDocument)
 
@@ -510,8 +505,6 @@ class NoteEditorKmpViewModel(
                         }
                     }
                 )
-            } else {
-                println("NoteEditorKmpViewModel: Skipping backend fetch, isDisconnected=$isDisconnected, documentLoadUseCase=${documentLoadUseCase != null}")
             }
         }
     }
