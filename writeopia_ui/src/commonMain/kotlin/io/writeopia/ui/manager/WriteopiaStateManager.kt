@@ -4,6 +4,7 @@ package io.writeopia.ui.manager
 
 import io.writeopia.sdk.manager.DocumentTracker
 import io.writeopia.sdk.manager.InTextMarkdownHandler
+import io.writeopia.sdk.manager.StoryStepSyncTracker
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.manager.fixMove
 import io.writeopia.sdk.model.action.Action
@@ -360,6 +361,22 @@ class WriteopiaStateManager(
                 userRepository?.listenForWorkspace()?.map { workspace ->
                     workspace.id
                 } ?: MutableStateFlow(Workspace.disconnectedWorkspace().id)
+            )
+        }
+    }
+
+    /**
+     * Syncs StorySteps with the backend using the provided [StoryStepSyncTracker].
+     * This method starts a coroutine that listens to document changes and syncs
+     * them with the backend using a buffered approach.
+     *
+     * @param syncTracker The tracker responsible for syncing StorySteps with the backend.
+     */
+    fun syncStoryStepsWithBackend(syncTracker: StoryStepSyncTracker) {
+        coroutineScope.launch(dispatcher) {
+            syncTracker.syncStorySteps(
+                documentEditionFlow = documentEditionState,
+                workspaceIdFlow = workspaceIdFlow
             )
         }
     }
