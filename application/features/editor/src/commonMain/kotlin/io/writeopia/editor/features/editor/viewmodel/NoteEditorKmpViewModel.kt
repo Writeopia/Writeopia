@@ -493,7 +493,7 @@ class NoteEditorKmpViewModel(
                     documentTracker = OnUpdateDocumentTracker(
                         documentRepository,
                         onStoryStepUpdate = { storyStep, position ->
-                            inDocumentSearchRepository.insertForFts(storyStep, documentId, position.toDouble())
+                            inDocumentSearchRepository.insertForFts(storyStep, documentId, position)
                         },
                         onDocumentUpdate = { doc ->
                             doc.content
@@ -501,7 +501,7 @@ class NoteEditorKmpViewModel(
                                     inDocumentSearchRepository.insertForFts(
                                         storyStep,
                                         documentId,
-                                        position.toDouble()
+                                        position
                                     )
                                 }
                         }

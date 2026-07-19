@@ -56,7 +56,12 @@ data class StoryStep(
      * intermediate positions when inserting new content. It starts as null and is populated
      * when the document is loaded or created.
      */
-    val previousPosition: Double? = null
+    val previousPosition: Double? = null,
+    /**
+     * The timestamp when this StoryStep was last updated. Used for conflict resolution during
+     * backend sync. This is in epoch milliseconds.
+     */
+    val lastUpdatedAt: Long? = null
 ) {
 
     val key: Int = localId.hashCode()

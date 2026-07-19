@@ -4,6 +4,7 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.extensions.sortWithOrderBy
 import io.writeopia.sdk.models.sorting.OrderBy
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sql.WriteopiaDbBackend
 
 private var documentSqlDao: DocumentSqlBeDao? = null
@@ -114,4 +115,49 @@ fun WriteopiaDbBackend.isUserFavorite(userId: String, documentId: String): Boole
 
 fun WriteopiaDbBackend.getUserFavoriteDocumentIds(userId: String, workspaceId: String): List<String> {
     return getDocumentDaoFn().getUserFavoriteDocumentIds(userId, workspaceId)
+}
+
+// StoryStep Sync Operations
+
+/**
+ * Upserts a StoryStep with a specific timestamp for conflict resolution.
+ */
+fun WriteopiaDbBackend.upsertStoryStep(
+    storyStep: StoryStep,
+    position: Double,
+    documentId: String,
+    lastUpdatedAt: Long
+) {
+    getDocumentDaoFn().upsertStoryStep(storyStep, position, documentId, lastUpdatedAt)
+}
+
+/**
+ * Gets StorySteps for a document that were updated after the given timestamp.
+ */
+fun WriteopiaDbBackend.getStoryStepsAfterTime(
+    documentId: String,
+    afterTime: Long
+): List<Pair<Double, StoryStep>> {
+    return getDocumentDaoFn().getStoryStepsAfterTime(documentId, afterTime)
+}
+
+/**
+ * Gets a single StoryStep by its ID.
+ */
+fun WriteopiaDbBackend.getStoryStepById(storyStepId: String): Pair<Double, StoryStep>? {
+    return getDocumentDaoFn().getStoryStepById(storyStepId)
+}
+
+/**
+ * Deletes a StoryStep by its ID.
+ */
+fun WriteopiaDbBackend.deleteStoryStepById(storyStepId: String) {
+    getDocumentDaoFn().deleteStoryStepById(storyStepId)
+}
+
+/**
+ * Deletes multiple StorySteps by their IDs.
+ */
+fun WriteopiaDbBackend.deleteStoryStepsByIds(storyStepIds: List<String>) {
+    getDocumentDaoFn().deleteStoryStepsByIds(storyStepIds)
 }
