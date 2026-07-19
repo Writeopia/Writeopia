@@ -5,8 +5,10 @@ import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.repository.folder.DocumentLoadUseCase
 import io.writeopia.core.folders.sync.ConfigFileWatcher
 import io.writeopia.core.folders.sync.DocumentConflictHandler
+import io.writeopia.core.folders.sync.DocumentMerger
 import io.writeopia.core.folders.sync.ImageSync
 import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.core.folders.sync.createConfigFileWatcher
@@ -50,10 +52,7 @@ class WorkspaceInjection private constructor(
             folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
             documentRepository = documentRepo,
             authRepository = authCoreInjection.provideAuthRepository(),
-            documentsApi = DocumentsApi(
-                appConnectionInjection.provideHttpClient(),
-                connectionInjector.baseUrl()
-            ),
+            documentsApi = provideDocumentsApi(),
             documentConflictHandler = DocumentConflictHandler(
                 documentRepository = documentRepo,
                 folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
@@ -66,6 +65,20 @@ class WorkspaceInjection private constructor(
             )
         )
     }
+
+    private fun provideDocumentsApi(): DocumentsApi = DocumentsApi(
+        appConnectionInjection.provideHttpClient(),
+        connectionInjector.baseUrl()
+    )
+
+    private fun provideDocumentMerger(): DocumentMerger = DocumentMerger()
+
+    fun provideDocumentLoadUseCase(): DocumentLoadUseCase = DocumentLoadUseCase(
+        documentRepository = repositoryInjection.provideDocumentRepository(),
+        documentsApi = provideDocumentsApi(),
+        documentMerger = provideDocumentMerger(),
+        authRepository = authCoreInjection.provideAuthRepository()
+    )
 
     companion object {
         private var instance: WorkspaceInjection? = null

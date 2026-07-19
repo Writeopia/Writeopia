@@ -11,6 +11,7 @@ import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
+import io.writeopia.core.folders.repository.folder.DocumentLoadUseCase
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toFolderUi
 import io.writeopia.core.folders.repository.InDocumentSearchRepository
@@ -91,7 +92,8 @@ class NoteEditorKmpViewModel(
     private val authRepository: AuthRepository,
     private val inDocumentSearchRepository: InDocumentSearchRepository,
     private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
-    private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton()
+    private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton(),
+    private val documentLoadUseCase: DocumentLoadUseCase? = null
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -478,37 +480,58 @@ class NoteEditorKmpViewModel(
 
         viewModelScope.launch(Dispatchers.Default) {
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            val isDisconnected = workspace.id == Workspace.disconnectedWorkspace().id
 
-            val document =
-                documentRepository.loadDocumentById(documentId, workspace.id)
+            // Step 1: Load from local database immediately (fast path)
+            val localDocument = documentRepository.loadDocumentById(documentId, workspace.id)
 
-            if (document != null) {
-                writeopiaManager.loadDocument(document)
+            if (localDocument != null) {
+                writeopiaManager.loadDocument(localDocument)
+                registerForSync(documentId)
+            }
 
-                // Use global sync manager for syncing - continues even after ViewModel is cleared
-                documentSyncManager.registerForSync(
+            // Step 2: If online, fetch from backend in background and merge
+            if (!isDisconnected && documentLoadUseCase != null) {
+                documentLoadUseCase.fetchAndMergeFromBackend(
                     documentId = documentId,
-                    documentEditionFlow = writeopiaManager.documentEditionState,
-                    workspaceIdFlow = writeopiaManager.workspaceIdFlow,
-                    documentTracker = OnUpdateDocumentTracker(
-                        documentRepository,
-                        onStoryStepUpdate = { storyStep, position ->
-                            inDocumentSearchRepository.insertForFts(storyStep, documentId, position)
-                        },
-                        onDocumentUpdate = { doc ->
-                            doc.content
-                                .forEach { (position, storyStep) ->
-                                    inDocumentSearchRepository.insertForFts(
-                                        storyStep,
-                                        documentId,
-                                        position
-                                    )
-                                }
+                    workspaceId = workspace.id,
+                    onMergeComplete = { mergedDocument ->
+                        // Reload the document in the manager with merged content
+                        writeopiaManager.loadDocument(mergedDocument)
+
+                        // Register for sync if this is the first load (backend-only document)
+                        if (localDocument == null) {
+                            registerForSync(documentId)
                         }
-                    )
+                    }
                 )
             }
         }
+    }
+
+    private fun registerForSync(documentId: String) {
+        // Use global sync manager for syncing - continues even after ViewModel is cleared
+        documentSyncManager.registerForSync(
+            documentId = documentId,
+            documentEditionFlow = writeopiaManager.documentEditionState,
+            workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+            documentTracker = OnUpdateDocumentTracker(
+                documentRepository,
+                onStoryStepUpdate = { storyStep, position ->
+                    inDocumentSearchRepository.insertForFts(storyStep, documentId, position)
+                },
+                onDocumentUpdate = { doc ->
+                    doc.content
+                        .forEach { (position, storyStep) ->
+                            inDocumentSearchRepository.insertForFts(
+                                storyStep,
+                                documentId,
+                                position
+                            )
+                        }
+                }
+            )
+        )
     }
 
     override fun onHeaderColorSelection(color: Int?) {

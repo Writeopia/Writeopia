@@ -79,7 +79,7 @@ object DocumentsService {
         id: String,
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
-    ): Document? = writeopiaDb.getDocumentById(id, workspaceId)
+    ): Document? = writeopiaDb.getDocumentWithContentById(id, workspaceId)
 
     suspend fun getDocumentByTitle(
         title: String,
