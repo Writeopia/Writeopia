@@ -20,12 +20,11 @@ class StoryStepSyncApiImpl(
     private val baseUrl: String
 ) : StoryStepSyncApi {
 
-    override suspend fun syncStorySteps(request: StoryStepSyncRequest): StoryStepSyncResponse {
-        return client.post(
+    override suspend fun syncStorySteps(request: StoryStepSyncRequest): StoryStepSyncResponse =
+        client.post(
             "$baseUrl/api/docs/workspace/${request.workspaceId}/document/${request.documentId}/steps/sync"
         ) {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()
-    }
 }

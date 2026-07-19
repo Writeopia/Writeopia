@@ -14,10 +14,12 @@ import io.writeopia.sdk.serialization.request.StoryStepChangeApi
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -51,21 +53,21 @@ class OnUpdateStoryStepSyncTracker(
         }
 
         // Collect changes and add to buffer
-        kotlinx.coroutines.coroutineScope {
+        coroutineScope {
             // Launch a coroutine to process document changes
-            kotlinx.coroutines.launch {
-                combinedFlow.collect { (storyState, documentInfo, workspaceId) ->
+            launch {
+                combinedFlow.collect { (storyState, documentInfo, _) ->
                     processLastEdit(storyState.lastEdit, documentInfo.id)
                 }
             }
 
             // Launch a coroutine to handle sync triggers
-            kotlinx.coroutines.launch {
+            launch {
                 syncBuffer.syncTrigger
                     .debounce(syncBuffer.syncInterval)
                     .collect {
                         if (syncBuffer.hasPendingChanges()) {
-                            val (storyState, documentInfo) = documentEditionFlow.first()
+                            val (_, documentInfo) = documentEditionFlow.first()
                             val workspaceId = workspaceIdFlow.first()
                             performSync(documentInfo.id, workspaceId)
                         }
