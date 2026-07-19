@@ -25,14 +25,13 @@ class DocumentMerger {
      * @param backendDocument The document from the backend (can be null)
      * @return The merged document, or null if both inputs are null
      */
-    fun merge(localDocument: Document?, backendDocument: Document?): Document? {
-        return when {
+    fun merge(localDocument: Document?, backendDocument: Document?): Document? =
+        when {
             localDocument == null && backendDocument == null -> null
             localDocument == null -> backendDocument
             backendDocument == null -> localDocument
             else -> mergeDocuments(localDocument, backendDocument)
         }
-    }
 
     private fun mergeDocuments(localDocument: Document, backendDocument: Document): Document {
         val mergedContent = mergeContent(localDocument.content, backendDocument.content)
