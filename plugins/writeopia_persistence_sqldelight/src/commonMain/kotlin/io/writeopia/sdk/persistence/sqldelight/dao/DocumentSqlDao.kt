@@ -191,7 +191,7 @@ class DocumentSqlDao(
 
                                 DocumentLink(documentId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at
+                            lastUpdatedAt = innerContent.last_updated_at_
                         )
 
                         innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
@@ -262,7 +262,7 @@ class DocumentSqlDao(
 
                                 DocumentLink(documentId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at
+                            lastUpdatedAt = innerContent.last_updated_at_
                         )
 
                         innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
@@ -336,7 +336,7 @@ class DocumentSqlDao(
 
                                 DocumentLink(documentId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at
+                            lastUpdatedAt = innerContent.last_updated_at_
                         )
 
                         innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
@@ -410,7 +410,7 @@ class DocumentSqlDao(
 
                                 DocumentLink(documentId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at
+                            lastUpdatedAt = innerContent.last_updated_at_
                         )
 
                         innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
@@ -482,7 +482,7 @@ class DocumentSqlDao(
 
                                 DocumentLink(documentId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at
+                            lastUpdatedAt = innerContent.last_updated_at_
                         )
 
                         innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
@@ -561,7 +561,7 @@ class DocumentSqlDao(
 
                                 DocumentLink(documentId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at
+                            lastUpdatedAt = innerContent.last_updated_at_
                         )
 
                         innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
@@ -630,7 +630,7 @@ class DocumentSqlDao(
 
                                 DocumentLink(documentId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at
+                            lastUpdatedAt = innerContent.last_updated_at_
                         )
 
                         innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
@@ -702,7 +702,7 @@ class DocumentSqlDao(
 
                                 DocumentLink(documentId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at
+                            lastUpdatedAt = innerContent.last_updated_at_
                         )
 
                         innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
@@ -771,7 +771,7 @@ class DocumentSqlDao(
 
                                 DocumentLink(documentId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at
+                            lastUpdatedAt = innerContent.last_updated_at_
                         )
 
                         innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
