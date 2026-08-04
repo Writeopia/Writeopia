@@ -496,8 +496,8 @@ class NoteEditorKmpViewModel(
                     documentId = documentId,
                     workspaceId = workspace.id,
                     onMergeComplete = { mergedDocument ->
-                        // Reload the document in the manager with merged content
-                        writeopiaManager.loadDocument(mergedDocument)
+                        // Update the document in the manager with merged content
+                        writeopiaManager.updateDocument(mergedDocument)
 
                         // Register for sync if this is the first load (backend-only document)
                         if (localDocument == null) {
