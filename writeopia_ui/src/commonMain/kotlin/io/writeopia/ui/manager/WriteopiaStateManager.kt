@@ -451,6 +451,22 @@ class WriteopiaStateManager(
     }
 
     /**
+     * Updates a document that was already loaded. This should be used when the document
+     * content has been updated (e.g., from a backend sync) and needs to be refreshed in the UI.
+     *
+     * @param document [Document] the updated document
+     */
+    fun updateDocument(document: Document) {
+        val stories = document.content
+        val normalized = stepsNormalizer(stories.toEditState())
+        val withNextPositions = NextPositionCalculator.calculate(normalized)
+
+        _currentStory.value = StoryState(withNextPositions, LastEdit.Nothing)
+        _documentInfo.value = document.info()
+        backStackManager.addState(_currentStory.value)
+    }
+
+    /**
      * Merges two [StoryStep] into a group. This can be used to merge two images into a message
      * group or any other kind of group.
      *
