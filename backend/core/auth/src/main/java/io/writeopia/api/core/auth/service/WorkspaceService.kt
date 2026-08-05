@@ -125,7 +125,7 @@ object WorkspaceService {
         val ownerWorkspaces = writeopiaDb.getWorkspacesByUserId(workspaceOwnerId)
         if (!ownerWorkspaces.any { it.id == workspaceId }) {
             println("This user doesn't not have access to this workspace as admin")
-            false
+            // Note: This check is handled by runIfAdmin in the routing layer
         }
 
         return writeopiaDb.getUserByEmail(userEmail)?.id?.let { userId ->

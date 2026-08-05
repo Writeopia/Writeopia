@@ -140,7 +140,7 @@ fun WorkspaceUsersScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
-                .padding(16.dp),
+                .padding(bottom = 80.dp, end = 16.dp),
             containerColor = MaterialTheme.colorScheme.primary
         ) {
             Icon(

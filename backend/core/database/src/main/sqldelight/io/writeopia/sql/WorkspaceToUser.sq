@@ -38,7 +38,7 @@ ORDER BY user_entity.name ASC
 LIMIT ? OFFSET ?;
 
 countUsersInWorkspace:
-SELECT COUNT(*) AS total_count
+SELECT COUNT(*)
 FROM workspace_to_user
 WHERE workspace_id = ?;
 

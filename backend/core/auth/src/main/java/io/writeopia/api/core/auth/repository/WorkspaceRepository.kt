@@ -126,7 +126,6 @@ internal fun WriteopiaDbBackend.countUsersInWorkspace(workspaceId: String): Long
     this.workspaceToUserQueries
         .countUsersInWorkspace(workspaceId)
         .executeAsOne()
-        .total_count
 
 internal fun WriteopiaDbBackend.getUserInWorkspace(
     workspaceId: String,
