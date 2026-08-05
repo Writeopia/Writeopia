@@ -13,11 +13,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +46,8 @@ fun SettingsAccountScreen(
     logout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier.fillMaxSize()
             .padding(16.dp)
@@ -82,10 +90,39 @@ fun SettingsAccountScreen(
             AccountMenuItem(
                 title = WrStrings.logout(),
                 icon = WrIcons.backArrowDesktop,
-                onClick = logout,
-                isDestructive = true
+                onClick = { showLogoutDialog = true }
             )
         }
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = {
+                Text(text = WrStrings.logout())
+            },
+            text = {
+                Text(text = WrStrings.areYouSure())
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        logout()
+                    }
+                ) {
+                    Text(
+                        text = WrStrings.logout(),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text(text = WrStrings.cancel())
+                }
+            }
+        )
     }
 }
 
@@ -93,26 +130,13 @@ fun SettingsAccountScreen(
 private fun AccountMenuItem(
     title: String,
     icon: ImageVector,
-    onClick: () -> Unit,
-    isDestructive: Boolean = false
+    onClick: () -> Unit
 ) {
-    val backgroundColor = if (isDestructive) {
-        MaterialTheme.colorScheme.error
-    } else {
-        WriteopiaTheme.colorScheme.optionsSelector
-    }
-
-    val contentColor = if (isDestructive) {
-        MaterialTheme.colorScheme.onError
-    } else {
-        MaterialTheme.colorScheme.onBackground
-    }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
-            .background(backgroundColor)
+            .background(WriteopiaTheme.colorScheme.optionsSelector)
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -120,7 +144,7 @@ private fun AccountMenuItem(
         Icon(
             imageVector = icon,
             contentDescription = title,
-            tint = contentColor,
+            tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.size(24.dp)
         )
 
@@ -129,14 +153,14 @@ private fun AccountMenuItem(
         Text(
             text = title,
             style = MaterialTheme.typography.bodyLarge,
-            color = contentColor,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.weight(1f)
         )
 
         Icon(
             imageVector = WrIcons.arrowRight,
             contentDescription = null,
-            tint = contentColor.copy(alpha = 0.7f),
+            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
             modifier = Modifier.size(20.dp)
         )
     }
