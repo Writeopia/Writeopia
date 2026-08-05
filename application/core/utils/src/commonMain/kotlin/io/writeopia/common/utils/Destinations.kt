@@ -12,6 +12,7 @@ enum class Destinations(val id: String, val root: String) {
     EDIT_FOLDER("edit_folder", "Home"),
     ACCOUNT("account", "Home"),
     SETTINGS_TEAMS("settings_teams", "Home"),
+    SETTINGS_WORKSPACE_USERS("settings_workspace_users", "Home"),
     SETTINGS_APPEARANCE("settings_appearance", "Home"),
     SETTINGS_ACCOUNT("settings_account", "Home"),
 

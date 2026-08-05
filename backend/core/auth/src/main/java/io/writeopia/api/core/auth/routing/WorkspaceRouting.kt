@@ -14,6 +14,7 @@ import io.writeopia.api.core.auth.repository.changeWorkspaceRoleForUser
 import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.runIfAdmin
+import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
 import io.writeopia.app.mapping.toApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.app.requests.CreateWorkspaceRequest
@@ -136,6 +137,32 @@ fun Routing.workspaceRoute(
                 } else {
                     call.respond(HttpStatusCode.NotFound, ServerResponse("No users found for workspace"))
                 }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debugMode) {
+        get("/api/workspace/{workspaceId}/users/paginated") {
+            val currentUserId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"]
+                ?: throw IllegalArgumentException("Workspace id is required")
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
+
+            runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
+                val paginatedUsers = WorkspaceService
+                    .getUsersInWorkspacePaginated(workspaceId, page, pageSize, writeopiaDb)
+
+                val response = PaginatedWorkspaceUsersResponse(
+                    users = paginatedUsers.users.map { it.toApi() },
+                    page = paginatedUsers.page,
+                    pageSize = paginatedUsers.pageSize,
+                    totalCount = paginatedUsers.totalCount,
+                    totalPages = paginatedUsers.totalPages,
+                    hasNextPage = paginatedUsers.hasNextPage
+                )
+
+                call.respond(HttpStatusCode.OK, response)
             }
         }
     }

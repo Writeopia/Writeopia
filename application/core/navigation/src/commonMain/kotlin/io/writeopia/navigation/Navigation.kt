@@ -12,6 +12,7 @@ import io.writeopia.account.navigation.accountMenuNavigation
 import io.writeopia.account.navigation.navigateToSettingsAccount
 import io.writeopia.account.navigation.navigateToSettingsAppearance
 import io.writeopia.account.navigation.navigateToSettingsTeams
+import io.writeopia.account.navigation.navigateToWorkspaceUsers
 import io.writeopia.common.utils.Destinations
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.documents.graph.navigation.documentsGraphNavigation
@@ -126,6 +127,7 @@ fun Navigation(
                 navigateToSettingsTeams = navController::navigateToSettingsTeams,
                 navigateToSettingsAppearance = navController::navigateToSettingsAppearance,
                 navigateToSettingsAccount = navController::navigateToSettingsAccount,
+                navigateToWorkspaceUsers = navController::navigateToWorkspaceUsers,
                 selectedColorTheme = selectedColorTheme,
                 selectedAccentColor = selectedAccentColor,
                 selectColorTheme = selectColorTheme,

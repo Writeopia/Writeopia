@@ -27,7 +27,7 @@ class WorkspaceInjection private constructor(
         AppConfigurationInjector.singleton(),
 ) {
 
-    private fun provideWorkspaceApi() =
+    fun provideWorkspaceApi() =
         WorkspaceApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
 
     private var configFileWatcher: ConfigFileWatcher? = null
