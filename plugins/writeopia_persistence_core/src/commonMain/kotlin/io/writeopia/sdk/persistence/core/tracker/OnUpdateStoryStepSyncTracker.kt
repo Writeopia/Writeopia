@@ -28,17 +28,22 @@ import kotlin.time.ExperimentalTime
  * using a buffered approach to avoid excessive network requests.
  *
  * @param syncBuffer The buffer for collecting and batching changes.
- * @param syncApi A function that performs the actual sync with the backend.
+ * @param syncApi A function that performs the actual sync with the backend (request, token) -> response.
+ * @param tokenProvider A function that provides the current authentication token.
  * @param onServerUpdate Callback invoked when server updates should be applied locally.
+ * @param maxRetries Maximum number of consecutive sync failures before discarding changes.
  */
 @OptIn(FlowPreview::class)
 class OnUpdateStoryStepSyncTracker(
     private val syncBuffer: StoryStepSyncBuffer = StoryStepSyncBuffer(),
-    private val syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse,
-    private val onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> }
+    private val syncApi: suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse,
+    private val tokenProvider: suspend () -> String?,
+    private val onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> },
+    private val maxRetries: Int = 3
 ) : StoryStepSyncTracker {
 
     private var lastSyncTimestamp: Long = 0L
+    private var consecutiveFailures: Int = 0
 
     override suspend fun syncStorySteps(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
@@ -197,10 +202,23 @@ class OnUpdateStoryStepSyncTracker(
         )
 
         try {
-            val response = syncApi(request)
+            val token = tokenProvider()
+            if (token == null) {
+                // Re-add changes to buffer for later retry when token is available
+                batch.changes.forEach { change ->
+                    syncBuffer.addChange(change.storyStep, change.position, change.documentId)
+                }
+                batch.deletions.forEach { id ->
+                    syncBuffer.addDeletion(id)
+                }
+                return
+            }
+
+            val response = syncApi(request, token)
 
             // Update last sync timestamp
             lastSyncTimestamp = response.serverTimestamp
+            consecutiveFailures = 0 // Reset on success
 
             // Apply server updates only if they are newer than local
             val serverSteps = response.updatedSteps.map { stepApi ->
@@ -211,12 +229,18 @@ class OnUpdateStoryStepSyncTracker(
                 onServerUpdate(serverSteps, response.deletedIds)
             }
         } catch (e: Exception) {
-            // On failure, re-add changes to buffer for retry
-            batch.changes.forEach { change ->
-                syncBuffer.addChange(change.storyStep, change.position, change.documentId)
-            }
-            batch.deletions.forEach { id ->
-                syncBuffer.addDeletion(id)
+            consecutiveFailures++
+
+            if (consecutiveFailures < maxRetries) {
+                // On failure, re-add changes to buffer for retry
+                batch.changes.forEach { change ->
+                    syncBuffer.addChange(change.storyStep, change.position, change.documentId)
+                }
+                batch.deletions.forEach { id ->
+                    syncBuffer.addDeletion(id)
+                }
+            } else {
+                consecutiveFailures = 0 // Reset for future changes
             }
         }
     }
