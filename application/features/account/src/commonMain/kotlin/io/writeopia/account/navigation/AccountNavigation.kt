@@ -18,10 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import io.writeopia.account.di.AccountMenuKmpInjector
 import io.writeopia.account.ui.AccountMenuScreen
+import io.writeopia.account.ui.SettingsAccountScreen
+import io.writeopia.account.ui.SettingsAppearanceScreen
+import io.writeopia.account.ui.SettingsTeamsScreen
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.model.AccentColor
@@ -30,11 +34,26 @@ import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 
+fun NavController.navigateToSettingsTeams() {
+    navigate(Destinations.SETTINGS_TEAMS.id)
+}
+
+fun NavController.navigateToSettingsAppearance() {
+    navigate(Destinations.SETTINGS_APPEARANCE.id)
+}
+
+fun NavController.navigateToSettingsAccount() {
+    navigate(Destinations.SETTINGS_ACCOUNT.id)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 fun NavGraphBuilder.accountMenuNavigation(
     navigateToAuthMenu: () -> Unit,
     resetPassword: () -> Unit,
     navigationClick: () -> Unit,
+    navigateToSettingsTeams: () -> Unit,
+    navigateToSettingsAppearance: () -> Unit,
+    navigateToSettingsAccount: () -> Unit,
     selectedColorTheme: StateFlow<ColorThemeOption?>,
     selectedAccentColor: StateFlow<AccentColor?>,
     selectColorTheme: (ColorThemeOption) -> Unit,
@@ -53,8 +72,6 @@ fun NavGraphBuilder.accountMenuNavigation(
             )
         }
     ) {
-        val accountMenuViewModel = AccountMenuKmpInjector.singleton().provideAccountMenuViewModel()
-
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -76,7 +93,6 @@ fun NavGraphBuilder.accountMenuNavigation(
                                     .padding(10.dp),
                                 imageVector = WrIcons.backArrowMobile,
                                 contentDescription = "",
-//                    stringResource(R.string.back),
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
@@ -87,16 +103,178 @@ fun NavGraphBuilder.accountMenuNavigation(
             AccountMenuScreen(
                 modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
                     .padding(paddingValues),
-                accountMenuViewModel = accountMenuViewModel,
-                isLoggedInState = accountMenuViewModel.isLoggedIn,
+                navigateToAppearance = navigateToSettingsAppearance,
+                navigateToTeams = navigateToSettingsTeams,
+                navigateToAccount = navigateToSettingsAccount,
+            )
+        }
+    }
+
+    // Teams Section
+    composable(
+        Destinations.SETTINGS_TEAMS.id,
+        enterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { intSize -> intSize }
+            )
+        },
+        exitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { intSize -> intSize }
+            )
+        }
+    ) {
+        val accountMenuViewModel = AccountMenuKmpInjector.singleton().provideAccountMenuViewModel()
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            WrStrings.teams(),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    navigationIcon = {
+                        Row(
+                            modifier = Modifier.fillMaxHeight(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable(onClick = navigationClick)
+                                    .padding(10.dp),
+                                imageVector = WrIcons.backArrowMobile,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            SettingsTeamsScreen(
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                    .padding(paddingValues),
+                workspacesState = accountMenuViewModel.availableWorkspaces,
+                selectedWorkspaceState = accountMenuViewModel.selectedWorkspace,
+                selectWorkspace = accountMenuViewModel::selectWorkspace,
+                addUserToTeam = accountMenuViewModel::addUserToWorkspace,
+                usersInSelectedWorkspace = accountMenuViewModel.usersOfSelectedWorkspace,
+            )
+        }
+    }
+
+    // Appearance Section
+    composable(
+        Destinations.SETTINGS_APPEARANCE.id,
+        enterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { intSize -> intSize }
+            )
+        },
+        exitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { intSize -> intSize }
+            )
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            WrStrings.appearance(),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    navigationIcon = {
+                        Row(
+                            modifier = Modifier.fillMaxHeight(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable(onClick = navigationClick)
+                                    .padding(10.dp),
+                                imageVector = WrIcons.backArrowMobile,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            SettingsAppearanceScreen(
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                    .padding(paddingValues),
                 selectedColorTheme = selectedColorTheme,
                 selectedAccentColor = selectedAccentColor,
-                onLogout = navigateToAuthMenu,
+                selectColorTheme = selectColorTheme,
+                selectAccentColor = selectAccentColor
+            )
+        }
+    }
+
+    // Account Section
+    composable(
+        Destinations.SETTINGS_ACCOUNT.id,
+        enterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { intSize -> intSize }
+            )
+        },
+        exitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { intSize -> intSize }
+            )
+        }
+    ) {
+        val accountMenuViewModel = AccountMenuKmpInjector.singleton().provideAccountMenuViewModel()
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            WrStrings.account(),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    navigationIcon = {
+                        Row(
+                            modifier = Modifier.fillMaxHeight(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable(onClick = navigationClick)
+                                    .padding(10.dp),
+                                imageVector = WrIcons.backArrowMobile,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            SettingsAccountScreen(
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                    .padding(paddingValues),
+                isLoggedInState = accountMenuViewModel.isLoggedIn,
                 goToRegister = navigateToAuthMenu,
                 changeAccount = navigateToAuthMenu,
                 resetPassword = resetPassword,
-                selectColorTheme = selectColorTheme,
-                selectAccentColor = selectAccentColor
+                logout = {
+                    accountMenuViewModel.logout {
+                        navigateToAuthMenu()
+                    }
+                }
             )
         }
     }
