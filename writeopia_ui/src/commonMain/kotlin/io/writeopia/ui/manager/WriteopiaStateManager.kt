@@ -33,6 +33,7 @@ import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.repository.UserRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
+import io.writeopia.sdk.utils.collections.toSortedMutableMap
 import io.writeopia.sdk.utils.NextPositionCalculator
 import io.writeopia.sdk.utils.extensions.toEditState
 import io.writeopia.ui.backstack.BackstackHandler
@@ -279,8 +280,7 @@ class WriteopiaStateManager(
                     )
                 }
                 .values
-                // Todo: Consider changing insertion order instead of sorting
-                .sortedBy { drawStory -> drawStory.position }
+                .toList() // Already sorted by position - map maintains sorted key order
                 .let { drawStories -> drawStateModify(drawStories, dragPosition).drop(1) }
 
             DrawState(toDrawStories, focus)
@@ -637,7 +637,7 @@ class WriteopiaStateManager(
                 storyText
             }
 
-            val mutable = currentStory.value.stories.toMutableMap()
+            val mutable = currentStory.value.stories.toSortedMutableMap()
             mutable[position] = story.copy(text = newText)
             mutable
         } else {
@@ -856,7 +856,7 @@ class WriteopiaStateManager(
         val lastContentStory = stories[lastPosition]
 
         val newState = if (lastContentStory?.type == StoryTypes.TEXT.type) {
-            val newStoriesState = stories.toMutableMap().apply {
+            val newStoriesState = stories.toSortedMutableMap().apply {
                 this[lastPosition] = lastContentStory.copyNewLocalId()
             }
             val cursor = lastContentStory.text?.length ?: 0
@@ -877,7 +877,7 @@ class WriteopiaStateManager(
             )
 
             // Update the last content story to point to the new story
-            val updatedStories = stories.toMutableMap().apply {
+            val updatedStories = stories.toSortedMutableMap().apply {
                 lastContentStory?.let { lastStory ->
                     this[lastPosition] = lastStory.copy(nextPosition = newPosition)
                 }
@@ -1473,7 +1473,7 @@ class WriteopiaStateManager(
             writeopiaManager.previousTextStory(getStories(), position)
                 ?.let { (step, newPosition) ->
                     val storyState = _currentStory.value
-                    val mutable = storyState.stories.toMutableMap()
+                    val mutable = storyState.stories.toSortedMutableMap()
 
                     mutable[newPosition] = step
 

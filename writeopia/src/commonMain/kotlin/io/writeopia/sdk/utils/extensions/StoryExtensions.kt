@@ -2,14 +2,16 @@ package io.writeopia.sdk.utils.extensions
 
 import io.writeopia.sdk.model.story.Section
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.utils.collections.sortedMutableMapOf
 
 fun Map<Double, StoryStep>.toEditState(): MutableMap<Double, List<StoryStep>> =
     mapValues { (_, story) -> listOf(story) }.toMutableMap()
 
 fun <T> Iterable<T>.associateWithPosition(): Map<Double, T> {
     var acc = -1.0
-
-    return associateBy { ++acc }
+    val result = sortedMutableMapOf<Double, T>()
+    forEach { result[++acc] = it }
+    return result
 }
 
 fun Map<Double, StoryStep>.noContent(): Boolean =
