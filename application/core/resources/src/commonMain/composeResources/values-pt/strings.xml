@@ -111,6 +111,7 @@
   <string name="repeat_password">Repita a senha</string>
   <string name="company">Empresa</string>
   <string name="change_account">Trocar conta</string>
+  <string name="change_workspace">Trocar workspace</string>
   <string name="delete_account">Deletar conta</string>
   <string name="are_you_sure">Tem certeza?</string>
   <string name="notes_will_be_deleted">Suas notas serão deletadas.</string>

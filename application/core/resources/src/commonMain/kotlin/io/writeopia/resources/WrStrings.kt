@@ -20,6 +20,7 @@ import writeopia.application.core.resources.generated.resources.box
 import writeopia.application.core.resources.generated.resources.card
 import writeopia.application.core.resources.generated.resources.cancel
 import writeopia.application.core.resources.generated.resources.change_account
+import writeopia.application.core.resources.generated.resources.change_workspace
 import writeopia.application.core.resources.generated.resources.choose_workspace
 import writeopia.application.core.resources.generated.resources.choose_your_model
 import writeopia.application.core.resources.generated.resources.close
@@ -426,6 +427,9 @@ object WrStrings {
 
     @Composable
     fun changeAccount() = stringResource(Res.string.change_account)
+
+    @Composable
+    fun changeWorkspace() = stringResource(Res.string.change_workspace)
 
     @Composable
     fun logout() = stringResource(Res.string.logout)

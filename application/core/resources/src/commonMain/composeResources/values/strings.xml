@@ -117,6 +117,7 @@
   <string name="repeat_password">Repeat password</string>
   <string name="company">Company</string>
   <string name="change_account">Change account</string>
+  <string name="change_workspace">Change workspace</string>
   <string name="delete_account">Delete Account</string>
   <string name="are_you_sure">Are you sure?</string>
   <string name="notes_will_be_deleted">All your notes will be deleted.</string>

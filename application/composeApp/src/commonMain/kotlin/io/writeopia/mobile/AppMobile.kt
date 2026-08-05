@@ -201,6 +201,11 @@ fun AppMobile(
                         navController.navigate(
                             Destinations.AUTH_RESET_PASSWORD.id
                         )
+                    },
+                    navigateToChooseWorkspace = {
+                        navController.navigate(Destinations.START_APP.id) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
                     }
                 )
             }

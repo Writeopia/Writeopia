@@ -120,6 +120,11 @@ fun Navigation(
                 navigateToAuthMenu = {
                     navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
                 },
+                navigateToChooseWorkspace = {
+                    navController.navigate(Destinations.START_APP.id) {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
+                },
                 resetPassword = {
                     navController.navigate(Destinations.AUTH_RESET_PASSWORD.id)
                 },

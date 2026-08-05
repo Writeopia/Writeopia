@@ -479,6 +479,13 @@ class GlobalShellKmpViewModel(
         }
     }
 
+    override fun changeWorkspace(sideEffect: () -> Unit) {
+        viewModelScope.launch {
+            authRepository.unselectAllWorkspaces()
+            sideEffect()
+        }
+    }
+
     override fun deleteAccount(sideEffect: () -> Unit) {
         viewModelScope.launch {
             val id = authRepository.getUser().id

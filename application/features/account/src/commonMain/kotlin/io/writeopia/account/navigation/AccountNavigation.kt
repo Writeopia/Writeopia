@@ -59,6 +59,7 @@ fun NavController.navigateToWorkspaceUsers(workspaceId: String, workspaceName: S
 @OptIn(ExperimentalMaterial3Api::class)
 fun NavGraphBuilder.accountMenuNavigation(
     navigateToAuthMenu: () -> Unit,
+    navigateToChooseWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     navigationClick: () -> Unit,
     navigateToSettingsTeams: () -> Unit,
@@ -350,6 +351,11 @@ fun NavGraphBuilder.accountMenuNavigation(
                 isLoggedInState = accountMenuViewModel.isLoggedIn,
                 goToRegister = navigateToAuthMenu,
                 changeAccount = navigateToAuthMenu,
+                changeWorkspace = {
+                    accountMenuViewModel.changeWorkspace {
+                        navigateToChooseWorkspace()
+                    }
+                },
                 resetPassword = resetPassword,
                 logout = {
                     accountMenuViewModel.logout {
