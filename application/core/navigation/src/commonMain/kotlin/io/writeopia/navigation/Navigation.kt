@@ -13,6 +13,7 @@ import io.writeopia.account.navigation.navigateToSettingsAccount
 import io.writeopia.account.navigation.navigateToSettingsAppearance
 import io.writeopia.account.navigation.navigateToSettingsTeams
 import io.writeopia.account.navigation.navigateToUserAdd
+import io.writeopia.account.navigation.navigateToUserEdit
 import io.writeopia.account.navigation.navigateToUserSearch
 import io.writeopia.account.navigation.navigateToWorkspaceUsers
 import io.writeopia.common.utils.Destinations
@@ -137,6 +138,7 @@ fun Navigation(
                 navigateToWorkspaceUsers = navController::navigateToWorkspaceUsers,
                 navigateToUserSearch = navController::navigateToUserSearch,
                 navigateToUserAdd = navController::navigateToUserAdd,
+                navigateToUserEdit = navController::navigateToUserEdit,
                 navigateBackToWorkspaceUsers = {
                     // Pop back to workspace users screen (pop search and add screens)
                     navController.popBackStack(

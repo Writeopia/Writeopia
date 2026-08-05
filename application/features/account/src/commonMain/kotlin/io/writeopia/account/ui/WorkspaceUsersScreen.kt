@@ -1,6 +1,7 @@
 package io.writeopia.account.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +53,7 @@ fun WorkspaceUsersScreen(
     onLoadMore: () -> Unit,
     onRetry: () -> Unit,
     onNavigateToUserSearch: () -> Unit,
+    onUserClick: (WorkspaceUserApi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val users by usersState.collectAsState()
@@ -85,7 +87,8 @@ fun WorkspaceUsersScreen(
                             users = currentUsers.data,
                             isLoadingMore = isLoadingMoreUsers,
                             hasMore = hasMore,
-                            onLoadMore = onLoadMore
+                            onLoadMore = onLoadMore,
+                            onUserClick = onUserClick
                         )
                     }
                 }
@@ -146,7 +149,8 @@ private fun UsersList(
     users: List<WorkspaceUserApi>,
     isLoadingMore: Boolean,
     hasMore: Boolean,
-    onLoadMore: () -> Unit
+    onLoadMore: () -> Unit,
+    onUserClick: (WorkspaceUserApi) -> Unit
 ) {
     val listState = rememberLazyListState()
 
@@ -173,7 +177,7 @@ private fun UsersList(
         modifier = Modifier.fillMaxSize()
     ) {
         items(users, key = { it.id }) { user ->
-            UserItem(user = user)
+            UserItem(user = user, onClick = { onUserClick(user) })
         }
 
         if (isLoadingMore) {
@@ -192,13 +196,14 @@ private fun UsersList(
 }
 
 @Composable
-private fun UserItem(user: WorkspaceUserApi) {
+private fun UserItem(user: WorkspaceUserApi, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .clip(MaterialTheme.shapes.medium)
             .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

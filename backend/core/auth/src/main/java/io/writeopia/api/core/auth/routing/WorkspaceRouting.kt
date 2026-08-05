@@ -12,6 +12,8 @@ import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.models.AddUserResult
 import io.writeopia.api.core.auth.repository.changeWorkspaceName
 import io.writeopia.api.core.auth.repository.changeWorkspaceRoleForUser
+import io.writeopia.api.core.auth.repository.countAdminsInWorkspace
+import io.writeopia.api.core.auth.repository.getUserRoleInWorkspace
 import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.api.core.auth.repository.searchUsersByEmail
 import io.writeopia.api.core.auth.service.WorkspaceService
@@ -284,6 +286,22 @@ fun Routing.workspaceRoute(
             val (workspaceId, changeRoleUserId, newRole) = roleChange
 
             runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+                // Check if this change would leave the workspace without admins
+                val currentRole = writeopiaDb.getUserRoleInWorkspace(workspaceId, changeRoleUserId)
+                val isCurrentlyAdmin = currentRole?.equals(Role.ADMIN.value, ignoreCase = true) == true
+                val isChangingToNonAdmin = !newRole.equals(Role.ADMIN.value, ignoreCase = true)
+
+                if (isCurrentlyAdmin && isChangingToNonAdmin) {
+                    val adminCount = writeopiaDb.countAdminsInWorkspace(workspaceId)
+                    if (adminCount <= 1) {
+                        call.respond(
+                            status = HttpStatusCode.Conflict,
+                            ServerResponse("Cannot change role: workspace must have at least one admin")
+                        )
+                        return@runIfAdmin
+                    }
+                }
+
                 writeopiaDb.changeWorkspaceRoleForUser(
                     workspaceId = workspaceId,
                     userId = changeRoleUserId,

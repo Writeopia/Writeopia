@@ -30,6 +30,7 @@ import io.writeopia.account.ui.SettingsAccountScreen
 import io.writeopia.account.ui.SettingsAppearanceScreen
 import io.writeopia.account.ui.SettingsTeamsScreen
 import io.writeopia.account.ui.UserAddScreen
+import io.writeopia.account.ui.UserEditScreen
 import io.writeopia.account.ui.UserSearchScreen
 import io.writeopia.account.ui.WorkspaceUsersScreen
 import io.writeopia.common.utils.Destinations
@@ -76,6 +77,20 @@ fun NavController.navigateToUserAdd(
     navigate("${Destinations.SETTINGS_USER_ADD.id}/$workspaceId/$safeName/$userId/$safeUserName/$safeEmail")
 }
 
+fun NavController.navigateToUserEdit(
+    workspaceId: String,
+    workspaceName: String,
+    userId: String,
+    userName: String,
+    userEmail: String,
+    currentRole: String
+) {
+    val safeName = workspaceName.replace("/", "_").replace("?", "_").replace("#", "_")
+    val safeUserName = userName.replace("/", "_").replace("?", "_").replace("#", "_")
+    val safeEmail = userEmail.replace("/", "_").replace("?", "_").replace("#", "_")
+    navigate("${Destinations.SETTINGS_USER_EDIT.id}/$workspaceId/$safeName/$userId/$safeUserName/$safeEmail/$currentRole")
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 fun NavGraphBuilder.accountMenuNavigation(
     navigateToAuthMenu: () -> Unit,
@@ -88,6 +103,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     navigateToWorkspaceUsers: (String, String) -> Unit,
     navigateToUserSearch: (String, String) -> Unit,
     navigateToUserAdd: (String, String, String, String, String) -> Unit,
+    navigateToUserEdit: (String, String, String, String, String, String) -> Unit,
     navigateBackToWorkspaceUsers: () -> Unit,
     selectedColorTheme: StateFlow<ColorThemeOption?>,
     selectedAccentColor: StateFlow<AccentColor?>,
@@ -267,6 +283,9 @@ fun NavGraphBuilder.accountMenuNavigation(
                 onRetry = viewModel::retry,
                 onNavigateToUserSearch = {
                     navigateToUserSearch(workspaceId, workspaceName)
+                },
+                onUserClick = { user ->
+                    navigateToUserEdit(workspaceId, workspaceName, user.id, user.name, user.email, user.role)
                 }
             )
         }
@@ -410,6 +429,84 @@ fun NavGraphBuilder.accountMenuNavigation(
                 onRoleSelect = viewModel::selectRole,
                 onAddUser = {
                     viewModel.addUser(onSuccess = navigateBackToWorkspaceUsers)
+                },
+                onCancel = navigationClick
+            )
+        }
+    }
+
+    // User Edit Screen
+    composable(
+        route = "${Destinations.SETTINGS_USER_EDIT.id}/{workspaceId}/{workspaceName}/{userId}/{userName}/{userEmail}/{currentRole}",
+        arguments = listOf(
+            navArgument("workspaceId") { type = NavType.StringType },
+            navArgument("workspaceName") { type = NavType.StringType },
+            navArgument("userId") { type = NavType.StringType },
+            navArgument("userName") { type = NavType.StringType },
+            navArgument("userEmail") { type = NavType.StringType },
+            navArgument("currentRole") { type = NavType.StringType }
+        ),
+        enterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { intSize -> intSize }
+            )
+        },
+        exitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { intSize -> intSize }
+            )
+        }
+    ) { backStackEntry ->
+        val workspaceId = backStackEntry.savedStateHandle.get<String?>("workspaceId") ?: ""
+        val workspaceName = backStackEntry.savedStateHandle.get<String?>("workspaceName") ?: ""
+        val userId = backStackEntry.savedStateHandle.get<String?>("userId") ?: ""
+        val userName = backStackEntry.savedStateHandle.get<String?>("userName") ?: ""
+        val userEmail = backStackEntry.savedStateHandle.get<String?>("userEmail") ?: ""
+        val currentRole = backStackEntry.savedStateHandle.get<String?>("currentRole") ?: ""
+
+        val viewModel = AccountMenuKmpInjector.singleton()
+            .provideUserEditViewModel(workspaceId, workspaceName, userId, userName, userEmail, currentRole)
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            WrStrings.editUserRole(),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    navigationIcon = {
+                        Row(
+                            modifier = Modifier.fillMaxHeight(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable(onClick = navigationClick)
+                                    .padding(10.dp),
+                                imageVector = WrIcons.backArrowMobile,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            UserEditScreen(
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                    .padding(paddingValues),
+                workspaceName = viewModel.getWorkspaceName(),
+                userName = viewModel.getUserName(),
+                userEmail = viewModel.getUserEmail(),
+                currentRole = viewModel.getCurrentRole(),
+                selectedRole = viewModel.selectedRole,
+                updateUserState = viewModel.updateUserState,
+                onRoleSelect = viewModel::selectRole,
+                onSave = {
+                    viewModel.updateUserRole(onSuccess = navigateBackToWorkspaceUsers)
                 },
                 onCancel = navigationClick
             )

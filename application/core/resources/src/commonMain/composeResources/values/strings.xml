@@ -175,4 +175,9 @@
   <string name="role_admin_description">Can manage workspace and users</string>
   <string name="user_already_in_workspace">This user is already in the workspace.</string>
   <string name="failed_to_add_user">Failed to add user. Please try again.</string>
+  <string name="edit_user_role">Edit User Role</string>
+  <string name="current_role">Current role</string>
+  <string name="failed_to_update_role">Failed to update role. Please try again.</string>
+  <string name="workspace_must_have_admin">Workspace must have at least one admin.</string>
+  <string name="save">Save</string>
 </resources>

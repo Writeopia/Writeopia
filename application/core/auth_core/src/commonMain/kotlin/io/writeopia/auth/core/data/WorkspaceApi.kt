@@ -3,12 +3,14 @@
 package io.writeopia.auth.core.data
 
 import io.ktor.client.HttpClient
+import io.writeopia.auth.core.exceptions.LastAdminException
 import io.writeopia.auth.core.exceptions.UserAlreadyInWorkspaceException
 import io.writeopia.auth.core.exceptions.UserNotFoundException
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -25,6 +27,7 @@ import io.writeopia.sdk.models.workspace.Role
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.toModel
+import io.writeopia.sdk.serialization.request.WorkspaceRoleChangeRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.time.Clock
@@ -221,5 +224,27 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
                 ResultData.Error(UserNotFoundException())
             else -> ResultData.Error()
         }
+    }
+
+    suspend fun changeUserRole(
+        workspaceId: String,
+        userId: String,
+        newRole: Role,
+        token: String
+    ): ResultData<Unit> = try {
+        val response = client.put("$baseUrl/api/workspace/role") {
+            contentType(ContentType.Application.Json)
+            setBody(WorkspaceRoleChangeRequest(workspaceId, userId, newRole.value))
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        when {
+            response.status.isSuccess() -> ResultData.Complete(Unit)
+            response.status == HttpStatusCode.Conflict -> ResultData.Error(LastAdminException())
+            else -> ResultData.Error()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
     }
 }

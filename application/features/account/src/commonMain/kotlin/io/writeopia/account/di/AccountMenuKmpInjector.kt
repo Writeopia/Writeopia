@@ -5,6 +5,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.account.viewmodel.AccountMenuKmpViewModel
 import io.writeopia.account.viewmodel.AccountMenuViewModel
 import io.writeopia.account.viewmodel.UserAddViewModel
+import io.writeopia.account.viewmodel.UserEditViewModel
 import io.writeopia.account.viewmodel.UserSearchViewModel
 import io.writeopia.account.viewmodel.WorkspaceUsersViewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
@@ -67,6 +68,28 @@ class AccountMenuKmpInjector private constructor(
                 userId = userId,
                 userName = userName,
                 userEmail = userEmail,
+                workspaceApi = workspaceInjection.provideWorkspaceApi(),
+                authRepository = authCoreInjection.provideAuthRepository()
+            )
+        }
+
+    @Composable
+    fun provideUserEditViewModel(
+        workspaceId: String,
+        workspaceName: String,
+        userId: String,
+        userName: String,
+        userEmail: String,
+        currentRole: String
+    ): UserEditViewModel =
+        viewModel(key = "user_edit_${workspaceId}_$userId") {
+            UserEditViewModel(
+                workspaceId = workspaceId,
+                workspaceName = workspaceName,
+                userId = userId,
+                userName = userName,
+                userEmail = userEmail,
+                currentRole = currentRole,
                 workspaceApi = workspaceInjection.provideWorkspaceApi(),
                 authRepository = authCoreInjection.provideAuthRepository()
             )

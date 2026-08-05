@@ -154,6 +154,11 @@ import writeopia.application.core.resources.generated.resources.role_editor_desc
 import writeopia.application.core.resources.generated.resources.role_admin_description
 import writeopia.application.core.resources.generated.resources.user_already_in_workspace
 import writeopia.application.core.resources.generated.resources.failed_to_add_user
+import writeopia.application.core.resources.generated.resources.edit_user_role
+import writeopia.application.core.resources.generated.resources.current_role
+import writeopia.application.core.resources.generated.resources.failed_to_update_role
+import writeopia.application.core.resources.generated.resources.workspace_must_have_admin
+import writeopia.application.core.resources.generated.resources.save
 
 object WrStrings {
 
@@ -615,4 +620,19 @@ object WrStrings {
 
     @Composable
     fun failedToAddUser() = stringResource(Res.string.failed_to_add_user)
+
+    @Composable
+    fun editUserRole() = stringResource(Res.string.edit_user_role)
+
+    @Composable
+    fun currentRole() = stringResource(Res.string.current_role)
+
+    @Composable
+    fun failedToUpdateRole() = stringResource(Res.string.failed_to_update_role)
+
+    @Composable
+    fun workspaceMustHaveAdmin() = stringResource(Res.string.workspace_must_have_admin)
+
+    @Composable
+    fun save() = stringResource(Res.string.save)
 }

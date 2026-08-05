@@ -151,4 +151,9 @@
   <string name="role_admin_description">Pode gerenciar área de trabalho e usuários</string>
   <string name="user_already_in_workspace">Este usuário já está na área de trabalho.</string>
   <string name="failed_to_add_user">Falha ao adicionar usuário. Tente novamente.</string>
+  <string name="edit_user_role">Editar Função do Usuário</string>
+  <string name="current_role">Função atual</string>
+  <string name="failed_to_update_role">Falha ao atualizar função. Tente novamente.</string>
+  <string name="workspace_must_have_admin">A área de trabalho deve ter pelo menos um administrador.</string>
+  <string name="save">Salvar</string>
 </resources>

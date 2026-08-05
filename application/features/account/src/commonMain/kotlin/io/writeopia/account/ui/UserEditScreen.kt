@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import io.writeopia.auth.core.exceptions.UserAlreadyInWorkspaceException
+import io.writeopia.auth.core.exceptions.LastAdminException
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Role
@@ -40,19 +40,20 @@ import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
-fun UserAddScreen(
+fun UserEditScreen(
     workspaceName: String,
     userName: String,
     userEmail: String,
+    currentRole: String,
     selectedRole: StateFlow<Role>,
-    addUserState: StateFlow<ResultData<Unit>>,
+    updateUserState: StateFlow<ResultData<Unit>>,
     onRoleSelect: (Role) -> Unit,
-    onAddUser: () -> Unit,
+    onSave: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val role by selectedRole.collectAsState()
-    val addState by addUserState.collectAsState()
+    val updateState by updateUserState.collectAsState()
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -62,7 +63,7 @@ fun UserAddScreen(
             .imePadding()
     ) {
         Text(
-            text = WrStrings.addUserToWorkspace(workspaceName),
+            text = WrStrings.editUserRole(),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold
@@ -109,6 +110,11 @@ fun UserAddScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                 )
+                Text(
+                    text = "${WrStrings.currentRole()}: $currentRole",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                )
             }
         }
 
@@ -124,7 +130,7 @@ fun UserAddScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        RoleOption(
+        RoleEditOption(
             role = Role.EDITOR,
             selected = role == Role.EDITOR,
             onClick = { onRoleSelect(Role.EDITOR) },
@@ -133,7 +139,7 @@ fun UserAddScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        RoleOption(
+        RoleEditOption(
             role = Role.ADMIN,
             selected = role == Role.ADMIN,
             onClick = { onRoleSelect(Role.ADMIN) },
@@ -143,10 +149,12 @@ fun UserAddScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         // Error message
-        if (addState is ResultData.Error) {
-            val errorMessage = when ((addState as ResultData.Error).exception) {
-                is UserAlreadyInWorkspaceException -> WrStrings.userAlreadyInWorkspace()
-                else -> WrStrings.failedToAddUser()
+        val errorState = updateState
+        if (errorState is ResultData.Error) {
+            val errorMessage = if (errorState.exception is LastAdminException) {
+                WrStrings.workspaceMustHaveAdmin()
+            } else {
+                WrStrings.failedToUpdateRole()
             }
             Text(
                 text = errorMessage,
@@ -164,24 +172,24 @@ fun UserAddScreen(
             OutlinedButton(
                 onClick = onCancel,
                 modifier = Modifier.weight(1f),
-                enabled = addState !is ResultData.Loading
+                enabled = updateState !is ResultData.Loading
             ) {
                 Text(WrStrings.cancel())
             }
 
             Button(
-                onClick = onAddUser,
+                onClick = onSave,
                 modifier = Modifier.weight(1f),
-                enabled = addState !is ResultData.Loading
+                enabled = updateState !is ResultData.Loading
             ) {
-                if (addState is ResultData.Loading) {
+                if (updateState is ResultData.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(WrStrings.add())
+                    Text(WrStrings.save())
                 }
             }
         }
@@ -189,7 +197,7 @@ fun UserAddScreen(
 }
 
 @Composable
-private fun RoleOption(
+private fun RoleEditOption(
     role: Role,
     selected: Boolean,
     onClick: () -> Unit,
