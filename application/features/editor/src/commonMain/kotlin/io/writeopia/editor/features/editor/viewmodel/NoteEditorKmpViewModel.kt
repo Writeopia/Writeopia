@@ -40,6 +40,8 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.sync.DocumentSyncManager
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
+import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.serialization.request.wrapInRequest
@@ -93,7 +95,8 @@ class NoteEditorKmpViewModel(
     private val inDocumentSearchRepository: InDocumentSearchRepository,
     private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
     private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton(),
-    private val documentLoadUseCase: DocumentLoadUseCase? = null
+    private val documentLoadUseCase: DocumentLoadUseCase? = null,
+    private val storyStepSyncApi: (suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse)? = null
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -472,6 +475,17 @@ class NoteEditorKmpViewModel(
             documentTracker = OnUpdateDocumentTracker(documentRepository)
         )
 
+        // Also register for backend sync if the API is available
+        storyStepSyncApi?.let { syncApi ->
+            documentSyncManager.registerForBackendSync(
+                documentId = documentId,
+                documentEditionFlow = writeopiaManager.documentEditionState,
+                workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                syncApi = syncApi,
+                tokenProvider = { authRepository.getAuthToken() }
+            )
+        }
+
         writeopiaManager.liveSync(sharedEditionManager)
     }
 
@@ -532,6 +546,17 @@ class NoteEditorKmpViewModel(
                 }
             )
         )
+
+        // Also register for backend sync if the API is available
+        storyStepSyncApi?.let { syncApi ->
+            documentSyncManager.registerForBackendSync(
+                documentId = documentId,
+                documentEditionFlow = writeopiaManager.documentEditionState,
+                workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                syncApi = syncApi,
+                tokenProvider = { authRepository.getAuthToken() }
+            )
+        }
     }
 
     override fun onHeaderColorSelection(color: Int?) {

@@ -108,7 +108,10 @@ class EditorKmpInjector private constructor(
             authRepository = authCoreInjection.provideAuthRepository(),
             inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo(),
             drawingSaveEvents = drawingSaveEvents,
-            documentLoadUseCase = workspaceInjection.provideDocumentLoadUseCase()
+            documentLoadUseCase = workspaceInjection.provideDocumentLoadUseCase(),
+            storyStepSyncApi = { request, token ->
+                connectionInjection.storyStepSyncApi().syncStorySteps(request, token)
+            }
         )
 
     @Composable

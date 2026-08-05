@@ -28,17 +28,67 @@ import kotlin.time.ExperimentalTime
  * using a buffered approach to avoid excessive network requests.
  *
  * @param syncBuffer The buffer for collecting and batching changes.
- * @param syncApi A function that performs the actual sync with the backend.
+ * @param syncApi A function that performs the actual sync with the backend (request, token) -> response.
+ * @param tokenProvider A function that provides the current authentication token.
  * @param onServerUpdate Callback invoked when server updates should be applied locally.
+ * @param maxRetries Maximum number of consecutive sync failures before discarding changes.
  */
 @OptIn(FlowPreview::class)
 class OnUpdateStoryStepSyncTracker(
     private val syncBuffer: StoryStepSyncBuffer = StoryStepSyncBuffer(),
-    private val syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse,
-    private val onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> }
+    private val syncApi: suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse,
+    private val tokenProvider: suspend () -> String?,
+    private val onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> },
+    private val maxRetries: Int = 3
 ) : StoryStepSyncTracker {
 
     private var lastSyncTimestamp: Long = 0L
+    private var consecutiveFailures: Int = 0
+
+    // Track last known content for each StoryStep to detect actual changes
+    private val lastKnownContent = mutableMapOf<String, StoryStepContent>()
+
+    /**
+     * Represents the content fields that matter for syncing.
+     * Changes to other fields (like localId, cursor position) should not trigger sync.
+     */
+    private data class StoryStepContent(
+        val text: String?,
+        val type: Int,
+        val checked: Boolean?,
+        val url: String?,
+        val path: String?,
+        val spans: Set<Any>,
+        val decoration: Any,
+        val documentLink: Any?
+    )
+
+    private fun StoryStep.toContent() = StoryStepContent(
+        text = text,
+        type = type.number,
+        checked = checked,
+        url = url,
+        path = path,
+        spans = spans,
+        decoration = decoration,
+        documentLink = documentLink
+    )
+
+    /**
+     * Checks if the StoryStep content has actually changed since last sync.
+     * Returns true if this is a new step or if content has changed.
+     */
+    private fun hasContentChanged(storyStep: StoryStep): Boolean {
+        val currentContent = storyStep.toContent()
+        val previousContent = lastKnownContent[storyStep.id]
+
+        return if (previousContent == null || previousContent != currentContent) {
+            lastKnownContent[storyStep.id] = currentContent
+            true
+        } else {
+            false
+        }
+    }
 
     override suspend fun syncStorySteps(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
@@ -79,7 +129,7 @@ class OnUpdateStoryStepSyncTracker(
     private fun processLastEdit(lastEdit: LastEdit, documentId: String) {
         when (lastEdit) {
             is LastEdit.LineEdition -> {
-                if (!lastEdit.storyStep.ephemeral) {
+                if (!lastEdit.storyStep.ephemeral && hasContentChanged(lastEdit.storyStep)) {
                     syncBuffer.addChange(
                         storyStep = lastEdit.storyStep.copy(
                             lastUpdatedAt = Clock.System.now().toEpochMilliseconds()
@@ -91,9 +141,10 @@ class OnUpdateStoryStepSyncTracker(
             }
 
             is LastEdit.BulkEdition -> {
-                lastEdit.steps
-                    .filter { (_, step) -> !step.ephemeral }
-                    .forEach { (position, step) ->
+                val changedSteps = lastEdit.steps
+                    .filter { (_, step) -> !step.ephemeral && hasContentChanged(step) }
+                if (changedSteps.isNotEmpty()) {
+                    changedSteps.forEach { (position, step) ->
                         syncBuffer.addChange(
                             storyStep = step.copy(
                                 lastUpdatedAt = Clock.System.now().toEpochMilliseconds()
@@ -102,11 +153,15 @@ class OnUpdateStoryStepSyncTracker(
                             documentId = documentId
                         )
                     }
+                }
             }
 
             is LastEdit.LineBreakEdition -> {
                 val timestamp = Clock.System.now().toEpochMilliseconds()
                 if (!lastEdit.originalStep.second.ephemeral) {
+                    // Always sync line breaks as they're structural changes
+                    lastKnownContent[lastEdit.originalStep.second.id] =
+                        lastEdit.originalStep.second.toContent()
                     syncBuffer.addChange(
                         storyStep = lastEdit.originalStep.second.copy(lastUpdatedAt = timestamp),
                         position = lastEdit.originalStep.first,
@@ -114,6 +169,7 @@ class OnUpdateStoryStepSyncTracker(
                     )
                 }
                 if (!lastEdit.newStep.second.ephemeral) {
+                    lastKnownContent[lastEdit.newStep.second.id] = lastEdit.newStep.second.toContent()
                     syncBuffer.addChange(
                         storyStep = lastEdit.newStep.second.copy(lastUpdatedAt = timestamp),
                         position = lastEdit.newStep.first,
@@ -123,7 +179,7 @@ class OnUpdateStoryStepSyncTracker(
             }
 
             is LastEdit.InfoEdition -> {
-                if (!lastEdit.storyStep.ephemeral) {
+                if (!lastEdit.storyStep.ephemeral && hasContentChanged(lastEdit.storyStep)) {
                     syncBuffer.addChange(
                         storyStep = lastEdit.storyStep.copy(
                             lastUpdatedAt = Clock.System.now().toEpochMilliseconds()
@@ -135,13 +191,16 @@ class OnUpdateStoryStepSyncTracker(
             }
 
             is LastEdit.DeleteEdition -> {
+                lastKnownContent.remove(lastEdit.deletedId)
                 syncBuffer.addDeletion(lastEdit.deletedId)
             }
 
             is LastEdit.EraseEdition -> {
+                lastKnownContent.remove(lastEdit.deletedId)
                 syncBuffer.addDeletion(lastEdit.deletedId)
                 val (position, step) = lastEdit.updatedStep
                 if (!step.ephemeral) {
+                    lastKnownContent[step.id] = step.toContent()
                     syncBuffer.addChange(
                         storyStep = step.copy(
                             lastUpdatedAt = Clock.System.now().toEpochMilliseconds()
@@ -154,11 +213,13 @@ class OnUpdateStoryStepSyncTracker(
 
             is LastEdit.BulkDeleteEdition -> {
                 lastEdit.deletedIds.forEach { id ->
+                    lastKnownContent.remove(id)
                     syncBuffer.addDeletion(id)
                 }
                 // Also sync any updated steps (e.g., position references)
                 lastEdit.updatedSteps.forEach { (position, step) ->
                     if (!step.ephemeral) {
+                        lastKnownContent[step.id] = step.toContent()
                         syncBuffer.addChange(
                             storyStep = step.copy(
                                 lastUpdatedAt = Clock.System.now().toEpochMilliseconds()
@@ -197,12 +258,24 @@ class OnUpdateStoryStepSyncTracker(
         )
 
         try {
-            val response = syncApi(request)
+            val token = tokenProvider()
+            if (token == null) {
+                batch.changes.forEach { change ->
+                    syncBuffer.addChange(change.storyStep, change.position, change.documentId)
+                }
+                batch.deletions.forEach { id ->
+                    syncBuffer.addDeletion(id)
+                }
+                return
+            }
+
+            val response = syncApi(request, token)
 
             // Update last sync timestamp
             lastSyncTimestamp = response.serverTimestamp
+            consecutiveFailures = 0
 
-            // Apply server updates only if they are newer than local
+            // Apply server updates
             val serverSteps = response.updatedSteps.map { stepApi ->
                 stepApi.position to stepApi.toModel()
             }
@@ -211,12 +284,17 @@ class OnUpdateStoryStepSyncTracker(
                 onServerUpdate(serverSteps, response.deletedIds)
             }
         } catch (e: Exception) {
-            // On failure, re-add changes to buffer for retry
-            batch.changes.forEach { change ->
-                syncBuffer.addChange(change.storyStep, change.position, change.documentId)
-            }
-            batch.deletions.forEach { id ->
-                syncBuffer.addDeletion(id)
+            consecutiveFailures++
+
+            if (consecutiveFailures < maxRetries) {
+                batch.changes.forEach { change ->
+                    syncBuffer.addChange(change.storyStep, change.position, change.documentId)
+                }
+                batch.deletions.forEach { id ->
+                    syncBuffer.addDeletion(id)
+                }
+            } else {
+                consecutiveFailures = 0
             }
         }
     }
