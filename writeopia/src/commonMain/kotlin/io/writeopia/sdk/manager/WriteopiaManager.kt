@@ -21,6 +21,7 @@ import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
+import io.writeopia.sdk.utils.collections.toSortedMutableMap
 import io.writeopia.sdk.utils.extensions.toEditState
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -183,7 +184,7 @@ class WriteopiaManager(
         storyState: StoryState,
         stateChange: Iterable<Action.StoryStateChange>,
     ): StoryState {
-        val mutable = storyState.stories.toMutableMap()
+        val mutable = storyState.stories.toSortedMutableMap()
         val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
 
         stateChange.forEach { change ->
