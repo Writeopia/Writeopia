@@ -13,9 +13,12 @@ import io.writeopia.api.core.auth.models.AddUserResult
 import io.writeopia.api.core.auth.repository.changeWorkspaceName
 import io.writeopia.api.core.auth.repository.changeWorkspaceRoleForUser
 import io.writeopia.api.core.auth.repository.listWorkspaces
+import io.writeopia.api.core.auth.repository.searchUsersByEmail
 import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.runIfAdmin
+import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.app.mapping.toApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.app.requests.CreateWorkspaceRequest
@@ -161,6 +164,47 @@ fun Routing.workspaceRoute(
                     totalCount = paginatedUsers.totalCount,
                     totalPages = paginatedUsers.totalPages,
                     hasNextPage = paginatedUsers.hasNextPage
+                )
+
+                call.respond(HttpStatusCode.OK, response)
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debugMode) {
+        get("/api/workspace/{workspaceId}/users/search") {
+            val currentUserId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"]
+                ?: throw IllegalArgumentException("Workspace id is required")
+            val emailQuery = call.request.queryParameters["email"] ?: ""
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
+
+            if (emailQuery.length < 2) {
+                call.respond(HttpStatusCode.BadRequest, ServerResponse("Email query must be at least 2 characters"))
+                return@get
+            }
+
+            runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
+                val offset = ((page - 1) * pageSize).toLong()
+                val limit = (pageSize + 1).toLong() // Request one extra to check if there's a next page
+
+                val results = writeopiaDb.searchUsersByEmail(emailQuery, limit, offset)
+
+                val hasNextPage = results.size > pageSize
+                val users = results.take(pageSize).map { user ->
+                    SearchUserApi(
+                        id = user.id,
+                        name = user.name,
+                        email = user.email
+                    )
+                }
+
+                val response = PaginatedUserSearchResponse(
+                    users = users,
+                    page = page,
+                    pageSize = pageSize,
+                    hasNextPage = hasNextPage
                 )
 
                 call.respond(HttpStatusCode.OK, response)
