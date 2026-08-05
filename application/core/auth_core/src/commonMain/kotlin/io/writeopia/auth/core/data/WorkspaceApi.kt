@@ -12,6 +12,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
 import io.writeopia.app.dto.WorkspaceUserApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.app.requests.CreateWorkspaceRequest
@@ -135,5 +136,29 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
                 workspaceUsersCache.value = ResultData.Error(e)
             }
         }
+    }
+
+    suspend fun getUsersOfWorkspacePaginated(
+        workspaceId: String,
+        page: Int,
+        pageSize: Int,
+        token: String
+    ): ResultData<PaginatedWorkspaceUsersResponse> = try {
+        val response = client.get("$baseUrl/api/workspace/$workspaceId/users/paginated") {
+            url {
+                parameters.append("page", page.toString())
+                parameters.append("pageSize", pageSize.toString())
+            }
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<PaginatedWorkspaceUsersResponse>())
+        } else {
+            ResultData.Error()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
     }
 }

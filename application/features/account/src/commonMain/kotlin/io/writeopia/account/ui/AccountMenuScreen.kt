@@ -1,75 +1,114 @@
 package io.writeopia.account.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import io.writeopia.account.viewmodel.AccountMenuViewModel
-import io.writeopia.model.AccentColor
-import io.writeopia.model.ColorThemeOption
-import io.writeopia.sdk.models.utils.ResultData
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.resources.WrStrings
+import io.writeopia.theme.WriteopiaTheme
 
 @Composable
 fun AccountMenuScreen(
-    accountMenuViewModel: AccountMenuViewModel,
-    isLoggedInState: StateFlow<ResultData<Boolean>>,
-    selectedColorTheme: StateFlow<ColorThemeOption?>,
-    selectedAccentColor: StateFlow<AccentColor?>,
-    onLogout: () -> Unit,
-    goToRegister: () -> Unit,
-    changeAccount: () -> Unit,
-    resetPassword: () -> Unit,
-    selectColorTheme: (ColorThemeOption) -> Unit,
-    selectAccentColor: (AccentColor) -> Unit,
+    navigateToAppearance: () -> Unit,
+    navigateToTeams: () -> Unit,
+    navigateToAccount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(state = rememberScrollState())
+            .verticalScroll(rememberScrollState())
     ) {
-        SettingsScreen(
-            showPath = false,
-            showOllamaConfig = false,
-            selectedColorTheme = selectedColorTheme,
-            selectedAccentColor = selectedAccentColor,
-            selectColorTheme = selectColorTheme,
-            selectAccentColor = selectAccentColor,
-            workplacePathState = MutableStateFlow(""),
-            syncWorkspaceState = accountMenuViewModel.lastWorkspaceSync,
-            isAutoSyncEnabled = MutableStateFlow(false),
-            selectWorkplacePath = {},
-            ollamaAvailableModels = MutableStateFlow(ResultData.Idle()),
-            ollamaUrl = "",
-            ollamaSelectedModel = MutableStateFlow(""),
-            downloadModelState = MutableStateFlow(ResultData.Idle()),
-            ollamaUrlChange = {},
-            ollamaModelChange = {},
-            ollamaModelsRetry = {},
-            downloadModel = {},
-            deleteModel = {},
-            syncWorkspace = accountMenuViewModel::syncWorkspace,
-            onAutoSyncToggle = {},
-            workspacesState = accountMenuViewModel.availableWorkspaces,
-            selectedWorkspaceState = accountMenuViewModel.selectedWorkspace,
-            selectWorkspace = accountMenuViewModel::selectWorkspace,
-            addUserToTeam = accountMenuViewModel::addUserToWorkspace,
-            usersInSelectedWorkspace = accountMenuViewModel.usersOfSelectedWorkspace,
-            isLoggedInState = isLoggedInState,
-            goToRegister = goToRegister,
-            changeAccount = changeAccount,
-            resetPassword = resetPassword,
-            logout = {
-                accountMenuViewModel.logout {
-                    onLogout()
-                }
-            },
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Menu sections
+        SettingsMenuItem(
+            title = WrStrings.appearance(),
+            icon = WrIcons.colorModeLight,
+            onClick = navigateToAppearance
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SettingsMenuItem(
+            title = WrStrings.teams(),
+            icon = WrIcons.group,
+            onClick = navigateToTeams
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SettingsMenuItem(
+            title = WrStrings.account(),
+            icon = WrIcons.person,
+            onClick = navigateToAccount
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = WrStrings.version(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+        )
+    }
+}
+
+@Composable
+private fun SettingsMenuItem(
+    title: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = title,
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f)
+        )
+
+        Icon(
+            imageVector = WrIcons.arrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+            modifier = Modifier.size(20.dp)
         )
     }
 }

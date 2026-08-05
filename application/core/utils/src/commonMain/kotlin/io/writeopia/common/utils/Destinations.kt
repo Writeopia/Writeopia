@@ -11,6 +11,10 @@ enum class Destinations(val id: String, val root: String) {
     NOTIFICATIONS("notifications", "Notifications"),
     EDIT_FOLDER("edit_folder", "Home"),
     ACCOUNT("account", "Home"),
+    SETTINGS_TEAMS("settings_teams", "Home"),
+    SETTINGS_WORKSPACE_USERS("settings_workspace_users", "Home"),
+    SETTINGS_APPEARANCE("settings_appearance", "Home"),
+    SETTINGS_ACCOUNT("settings_account", "Home"),
 
     AUTH_MENU_INNER_NAVIGATION("auth_menu_inner_navigation", "Home"),
     AUTH_REGISTER("auth_register", "Home"),
