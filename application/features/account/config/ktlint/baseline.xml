@@ -6,6 +6,9 @@
         <error line="197" column="22" source="standard:if-else-wrapping" />
         <error line="197" column="22" source="standard:multiline-if-else" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/account/ui/UserSearchScreen.kt">
+        <error line="5" column="1" source="standard:no-unused-imports" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/account/viewmodel/UserAddViewModel.kt">
         <error line="31" column="5" source="standard:blank-line-before-declaration" />
         <error line="32" column="5" source="standard:blank-line-before-declaration" />
