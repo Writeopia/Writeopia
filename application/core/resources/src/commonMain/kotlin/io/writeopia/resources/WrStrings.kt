@@ -143,6 +143,17 @@ import writeopia.application.core.resources.generated.resources.verify
 import writeopia.application.core.resources.generated.resources.create_workspace
 import writeopia.application.core.resources.generated.resources.create
 import writeopia.application.core.resources.generated.resources.create_workspace_failed
+import writeopia.application.core.resources.generated.resources.add_user_to_workspace
+import writeopia.application.core.resources.generated.resources.search_by_email
+import writeopia.application.core.resources.generated.resources.enter_at_least_2_chars
+import writeopia.application.core.resources.generated.resources.no_users_found
+import writeopia.application.core.resources.generated.resources.failed_to_search_users
+import writeopia.application.core.resources.generated.resources.enter_email_to_search
+import writeopia.application.core.resources.generated.resources.select_role
+import writeopia.application.core.resources.generated.resources.role_editor_description
+import writeopia.application.core.resources.generated.resources.role_admin_description
+import writeopia.application.core.resources.generated.resources.user_already_in_workspace
+import writeopia.application.core.resources.generated.resources.failed_to_add_user
 
 object WrStrings {
 
@@ -571,4 +582,37 @@ object WrStrings {
 
     @Composable
     fun createWorkspaceFailed() = stringResource(Res.string.create_workspace_failed)
+
+    @Composable
+    fun addUserToWorkspace(workspaceName: String) = stringResource(Res.string.add_user_to_workspace, workspaceName)
+
+    @Composable
+    fun searchByEmail() = stringResource(Res.string.search_by_email)
+
+    @Composable
+    fun enterAtLeast2Chars() = stringResource(Res.string.enter_at_least_2_chars)
+
+    @Composable
+    fun noUsersFound() = stringResource(Res.string.no_users_found)
+
+    @Composable
+    fun failedToSearchUsers() = stringResource(Res.string.failed_to_search_users)
+
+    @Composable
+    fun enterEmailToSearch() = stringResource(Res.string.enter_email_to_search)
+
+    @Composable
+    fun selectRole() = stringResource(Res.string.select_role)
+
+    @Composable
+    fun roleEditorDescription() = stringResource(Res.string.role_editor_description)
+
+    @Composable
+    fun roleAdminDescription() = stringResource(Res.string.role_admin_description)
+
+    @Composable
+    fun userAlreadyInWorkspace() = stringResource(Res.string.user_already_in_workspace)
+
+    @Composable
+    fun failedToAddUser() = stringResource(Res.string.failed_to_add_user)
 }

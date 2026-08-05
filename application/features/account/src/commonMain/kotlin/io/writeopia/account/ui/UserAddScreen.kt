@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.writeopia.auth.core.exceptions.UserAlreadyInWorkspaceException
+import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Role
 import io.writeopia.theme.WriteopiaTheme
@@ -54,7 +55,7 @@ fun UserAddScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "Add user to $workspaceName",
+            text = WrStrings.addUserToWorkspace(workspaceName),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold
@@ -108,7 +109,7 @@ fun UserAddScreen(
 
         // Role selection
         Text(
-            text = "Select role",
+            text = WrStrings.selectRole(),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.SemiBold
@@ -120,7 +121,7 @@ fun UserAddScreen(
             role = Role.EDITOR,
             selected = role == Role.EDITOR,
             onClick = { onRoleSelect(Role.EDITOR) },
-            description = "Can view and edit documents"
+            description = WrStrings.roleEditorDescription()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -129,7 +130,7 @@ fun UserAddScreen(
             role = Role.ADMIN,
             selected = role == Role.ADMIN,
             onClick = { onRoleSelect(Role.ADMIN) },
-            description = "Can manage workspace and users"
+            description = WrStrings.roleAdminDescription()
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -137,9 +138,8 @@ fun UserAddScreen(
         // Error message
         if (addState is ResultData.Error) {
             val errorMessage = when ((addState as ResultData.Error).exception) {
-                is UserAlreadyInWorkspaceException ->
-                    "This user is already in the workspace."
-                else -> "Failed to add user. Please try again."
+                is UserAlreadyInWorkspaceException -> WrStrings.userAlreadyInWorkspace()
+                else -> WrStrings.failedToAddUser()
             }
             Text(
                 text = errorMessage,
@@ -159,7 +159,7 @@ fun UserAddScreen(
                 modifier = Modifier.weight(1f),
                 enabled = addState !is ResultData.Loading
             ) {
-                Text("Cancel")
+                Text(WrStrings.cancel())
             }
 
             Button(
@@ -174,7 +174,7 @@ fun UserAddScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Add")
+                    Text(WrStrings.add())
                 }
             }
         }

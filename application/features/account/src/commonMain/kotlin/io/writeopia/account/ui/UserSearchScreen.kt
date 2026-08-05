@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.writeopia.app.dto.SearchUserApi
+import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
@@ -65,7 +66,7 @@ fun UserSearchScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "Add user to $workspaceName",
+            text = WrStrings.addUserToWorkspace(workspaceName),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold
@@ -76,7 +77,7 @@ fun UserSearchScreen(
         OutlinedTextField(
             value = query,
             onValueChange = onSearchQueryChange,
-            label = { Text("Search by email") },
+            label = { Text(WrStrings.searchByEmail()) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
@@ -89,7 +90,7 @@ fun UserSearchScreen(
 
         if (query.isNotEmpty() && query.length < 2) {
             Text(
-                text = "Enter at least 2 characters to search",
+                text = WrStrings.enterAtLeast2Chars(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
             )
@@ -101,7 +102,7 @@ fun UserSearchScreen(
             is ResultData.Complete -> {
                 if (currentResults.data.isEmpty()) {
                     Text(
-                        text = "No users found",
+                        text = WrStrings.noUsersFound(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                     )
@@ -126,24 +127,18 @@ fun UserSearchScreen(
             }
 
             is ResultData.Error -> {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Failed to search users",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
+                Text(
+                    text = WrStrings.failedToSearchUsers(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
 
             is ResultData.Idle -> {
                 // Initial state, show hint
                 if (query.isEmpty()) {
                     Text(
-                        text = "Enter an email address to search for users",
+                        text = WrStrings.enterEmailToSearch(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                     )
