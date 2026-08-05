@@ -9,6 +9,8 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
+import io.writeopia.sdk.network.api.StoryStepSyncApi
+import io.writeopia.sdk.network.api.StoryStepSyncApiImpl
 import io.writeopia.sdk.network.notes.NotesApi
 import io.writeopia.sdk.network.websocket.MockWebsocketEditionManager
 import io.writeopia.sdk.network.websocket.WebsocketEditionManager
@@ -31,6 +33,8 @@ class WriteopiaConnectionInjector private constructor(
     fun baseUrl(): String = baseUrl
 
     fun notesApi(): NotesApi = NotesApi(client, baseUrl)
+
+    fun storyStepSyncApi(): StoryStepSyncApi = StoryStepSyncApiImpl(client, baseUrl)
 
     fun liveEditionManager(): SharedEditionManager = if (disableWebsocket) {
         MockWebsocketEditionManager()

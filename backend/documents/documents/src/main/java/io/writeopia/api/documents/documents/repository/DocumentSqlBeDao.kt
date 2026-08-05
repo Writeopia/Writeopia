@@ -118,7 +118,8 @@ class DocumentSqlBeDao(
                 background_color = decoration.backgroundColor,
                 tags = tags.joinToString(separator = ",") { it.tag.label },
                 spans = spans.joinToString(separator = ",") { it.toText() },
-                link_to_document = documentLink?.id
+                link_to_document = documentLink?.id,
+                last_updated_at = lastUpdatedAt?.toInt()
             )
         }
     }
@@ -812,6 +813,127 @@ class DocumentSqlBeDao(
             Clock.System.now().toEpochMilliseconds(),
             folderId
         )
+    }
+
+    /**
+     * Inserts or updates a StoryStep with a specific timestamp.
+     */
+    fun upsertStoryStep(storyStep: StoryStep, position: Double, documentId: String, lastUpdatedAt: Long) {
+        storyStep.run {
+            storyStepQueries?.insert(
+                id = id,
+                local_id = localId,
+                type = type.number,
+                parent_id = parentId,
+                url = url,
+                path = path,
+                text = text,
+                checked = checked ?: false,
+                position = BigDecimal.valueOf(position),
+                document_id = documentId,
+                is_group = isGroup,
+                has_inner_steps = steps.isNotEmpty(),
+                background_color = decoration.backgroundColor,
+                tags = tags.joinToString(separator = ",") { it.tag.label },
+                spans = spans.joinToString(separator = ",") { it.toText() },
+                link_to_document = documentLink?.id,
+                last_updated_at = lastUpdatedAt.toInt()
+            )
+        }
+    }
+
+    /**
+     * Gets story steps for a document that were updated after the given timestamp.
+     */
+    fun getStoryStepsAfterTime(documentId: String, afterTime: Long): List<Pair<Double, StoryStep>> {
+        return storyStepQueries?.selectByDocumentIdAfterTime(documentId, afterTime.toInt())
+            ?.executeAsList()
+            ?.map { entity ->
+                val storyStep = StoryStep(
+                    id = entity.id,
+                    localId = entity.local_id,
+                    type = StoryTypes.fromNumber(entity.type).type,
+                    parentId = entity.parent_id,
+                    url = entity.url,
+                    path = entity.path,
+                    text = entity.text,
+                    checked = entity.checked,
+                    decoration = Decoration(
+                        backgroundColor = entity.background_color
+                    ),
+                    tags = entity.tags
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .mapNotNull(TagInfo.Companion::fromString)
+                        .toSet(),
+                    spans = entity.spans
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .map(SpanInfo::fromString)
+                        .toSet(),
+                    documentLink = entity.link_to_document?.let { docId ->
+                        val title = documentQueries?.selectTitleByDocumentId(docId)
+                            ?.executeAsOneOrNull()
+                        DocumentLink(docId, title)
+                    },
+                    lastUpdatedAt = entity.last_updated_at?.toLong()
+                )
+                entity.position.toDouble() to storyStep
+            } ?: emptyList()
+    }
+
+    /**
+     * Gets a single StoryStep by ID.
+     */
+    fun getStoryStepById(storyStepId: String): Pair<Double, StoryStep>? {
+        return storyStepQueries?.selectById(storyStepId)
+            ?.executeAsOneOrNull()
+            ?.let { entity ->
+                val storyStep = StoryStep(
+                    id = entity.id,
+                    localId = entity.local_id,
+                    type = StoryTypes.fromNumber(entity.type).type,
+                    parentId = entity.parent_id,
+                    url = entity.url,
+                    path = entity.path,
+                    text = entity.text,
+                    checked = entity.checked,
+                    decoration = Decoration(
+                        backgroundColor = entity.background_color
+                    ),
+                    tags = entity.tags
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .mapNotNull(TagInfo.Companion::fromString)
+                        .toSet(),
+                    spans = entity.spans
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .map(SpanInfo::fromString)
+                        .toSet(),
+                    documentLink = entity.link_to_document?.let { docId ->
+                        val title = documentQueries?.selectTitleByDocumentId(docId)
+                            ?.executeAsOneOrNull()
+                        DocumentLink(docId, title)
+                    },
+                    lastUpdatedAt = entity.last_updated_at?.toLong()
+                )
+                entity.position.toDouble() to storyStep
+            }
+    }
+
+    /**
+     * Deletes a StoryStep by ID.
+     */
+    fun deleteStoryStepById(storyStepId: String) {
+        storyStepQueries?.deleteById(storyStepId)
+    }
+
+    /**
+     * Deletes multiple StorySteps by their IDs.
+     */
+    fun deleteStoryStepsByIds(storyStepIds: List<String>) {
+        storyStepQueries?.deleteByIds(storyStepIds)
     }
 }
 

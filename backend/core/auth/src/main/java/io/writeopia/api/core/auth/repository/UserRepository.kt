@@ -139,3 +139,21 @@ fun WriteopiaDbBackend.isCodeValid(email: String, code: String): Boolean {
     val currentTime = Clock.System.now().toEpochMilliseconds()
     return data.code == code && (data.expiry ?: 0) > currentTime
 }
+
+data class UserSearchResult(val id: String, val name: String, val email: String)
+
+fun WriteopiaDbBackend.searchUsersByEmail(
+    emailQuery: String,
+    limit: Long,
+    offset: Long
+): List<UserSearchResult> =
+    this.userEntityQueries
+        .searchUsersByEmail(emailQuery, limit, offset)
+        .executeAsList()
+        .map { result ->
+            UserSearchResult(
+                id = result.id,
+                name = result.name,
+                email = result.email
+            )
+        }

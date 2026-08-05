@@ -70,3 +70,11 @@ FROM user_entity
 WHERE email = ?
 LIMIT 1;
 
+searchUsersByEmail:
+SELECT id, name, email
+FROM user_entity
+WHERE email ILIKE '%' || ? || '%' AND enabled = TRUE
+ORDER BY email ASC
+LIMIT ?
+OFFSET ?;
+

@@ -39,11 +39,12 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         folderId: String,
         workspaceId: String,
         lastSync: Instant,
-        token: String
+        token: String,
+        orderBy: String = "last_updated_at"
     ): ResultData<List<Document>> {
         val response = client.post("$baseUrl/api/docs/workspace/document/folder/diff") {
             contentType(ContentType.Application.Json)
-            setBody(FolderDiffRequest(folderId, workspaceId, lastSync.toEpochMilliseconds()))
+            setBody(FolderDiffRequest(folderId, workspaceId, lastSync.toEpochMilliseconds(), orderBy))
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
@@ -58,12 +59,13 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
     suspend fun getWorkspaceNewData(
         workspaceId: String,
         lastSync: Instant,
-        token: String
+        token: String,
+        orderBy: String = "last_updated_at"
     ): ResultData<Pair<List<Document>, List<Folder>>> {
         val url = "$baseUrl/api/workspace/diff"
         val response = client.post(url) {
             contentType(ContentType.Application.Json)
-            setBody(WorkspaceDiffRequest(workspaceId, lastSync.toEpochMilliseconds()))
+            setBody(WorkspaceDiffRequest(workspaceId, lastSync.toEpochMilliseconds(), orderBy))
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
@@ -242,6 +244,23 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
             ResultData.Complete(response.body<List<String>>())
         } else {
             println("error getting user favorites: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun getDocumentById(
+        documentId: String,
+        workspaceId: String,
+        token: String
+    ): ResultData<Document> {
+        val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/document/$documentId") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<DocumentApi>().toModel())
+        } else {
+            println("error getting document by id: $response")
             ResultData.Error()
         }
     }

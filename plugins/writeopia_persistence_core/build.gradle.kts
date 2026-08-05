@@ -83,6 +83,7 @@ kotlin {
             dependencies {
                 implementation(project(":writeopia"))
                 implementation(project(":writeopia_models"))
+                implementation(project(":plugins:writeopia_serialization"))
 
                 //
                 implementation(libs.kotlinx.coroutines.core)

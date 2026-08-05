@@ -2,14 +2,18 @@
 
 package io.writeopia.api.core.auth.service
 
+import io.writeopia.api.core.auth.models.AddUserResult
+import io.writeopia.api.core.auth.repository.countUsersInWorkspace
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserInWorkspace
 import io.writeopia.api.core.auth.repository.getUsersInWorkspace
+import io.writeopia.api.core.auth.repository.getUsersInWorkspacePaginated
 import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertUserInWorkspace
 import io.writeopia.api.core.auth.repository.insertWorkspace
 import io.writeopia.api.core.auth.repository.removeUserFromWorkspace
+import io.writeopia.models.user.PaginatedWorkspaceUsers
 import io.writeopia.models.user.WorkspaceUser
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sql.WriteopiaDbBackend
@@ -36,6 +40,31 @@ object WorkspaceService {
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
     ): List<WorkspaceUser> = writeopiaDb.getUsersInWorkspace(workspaceId)
+
+    fun getUsersInWorkspacePaginated(
+        workspaceId: String,
+        page: Int,
+        pageSize: Int,
+        writeopiaDb: WriteopiaDbBackend
+    ): PaginatedWorkspaceUsers {
+        val offset = (page - 1) * pageSize
+        val users = writeopiaDb.getUsersInWorkspacePaginated(
+            workspaceId,
+            pageSize.toLong(),
+            offset.toLong()
+        )
+        val totalCount = writeopiaDb.countUsersInWorkspace(workspaceId)
+        val totalPages = ((totalCount + pageSize - 1) / pageSize).toInt()
+
+        return PaginatedWorkspaceUsers(
+            users = users,
+            page = page,
+            pageSize = pageSize,
+            totalCount = totalCount.toInt(),
+            totalPages = totalPages,
+            hasNextPage = page < totalPages
+        )
+    }
 
     fun getUserInWorkspace(
         workspaceId: String,
@@ -93,19 +122,26 @@ object WorkspaceService {
         workspaceId: String,
         role: String,
         writeopiaDb: WriteopiaDbBackend
-    ): Boolean {
+    ): AddUserResult {
         val ownerWorkspaces = writeopiaDb.getWorkspacesByUserId(workspaceOwnerId)
         if (!ownerWorkspaces.any { it.id == workspaceId }) {
             println("This user doesn't not have access to this workspace as admin")
-            false
+            // Note: This check is handled by runIfAdmin in the routing layer
+        }
+
+        // Check if user already exists in the workspace
+        val existingUser = writeopiaDb.getUserInWorkspace(workspaceId, userEmail)
+        if (existingUser != null) {
+            println("User with email $userEmail is already in this workspace")
+            return AddUserResult.USER_ALREADY_IN_WORKSPACE
         }
 
         return writeopiaDb.getUserByEmail(userEmail)?.id?.let { userId ->
             writeopiaDb.insertUserInWorkspace(workspaceId, userId, role)
-            true
+            AddUserResult.SUCCESS
         } ?: run {
             println("User with email $userEmail doesn't exist")
-            false
+            AddUserResult.USER_NOT_FOUND
         }
     }
 

@@ -34,6 +34,7 @@ import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
+import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.FolderContentResponse
@@ -389,12 +390,14 @@ fun Routing.documentsRoute(
                     println("loading folder diff")
                     println("user id: ${getUserId()}")
                     println("last sync: ${Instant.fromEpochMilliseconds(folderDiff.lastFolderSync)}")
+                    println("orderBy: ${folderDiff.orderBy}")
 
                     val documents =
                         writeopiaDb.documentsDiffByFolder(
                             folderDiff.folderId,
                             folderDiff.workspaceId,
-                            folderDiff.lastFolderSync
+                            folderDiff.lastFolderSync,
+                            folderDiff.orderBy
                         )
 
                     println("returning ${documents.count()} documents")
@@ -423,10 +426,12 @@ fun Routing.documentsRoute(
                     println("loading workspace diff")
                     println("user id: ${getUserId()}")
                     println("last sync: ${Instant.fromEpochMilliseconds(workspaceDiff.lastSync)}")
+                    println("orderBy: ${workspaceDiff.orderBy}")
 
                     val documents = writeopiaDb.documentsDiffByWorkspace(
                         workspaceDiff.workspaceId,
-                        workspaceDiff.lastSync
+                        workspaceDiff.lastSync,
+                        workspaceDiff.orderBy
                     )
                     val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceDiff.workspaceId)
 
@@ -669,6 +674,35 @@ fun Routing.documentsRoute(
                     call.respond(
                         status = HttpStatusCode.OK,
                         message = favoriteIds
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<StoryStepSyncRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/steps/sync") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val documentId = call.pathParameters["documentId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val response = DocumentsService.syncStorySteps(
+                        documentId = documentId,
+                        workspaceId = workspaceId,
+                        request = request,
+                        writeopiaDb = writeopiaDb
+                    )
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = response
                     )
                 } catch (e: Exception) {
                     call.respond(

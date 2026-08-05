@@ -526,8 +526,9 @@ internal class ChooseNoteKmpViewModel(
                 workspace != null
             ) {
                 folderSync.syncFolder(
-                    notesNavigation.id,
-                    workspace.id,
+                    folderId = notesNavigation.id,
+                    workspaceId = workspace.id,
+                    orderBy = orderByState.value.type
                 )
             }
         }

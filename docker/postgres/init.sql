@@ -30,7 +30,8 @@ CREATE TABLE story_step_entity (
   background_color INTEGER,
   tags TEXT NOT NULL,
   spans TEXT NOT NULL,
-  link_to_document TEXT
+  link_to_document TEXT,
+  last_updated_at BIGINT
 );
 
 CREATE TABLE user_entity (

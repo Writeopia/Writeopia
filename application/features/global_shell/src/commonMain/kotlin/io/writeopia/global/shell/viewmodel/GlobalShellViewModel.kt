@@ -75,6 +75,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     fun logout(sideEffect: () -> Unit)
 
+    fun changeWorkspace(sideEffect: () -> Unit)
+
     fun dismissDeleteConfirm()
 
     fun showDeleteConfirm()

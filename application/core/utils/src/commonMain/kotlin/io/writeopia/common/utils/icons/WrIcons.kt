@@ -1,9 +1,11 @@
 package io.writeopia.common.utils.icons
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.FormatColorReset
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.MoreVert
@@ -131,6 +133,12 @@ object WrIcons {
     val transparent: ImageVector = Icons.Outlined.FormatColorReset
 
     val person: ImageVector = Icons.Outlined.Person
+
+    val group: ImageVector = Icons.Outlined.Groups
+
+    val arrowRight: ImageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight
+
+    val arrowBack: ImageVector = PlatformIcons.backArrowMobile
 
     val smallArrowRight: ImageVector = ChevronRight
 

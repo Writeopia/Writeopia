@@ -144,13 +144,13 @@ fun PortraitMobile(
                                 )
                             },
                             onClick = {
-                                navController.navigateToItem(item.navItemName) {
-                                    if (!isSelected) {
+                                if (!isSelected) {
+                                    navController.navigateToItem(item.navItemName) {
                                         popUpTo(navController.graph.findStartDestination().route!!) {
-                                            saveState = true
+                                            saveState = item.navItemName != NavItemName.SEARCH
                                         }
                                         launchSingleTop = true
-                                        restoreState = true
+                                        restoreState = item.navItemName != NavItemName.SEARCH
                                     }
                                 }
                             },

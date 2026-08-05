@@ -32,7 +32,12 @@ class FolderSync(
      * This logic is atomic. If it fails, the whole process must be tried again in a future time.
      * The sync time of the folder will only be updated with everything works correctly.
      */
-    suspend fun syncFolder(folderId: String, workspaceId: String, force: Boolean = false) {
+    suspend fun syncFolder(
+        folderId: String,
+        workspaceId: String,
+        force: Boolean = false,
+        orderBy: String = "last_updated_at"
+    ) {
         try {
             if (workspaceId == Workspace.disconnectedWorkspace().id) return
 
@@ -67,7 +72,8 @@ class FolderSync(
                 folderId,
                 workspaceId,
                 lastSync ?: Instant.DISTANT_PAST,
-                authToken
+                authToken,
+                orderBy
             )
 
             val newDocuments = if (response is ResultData.Complete) {

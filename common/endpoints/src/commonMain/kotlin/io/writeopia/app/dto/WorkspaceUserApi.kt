@@ -9,3 +9,13 @@ data class WorkspaceUserApi(
     val name: String,
     val role: String,
 )
+
+@Serializable
+data class PaginatedWorkspaceUsersResponse(
+    val users: List<WorkspaceUserApi>,
+    val page: Int,
+    val pageSize: Int,
+    val totalCount: Int,
+    val totalPages: Int,
+    val hasNextPage: Boolean,
+)

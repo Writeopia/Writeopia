@@ -11,6 +11,7 @@ import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
+import io.writeopia.core.folders.repository.folder.DocumentLoadUseCase
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toFolderUi
 import io.writeopia.core.folders.repository.InDocumentSearchRepository
@@ -36,8 +37,11 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.persistence.core.sync.DocumentSyncManager
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
+import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.serialization.request.wrapInRequest
@@ -89,7 +93,10 @@ class NoteEditorKmpViewModel(
     private val copyManager: CopyManager,
     private val authRepository: AuthRepository,
     private val inDocumentSearchRepository: InDocumentSearchRepository,
-    private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null
+    private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
+    private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton(),
+    private val documentLoadUseCase: DocumentLoadUseCase? = null,
+    private val storyStepSyncApi: (suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse)? = null
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -459,7 +466,26 @@ class NoteEditorKmpViewModel(
         }
 
         writeopiaManager.newDocument(documentId, title, parentFolder = parentFolderId)
-        writeopiaManager.saveOnStoryChanges(OnUpdateDocumentTracker(documentRepository))
+
+        // Use global sync manager for syncing - continues even after ViewModel is cleared
+        documentSyncManager.registerForSync(
+            documentId = documentId,
+            documentEditionFlow = writeopiaManager.documentEditionState,
+            workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+            documentTracker = OnUpdateDocumentTracker(documentRepository)
+        )
+
+        // Also register for backend sync if the API is available
+        storyStepSyncApi?.let { syncApi ->
+            documentSyncManager.registerForBackendSync(
+                documentId = documentId,
+                documentEditionFlow = writeopiaManager.documentEditionState,
+                workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                syncApi = syncApi,
+                tokenProvider = { authRepository.getAuthToken() }
+            )
+        }
+
         writeopiaManager.liveSync(sharedEditionManager)
     }
 
@@ -468,31 +494,68 @@ class NoteEditorKmpViewModel(
 
         viewModelScope.launch(Dispatchers.Default) {
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            val isDisconnected = workspace.id == Workspace.disconnectedWorkspace().id
 
-            val document =
-                documentRepository.loadDocumentById(documentId, workspace.id)
+            // Step 1: Load from local database immediately (fast path)
+            val localDocument = documentRepository.loadDocumentById(documentId, workspace.id)
 
-            if (document != null) {
-                writeopiaManager.loadDocument(document)
-                writeopiaManager.saveOnStoryChanges(
-                    OnUpdateDocumentTracker(
-                        documentRepository,
-                        onStoryStepUpdate = { storyStep, position ->
-                            inDocumentSearchRepository.insertForFts(storyStep, documentId, position.toDouble())
-                        },
-                        onDocumentUpdate = { document ->
-                            document.content
-                                .forEach { (position, storyStep) ->
-                                    inDocumentSearchRepository.insertForFts(
-                                        storyStep,
-                                        documentId,
-                                        position.toDouble()
-                                    )
-                                }
+            if (localDocument != null) {
+                writeopiaManager.loadDocument(localDocument)
+                registerForSync(documentId)
+            }
+
+            // Step 2: If online, fetch from backend in background and merge
+            if (!isDisconnected && documentLoadUseCase != null) {
+                documentLoadUseCase.fetchAndMergeFromBackend(
+                    documentId = documentId,
+                    workspaceId = workspace.id,
+                    onMergeComplete = { mergedDocument ->
+                        // Update the document in the manager with merged content
+                        writeopiaManager.updateDocument(mergedDocument)
+
+                        // Register for sync if this is the first load (backend-only document)
+                        if (localDocument == null) {
+                            registerForSync(documentId)
                         }
-                    )
+                    }
                 )
             }
+        }
+    }
+
+    private fun registerForSync(documentId: String) {
+        // Use global sync manager for syncing - continues even after ViewModel is cleared
+        documentSyncManager.registerForSync(
+            documentId = documentId,
+            documentEditionFlow = writeopiaManager.documentEditionState,
+            workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+            documentTracker = OnUpdateDocumentTracker(
+                documentRepository,
+                onStoryStepUpdate = { storyStep, position ->
+                    inDocumentSearchRepository.insertForFts(storyStep, documentId, position)
+                },
+                onDocumentUpdate = { doc ->
+                    doc.content
+                        .forEach { (position, storyStep) ->
+                            inDocumentSearchRepository.insertForFts(
+                                storyStep,
+                                documentId,
+                                position
+                            )
+                        }
+                }
+            )
+        )
+
+        // Also register for backend sync if the API is available
+        storyStepSyncApi?.let { syncApi ->
+            documentSyncManager.registerForBackendSync(
+                documentId = documentId,
+                documentEditionFlow = writeopiaManager.documentEditionState,
+                workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                syncApi = syncApi,
+                tokenProvider = { authRepository.getAuthToken() }
+            )
         }
     }
 

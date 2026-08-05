@@ -76,6 +76,7 @@ fun DesktopApp(
     toggleMaxScreen: () -> Unit,
     navigateToRegister: () -> Unit,
     navigateToResetPassword: () -> Unit,
+    navigateToChooseWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
     startDestination: String = startDestination(),
@@ -259,6 +260,9 @@ fun DesktopApp(
                                     downloadModel = globalShellViewModel::modelToDownload,
                                     deleteModel = globalShellViewModel::deleteModel,
                                     signIn = navigateToRegister,
+                                    changeWorkspace = {
+                                        globalShellViewModel.changeWorkspace(sideEffect = navigateToChooseWorkspace)
+                                    },
                                     resetPassword = navigateToResetPassword,
                                     logout = {
                                         globalShellViewModel.logout(sideEffect = navigateToRegister)

@@ -4,6 +4,7 @@ package io.writeopia.ui.manager
 
 import io.writeopia.sdk.manager.DocumentTracker
 import io.writeopia.sdk.manager.InTextMarkdownHandler
+import io.writeopia.sdk.manager.StoryStepSyncTracker
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.manager.fixMove
 import io.writeopia.sdk.model.action.Action
@@ -32,6 +33,7 @@ import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.repository.UserRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
+import io.writeopia.sdk.utils.collections.toSortedMutableMap
 import io.writeopia.sdk.utils.NextPositionCalculator
 import io.writeopia.sdk.utils.extensions.toEditState
 import io.writeopia.ui.backstack.BackstackHandler
@@ -244,8 +246,21 @@ class WriteopiaStateManager(
             parseDocument(info, state)
         }.stateIn(coroutineScope, SharingStarted.Lazily, null)
 
-    private val documentEditionState: Flow<Pair<StoryState, DocumentInfo>> =
+    /**
+     * Flow that emits the current document edition state, combining story state and document info.
+     * This can be used by external sync managers to track document changes.
+     */
+    val documentEditionState: Flow<Pair<StoryState, DocumentInfo>> =
         combine(currentStory, _documentInfo, ::Pair)
+
+    /**
+     * Flow that emits the current workspace ID.
+     * This can be used by external sync managers along with [documentEditionState].
+     */
+    val workspaceIdFlow: Flow<String> =
+        userRepository?.listenForWorkspace()?.map { workspace ->
+            workspace.id
+        } ?: MutableStateFlow(Workspace.disconnectedWorkspace().id)
 
     val toDraw: Flow<DrawState> =
         combine(
@@ -265,8 +280,7 @@ class WriteopiaStateManager(
                     )
                 }
                 .values
-                // Todo: Consider changing insertion order instead of sorting
-                .sortedBy { drawStory -> drawStory.position }
+                .toList() // Already sorted by position - map maintains sorted key order
                 .let { drawStories -> drawStateModify(drawStories, dragPosition).drop(1) }
 
             DrawState(toDrawStories, focus)
@@ -351,6 +365,22 @@ class WriteopiaStateManager(
         }
     }
 
+    /**
+     * Syncs StorySteps with the backend using the provided [StoryStepSyncTracker].
+     * This method starts a coroutine that listens to document changes and syncs
+     * them with the backend using a buffered approach.
+     *
+     * @param syncTracker The tracker responsible for syncing StorySteps with the backend.
+     */
+    fun syncStoryStepsWithBackend(syncTracker: StoryStepSyncTracker) {
+        coroutineScope.launch(dispatcher) {
+            syncTracker.syncStorySteps(
+                documentEditionFlow = documentEditionState,
+                workspaceIdFlow = workspaceIdFlow
+            )
+        }
+    }
+
     fun getDocument(): Document =
         parseDocument(_documentInfo.value, _currentStory.value)
 
@@ -418,6 +448,22 @@ class WriteopiaStateManager(
 
         _currentStory.value = StoryState(withNextPositions, LastEdit.Nothing)
         _documentInfo.value = document.info()
+    }
+
+    /**
+     * Updates a document that was already loaded. This should be used when the document
+     * content has been updated (e.g., from a backend sync) and needs to be refreshed in the UI.
+     *
+     * @param document [Document] the updated document
+     */
+    fun updateDocument(document: Document) {
+        val stories = document.content
+        val normalized = stepsNormalizer(stories.toEditState())
+        val withNextPositions = NextPositionCalculator.calculate(normalized)
+
+        _currentStory.value = StoryState(withNextPositions, LastEdit.Nothing)
+        _documentInfo.value = document.info()
+        backStackManager.addState(_currentStory.value)
     }
 
     /**
@@ -591,7 +637,7 @@ class WriteopiaStateManager(
                 storyText
             }
 
-            val mutable = currentStory.value.stories.toMutableMap()
+            val mutable = currentStory.value.stories.toSortedMutableMap()
             mutable[position] = story.copy(text = newText)
             mutable
         } else {
@@ -810,7 +856,7 @@ class WriteopiaStateManager(
         val lastContentStory = stories[lastPosition]
 
         val newState = if (lastContentStory?.type == StoryTypes.TEXT.type) {
-            val newStoriesState = stories.toMutableMap().apply {
+            val newStoriesState = stories.toSortedMutableMap().apply {
                 this[lastPosition] = lastContentStory.copyNewLocalId()
             }
             val cursor = lastContentStory.text?.length ?: 0
@@ -831,7 +877,7 @@ class WriteopiaStateManager(
             )
 
             // Update the last content story to point to the new story
-            val updatedStories = stories.toMutableMap().apply {
+            val updatedStories = stories.toSortedMutableMap().apply {
                 lastContentStory?.let { lastStory ->
                     this[lastPosition] = lastStory.copy(nextPosition = newPosition)
                 }
@@ -1427,7 +1473,7 @@ class WriteopiaStateManager(
             writeopiaManager.previousTextStory(getStories(), position)
                 ?.let { (step, newPosition) ->
                     val storyState = _currentStory.value
-                    val mutable = storyState.stories.toMutableMap()
+                    val mutable = storyState.stories.toSortedMutableMap()
 
                     mutable[newPosition] = step
 

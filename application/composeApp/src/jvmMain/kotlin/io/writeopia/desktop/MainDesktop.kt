@@ -281,6 +281,13 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                         navigationController.navigate(
                                             Destinations.AUTH_RESET_PASSWORD.id
                                         )
+                                    },
+                                    navigateToChooseWorkspace = {
+                                        navigationController.navigate(Destinations.START_APP.id) {
+                                            popUpTo(navigationController.graph.startDestinationId) {
+                                                inclusive = true
+                                            }
+                                        }
                                     }
                                 )
                             }
