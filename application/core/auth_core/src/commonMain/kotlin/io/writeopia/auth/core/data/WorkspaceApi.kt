@@ -15,6 +15,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
 import io.writeopia.app.dto.WorkspaceUserApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
@@ -166,5 +167,59 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
     } catch (e: Exception) {
         e.printStackTrace()
         ResultData.Error(e)
+    }
+
+    suspend fun searchUsers(
+        workspaceId: String,
+        emailQuery: String,
+        page: Int,
+        pageSize: Int,
+        token: String
+    ): ResultData<PaginatedUserSearchResponse> = try {
+        val response = client.get("$baseUrl/api/workspace/$workspaceId/users/search") {
+            url {
+                parameters.append("email", emailQuery)
+                parameters.append("page", page.toString())
+                parameters.append("pageSize", pageSize.toString())
+            }
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<PaginatedUserSearchResponse>())
+        } else {
+            ResultData.Error()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    suspend fun addUserToWorkspaceWithRole(
+        workspaceId: String,
+        userEmail: String,
+        role: Role,
+        token: String
+    ): ResultData<Unit> {
+        val cache = workspaceUsersCache.value
+        workspaceUsersCache.value = ResultData.Loading()
+
+        val response = client.post("$baseUrl/api/workspace/user") {
+            contentType(ContentType.Application.Json)
+            setBody(AddUserToWorkspaceRequest(userEmail, workspaceId, role.value))
+
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        workspaceUsersCache.value = cache
+
+        return when {
+            response.status.isSuccess() -> ResultData.Complete(Unit)
+            response.status == HttpStatusCode.Conflict ->
+                ResultData.Error(UserAlreadyInWorkspaceException())
+            response.status == HttpStatusCode.NotFound ->
+                ResultData.Error(UserNotFoundException())
+            else -> ResultData.Error()
+        }
     }
 }

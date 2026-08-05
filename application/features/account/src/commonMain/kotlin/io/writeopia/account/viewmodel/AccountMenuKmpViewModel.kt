@@ -56,6 +56,16 @@ internal class AccountMenuKmpViewModel(
         }
     }
 
+    override fun changeWorkspace(onChangeSuccess: () -> Unit) {
+        viewModelScope.launch(Dispatchers.Default) {
+            authRepository.unselectAllWorkspaces()
+
+            withContext(Dispatchers.Main) {
+                onChangeSuccess()
+            }
+        }
+    }
+
     override fun syncWorkspace() {
         workspaceHandler.syncWorkspace()
     }

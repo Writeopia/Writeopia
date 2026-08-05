@@ -13,6 +13,8 @@ enum class Destinations(val id: String, val root: String) {
     ACCOUNT("account", "Home"),
     SETTINGS_TEAMS("settings_teams", "Home"),
     SETTINGS_WORKSPACE_USERS("settings_workspace_users", "Home"),
+    SETTINGS_USER_SEARCH("settings_user_search", "Home"),
+    SETTINGS_USER_ADD("settings_user_add", "Home"),
     SETTINGS_APPEARANCE("settings_appearance", "Home"),
     SETTINGS_ACCOUNT("settings_account", "Home"),
 

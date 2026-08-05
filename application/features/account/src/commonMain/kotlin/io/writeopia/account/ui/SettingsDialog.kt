@@ -109,6 +109,7 @@ fun SettingsDialog(
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     signIn: () -> Unit,
+    changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
     showDeleteConfirm: () -> Unit,
@@ -146,6 +147,7 @@ fun SettingsDialog(
                         workspaces,
                         showDeleteConfirmation,
                         signIn,
+                        changeWorkspace,
                         resetPassword,
                         logout,
                         dismissDeleteConfirm,
@@ -238,6 +240,7 @@ fun SettingsScreen(
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     goToRegister: () -> Unit,
     changeAccount: () -> Unit,
+    changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
 ) {
@@ -265,7 +268,7 @@ fun SettingsScreen(
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    Connect(isLoggedInState, goToRegister, changeAccount, resetPassword, logout)
+    Connect(isLoggedInState, goToRegister, changeAccount, changeWorkspace, resetPassword, logout)
 
     val isLoggedIn = isLoggedInState.collectAsState().value.toBoolean()
 
@@ -306,6 +309,7 @@ private fun Connect(
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     goToRegister: () -> Unit,
     changeAccount: () -> Unit,
+    changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
 ) {
@@ -346,6 +350,15 @@ private fun Connect(
             Spacer(modifier = Modifier.height(4.dp))
 
             CommonButton(
+                text = WrStrings.changeWorkspace(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                changeWorkspace()
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            CommonButton(
                 text = WrStrings.resetPassword(),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -370,6 +383,7 @@ private fun AccountScreen(
     workspaces: StateFlow<ResultData<List<Workspace>>>,
     showDeleteConfirmation: StateFlow<Boolean>,
     signIn: () -> Unit,
+    changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
     dismissDeleteConfirm: () -> Unit,
@@ -406,6 +420,15 @@ private fun AccountScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     signIn()
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                CommonButton(
+                    text = WrStrings.changeWorkspace(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    changeWorkspace()
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
