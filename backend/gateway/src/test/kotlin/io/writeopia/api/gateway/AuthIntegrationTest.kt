@@ -374,6 +374,81 @@ class AuthIntegrationTest {
     }
 
     @Test
+    fun `it should not be possible to add a user that is already in the workspace`() = testApplication {
+        application {
+            module(db, debugMode = true, adminKey = "somekey")
+        }
+
+        val client = defaultClient()
+
+        val email1 = Random.nextInt().toString()
+
+        val response1 = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = Random.nextInt().toString(),
+                    email = email1,
+                    password = "lasjbdalsdq08w9y&",
+                )
+            )
+        }
+
+        assertTrue { response1.status.isSuccess() }
+
+        val email2 = Random.nextInt().toString()
+
+        val response2 = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = Random.nextInt().toString(),
+                    email = email2,
+                    password = "lasjbdalsdq08w9y&",
+                )
+            )
+        }
+
+        assertTrue { response2.status.isSuccess() }
+
+        val getWorkspaceResponse = client.get("/api/workspace/user/email/$email1") {
+            contentType(ContentType.Application.Json)
+        }
+
+        val workspaceOfUser1 = getWorkspaceResponse.body<List<WorkspaceApi>>().first()
+
+        // First add should succeed
+        val addUserToWorkspace = client.post("/api/workspace/user") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                AddUserToWorkspaceRequest(
+                    email = email2,
+                    workspaceId = workspaceOfUser1.id,
+                    role = "user"
+                )
+            )
+        }
+
+        assertTrue(addUserToWorkspace.status.isSuccess())
+
+        // Second add of the same user should fail with Conflict
+        val addUserToWorkspaceAgain = client.post("/api/workspace/user") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                AddUserToWorkspaceRequest(
+                    email = email2,
+                    workspaceId = workspaceOfUser1.id,
+                    role = "user"
+                )
+            )
+        }
+
+        assertEquals(HttpStatusCode.Conflict, addUserToWorkspaceAgain.status)
+    }
+
+    @Test
     fun `it should be possible to remove a user to a workspace`() = testApplication {
         application {
             module(db, debugMode = true, adminKey = "somekey")

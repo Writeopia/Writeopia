@@ -9,6 +9,7 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
+import io.writeopia.api.core.auth.models.AddUserResult
 import io.writeopia.api.core.auth.repository.changeWorkspaceName
 import io.writeopia.api.core.auth.repository.changeWorkspaceRoleForUser
 import io.writeopia.api.core.auth.repository.listWorkspaces
@@ -182,10 +183,16 @@ fun Routing.workspaceRoute(
                     writeopiaDb
                 )
 
-                if (result) {
-                    call.respond(HttpStatusCode.OK, ServerResponse("User added to workspace"))
-                } else {
-                    call.respond(HttpStatusCode.NotFound, ServerResponse("Not added"))
+                when (result) {
+                    AddUserResult.SUCCESS -> {
+                        call.respond(HttpStatusCode.OK, ServerResponse("User added to workspace"))
+                    }
+                    AddUserResult.USER_NOT_FOUND -> {
+                        call.respond(HttpStatusCode.NotFound, ServerResponse("User not found"))
+                    }
+                    AddUserResult.USER_ALREADY_IN_WORKSPACE -> {
+                        call.respond(HttpStatusCode.Conflict, ServerResponse("User is already in this workspace"))
+                    }
                 }
             }
         }

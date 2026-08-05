@@ -3,6 +3,8 @@
 package io.writeopia.auth.core.data
 
 import io.ktor.client.HttpClient
+import io.writeopia.auth.core.exceptions.UserAlreadyInWorkspaceException
+import io.writeopia.auth.core.exceptions.UserNotFoundException
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -10,6 +12,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
@@ -47,10 +50,13 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
 
         workspaceUsersCache.value = cache
 
-        return if (response.status.isSuccess()) {
-            ResultData.Complete(Unit)
-        } else {
-            ResultData.Error()
+        return when {
+            response.status.isSuccess() -> ResultData.Complete(Unit)
+            response.status == HttpStatusCode.Conflict ->
+                ResultData.Error(UserAlreadyInWorkspaceException())
+            response.status == HttpStatusCode.NotFound ->
+                ResultData.Error(UserNotFoundException())
+            else -> ResultData.Error()
         }
     }
 

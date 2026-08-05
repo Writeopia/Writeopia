@@ -44,6 +44,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.writeopia.app.dto.WorkspaceUserApi
+import io.writeopia.auth.core.exceptions.UserAlreadyInWorkspaceException
+import io.writeopia.auth.core.exceptions.UserNotFoundException
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.theme.WriteopiaTheme
@@ -317,8 +319,15 @@ private fun AddUserDialog(
 
                 if (hasSubmitted && addUserState is ResultData.Error) {
                     Spacer(modifier = Modifier.height(8.dp))
+                    val errorMessage = when (addUserState.exception) {
+                        is UserAlreadyInWorkspaceException ->
+                            "This user is already in the workspace."
+                        is UserNotFoundException ->
+                            "User not found. Please check the email address."
+                        else -> "Failed to add user. Please try again."
+                    }
                     Text(
-                        text = "Failed to add user. Please check the email and try again.",
+                        text = errorMessage,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
