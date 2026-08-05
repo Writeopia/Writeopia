@@ -18,8 +18,11 @@ private class SortedMutableMap<K : Comparable<K>, V> : MutableMap<K, V> {
     override val values: MutableCollection<V> get() = delegate.values
 
     override fun isEmpty(): Boolean = delegate.isEmpty()
+
     override fun containsKey(key: K): Boolean = delegate.containsKey(key)
+
     override fun containsValue(value: V): Boolean = delegate.containsValue(value)
+
     override fun get(key: K): V? = delegate[key]
 
     override fun put(key: K, value: V): V? {
@@ -30,6 +33,7 @@ private class SortedMutableMap<K : Comparable<K>, V> : MutableMap<K, V> {
             override val key: K = key
             private var _value: V = value
             override val value: V get() = _value
+
             override fun setValue(newValue: V): V {
                 val old = _value
                 _value = newValue
