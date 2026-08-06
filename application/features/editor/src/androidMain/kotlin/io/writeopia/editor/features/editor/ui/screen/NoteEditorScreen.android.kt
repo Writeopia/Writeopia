@@ -61,6 +61,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
+import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
 import io.writeopia.editor.input.InputScreen
@@ -233,7 +234,24 @@ internal fun NoteEditorScreen(
                     onShareJson = { noteEditorViewModel.shareDocumentInJson() },
                     onShareMd = { noteEditorViewModel.shareDocumentInMarkdown() },
                     changeFontFamily = noteEditorViewModel::changeFontFamily,
-                    selectedState = noteEditorViewModel.fontFamily
+                    selectedState = noteEditorViewModel.fontFamily,
+                    onPublishClick = noteEditorViewModel::showPublishDialog
+                )
+            }
+
+            val showPublishDialog by noteEditorViewModel.showPublishDialog.collectAsState()
+            val isDocumentPublished by noteEditorViewModel.isDocumentPublished.collectAsState()
+            val publishLoading by noteEditorViewModel.publishLoading.collectAsState()
+
+            if (showPublishDialog && documentId != null) {
+                PublishDialog(
+                    documentId = documentId,
+                    isPublished = isDocumentPublished,
+                    isLoading = publishLoading,
+                    onDismiss = noteEditorViewModel::hidePublishDialog,
+                    onPublishAndView = noteEditorViewModel::publishDocument,
+                    onUnpublish = noteEditorViewModel::unpublishDocument,
+                    onCopyLink = noteEditorViewModel::copyPublishLink
                 )
             }
         }

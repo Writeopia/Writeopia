@@ -17,9 +17,11 @@ import io.writeopia.api.documents.documents.repository.deleteStoryStepsByIds
 import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.getFolderById
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
+import io.writeopia.api.documents.documents.repository.getPublishedDocumentById
 import io.writeopia.api.documents.documents.repository.getStoryStepById
 import io.writeopia.api.documents.documents.repository.getStoryStepsAfterTime
 import io.writeopia.api.documents.documents.repository.getUserFavoriteDocumentIds
+import io.writeopia.api.documents.documents.repository.isDocumentPublished
 import io.writeopia.api.documents.documents.repository.isUserFavorite
 import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.removeUserFavorite
@@ -27,6 +29,7 @@ import io.writeopia.api.documents.documents.repository.getDocumentByTitle
 import io.writeopia.api.documents.documents.repository.getDocumentWithContentById
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
+import io.writeopia.api.documents.documents.repository.setDocumentPublished
 import io.writeopia.api.documents.documents.repository.upsertStoryStep
 import io.writeopia.api.documents.search.SearchDocument
 import io.writeopia.connection.ResultData
@@ -306,6 +309,28 @@ object DocumentsService {
 
     fun countDocumentsByWorkspaceId(workspaceId: String, writeopiaDb: WriteopiaDbBackend): Long {
         return writeopiaDb.documentEntityQueries.countByWorkspaceId(workspaceId).executeAsOne()
+    }
+
+    /**
+     * Gets a published document by ID.
+     * Returns null if the document doesn't exist or is not published.
+     */
+    suspend fun getPublishedDocument(documentId: String, writeopiaDb: WriteopiaDbBackend): Document? {
+        return writeopiaDb.getPublishedDocumentById(documentId)
+    }
+
+    /**
+     * Sets the published status of a document.
+     */
+    fun setPublished(documentId: String, published: Boolean, writeopiaDb: WriteopiaDbBackend) {
+        writeopiaDb.setDocumentPublished(documentId, published)
+    }
+
+    /**
+     * Checks if a document is published.
+     */
+    fun isPublished(documentId: String, writeopiaDb: WriteopiaDbBackend): Boolean {
+        return writeopiaDb.isDocumentPublished(documentId)
     }
 
     /**

@@ -40,6 +40,7 @@ internal fun NoteGlobalActionsMenu(
     onShareMd: () -> Unit = {},
     changeFontFamily: (Font) -> Unit,
     selectedState: StateFlow<Font>,
+    onPublishClick: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -97,6 +98,18 @@ internal fun NoteGlobalActionsMenu(
                     onClick = onShareMd
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Title(WrStrings.publish())
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ShareButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = WrStrings.publishToWeb(),
+                onClick = onPublishClick
+            )
         }
     }
 }

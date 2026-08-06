@@ -46,6 +46,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
+import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
 import io.writeopia.resources.WrStrings
@@ -245,7 +246,8 @@ fun DesktopNoteEditorScreen(
             selectModel = noteEditorViewModel::selectModel,
             changeSideMenuTab = noteEditorViewModel::changeSideMenu,
             titleClick = noteEditorViewModel::titleClick,
-            onDrawingClick = onNewDrawingClick
+            onDrawingClick = onNewDrawingClick,
+            onPublishClick = noteEditorViewModel::showPublishDialog
         )
 
         if (showDeleteConfirmation) {
@@ -301,6 +303,22 @@ fun DesktopNoteEditorScreen(
                     strokeWidth = 2.dp
                 )
             }
+        }
+
+        val showPublishDialog by noteEditorViewModel.showPublishDialog.collectAsState()
+        val isDocumentPublished by noteEditorViewModel.isDocumentPublished.collectAsState()
+        val publishLoading by noteEditorViewModel.publishLoading.collectAsState()
+
+        if (showPublishDialog && documentId != null) {
+            PublishDialog(
+                documentId = documentId,
+                isPublished = isDocumentPublished,
+                isLoading = publishLoading,
+                onDismiss = noteEditorViewModel::hidePublishDialog,
+                onPublishAndView = noteEditorViewModel::publishDocument,
+                onUnpublish = noteEditorViewModel::unpublishDocument,
+                onCopyLink = noteEditorViewModel::copyPublishLink
+            )
         }
     }
 }

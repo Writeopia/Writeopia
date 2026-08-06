@@ -303,6 +303,15 @@ class NoteEditorKmpViewModel(
     private val _sideMenuTabState = MutableStateFlow(SideMenuTab.NONE)
     override val sideMenuTabState: StateFlow<SideMenuTab> = _sideMenuTabState.asStateFlow()
 
+    private val _showPublishDialog = MutableStateFlow(false)
+    override val showPublishDialog: StateFlow<Boolean> = _showPublishDialog.asStateFlow()
+
+    private val _isDocumentPublished = MutableStateFlow(false)
+    override val isDocumentPublished: StateFlow<Boolean> = _isDocumentPublished.asStateFlow()
+
+    private val _publishLoading = MutableStateFlow(false)
+    override val publishLoading: StateFlow<Boolean> = _publishLoading.asStateFlow()
+
     /**
      * This property defines if the document is favorite
      */
@@ -976,6 +985,60 @@ class NoteEditorKmpViewModel(
             withContext(Dispatchers.Main) {
                 onComplete()
             }
+        }
+    }
+
+    override fun showPublishDialog() {
+        _showPublishDialog.value = true
+        // Fetch current publish status from server
+        viewModelScope.launch(Dispatchers.Default) {
+            val docId = documentId.value
+            if (docId.isNotEmpty()) {
+                val isPublished = documentRepository.isPublished(docId)
+                _isDocumentPublished.value = isPublished
+            }
+        }
+    }
+
+    override fun hidePublishDialog() {
+        _showPublishDialog.value = false
+    }
+
+    override fun publishDocument() {
+        viewModelScope.launch(Dispatchers.Default) {
+            _publishLoading.value = true
+            try {
+                val docId = documentId.value
+                if (docId.isNotEmpty()) {
+                    documentRepository.setPublished(docId, true)
+                    _isDocumentPublished.value = true
+                }
+            } finally {
+                _publishLoading.value = false
+            }
+        }
+    }
+
+    override fun unpublishDocument() {
+        viewModelScope.launch(Dispatchers.Default) {
+            _publishLoading.value = true
+            try {
+                val docId = documentId.value
+                if (docId.isNotEmpty()) {
+                    documentRepository.setPublished(docId, false)
+                    _isDocumentPublished.value = false
+                }
+            } finally {
+                _publishLoading.value = false
+            }
+        }
+    }
+
+    override fun copyPublishLink() {
+        val docId = documentId.value
+        if (docId.isNotEmpty()) {
+            val url = "https://writeopia.io/site/$docId"
+            copyManager.copyText(url)
         }
     }
 }

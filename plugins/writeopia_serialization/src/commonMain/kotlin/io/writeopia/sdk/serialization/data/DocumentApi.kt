@@ -19,5 +19,6 @@ data class DocumentApi(
     val parentId: String? = null,
     val isLocked: Boolean = false,
     val icon: IconApi? = null,
-    val deleted: Boolean = false
+    val deleted: Boolean = false,
+    val published: Boolean = false
 )
