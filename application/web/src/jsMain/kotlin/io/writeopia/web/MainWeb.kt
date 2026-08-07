@@ -54,7 +54,9 @@ fun main() {
 @Composable
 fun CreateSiteView(documentId: String) {
     RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
-    WriteopiaConnectionInjector.setBaseUrl("https://writeopia.io")
+    // Use the current origin for API calls (works for both app.writeopia.io and localhost)
+    val baseUrl = window.location.origin
+    WriteopiaConnectionInjector.setBaseUrl(baseUrl)
 
     val connectionInjector = WriteopiaConnectionInjector.singleton()
 
