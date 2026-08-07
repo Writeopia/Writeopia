@@ -11,7 +11,12 @@ kotlin {
     jvmToolchain(21)
 
     js {
-        browser()
+        browser {
+            webpackTask {
+                mainOutputFileName = "writeopia.js"
+                sourceMaps = false
+            }
+        }
         binaries.executable()
     }
 

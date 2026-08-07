@@ -1,21 +1,10 @@
 package io.writeopia.common.utils.icons
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.FormatColorReset
-import androidx.compose.material.icons.outlined.Groups
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 import io.writeopia.common.utils.icons.all.ALargeSmall
 import io.writeopia.common.utils.icons.all.ArrowDownAZ
 import io.writeopia.common.utils.icons.all.ArrowDownUp
+import io.writeopia.common.utils.icons.all.Bell
 import io.writeopia.common.utils.icons.all.Bold
 import io.writeopia.common.utils.icons.all.Bolt
 import io.writeopia.common.utils.icons.all.CalendarArrowDown
@@ -33,6 +22,9 @@ import io.writeopia.common.utils.icons.all.CloudUpload
 import io.writeopia.common.utils.icons.all.Command
 import io.writeopia.common.utils.icons.all.Contrast
 import io.writeopia.common.utils.icons.all.Crosshair
+import io.writeopia.common.utils.icons.all.Droplet
+import io.writeopia.common.utils.icons.all.Ellipsis
+import io.writeopia.common.utils.icons.all.EllipsisVertical
 import io.writeopia.common.utils.icons.all.Eye
 import io.writeopia.common.utils.icons.all.EyeClosed
 import io.writeopia.common.utils.icons.all.FileDown
@@ -40,15 +32,19 @@ import io.writeopia.common.utils.icons.all.FileMinus
 import io.writeopia.common.utils.icons.all.FileUp
 import io.writeopia.common.utils.icons.all.FolderOpen
 import io.writeopia.common.utils.icons.all.FolderSync
+import io.writeopia.common.utils.icons.all.Heart
 import io.writeopia.common.utils.icons.all.House
 import io.writeopia.common.utils.icons.all.Image
 import io.writeopia.common.utils.icons.all.Italic
 import io.writeopia.common.utils.icons.all.LayoutGrid
 import io.writeopia.common.utils.icons.all.LayoutPanelLeft
 import io.writeopia.common.utils.icons.all.Link
+import io.writeopia.common.utils.icons.all.Lock
 import io.writeopia.common.utils.icons.all.Moon
 import io.writeopia.common.utils.icons.all.MoveLeft
 import io.writeopia.common.utils.icons.all.NotebookText
+import io.writeopia.common.utils.icons.all.Palette
+import io.writeopia.common.utils.icons.all.PencilLine
 import io.writeopia.common.utils.icons.all.Play
 import io.writeopia.common.utils.icons.all.Plus
 import io.writeopia.common.utils.icons.all.Redo2
@@ -57,13 +53,15 @@ import io.writeopia.common.utils.icons.all.Save
 import io.writeopia.common.utils.icons.all.Search
 import io.writeopia.common.utils.icons.all.SquareCode
 import io.writeopia.common.utils.icons.all.Sun
+import io.writeopia.common.utils.icons.all.Trash2
 import io.writeopia.common.utils.icons.all.Underline
 import io.writeopia.common.utils.icons.all.Undo2
+import io.writeopia.common.utils.icons.all.User
+import io.writeopia.common.utils.icons.all.Users
 import io.writeopia.common.utils.icons.all.WandSparkles
 import io.writeopia.common.utils.icons.all.X
 import io.writeopia.common.utils.icons.all.Zap
 import io.writeopia.common.utils.icons.all.highlighter
-import io.writeopia.common.utils.icons.all.PencilLine
 
 object WrIcons {
     val settings: ImageVector = Bolt
@@ -72,9 +70,9 @@ object WrIcons {
 
     val search: ImageVector = Search
 
-    val notifications: ImageVector = Icons.Outlined.Notifications
+    val notifications: ImageVector = Bell
 
-    val favorites: ImageVector = Icons.Outlined.FavoriteBorder
+    val favorites: ImageVector = Heart
 
     val file: ImageVector = FileMinus
 
@@ -88,9 +86,9 @@ object WrIcons {
 
     val sync: ImageVector = FolderSync
 
-    val moreVert: ImageVector = Icons.Outlined.MoreVert
+    val moreVert: ImageVector = EllipsisVertical
 
-    val moreHoriz: ImageVector = Icons.Outlined.MoreHoriz
+    val moreHoriz: ImageVector = Ellipsis
 
     val sort: ImageVector = ArrowDownUp
 
@@ -100,7 +98,7 @@ object WrIcons {
 
     val colorModeSystem: ImageVector = Contrast
 
-    val dynamicColor: ImageVector = Icons.Outlined.Palette
+    val dynamicColor: ImageVector = Palette
 
     val bold: ImageVector = Bold
 
@@ -128,15 +126,15 @@ object WrIcons {
 
     val close: ImageVector = X
 
-    val delete: ImageVector = Icons.Outlined.DeleteOutline
+    val delete: ImageVector = Trash2
 
-    val transparent: ImageVector = Icons.Outlined.FormatColorReset
+    val transparent: ImageVector = Droplet
 
-    val person: ImageVector = Icons.Outlined.Person
+    val person: ImageVector = User
 
-    val group: ImageVector = Icons.Outlined.Groups
+    val group: ImageVector = Users
 
-    val arrowRight: ImageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight
+    val arrowRight: ImageVector = ChevronRight
 
     val arrowBack: ImageVector = PlatformIcons.backArrowMobile
 
@@ -170,7 +168,7 @@ object WrIcons {
 
     val visibilityOff = EyeClosed
 
-    val lock = Icons.Outlined.Lock
+    val lock = Lock
 
     val image = Image
 

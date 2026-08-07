@@ -20,8 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -252,7 +250,7 @@ private fun TopBar(
                     .clip(CircleShape)
                     .clickable(onClick = menuClick)
                     .padding(10.dp),
-                imageVector = Icons.Default.MoreVert,
+                imageVector = WrIcons.moreVert,
                 contentDescription = "More options",
 //                stringResource(R.string.more_options),
                 tint = MaterialTheme.colorScheme.onPrimary

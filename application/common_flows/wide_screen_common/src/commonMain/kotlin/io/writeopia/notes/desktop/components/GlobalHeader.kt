@@ -6,8 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import io.writeopia.common.utils.icons.WrIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -77,7 +76,7 @@ private fun PathToCurrentDirectory(pathState: StateFlow<List<String>>) {
             if (i != size) {
                 Icon(
                     modifier = Modifier.size(20.dp),
-                    imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
+                    imageVector = WrIcons.arrowRight,
                     contentDescription = "Next",
                     tint = MaterialTheme.colorScheme.onBackground
                 )

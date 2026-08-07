@@ -18,13 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.ContentCut
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.outlined.FormatBold
-import androidx.compose.material.icons.outlined.FormatItalic
-import androidx.compose.material.icons.outlined.FormatUnderlined
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -113,9 +106,8 @@ fun EditionScreen(
                         }
                         .size(iconSize)
                         .padding(iconPadding),
-                    imageVector = Icons.Outlined.FormatBold,
+                    imageVector = WrSdkIcons.bold,
                     contentDescription = "BOLD",
-//            contentDescription = stringResource(R.string.delete),
                     tint = tint
                 )
 
@@ -127,9 +119,8 @@ fun EditionScreen(
                         }
                         .size(iconSize)
                         .padding(iconPadding),
-                    imageVector = Icons.Outlined.FormatItalic,
+                    imageVector = WrSdkIcons.italic,
                     contentDescription = "ITALIC",
-//            contentDescription = stringResource(R.string.delete),
                     tint = tint
                 )
 
@@ -143,9 +134,8 @@ fun EditionScreen(
                         }
                         .size(iconSize)
                         .padding(iconPadding),
-                    imageVector = Icons.Outlined.FormatUnderlined,
+                    imageVector = WrSdkIcons.underline,
                     contentDescription = "UNDERLINE",
-//            contentDescription = stringResource(R.string.delete),
                     tint = tint
                 )
 
@@ -185,7 +175,7 @@ fun EditionScreen(
                         .clickable(onClick = codeBlockClick)
                         .size(iconSize)
                         .padding(iconPadding),
-                    imageVector = Icons.Default.Code,
+                    imageVector = WrSdkIcons.code,
                     contentDescription = "Code block",
                     tint = tint
                 )
@@ -276,7 +266,7 @@ fun EditionScreen(
                         .clickable(onClick = onCut)
                         .size(iconSize)
                         .padding(iconPadding),
-                    imageVector = Icons.Default.ContentCut,
+                    imageVector = WrSdkIcons.scissors,
                     contentDescription = "Cut",
                     tint = tint
                 )
@@ -289,9 +279,8 @@ fun EditionScreen(
                         .clickable(onClick = onDelete)
                         .size(iconSize)
                         .padding(iconPadding),
-                    imageVector = Icons.Default.DeleteOutline,
+                    imageVector = WrSdkIcons.delete,
                     contentDescription = "Delete",
-//            contentDescription = stringResource(R.string.delete),
                     tint = tint
                 )
 
@@ -509,9 +498,8 @@ fun EditionScreenForText(
                             }
                             .size(iconSize)
                             .padding(iconPadding),
-                        imageVector = Icons.Outlined.FormatBold,
+                        imageVector = WrSdkIcons.bold,
                         contentDescription = "BOLD",
-//            contentDescription = stringResource(R.string.delete),
                         tint = tint,
                     )
 
@@ -523,9 +511,8 @@ fun EditionScreenForText(
                             }
                             .size(iconSize)
                             .padding(iconPadding),
-                        imageVector = Icons.Outlined.FormatItalic,
+                        imageVector = WrSdkIcons.italic,
                         contentDescription = "ITALIC",
-//            contentDescription = stringResource(R.string.delete),
                         tint = tint
                     )
 
@@ -539,9 +526,8 @@ fun EditionScreenForText(
                             }
                             .size(iconSize)
                             .padding(iconPadding),
-                        imageVector = Icons.Outlined.FormatUnderlined,
+                        imageVector = WrSdkIcons.underline,
                         contentDescription = "UNDERLINE",
-//            contentDescription = stringResource(R.string.delete),
                         tint = tint
                     )
 
