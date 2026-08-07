@@ -66,7 +66,7 @@ class WorkspaceInjection private constructor(
         )
     }
 
-    private fun provideDocumentsApi(): DocumentsApi = DocumentsApi(
+    fun provideDocumentsApi(): DocumentsApi = DocumentsApi(
         appConnectionInjection.provideHttpClient(),
         connectionInjector.baseUrl()
     )

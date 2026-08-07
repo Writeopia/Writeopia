@@ -62,6 +62,7 @@ import io.writeopia.common.utils.icons.all.WandSparkles
 import io.writeopia.common.utils.icons.all.X
 import io.writeopia.common.utils.icons.all.Zap
 import io.writeopia.common.utils.icons.all.highlighter
+import com.composables.GlobeCheck
 
 object WrIcons {
     val settings: ImageVector = Bolt
@@ -191,6 +192,8 @@ object WrIcons {
     val highlight = highlighter
 
     val drawing: ImageVector = PencilLine
+
+    val published: ImageVector = GlobeCheck
 
     val allIcons: Map<String, ImageVector> =
         mapOf(

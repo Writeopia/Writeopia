@@ -127,6 +127,7 @@ internal fun NoteEditorScreen(
                 TopBar(
                     titleState = noteEditorViewModel.currentTitle,
                     editableState = noteEditorViewModel.isEditable,
+                    publishedState = noteEditorViewModel.isDocumentPublished,
                     navigationClick = {
                         noteEditorViewModel.handleBackAction(navigateBack = navigateBack)
                     },
@@ -260,12 +261,14 @@ internal fun NoteEditorScreen(
 private fun TopBar(
     titleState: StateFlow<String>,
     editableState: StateFlow<Boolean>,
+    publishedState: StateFlow<Boolean>,
     modifier: Modifier = Modifier,
     navigationClick: () -> Unit = {},
     shareDocument: () -> Unit
 ) {
     val title by titleState.collectAsState()
     val isEditable by editableState.collectAsState()
+    val isPublished by publishedState.collectAsState()
 
     TopAppBar(
         modifier = modifier.height(110.dp),
@@ -286,12 +289,26 @@ private fun TopBar(
                     style = MaterialTheme.typography.titleSmall.copy(textAlign = TextAlign.Center)
                 )
 
-                if (!isEditable) {
+                if (!isEditable || isPublished) {
                     Spacer(modifier.width(4.dp))
+                }
 
+                if (!isEditable) {
                     Icon(
                         imageVector = WrIcons.lock,
-                        contentDescription = "Lock",
+                        contentDescription = "Locked",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+
+                if (isPublished) {
+                    if (!isEditable) {
+                        Spacer(modifier.width(4.dp))
+                    }
+                    Icon(
+                        imageVector = WrIcons.published,
+                        contentDescription = "Published",
                         tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(14.dp)
                     )

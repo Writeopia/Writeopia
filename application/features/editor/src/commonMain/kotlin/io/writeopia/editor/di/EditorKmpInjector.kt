@@ -112,7 +112,8 @@ class EditorKmpInjector private constructor(
             documentLoadUseCase = workspaceInjection.provideDocumentLoadUseCase(),
             storyStepSyncApi = { request, token ->
                 connectionInjection.storyStepSyncApi().syncStorySteps(request, token)
-            }
+            },
+            documentsApi = workspaceInjection.provideDocumentsApi()
         )
 
     @Composable

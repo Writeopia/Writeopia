@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -261,14 +262,30 @@ fun DesktopNoteEditorScreen(
             )
         }
 
-        if (!isEditable) {
-            Icon(
-                imageVector = WrIcons.lock,
-                contentDescription = "Lock",
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
-                    .size(16.dp)
-            )
+        val isPublished by noteEditorViewModel.isDocumentPublished.collectAsState()
+
+        if (!isEditable || isPublished) {
+            Row(
+                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (!isEditable) {
+                    Icon(
+                        imageVector = WrIcons.lock,
+                        contentDescription = "Locked",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                if (isPublished) {
+                    Icon(
+                        imageVector = WrIcons.published,
+                        contentDescription = "Published",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
 
         if (showFolderSelection) {
@@ -304,13 +321,12 @@ fun DesktopNoteEditorScreen(
         }
 
         val showPublishDialog by noteEditorViewModel.showPublishDialog.collectAsState()
-        val isDocumentPublished by noteEditorViewModel.isDocumentPublished.collectAsState()
         val publishLoading by noteEditorViewModel.publishLoading.collectAsState()
 
         if (showPublishDialog && documentId != null) {
             PublishDialog(
                 documentId = documentId,
-                isPublished = isDocumentPublished,
+                isPublished = isPublished,
                 isLoading = publishLoading,
                 onDismiss = noteEditorViewModel::hidePublishDialog,
                 onPublishAndView = noteEditorViewModel::publishDocument,

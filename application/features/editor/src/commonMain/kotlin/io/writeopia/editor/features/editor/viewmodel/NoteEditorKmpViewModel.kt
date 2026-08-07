@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.collections.toNodeTree
+import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
@@ -96,7 +97,8 @@ class NoteEditorKmpViewModel(
     private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
     private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton(),
     private val documentLoadUseCase: DocumentLoadUseCase? = null,
-    private val storyStepSyncApi: (suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse)? = null
+    private val storyStepSyncApi: (suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse)? = null,
+    private val documentsApi: DocumentsApi? = null
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -511,6 +513,8 @@ class NoteEditorKmpViewModel(
             if (localDocument != null) {
                 writeopiaManager.loadDocument(localDocument)
                 registerForSync(documentId)
+                // Set initial published state from local document
+                _isDocumentPublished.value = localDocument.published
             }
 
             // Step 2: If online, fetch from backend in background and merge
@@ -521,6 +525,8 @@ class NoteEditorKmpViewModel(
                     onMergeComplete = { mergedDocument ->
                         // Update the document in the manager with merged content
                         writeopiaManager.updateDocument(mergedDocument)
+                        // Update published state from merged document
+                        _isDocumentPublished.value = mergedDocument.published
 
                         // Register for sync if this is the first load (backend-only document)
                         if (localDocument == null) {
@@ -528,6 +534,15 @@ class NoteEditorKmpViewModel(
                         }
                     }
                 )
+            }
+
+            // Step 3: Fetch published status from API if online
+            if (!isDisconnected && documentsApi != null) {
+                val token = authRepository.getAuthToken() ?: return@launch
+                val result = documentsApi.isDocumentPublished(documentId, workspace.id, token)
+                if (result is ResultData.Complete) {
+                    _isDocumentPublished.value = result.data
+                }
             }
         }
     }
@@ -993,9 +1008,13 @@ class NoteEditorKmpViewModel(
         // Fetch current publish status from server
         viewModelScope.launch(Dispatchers.Default) {
             val docId = documentId.value
-            if (docId.isNotEmpty()) {
-                val isPublished = documentRepository.isPublished(docId)
-                _isDocumentPublished.value = isPublished
+            if (docId.isNotEmpty() && documentsApi != null) {
+                val token = authRepository.getAuthToken() ?: return@launch
+                val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
+                val result = documentsApi.isDocumentPublished(docId, workspaceId, token)
+                if (result is ResultData.Complete) {
+                    _isDocumentPublished.value = result.data
+                }
             }
         }
     }
@@ -1009,9 +1028,13 @@ class NoteEditorKmpViewModel(
             _publishLoading.value = true
             try {
                 val docId = documentId.value
-                if (docId.isNotEmpty()) {
-                    documentRepository.setPublished(docId, true)
-                    _isDocumentPublished.value = true
+                if (docId.isNotEmpty() && documentsApi != null) {
+                    val token = authRepository.getAuthToken() ?: return@launch
+                    val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
+                    val result = documentsApi.publishDocument(docId, workspaceId, token)
+                    if (result is ResultData.Complete) {
+                        _isDocumentPublished.value = true
+                    }
                 }
             } finally {
                 _publishLoading.value = false
@@ -1024,9 +1047,13 @@ class NoteEditorKmpViewModel(
             _publishLoading.value = true
             try {
                 val docId = documentId.value
-                if (docId.isNotEmpty()) {
-                    documentRepository.setPublished(docId, false)
-                    _isDocumentPublished.value = false
+                if (docId.isNotEmpty() && documentsApi != null) {
+                    val token = authRepository.getAuthToken() ?: return@launch
+                    val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
+                    val result = documentsApi.unpublishDocument(docId, workspaceId, token)
+                    if (result is ResultData.Complete) {
+                        _isDocumentPublished.value = false
+                    }
                 }
             } finally {
                 _publishLoading.value = false
