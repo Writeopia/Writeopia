@@ -107,7 +107,8 @@ fun SideEditorOptions(
     selectModel: (String) -> Unit,
     changeSideMenuTab: (SideMenuTab) -> Unit,
     titleClick: (Tag) -> Unit,
-    onDrawingClick: () -> Unit = {}
+    onDrawingClick: () -> Unit = {},
+    onPublishClick: () -> Unit = {}
 ) {
     val menuType by sideMenuTabState.collectAsState()
 
@@ -182,6 +183,7 @@ fun SideEditorOptions(
                             Actions(
                                 exportJson,
                                 exportMarkdown,
+                                onPublishClick,
                             )
                         }
 
@@ -891,6 +893,7 @@ private fun TextOptions(
 private fun Actions(
     exportJson: (String) -> Unit,
     exportMarkdown: (String) -> Unit,
+    onPublishClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -925,6 +928,19 @@ private fun Actions(
                 fileChooserSave()?.let(exportMarkdown)
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Title(WrStrings.publish())
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        TextButton(
+            text = WrStrings.publishToWeb(),
+            modifier = Modifier.fillMaxWidth(),
+            paddingValues = smallButtonPadding(),
+            onClick = onPublishClick
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
     }
@@ -1079,7 +1095,7 @@ private fun buttonsTextStyle() =
     MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
 
 @Composable
-private fun smallButtonPadding() = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+private fun smallButtonPadding() = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
 
 private data class DecorationButton(
     val text: String,

@@ -15,6 +15,7 @@ import io.writeopia.editor.features.editor.viewmodel.NoteEditorKmpViewModel
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.presentation.viewmodel.PresentationKmpViewModel
 import io.writeopia.editor.features.presentation.viewmodel.PresentationViewModel
+import io.writeopia.editor.features.site.viewmodel.SiteViewModel
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.sdk.models.id.GenerateId
@@ -127,6 +128,13 @@ class EditorKmpInjector private constructor(
         viewModel {
             provideNoteEditorViewModel(parentFolder = parentFolder, copyManager = copyManager)
         }
+
+    @Composable
+    override fun provideSiteViewModel(): SiteViewModel {
+        throw UnsupportedOperationException(
+            "SiteViewModel should be created directly where needed with the appropriate DocumentsApi"
+        )
+    }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 

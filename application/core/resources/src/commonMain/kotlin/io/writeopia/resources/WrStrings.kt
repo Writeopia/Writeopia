@@ -159,6 +159,12 @@ import writeopia.application.core.resources.generated.resources.current_role
 import writeopia.application.core.resources.generated.resources.failed_to_update_role
 import writeopia.application.core.resources.generated.resources.workspace_must_have_admin
 import writeopia.application.core.resources.generated.resources.save
+import writeopia.application.core.resources.generated.resources.publish
+import writeopia.application.core.resources.generated.resources.unpublish
+import writeopia.application.core.resources.generated.resources.publish_to_web
+import writeopia.application.core.resources.generated.resources.view_site
+import writeopia.application.core.resources.generated.resources.copy_link
+import writeopia.application.core.resources.generated.resources.link_copied
 
 object WrStrings {
 
@@ -635,4 +641,22 @@ object WrStrings {
 
     @Composable
     fun save() = stringResource(Res.string.save)
+
+    @Composable
+    fun publish() = stringResource(Res.string.publish)
+
+    @Composable
+    fun unpublish() = stringResource(Res.string.unpublish)
+
+    @Composable
+    fun publishToWeb() = stringResource(Res.string.publish_to_web)
+
+    @Composable
+    fun viewSite() = stringResource(Res.string.view_site)
+
+    @Composable
+    fun copyLink() = stringResource(Res.string.copy_link)
+
+    @Composable
+    fun linkCopied() = stringResource(Res.string.link_copied)
 }

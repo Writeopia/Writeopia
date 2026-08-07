@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.presentation.viewmodel.PresentationViewModel
+import io.writeopia.editor.features.site.viewmodel.SiteViewModel
 
 interface TextEditorInjector {
 
@@ -15,4 +16,7 @@ interface TextEditorInjector {
 
     @Composable
     fun providePresentationViewModel(): PresentationViewModel
+
+    @Composable
+    fun provideSiteViewModel(): SiteViewModel
 }

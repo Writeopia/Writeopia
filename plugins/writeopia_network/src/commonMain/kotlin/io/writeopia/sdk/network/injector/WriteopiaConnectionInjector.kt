@@ -32,6 +32,8 @@ class WriteopiaConnectionInjector private constructor(
 
     fun baseUrl(): String = baseUrl
 
+    fun httpClient(): HttpClient = client
+
     fun notesApi(): NotesApi = NotesApi(client, baseUrl)
 
     fun storyStepSyncApi(): StoryStepSyncApi = StoryStepSyncApiImpl(client, baseUrl)

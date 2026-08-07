@@ -19,5 +19,6 @@ data class Document(
     override val favorite: Boolean = false,
     override val icon: MenuItem.Icon? = null,
     val isLocked: Boolean = false,
-    val deleted: Boolean = false
+    val deleted: Boolean = false,
+    val published: Boolean = false
 ) : MenuItem

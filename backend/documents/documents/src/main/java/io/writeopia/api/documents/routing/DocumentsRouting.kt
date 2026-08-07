@@ -5,6 +5,7 @@ package io.writeopia.api.documents.routing
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receiveMultipart
+import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.delete
@@ -52,6 +53,19 @@ fun Routing.documentsRoute(
     debug: Boolean = false,
     imageStorageService: ImageStorageService = GcpBucketImageStorageService
 ) {
+    // Public site endpoint - no authentication required
+    get("/api/site/{documentId}") {
+        val documentId = call.pathParameters["documentId"] ?: ""
+        val document = DocumentsService.getPublishedDocument(documentId, writeopiaDb)
+
+        if (document != null) {
+            call.response.header("Cache-Control", "public, max-age=3600, s-maxage=86400")
+            call.respond(HttpStatusCode.OK, document.toApi())
+        } else {
+            call.respond(HttpStatusCode.NotFound, "Document not found or not published")
+        }
+    }
+
     authenticate("auth-jwt", optional = debug) {
         get("/api/docs/workspace/{workspaceId}/document/{id}") {
             val userId = getUserId() ?: ""
@@ -647,6 +661,108 @@ fun Routing.documentsRoute(
                     call.respond(
                         status = HttpStatusCode.OK,
                         message = if (request.favorite) "Document favorited" else "Document unfavorited"
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post("/api/docs/workspace/{workspaceId}/document/{documentId}/publish") {
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val documentId = call.pathParameters["documentId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    // Verify document exists and belongs to workspace
+                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                    if (document == null) {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Document not found"
+                        )
+                        return@runIfMember
+                    }
+
+                    DocumentsService.setPublished(documentId, true, writeopiaDb)
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = "Document published"
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post("/api/docs/workspace/{workspaceId}/document/{documentId}/unpublish") {
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val documentId = call.pathParameters["documentId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    // Verify document exists and belongs to workspace
+                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                    if (document == null) {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Document not found"
+                        )
+                        return@runIfMember
+                    }
+
+                    DocumentsService.setPublished(documentId, false, writeopiaDb)
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = "Document unpublished"
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        get("/api/docs/workspace/{workspaceId}/document/{documentId}/published") {
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val documentId = call.pathParameters["documentId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    // Verify document exists and belongs to workspace
+                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                    if (document == null) {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Document not found"
+                        )
+                        return@runIfMember
+                    }
+
+                    val isPublished = DocumentsService.isPublished(documentId, writeopiaDb)
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = mapOf("published" to isPublished)
                     )
                 } catch (e: Exception) {
                     call.respond(

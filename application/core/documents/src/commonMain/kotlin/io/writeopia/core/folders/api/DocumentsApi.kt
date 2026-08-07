@@ -264,4 +264,15 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
             ResultData.Error()
         }
     }
+
+    suspend fun getPublishedDocument(documentId: String): ResultData<Document> {
+        val response = client.get("$baseUrl/api/site/$documentId")
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<DocumentApi>().toModel())
+        } else {
+            println("error getting published document: $response")
+            ResultData.Error()
+        }
+    }
 }
