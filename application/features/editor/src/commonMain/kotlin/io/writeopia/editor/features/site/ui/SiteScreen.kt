@@ -148,16 +148,7 @@ private fun SiteContent(
             .padding(horizontal = 16.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Document title
-        val title = document.title.ifBlank { "Untitled" }
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-
-        // Document content
+        // Document content (title is already in the document header)
         WriteopiaEditor(
             modifier = Modifier.widthIn(max = 850.dp),
             editable = false,

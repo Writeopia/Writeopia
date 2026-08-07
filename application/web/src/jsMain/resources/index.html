@@ -17,12 +17,36 @@
             overflow: hidden; /* Prevent body scrollbars */
             min-height: 100vh;
         }
+
+        /* Loading spinner */
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-top-color: #888;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
 
 <div id="root">
-    Loading...
+    <div class="loading-container">
+        <div class="spinner"></div>
+    </div>
 </div>
 
 <script src="/writeopia.js"></script>

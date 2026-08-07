@@ -1064,7 +1064,7 @@ class NoteEditorKmpViewModel(
     override fun copyPublishLink() {
         val docId = documentId.value
         if (docId.isNotEmpty()) {
-            val url = "https://writeopia.io/site/$docId"
+            val url = "https://app.writeopia.io/site/$docId"
             copyManager.copyText(url)
         }
     }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
     <file name="src/commonMain/kotlin/io/writeopia/editor/di/EditorKmpInjector.kt">
-        <error line="133" column="56" source="standard:function-expression-body" />
+        <error line="134" column="56" source="standard:function-expression-body" />
     </file>
 </baseline>
