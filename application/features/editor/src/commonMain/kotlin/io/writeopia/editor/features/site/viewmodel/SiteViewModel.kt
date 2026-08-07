@@ -12,8 +12,11 @@ import kotlinx.coroutines.launch
 
 sealed class SiteUiState {
     data object Loading : SiteUiState()
+
     data class Success(val document: Document) : SiteUiState()
+
     data object Error : SiteUiState()
+
     data object NotFound : SiteUiState()
 }
 
