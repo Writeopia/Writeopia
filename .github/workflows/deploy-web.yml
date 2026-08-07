@@ -52,12 +52,3 @@ jobs:
       - name: Deploy to Cloud Storage
         run: |
           gsutil -m rsync -r -d application/web/build/dist/js/productionExecutable/ gs://writeopia-web/
-
-      - name: Set Cache-Control headers
-        run: |
-          # Set cache headers for static assets (long cache for hashed files)
-          gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" "gs://writeopia-web/*.wasm"
-          gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" "gs://writeopia-web/*.js"
-
-          # Set shorter cache for HTML (to pick up new deployments)
-          gsutil -m setmeta -h "Cache-Control:public, max-age=300" "gs://writeopia-web/*.html"
