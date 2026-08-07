@@ -16,6 +16,9 @@ kotlin {
                 mainOutputFileName = "writeopia.js"
                 sourceMaps = false
             }
+            runTask {
+                mainOutputFileName = "writeopia.js"
+            }
         }
         binaries.executable()
     }
