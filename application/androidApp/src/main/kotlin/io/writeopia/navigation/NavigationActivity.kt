@@ -18,6 +18,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.BuildConfig
 import io.writeopia.common.utils.di.SharedPreferencesInjector
+import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.MobileSearchInjection
 import io.writeopia.mobile.AppMobile
@@ -75,7 +76,9 @@ fun NavigationGraph(
     val appDaosInjection = AppRoomDaosInjection.singleton()
     WriteopiaConnectionInjector.setBaseUrl(BuildConfig.BASE_URL)
     val uiConfigViewModel = uiConfigInjection.provideUiConfigurationViewModel()
-    val editorInjector = EditorKmpInjector.mobile()
+    val editorInjector = EditorKmpInjector.mobile(
+        imageUploader = WorkspaceInjection.singleton().provideImageUploader()
+    )
     val notesMenuInjection = NotesMenuKmpInjection.mobile()
 
     val searchInjector = remember {

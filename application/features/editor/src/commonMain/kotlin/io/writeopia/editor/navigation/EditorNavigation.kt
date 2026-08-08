@@ -36,7 +36,8 @@ fun NavGraphBuilder.editorNavigation(
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
     navigateToNewDrawing: (String) -> Unit = {},
-    navigateToEditDrawing: (String, StoryStep) -> Unit = { _, _ -> }
+    navigateToEditDrawing: (String, StoryStep) -> Unit = { _, _ -> },
+    onImagePick: () -> Unit = {}
 ) {
     sharedTransitionScope.run {
         composable(
@@ -78,6 +79,7 @@ fun NavGraphBuilder.editorNavigation(
                     navigateBack = navigateBack,
                     onDocumentLinkClick = navigateToNote,
                     onNewDrawingClick = { navigateToNewDrawing(noteId) },
+                    onNewImageClick = onImagePick,
                     onDrawingClick = { storyStep, _ ->
                         navigateToEditDrawing(noteId, storyStep)
                     },
@@ -113,6 +115,7 @@ fun NavGraphBuilder.editorNavigation(
                 },
                 onDocumentLinkClick = navigateToNote,
                 onNewDrawingClick = { navigateToNewDrawing(documentId) },
+                onNewImageClick = onImagePick,
                 onDrawingClick = { storyStep, _ ->
                     navigateToEditDrawing(documentId, storyStep)
                 },

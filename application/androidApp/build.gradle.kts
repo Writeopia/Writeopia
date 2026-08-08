@@ -78,6 +78,7 @@ dependencies {
     implementation(project(":application:core:utils"))
     implementation(project(":application:core:theme"))
     implementation(project(":application:core:models"))
+    implementation(project(":application:core:documents"))
 
     implementation(project(":application:features:editor"))
     implementation(project(":application:features:note_menu"))
