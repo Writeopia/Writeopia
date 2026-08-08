@@ -111,6 +111,7 @@
   <string name="repeat_password">Repita a senha</string>
   <string name="company">Empresa</string>
   <string name="change_account">Trocar conta</string>
+  <string name="change_workspace">Trocar workspace</string>
   <string name="delete_account">Deletar conta</string>
   <string name="are_you_sure">Tem certeza?</string>
   <string name="notes_will_be_deleted">Suas notas serão deletadas.</string>
@@ -139,4 +140,20 @@
   <string name="create_workspace">Criar área de trabalho</string>
   <string name="create">Criar</string>
   <string name="create_workspace_failed">Falha ao criar área de trabalho</string>
+  <string name="add_user_to_workspace">Adicionar usuário a %s</string>
+  <string name="search_by_email">Buscar por email</string>
+  <string name="enter_at_least_2_chars">Digite pelo menos 2 caracteres para buscar</string>
+  <string name="no_users_found">Nenhum usuário encontrado</string>
+  <string name="failed_to_search_users">Falha ao buscar usuários. Tente novamente.</string>
+  <string name="enter_email_to_search">Digite um email para buscar usuários</string>
+  <string name="select_role">Selecionar função</string>
+  <string name="role_editor_description">Pode visualizar e editar documentos</string>
+  <string name="role_admin_description">Pode gerenciar área de trabalho e usuários</string>
+  <string name="user_already_in_workspace">Este usuário já está na área de trabalho.</string>
+  <string name="failed_to_add_user">Falha ao adicionar usuário. Tente novamente.</string>
+  <string name="edit_user_role">Editar Função do Usuário</string>
+  <string name="current_role">Função atual</string>
+  <string name="failed_to_update_role">Falha ao atualizar função. Tente novamente.</string>
+  <string name="workspace_must_have_admin">A área de trabalho deve ter pelo menos um administrador.</string>
+  <string name="save">Salvar</string>
 </resources>

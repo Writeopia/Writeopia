@@ -4,6 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.account.viewmodel.AccountMenuKmpViewModel
 import io.writeopia.account.viewmodel.AccountMenuViewModel
+import io.writeopia.account.viewmodel.UserAddViewModel
+import io.writeopia.account.viewmodel.UserEditViewModel
+import io.writeopia.account.viewmodel.UserSearchViewModel
 import io.writeopia.account.viewmodel.WorkspaceUsersViewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.core.folders.di.WorkspaceInjection
@@ -31,6 +34,62 @@ class AccountMenuKmpInjector private constructor(
             WorkspaceUsersViewModel(
                 workspaceId = workspaceId,
                 workspaceName = workspaceName,
+                workspaceApi = workspaceInjection.provideWorkspaceApi(),
+                authRepository = authCoreInjection.provideAuthRepository()
+            )
+        }
+
+    @Composable
+    fun provideUserSearchViewModel(
+        workspaceId: String,
+        workspaceName: String
+    ): UserSearchViewModel =
+        viewModel(key = "user_search_$workspaceId") {
+            UserSearchViewModel(
+                workspaceId = workspaceId,
+                workspaceName = workspaceName,
+                workspaceApi = workspaceInjection.provideWorkspaceApi(),
+                authRepository = authCoreInjection.provideAuthRepository()
+            )
+        }
+
+    @Composable
+    fun provideUserAddViewModel(
+        workspaceId: String,
+        workspaceName: String,
+        userId: String,
+        userName: String,
+        userEmail: String
+    ): UserAddViewModel =
+        viewModel(key = "user_add_${workspaceId}_$userId") {
+            UserAddViewModel(
+                workspaceId = workspaceId,
+                workspaceName = workspaceName,
+                userId = userId,
+                userName = userName,
+                userEmail = userEmail,
+                workspaceApi = workspaceInjection.provideWorkspaceApi(),
+                authRepository = authCoreInjection.provideAuthRepository()
+            )
+        }
+
+    @Composable
+    fun provideUserEditViewModel(
+        workspaceId: String,
+        workspaceName: String,
+        userId: String,
+        userName: String,
+        userEmail: String,
+        currentRole: String
+    ): UserEditViewModel =
+        viewModel(key = "user_edit_${workspaceId}_$userId") {
+            UserEditViewModel(
+                workspaceId = workspaceId,
+                workspaceName = workspaceName,
+                userId = userId,
+                userName = userName,
+                userEmail = userEmail,
+                currentRole = currentRole,
                 workspaceApi = workspaceInjection.provideWorkspaceApi(),
                 authRepository = authCoreInjection.provideAuthRepository()
             )

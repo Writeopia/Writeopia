@@ -1,6 +1,7 @@
 package io.writeopia.account.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,14 +18,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,16 +29,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.writeopia.app.dto.WorkspaceUserApi
 import io.writeopia.common.utils.icons.WrIcons
@@ -57,17 +50,15 @@ fun WorkspaceUsersScreen(
     usersState: StateFlow<ResultData<List<WorkspaceUserApi>>>,
     isLoadingMore: StateFlow<Boolean>,
     hasMorePages: StateFlow<Boolean>,
-    addUserState: StateFlow<ResultData<Unit>>,
     onLoadMore: () -> Unit,
-    onAddUser: (String) -> Unit,
     onRetry: () -> Unit,
+    onNavigateToUserSearch: () -> Unit,
+    onUserClick: (WorkspaceUserApi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showAddUserDialog by remember { mutableStateOf(false) }
     val users by usersState.collectAsState()
     val isLoadingMoreUsers by isLoadingMore.collectAsState()
     val hasMore by hasMorePages.collectAsState()
-    val addUserResult by addUserState.collectAsState()
 
     Box(
         modifier = modifier.fillMaxSize()
@@ -96,7 +87,8 @@ fun WorkspaceUsersScreen(
                             users = currentUsers.data,
                             isLoadingMore = isLoadingMoreUsers,
                             hasMore = hasMore,
-                            onLoadMore = onLoadMore
+                            onLoadMore = onLoadMore,
+                            onUserClick = onUserClick
                         )
                     }
                 }
@@ -134,9 +126,9 @@ fun WorkspaceUsersScreen(
             }
         }
 
-        // FAB for adding user
+        // FAB for adding user - navigates to search screen
         FloatingActionButton(
-            onClick = { showAddUserDialog = true },
+            onClick = onNavigateToUserSearch,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
@@ -150,16 +142,6 @@ fun WorkspaceUsersScreen(
             )
         }
     }
-
-    if (showAddUserDialog) {
-        AddUserDialog(
-            addUserState = addUserResult,
-            onDismiss = { showAddUserDialog = false },
-            onAddUser = { email ->
-                onAddUser(email)
-            }
-        )
-    }
 }
 
 @Composable
@@ -167,7 +149,8 @@ private fun UsersList(
     users: List<WorkspaceUserApi>,
     isLoadingMore: Boolean,
     hasMore: Boolean,
-    onLoadMore: () -> Unit
+    onLoadMore: () -> Unit,
+    onUserClick: (WorkspaceUserApi) -> Unit
 ) {
     val listState = rememberLazyListState()
 
@@ -194,7 +177,7 @@ private fun UsersList(
         modifier = Modifier.fillMaxSize()
     ) {
         items(users, key = { it.id }) { user ->
-            UserItem(user = user)
+            UserItem(user = user, onClick = { onUserClick(user) })
         }
 
         if (isLoadingMore) {
@@ -213,13 +196,14 @@ private fun UsersList(
 }
 
 @Composable
-private fun UserItem(user: WorkspaceUserApi) {
+private fun UserItem(user: WorkspaceUserApi, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .clip(MaterialTheme.shapes.medium)
             .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -260,88 +244,4 @@ private fun UserItem(user: WorkspaceUserApi) {
             color = MaterialTheme.colorScheme.primary
         )
     }
-}
-
-@Composable
-private fun AddUserDialog(
-    addUserState: ResultData<Unit>,
-    onDismiss: () -> Unit,
-    onAddUser: (String) -> Unit
-) {
-    var email by remember { mutableStateOf("") }
-    var hasSubmitted by remember { mutableStateOf(false) }
-
-    LaunchedEffect(addUserState) {
-        if (hasSubmitted && addUserState is ResultData.Complete) {
-            onDismiss()
-        }
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text("Add user to workspace")
-        },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            if (email.isNotBlank()) {
-                                hasSubmitted = true
-                                onAddUser(email)
-                            }
-                        }
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    isError = hasSubmitted && addUserState is ResultData.Error
-                )
-
-                if (addUserState is ResultData.Loading) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    }
-                }
-
-                if (hasSubmitted && addUserState is ResultData.Error) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Failed to add user. Please check the email and try again.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (email.isNotBlank()) {
-                        hasSubmitted = true
-                        onAddUser(email)
-                    }
-                },
-                enabled = email.isNotBlank() && addUserState !is ResultData.Loading
-            ) {
-                Text("Add")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
 }

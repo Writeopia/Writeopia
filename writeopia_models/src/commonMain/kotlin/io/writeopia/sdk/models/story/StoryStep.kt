@@ -38,6 +38,11 @@ data class StoryStep(
     val spans: Set<SpanInfo> = emptySet(),
     val decoration: Decoration = Decoration(),
     val ephemeral: Boolean = false,
+    /**
+     * Indicates whether the content of this StoryStep is currently being loaded or processed.
+     * When true, a loading indicator should be displayed (e.g., for image uploads).
+     */
+    val loading: Boolean = false,
     val documentLink: DocumentLink? = null,
     /**
      * The position of this StoryStep in the database. This is a Double to support intermediate

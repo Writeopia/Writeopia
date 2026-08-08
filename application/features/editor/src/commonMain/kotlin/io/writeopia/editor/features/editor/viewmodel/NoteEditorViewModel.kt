@@ -62,6 +62,12 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val sideMenuTabState: StateFlow<SideMenuTab>
 
+    val showPublishDialog: StateFlow<Boolean>
+
+    val isDocumentPublished: StateFlow<Boolean>
+
+    val publishLoading: StateFlow<Boolean>
+
     fun changeSideMenu(tab: SideMenuTab)
 
     fun showSearch()
@@ -155,6 +161,16 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun selectModel(model: String)
 
     fun titleClick(tag: Tag)
+
+    fun showPublishDialog()
+
+    fun hidePublishDialog()
+
+    fun publishDocument()
+
+    fun unpublishDocument()
+
+    fun copyPublishLink()
 }
 
 data class ShareDocument(val content: String, val title: String, val type: String)

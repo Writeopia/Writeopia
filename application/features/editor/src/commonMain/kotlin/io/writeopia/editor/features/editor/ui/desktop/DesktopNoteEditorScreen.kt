@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -17,8 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +45,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
+import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
 import io.writeopia.resources.WrStrings
@@ -245,7 +245,8 @@ fun DesktopNoteEditorScreen(
             selectModel = noteEditorViewModel::selectModel,
             changeSideMenuTab = noteEditorViewModel::changeSideMenu,
             titleClick = noteEditorViewModel::titleClick,
-            onDrawingClick = onNewDrawingClick
+            onDrawingClick = onNewDrawingClick,
+            onPublishClick = noteEditorViewModel::showPublishDialog
         )
 
         if (showDeleteConfirmation) {
@@ -261,14 +262,30 @@ fun DesktopNoteEditorScreen(
             )
         }
 
-        if (!isEditable) {
-            Icon(
-                imageVector = Icons.Outlined.Lock,
-                contentDescription = "Lock",
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
-                    .size(16.dp)
-            )
+        val isPublished by noteEditorViewModel.isDocumentPublished.collectAsState()
+
+        if (!isEditable || isPublished) {
+            Row(
+                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (!isEditable) {
+                    Icon(
+                        imageVector = WrIcons.lock,
+                        contentDescription = "Locked",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                if (isPublished) {
+                    Icon(
+                        imageVector = WrIcons.published,
+                        contentDescription = "Published",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
 
         if (showFolderSelection) {
@@ -301,6 +318,21 @@ fun DesktopNoteEditorScreen(
                     strokeWidth = 2.dp
                 )
             }
+        }
+
+        val showPublishDialog by noteEditorViewModel.showPublishDialog.collectAsState()
+        val publishLoading by noteEditorViewModel.publishLoading.collectAsState()
+
+        if (showPublishDialog && documentId != null) {
+            PublishDialog(
+                documentId = documentId,
+                isPublished = isPublished,
+                isLoading = publishLoading,
+                onDismiss = noteEditorViewModel::hidePublishDialog,
+                onPublishAndView = noteEditorViewModel::publishDocument,
+                onUnpublish = noteEditorViewModel::unpublishDocument,
+                onCopyLink = noteEditorViewModel::copyPublishLink
+            )
         }
     }
 }

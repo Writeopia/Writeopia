@@ -33,6 +33,7 @@ import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.repository.UserRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
+import io.writeopia.sdk.utils.collections.toSortedMutableMap
 import io.writeopia.sdk.utils.NextPositionCalculator
 import io.writeopia.sdk.utils.extensions.toEditState
 import io.writeopia.ui.backstack.BackstackHandler
@@ -43,6 +44,7 @@ import io.writeopia.ui.extensions.toSelectionMetadata
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.model.DrawState
 import io.writeopia.ui.model.DrawStory
+import io.writeopia.ui.image.ImageUploader
 import io.writeopia.ui.model.SelectionInfo
 import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.ui.model.TextInput
@@ -94,7 +96,8 @@ class WriteopiaStateManager(
         StoryTypes.CHECK_ITEM.type.number,
         StoryTypes.UNORDERED_LIST_ITEM.type.number,
     ),
-    private val inTextMarkdownHandler: InTextMarkdownHandler? = InTextMarkdownHandler
+    private val inTextMarkdownHandler: InTextMarkdownHandler? = InTextMarkdownHandler,
+    private val imageUploader: ImageUploader? = null
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     private val selectionBuffer: EventBuffer<Pair<Boolean, Double>> = EventBuffer(coroutineScope)
@@ -279,8 +282,7 @@ class WriteopiaStateManager(
                     )
                 }
                 .values
-                // Todo: Consider changing insertion order instead of sorting
-                .sortedBy { drawStory -> drawStory.position }
+                .toList() // Already sorted by position - map maintains sorted key order
                 .let { drawStories -> drawStateModify(drawStories, dragPosition).drop(1) }
 
             DrawState(toDrawStories, focus)
@@ -637,7 +639,7 @@ class WriteopiaStateManager(
                 storyText
             }
 
-            val mutable = currentStory.value.stories.toMutableMap()
+            val mutable = currentStory.value.stories.toSortedMutableMap()
             mutable[position] = story.copy(text = newText)
             mutable
         } else {
@@ -856,7 +858,7 @@ class WriteopiaStateManager(
         val lastContentStory = stories[lastPosition]
 
         val newState = if (lastContentStory?.type == StoryTypes.TEXT.type) {
-            val newStoriesState = stories.toMutableMap().apply {
+            val newStoriesState = stories.toSortedMutableMap().apply {
                 this[lastPosition] = lastContentStory.copyNewLocalId()
             }
             val cursor = lastContentStory.text?.length ?: 0
@@ -877,7 +879,7 @@ class WriteopiaStateManager(
             )
 
             // Update the last content story to point to the new story
-            val updatedStories = stories.toMutableMap().apply {
+            val updatedStories = stories.toSortedMutableMap().apply {
                 lastContentStory?.let { lastStory ->
                     this[lastPosition] = lastStory.copy(nextPosition = newPosition)
                 }
@@ -1101,15 +1103,76 @@ class WriteopiaStateManager(
             val story = getStory(pos)
 
             if (story != null) {
-                if (position == null) {
-                    val stateChange = Action.StoryStateChange(
-                        story.copy(type = StoryTypes.IMAGE.type, path = imagePath),
-                        pos
-                    )
+                // Check if we should upload to cloud
+                coroutineScope.launch(dispatcher) {
+                    val shouldUpload = imageUploader?.isAuthenticated() == true
 
-                    changeStoryStateAndTrackIt(stateChange)
-                } else {
-                    addAtPosition(StoryStep(type = StoryTypes.IMAGE.type, path = imagePath), pos)
+                    if (shouldUpload) {
+                        // Insert image with loading state immediately
+                        val loadingStep = StoryStep(
+                            type = StoryTypes.IMAGE.type,
+                            path = imagePath,
+                            ephemeral = true,
+                            loading = true
+                        )
+
+                        if (position == null) {
+                            changeStoryStateAndTrackIt(
+                                Action.StoryStateChange(
+                                    story.copy(
+                                        type = StoryTypes.IMAGE.type,
+                                        path = imagePath,
+                                        ephemeral = true,
+                                        loading = true
+                                    ),
+                                    pos
+                                )
+                            )
+                        } else {
+                            addAtPosition(loadingStep, pos)
+                        }
+
+                        // Upload in background
+                        val result = imageUploader!!.uploadImage(imagePath)
+
+                        // Replace with final image
+                        val currentStory = getStory(pos)
+                        if (currentStory != null) {
+                            val finalStep = when (result) {
+                                is io.writeopia.sdk.models.utils.ResultData.Complete -> currentStory.copy(
+                                    url = result.data,
+                                    path = null,
+                                    ephemeral = false,
+                                    loading = false
+                                )
+                                else -> currentStory.copy(
+                                    url = null,
+                                    path = imagePath,
+                                    ephemeral = false,
+                                    loading = false
+                                )
+                            }
+
+                            changeStoryStateAndTrackIt(
+                                Action.StoryStateChange(finalStep, pos)
+                            )
+                        }
+                    } else {
+                        // No auth - use local path directly (existing behavior)
+                        if (position == null) {
+                            changeStoryStateAndTrackIt(
+                                Action.StoryStateChange(
+                                    story.copy(type = StoryTypes.IMAGE.type, path = imagePath),
+                                    pos
+                                )
+                            )
+                        } else {
+                            addAtPosition(
+                                StoryStep(type = StoryTypes.IMAGE.type, path = imagePath),
+                                pos
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -1473,7 +1536,7 @@ class WriteopiaStateManager(
             writeopiaManager.previousTextStory(getStories(), position)
                 ?.let { (step, newPosition) ->
                     val storyState = _currentStory.value
-                    val mutable = storyState.stories.toMutableMap()
+                    val mutable = storyState.stories.toSortedMutableMap()
 
                     mutable[newPosition] = step
 
@@ -1665,6 +1728,7 @@ class WriteopiaStateManager(
             coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext),
             backStackManager: SnapshotBackstackManager = SnapshotBackstackManager(),
             userRepository: UserRepository? = null,
+            imageUploader: ImageUploader? = null
         ) = WriteopiaStateManager(
             stepsNormalizer,
             dispatcher,
@@ -1676,7 +1740,8 @@ class WriteopiaStateManager(
             keyboardEventFlow.filterNotNull(),
             documentRepository,
             setOf("jpg", "jpeg", "png"),
-            StepsModifier::modify
+            StepsModifier::modify,
+            imageUploader = imageUploader
         )
     }
 }

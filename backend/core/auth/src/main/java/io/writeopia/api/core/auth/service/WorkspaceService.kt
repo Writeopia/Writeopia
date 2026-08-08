@@ -2,6 +2,7 @@
 
 package io.writeopia.api.core.auth.service
 
+import io.writeopia.api.core.auth.models.AddUserResult
 import io.writeopia.api.core.auth.repository.countUsersInWorkspace
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserInWorkspace
@@ -121,19 +122,26 @@ object WorkspaceService {
         workspaceId: String,
         role: String,
         writeopiaDb: WriteopiaDbBackend
-    ): Boolean {
+    ): AddUserResult {
         val ownerWorkspaces = writeopiaDb.getWorkspacesByUserId(workspaceOwnerId)
         if (!ownerWorkspaces.any { it.id == workspaceId }) {
             println("This user doesn't not have access to this workspace as admin")
             // Note: This check is handled by runIfAdmin in the routing layer
         }
 
+        // Check if user already exists in the workspace
+        val existingUser = writeopiaDb.getUserInWorkspace(workspaceId, userEmail)
+        if (existingUser != null) {
+            println("User with email $userEmail is already in this workspace")
+            return AddUserResult.USER_ALREADY_IN_WORKSPACE
+        }
+
         return writeopiaDb.getUserByEmail(userEmail)?.id?.let { userId ->
             writeopiaDb.insertUserInWorkspace(workspaceId, userId, role)
-            true
+            AddUserResult.SUCCESS
         } ?: run {
             println("User with email $userEmail doesn't exist")
-            false
+            AddUserResult.USER_NOT_FOUND
         }
     }
 

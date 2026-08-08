@@ -14,6 +14,7 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
+import io.writeopia.sdk.utils.collections.toSortedMutableMap
 import io.writeopia.sdk.utils.extensions.toEditState
 import io.writeopia.sdk.utils.iterables.addElementInPosition
 import io.writeopia.sdk.utils.iterables.mergeSortedMaps
@@ -45,7 +46,7 @@ class ContentHandler(
         newState: StoryStep,
         position: Double
     ): StoryState? = if (currentStory[position] != null) {
-        val newMap = currentStory.toMutableMap()
+        val newMap = currentStory.toSortedMutableMap()
         newMap[position] = newState
         StoryState(newMap, LastEdit.LineEdition(position, newState), position)
     } else {
@@ -56,7 +57,7 @@ class ContentHandler(
      * Removes tags from a StoryStep at a certain position
      */
     fun removeTags(currentStory: Map<Double, StoryStep>, position: Double): StoryState {
-        val newMap = currentStory.toMutableMap()
+        val newMap = currentStory.toSortedMutableMap()
         val storyStep = newMap[position]
 
         val newStory = storyStep?.copy(
@@ -126,7 +127,7 @@ class ContentHandler(
         position: Double,
         commandInfo: CommandInfo?
     ): Map<Double, StoryStep> {
-        val newMap = currentStory.toMutableMap()
+        val newMap = currentStory.toSortedMutableMap()
         val storyStep = newMap[position]
         val commandTrigger = commandInfo?.commandTrigger
         val commandText = commandInfo?.command?.commandText?.trim() ?: ""
@@ -201,7 +202,7 @@ class ContentHandler(
         documentId: String,
         text: String
     ): Map<Double, StoryStep> {
-        val mutable = currentStory.toMutableMap()
+        val mutable = currentStory.toSortedMutableMap()
         mutable[position] =
             StoryStep(
                 type = StoryTypes.DOCUMENT_LINK.type,
@@ -223,7 +224,7 @@ class ContentHandler(
         val storyStep = lineBreakInfo.storyStep
         val position = lineBreakInfo.position
         val carryOverTags = storyStep.tags.filterTo(mutableSetOf()) { it.tag.mustCarryOver() }
-        val mutable = currentStory.toMutableMap()
+        val mutable = currentStory.toSortedMutableMap()
         val split = storyStep.text?.split("\n")
 
         val next = storyStep.nextPosition
@@ -373,7 +374,7 @@ class ContentHandler(
     ): StoryState? {
         val step = deleteInfo.storyStep
         val parentId = step.parentId
-        val mutableSteps = history.toMutableMap()
+        val mutableSteps = history.toSortedMutableMap()
 
         return if (parentId == null) {
             // Update position references before removing
@@ -429,7 +430,7 @@ class ContentHandler(
     }
 
     fun eraseStory(deleteInfo: Action.EraseStory, history: Map<Double, StoryStep>): StoryState {
-        val mutableSteps = history.toMutableMap()
+        val mutableSteps = history.toSortedMutableMap()
         val deletedStep = deleteInfo.storyStep
 
         // Get position references before removing
@@ -488,7 +489,7 @@ class ContentHandler(
         stories: Map<Double, StoryStep>
     ): Pair<Map<Double, StoryStep>, Map<Double, StoryStep>> {
         val deleted = mutableMapOf<Double, StoryStep>()
-        val newState = stories.toMutableMap()
+        val newState = stories.toSortedMutableMap()
 
         positions.forEach { position ->
             newState.remove(position)?.let { deletedStory ->
@@ -512,7 +513,7 @@ class ContentHandler(
         storyMap: Map<Double, StoryStep>,
         position: Double
     ): StoryState {
-        val mutable = storyMap.toMutableMap()
+        val mutable = storyMap.toSortedMutableMap()
         storyMap[position]?.let { step ->
             val tagInfo = setOf(TagInfo(tag = Tag.COLLAPSED))
             mutable[position] = step.copy(tags = step.tags.merge(tagInfo))
@@ -549,7 +550,7 @@ class ContentHandler(
         storyMap: Map<Double, StoryStep>,
         position: Double
     ): StoryState {
-        val mutable = storyMap.toMutableMap()
+        val mutable = storyMap.toSortedMutableMap()
         storyMap[position]?.let { step ->
             mutable[position] =
                 step.copy(tags = step.tags.filterNotTo(mutableSetOf()) { it.tag == Tag.COLLAPSED })

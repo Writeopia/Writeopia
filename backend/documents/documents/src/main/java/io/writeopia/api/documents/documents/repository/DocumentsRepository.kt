@@ -161,3 +161,26 @@ fun WriteopiaDbBackend.deleteStoryStepById(storyStepId: String) {
 fun WriteopiaDbBackend.deleteStoryStepsByIds(storyStepIds: List<String>) {
     getDocumentDaoFn().deleteStoryStepsByIds(storyStepIds)
 }
+
+// Document Publishing Operations
+
+/**
+ * Gets a published document by ID with its content.
+ * Returns null if the document doesn't exist or is not published.
+ */
+suspend fun WriteopiaDbBackend.getPublishedDocumentById(documentId: String): Document? =
+    getDocumentDaoFn().loadPublishedDocumentWithContentById(documentId)
+
+/**
+ * Sets the published status of a document.
+ */
+fun WriteopiaDbBackend.setDocumentPublished(documentId: String, published: Boolean) {
+    getDocumentDaoFn().setDocumentPublished(documentId, published)
+}
+
+/**
+ * Checks if a document is published.
+ */
+fun WriteopiaDbBackend.isDocumentPublished(documentId: String): Boolean {
+    return getDocumentDaoFn().isDocumentPublished(documentId)
+}

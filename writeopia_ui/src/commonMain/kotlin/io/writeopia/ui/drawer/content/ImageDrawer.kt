@@ -4,10 +4,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -124,21 +126,38 @@ class ImageDrawer(
                                 modifier = imageModifier,
                                 dataToDrop = DropInfo(step, drawInfo.position)
                             ) {
-                                SubcomposeAsyncImage(
-                                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                                        .data(step.url ?: step.path)
-                                        .build(),
-                                    contentScale = ContentScale.Crop,
-                                    contentDescription = "",
-                                    modifier = Modifier
-                                        .defaultMinSize(minHeight = 300.dp)
-                                        .clip(
-                                            shape = RoundedCornerShape(size = 12.dp)
-                                        ),
-                                    loading = {
-                                        CircularProgressIndicator()
+                                Box {
+                                    SubcomposeAsyncImage(
+                                        model = ImageRequest.Builder(LocalPlatformContext.current)
+                                            .data(step.url ?: step.path)
+                                            .build(),
+                                        contentScale = ContentScale.Crop,
+                                        contentDescription = "",
+                                        modifier = Modifier
+                                            .defaultMinSize(minHeight = 300.dp)
+                                            .clip(
+                                                shape = RoundedCornerShape(size = 12.dp)
+                                            ),
+                                        loading = {
+                                            CircularProgressIndicator()
+                                        }
+                                    )
+
+                                    // Show loading overlay when step is uploading
+                                    if (step.loading) {
+                                        Box(
+                                            modifier = Modifier
+                                                .matchParentSize()
+                                                .clip(RoundedCornerShape(size = 12.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(48.dp),
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
                                     }
-                                )
+                                }
                             }
                             step.text?.let { text ->
                                 Text(

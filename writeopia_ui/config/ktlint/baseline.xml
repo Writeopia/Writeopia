@@ -149,6 +149,14 @@
         <error line="36" column="1" source="standard:indent" />
         <error line="37" column="1" source="standard:indent" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Bold.kt">
+        <error line="52" column="13" source="standard:backing-property-naming" />
+        <error line="52" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Calendar.kt">
+        <error line="95" column="13" source="standard:backing-property-naming" />
+        <error line="95" column="13" source="standard:backing-property-naming" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Check.kt">
         <error line="43" column="13" source="standard:backing-property-naming" />
         <error line="43" column="13" source="standard:backing-property-naming" />
@@ -165,9 +173,33 @@
         <error line="46" column="13" source="standard:backing-property-naming" />
         <error line="46" column="13" source="standard:backing-property-naming" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Clock.kt">
+        <error line="62" column="13" source="standard:backing-property-naming" />
+        <error line="62" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Code.kt">
+        <error line="61" column="13" source="standard:backing-property-naming" />
+        <error line="61" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/ExternalLink.kt">
+        <error line="80" column="13" source="standard:backing-property-naming" />
+        <error line="80" column="13" source="standard:backing-property-naming" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Files.kt">
         <error line="84" column="13" source="standard:backing-property-naming" />
         <error line="84" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/GripVertical.kt">
+        <error line="127" column="13" source="standard:backing-property-naming" />
+        <error line="127" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/HighlightBox.kt">
+        <error line="100" column="13" source="standard:backing-property-naming" />
+        <error line="100" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Italic.kt">
+        <error line="73" column="13" source="standard:backing-property-naming" />
+        <error line="73" column="13" source="standard:backing-property-naming" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/LargeSmallA.kt">
         <error line="67" column="13" source="standard:backing-property-naming" />
@@ -176,16 +208,56 @@
         <error line="115" column="13" source="standard:backing-property-naming" />
         <error line="115" column="13" source="standard:backing-property-naming" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Pause.kt">
+        <error line="67" column="13" source="standard:backing-property-naming" />
+        <error line="67" column="13" source="standard:backing-property-naming" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Pencil.kt">
         <error line="55" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Play.kt">
+        <error line="48" column="13" source="standard:backing-property-naming" />
+        <error line="48" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Plus.kt">
+        <error line="59" column="13" source="standard:backing-property-naming" />
+        <error line="59" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/RefreshCw.kt">
+        <error line="93" column="13" source="standard:backing-property-naming" />
+        <error line="93" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Scissors.kt">
+        <error line="105" column="13" source="standard:backing-property-naming" />
+        <error line="105" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Square.kt">
+        <error line="53" column="13" source="standard:backing-property-naming" />
+        <error line="53" column="13" source="standard:backing-property-naming" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/SquareCheck.kt">
         <error line="68" column="13" source="standard:backing-property-naming" />
         <error line="68" column="13" source="standard:backing-property-naming" />
     </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Trash2.kt">
+        <error line="109" column="13" source="standard:backing-property-naming" />
+        <error line="109" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Underline.kt">
+        <error line="61" column="13" source="standard:backing-property-naming" />
+        <error line="61" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/Video.kt">
+        <error line="85" column="13" source="standard:backing-property-naming" />
+        <error line="85" column="13" source="standard:backing-property-naming" />
+    </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/WandSparkles.kt">
         <error line="150" column="13" source="standard:backing-property-naming" />
         <error line="150" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/X.kt">
+        <error line="59" column="13" source="standard:backing-property-naming" />
+        <error line="59" column="13" source="standard:backing-property-naming" />
     </file>
     <file name="src/commonMain/kotlin/io/writeopia/ui/icons/all/spotlight.kt">
         <error line="79" column="13" source="standard:backing-property-naming" />

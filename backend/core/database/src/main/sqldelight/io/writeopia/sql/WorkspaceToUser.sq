@@ -72,3 +72,13 @@ UPDATE workspace_to_user
 SET role = ?
 WHERE workspace_id = ? AND user_id = ?;
 
+countAdminsInWorkspace:
+SELECT COUNT(*)
+FROM workspace_to_user
+WHERE workspace_id = ? AND role = 'ADMIN';
+
+getUserRoleInWorkspace:
+SELECT role
+FROM workspace_to_user
+WHERE workspace_id = ? AND user_id = ?;
+

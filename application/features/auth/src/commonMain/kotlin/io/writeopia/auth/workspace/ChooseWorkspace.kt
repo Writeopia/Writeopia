@@ -143,9 +143,7 @@ fun BoxScope.ChooseWorkspace(
                 CommonButton(text = "Try again", clickListener = retry)
             }
 
-            is ResultData.Idle -> { }
-
-            is ResultData.InProgress, is ResultData.Loading -> {
+            is ResultData.Idle, is ResultData.InProgress, is ResultData.Loading -> {
                 CircularProgressIndicator()
             }
         }

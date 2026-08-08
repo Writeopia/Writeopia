@@ -96,7 +96,8 @@ class DocumentSqlBeDao(
             icon_tint = document.icon?.tint,
             is_locked = document.isLocked,
             company_id = "",
-            deleted = document.deleted
+            deleted = document.deleted,
+            published = document.published
         )
     }
 
@@ -934,6 +935,87 @@ class DocumentSqlBeDao(
      */
     fun deleteStoryStepsByIds(storyStepIds: List<String>) {
         storyStepQueries?.deleteByIds(storyStepIds)
+    }
+
+    /**
+     * Gets a published document by ID with its content.
+     * Returns null if the document doesn't exist or is not published.
+     */
+    fun loadPublishedDocumentWithContentById(documentId: String): Document? =
+        documentQueries?.selectPublishedWithContentById(documentId)
+            ?.executeAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (docId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        !innerContent.id_.isNullOrEmpty()
+                    }.associate { innerContent ->
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked ?: false,
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color,
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { linkDocId ->
+                                val title = documentQueries.selectTitleByDocumentId(linkDocId)
+                                    .executeAsOneOrNull()
+                                DocumentLink(linkDocId, title)
+                            }
+                        )
+
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                    }
+
+                    Document(
+                        id = docId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
+                        workspaceId = document.workspace_id,
+                        favorite = document.favorite,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(it, document.icon_tint)
+                        },
+                        isLocked = document.is_locked,
+                        published = document.published
+                    )
+                }
+            }
+            ?.firstOrNull()
+
+    /**
+     * Sets the published status of a document.
+     */
+    fun setDocumentPublished(documentId: String, published: Boolean) {
+        documentQueries?.setPublished(published, Clock.System.now().toEpochMilliseconds(), documentId)
+    }
+
+    /**
+     * Checks if a document is published.
+     */
+    fun isDocumentPublished(documentId: String): Boolean {
+        return documentQueries?.isPublished(documentId)?.executeAsOneOrNull() ?: false
     }
 }
 

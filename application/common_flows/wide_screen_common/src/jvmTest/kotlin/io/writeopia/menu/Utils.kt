@@ -33,7 +33,8 @@ fun ComposeUiTest.startApp(
             keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
             toggleMaxScreen = {},
             navigateToRegister = {},
-            navigateToResetPassword = {}
+            navigateToResetPassword = {},
+            navigateToChooseWorkspace = {}
         )
     }
 }

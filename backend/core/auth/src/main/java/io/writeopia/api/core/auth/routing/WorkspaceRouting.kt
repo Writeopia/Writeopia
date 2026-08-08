@@ -9,12 +9,18 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
+import io.writeopia.api.core.auth.models.AddUserResult
 import io.writeopia.api.core.auth.repository.changeWorkspaceName
 import io.writeopia.api.core.auth.repository.changeWorkspaceRoleForUser
+import io.writeopia.api.core.auth.repository.countAdminsInWorkspace
+import io.writeopia.api.core.auth.repository.getUserRoleInWorkspace
 import io.writeopia.api.core.auth.repository.listWorkspaces
+import io.writeopia.api.core.auth.repository.searchUsersByEmail
 import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.runIfAdmin
+import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.app.mapping.toApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.app.requests.CreateWorkspaceRequest
@@ -168,6 +174,47 @@ fun Routing.workspaceRoute(
     }
 
     authenticate("auth-jwt", optional = debugMode) {
+        get("/api/workspace/{workspaceId}/users/search") {
+            val currentUserId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"]
+                ?: throw IllegalArgumentException("Workspace id is required")
+            val emailQuery = call.request.queryParameters["email"] ?: ""
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
+
+            if (emailQuery.length < 2) {
+                call.respond(HttpStatusCode.BadRequest, ServerResponse("Email query must be at least 2 characters"))
+                return@get
+            }
+
+            runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
+                val offset = ((page - 1) * pageSize).toLong()
+                val limit = (pageSize + 1).toLong() // Request one extra to check if there's a next page
+
+                val results = writeopiaDb.searchUsersByEmail(emailQuery, limit, offset)
+
+                val hasNextPage = results.size > pageSize
+                val users = results.take(pageSize).map { user ->
+                    SearchUserApi(
+                        id = user.id,
+                        name = user.name,
+                        email = user.email
+                    )
+                }
+
+                val response = PaginatedUserSearchResponse(
+                    users = users,
+                    page = page,
+                    pageSize = pageSize,
+                    hasNextPage = hasNextPage
+                )
+
+                call.respond(HttpStatusCode.OK, response)
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debugMode) {
         post<AddUserToWorkspaceRequest>("/api/workspace/user") { request ->
             println("adding user to workspace")
             val userId = getUserId() ?: ""
@@ -182,10 +229,16 @@ fun Routing.workspaceRoute(
                     writeopiaDb
                 )
 
-                if (result) {
-                    call.respond(HttpStatusCode.OK, ServerResponse("User added to workspace"))
-                } else {
-                    call.respond(HttpStatusCode.NotFound, ServerResponse("Not added"))
+                when (result) {
+                    AddUserResult.SUCCESS -> {
+                        call.respond(HttpStatusCode.OK, ServerResponse("User added to workspace"))
+                    }
+                    AddUserResult.USER_NOT_FOUND -> {
+                        call.respond(HttpStatusCode.NotFound, ServerResponse("User not found"))
+                    }
+                    AddUserResult.USER_ALREADY_IN_WORKSPACE -> {
+                        call.respond(HttpStatusCode.Conflict, ServerResponse("User is already in this workspace"))
+                    }
                 }
             }
         }
@@ -233,6 +286,22 @@ fun Routing.workspaceRoute(
             val (workspaceId, changeRoleUserId, newRole) = roleChange
 
             runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+                // Check if this change would leave the workspace without admins
+                val currentRole = writeopiaDb.getUserRoleInWorkspace(workspaceId, changeRoleUserId)
+                val isCurrentlyAdmin = currentRole?.equals(Role.ADMIN.value, ignoreCase = true) == true
+                val isChangingToNonAdmin = !newRole.equals(Role.ADMIN.value, ignoreCase = true)
+
+                if (isCurrentlyAdmin && isChangingToNonAdmin) {
+                    val adminCount = writeopiaDb.countAdminsInWorkspace(workspaceId)
+                    if (adminCount <= 1) {
+                        call.respond(
+                            status = HttpStatusCode.Conflict,
+                            ServerResponse("Cannot change role: workspace must have at least one admin")
+                        )
+                        return@runIfAdmin
+                    }
+                }
+
                 writeopiaDb.changeWorkspaceRoleForUser(
                     workspaceId = workspaceId,
                     userId = changeRoleUserId,

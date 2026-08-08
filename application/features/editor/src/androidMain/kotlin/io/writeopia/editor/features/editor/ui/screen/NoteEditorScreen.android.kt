@@ -29,9 +29,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +58,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
+import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
 import io.writeopia.editor.input.InputScreen
@@ -129,6 +127,7 @@ internal fun NoteEditorScreen(
                 TopBar(
                     titleState = noteEditorViewModel.currentTitle,
                     editableState = noteEditorViewModel.isEditable,
+                    publishedState = noteEditorViewModel.isDocumentPublished,
                     navigationClick = {
                         noteEditorViewModel.handleBackAction(navigateBack = navigateBack)
                     },
@@ -233,7 +232,24 @@ internal fun NoteEditorScreen(
                     onShareJson = { noteEditorViewModel.shareDocumentInJson() },
                     onShareMd = { noteEditorViewModel.shareDocumentInMarkdown() },
                     changeFontFamily = noteEditorViewModel::changeFontFamily,
-                    selectedState = noteEditorViewModel.fontFamily
+                    selectedState = noteEditorViewModel.fontFamily,
+                    onPublishClick = noteEditorViewModel::showPublishDialog
+                )
+            }
+
+            val showPublishDialog by noteEditorViewModel.showPublishDialog.collectAsState()
+            val isDocumentPublished by noteEditorViewModel.isDocumentPublished.collectAsState()
+            val publishLoading by noteEditorViewModel.publishLoading.collectAsState()
+
+            if (showPublishDialog && documentId != null) {
+                PublishDialog(
+                    documentId = documentId,
+                    isPublished = isDocumentPublished,
+                    isLoading = publishLoading,
+                    onDismiss = noteEditorViewModel::hidePublishDialog,
+                    onPublishAndView = noteEditorViewModel::publishDocument,
+                    onUnpublish = noteEditorViewModel::unpublishDocument,
+                    onCopyLink = noteEditorViewModel::copyPublishLink
                 )
             }
         }
@@ -245,12 +261,14 @@ internal fun NoteEditorScreen(
 private fun TopBar(
     titleState: StateFlow<String>,
     editableState: StateFlow<Boolean>,
+    publishedState: StateFlow<Boolean>,
     modifier: Modifier = Modifier,
     navigationClick: () -> Unit = {},
     shareDocument: () -> Unit
 ) {
     val title by titleState.collectAsState()
     val isEditable by editableState.collectAsState()
+    val isPublished by publishedState.collectAsState()
 
     TopAppBar(
         modifier = modifier.height(110.dp),
@@ -271,12 +289,26 @@ private fun TopBar(
                     style = MaterialTheme.typography.titleSmall.copy(textAlign = TextAlign.Center)
                 )
 
-                if (!isEditable) {
+                if (!isEditable || isPublished) {
                     Spacer(modifier.width(4.dp))
+                }
 
+                if (!isEditable) {
                     Icon(
-                        imageVector = Icons.Outlined.Lock,
-                        contentDescription = "Lock",
+                        imageVector = WrIcons.lock,
+                        contentDescription = "Locked",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+
+                if (isPublished) {
+                    if (!isEditable) {
+                        Spacer(modifier.width(4.dp))
+                    }
+                    Icon(
+                        imageVector = WrIcons.published,
+                        contentDescription = "Published",
                         tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(14.dp)
                     )
@@ -307,7 +339,7 @@ private fun TopBar(
                     .clip(CircleShape)
                     .clickable(onClick = shareDocument)
                     .padding(9.dp),
-                imageVector = Icons.Default.MoreVert,
+                imageVector = WrIcons.moreVert,
                 contentDescription = "",
                 tint = MaterialTheme.colorScheme.onBackground
             )

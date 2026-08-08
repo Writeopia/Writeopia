@@ -23,9 +23,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -245,7 +242,7 @@ private fun TopBar(
 
                 if (!isEditable) {
                     Icon(
-                        imageVector = Icons.Outlined.Lock,
+                        imageVector = WrIcons.lock,
                         contentDescription = "Lock",
                         tint = MaterialTheme.colorScheme.onBackground
                     )
@@ -278,7 +275,7 @@ private fun TopBar(
                     .clip(CircleShape)
                     .clickable(onClick = shareDocument)
                     .padding(9.dp),
-                imageVector = Icons.Default.MoreVert,
+                imageVector = WrIcons.moreVert,
                 contentDescription = "",
                 tint = MaterialTheme.colorScheme.onBackground
             )

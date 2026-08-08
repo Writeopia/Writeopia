@@ -19,6 +19,8 @@ interface AccountMenuViewModel {
 
     fun logout(onLogOutSuccess: () -> Unit)
 
+    fun changeWorkspace(onChangeSuccess: () -> Unit)
+
     fun syncWorkspace()
 
     fun selectWorkspace(workspaceId: String)

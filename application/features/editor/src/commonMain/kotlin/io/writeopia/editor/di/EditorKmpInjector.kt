@@ -15,6 +15,7 @@ import io.writeopia.editor.features.editor.viewmodel.NoteEditorKmpViewModel
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.presentation.viewmodel.PresentationKmpViewModel
 import io.writeopia.editor.features.presentation.viewmodel.PresentationViewModel
+import io.writeopia.editor.features.site.viewmodel.SiteViewModel
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.sdk.models.id.GenerateId
@@ -24,6 +25,7 @@ import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
+import io.writeopia.ui.image.ImageUploader
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.CoroutineScope
@@ -61,6 +63,7 @@ class EditorKmpInjector private constructor(
         InDocumentSearchInjection.singleton(),
     private val workspaceInjection: WorkspaceInjection =
         WorkspaceInjection.singleton(),
+    private val imageUploader: ImageUploader? = null,
 ) : TextEditorInjector {
 
     // SharedFlow for drawing save events - ViewModel subscribes to this
@@ -83,7 +86,8 @@ class EditorKmpInjector private constructor(
         selectionState = selectionState,
         keyboardEventFlow = keyboardEventFlow,
         documentRepository = repositoryInjection.provideDocumentRepository(),
-        userRepository = authRepository
+        userRepository = authRepository,
+        imageUploader = imageUploader
     )
 
     private fun provideNoteEditorViewModel(
@@ -108,7 +112,11 @@ class EditorKmpInjector private constructor(
             authRepository = authCoreInjection.provideAuthRepository(),
             inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo(),
             drawingSaveEvents = drawingSaveEvents,
-            documentLoadUseCase = workspaceInjection.provideDocumentLoadUseCase()
+            documentLoadUseCase = workspaceInjection.provideDocumentLoadUseCase(),
+            storyStepSyncApi = { request, token ->
+                connectionInjection.storyStepSyncApi().syncStorySteps(request, token)
+            },
+            documentsApi = workspaceInjection.provideDocumentsApi()
         )
 
     @Composable
@@ -124,6 +132,13 @@ class EditorKmpInjector private constructor(
         viewModel {
             provideNoteEditorViewModel(parentFolder = parentFolder, copyManager = copyManager)
         }
+
+    @Composable
+    override fun provideSiteViewModel(): SiteViewModel {
+        throw UnsupportedOperationException(
+            "SiteViewModel should be created directly where needed with the appropriate DocumentsApi"
+        )
+    }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -179,12 +194,14 @@ class EditorKmpInjector private constructor(
             connectionInjector: WriteopiaConnectionInjector =
                 WriteopiaConnectionInjector.singleton(),
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
+            imageUploader: ImageUploader? = null,
         ) = EditorKmpInjector(
             authCoreInjection,
             RepositoryInjector.singleton(),
             connectionInjector,
             MutableStateFlow(false),
             MutableStateFlow(KeyboardEvent.IDLE),
+            imageUploader = imageUploader,
         )
 
         fun desktop(
@@ -195,6 +212,7 @@ class EditorKmpInjector private constructor(
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
             ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
+            imageUploader: ImageUploader? = null,
         ) = EditorKmpInjector(
             authCoreInjection,
             repositoryInjection,
@@ -202,6 +220,7 @@ class EditorKmpInjector private constructor(
             selectionState,
             keyboardEventFlow,
             ollamaInjection = ollamaInjection,
+            imageUploader = imageUploader,
         )
     }
 }

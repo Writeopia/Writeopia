@@ -10,10 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.VideoFile
+import io.writeopia.ui.icons.WrSdkIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,7 +48,7 @@ fun VideoPlayer(
         ) {
             // Video icon
             Icon(
-                imageVector = Icons.Filled.VideoFile,
+                imageVector = WrSdkIcons.video,
                 contentDescription = "Video",
                 tint = Color.White.copy(alpha = 0.7f),
                 modifier = Modifier.size(48.dp)
@@ -68,7 +65,7 @@ fun VideoPlayer(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Filled.PlayArrow,
+                    imageVector = WrSdkIcons.play,
                     contentDescription = "Play in system player",
                     tint = Color(0xFF1a1a2e),
                     modifier = Modifier.size(40.dp)
@@ -88,7 +85,7 @@ fun VideoPlayer(
                     textAlign = TextAlign.Center
                 )
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                    imageVector = WrSdkIcons.externalLink,
                     contentDescription = null,
                     tint = Color.White.copy(alpha = 0.6f),
                     modifier = Modifier

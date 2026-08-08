@@ -38,6 +38,7 @@ fun Application.module(
 fun Application.installCORS() {
     install(CORS) {
         allowHost("writeopia.io", schemes = listOf("https"))
+        allowHost("app.writeopia.io", schemes = listOf("https"))
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
         allowMethod(HttpMethod.Get)

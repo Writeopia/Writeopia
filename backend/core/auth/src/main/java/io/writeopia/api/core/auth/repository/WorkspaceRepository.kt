@@ -165,3 +165,9 @@ fun WriteopiaDbBackend.changeWorkspaceRoleForUser(
         role = newRole
     )
 }
+
+fun WriteopiaDbBackend.countAdminsInWorkspace(workspaceId: String): Long =
+    this.workspaceToUserQueries.countAdminsInWorkspace(workspaceId).executeAsOne()
+
+fun WriteopiaDbBackend.getUserRoleInWorkspace(workspaceId: String, userId: String): String? =
+    this.workspaceToUserQueries.getUserRoleInWorkspace(workspaceId, userId).executeAsOneOrNull()

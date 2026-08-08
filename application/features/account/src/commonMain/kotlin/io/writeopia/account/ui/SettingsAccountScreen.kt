@@ -42,6 +42,7 @@ fun SettingsAccountScreen(
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     goToRegister: () -> Unit,
     changeAccount: () -> Unit,
+    changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
     modifier: Modifier = Modifier,
@@ -75,6 +76,14 @@ fun SettingsAccountScreen(
                 title = WrStrings.changeAccount(),
                 icon = WrIcons.person,
                 onClick = changeAccount
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            AccountMenuItem(
+                title = WrStrings.changeWorkspace(),
+                icon = WrIcons.group,
+                onClick = changeWorkspace
             )
 
             Spacer(modifier = Modifier.height(8.dp))

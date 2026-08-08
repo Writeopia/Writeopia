@@ -11,7 +11,8 @@ CREATE TABLE document_entity (
   icon_tint INTEGER,
   is_locked BOOLEAN NOT NULL,
   company_id TEXT NULL,
-  deleted BOOLEAN NOT NULL
+  deleted BOOLEAN NOT NULL,
+  published BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE story_step_entity (

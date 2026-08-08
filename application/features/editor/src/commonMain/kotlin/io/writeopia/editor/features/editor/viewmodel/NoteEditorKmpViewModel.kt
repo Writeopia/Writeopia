@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.collections.toNodeTree
+import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
@@ -40,6 +41,8 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.sync.DocumentSyncManager
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
+import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.serialization.request.wrapInRequest
@@ -93,7 +96,9 @@ class NoteEditorKmpViewModel(
     private val inDocumentSearchRepository: InDocumentSearchRepository,
     private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
     private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton(),
-    private val documentLoadUseCase: DocumentLoadUseCase? = null
+    private val documentLoadUseCase: DocumentLoadUseCase? = null,
+    private val storyStepSyncApi: (suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse)? = null,
+    private val documentsApi: DocumentsApi? = null
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -300,6 +305,15 @@ class NoteEditorKmpViewModel(
     private val _sideMenuTabState = MutableStateFlow(SideMenuTab.NONE)
     override val sideMenuTabState: StateFlow<SideMenuTab> = _sideMenuTabState.asStateFlow()
 
+    private val _showPublishDialog = MutableStateFlow(false)
+    override val showPublishDialog: StateFlow<Boolean> = _showPublishDialog.asStateFlow()
+
+    private val _isDocumentPublished = MutableStateFlow(false)
+    override val isDocumentPublished: StateFlow<Boolean> = _isDocumentPublished.asStateFlow()
+
+    private val _publishLoading = MutableStateFlow(false)
+    override val publishLoading: StateFlow<Boolean> = _publishLoading.asStateFlow()
+
     /**
      * This property defines if the document is favorite
      */
@@ -472,6 +486,17 @@ class NoteEditorKmpViewModel(
             documentTracker = OnUpdateDocumentTracker(documentRepository)
         )
 
+        // Also register for backend sync if the API is available
+        storyStepSyncApi?.let { syncApi ->
+            documentSyncManager.registerForBackendSync(
+                documentId = documentId,
+                documentEditionFlow = writeopiaManager.documentEditionState,
+                workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                syncApi = syncApi,
+                tokenProvider = { authRepository.getAuthToken() }
+            )
+        }
+
         writeopiaManager.liveSync(sharedEditionManager)
     }
 
@@ -488,6 +513,8 @@ class NoteEditorKmpViewModel(
             if (localDocument != null) {
                 writeopiaManager.loadDocument(localDocument)
                 registerForSync(documentId)
+                // Set initial published state from local document
+                _isDocumentPublished.value = localDocument.published
             }
 
             // Step 2: If online, fetch from backend in background and merge
@@ -498,6 +525,8 @@ class NoteEditorKmpViewModel(
                     onMergeComplete = { mergedDocument ->
                         // Update the document in the manager with merged content
                         writeopiaManager.updateDocument(mergedDocument)
+                        // Update published state from merged document
+                        _isDocumentPublished.value = mergedDocument.published
 
                         // Register for sync if this is the first load (backend-only document)
                         if (localDocument == null) {
@@ -505,6 +534,15 @@ class NoteEditorKmpViewModel(
                         }
                     }
                 )
+            }
+
+            // Step 3: Fetch published status from API if online
+            if (!isDisconnected && documentsApi != null) {
+                val token = authRepository.getAuthToken() ?: return@launch
+                val result = documentsApi.isDocumentPublished(documentId, workspace.id, token)
+                if (result is ResultData.Complete) {
+                    _isDocumentPublished.value = result.data
+                }
             }
         }
     }
@@ -532,6 +570,17 @@ class NoteEditorKmpViewModel(
                 }
             )
         )
+
+        // Also register for backend sync if the API is available
+        storyStepSyncApi?.let { syncApi ->
+            documentSyncManager.registerForBackendSync(
+                documentId = documentId,
+                documentEditionFlow = writeopiaManager.documentEditionState,
+                workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                syncApi = syncApi,
+                tokenProvider = { authRepository.getAuthToken() }
+            )
+        }
     }
 
     override fun onHeaderColorSelection(color: Int?) {
@@ -951,6 +1000,72 @@ class NoteEditorKmpViewModel(
             withContext(Dispatchers.Main) {
                 onComplete()
             }
+        }
+    }
+
+    override fun showPublishDialog() {
+        _showPublishDialog.value = true
+        // Fetch current publish status from server
+        viewModelScope.launch(Dispatchers.Default) {
+            val docId = documentId.value
+            if (docId.isNotEmpty() && documentsApi != null) {
+                val token = authRepository.getAuthToken() ?: return@launch
+                val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
+                val result = documentsApi.isDocumentPublished(docId, workspaceId, token)
+                if (result is ResultData.Complete) {
+                    _isDocumentPublished.value = result.data
+                }
+            }
+        }
+    }
+
+    override fun hidePublishDialog() {
+        _showPublishDialog.value = false
+    }
+
+    override fun publishDocument() {
+        viewModelScope.launch(Dispatchers.Default) {
+            _publishLoading.value = true
+            try {
+                val docId = documentId.value
+                if (docId.isNotEmpty() && documentsApi != null) {
+                    val token = authRepository.getAuthToken() ?: return@launch
+                    val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
+                    val result = documentsApi.publishDocument(docId, workspaceId, token)
+                    if (result is ResultData.Complete) {
+                        _isDocumentPublished.value = true
+                    }
+                }
+            } finally {
+                _publishLoading.value = false
+            }
+        }
+    }
+
+    override fun unpublishDocument() {
+        viewModelScope.launch(Dispatchers.Default) {
+            _publishLoading.value = true
+            try {
+                val docId = documentId.value
+                if (docId.isNotEmpty() && documentsApi != null) {
+                    val token = authRepository.getAuthToken() ?: return@launch
+                    val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
+                    val result = documentsApi.unpublishDocument(docId, workspaceId, token)
+                    if (result is ResultData.Complete) {
+                        _isDocumentPublished.value = false
+                    }
+                }
+            } finally {
+                _publishLoading.value = false
+            }
+        }
+    }
+
+    override fun copyPublishLink() {
+        val docId = documentId.value
+        if (docId.isNotEmpty()) {
+            val url = "https://app.writeopia.io/site/$docId"
+            copyManager.copyText(url)
         }
     }
 }

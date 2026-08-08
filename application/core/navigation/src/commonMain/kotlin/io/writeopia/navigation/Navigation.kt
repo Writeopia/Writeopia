@@ -12,6 +12,9 @@ import io.writeopia.account.navigation.accountMenuNavigation
 import io.writeopia.account.navigation.navigateToSettingsAccount
 import io.writeopia.account.navigation.navigateToSettingsAppearance
 import io.writeopia.account.navigation.navigateToSettingsTeams
+import io.writeopia.account.navigation.navigateToUserAdd
+import io.writeopia.account.navigation.navigateToUserEdit
+import io.writeopia.account.navigation.navigateToUserSearch
 import io.writeopia.account.navigation.navigateToWorkspaceUsers
 import io.writeopia.common.utils.Destinations
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
@@ -120,6 +123,11 @@ fun Navigation(
                 navigateToAuthMenu = {
                     navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
                 },
+                navigateToChooseWorkspace = {
+                    navController.navigate(Destinations.START_APP.id) {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
+                },
                 resetPassword = {
                     navController.navigate(Destinations.AUTH_RESET_PASSWORD.id)
                 },
@@ -128,6 +136,16 @@ fun Navigation(
                 navigateToSettingsAppearance = navController::navigateToSettingsAppearance,
                 navigateToSettingsAccount = navController::navigateToSettingsAccount,
                 navigateToWorkspaceUsers = navController::navigateToWorkspaceUsers,
+                navigateToUserSearch = navController::navigateToUserSearch,
+                navigateToUserAdd = navController::navigateToUserAdd,
+                navigateToUserEdit = navController::navigateToUserEdit,
+                navigateBackToWorkspaceUsers = {
+                    // Pop back to workspace users screen (pop search and add screens)
+                    navController.popBackStack(
+                        route = "${Destinations.SETTINGS_WORKSPACE_USERS.id}/{workspaceId}/{workspaceName}",
+                        inclusive = false
+                    )
+                },
                 selectedColorTheme = selectedColorTheme,
                 selectedAccentColor = selectedAccentColor,
                 selectColorTheme = selectColorTheme,

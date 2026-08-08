@@ -1,0 +1,54 @@
+name: Deploy Web App
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'application/web/**'
+      - 'application/features/**'
+      - 'application/core/**'
+      - 'application/common_flows/**'
+      - 'writeopia/**'
+      - 'writeopia_ui/**'
+      - 'writeopia_models/**'
+      - 'plugins/**'
+
+jobs:
+  deploy_web:
+    name: Build and Deploy Web App
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: adopt
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/640912732949/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
+          service_account: 'github-actions-deployer@writeopia.iam.gserviceaccount.com'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build Web App (Production)
+        run: ./gradlew :application:web:jsBrowserDistribution --no-daemon
+
+      - name: Deploy to Cloud Storage
+        run: |
+          gsutil -m rsync -r -d application/web/build/dist/js/productionExecutable/ gs://writeopia-web/

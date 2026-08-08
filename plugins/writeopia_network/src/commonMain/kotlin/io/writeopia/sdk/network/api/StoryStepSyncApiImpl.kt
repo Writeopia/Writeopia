@@ -2,9 +2,11 @@ package io.writeopia.sdk.network.api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
@@ -20,11 +22,12 @@ class StoryStepSyncApiImpl(
     private val baseUrl: String
 ) : StoryStepSyncApi {
 
-    override suspend fun syncStorySteps(request: StoryStepSyncRequest): StoryStepSyncResponse =
+    override suspend fun syncStorySteps(request: StoryStepSyncRequest, token: String): StoryStepSyncResponse =
         client.post(
             "$baseUrl/api/docs/workspace/${request.workspaceId}/document/${request.documentId}/steps/sync"
         ) {
             contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $token")
             setBody(request)
         }.body()
 }

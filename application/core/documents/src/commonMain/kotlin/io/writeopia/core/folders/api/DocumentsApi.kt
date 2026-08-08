@@ -264,4 +264,67 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
             ResultData.Error()
         }
     }
+
+    suspend fun getPublishedDocument(documentId: String): ResultData<Document> {
+        val response = client.get("$baseUrl/api/site/$documentId")
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<DocumentApi>().toModel())
+        } else {
+            println("error getting published document: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun publishDocument(
+        documentId: String,
+        workspaceId: String,
+        token: String
+    ): ResultData<Unit> {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/$documentId/publish") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            println("error publishing document: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun unpublishDocument(
+        documentId: String,
+        workspaceId: String,
+        token: String
+    ): ResultData<Unit> {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/$documentId/unpublish") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            println("error unpublishing document: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun isDocumentPublished(
+        documentId: String,
+        workspaceId: String,
+        token: String
+    ): ResultData<Boolean> {
+        val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/document/$documentId/published") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            val body = response.body<Map<String, Boolean>>()
+            ResultData.Complete(body["published"] ?: false)
+        } else {
+            println("error checking document published status: $response")
+            ResultData.Error()
+        }
+    }
 }
