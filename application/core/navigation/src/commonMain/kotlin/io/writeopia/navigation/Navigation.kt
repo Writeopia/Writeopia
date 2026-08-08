@@ -58,6 +58,7 @@ fun Navigation(
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
     onDrawingSaved: (String, String, DrawingData) -> Unit = { _, _, _ -> },
+    onImagePick: () -> Unit = {},
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
     navigationBar: @Composable () -> Unit,
@@ -108,7 +109,8 @@ fun Navigation(
                         storyStepId = storyStep.id,
                         drawingJson = storyStep.text
                     )
-                }
+                },
+                onImagePick = onImagePick
             )
 
             if (drawingInjection != null) {

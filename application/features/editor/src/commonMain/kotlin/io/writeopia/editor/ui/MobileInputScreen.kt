@@ -50,6 +50,7 @@ internal fun MobileInputScreen(
     canUndoState: StateFlow<Boolean>,
     canRedoState: StateFlow<Boolean>,
     onDrawingClick: () -> Unit = {},
+    onImageClick: () -> Unit = {},
 ) {
     val canUndo by canUndoState.collectAsState()
     val canRedo by canRedoState.collectAsState()
@@ -184,6 +185,20 @@ internal fun MobileInputScreen(
                             .padding(iconPadding),
                         imageVector = WrIcons.drawing,
                         contentDescription = "Drawing",
+                        tint = buttonColor
+                    )
+
+                    Spacer(modifier = Modifier.width(15.dp))
+
+                    Icon(
+                        modifier = Modifier
+                            .clip(buttonShape)
+                            .clickable {
+                                onImageClick()
+                            }
+                            .padding(iconPadding),
+                        imageVector = WrIcons.image,
+                        contentDescription = "Image",
                         tint = buttonColor
                     )
 
