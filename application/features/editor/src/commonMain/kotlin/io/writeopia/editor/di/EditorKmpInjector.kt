@@ -64,6 +64,7 @@ class EditorKmpInjector private constructor(
     private val workspaceInjection: WorkspaceInjection =
         WorkspaceInjection.singleton(),
     private val imageUploader: ImageUploader? = null,
+    val textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false),
 ) : TextEditorInjector {
 
     // SharedFlow for drawing save events - ViewModel subscribes to this
@@ -87,7 +88,8 @@ class EditorKmpInjector private constructor(
         keyboardEventFlow = keyboardEventFlow,
         documentRepository = repositoryInjection.provideDocumentRepository(),
         userRepository = authRepository,
-        imageUploader = imageUploader
+        imageUploader = imageUploader,
+        textSelectionActiveState = textSelectionActiveState
     )
 
     private fun provideNoteEditorViewModel(
