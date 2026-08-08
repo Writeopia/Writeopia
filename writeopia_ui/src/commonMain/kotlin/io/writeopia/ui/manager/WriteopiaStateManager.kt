@@ -97,7 +97,8 @@ class WriteopiaStateManager(
         StoryTypes.UNORDERED_LIST_ITEM.type.number,
     ),
     private val inTextMarkdownHandler: InTextMarkdownHandler? = InTextMarkdownHandler,
-    private val imageUploader: ImageUploader? = null
+    private val imageUploader: ImageUploader? = null,
+    private val textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false)
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     private val selectionBuffer: EventBuffer<Pair<Boolean, Double>> = EventBuffer(coroutineScope)
@@ -183,6 +184,7 @@ class WriteopiaStateManager(
                     }
                 }
         }
+
     }
 
     private var lastLineBreak: LineBreakCommand? = null
@@ -1214,6 +1216,10 @@ class WriteopiaStateManager(
         trackIt: Boolean = true
     ) {
         if (!isEditable) return
+
+        // Track when text is being selected (start != end) for disabling drag selection
+        textSelectionActiveState.value = input.start != input.end
+
         val text = input.text
         val step = _currentStory.value.stories[position] ?: return
 
@@ -1728,7 +1734,8 @@ class WriteopiaStateManager(
             coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext),
             backStackManager: SnapshotBackstackManager = SnapshotBackstackManager(),
             userRepository: UserRepository? = null,
-            imageUploader: ImageUploader? = null
+            imageUploader: ImageUploader? = null,
+            textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false)
         ) = WriteopiaStateManager(
             stepsNormalizer,
             dispatcher,
@@ -1741,7 +1748,8 @@ class WriteopiaStateManager(
             documentRepository,
             setOf("jpg", "jpeg", "png"),
             StepsModifier::modify,
-            imageUploader = imageUploader
+            imageUploader = imageUploader,
+            textSelectionActiveState = textSelectionActiveState
         )
     }
 }

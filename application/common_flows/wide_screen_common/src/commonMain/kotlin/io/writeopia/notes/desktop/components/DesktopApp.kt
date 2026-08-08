@@ -136,7 +136,8 @@ fun DesktopApp(
     ) {
         val density = LocalDensity.current
         val globalBackground = WriteopiaTheme.colorScheme.globalBackground
-        DragSelectionBox(modifier = modifier) {
+        val isTextSelected by editorInjector.textSelectionActiveState.collectAsState()
+        DragSelectionBox(modifier = modifier, isTextSelected = isTextSelected) {
             DraggableScreen {
                 Row(Modifier.background(globalBackground)) {
                     val sideMenuWidth by globalShellViewModel.showSideMenuState.collectAsState()
