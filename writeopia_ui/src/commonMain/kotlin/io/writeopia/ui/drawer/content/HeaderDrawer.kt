@@ -195,6 +195,7 @@ fun headerDrawer(
                 enabled = enabled,
                 isDarkTheme = isDarkTheme,
                 onTextEdit = manager::handleTextInput,
+                onSelectionChange = manager::onTextSelectionChanged,
                 onKeyEvent = onKeyEvent,
                 lineBreakByContent = lineBreakByContent,
                 emptyErase = EmptyErase.DISABLED,

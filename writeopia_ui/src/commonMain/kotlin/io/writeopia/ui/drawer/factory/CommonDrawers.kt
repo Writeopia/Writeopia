@@ -342,6 +342,7 @@ private fun RowScope.messageDrawer(
         modifier = modifier.weight(1F),
         onKeyEvent = eventListener,
         onTextEdit = manager::handleTextInput,
+        onSelectionChange = manager::onTextSelectionChanged,
         textStyle = textStyle,
         onFocusChanged = { position, focus ->
             manager.onFocusChange(position, focus.isFocused)

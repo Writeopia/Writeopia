@@ -38,6 +38,8 @@ fun AppTextEditor(
     listState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier
 ) {
+    println("draw!!")
+
     LaunchedEffect(Unit) {
         manager.scrollToPosition.collectLatest { position ->
             if (position == -1) {

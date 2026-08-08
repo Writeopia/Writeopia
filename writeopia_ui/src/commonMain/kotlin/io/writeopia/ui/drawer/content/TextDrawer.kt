@@ -82,6 +82,7 @@ class TextDrawer(
         { _, _, _, _, _, _, _ -> false },
     private val textStyle: @Composable (StoryStep) -> TextStyle = { defaultTextStyle(it) },
     private val onTextEdit: (TextInput, Double, Boolean) -> Unit = { _, _, _ -> },
+    private val onSelectionChange: (position: Double, start: Int, end: Int) -> Unit = { _, _, _ -> },
     private val lineBreakByContent: Boolean = true,
     private val enabled: Boolean = true,
     private val emptyErase: EmptyErase = EmptyErase.CHANGE_TYPE,
@@ -259,10 +260,14 @@ class TextDrawer(
                         val previousStart = inputText.selection.start
 
                         val sizeDifference = value.text.length - inputText.text.length
+                        val textChanged = value.text != inputText.text
 
                         if (abs(sizeDifference) > 0) {
                             spans = Spans.recalculateSpans(spans, previousStart, sizeDifference)
                         }
+
+                        // Report selection change for formatting operations (without triggering full redraw)
+                        onSelectionChange(drawInfo.position, start, end)
 
                         // Detect slash command
                         if (slashCommandsEnabled) {
@@ -321,7 +326,8 @@ class TextDrawer(
                             )
                         }
 
-                        if (!showSlashCommandPopup) {
+                        // Only call onTextEdit when text actually changes, not on selection-only changes
+                        if (!showSlashCommandPopup && textChanged) {
                             onTextEdit(
                                 TextInput(value.text, start, end, spans),
                                 drawInfo.position,
@@ -490,6 +496,7 @@ fun DesktopMessageDrawerPreview() {
         aiExplanation = "",
         selectionState = MutableStateFlow(false),
         onSelectionLister = {},
+        onSelectionChange = { _, _, _ -> },
     ).Text(
         step = StoryStep(text = "Some text", type = StoryTypes.TEXT.type),
         drawInfo = DrawInfo(),

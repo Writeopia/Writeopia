@@ -228,6 +228,14 @@ class WriteopiaStateManager(
     val onEditPositions = _onEditPositions.asStateFlow()
 
     /**
+     * Separate selection StateFlow for tracking text selection without triggering toDraw redraws.
+     * This is used for formatting operations (bold, italic, etc.) without causing all text
+     * drawers to recompose.
+     */
+    private val _textSelection = MutableStateFlow(Selection.start())
+    val textSelection: StateFlow<Selection> = _textSelection.asStateFlow()
+
+    /**
      * Tracks the anchor position for keyboard-based multi-line selection.
      * This is the position from which the selection extends when using shift+arrows.
      * It's null when the selection was made with mouse (unknown keyboard position).
@@ -238,10 +246,7 @@ class WriteopiaStateManager(
 
     val currentStory: StateFlow<StoryState> = _currentStory.asStateFlow()
 
-    val textSelectionState: Flow<Selection> =
-        _currentStory.map { storyState ->
-            storyState.selection
-        }
+    val textSelectionState: Flow<Selection> = _textSelection.asStateFlow()
 
     val currentDocument: StateFlow<Document?> =
         combine(_documentInfo, _currentStory) { info, state ->
@@ -276,7 +281,7 @@ class WriteopiaStateManager(
                 .mapValues { (position, storyStep) ->
                     DrawStory(
                         storyStep = storyStep,
-                        cursor = storyState.selection.takeIf { it.position == position },
+                        cursor = null, // No longer pass cursor here to avoid unnecessary redraws
                         isSelected = positions.contains(position),
                         position = position
                     )
@@ -291,11 +296,11 @@ class WriteopiaStateManager(
     private var initialized = false
 
     val selectionMetadataState: Flow<Set<SelectionMetadata>> =
-        combine(_currentStory, _onEditPositions) { storyState, onEditPositions ->
+        combine(_currentStory, _onEditPositions, _textSelection) { storyState, onEditPositions, selection ->
             val result = mutableSetOf<SelectionMetadata>()
 
             val findMetadata = { storyStep: StoryStep ->
-                val (selectStart, selectEnd) = (storyState.selection.start to storyState.selection.end)
+                val (selectStart, selectEnd) = (selection.start to selection.end)
                 val fromType = SelectionMetadata.fromStoryType(storyStep.type.number)
 
                 if (fromType != null) {
@@ -336,7 +341,7 @@ class WriteopiaStateManager(
             }
 
             if (!onEditPositions.isNotEmpty()) {
-                val selectionPos = storyState.selection.position
+                val selectionPos = selection.position
                 val step = storyState.stories[selectionPos]
 
                 if (step != null) {
@@ -780,7 +785,9 @@ class WriteopiaStateManager(
             writeopiaManager.onLineBreak(lineBreak, expanded).let { (_, newState) ->
                 // Todo: Fix this when the inner position are completed
                 //  backStackManager.addAction(BackstackAction.Add(newStory, newPosition))
-                _currentStory.value = newState.copy(selection = Selection.start())
+                val newSelection = Selection.start()
+                _textSelection.value = newSelection
+                _currentStory.value = newState.copy(selection = newSelection)
                 _scrollToPosition.value = -1
             }
         }
@@ -793,6 +800,15 @@ class WriteopiaStateManager(
         // Don't preserve lastEdit on focus change - it would cause the save to be
         // cancelled and re-triggered, potentially interrupting in-progress saves
         _currentStory.value = story.copy(focus = position, lastEdit = LastEdit.Nothing)
+    }
+
+    /**
+     * Updates text selection without triggering StoryState changes.
+     * This allows selection changes to be tracked for formatting operations
+     * without causing all text drawers to recompose.
+     */
+    fun onTextSelectionChanged(position: Double, start: Int, end: Int) {
+        _textSelection.value = Selection(start, end, position)
     }
 
     fun scrollToPosition(position: Int) {
@@ -862,14 +878,17 @@ class WriteopiaStateManager(
                 this[lastPosition] = lastContentStory.copyNewLocalId()
             }
             val cursor = lastContentStory.text?.length ?: 0
+            val newSelection = Selection.fromPosition(
+                cursorPosition = cursor,
+                stepPosition = lastPosition
+            )
+
+            _textSelection.value = newSelection
 
             _currentStory.value.copy(
                 focus = lastPosition,
                 stories = newStoriesState,
-                selection = Selection.fromPosition(
-                    cursorPosition = cursor,
-                    stepPosition = lastPosition
-                )
+                selection = newSelection
             )
         } else {
             val newPosition = stories.size.toDouble()
@@ -887,15 +906,18 @@ class WriteopiaStateManager(
             }
 
             val cursor = newLastMessage.text?.length ?: 0
+            val newSelection = Selection.fromPosition(
+                cursorPosition = cursor,
+                stepPosition = newPosition
+            )
+
+            _textSelection.value = newSelection
 
             StoryState(
                 updatedStories,
                 LastEdit.LineEdition(newPosition, newLastMessage),
                 newPosition,
-                selection = Selection.fromPosition(
-                    cursorPosition = cursor,
-                    stepPosition = newPosition
-                )
+                selection = newSelection
             )
         }
 
@@ -972,12 +994,12 @@ class WriteopiaStateManager(
 
             val state = writeopiaManager.onErase(eraseStory, _currentStory.value).let { state ->
                 if (previousStory != null && newFocus != null) {
-                    state.copy(
-                        selection = Selection.fromPosition(
-                            previousStory.text?.length ?: 0,
-                            newFocus
-                        )
+                    val newSelection = Selection.fromPosition(
+                        previousStory.text?.length ?: 0,
+                        newFocus
                     )
+                    _textSelection.value = newSelection
+                    state.copy(selection = newSelection)
                 } else {
                     state
                 }
@@ -1081,7 +1103,7 @@ class WriteopiaStateManager(
                 _currentStory.value =
                     writeopiaManager.addSpanToStories(_currentStory.value, onEdit, span)
             } else {
-                val selection = currentStory.value.selection
+                val selection = _textSelection.value
                 val (start, end) = selection.sortedPositions()
 
                 _currentStory.value = writeopiaManager.addSpan(
@@ -1360,7 +1382,7 @@ class WriteopiaStateManager(
             val maxSelected = _onEditPositions.value.maxOrNull() ?: return null
             getStory(maxSelected)?.nextPosition
         } else {
-            val currentPos = currentStory.value.selection.position
+            val currentPos = _textSelection.value.position
             getStory(currentPos)?.nextPosition
         }
 
@@ -1508,7 +1530,7 @@ class WriteopiaStateManager(
     }
 
     private fun currentLineText(): String? {
-        val selection = currentStory.value.selection
+        val selection = _textSelection.value
         val (start, end) = selection.sortedPositions()
 
         return when {
@@ -1540,9 +1562,12 @@ class WriteopiaStateManager(
 
                     mutable[newPosition] = step
 
+                    val newSelection = Selection.fromLastLine(cursor, newPosition)
+                    _textSelection.value = newSelection
+
                     _currentStory.value = storyState.copy(
                         focus = newPosition,
-                        selection = Selection.fromLastLine(cursor, newPosition),
+                        selection = newSelection,
                         stories = mutable
                     )
                 }
@@ -1647,7 +1672,7 @@ class WriteopiaStateManager(
         lastStateChange = stateChange
 
         val currentFocusPosition = _currentStory.value.focus
-        val currentSelectionPosition = _currentStory.value.selection.position
+        val currentSelectionPosition = _textSelection.value.position
 
         writeopiaManager.changeStoryState(stateChange, _currentStory.value).let { state ->
             if (trackIt) {
@@ -1666,13 +1691,18 @@ class WriteopiaStateManager(
                 state.focus
             }
 
+            val newSelection = Selection(
+                stateChange.selectionStart ?: state.selection.start,
+                stateChange.selectionEnd ?: state.selection.end,
+                newSelectionPosition
+            )
+
+            // Update separate selection state for formatting operations
+            _textSelection.value = newSelection
+
             _currentStory.value = state.copy(
                 focus = newFocus,
-                selection = Selection(
-                    stateChange.selectionStart ?: state.selection.start,
-                    stateChange.selectionEnd ?: state.selection.end,
-                    newSelectionPosition
-                )
+                selection = newSelection
             )
         }
     }
