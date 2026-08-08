@@ -44,6 +44,7 @@ import io.writeopia.ui.extensions.toSelectionMetadata
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.model.DrawState
 import io.writeopia.ui.model.DrawStory
+import io.writeopia.ui.image.ImageUploader
 import io.writeopia.ui.model.SelectionInfo
 import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.ui.model.TextInput
@@ -95,7 +96,8 @@ class WriteopiaStateManager(
         StoryTypes.CHECK_ITEM.type.number,
         StoryTypes.UNORDERED_LIST_ITEM.type.number,
     ),
-    private val inTextMarkdownHandler: InTextMarkdownHandler? = InTextMarkdownHandler
+    private val inTextMarkdownHandler: InTextMarkdownHandler? = InTextMarkdownHandler,
+    private val imageUploader: ImageUploader? = null
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     private val selectionBuffer: EventBuffer<Pair<Boolean, Double>> = EventBuffer(coroutineScope)
@@ -1101,15 +1103,76 @@ class WriteopiaStateManager(
             val story = getStory(pos)
 
             if (story != null) {
-                if (position == null) {
-                    val stateChange = Action.StoryStateChange(
-                        story.copy(type = StoryTypes.IMAGE.type, path = imagePath),
-                        pos
-                    )
+                // Check if we should upload to cloud
+                coroutineScope.launch(dispatcher) {
+                    val shouldUpload = imageUploader?.isAuthenticated() == true
 
-                    changeStoryStateAndTrackIt(stateChange)
-                } else {
-                    addAtPosition(StoryStep(type = StoryTypes.IMAGE.type, path = imagePath), pos)
+                    if (shouldUpload) {
+                        // Insert image with loading state immediately
+                        val loadingStep = StoryStep(
+                            type = StoryTypes.IMAGE.type,
+                            path = imagePath,
+                            ephemeral = true,
+                            loading = true
+                        )
+
+                        if (position == null) {
+                            changeStoryStateAndTrackIt(
+                                Action.StoryStateChange(
+                                    story.copy(
+                                        type = StoryTypes.IMAGE.type,
+                                        path = imagePath,
+                                        ephemeral = true,
+                                        loading = true
+                                    ),
+                                    pos
+                                )
+                            )
+                        } else {
+                            addAtPosition(loadingStep, pos)
+                        }
+
+                        // Upload in background
+                        val result = imageUploader!!.uploadImage(imagePath)
+
+                        // Replace with final image
+                        val currentStory = getStory(pos)
+                        if (currentStory != null) {
+                            val finalStep = when (result) {
+                                is io.writeopia.sdk.models.utils.ResultData.Complete -> currentStory.copy(
+                                    url = result.data,
+                                    path = null,
+                                    ephemeral = false,
+                                    loading = false
+                                )
+                                else -> currentStory.copy(
+                                    url = null,
+                                    path = imagePath,
+                                    ephemeral = false,
+                                    loading = false
+                                )
+                            }
+
+                            changeStoryStateAndTrackIt(
+                                Action.StoryStateChange(finalStep, pos)
+                            )
+                        }
+                    } else {
+                        // No auth - use local path directly (existing behavior)
+                        if (position == null) {
+                            changeStoryStateAndTrackIt(
+                                Action.StoryStateChange(
+                                    story.copy(type = StoryTypes.IMAGE.type, path = imagePath),
+                                    pos
+                                )
+                            )
+                        } else {
+                            addAtPosition(
+                                StoryStep(type = StoryTypes.IMAGE.type, path = imagePath),
+                                pos
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -1665,6 +1728,7 @@ class WriteopiaStateManager(
             coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext),
             backStackManager: SnapshotBackstackManager = SnapshotBackstackManager(),
             userRepository: UserRepository? = null,
+            imageUploader: ImageUploader? = null
         ) = WriteopiaStateManager(
             stepsNormalizer,
             dispatcher,
@@ -1676,7 +1740,8 @@ class WriteopiaStateManager(
             keyboardEventFlow.filterNotNull(),
             documentRepository,
             setOf("jpg", "jpeg", "png"),
-            StepsModifier::modify
+            StepsModifier::modify,
+            imageUploader = imageUploader
         )
     }
 }
