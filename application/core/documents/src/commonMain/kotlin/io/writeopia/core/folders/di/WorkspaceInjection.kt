@@ -5,7 +5,10 @@ import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.api.MediaApi
+import io.writeopia.core.folders.image.CloudImageUploader
 import io.writeopia.core.folders.repository.folder.DocumentLoadUseCase
+import io.writeopia.ui.image.ImageUploader
 import io.writeopia.core.folders.sync.ConfigFileWatcher
 import io.writeopia.core.folders.sync.DocumentConflictHandler
 import io.writeopia.core.folders.sync.DocumentMerger
@@ -69,6 +72,16 @@ class WorkspaceInjection private constructor(
     fun provideDocumentsApi(): DocumentsApi = DocumentsApi(
         appConnectionInjection.provideHttpClient(),
         connectionInjector.baseUrl()
+    )
+
+    fun provideMediaApi(): MediaApi = MediaApi(
+        appConnectionInjection.provideHttpClient(),
+        connectionInjector.baseUrl()
+    )
+
+    fun provideImageUploader(): ImageUploader = CloudImageUploader(
+        mediaApi = provideMediaApi(),
+        authRepository = authCoreInjection.provideAuthRepository()
     )
 
     private fun provideDocumentMerger(): DocumentMerger = DocumentMerger()

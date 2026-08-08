@@ -33,6 +33,7 @@ import io.writeopia.account.ui.SettingsDialog
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
+import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.drawing.di.DrawingInjection
 import io.writeopia.editor.di.EditorKmpInjector
@@ -85,6 +86,7 @@ fun DesktopApp(
         EditorKmpInjector.desktop(
             selectionState = selectionState,
             keyboardEventFlow = keyboardEventFlow,
+            imageUploader = WorkspaceInjection.singleton().provideImageUploader(),
         )
     }
 

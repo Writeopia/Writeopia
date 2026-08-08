@@ -25,6 +25,7 @@ import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
+import io.writeopia.ui.image.ImageUploader
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.CoroutineScope
@@ -62,6 +63,7 @@ class EditorKmpInjector private constructor(
         InDocumentSearchInjection.singleton(),
     private val workspaceInjection: WorkspaceInjection =
         WorkspaceInjection.singleton(),
+    private val imageUploader: ImageUploader? = null,
 ) : TextEditorInjector {
 
     // SharedFlow for drawing save events - ViewModel subscribes to this
@@ -84,7 +86,8 @@ class EditorKmpInjector private constructor(
         selectionState = selectionState,
         keyboardEventFlow = keyboardEventFlow,
         documentRepository = repositoryInjection.provideDocumentRepository(),
-        userRepository = authRepository
+        userRepository = authRepository,
+        imageUploader = imageUploader
     )
 
     private fun provideNoteEditorViewModel(
@@ -191,12 +194,14 @@ class EditorKmpInjector private constructor(
             connectionInjector: WriteopiaConnectionInjector =
                 WriteopiaConnectionInjector.singleton(),
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
+            imageUploader: ImageUploader? = null,
         ) = EditorKmpInjector(
             authCoreInjection,
             RepositoryInjector.singleton(),
             connectionInjector,
             MutableStateFlow(false),
             MutableStateFlow(KeyboardEvent.IDLE),
+            imageUploader = imageUploader,
         )
 
         fun desktop(
@@ -207,6 +212,7 @@ class EditorKmpInjector private constructor(
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
             ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
+            imageUploader: ImageUploader? = null,
         ) = EditorKmpInjector(
             authCoreInjection,
             repositoryInjection,
@@ -214,6 +220,7 @@ class EditorKmpInjector private constructor(
             selectionState,
             keyboardEventFlow,
             ollamaInjection = ollamaInjection,
+            imageUploader = imageUploader,
         )
     }
 }

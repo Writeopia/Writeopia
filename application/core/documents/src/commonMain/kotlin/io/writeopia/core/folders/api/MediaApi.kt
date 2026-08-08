@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.client.request.header
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
@@ -50,11 +51,12 @@ class MediaApi(
                                 HttpHeaders.ContentDisposition,
                                 "filename=\"${imagePath.substringAfterLast("/")}\""
                             )
-                            append(HttpHeaders.Authorization, "Bearer $token")
                         }
                     )
                 }
-            )
+            ) {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
 
             if (response.status == HttpStatusCode.Created) {
                 val mediaResponse = response.body<MediaUploadResponse>()
