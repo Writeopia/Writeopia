@@ -184,7 +184,6 @@ class WriteopiaStateManager(
                     }
                 }
         }
-
     }
 
     private var lastLineBreak: LineBreakCommand? = null
