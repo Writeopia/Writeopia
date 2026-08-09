@@ -164,4 +164,14 @@
   <string name="failed_to_update_role">Failed to update role. Please try again.</string>
   <string name="workspace_must_have_admin">Workspace must have at least one admin.</string>
   <string name="save">Save</string>
+  <string name="publish">Publish</string>
+  <string name="unpublish">Unpublish</string>
+  <string name="publish_to_web">Publish to Web</string>
+  <string name="view_site">View Site</string>
+  <string name="copy_link">Copy Link</string>
+  <string name="link_copied">Link copied!</string>
+  <string name="apply_to">Apply to:</string>
+  <string name="selected_lines">Selected Lines</string>
+  <string name="cursor">Cursor</string>
+  <string name="select_lines_first">Select lines in the document first</string>
 </resources>

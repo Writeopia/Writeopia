@@ -124,7 +124,8 @@ class NoteEditorKmpViewModel(
                         }
 
                         KeyboardEvent.AI_QUESTION -> {
-                            askAiBySelection()
+                            // Keyboard shortcut uses CURSOR mode by default
+                            askAiWithMode(AiTargetMode.CURSOR)
                         }
 
                         KeyboardEvent.CANCEL -> {
@@ -737,40 +738,41 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun askAiBySelection() {
+    override fun askAiWithMode(targetMode: AiTargetMode) {
         if (ollamaRepository == null) return
 
         aiJob = viewModelScope.launch(Dispatchers.Default) {
-            PromptService.promptBySelection(
+            PromptService.promptWithMode(
                 authRepository.getUser().id,
+                targetMode,
                 writeopiaManager,
                 ollamaRepository
             )
         }
     }
 
-    override fun aiSummary() {
+    override fun aiSummary(targetMode: AiTargetMode) {
         if (ollamaRepository == null) return
 
-        documentPrompt(ollamaRepository::streamSummary)
+        documentPrompt(targetMode, ollamaRepository::streamSummary)
     }
 
-    override fun aiActionPoints() {
+    override fun aiActionPoints(targetMode: AiTargetMode) {
         if (ollamaRepository == null) return
 
-        documentPrompt(ollamaRepository::streamActionsPoints)
+        documentPrompt(targetMode, ollamaRepository::streamActionsPoints)
     }
 
-    override fun aiFaq() {
+    override fun aiFaq(targetMode: AiTargetMode) {
         if (ollamaRepository == null) return
 
-        documentPrompt(ollamaRepository::streamFaq)
+        documentPrompt(targetMode, ollamaRepository::streamFaq)
     }
 
-    override fun aiTags() {
+    override fun aiTags(targetMode: AiTargetMode) {
         if (ollamaRepository == null) return
 
-        documentPrompt(ollamaRepository::streamTags)
+        documentPrompt(targetMode, ollamaRepository::streamTags)
     }
 
     override fun aiSection(position: Double) {
@@ -922,15 +924,19 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    private fun documentPrompt(promptFn: (String, String, String) -> Flow<ResultData<String>>) {
+    private fun documentPrompt(
+        targetMode: AiTargetMode,
+        promptFn: (String, String, String) -> Flow<ResultData<String>>
+    ) {
         if (ollamaRepository == null) return
 
         aiJob = viewModelScope.launch(Dispatchers.Default) {
             PromptService.documentPrompt(
                 userId = authRepository.getUser().id,
-                promptFn,
-                writeopiaManager,
-                ollamaRepository
+                targetMode = targetMode,
+                promptFn = promptFn,
+                writeopiaManager = writeopiaManager,
+                ollamaRepository = ollamaRepository
             )
         }
     }

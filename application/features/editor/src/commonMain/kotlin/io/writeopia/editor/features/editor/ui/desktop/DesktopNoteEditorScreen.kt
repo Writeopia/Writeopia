@@ -216,6 +216,7 @@ fun DesktopNoteEditorScreen(
             isFavorite = noteEditorViewModel.notFavorite,
             selectedMetadataState = noteEditorViewModel.selectionMetadataState,
             sideMenuTabState = noteEditorViewModel.sideMenuTabState,
+            hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
             boldClick = noteEditorViewModel::onAddSpanClick,
             setEditable = noteEditorViewModel::toggleEditable,
             checkItemClick = noteEditorViewModel::onAddCheckListClick,
@@ -232,7 +233,7 @@ fun DesktopNoteEditorScreen(
             moveToClick = {
                 showFolderSelection = true
             },
-            askAiBySelection = noteEditorViewModel::askAiBySelection,
+            askAiWithMode = noteEditorViewModel::askAiWithMode,
             addPage = noteEditorViewModel::addPage,
             deleteDocument = {
                 showDeleteConfirmation = true
