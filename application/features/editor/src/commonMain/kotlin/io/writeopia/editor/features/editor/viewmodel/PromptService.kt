@@ -22,6 +22,8 @@ object PromptService {
     ) {
         val (text, position) = getTextAndPosition(targetMode, writeopiaManager)
 
+        if (text == null) return
+
         val url = ollamaRepository.getConfiguredUrl(userId)?.trim()
 
         if (url == null) {
