@@ -132,15 +132,15 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun moveToRootFolder()
 
-    fun askAiBySelection()
+    fun askAiWithMode(targetMode: AiTargetMode)
 
-    fun aiSummary()
+    fun aiSummary(targetMode: AiTargetMode)
 
-    fun aiActionPoints()
+    fun aiActionPoints(targetMode: AiTargetMode)
 
-    fun aiFaq()
+    fun aiFaq(targetMode: AiTargetMode)
 
-    fun aiTags()
+    fun aiTags(targetMode: AiTargetMode)
 
     fun aiSection(position: Double)
 
@@ -182,4 +182,10 @@ public enum class SideMenuTab {
     EXPORT,
     AI,
     DRAWING
+}
+
+public enum class AiTargetMode {
+    DOCUMENT,
+    SELECTED_LINES,
+    CURSOR
 }

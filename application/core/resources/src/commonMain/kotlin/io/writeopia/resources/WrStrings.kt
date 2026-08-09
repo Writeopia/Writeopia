@@ -165,6 +165,10 @@ import writeopia.application.core.resources.generated.resources.publish_to_web
 import writeopia.application.core.resources.generated.resources.view_site
 import writeopia.application.core.resources.generated.resources.copy_link
 import writeopia.application.core.resources.generated.resources.link_copied
+import writeopia.application.core.resources.generated.resources.apply_to
+import writeopia.application.core.resources.generated.resources.selected_lines
+import writeopia.application.core.resources.generated.resources.cursor
+import writeopia.application.core.resources.generated.resources.select_lines_first
 
 object WrStrings {
 
@@ -659,4 +663,16 @@ object WrStrings {
 
     @Composable
     fun linkCopied() = stringResource(Res.string.link_copied)
+
+    @Composable
+    fun applyTo() = stringResource(Res.string.apply_to)
+
+    @Composable
+    fun selectedLines() = stringResource(Res.string.selected_lines)
+
+    @Composable
+    fun cursor() = stringResource(Res.string.cursor)
+
+    @Composable
+    fun selectLinesFirst() = stringResource(Res.string.select_lines_first)
 }

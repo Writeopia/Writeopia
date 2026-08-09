@@ -186,4 +186,8 @@
   <string name="view_site">View Site</string>
   <string name="copy_link">Copy Link</string>
   <string name="link_copied">Link copied!</string>
+  <string name="apply_to">Apply to:</string>
+  <string name="selected_lines">Selected Lines</string>
+  <string name="cursor">Cursor</string>
+  <string name="select_lines_first">Select lines in the document first</string>
 </resources>
