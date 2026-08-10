@@ -46,7 +46,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.writeopia.ai.task.AiTask
-import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskStatus
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.ui.icons.WrSdkIcons
@@ -87,8 +86,8 @@ private fun TaskIndicatorContent(
     val activeCount = tasks.count { it.status == AiTaskStatus.QUEUED || it.status == AiTaskStatus.RUNNING }
     val hasFinished = tasks.any {
         it.status == AiTaskStatus.COMPLETED ||
-        it.status == AiTaskStatus.FAILED ||
-        it.status == AiTaskStatus.CANCELLED
+            it.status == AiTaskStatus.FAILED ||
+            it.status == AiTaskStatus.CANCELLED
     }
 
     Surface(

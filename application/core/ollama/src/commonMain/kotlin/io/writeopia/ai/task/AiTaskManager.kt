@@ -122,9 +122,8 @@ class AiTaskManager(
     /**
      * Checks if a task has been cancelled.
      */
-    private fun isCancelled(taskId: String): Boolean {
-        return _tasks.value.find { it.id == taskId }?.status == AiTaskStatus.CANCELLED
-    }
+    private fun isCancelled(taskId: String): Boolean =
+        _tasks.value.find { it.id == taskId }?.status == AiTaskStatus.CANCELLED
 
     /**
      * Updates the status of a task by its ID.
@@ -168,20 +167,18 @@ class AiTaskManager(
     /**
      * Returns true if there are any active (queued or running) tasks.
      */
-    fun hasActiveTasks(): Boolean {
-        return _tasks.value.any { task ->
+    fun hasActiveTasks(): Boolean =
+        _tasks.value.any { task ->
             task.status == AiTaskStatus.QUEUED || task.status == AiTaskStatus.RUNNING
         }
-    }
 
     /**
      * Returns the count of active tasks.
      */
-    fun activeTaskCount(): Int {
-        return _tasks.value.count { task ->
+    fun activeTaskCount(): Int =
+        _tasks.value.count { task ->
             task.status == AiTaskStatus.QUEUED || task.status == AiTaskStatus.RUNNING
         }
-    }
 
     companion object {
         private var instance: AiTaskManager? = null
