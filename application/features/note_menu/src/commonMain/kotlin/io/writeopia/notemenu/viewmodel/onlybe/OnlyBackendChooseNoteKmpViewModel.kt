@@ -104,10 +104,13 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     private val _showAddMenuState = MutableStateFlow(false)
     override val showAddMenuState: StateFlow<Boolean> = _showAddMenuState.asStateFlow()
 
-    private val _editingFolder = MutableStateFlow<MenuItemUi.FolderUi?>(null)
+    private val _showAiOptionsState = MutableStateFlow(false)
+    override val showAiOptionsState: StateFlow<Boolean> = _showAiOptionsState.asStateFlow()
+
+    private val _editFolderState = MutableStateFlow<MenuItemUi.FolderUi?>(null)
     override val editFolderState: StateFlow<Folder?> by lazy {
         combine(
-            _editingFolder,
+            _editFolderState,
             _menuItemsPerFolderId,
         ) { selectedFolder, menuItems ->
             if (selectedFolder != null) {
@@ -352,6 +355,14 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         // Not supported in backend-only mode
     }
 
+    override fun showAiOptions() {
+        // Not supported in backend-only mode
+    }
+
+    override fun hideAiOptions() {
+        _showAiOptionsState.value = false
+    }
+
     override fun requestPermissionToDeleteSelection() {
         askToDelete.value = true
     }
@@ -412,7 +423,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun editFolder(folder: MenuItemUi.FolderUi) {
-        _editingFolder.value = folder
+        _editFolderState.value = folder
     }
 
     override fun updateFolder(folderEdit: Folder) {
@@ -431,7 +442,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun stopEditingFolder() {
-        _editingFolder.value = null
+        _editFolderState.value = null
     }
 
     override fun moveToFolder(menuItemUi: MenuItemUi, parentId: String) {
