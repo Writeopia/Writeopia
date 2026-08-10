@@ -42,6 +42,8 @@ interface ChooseNoteViewModel : FolderController {
 
     val editFolderState: StateFlow<Folder?>
 
+    val showAiOptionsState: StateFlow<Boolean>
+
     //    fun requestDocuments(force: Boolean)
     fun handleMenuItemTap(id: String): Boolean
 
@@ -86,6 +88,10 @@ interface ChooseNoteViewModel : FolderController {
     fun favoriteSelectedNotes()
 
     fun summarizeDocuments()
+
+    fun showAiOptions()
+
+    fun hideAiOptions()
 
     fun hideConfigSyncMenu()
 

@@ -104,6 +104,9 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     private val _showAddMenuState = MutableStateFlow(false)
     override val showAddMenuState: StateFlow<Boolean> = _showAddMenuState.asStateFlow()
 
+    private val _showAiOptionsState = MutableStateFlow(false)
+    override val showAiOptionsState: StateFlow<Boolean> = _showAiOptionsState.asStateFlow()
+
     private val _editingFolder = MutableStateFlow<MenuItemUi.FolderUi?>(null)
     override val editFolderState: StateFlow<Folder?> by lazy {
         combine(
@@ -350,6 +353,14 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun summarizeDocuments() {
         // Not supported in backend-only mode
+    }
+
+    override fun showAiOptions() {
+        // Not supported in backend-only mode
+    }
+
+    override fun hideAiOptions() {
+        _showAiOptionsState.value = false
     }
 
     override fun requestPermissionToDeleteSelection() {

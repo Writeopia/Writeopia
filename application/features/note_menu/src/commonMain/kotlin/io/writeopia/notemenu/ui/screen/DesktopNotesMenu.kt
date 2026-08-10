@@ -37,6 +37,9 @@ import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesConfiguratio
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu
 import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
 import io.writeopia.controller.OllamaConfigController
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.ui.AiOptionsDialog
+import io.writeopia.ai.task.ui.AiTaskIndicator
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.notemenu.ui.screen.documents.NotesCardsScreen
 import io.writeopia.notemenu.ui.screen.file.fileChooserLoad
@@ -221,12 +224,28 @@ fun DesktopNotesMenu(
                 onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
                 onCopy = chooseNoteViewModel::copySelectedNotes,
                 onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
-                onSummary = chooseNoteViewModel::summarizeDocuments,
+                onSummary = chooseNoteViewModel::showAiOptions,
                 onClose = chooseNoteViewModel::clearSelection,
                 shape = RoundedCornerShape(CornerSize(16.dp)),
                 exitAnimationOffset = 2.3F,
                 enterAnimationSpec = spring(dampingRatio = 0.6F)
             )
+
+            AiTaskIndicator(
+                tasksFlow = AiTaskManager.singleton().tasks,
+                onClearFinished = { AiTaskManager.singleton().clearFinishedTasks() },
+                onCancelTask = { taskId -> AiTaskManager.singleton().cancelTask(taskId) },
+                modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 16.dp)
+            )
+
+            val showAiOptions by chooseNoteViewModel.showAiOptionsState.collectAsState()
+
+            if (showAiOptions) {
+                AiOptionsDialog(
+                    onSummarize = chooseNoteViewModel::summarizeDocuments,
+                    onDismiss = chooseNoteViewModel::hideAiOptions
+                )
+            }
 
             val titlesToDelete by chooseNoteViewModel.titlesToDelete.collectAsState()
 

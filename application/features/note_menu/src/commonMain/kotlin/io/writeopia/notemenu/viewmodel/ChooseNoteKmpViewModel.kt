@@ -5,6 +5,8 @@ package io.writeopia.notemenu.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.common.utils.NotesNavigation
@@ -42,7 +44,6 @@ import io.writeopia.sdk.preview.PreviewParser
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -214,6 +215,9 @@ internal class ChooseNoteKmpViewModel(
     private val _showAddMenuState = MutableStateFlow(false)
     override val showAddMenuState: StateFlow<Boolean> = _showAddMenuState
 
+    private val _showAiOptionsState = MutableStateFlow(false)
+    override val showAiOptionsState: StateFlow<Boolean> = _showAiOptionsState.asStateFlow()
+
     override val editFolderState: StateFlow<Folder?> by lazy {
         combine(
             folderController.editingFolderState,
@@ -229,8 +233,6 @@ internal class ChooseNoteKmpViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, null)
     }
-
-    private var aiJob: Job? = null
 
     init {
         folderController.initCoroutine(viewModelScope)
@@ -361,11 +363,16 @@ internal class ChooseNoteKmpViewModel(
         if (!hasSelectedNotes.value) return
         if (ollamaRepository == null) return
 
-        aiJob?.cancel()
+        val selectedIds = selectedNotes.value.toList()
+        val documentCount = selectedIds.size
         cancelEditMenu()
 
         viewModelScope.launch {
-            val documents = notesUseCase.loadDocumentsByIds(selectedNotes.value, getWorkspaceId())
+            val workspaceId = getWorkspaceId()
+            val userId = getUserId()
+            val taskId = GenerateId.generate()
+
+            val documents = notesUseCase.loadDocumentsByIds(selectedIds, workspaceId)
             val prompt = buildString {
                 documents.forEach { doc ->
                     val documentMd = documentToMarkdown.parse(doc.content)
@@ -377,27 +384,44 @@ internal class ChooseNoteKmpViewModel(
                 }
             }
 
-            aiJob = viewModelScope.launch(Dispatchers.Default) {
-                val userId = getUserId()
-                val workspaceId = getWorkspaceId()
-
+            AiTaskManager.singleton().enqueueTask(
+                id = taskId,
+                type = AiTaskType.SUMMARIZATION,
+                description = "Summarizing $documentCount document${if (documentCount > 1) "s" else ""}"
+            ) {
                 val aiPromptResultMd = PromptService.prompt(
                     userId = userId,
                     prompt = prompt,
                     ollamaRepository = ollamaRepository,
                     markdownResult = true
-                ) ?: return@launch
+                )
 
-                val document =
-                    MarkdownToDocument.readMarkdown(
+                if (aiPromptResultMd == null) {
+                    Result.failure(Exception("AI response was empty"))
+                } else {
+                    val document = MarkdownToDocument.readMarkdown(
                         markdownText = aiPromptResultMd,
                         parentId = notesNavigation.id,
                         workspaceId = workspaceId,
-                    ) ?: return@launch
+                    )
 
-                notesUseCase.saveDocumentDb(document)
+                    if (document == null) {
+                        Result.failure(Exception("Failed to parse AI response"))
+                    } else {
+                        notesUseCase.saveDocumentDb(document)
+                        Result.success(Unit)
+                    }
+                }
             }
         }
+    }
+
+    override fun showAiOptions() {
+        _showAiOptionsState.value = true
+    }
+
+    override fun hideAiOptions() {
+        _showAiOptionsState.value = false
     }
 
     override fun showSortMenu() {
