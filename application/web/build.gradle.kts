@@ -50,6 +50,8 @@ kotlin {
                 implementation(project(":application:common_flows:wide_screen_common"))
                 implementation(project(":application:features:note_menu"))
                 implementation(project(":application:features:editor"))
+                implementation(project(":application:features:auth"))
+                implementation(project(":application:core:auth_core"))
 
                 implementation(libs.compose.navigation)
                 implementation(libs.lifecycle.viewmodel.compose)

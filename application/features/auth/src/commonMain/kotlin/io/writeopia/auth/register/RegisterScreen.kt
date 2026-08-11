@@ -46,6 +46,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import io.writeopia.auth.utils.arrowPadding
+import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.icons.PlatformIcons
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
@@ -125,17 +127,19 @@ fun RegisterScreen(
             }
         }
 
-        Icon(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .arrowPadding()
-                .clip(CircleShape)
-                .clickable(onClick = navigateBack)
-                .padding(6.dp),
-            imageVector = PlatformIcons.backArrowMobile,
-            contentDescription = "Arrow back",
-            tint = MaterialTheme.colorScheme.onBackground
-        )
+        if (LocalPlatform.current != PlatformType.WEB) {
+            Icon(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .arrowPadding()
+                    .clip(CircleShape)
+                    .clickable(onClick = navigateBack)
+                    .padding(6.dp),
+                imageVector = PlatformIcons.backArrowMobile,
+                contentDescription = "Arrow back",
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
 
         SnackbarHost(
             hostState = snackbarHostState,

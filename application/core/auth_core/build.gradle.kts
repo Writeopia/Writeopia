@@ -86,9 +86,18 @@ kotlin {
             }
         }
 
+        val webMain by creating {
+            dependsOn(commonMain)
+        }
+
         val jsMain by getting {
+            dependsOn(webMain)
             dependencies {
             }
+        }
+
+        val wasmJsMain by getting {
+            dependsOn(webMain)
         }
 
         val androidMain by getting {
