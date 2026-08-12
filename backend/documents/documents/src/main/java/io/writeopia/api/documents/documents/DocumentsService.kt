@@ -345,13 +345,34 @@ object DocumentsService {
      * 4. Process deletions
      * 5. Return steps newer than client's lastSync (excluding client's changes)
      */
-    fun syncStorySteps(
+    suspend fun syncStorySteps(
         documentId: String,
         workspaceId: String,
         request: StoryStepSyncRequest,
         writeopiaDb: WriteopiaDbBackend
     ): StoryStepSyncResponse {
         val serverTimestamp = Clock.System.now().toEpochMilliseconds()
+
+        // Check if document exists, create it if not
+        val existingDocument = writeopiaDb.getDocumentById(documentId, workspaceId)
+        if (existingDocument == null) {
+            // Extract title from the first title-type story step, or use a default
+            val titleStep = request.changes.firstOrNull { it.storyStep.type.name == "title" }
+            val title = titleStep?.storyStep?.text ?: "Untitled"
+
+            val now = Clock.System.now()
+            val newDocument = Document(
+                id = documentId,
+                title = title,
+                content = emptyMap(),
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                parentId = "root",
+                workspaceId = workspaceId
+            )
+            writeopiaDb.saveDocument(newDocument)
+        }
 
         // Get server steps updated after client's last sync
         val serverUpdatedSteps = writeopiaDb.getStoryStepsAfterTime(
