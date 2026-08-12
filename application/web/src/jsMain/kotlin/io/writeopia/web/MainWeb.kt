@@ -112,8 +112,9 @@ fun CreateAppInMemory() {
 
     RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
     WriteopiaConnectionInjector.setBaseUrl(
-        "https://writeopia.io"
+        "http://0.0.0.0:8080"
     )
+    WriteopiaConnectionInjector.setDisableWebsocket(true)
 
     val uiConfigurationViewModel = UiConfigurationInjector.singleton()
         .provideUiConfigurationViewModel()

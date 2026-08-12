@@ -387,6 +387,7 @@ object DocumentsService {
 
         // Track which step IDs the client is updating (to exclude from response)
         val clientUpdatedStepIds = mutableSetOf<String>()
+        var updatedTitle: String? = null
 
         // Process client changes
         for (change in request.changes) {
@@ -403,6 +404,23 @@ object DocumentsService {
                     lastUpdatedAt = request.requestTimestamp
                 )
                 clientUpdatedStepIds.add(clientStep.id)
+
+                // Track title updates
+                if (change.storyStep.type.name == "title") {
+                    updatedTitle = change.storyStep.text
+                }
+            }
+        }
+
+        // Update document title if title step was changed
+        if (updatedTitle != null) {
+            val currentDoc = writeopiaDb.getDocumentById(documentId, workspaceId)
+            if (currentDoc != null && currentDoc.title != updatedTitle) {
+                writeopiaDb.saveDocument(currentDoc.copy(
+                    title = updatedTitle,
+                    lastUpdatedAt = Clock.System.now(),
+                    lastSyncedAt = Clock.System.now()
+                ))
             }
         }
 

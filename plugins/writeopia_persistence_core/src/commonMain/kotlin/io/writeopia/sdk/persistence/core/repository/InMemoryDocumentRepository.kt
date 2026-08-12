@@ -16,12 +16,9 @@ import kotlin.time.Instant
 class InMemoryDocumentRepository : DocumentRepository {
 
     private val documentsMap: MutableMap<String, Document> = mutableMapOf()
-    private val _documentsMapState = MutableStateFlow<Map<String, Document>>(emptyMap())
 
-    // Groups documents by parentId for the menu
-    private val documentsMapState = _documentsMapState.map { map ->
-        map.values.groupBy { document -> document.parentId }
-    }
+    // Holds documents grouped by parentId for reactive updates
+    private val _documentsGroupedByParentId = MutableStateFlow<Map<String, List<Document>>>(emptyMap())
 
     override suspend fun loadDocumentsWorkspace(
         workspaceId: String
@@ -57,11 +54,14 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun listenForDocumentsByParentId(
         parentId: String,
         workspaceId: String
-    ): Flow<Map<String, List<Document>>> = documentsMapState
+    ): Flow<Map<String, List<Document>>> {
+        refreshDocuments()
+        return _documentsGroupedByParentId
+    }
 
     override suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo> =
-        documentsMapState.map {  documentsMap ->
-            documentsMap.values.flatten().find { document ->
+        _documentsGroupedByParentId.map { groupedDocs ->
+            groupedDocs.values.flatten().find { document ->
                 document.id == id
             }?.info() ?: DocumentInfo.empty()
         }
@@ -177,7 +177,7 @@ class InMemoryDocumentRepository : DocumentRepository {
     }
 
     override suspend fun refreshDocuments() {
-        _documentsMapState.value = documentsMap.toMap()
+        _documentsGroupedByParentId.value = documentsMap.values.groupBy { it.parentId }
     }
 
     override suspend fun queryUnsyncedImagesSteps(): List<StoryStep> = emptyList()

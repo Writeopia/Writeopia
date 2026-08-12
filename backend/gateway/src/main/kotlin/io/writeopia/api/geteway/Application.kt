@@ -42,6 +42,8 @@ fun Application.installCORS() {
     install(CORS) {
         allowHost("writeopia.io", schemes = listOf("https"))
         allowHost("app.writeopia.io", schemes = listOf("https"))
+        allowHost("localhost:8081", schemes = listOf("http"))
+        allowHost("localhost:8082", schemes = listOf("http"))
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
         allowHeader("X-Admin-KEY")
