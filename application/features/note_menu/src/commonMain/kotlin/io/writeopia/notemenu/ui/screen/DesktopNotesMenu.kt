@@ -232,7 +232,7 @@ fun DesktopNotesMenu(
                 onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
                 onCopy = chooseNoteViewModel::copySelectedNotes,
                 onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
-                onSummary = chooseNoteViewModel::showAiOptions,
+                onSummary = if (ollamaConfigController != null) chooseNoteViewModel::showAiOptions else null,
                 onClose = chooseNoteViewModel::clearSelection,
                 shape = RoundedCornerShape(CornerSize(16.dp)),
                 exitAnimationOffset = 2.3F,
