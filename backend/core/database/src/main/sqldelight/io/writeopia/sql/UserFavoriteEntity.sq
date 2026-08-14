@@ -23,7 +23,8 @@ WHERE user_id = ? AND document_id = ?;
 
 insert:
 INSERT INTO user_favorite_entity(user_id, document_id, workspace_id, created_at)
-VALUES (?, ?, ?, ?);
+VALUES (?, ?, ?, ?)
+ON CONFLICT (user_id, document_id) DO NOTHING;
 
 delete:
 DELETE FROM user_favorite_entity
