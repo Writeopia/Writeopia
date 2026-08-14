@@ -220,11 +220,22 @@ fun Routing.documentsRoute(
                     val folders = writeopiaDb.getFoldersByParentId(folderId)
                     val documents = writeopiaDb.getDocumentsByParentId(folderId)
 
+                    // Get user's favorite document IDs
+                    val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                        userId, workspaceId, writeopiaDb
+                    ).toSet()
+
+                    // Set favorite status on each document
+                    val documentsWithFavorites = documents.map { doc ->
+                        val isFavorite = userFavoriteIds.contains(doc.id)
+                        doc.copy(favorite = isFavorite)
+                    }
+
                     call.respond(
                         status = HttpStatusCode.OK,
                         message = FolderContentResponse(
                             folders = folders.map { it.toApi() },
-                            documents = documents.map { it.toApi() }
+                            documents = documentsWithFavorites.map { it.toApi() }
                         )
                     )
                 } catch (e: Exception) {
@@ -413,11 +424,19 @@ fun Routing.documentsRoute(
                             writeopiaDb
                         )
 
-                    println("returning ${documents.count()} documents")
+                    // Get user's favorite document IDs
+                    val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                        userId, workspaceId, writeopiaDb
+                    ).toSet()
 
+                    // Set favorite status on each document
+                    val documentsWithFavorites = documents.map { doc ->
+                        doc.copy(favorite = userFavoriteIds.contains(doc.id))
+                    }
+                    
                     call.respond(
                         status = HttpStatusCode.OK,
-                        message = documents.map { document -> document.toApi() }
+                        message = documentsWithFavorites.map { document -> document.toApi() }
                     )
                 } catch (e: Exception) {
                     call.respond(
