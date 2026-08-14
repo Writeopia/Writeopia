@@ -1012,6 +1012,14 @@ class DocumentSqlBeDao(
     }
 
     /**
+     * Updates only the document title without affecting story steps.
+     */
+    fun updateDocumentTitle(documentId: String, title: String) {
+        val now = Clock.System.now().toEpochMilliseconds()
+        documentQueries?.updateTitle(title, now, now, documentId)
+    }
+
+    /**
      * Checks if a document is published.
      */
     fun isDocumentPublished(documentId: String): Boolean {

@@ -4,6 +4,8 @@ package io.writeopia.notemenu.viewmodel
 
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.icons.IconChange
+import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.common.utils.anyNode
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.sdk.models.document.Folder
@@ -22,6 +24,7 @@ import kotlin.time.ExperimentalTime
 class FolderStateController private constructor(
     private val notesUseCase: NotesUseCase,
     private val authRepository: AuthRepository,
+    private val documentsApi: DocumentsApi,
 ) : FolderController {
     private lateinit var coroutineScope: CoroutineScope
 
@@ -59,7 +62,24 @@ class FolderStateController private constructor(
         coroutineScope.launch(Dispatchers.Default) {
             notesUseCase.deleteFolderById(id)
             stopEditingFolder()
+
+            // Sync folder deletion to backend
+            syncFolderDeletionToBackend(id)
         }
+    }
+
+    private suspend fun syncFolderDeletionToBackend(folderId: String) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+        val token = authRepository.getAuthToken() ?: return
+
+        documentsApi.deleteFolder(
+            folderId = folderId,
+            workspaceId = workspace.id,
+            token = token
+        )
     }
 
     override fun stopEditingFolder() {
@@ -148,8 +168,12 @@ class FolderStateController private constructor(
     companion object {
         var instance: FolderStateController? = null
 
-        fun singleton(notesUseCase: NotesUseCase, authRepository: AuthRepository) =
-            instance ?: FolderStateController(notesUseCase, authRepository)
+        fun singleton(
+            notesUseCase: NotesUseCase,
+            authRepository: AuthRepository,
+            documentsApi: DocumentsApi
+        ) =
+            instance ?: FolderStateController(notesUseCase, authRepository, documentsApi)
                 .also {
                     instance = it
                 }

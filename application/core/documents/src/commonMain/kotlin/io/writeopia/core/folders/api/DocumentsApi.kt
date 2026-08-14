@@ -62,7 +62,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         token: String,
         orderBy: String = "last_updated_at"
     ): ResultData<Pair<List<Document>, List<Folder>>> {
-        val url = "$baseUrl/api/workspace/diff"
+        val url = "$baseUrl/api/docs/workspace/diff"
         val response = client.post(url) {
             contentType(ContentType.Application.Json)
             setBody(WorkspaceDiffRequest(workspaceId, lastSync.toEpochMilliseconds(), orderBy))
@@ -105,7 +105,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Unit> {
-        val response = client.post("$baseUrl/api/workspace/folder") {
+        val response = client.post("$baseUrl/api/docs/workspace/folder") {
             contentType(ContentType.Application.Json)
             setBody(SendFoldersRequest(folders.map { it.toApi() }, workspaceId))
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -125,7 +125,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Folder> {
-        val response = client.post("$baseUrl/api/workspace/$workspaceId/folder/$parentFolderId/create") {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/folder/$parentFolderId/create") {
             contentType(ContentType.Application.Json)
             setBody(CreateFolderRequest(title))
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -144,7 +144,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<FolderContentResponse> {
-        val response = client.get("$baseUrl/api/workspace/$workspaceId/folder/$folderId/contents") {
+        val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/folder/$folderId/contents") {
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
@@ -161,7 +161,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Unit> {
-        val response = client.delete("$baseUrl/api/workspace/$workspaceId/folder/$folderId") {
+        val response = client.delete("$baseUrl/api/docs/workspace/$workspaceId/folder/$folderId") {
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
@@ -178,7 +178,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Unit> {
-        val response = client.post("$baseUrl/api/workspace/$workspaceId/document/delete") {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/delete") {
             contentType(ContentType.Application.Json)
             setBody(DeleteDocumentsRequest(documentIds))
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -198,7 +198,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Unit> {
-        val response = client.post("$baseUrl/api/workspace/$workspaceId/folder/$folderId/move") {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/folder/$folderId/move") {
             contentType(ContentType.Application.Json)
             setBody(MoveFolderRequest(targetParentId))
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -218,7 +218,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Unit> {
-        val response = client.post("$baseUrl/api/workspace/$workspaceId/document/$documentId/favorite") {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/$documentId/favorite") {
             contentType(ContentType.Application.Json)
             setBody(FavoriteDocumentRequest(favorite))
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -236,7 +236,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<List<String>> {
-        val response = client.get("$baseUrl/api/workspace/$workspaceId/user/favorites") {
+        val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/user/favorites") {
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 

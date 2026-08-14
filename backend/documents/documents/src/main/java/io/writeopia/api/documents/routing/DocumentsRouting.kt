@@ -15,8 +15,6 @@ import io.writeopia.api.core.auth.routing.getUserId
 import io.writeopia.api.core.auth.utils.runIfMember
 import io.writeopia.api.documents.documents.DocumentsService
 import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
-import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
-import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
@@ -407,11 +405,12 @@ fun Routing.documentsRoute(
                     println("orderBy: ${folderDiff.orderBy}")
 
                     val documents =
-                        writeopiaDb.documentsDiffByFolder(
+                        DocumentsService.getDocumentsDiffByFolder(
                             folderDiff.folderId,
                             folderDiff.workspaceId,
                             folderDiff.lastFolderSync,
-                            folderDiff.orderBy
+                            folderDiff.orderBy,
+                            writeopiaDb
                         )
 
                     println("returning ${documents.count()} documents")
@@ -442,10 +441,11 @@ fun Routing.documentsRoute(
                     println("last sync: ${Instant.fromEpochMilliseconds(workspaceDiff.lastSync)}")
                     println("orderBy: ${workspaceDiff.orderBy}")
 
-                    val documents = writeopiaDb.documentsDiffByWorkspace(
+                    val documents = DocumentsService.getDocumentsDiffByWorkspace(
                         workspaceDiff.workspaceId,
                         workspaceDiff.lastSync,
-                        workspaceDiff.orderBy
+                        workspaceDiff.orderBy,
+                        writeopiaDb
                     )
                     val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceDiff.workspaceId)
 

@@ -19,6 +19,7 @@ import io.writeopia.common.utils.toList
 import io.writeopia.commonui.buttons.sideMenuDefaultWidth
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
+import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
@@ -63,8 +64,9 @@ class GlobalShellKmpViewModel(
     private val authRepository: AuthRepository,
     private val authApi: AuthApi,
     private val notesNavigationUseCase: NotesNavigationUseCase,
+    private val documentsApi: DocumentsApi,
     private val folderStateController: FolderStateController =
-        FolderStateController.singleton(notesUseCase, authRepository),
+        FolderStateController.singleton(notesUseCase, authRepository, documentsApi),
     private val ollamaRepository: OllamaRepository,
     private val workspaceHandler: WorkspaceHandler,
     private val keyboardEventFlow: Flow<KeyboardEvent>?,

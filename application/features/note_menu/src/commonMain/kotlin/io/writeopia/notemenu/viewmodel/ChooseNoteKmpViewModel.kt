@@ -16,6 +16,7 @@ import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
+import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
@@ -64,6 +65,7 @@ internal class ChooseNoteKmpViewModel(
     private val notesUseCase: NotesUseCase,
     private val notesConfig: ConfigurationRepository,
     private val authRepository: AuthRepository,
+    private val documentsApi: DocumentsApi,
     private val ollamaRepository: OllamaRepository? = null,
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
@@ -71,7 +73,8 @@ internal class ChooseNoteKmpViewModel(
     private val folderSync: FolderSync,
     private val folderController: FolderStateController = FolderStateController.singleton(
         notesUseCase,
-        authRepository
+        authRepository,
+        documentsApi
     ),
     private val notesNavigation: NotesNavigation = NotesNavigation.Root,
     private val previewParser: PreviewParser = PreviewParser(),
@@ -335,10 +338,28 @@ internal class ChooseNoteKmpViewModel(
         val selected = selectedNotes.value
 
         viewModelScope.launch(Dispatchers.Default) {
+            // Delete locally first (optimistic delete)
             notesUseCase.deleteNotes(selected)
             clearSelection()
             askToDelete.value = false
+
+            // Sync deletion to backend if logged in with premium tier
+            syncDeletionToBackend(selected.toList())
         }
+    }
+
+    private suspend fun syncDeletionToBackend(documentIds: List<String>) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+        val token = authRepository.getAuthToken() ?: return
+
+        documentsApi.deleteDocuments(
+            documentIds = documentIds,
+            workspaceId = workspace.id,
+            token = token
+        )
     }
 
     override fun favoriteSelectedNotes() {

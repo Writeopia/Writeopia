@@ -184,3 +184,10 @@ fun WriteopiaDbBackend.setDocumentPublished(documentId: String, published: Boole
 fun WriteopiaDbBackend.isDocumentPublished(documentId: String): Boolean {
     return getDocumentDaoFn().isDocumentPublished(documentId)
 }
+
+/**
+ * Updates only the document title without affecting story steps.
+ */
+fun WriteopiaDbBackend.updateDocumentTitle(documentId: String, title: String) {
+    getDocumentDaoFn().updateDocumentTitle(documentId, title)
+}
