@@ -326,11 +326,13 @@ internal class ChooseNoteKmpViewModel(
 
     override fun copySelectedNotes() {
         viewModelScope.launch(Dispatchers.Default) {
-            notesUseCase.duplicateDocuments(
+            val duplicatedDocuments = notesUseCase.duplicateDocuments(
                 selectedNotes.value.toList(),
                 getUserId(),
                 getWorkspaceId()
             )
+
+            syncDocumentsToBackend(duplicatedDocuments)
         }
     }
 
@@ -362,6 +364,37 @@ internal class ChooseNoteKmpViewModel(
         )
     }
 
+    private suspend fun syncDocumentsToBackend(documents: List<Document>) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+        val token = authRepository.getAuthToken() ?: return
+
+        documentsApi.sendDocuments(
+            documents = documents,
+            workspaceId = workspace.id,
+            token = token
+        )
+    }
+
+    private suspend fun syncFavoriteToBackend(documentIds: Set<String>, favorite: Boolean) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+        val token = authRepository.getAuthToken() ?: return
+
+        documentIds.forEach { documentId ->
+            documentsApi.favoriteDocument(
+                documentId = documentId,
+                favorite = favorite,
+                workspaceId = workspace.id,
+                token = token
+            )
+        }
+    }
+
     override fun favoriteSelectedNotes() {
         val selectedIds = selectedNotes.value
 
@@ -374,8 +407,10 @@ internal class ChooseNoteKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             if (allFavorites) {
                 notesUseCase.unFavoriteDocuments(selectedIds)
+                syncFavoriteToBackend(selectedIds, favorite = false)
             } else {
                 notesUseCase.favoriteDocuments(selectedIds)
+                syncFavoriteToBackend(selectedIds, favorite = true)
             }
         }
     }
@@ -430,6 +465,7 @@ internal class ChooseNoteKmpViewModel(
                         Result.failure(Exception("Failed to parse AI response"))
                     } else {
                         notesUseCase.saveDocumentDb(document)
+                        syncDocumentsToBackend(listOf(document))
                         Result.success(Unit)
                     }
                 }

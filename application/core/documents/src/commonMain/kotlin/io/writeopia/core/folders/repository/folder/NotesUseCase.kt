@@ -185,9 +185,10 @@ class NotesUseCase private constructor(
         documentRepository.stopListeningForFoldersByParentId(id, workspaceId)
     }
 
-    suspend fun duplicateDocuments(ids: List<String>, userId: String, workspaceId: String) {
-        duplicateNotes(ids, userId, workspaceId)
+    suspend fun duplicateDocuments(ids: List<String>, userId: String, workspaceId: String): List<Document> {
+        val duplicatedDocuments = duplicateNotes(ids, userId, workspaceId)
         duplicateFolders(ids, workspaceId)
+        return duplicatedDocuments
     }
 
     suspend fun saveDocumentDb(document: Document) {
@@ -233,16 +234,19 @@ class NotesUseCase private constructor(
     ): Flow<Map<String, List<Document>>> =
         documentRepository.listenForDocumentsByParentId(parentId, workspaceId)
 
-    private suspend fun duplicateNotes(ids: List<String>, userId: String, workspaceId: String) {
-        notesConfig.getOrderPreference(userId).let { orderBy ->
+    private suspend fun duplicateNotes(ids: List<String>, userId: String, workspaceId: String): List<Document> {
+        val duplicatedDocuments = notesConfig.getOrderPreference(userId).let { orderBy ->
             documentRepository.loadDocumentsWithContentByIds(ids, orderBy, workspaceId)
         }.map { document ->
             document.duplicateWithNewIds()
-        }.forEach { document ->
+        }
+
+        duplicatedDocuments.forEach { document ->
             documentRepository.saveDocument(document)
         }
 
         documentRepository.refreshDocuments()
+        return duplicatedDocuments
     }
 
     private suspend fun duplicateFolders(ids: List<String>, workspaceId: String) {
