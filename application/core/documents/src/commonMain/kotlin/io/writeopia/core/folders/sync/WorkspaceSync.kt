@@ -58,6 +58,10 @@ class WorkspaceSync(
                 documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
             val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
 
+            println("WorkspaceSync: Received ${newFolders.size} new folders from backend")
+            newFolders.forEach { folder ->
+                println("WorkspaceSync: Backend folder id=${folder.id}, title=${folder.title}, parentId=${folder.parentId}")
+            }
             println("local outdated folders: ${localOutdatedFolders.size}")
             println("local outdated docs: ${localOutdatedDocs.size}")
 

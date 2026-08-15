@@ -30,10 +30,12 @@ class FolderRepositorySqlDelight(
         folderDao.selectByWorkspaceId(workspaceId)
 
     override suspend fun createFolder(folder: Folder) {
+        println("FolderRepositorySqlDelight.createFolder: id=${folder.id}, title=${folder.title}, parentId=${folder.parentId}")
         folderDao.createFolder(folder.toEntity())
     }
 
     override suspend fun updateFolder(folder: Folder) {
+        println("FolderRepositorySqlDelight.updateFolder: id=${folder.id}, title=${folder.title}, parentId=${folder.parentId}")
         folderDao.updateFolder(folder.toEntity())
     }
 

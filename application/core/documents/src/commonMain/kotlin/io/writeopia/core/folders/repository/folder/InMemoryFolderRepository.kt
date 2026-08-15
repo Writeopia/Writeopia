@@ -9,20 +9,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
+/**
+ * A no-op folder repository for the webapp. The webapp should only use backend data,
+ * so this repository returns empty states and does not persist any data locally.
+ */
 class InMemoryFolderRepository : FolderRepository {
 
-    private val mutableMap = mutableMapOf<String, List<Folder>>()
-    private val foldersStateFlow = MutableStateFlow<Map<String, List<Folder>>>(mutableMap)
+    private val emptyStateFlow = MutableStateFlow<Map<String, List<Folder>>>(emptyMap())
 
     override suspend fun createFolder(folder: Folder) {
-        println("createFolder")
-        mutableMap[folder.id] = listOf(folder)
-        refreshState()
+        // No-op: webapp uses backend data only
+        println("InMemoryFolderRepository.createFolder (no-op): id=${folder.id}, title=${folder.title}, parentId=${folder.parentId}")
     }
 
     override suspend fun updateFolder(folder: Folder) {
-        mutableMap[folder.id] = listOf(folder)
-        refreshState()
+        // No-op: webapp uses backend data only
+        println("InMemoryFolderRepository.updateFolder (no-op): id=${folder.id}, title=${folder.title}, parentId=${folder.parentId}")
     }
 
     override suspend fun getFoldersForWorkspaceAfterTime(
@@ -35,36 +37,46 @@ class InMemoryFolderRepository : FolderRepository {
     override suspend fun listenForFoldersByParentId(
         parentId: String,
         workspaceId: String
-    ): Flow<Map<String, List<Folder>>> = foldersStateFlow.asStateFlow()
+    ): Flow<Map<String, List<Folder>>> = emptyStateFlow.asStateFlow()
 
     override suspend fun deleteFolderById(folderId: String) {
-        mutableMap.remove(folderId)
-        refreshState()
+        // No-op: webapp uses backend data only
     }
 
     override suspend fun refreshFolders() {
-        foldersStateFlow.value = mutableMap
+        // No-op: webapp uses backend data only
     }
 
-    override suspend fun moveToFolder(documentId: String, parentId: String) {}
+    override suspend fun moveToFolder(documentId: String, parentId: String) {
+        // No-op: webapp uses backend data only
+    }
 
-    override suspend fun deleteFolderByParent(folderId: String) {}
+    override suspend fun deleteFolderByParent(folderId: String) {
+        // No-op: webapp uses backend data only
+    }
 
-    override suspend fun setLastUpdated(folderId: String, long: Long) {}
+    override suspend fun setLastUpdated(folderId: String, long: Long) {
+        // No-op: webapp uses backend data only
+    }
 
-    override suspend fun favoriteDocumentByIds(ids: Set<String>) {}
+    override suspend fun favoriteDocumentByIds(ids: Set<String>) {
+        // No-op: webapp uses backend data only
+    }
 
-    override suspend fun unFavoriteDocumentByIds(ids: Set<String>) {}
+    override suspend fun unFavoriteDocumentByIds(ids: Set<String>) {
+        // No-op: webapp uses backend data only
+    }
 
-    override suspend fun getFolderById(id: String): Folder =
-        Folder.fromName("folder", "disconnecter_user").copy(id = id)
+    override suspend fun getFolderById(id: String): Folder? = null
 
     override suspend fun getFolderByParentId(parentId: String, workspaceId: String): List<Folder> =
         emptyList()
 
-    private fun refreshState() {
-        foldersStateFlow.value = mutableMap
+    override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
+        // No-op: webapp uses backend data only
     }
+
+    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> = emptyList()
 
     companion object {
         private var instance: InMemoryFolderRepository? = null
@@ -74,9 +86,4 @@ class InMemoryFolderRepository : FolderRepository {
             instance!!
         }
     }
-
-    override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
-    }
-
-    override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> = emptyList()
 }

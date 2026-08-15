@@ -49,22 +49,12 @@ class FolderSync(
             val authToken = authRepository.getAuthToken() ?: return
 
             println("syncFolder folderId: $folderId")
-            val folder: Folder = folderRepository.getFolderById(folderId) ?: run {
-                val folder = Folder(
-                    id = "root",
-                    parentId = "null",
-                    title = "root",
-                    createdAt = Instant.DISTANT_PAST,
-                    lastUpdatedAt = Instant.DISTANT_PAST,
-                    itemCount = 0,
-                    workspaceId = workspaceId,
-                )
+            val existingFolder = folderRepository.getFolderById(folderId)
+            println("syncFolder existingFolder: $existingFolder")
 
-                folderRepository.createFolder(folder)
-                folder
-            }
-
-            val lastSync = folder.lastSyncedAt
+            // Use the existing folder's lastSyncedAt, or DISTANT_PAST if folder doesn't exist
+            // We don't create a fallback folder to avoid creating unwanted "root" folders
+            val lastSync = existingFolder?.lastSyncedAt
             println("Sync. lastSync: $lastSync")
 
             // First, receive the documents for the backend.
@@ -112,7 +102,11 @@ class FolderSync(
                 }
 
                 documentRepository.refreshDocuments()
-                folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
+
+                // Only update folder sync time if folder exists locally
+                existingFolder?.let { folder ->
+                    folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
+                }
 
                 println("folders sync OK")
 
