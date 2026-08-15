@@ -49,6 +49,7 @@ import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNoteMobile
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
+import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
 import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
@@ -81,6 +82,7 @@ fun DesktopApp(
     modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
     startDestination: String = startDestination(),
+    notesMenuInjection: NotesMenuInjection? = null,
 ) {
     val editorInjector = remember {
         EditorKmpInjector.desktop(
@@ -90,7 +92,7 @@ fun DesktopApp(
         )
     }
 
-    val notesMenuInjection = remember {
+    val actualNotesMenuInjection = notesMenuInjection ?: remember {
         NotesMenuKmpInjection.desktop(
             selectionState = selectionState,
             keyboardEventFlow = keyboardEventFlow,
@@ -202,7 +204,7 @@ fun DesktopApp(
                             Navigation(
                                 isDarkTheme = colorTheme.isDarkTheme(),
                                 startDestination = startDestination,
-                                notesMenuInjection = notesMenuInjection,
+                                notesMenuInjection = actualNotesMenuInjection,
                                 sideMenuKmpInjector = sideMenuInjector,
                                 documentsGraphInjection = documentsGraphInjection,
                                 editorInjector = editorInjector,
