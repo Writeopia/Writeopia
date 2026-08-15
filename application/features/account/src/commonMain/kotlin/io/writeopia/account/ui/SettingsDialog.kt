@@ -1352,12 +1352,16 @@ private fun AccentColorOptions(
                 onClick = { selectAccentColor(AccentColor.ORANGE) }
             )
 
-            Spacer(modifier = Modifier.width(spaceWidth))
+            // Only show Dynamic color option on mobile (not on web)
+            val currentPlatform = LocalPlatform.current
+            if (currentPlatform.isMobile()) {
+                Spacer(modifier = Modifier.width(spaceWidth))
 
-            DynamicColorOption(
-                isSelected = selectedColor == AccentColor.DYNAMIC,
-                onClick = { selectAccentColor(AccentColor.DYNAMIC) }
-            )
+                DynamicColorOption(
+                    isSelected = selectedColor == AccentColor.DYNAMIC,
+                    onClick = { selectAccentColor(AccentColor.DYNAMIC) }
+                )
+            }
         }
     }
 }
