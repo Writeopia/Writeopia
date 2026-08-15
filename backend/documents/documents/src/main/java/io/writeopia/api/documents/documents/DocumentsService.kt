@@ -40,6 +40,7 @@ import io.writeopia.connection.Urls
 import io.writeopia.connection.wrWebClient
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -122,6 +123,27 @@ object DocumentsService {
 
         writeopiaDb.saveFolder(folder)
         return folder
+    }
+
+    suspend fun updateFolder(
+        folderId: String,
+        workspaceId: String,
+        title: String?,
+        icon: MenuItem.Icon?,
+        favorite: Boolean?,
+        writeopiaDb: WriteopiaDbBackend
+    ): Folder? {
+        val existingFolder = writeopiaDb.getFolderById(folderId, workspaceId) ?: return null
+
+        val updatedFolder = existingFolder.copy(
+            title = title ?: existingFolder.title,
+            icon = icon ?: existingFolder.icon,
+            favorite = favorite ?: existingFolder.favorite,
+            lastUpdatedAt = Clock.System.now()
+        )
+
+        writeopiaDb.saveFolder(updatedFolder)
+        return updatedFolder
     }
 
     suspend fun upsertDocument(

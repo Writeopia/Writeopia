@@ -26,6 +26,7 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.preview.PreviewParser
+import io.writeopia.sdk.serialization.data.IconApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -427,7 +428,28 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun updateFolder(folderEdit: Folder) {
-        // Would need an update folder API endpoint
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+
+            val iconApi = folderEdit.icon?.let { icon ->
+                IconApi(label = icon.label, tint = icon.tint)
+            }
+
+            val result = documentsApi.updateFolder(
+                folderId = folderEdit.id,
+                workspaceId = workspace.id,
+                title = folderEdit.title,
+                icon = iconApi,
+                favorite = folderEdit.favorite,
+                token = token
+            )
+
+            if (result is ResultData.Complete) {
+                stopEditingFolder()
+                loadFolderContents()
+            }
+        }
     }
 
     override fun deleteFolder(id: String) {
@@ -466,7 +488,30 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun changeIcons(menuItemId: String, icon: String, tint: Int, iconChange: IconChange) {
-        // Would need an update icon API endpoint
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+
+            when (iconChange) {
+                IconChange.FOLDER -> {
+                    val iconApi = IconApi(label = icon, tint = tint)
+                    val result = documentsApi.updateFolder(
+                        folderId = menuItemId,
+                        workspaceId = workspace.id,
+                        icon = iconApi,
+                        token = token
+                    )
+
+                    if (result is ResultData.Complete) {
+                        loadFolderContents()
+                    }
+                }
+
+                IconChange.DOCUMENT -> {
+                    // Would need an update document icon API endpoint
+                }
+            }
+        }
     }
 
     override fun toggleSelection(id: String) {

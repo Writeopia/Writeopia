@@ -8,6 +8,7 @@ import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -19,6 +20,8 @@ import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.data.FolderApi
+import io.writeopia.sdk.serialization.data.IconApi
+import io.writeopia.sdk.serialization.request.UpdateFolderRequest
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
@@ -135,6 +138,28 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
             ResultData.Complete(response.body<FolderApi>().toModel())
         } else {
             println("error creating folder: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun updateFolder(
+        folderId: String,
+        workspaceId: String,
+        title: String? = null,
+        icon: IconApi? = null,
+        favorite: Boolean? = null,
+        token: String
+    ): ResultData<Folder> {
+        val response = client.put("$baseUrl/api/docs/workspace/$workspaceId/folder/$folderId") {
+            contentType(ContentType.Application.Json)
+            setBody(UpdateFolderRequest(title = title, icon = icon, favorite = favorite))
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<FolderApi>().toModel())
+        } else {
+            println("error updating folder: $response")
             ResultData.Error()
         }
     }
