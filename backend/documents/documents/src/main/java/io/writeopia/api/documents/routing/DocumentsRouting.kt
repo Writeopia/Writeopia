@@ -433,7 +433,7 @@ fun Routing.documentsRoute(
                     val documentsWithFavorites = documents.map { doc ->
                         doc.copy(favorite = userFavoriteIds.contains(doc.id))
                     }
-                    
+
                     call.respond(
                         status = HttpStatusCode.OK,
                         message = documentsWithFavorites.map { document -> document.toApi() }
