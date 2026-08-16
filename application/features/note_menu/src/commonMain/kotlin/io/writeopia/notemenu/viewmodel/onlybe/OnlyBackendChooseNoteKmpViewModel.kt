@@ -35,14 +35,17 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 /**
  * ViewModel that only interacts with the backend, without any local database operations.
  * All data is fetched from and sent to the backend API.
  */
+@OptIn(ExperimentalTime::class)
 internal class OnlyBackendChooseNoteKmpViewModel(
     private val documentsApi: DocumentsApi,
     private val authRepository: AuthRepository,
@@ -112,15 +115,19 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     private val _editFolderState = MutableStateFlow<MenuItemUi.FolderUi?>(null)
     override val editFolderState: StateFlow<Folder?> by lazy {
-        combine(
-            _editFolderState,
-            menuItemsPerFolderId,
-        ) { selectedFolder, menuItems ->
-            if (selectedFolder != null) {
-                menuItems[selectedFolder.parentId]
-                    ?.find { menuItem: MenuItem -> menuItem.id == selectedFolder.id } as? Folder
-            } else {
-                null
+        _editFolderState.map { folderUi ->
+            folderUi?.let {
+                Folder(
+                    id = it.documentId,
+                    parentId = it.parentId,
+                    title = it.title,
+                    createdAt = Clock.System.now(),
+                    lastUpdatedAt = Clock.System.now(),
+                    workspaceId = "",
+                    favorite = it.isFavorite,
+                    icon = it.icon,
+                    itemCount = it.itemsCount
+                )
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, null)
     }
