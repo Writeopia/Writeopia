@@ -108,6 +108,7 @@ object DocumentsService {
         parentFolderId: String,
         title: String,
         workspaceId: String,
+        icon: MenuItem.Icon? = null,
         writeopiaDb: WriteopiaDbBackend
     ): Folder {
         val now = Clock.System.now()
@@ -118,7 +119,8 @@ object DocumentsService {
             createdAt = now,
             lastUpdatedAt = now,
             workspaceId = workspaceId,
-            itemCount = 0
+            itemCount = 0,
+            icon = icon
         )
 
         writeopiaDb.saveFolder(folder)

@@ -263,6 +263,7 @@ fun Routing.documentsRoute(
                         parentFolderId = parentFolderId,
                         title = request.title,
                         workspaceId = workspaceId,
+                        icon = request.icon?.toModel(),
                         writeopiaDb = writeopiaDb
                     )
 

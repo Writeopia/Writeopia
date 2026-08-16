@@ -221,6 +221,9 @@ internal class ChooseNoteKmpViewModel(
     private val _showAiOptionsState = MutableStateFlow(false)
     override val showAiOptionsState: StateFlow<Boolean> = _showAiOptionsState.asStateFlow()
 
+    private val _showCreateFolderDialogState = MutableStateFlow(false)
+    override val showCreateFolderDialogState: StateFlow<Boolean> = _showCreateFolderDialogState.asStateFlow()
+
     override val editFolderState: StateFlow<Folder?> by lazy {
         combine(
             folderController.editingFolderState,
@@ -624,6 +627,28 @@ internal class ChooseNoteKmpViewModel(
             }
 
             folderController.addFolder(parentId = parentId)
+        }
+    }
+
+    override fun showCreateFolderDialog() {
+        _showCreateFolderDialogState.value = true
+    }
+
+    override fun hideCreateFolderDialog() {
+        _showCreateFolderDialogState.value = false
+    }
+
+    override fun createFolderWithDetails(name: String, icon: MenuItem.Icon?) {
+        // For desktop, we use the simple folder creation through folderController
+        // Icon support can be added later if needed
+        viewModelScope.launch(Dispatchers.Default) {
+            val parentId = if (notesNavigation.navigationType == NotesNavigationType.FOLDER) {
+                notesNavigation.id
+            } else {
+                Folder.ROOT_PATH
+            }
+            folderController.addFolder(parentId = parentId)
+            hideCreateFolderDialog()
         }
     }
 

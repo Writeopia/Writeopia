@@ -113,6 +113,9 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     private val _showAiOptionsState = MutableStateFlow(false)
     override val showAiOptionsState: StateFlow<Boolean> = _showAiOptionsState.asStateFlow()
 
+    private val _showCreateFolderDialogState = MutableStateFlow(false)
+    override val showCreateFolderDialogState: StateFlow<Boolean> = _showCreateFolderDialogState.asStateFlow()
+
     private val _editFolderState = MutableStateFlow<MenuItemUi.FolderUi?>(null)
     override val editFolderState: StateFlow<Folder?> by lazy {
         _editFolderState.map { folderUi ->
@@ -380,21 +383,48 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun newFolder() {
+        showCreateFolderDialog()
+    }
+
+    override fun showCreateFolderDialog() {
+        _showCreateFolderDialogState.value = true
+    }
+
+    override fun hideCreateFolderDialog() {
+        _showCreateFolderDialogState.value = false
+    }
+
+    override fun createFolderWithDetails(name: String, icon: MenuItem.Icon?) {
+        println("createFolderWithDetails called with name: $name, icon: $icon")
         viewModelScope.launch(Dispatchers.Default) {
-            val token = authRepository.getAuthToken() ?: return@launch
-            val workspace = authRepository.getWorkspace() ?: return@launch
+            val token = authRepository.getAuthToken()
+            if (token == null) {
+                println("createFolderWithDetails: token is null")
+                return@launch
+            }
+
+            val workspace = authRepository.getWorkspace()
+            if (workspace == null) {
+                println("createFolderWithDetails: workspace is null")
+                return@launch
+            }
 
             val parentId = when (notesNavigation.navigationType) {
                 NotesNavigationType.FOLDER -> notesNavigation.id
                 else -> Folder.ROOT_PATH
             }
+            println("createFolderWithDetails: parentId=$parentId, workspaceId=${workspace.id}")
+
+            val iconApi = icon?.let { IconApi(label = it.label, tint = it.tint) }
 
             val result = documentsApi.createFolder(
                 parentFolderId = parentId,
-                title = "Untitled",
+                title = name,
                 workspaceId = workspace.id,
+                icon = iconApi,
                 token = token
             )
+            println("createFolderWithDetails: result=$result")
 
             if (result is ResultData.Complete) {
                 // Fetch the contents of the newly created folder

@@ -126,11 +126,12 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         parentFolderId: String,
         title: String,
         workspaceId: String,
+        icon: IconApi? = null,
         token: String
     ): ResultData<Folder> {
         val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/folder/$parentFolderId/create") {
             contentType(ContentType.Application.Json)
-            setBody(CreateFolderRequest(title))
+            setBody(CreateFolderRequest(title, icon))
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 

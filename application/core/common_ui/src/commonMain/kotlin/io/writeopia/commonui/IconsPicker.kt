@@ -39,9 +39,14 @@ fun IconsPicker(
     iconSelect: (String, Int) -> Unit,
 ) {
     val defaultColor = MaterialTheme.colorScheme.onBackground
+    val selectedBackground = MaterialTheme.colorScheme.primaryContainer
 
     var tintColor by remember {
         mutableStateOf(defaultColor)
+    }
+
+    var selectedIconName by remember {
+        mutableStateOf<String?>(null)
     }
 
     val colorShape = CircleShape
@@ -53,10 +58,19 @@ fun IconsPicker(
             verticalAlignment = Alignment.CenterVertically
         ) {
             ColorUtils.tintColors().forEach { color ->
-                Box(modifier = Modifier.size(12.dp)
-                    .background(color, colorShape)
-                    .clip(colorShape)
-                    .clickable { tintColor = color }
+                val isSelected = color == tintColor
+                Box(
+                    modifier = Modifier
+                        .size(if (isSelected) 16.dp else 12.dp)
+                        .background(color, colorShape)
+                        .clip(colorShape)
+                        .clickable {
+                            tintColor = color
+                            // Update the selection with new color if an icon is selected
+                            selectedIconName?.let { iconName ->
+                                iconSelect(iconName, color.toArgb())
+                            }
+                        }
                 )
             }
         }
@@ -71,10 +85,18 @@ fun IconsPicker(
             contentPadding = PaddingValues(10.dp)
         ) {
             items(icons.toList()) { (name, vector) ->
+                val isSelected = name == selectedIconName
                 Icon(
                     modifier = Modifier
                         .clip(MaterialTheme.shapes.medium)
-                        .clickable { iconSelect(name, tintColor.toArgb()) }
+                        .background(
+                            if (isSelected) selectedBackground else androidx.compose.ui.graphics.Color.Transparent,
+                            MaterialTheme.shapes.medium
+                        )
+                        .clickable {
+                            selectedIconName = name
+                            iconSelect(name, tintColor.toArgb())
+                        }
                         .padding(4.dp)
                         .size(iconSize),
                     imageVector = vector,

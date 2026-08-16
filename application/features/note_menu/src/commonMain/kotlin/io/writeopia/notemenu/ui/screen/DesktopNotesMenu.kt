@@ -45,6 +45,7 @@ import io.writeopia.ai.task.ui.AiTaskIndicator
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.notemenu.ui.screen.documents.NotesCardsScreen
 import io.writeopia.notemenu.ui.screen.file.fileChooserLoad
+import io.writeopia.notemenu.ui.screen.menu.CreateFolderDialog
 import io.writeopia.notemenu.ui.screen.menu.EditFileDialog
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
@@ -273,6 +274,15 @@ fun DesktopNotesMenu(
                     onDismissRequest = chooseNoteViewModel::stopEditingFolder,
                     deleteFolder = chooseNoteViewModel::deleteFolder,
                     editFolder = chooseNoteViewModel::updateFolder
+                )
+            }
+
+            val showCreateFolderDialog by chooseNoteViewModel.showCreateFolderDialogState.collectAsState()
+
+            if (showCreateFolderDialog) {
+                CreateFolderDialog(
+                    onDismissRequest = chooseNoteViewModel::hideCreateFolderDialog,
+                    onCreate = chooseNoteViewModel::createFolderWithDetails
                 )
             }
         }
