@@ -960,6 +960,8 @@ private fun Actions(
     onPublishClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val currentPlatform = LocalPlatform.current
+
     Column(
         modifier = modifier.border(
             1.dp,
@@ -969,31 +971,34 @@ private fun Actions(
             .width(MENU_WIDTH.dp)
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
-        Title(WrStrings.export())
+        // Hide export options for web platform
+        if (currentPlatform != PlatformType.WEB) {
+            Title(WrStrings.export())
 
-        Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-        Row {
-            TextButton(
-                text = WrStrings.json(),
-                modifier = Modifier.weight(1F),
-                paddingValues = smallButtonPadding()
-            ) {
-                fileChooserSave()?.let {
-                    exportJson(it)
+            Row {
+                TextButton(
+                    text = WrStrings.json(),
+                    modifier = Modifier.weight(1F),
+                    paddingValues = smallButtonPadding()
+                ) {
+                    fileChooserSave()?.let {
+                        exportJson(it)
+                    }
+                }
+
+                TextButton(
+                    text = WrStrings.markdown(),
+                    modifier = Modifier.weight(1F),
+                    paddingValues = smallButtonPadding()
+                ) {
+                    fileChooserSave()?.let(exportMarkdown)
                 }
             }
 
-            TextButton(
-                text = WrStrings.markdown(),
-                modifier = Modifier.weight(1F),
-                paddingValues = smallButtonPadding()
-            ) {
-                fileChooserSave()?.let(exportMarkdown)
-            }
+            Spacer(modifier = Modifier.height(12.dp))
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
 
         Title(WrStrings.publish())
 
