@@ -8,6 +8,7 @@ import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.core.folders.repository.folder.FolderRepository
@@ -33,6 +34,8 @@ class SideMenuKmpInjector(
     private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val connectionInjector: WriteopiaConnectionInjector = WriteopiaConnectionInjector.singleton(),
+    private val useBackendOnly: Boolean = false,
+    private val menuItemsRepository: MenuItemsRepository? = null,
 ) : SideMenuInjector, OllamaConfigInjector {
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
@@ -65,7 +68,9 @@ class SideMenuKmpInjector(
                 ollamaRepository = ollamaInjection.provideRepository(),
                 authApi = authCoreInjection.provideAuthApi(),
                 workspaceHandler = workspaceInjection.provideWorkspaceHandler(),
-                keyboardEventFlow = keyboardEventFlow
+                keyboardEventFlow = keyboardEventFlow,
+                useBackendOnly = useBackendOnly,
+                menuItemsRepository = menuItemsRepository,
             )
         }
 

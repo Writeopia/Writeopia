@@ -20,6 +20,7 @@ import io.writeopia.commonui.buttons.sideMenuDefaultWidth
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
@@ -71,6 +72,8 @@ class GlobalShellKmpViewModel(
     private val workspaceHandler: WorkspaceHandler,
     private val keyboardEventFlow: Flow<KeyboardEvent>?,
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
+    private val useBackendOnly: Boolean = false,
+    private val menuItemsRepository: MenuItemsRepository? = null,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     private var localUserId: String? = null
@@ -201,15 +204,21 @@ class GlobalShellKmpViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
-        combine(
-            authRepository.listenForUser(),
-            authRepository.listenForWorkspace(),
-            notesNavigationUseCase.navigationState
-        ) { user, workspace, notesNavigation ->
-            Triple(user, notesNavigation, workspace)
-        }.flatMapLatest { (user, notesNavigation, workspace) ->
-            notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id, workspace.id)
-        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
+        if (useBackendOnly && menuItemsRepository != null) {
+            // For web/backend-only mode, use the shared repository
+            menuItemsRepository.menuItemsPerFolderId
+        } else {
+            // For desktop/local mode, use local storage
+            combine(
+                authRepository.listenForUser(),
+                authRepository.listenForWorkspace(),
+                notesNavigationUseCase.navigationState
+            ) { user, workspace, notesNavigation ->
+                Triple(user, notesNavigation, workspace)
+            }.flatMapLatest { (user, notesNavigation, workspace) ->
+                notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id, workspace.id)
+            }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
+        }
     }
 
     override val sideMenuItems: StateFlow<List<MenuItemUi>> by lazy {
@@ -292,6 +301,16 @@ class GlobalShellKmpViewModel(
             }
         }
 
+        // For backend-only mode, load menu items from the backend
+        if (useBackendOnly) {
+            viewModelScope.launch(Dispatchers.Default) {
+                // Listen for navigation changes and reload from backend
+                notesNavigationUseCase.navigationState.collect { navigation ->
+                    loadMenuItemsFromBackend(navigation.id)
+                }
+            }
+        }
+
         workspaceHandler.loadAvailableWorkspaces()
     }
 
@@ -304,6 +323,25 @@ class GlobalShellKmpViewModel(
 
         writeopiaJsonParser.readAllDocuments(path)
             .collect(notesUseCase::saveDocumentDb)
+    }
+
+    private suspend fun loadMenuItemsFromBackend(folderId: String) {
+        if (menuItemsRepository == null) return
+
+        val token = authRepository.getAuthToken() ?: return
+        val workspace = authRepository.getWorkspace() ?: return
+
+        // Use the shared repository to load folder contents
+        menuItemsRepository.loadFolderContents(folderId, workspace.id, token)
+    }
+
+    fun refreshFromBackend() {
+        if (useBackendOnly && menuItemsRepository != null) {
+            viewModelScope.launch(Dispatchers.Default) {
+                val navigation = notesNavigationUseCase.navigationState.value
+                loadMenuItemsFromBackend(navigation.id)
+            }
+        }
     }
 
     override fun init() {

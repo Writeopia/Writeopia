@@ -10,6 +10,7 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
@@ -45,13 +46,14 @@ import kotlin.time.ExperimentalTime
 internal class OnlyBackendChooseNoteKmpViewModel(
     private val documentsApi: DocumentsApi,
     private val authRepository: AuthRepository,
+    private val menuItemsRepository: MenuItemsRepository,
     private val notesNavigation: NotesNavigation = NotesNavigation.Root,
     private val previewParser: PreviewParser = PreviewParser(),
 ) : ChooseNoteViewModel, ViewModel(), FolderController {
 
-    private val _menuItemsPerFolderId = MutableStateFlow<Map<String, List<MenuItem>>>(emptyMap())
+    // Use the shared repository's state flow
     override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> =
-        _menuItemsPerFolderId.asStateFlow()
+        menuItemsRepository.menuItemsPerFolderId
 
     private val _menuItemsState = MutableStateFlow<ResultData<List<MenuItem>>>(ResultData.Loading())
     override val menuItemsState: StateFlow<ResultData<List<MenuItem>>> =
@@ -112,11 +114,11 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     override val editFolderState: StateFlow<Folder?> by lazy {
         combine(
             _editFolderState,
-            _menuItemsPerFolderId,
+            menuItemsPerFolderId,
         ) { selectedFolder, menuItems ->
             if (selectedFolder != null) {
                 menuItems[selectedFolder.parentId]
-                    ?.find { menuItem -> menuItem.id == selectedFolder.id } as? Folder
+                    ?.find { menuItem: MenuItem -> menuItem.id == selectedFolder.id } as? Folder
             } else {
                 null
             }
@@ -190,18 +192,11 @@ internal class OnlyBackendChooseNoteKmpViewModel(
                 NotesNavigation.Root, NotesNavigation.Favorites -> Folder.ROOT_PATH
             }
 
-            val result = documentsApi.getFolderContents(folderId, workspace.id, token)
+            // Use the shared repository to load folder contents
+            val result = menuItemsRepository.loadFolderContents(folderId, workspace.id, token)
 
             if (result is ResultData.Complete) {
-                val contents = result.data
-                val folders: List<MenuItem> = contents.folders.map { it.toModel() }
-                val documents: List<MenuItem> = contents.documents.map { it.toModel() }
-                val allItems = folders + documents
-
-                // Update the menu items map
-                val newMap = _menuItemsPerFolderId.value.toMutableMap()
-                newMap[folderId] = allItems
-                _menuItemsPerFolderId.value = newMap
+                val allItems = result.data
 
                 // Filter for favorites if needed
                 val pageItems = when (notesNavigation) {

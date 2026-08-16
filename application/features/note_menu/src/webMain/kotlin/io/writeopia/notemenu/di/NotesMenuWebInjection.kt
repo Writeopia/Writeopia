@@ -5,6 +5,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.onlybe.OnlyBackendChooseNoteKmpViewModel
@@ -20,8 +21,11 @@ class NotesMenuWebInjection private constructor(
     private val connectionInjector: WriteopiaConnectionInjector = WriteopiaConnectionInjector.singleton(),
 ) : NotesMenuInjection {
 
-    private fun provideDocumentsApi() =
+    fun provideDocumentsApi() =
         DocumentsApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+
+    fun provideMenuItemsRepository(): MenuItemsRepository =
+        MenuItemsRepository.singleton(provideDocumentsApi())
 
     @Composable
     override fun provideChooseNoteViewModel(
@@ -31,6 +35,7 @@ class NotesMenuWebInjection private constructor(
             OnlyBackendChooseNoteKmpViewModel(
                 documentsApi = provideDocumentsApi(),
                 authRepository = authCoreInjection.provideAuthRepository(),
+                menuItemsRepository = provideMenuItemsRepository(),
                 notesNavigation = notesNavigation,
             )
         }

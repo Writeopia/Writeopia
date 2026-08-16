@@ -83,6 +83,7 @@ fun DesktopApp(
     hasGlobalHeader: Boolean = true,
     startDestination: String = startDestination(),
     notesMenuInjection: NotesMenuInjection? = null,
+    sideMenuInjector: SideMenuKmpInjector? = null,
 ) {
     val editorInjector = remember {
         EditorKmpInjector.desktop(
@@ -99,7 +100,7 @@ fun DesktopApp(
         )
     }
 
-    val sideMenuInjector = remember {
+    val actualSideMenuInjector = sideMenuInjector ?: remember {
         SideMenuKmpInjector()
     }
 
@@ -109,7 +110,7 @@ fun DesktopApp(
         DocumentsGraphInjection(repositoryInjection = RepositoryInjector.singleton())
 
     val globalShellViewModel: GlobalShellViewModel =
-        sideMenuInjector.provideSideMenuViewModel(keyboardEventFlow)
+        actualSideMenuInjector.provideSideMenuViewModel(keyboardEventFlow)
     val colorTheme by colorThemeOption.collectAsState()
     val accentColor by accentColorOption.collectAsState()
     val navigationController: NavHostController = rememberNavController()
@@ -205,7 +206,7 @@ fun DesktopApp(
                                 isDarkTheme = colorTheme.isDarkTheme(),
                                 startDestination = startDestination,
                                 notesMenuInjection = actualNotesMenuInjection,
-                                sideMenuKmpInjector = sideMenuInjector,
+                                sideMenuKmpInjector = actualSideMenuInjector,
                                 documentsGraphInjection = documentsGraphInjection,
                                 editorInjector = editorInjector,
                                 drawingInjection = drawingInjection,

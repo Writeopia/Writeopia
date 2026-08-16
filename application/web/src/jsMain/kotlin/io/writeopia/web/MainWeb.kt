@@ -31,6 +31,7 @@ import io.writeopia.editor.features.site.ui.SiteScreen
 import io.writeopia.editor.features.site.viewmodel.SiteViewModel
 import io.writeopia.model.AccentColor
 import io.writeopia.model.isDarkTheme
+import io.writeopia.global.shell.di.SideMenuKmpInjector
 import io.writeopia.notemenu.di.NotesMenuWebInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
@@ -183,6 +184,10 @@ fun CreateAppInMemory() {
                                 }
                             },
                             notesMenuInjection = NotesMenuWebInjection.singleton(),
+                            sideMenuInjector = SideMenuKmpInjector(
+                                useBackendOnly = true,
+                                menuItemsRepository = NotesMenuWebInjection.singleton().provideMenuItemsRepository()
+                            ),
                         )
                     }
 
