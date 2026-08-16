@@ -1074,6 +1074,13 @@ class WriteopiaStateManager(
         _currentStory.value = currentStory.value.copy(lastEdit = LastEdit.Metadata)
     }
 
+    fun setFavorite(isFavorite: Boolean) {
+        val info = _documentInfo.value
+        if (info.isFavorite != isFavorite) {
+            _documentInfo.value = info.copy(isFavorite = isFavorite)
+        }
+    }
+
     fun toggleSpan(span: Span, extra: String? = null) {
         if (isEditable) {
             val onEdit = _onEditPositions.value

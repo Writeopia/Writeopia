@@ -54,6 +54,7 @@ import androidx.compose.ui.window.PopupProperties
 import io.writeopia.common.utils.collections.inBatches
 import io.writeopia.common.utils.colors.highlightColors
 import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
@@ -212,6 +213,8 @@ fun SideEditorOptions(
 
             Spacer(modifier = Modifier.width(4.dp))
 
+            val currentPlatform = LocalPlatform.current
+
             Column(
                 modifier = Modifier.border(
                     1.dp,
@@ -283,26 +286,29 @@ fun SideEditorOptions(
                     tint = tint(SideMenuTab.TEXT_OPTIONS)
                 )
 
-                Icon(
-                    imageVector = WrIcons.ai,
-                    contentDescription = "AI",
-                    modifier = Modifier
-                        .padding(horizontal = spacing)
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(background(SideMenuTab.AI))
-                        .clickable {
-                            val menuType = if (menuType != SideMenuTab.AI) {
-                                SideMenuTab.AI
-                            } else {
-                                SideMenuTab.NONE
-                            }
+                // Hide AI button for web platform
+                if (currentPlatform != PlatformType.WEB) {
+                    Icon(
+                        imageVector = WrIcons.ai,
+                        contentDescription = "AI",
+                        modifier = Modifier
+                            .padding(horizontal = spacing)
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(background(SideMenuTab.AI))
+                            .clickable {
+                                val menuType = if (menuType != SideMenuTab.AI) {
+                                    SideMenuTab.AI
+                                } else {
+                                    SideMenuTab.NONE
+                                }
 
-                            changeSideMenuTab(menuType)
-                        }
-                        .size(40.dp)
-                        .padding(9.dp),
-                    tint = tint(SideMenuTab.AI)
-                )
+                                changeSideMenuTab(menuType)
+                            }
+                            .size(40.dp)
+                            .padding(9.dp),
+                        tint = tint(SideMenuTab.AI)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(spacing))
 
@@ -346,6 +352,8 @@ private fun PageOptions(
     toggleFavorite: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val currentPlatform = LocalPlatform.current
+
     Column(
         modifier = modifier.border(
             1.dp,
@@ -355,11 +363,14 @@ private fun PageOptions(
             .width(MENU_WIDTH.dp)
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
-        Title("Font")
-        Spacer(modifier = Modifier.height(4.dp))
-        FontOptions(changeFontFamily, selectedState)
+        // Hide font options for web platform
+        if (currentPlatform != PlatformType.WEB) {
+            Title("Font")
+            Spacer(modifier = Modifier.height(4.dp))
+            FontOptions(changeFontFamily, selectedState)
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         Title("Actions")
         Spacer(modifier = Modifier.height(6.dp))
