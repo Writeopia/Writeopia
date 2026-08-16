@@ -26,6 +26,7 @@ import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
+import io.writeopia.sdk.serialization.request.CloneDocumentsRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
@@ -254,6 +255,25 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
             ResultData.Complete(Unit)
         } else {
             println("error favoriting document: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun cloneDocuments(
+        documentIds: List<String>,
+        workspaceId: String,
+        token: String
+    ): ResultData<List<Document>> {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/clone") {
+            contentType(ContentType.Application.Json)
+            setBody(CloneDocumentsRequest(documentIds))
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<List<DocumentApi>>().map { it.toModel() })
+        } else {
+            println("error cloning documents: $response")
             ResultData.Error()
         }
     }

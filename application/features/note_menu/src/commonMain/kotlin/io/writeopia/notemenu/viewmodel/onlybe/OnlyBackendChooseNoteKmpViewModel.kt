@@ -294,7 +294,20 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun copySelectedNotes() {
-        // Not supported in backend-only mode
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+            val selectedIds = _selectedNotes.value.toList()
+
+            if (selectedIds.isEmpty()) return@launch
+
+            val result = documentsApi.cloneDocuments(selectedIds, workspace.id, token)
+
+            if (result is ResultData.Complete) {
+                clearSelection()
+                loadFolderContents()
+            }
+        }
     }
 
     override fun deleteSelectedNotes() {
@@ -335,26 +348,27 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun favoriteSelectedNotes() {
-//        viewModelScope.launch(Dispatchers.Default) {
-//            val token = authRepository.getAuthToken() ?: return@launch
-//            val workspace = authRepository.getWorkspace() ?: return@launch
-//            val selectedIds = _selectedNotes.value
-//
-//            // Check if all selected notes are already favorited
-//            val currentItems = (_menuItemsState.value as? ResultData.Complete)?.data ?: emptyList()
-//            val allFavorites = currentItems
-//                .filter { selectedIds.contains(it.id) }
-//                .all { it.favorite }
-//
-//            // Toggle: if all are favorites, unfavorite them; otherwise favorite them
-//            val newFavoriteState = !allFavorites
-//
-//            selectedIds.forEach { id ->
-//                documentsApi.favoriteDocument(id, newFavoriteState, workspace.id, token)
-//            }
-//
-//            loadFolderContents()
-//        }
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+            val selectedIds = _selectedNotes.value
+
+            // Check if all selected notes are already favorited
+            val currentItems = (_menuItemsState.value as? ResultData.Complete)?.data ?: emptyList()
+            val allFavorites = currentItems
+                .filter { selectedIds.contains(it.id) }
+                .all { it.favorite }
+
+            // Toggle: if all are favorites, unfavorite them; otherwise favorite them
+            val newFavoriteState = !allFavorites
+
+            selectedIds.forEach { id ->
+                documentsApi.favoriteDocument(id, newFavoriteState, workspace.id, token)
+            }
+
+            clearSelection()
+            loadFolderContents()
+        }
     }
 
     override fun summarizeDocuments() {
