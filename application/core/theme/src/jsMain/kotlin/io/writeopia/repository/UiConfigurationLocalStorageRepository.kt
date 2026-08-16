@@ -26,9 +26,7 @@ class UiConfigurationLocalStorageRepository : UiConfigurationRepository {
         configurationState.value = uiConfiguration
     }
 
-    override suspend fun getUiConfigurationEntity(userId: String): UiConfiguration {
-        return configurationState.value
-    }
+    override suspend fun getUiConfigurationEntity(userId: String): UiConfiguration = configurationState.value
 
     override suspend fun updateConfiguration(
         userId: String,

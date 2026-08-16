@@ -32,5 +32,11 @@ ktlint_standard_no-multi-spaces = disabled
 ktlint_standard_chain-method-continuation = disabled
 ktlint_standard_class-signature = disabled
 
+[**/build/generated/**]
+ktlint = disabled
+
+[**/generated/**]
+ktlint = disabled
+
 
 

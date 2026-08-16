@@ -18,7 +18,7 @@ class InMemoryDocumentRepository : DocumentRepository {
     private val documentsMap: MutableMap<String, Document> = mutableMapOf()
 
     // Holds documents grouped by parentId for reactive updates
-    private val _documentsGroupedByParentId = MutableStateFlow<Map<String, List<Document>>>(emptyMap())
+    private val documentsGroupedByParentIdFlow = MutableStateFlow<Map<String, List<Document>>>(emptyMap())
 
     override suspend fun loadDocumentsWorkspace(
         workspaceId: String
@@ -56,11 +56,11 @@ class InMemoryDocumentRepository : DocumentRepository {
         workspaceId: String
     ): Flow<Map<String, List<Document>>> {
         refreshDocuments()
-        return _documentsGroupedByParentId
+        return documentsGroupedByParentIdFlow
     }
 
     override suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo> =
-        _documentsGroupedByParentId.map { groupedDocs ->
+        documentsGroupedByParentIdFlow.map { groupedDocs ->
             groupedDocs.values.flatten().find { document ->
                 document.id == id
             }?.info() ?: DocumentInfo.empty()
@@ -177,7 +177,7 @@ class InMemoryDocumentRepository : DocumentRepository {
     }
 
     override suspend fun refreshDocuments() {
-        _documentsGroupedByParentId.value = documentsMap.values.groupBy { it.parentId }
+        documentsGroupedByParentIdFlow.value = documentsMap.values.groupBy { it.parentId }
     }
 
     override suspend fun queryUnsyncedImagesSteps(): List<StoryStep> = emptyList()

@@ -5,7 +5,6 @@ package io.writeopia.core.folders.sync
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.FolderRepository
-import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository

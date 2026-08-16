@@ -10,9 +10,9 @@ import androidx.compose.ui.unit.dp
 
 val GlobeCheck: ImageVector
     get() {
-        if (_GlobeCheck != null) return _GlobeCheck!!
-        
-        _GlobeCheck = ImageVector.Builder(
+        if (globeCheckCache != null) return globeCheckCache!!
+
+        globeCheckCache = ImageVector.Builder(
             name = "GlobeCheck",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
@@ -42,9 +42,8 @@ val GlobeCheck: ImageVector
                 arcToRelative(14.5f, 14.5f, 0f, false, false, 4f, -10f)
             }
         }.build()
-        
-        return _GlobeCheck!!
+
+        return globeCheckCache!!
     }
 
-private var _GlobeCheck: ImageVector? = null
-
+private var globeCheckCache: ImageVector? = null

@@ -34,8 +34,8 @@ class FolderStateController private constructor(
     override val selectedNotes: StateFlow<Set<String>> = _selectedNotes.asStateFlow()
 
     // Todo: Change this to a usecase
-    private val _editingFolder = MutableStateFlow<MenuItemUi.FolderUi?>(null)
-    val editingFolderState = _editingFolder.asStateFlow()
+    private val editingFolderMutable = MutableStateFlow<MenuItemUi.FolderUi?>(null)
+    val editingFolderState = editingFolderMutable.asStateFlow()
 
     fun initCoroutine(coroutineScope: CoroutineScope) {
         this.coroutineScope = coroutineScope
@@ -49,7 +49,7 @@ class FolderStateController private constructor(
     }
 
     override fun editFolder(folder: MenuItemUi.FolderUi) {
-        _editingFolder.value = folder
+        editingFolderMutable.value = folder
     }
 
     override fun updateFolder(folderEdit: Folder) {
@@ -83,7 +83,7 @@ class FolderStateController private constructor(
     }
 
     override fun stopEditingFolder() {
-        _editingFolder.value = null
+        editingFolderMutable.value = null
     }
 
     override fun moveToFolder(menuItemUi: MenuItemUi, parentId: String) {

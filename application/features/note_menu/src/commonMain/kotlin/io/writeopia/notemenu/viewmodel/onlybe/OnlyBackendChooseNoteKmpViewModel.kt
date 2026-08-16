@@ -28,7 +28,6 @@ import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.preview.PreviewParser
 import io.writeopia.sdk.serialization.data.IconApi
-import io.writeopia.sdk.serialization.extensions.toModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

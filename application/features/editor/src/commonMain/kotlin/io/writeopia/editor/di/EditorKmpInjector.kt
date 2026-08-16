@@ -136,11 +136,9 @@ class EditorKmpInjector private constructor(
         }
 
     @Composable
-    override fun provideSiteViewModel(): SiteViewModel {
-        throw UnsupportedOperationException(
-            "SiteViewModel should be created directly where needed with the appropriate DocumentsApi"
-        )
-    }
+    override fun provideSiteViewModel(): SiteViewModel = throw UnsupportedOperationException(
+        "SiteViewModel should be created directly where needed with the appropriate DocumentsApi"
+    )
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
