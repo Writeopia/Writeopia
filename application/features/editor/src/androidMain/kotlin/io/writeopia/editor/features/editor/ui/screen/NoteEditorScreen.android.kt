@@ -62,6 +62,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
+import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
 import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
@@ -278,6 +279,11 @@ internal fun NoteEditorScreen(
                     onUnpublish = noteEditorViewModel::unpublishDocument,
                     onCopyLink = noteEditorViewModel::copyPublishLink
                 )
+            }
+
+            val showPremiumDialog by noteEditorViewModel.showPremiumDialog.collectAsState()
+            if (showPremiumDialog) {
+                PremiumOnlyDialog(onDismiss = noteEditorViewModel::hidePremiumDialog)
             }
         }
     }

@@ -36,6 +36,7 @@ import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.sync.DocumentSyncManager
@@ -314,6 +315,9 @@ class NoteEditorKmpViewModel(
 
     private val _publishLoading = MutableStateFlow(false)
     override val publishLoading: StateFlow<Boolean> = _publishLoading.asStateFlow()
+
+    private val _showPremiumDialog = MutableStateFlow(false)
+    override val showPremiumDialog: StateFlow<Boolean> = _showPremiumDialog.asStateFlow()
 
     /**
      * This property defines if the document is favorite
@@ -1018,9 +1022,16 @@ class NoteEditorKmpViewModel(
     }
 
     override fun showPublishDialog() {
-        _showPublishDialog.value = true
-        // Fetch current publish status from server
         viewModelScope.launch(Dispatchers.Default) {
+            // Check if user is on free tier
+            val user = authRepository.getUser()
+            if (user.tier != Tier.PREMIUM) {
+                _showPremiumDialog.value = true
+                return@launch
+            }
+
+            _showPublishDialog.value = true
+            // Fetch current publish status from server
             val docId = documentId.value
             if (docId.isNotEmpty() && documentsApi != null) {
                 val token = authRepository.getAuthToken() ?: return@launch
@@ -1035,6 +1046,10 @@ class NoteEditorKmpViewModel(
 
     override fun hidePublishDialog() {
         _showPublishDialog.value = false
+    }
+
+    override fun hidePremiumDialog() {
+        _showPremiumDialog.value = false
     }
 
     override fun publishDocument() {

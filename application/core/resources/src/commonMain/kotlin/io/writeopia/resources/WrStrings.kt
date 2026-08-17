@@ -169,6 +169,8 @@ import writeopia.application.core.resources.generated.resources.apply_to
 import writeopia.application.core.resources.generated.resources.selected_lines
 import writeopia.application.core.resources.generated.resources.cursor
 import writeopia.application.core.resources.generated.resources.select_lines_first
+import writeopia.application.core.resources.generated.resources.premium_feature
+import writeopia.application.core.resources.generated.resources.premium_feature_message
 
 object WrStrings {
 
@@ -675,4 +677,10 @@ object WrStrings {
 
     @Composable
     fun selectLinesFirst() = stringResource(Res.string.select_lines_first)
+
+    @Composable
+    fun premiumFeature() = stringResource(Res.string.premium_feature)
+
+    @Composable
+    fun premiumFeatureMessage() = stringResource(Res.string.premium_feature_message)
 }

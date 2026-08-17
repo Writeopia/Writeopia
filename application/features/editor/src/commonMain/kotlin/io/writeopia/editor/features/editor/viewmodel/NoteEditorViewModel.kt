@@ -68,6 +68,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val publishLoading: StateFlow<Boolean>
 
+    val showPremiumDialog: StateFlow<Boolean>
+
     fun changeSideMenu(tab: SideMenuTab)
 
     fun showSearch()
@@ -165,6 +167,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun showPublishDialog()
 
     fun hidePublishDialog()
+
+    fun hidePremiumDialog()
 
     fun publishDocument()
 

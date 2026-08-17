@@ -166,4 +166,6 @@
   <string name="selected_lines">Linhas Selecionadas</string>
   <string name="cursor">Cursor</string>
   <string name="select_lines_first">Selecione linhas no documento primeiro</string>
+  <string name="premium_feature">Recurso Premium</string>
+  <string name="premium_feature_message">Este recurso está disponível apenas para usuários premium usando uma área de trabalho online</string>
 </resources>
