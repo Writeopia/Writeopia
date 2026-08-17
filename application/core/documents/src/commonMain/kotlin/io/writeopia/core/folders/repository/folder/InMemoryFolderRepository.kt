@@ -19,12 +19,10 @@ class InMemoryFolderRepository : FolderRepository {
 
     override suspend fun createFolder(folder: Folder) {
         // No-op: webapp uses backend data only
-        println("InMemoryFolderRepository.createFolder (no-op): id=${folder.id}, title=${folder.title}, parentId=${folder.parentId}")
     }
 
     override suspend fun updateFolder(folder: Folder) {
         // No-op: webapp uses backend data only
-        println("InMemoryFolderRepository.updateFolder (no-op): id=${folder.id}, title=${folder.title}, parentId=${folder.parentId}")
     }
 
     override suspend fun getFoldersForWorkspaceAfterTime(

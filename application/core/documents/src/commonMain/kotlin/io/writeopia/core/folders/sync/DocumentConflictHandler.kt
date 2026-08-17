@@ -57,11 +57,7 @@ class DocumentConflictHandler(
     ): List<Folder> {
         val now = Clock.System.now()
 
-        println("handleConflictForFolders: Processing ${externalFolders.size} external folders")
         externalFolders.forEach { folder ->
-            println(
-                "handleConflictForFolders: Updating/creating folder id=${folder.id}, title=${folder.title}, parentId=${folder.parentId}"
-            )
             folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
         }
 

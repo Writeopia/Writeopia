@@ -30,7 +30,6 @@ class NotesUseCase private constructor(
 ) {
 
     suspend fun createFolder(name: String, workspaceId: String, parentId: String) {
-        println("NotesUseCase.createFolder: name=$name, workspaceId=$workspaceId, parentId=$parentId")
         folderRepository.createFolder(Folder.fromName(name, workspaceId).copy(parentId = parentId))
     }
 
