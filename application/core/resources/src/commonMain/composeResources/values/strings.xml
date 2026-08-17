@@ -191,5 +191,5 @@
   <string name="cursor">Cursor</string>
   <string name="select_lines_first">Select lines in the document first</string>
   <string name="premium_feature">Premium Feature</string>
-  <string name="premium_feature_message">This feature is only available for premium users.</string>
+  <string name="premium_feature_message">This feature is only available for premium users using an online workspace</string>
 </resources>
