@@ -29,8 +29,15 @@ class NotesUseCase private constructor(
     private val folderRepository: FolderRepository,
 ) {
 
-    suspend fun createFolder(name: String, workspaceId: String, parentId: String) {
-        folderRepository.createFolder(Folder.fromName(name, workspaceId).copy(parentId = parentId))
+    suspend fun createFolder(
+        name: String,
+        workspaceId: String,
+        parentId: String,
+        icon: MenuItem.Icon? = null
+    ) {
+        folderRepository.createFolder(
+            Folder.fromName(name, workspaceId).copy(parentId = parentId, icon = icon)
+        )
     }
 
     suspend fun updateFolder(folder: Folder) {

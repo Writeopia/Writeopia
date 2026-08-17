@@ -619,15 +619,7 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun newFolder() {
-        viewModelScope.launch(Dispatchers.Default) {
-            val parentId = if (notesNavigation.navigationType == NotesNavigationType.FOLDER) {
-                notesNavigation.id
-            } else {
-                Folder.ROOT_PATH
-            }
-
-            folderController.addFolder(parentId = parentId)
-        }
+        showCreateFolderDialog()
     }
 
     override fun showCreateFolderDialog() {
@@ -639,15 +631,14 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun createFolderWithDetails(name: String, icon: MenuItem.Icon?) {
-        // For desktop, we use the simple folder creation through folderController
-        // Icon support can be added later if needed
         viewModelScope.launch(Dispatchers.Default) {
             val parentId = if (notesNavigation.navigationType == NotesNavigationType.FOLDER) {
                 notesNavigation.id
             } else {
                 Folder.ROOT_PATH
             }
-            folderController.addFolder(parentId = parentId)
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            notesUseCase.createFolder(name, workspace.id, parentId, icon)
             hideCreateFolderDialog()
         }
     }
