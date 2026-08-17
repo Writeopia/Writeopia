@@ -114,7 +114,7 @@ fun CreateAppInMemory() {
 
     RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
     WriteopiaConnectionInjector.setBaseUrl(
-        "http://0.0.0.0:8080"
+        "https://writeopia.io"
     )
     WriteopiaConnectionInjector.setDisableWebsocket(true)
 

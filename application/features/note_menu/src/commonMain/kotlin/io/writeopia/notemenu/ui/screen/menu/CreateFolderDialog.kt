@@ -77,12 +77,10 @@ fun CreateFolderDialog(
 
                     TextButton(
                         onClick = {
-                            println("Create button clicked")
                             val icon = selectedIcon?.let { iconLabel ->
                                 MenuItem.Icon(label = iconLabel, tint = selectedTint)
                             }
                             val name = folderName.takeIf { it.isNotBlank() } ?: "Untitled"
-                            println("Creating folder with name: $name, icon: $icon")
                             onCreate(name, icon)
                             onDismissRequest()
                         }
