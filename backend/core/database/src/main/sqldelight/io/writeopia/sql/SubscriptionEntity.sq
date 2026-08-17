@@ -1,0 +1,78 @@
+CREATE TABLE stripe_customer (
+    user_id TEXT PRIMARY KEY,
+    stripe_customer_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL
+);
+
+CREATE TABLE user_subscription (
+    user_id TEXT PRIMARY KEY,
+    stripe_subscription_id TEXT,
+    plan_id TEXT NOT NULL DEFAULT 'free',
+    status TEXT NOT NULL DEFAULT 'active',
+    current_period_start BIGINT,
+    current_period_end BIGINT,
+    cancel_at_period_end INTEGER NOT NULL DEFAULT 0,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
+);
+
+-- Stripe Customer queries
+selectStripeCustomerByUserId:
+SELECT *
+FROM stripe_customer
+WHERE user_id = ?
+LIMIT 1;
+
+insertStripeCustomer:
+INSERT INTO stripe_customer(user_id, stripe_customer_id, created_at)
+VALUES (?, ?, ?)
+ON CONFLICT(user_id) DO
+UPDATE SET stripe_customer_id = excluded.stripe_customer_id;
+
+deleteStripeCustomerByUserId:
+DELETE FROM stripe_customer
+WHERE user_id = ?;
+
+selectUserByStripeCustomerId:
+SELECT *
+FROM stripe_customer
+WHERE stripe_customer_id = ?
+LIMIT 1;
+
+-- User Subscription queries
+selectSubscriptionByUserId:
+SELECT *
+FROM user_subscription
+WHERE user_id = ?
+LIMIT 1;
+
+insertOrUpdateSubscription:
+INSERT INTO user_subscription(user_id, stripe_subscription_id, plan_id, status, current_period_start, current_period_end, cancel_at_period_end, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(user_id) DO
+UPDATE SET stripe_subscription_id = excluded.stripe_subscription_id,
+           plan_id = excluded.plan_id,
+           status = excluded.status,
+           current_period_start = excluded.current_period_start,
+           current_period_end = excluded.current_period_end,
+           cancel_at_period_end = excluded.cancel_at_period_end,
+           updated_at = excluded.updated_at;
+
+updateSubscriptionStatus:
+UPDATE user_subscription
+SET status = ?, updated_at = ?
+WHERE user_id = ?;
+
+updateSubscriptionPlan:
+UPDATE user_subscription
+SET plan_id = ?, stripe_subscription_id = ?, status = ?, updated_at = ?
+WHERE user_id = ?;
+
+cancelSubscription:
+UPDATE user_subscription
+SET plan_id = 'free', stripe_subscription_id = NULL, status = 'cancelled', cancel_at_period_end = 0, updated_at = ?
+WHERE user_id = ?;
+
+deleteSubscriptionByUserId:
+DELETE FROM user_subscription
+WHERE user_id = ?;

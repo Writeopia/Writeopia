@@ -29,6 +29,7 @@ import io.writeopia.account.ui.AccountMenuScreen
 import io.writeopia.account.ui.SettingsAccountScreen
 import io.writeopia.account.ui.SettingsAppearanceScreen
 import io.writeopia.account.ui.SettingsTeamsScreen
+import io.writeopia.account.ui.SubscriptionScreen
 import io.writeopia.account.ui.UserAddScreen
 import io.writeopia.account.ui.UserEditScreen
 import io.writeopia.account.ui.UserSearchScreen
@@ -51,6 +52,10 @@ fun NavController.navigateToSettingsAppearance() {
 
 fun NavController.navigateToSettingsAccount() {
     navigate(Destinations.SETTINGS_ACCOUNT.id)
+}
+
+fun NavController.navigateToSubscription() {
+    navigate(Destinations.SUBSCRIPTION.id)
 }
 
 fun NavController.navigateToWorkspaceUsers(workspaceId: String, workspaceName: String) {
@@ -100,6 +105,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     navigateToSettingsTeams: () -> Unit,
     navigateToSettingsAppearance: () -> Unit,
     navigateToSettingsAccount: () -> Unit,
+    navigateToSubscription: () -> Unit,
     navigateToWorkspaceUsers: (String, String) -> Unit,
     navigateToUserSearch: (String, String) -> Unit,
     navigateToUserAdd: (String, String, String, String, String) -> Unit,
@@ -109,6 +115,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     selectedAccentColor: StateFlow<AccentColor?>,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
+    onOpenUrl: (String) -> Unit,
 ) {
     composable(
         Destinations.ACCOUNT.id,
@@ -157,6 +164,7 @@ fun NavGraphBuilder.accountMenuNavigation(
                 navigateToAppearance = navigateToSettingsAppearance,
                 navigateToTeams = navigateToSettingsTeams,
                 navigateToAccount = navigateToSettingsAccount,
+                navigateToSubscription = navigateToSubscription,
             )
         }
     }
@@ -627,6 +635,59 @@ fun NavGraphBuilder.accountMenuNavigation(
                         navigateToAuthMenu()
                     }
                 }
+            )
+        }
+    }
+
+    // Subscription Section
+    composable(
+        Destinations.SUBSCRIPTION.id,
+        enterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { intSize -> intSize }
+            )
+        },
+        exitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { intSize -> intSize }
+            )
+        }
+    ) {
+        val subscriptionViewModel = AccountMenuKmpInjector.singleton().provideSubscriptionViewModel()
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            WrStrings.subscription(),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    navigationIcon = {
+                        Row(
+                            modifier = Modifier.fillMaxHeight(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable(onClick = navigationClick)
+                                    .padding(10.dp),
+                                imageVector = WrIcons.backArrowMobile,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            SubscriptionScreen(
+                viewModel = subscriptionViewModel,
+                onOpenUrl = onOpenUrl,
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                    .padding(paddingValues)
             )
         }
     }

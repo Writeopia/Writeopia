@@ -8,6 +8,7 @@ import io.writeopia.api.core.auth.repository.insertUser
 import io.writeopia.api.core.auth.repository.insertUserInWorkspace
 import io.writeopia.api.core.auth.repository.insertWorkspace
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sql.WriteopiaDbBackend
@@ -40,6 +41,7 @@ object AuthService {
             id = id,
             name = name,
             email = email,
+            tier = Tier.FREE
         )
     }
 

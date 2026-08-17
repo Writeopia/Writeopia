@@ -14,6 +14,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.routing.getUserId
 import io.writeopia.api.core.auth.utils.runIfMember
+import io.writeopia.api.core.auth.utils.runIfPremiumMember
 import io.writeopia.api.documents.documents.DocumentsService
 import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
@@ -331,7 +332,7 @@ fun Routing.documentsRoute(
                 document.copy(workspaceId = workspaceId)
             }
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            runIfPremiumMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     if (documentList.isNotEmpty()) {
                         val addedToHub = DocumentsService.receiveDocuments(
@@ -409,7 +410,7 @@ fun Routing.documentsRoute(
             val userId = getUserId() ?: ""
             val workspaceId = request.workspaceId
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            runIfPremiumMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     val folderList = request.folders.map { folder ->
                         folder.copy(workspaceId = workspaceId)
@@ -454,7 +455,7 @@ fun Routing.documentsRoute(
             val userId = getUserId() ?: ""
             val workspaceId = folderDiff.workspaceId
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            runIfPremiumMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     println("loading folder diff")
                     println("user id: ${getUserId()}")
@@ -499,7 +500,7 @@ fun Routing.documentsRoute(
             val userId = getUserId() ?: ""
             val workspaceId = workspaceDiff.workspaceId
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            runIfPremiumMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     println("loading workspace diff")
                     println("user id: ${getUserId()}")
@@ -538,7 +539,7 @@ fun Routing.documentsRoute(
             val userId = getUserId() ?: ""
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            runIfPremiumMember(userId, workspaceId, writeopiaDb, debug) {
                 val multipart = call.receiveMultipart()
 
                 val imageUrl = imageStorageService.uploadImage(multipart, userId, debug)
@@ -743,7 +744,7 @@ fun Routing.documentsRoute(
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
             val documentId = call.pathParameters["documentId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            runIfPremiumMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     // Verify document exists and belongs to workspace
                     val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
@@ -752,7 +753,7 @@ fun Routing.documentsRoute(
                             status = HttpStatusCode.NotFound,
                             message = "Document not found"
                         )
-                        return@runIfMember
+                        return@runIfPremiumMember
                     }
 
                     DocumentsService.setPublished(documentId, true, writeopiaDb)
@@ -777,7 +778,7 @@ fun Routing.documentsRoute(
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
             val documentId = call.pathParameters["documentId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            runIfPremiumMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     // Verify document exists and belongs to workspace
                     val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
@@ -786,7 +787,7 @@ fun Routing.documentsRoute(
                             status = HttpStatusCode.NotFound,
                             message = "Document not found"
                         )
-                        return@runIfMember
+                        return@runIfPremiumMember
                     }
 
                     DocumentsService.setPublished(documentId, false, writeopiaDb)
@@ -872,7 +873,7 @@ fun Routing.documentsRoute(
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
             val documentId = call.pathParameters["documentId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            runIfPremiumMember(userId, workspaceId, writeopiaDb, debug) {
                 try {
                     val response = DocumentsService.syncStorySteps(
                         documentId = documentId,

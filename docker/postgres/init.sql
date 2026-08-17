@@ -44,7 +44,8 @@ CREATE TABLE user_entity (
   salt TEXT NOT NULL,
   enabled BOOLEAN NOT NULL,
   confirmation_code TEXT,
-  confirmation_code_expiry BIGINT
+  confirmation_code_expiry BIGINT,
+  tier TEXT NOT NULL DEFAULT 'FREE'
 );
 
 CREATE TABLE company_entity (
@@ -85,5 +86,23 @@ CREATE TABLE user_favorite_entity (
   workspace_id TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   PRIMARY KEY (user_id, document_id)
+);
+
+CREATE TABLE stripe_customer (
+    user_id TEXT PRIMARY KEY,
+    stripe_customer_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL
+);
+
+CREATE TABLE user_subscription (
+    user_id TEXT PRIMARY KEY,
+    stripe_subscription_id TEXT,
+    plan_id TEXT NOT NULL DEFAULT 'free',
+    status TEXT NOT NULL DEFAULT 'active',
+    current_period_start BIGINT,
+    current_period_end BIGINT,
+    cancel_at_period_end INTEGER NOT NULL DEFAULT 0,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
 );
 

@@ -1,5 +1,6 @@
 [versions]
 coilVersion = "3.4.0"
+stripe = "28.2.0"
 media3 = "1.10.1"
 espressoCore = "3.7.0"
 firebaseAdmin = "9.10.0"
@@ -101,6 +102,7 @@ compose-navigation = { group = "org.jetbrains.androidx.navigation", name = "navi
 sqldelight-web-driver = { module = "app.cash.sqldelight:web-worker-driver", version.ref = "webWorkerDriver" }
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
 jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
+stripe-java = { module = "com.stripe:stripe-java", version.ref = "stripe" }
 
 [plugins]
 application = { id = "com.android.application", version.ref = "agp" }

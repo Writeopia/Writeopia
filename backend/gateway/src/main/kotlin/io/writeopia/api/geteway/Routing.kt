@@ -4,6 +4,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import io.writeopia.api.billing.billingRoutes
 import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.passwordResetRoute
@@ -27,6 +28,8 @@ fun Application.configureRouting(
             workspaceRoute(adminKey, writeopiaDb, debugMode)
 
             passwordResetRoute(writeopiaDb)
+
+            billingRoutes(writeopiaDb, debugMode)
 
             if (adminKey != null || debugMode) {
                 logger.info("Admin routes are enabled.")

@@ -7,5 +7,6 @@ import kotlinx.serialization.Serializable
 data class AuthResponse(
     val token: String?,
     val writeopiaUser: WriteopiaUserApi,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+    val tier: String = "FREE"
 )

@@ -19,6 +19,7 @@ dependencies {
     implementation(project(":backend:core:connection"))
     implementation(project(":backend:documents:documents"))
     implementation(project(":backend:editor:api_editor_socket"))
+    implementation(project(":backend:micro:billing"))
 
     implementation(project(":plugins:writeopia_serialization"))
 
@@ -38,6 +39,8 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlin.coroutines.reactor)
+
+    implementation(libs.stripe.java)
     //
 
     implementation(libs.ktor.serialization.json)

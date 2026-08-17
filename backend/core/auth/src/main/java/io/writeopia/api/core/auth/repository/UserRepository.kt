@@ -3,6 +3,7 @@
 package io.writeopia.api.core.auth.repository
 
 import io.writeopia.api.core.auth.models.WriteopiaBeUser
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
 import java.util.UUID
@@ -20,6 +21,7 @@ fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaBeUser? =
                 name = userEntity.name,
                 salt = userEntity.salt,
                 enabled = userEntity.enabled,
+                tier = Tier.valueOf(userEntity.tier),
                 confirmationCode = userEntity.confirmation_code,
                 confirmationCodeExpiry = userEntity.confirmation_code_expiry
             )
@@ -37,6 +39,7 @@ fun WriteopiaDbBackend.getEnabledUserByEmail(email: String): WriteopiaBeUser? =
                 name = userEntity.name,
                 salt = userEntity.salt,
                 enabled = userEntity.enabled,
+                tier = Tier.valueOf(userEntity.tier),
                 confirmationCode = userEntity.confirmation_code,
                 confirmationCodeExpiry = userEntity.confirmation_code_expiry
             )
@@ -54,6 +57,7 @@ fun WriteopiaDbBackend.getUserById(id: String): WriteopiaBeUser? =
                 name = userEntity.name,
                 salt = userEntity.salt,
                 enabled = userEntity.enabled,
+                tier = Tier.valueOf(userEntity.tier),
                 confirmationCode = userEntity.confirmation_code,
                 confirmationCodeExpiry = userEntity.confirmation_code_expiry
             )
@@ -68,6 +72,7 @@ fun WriteopiaDbBackend.insertUser(
     enabled: Boolean,
     confirmationCode: String? = null,
     confirmationCodeExpiry: Long? = null,
+    tier: Tier = Tier.FREE,
 ) {
     this.userEntityQueries.insertUser(
         id = id,
@@ -79,6 +84,7 @@ fun WriteopiaDbBackend.insertUser(
         enabled = enabled,
         confirmation_code = confirmationCode,
         confirmation_code_expiry = confirmationCodeExpiry,
+        tier = tier.name,
     )
 }
 
@@ -94,6 +100,7 @@ fun WriteopiaDbBackend.insertUser(
         enabled = user.enabled,
         confirmationCode = user.confirmationCode,
         confirmationCodeExpiry = user.confirmationCodeExpiry,
+        tier = user.tier,
     )
 }
 
@@ -157,3 +164,13 @@ fun WriteopiaDbBackend.searchUsersByEmail(
                 email = result.email
             )
         }
+
+fun WriteopiaDbBackend.updateUserTier(userId: String, tier: Tier) {
+    this.userEntityQueries.updateUserTier(tier.name, userId)
+}
+
+fun WriteopiaDbBackend.getUserTier(userId: String): Tier? =
+    this.userEntityQueries
+        .selectUserTierById(userId)
+        .executeAsOneOrNull()
+        ?.let { Tier.valueOf(it) }

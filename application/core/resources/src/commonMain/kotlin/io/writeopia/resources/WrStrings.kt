@@ -406,6 +406,9 @@ object WrStrings {
     fun account() = stringResource(Res.string.account)
 
     @Composable
+    fun subscription() = stringResource(Res.string.subscription)
+
+    @Composable
     fun workspaceName() = stringResource(Res.string.workspaceName)
 
     @Composable

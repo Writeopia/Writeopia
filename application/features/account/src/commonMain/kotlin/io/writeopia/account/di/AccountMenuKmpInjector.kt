@@ -4,16 +4,19 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.account.viewmodel.AccountMenuKmpViewModel
 import io.writeopia.account.viewmodel.AccountMenuViewModel
+import io.writeopia.account.viewmodel.SubscriptionViewModel
 import io.writeopia.account.viewmodel.UserAddViewModel
 import io.writeopia.account.viewmodel.UserEditViewModel
 import io.writeopia.account.viewmodel.UserSearchViewModel
 import io.writeopia.account.viewmodel.WorkspaceUsersViewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
+import io.writeopia.core.folders.di.SubscriptionInjection
 import io.writeopia.core.folders.di.WorkspaceInjection
 
 class AccountMenuKmpInjector private constructor(
     private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
+    private val subscriptionInjection: SubscriptionInjection = SubscriptionInjection.singleton(),
 ) {
 
     @Composable
@@ -22,6 +25,15 @@ class AccountMenuKmpInjector private constructor(
             AccountMenuKmpViewModel(
                 authRepository = authCoreInjection.provideAuthRepository(),
                 workspaceHandler = workspaceInjection.provideWorkspaceHandler()
+            )
+        }
+
+    @Composable
+    fun provideSubscriptionViewModel(): SubscriptionViewModel =
+        viewModel {
+            SubscriptionViewModel(
+                subscriptionApi = subscriptionInjection.provideSubscriptionApi(),
+                authRepository = authCoreInjection.provideAuthRepository()
             )
         }
 

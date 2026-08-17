@@ -16,4 +16,9 @@ object EndPoints {
     fun proxyUserNotes(userId: String = "{userId}") = "proxy/document/user/$userId"
 
     fun userNotes(userId: String = "{userId}") = "document/user/$userId"
+
+    // Billing endpoints
+    fun billingCheckoutSession() = "api/billing/checkout-session"
+    fun billingPortalSession() = "api/billing/portal-session"
+    fun billingSubscription() = "api/billing/subscription"
 }

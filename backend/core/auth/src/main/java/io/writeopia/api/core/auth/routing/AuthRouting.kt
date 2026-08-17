@@ -58,13 +58,23 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                         val token = JwtConfig.generateToken(user.id)
                         call.respond(
                             HttpStatusCode.OK,
-                            AuthResponse(token, user.toApi(), enabled = true)
+                            AuthResponse(
+                                token = token,
+                                writeopiaUser = user.toApi(),
+                                enabled = true,
+                                tier = user.tier.name
+                            )
                         )
                     } else {
                         // User exists but email not confirmed
                         call.respond(
                             HttpStatusCode.OK,
-                            AuthResponse(null, user.toApi(), enabled = false)
+                            AuthResponse(
+                                token = null,
+                                writeopiaUser = user.toApi(),
+                                enabled = false,
+                                tier = user.tier.name
+                            )
                         )
                     }
                 } else {
@@ -117,12 +127,22 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 if (created) {
                     call.respond(
                         HttpStatusCode.Created,
-                        AuthResponse(null, wUser.toApi(), enabled = false),
+                        AuthResponse(
+                            token = null,
+                            writeopiaUser = wUser.toApi(),
+                            enabled = false,
+                            tier = wUser.tier.name
+                        ),
                     )
                 } else {
                     call.respond(
                         HttpStatusCode.InternalServerError,
-                        AuthResponse(null, wUser.toApi(), enabled = false),
+                        AuthResponse(
+                            token = null,
+                            writeopiaUser = wUser.toApi(),
+                            enabled = false,
+                            tier = wUser.tier.name
+                        ),
                     )
                 }
             } else {

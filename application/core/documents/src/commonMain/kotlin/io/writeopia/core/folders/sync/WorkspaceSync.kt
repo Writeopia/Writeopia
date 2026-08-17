@@ -5,6 +5,7 @@ package io.writeopia.core.folders.sync
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.FolderRepository
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
@@ -28,6 +29,12 @@ class WorkspaceSync(
     suspend fun syncWorkspace(workspaceId: String, force: Boolean = false): ResultData<Unit> {
         try {
             if (workspaceId == Workspace.disconnectedWorkspace().id) {
+                return ResultData.Complete(Unit)
+            }
+
+            // Only premium users can sync with backend
+            val user = authRepository.getUser()
+            if (user.tier != Tier.PREMIUM) {
                 return ResultData.Complete(Unit)
             }
 

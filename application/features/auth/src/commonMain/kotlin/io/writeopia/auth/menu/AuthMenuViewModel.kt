@@ -136,6 +136,11 @@ class AuthMenuViewModel(
                 _loginState.value = when (result) {
                     is ResultData.Complete -> {
                         val user = result.data.writeopiaUser.toModel()
+                        val tier = try {
+                            Tier.valueOf(result.data.tier)
+                        } catch (e: Exception) {
+                            Tier.FREE
+                        }
 
                         // Check if user is enabled (email confirmed)
                         if (!result.data.enabled) {
@@ -151,7 +156,7 @@ class AuthMenuViewModel(
 
                             authRepository.unselectAllUsers()
                             authRepository.saveUser(
-                                user = user.copy(tier = Tier.PREMIUM),
+                                user = user.copy(tier = tier),
                                 selected = true
                             )
                             result.data.token?.let { token ->

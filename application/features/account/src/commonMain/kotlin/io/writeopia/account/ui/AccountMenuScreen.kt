@@ -31,6 +31,7 @@ fun AccountMenuScreen(
     navigateToAppearance: () -> Unit,
     navigateToTeams: () -> Unit,
     navigateToAccount: () -> Unit,
+    navigateToSubscription: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -61,6 +62,14 @@ fun AccountMenuScreen(
             title = WrStrings.account(),
             icon = WrIcons.person,
             onClick = navigateToAccount
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SettingsMenuItem(
+            title = WrStrings.subscription(),
+            icon = WrIcons.zap,
+            onClick = navigateToSubscription
         )
 
         Spacer(modifier = Modifier.height(24.dp))
