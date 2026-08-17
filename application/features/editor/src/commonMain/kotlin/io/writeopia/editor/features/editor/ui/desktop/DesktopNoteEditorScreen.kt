@@ -45,6 +45,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
+import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
 import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
@@ -334,6 +335,11 @@ fun DesktopNoteEditorScreen(
                 onUnpublish = noteEditorViewModel::unpublishDocument,
                 onCopyLink = noteEditorViewModel::copyPublishLink
             )
+        }
+
+        val showPremiumDialog by noteEditorViewModel.showPremiumDialog.collectAsState()
+        if (showPremiumDialog) {
+            PremiumOnlyDialog(onDismiss = noteEditorViewModel::hidePremiumDialog)
         }
     }
 }
