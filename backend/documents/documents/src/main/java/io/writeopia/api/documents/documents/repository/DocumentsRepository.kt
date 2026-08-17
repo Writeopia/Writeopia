@@ -186,6 +186,12 @@ fun WriteopiaDbBackend.isDocumentPublished(documentId: String): Boolean {
 }
 
 /**
+ * Gets all document IDs in a workspace (lightweight query for memory-efficient processing).
+ */
+fun WriteopiaDbBackend.getDocumentIdsByWorkspaceId(workspaceId: String): List<String> =
+    getDocumentDaoFn().loadDocumentIdsByWorkspaceId(workspaceId)
+
+/**
  * Updates only the document title without affecting story steps.
  */
 fun WriteopiaDbBackend.updateDocumentTitle(documentId: String, title: String) {

@@ -184,3 +184,8 @@ ORDER BY position;
 
 isPublished:
 SELECT published FROM document_entity WHERE id = ? AND deleted = FALSE;
+
+selectIdsByWorkspaceId:
+SELECT id
+FROM document_entity
+WHERE workspace_id = ? AND deleted = FALSE;

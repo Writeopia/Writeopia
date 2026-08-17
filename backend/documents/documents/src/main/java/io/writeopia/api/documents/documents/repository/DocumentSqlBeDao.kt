@@ -1025,6 +1025,14 @@ class DocumentSqlBeDao(
     fun isDocumentPublished(documentId: String): Boolean {
         return documentQueries?.isPublished(documentId)?.executeAsOneOrNull() ?: false
     }
+
+    /**
+     * Loads all document IDs in a workspace (lightweight query for memory-efficient processing).
+     */
+    fun loadDocumentIdsByWorkspaceId(workspaceId: String): List<String> =
+        documentQueries?.selectIdsByWorkspaceId(workspaceId)
+            ?.executeAsList()
+            ?: emptyList()
 }
 
 fun Folder_entity.toModel(count: Long) =
