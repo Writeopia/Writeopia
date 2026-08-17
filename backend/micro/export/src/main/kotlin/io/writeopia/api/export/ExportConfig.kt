@@ -9,10 +9,15 @@ object ExportConfig {
             ?: throw IllegalStateException("EXPORT_WORKSPACE_ID environment variable is required")
         val userId = System.getenv("EXPORT_USER_ID")
             ?: throw IllegalStateException("EXPORT_USER_ID environment variable is required")
+        val userEmail = System.getenv("EXPORT_USER_EMAIL")
+            ?: throw IllegalStateException("EXPORT_USER_EMAIL environment variable is required")
+        val userName = System.getenv("EXPORT_USER_NAME") ?: "User"
 
         return ExportRequest(
             workspaceId = workspaceId,
-            userId = userId
+            userId = userId,
+            userEmail = userEmail,
+            userName = userName
         )
     }
 
