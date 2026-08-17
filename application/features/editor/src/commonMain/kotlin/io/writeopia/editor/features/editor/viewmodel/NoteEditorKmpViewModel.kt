@@ -537,12 +537,20 @@ class NoteEditorKmpViewModel(
                 )
             }
 
-            // Step 3: Fetch published status from API if online
+            // Step 3: Fetch document metadata from API if online
             if (!isDisconnected && documentsApi != null) {
                 val token = authRepository.getAuthToken() ?: return@launch
-                val result = documentsApi.isDocumentPublished(documentId, workspace.id, token)
-                if (result is ResultData.Complete) {
-                    _isDocumentPublished.value = result.data
+
+                // Fetch favorite status from backend
+                val docResult = documentsApi.getDocumentById(documentId, workspace.id, token)
+                if (docResult is ResultData.Complete) {
+                    writeopiaManager.setFavorite(docResult.data.favorite)
+                }
+
+                // Fetch published status
+                val publishedResult = documentsApi.isDocumentPublished(documentId, workspace.id, token)
+                if (publishedResult is ResultData.Complete) {
+                    _isDocumentPublished.value = publishedResult.data
                 }
             }
         }

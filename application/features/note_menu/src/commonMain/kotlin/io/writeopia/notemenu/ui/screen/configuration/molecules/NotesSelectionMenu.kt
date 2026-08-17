@@ -35,7 +35,7 @@ internal fun NotesSelectionMenu(
     onDelete: () -> Unit,
     onCopy: () -> Unit,
     onFavorite: () -> Unit,
-    onSummary: () -> Unit,
+    onSummary: (() -> Unit)? = null,
     onClose: () -> Unit,
     shape: Shape = RoundedCornerShape(
         CornerSize(16.dp),
@@ -98,7 +98,7 @@ internal fun NotesSelectionMenu(
 
                 val currentPlatform = LocalPlatform.current
 
-                if (currentPlatform.isDesktop()) {
+                if (currentPlatform.isDesktop() && onSummary != null) {
                     Icon(
                         modifier = Modifier
                             .clickable(onClick = onSummary)

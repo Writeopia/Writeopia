@@ -11,12 +11,11 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.routing.getUserId
 import io.writeopia.api.core.auth.utils.runIfMember
 import io.writeopia.api.documents.documents.DocumentsService
 import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
-import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
-import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
@@ -30,7 +29,9 @@ import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CloneDocumentsRequest
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
+import io.writeopia.sdk.serialization.request.UpdateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
@@ -222,11 +223,22 @@ fun Routing.documentsRoute(
                     val folders = writeopiaDb.getFoldersByParentId(folderId)
                     val documents = writeopiaDb.getDocumentsByParentId(folderId)
 
+                    // Get user's favorite document IDs
+                    val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                        userId, workspaceId, writeopiaDb
+                    ).toSet()
+
+                    // Set favorite status on each document
+                    val documentsWithFavorites = documents.map { doc ->
+                        val isFavorite = userFavoriteIds.contains(doc.id)
+                        doc.copy(favorite = isFavorite)
+                    }
+
                     call.respond(
                         status = HttpStatusCode.OK,
                         message = FolderContentResponse(
                             folders = folders.map { it.toApi() },
-                            documents = documents.map { it.toApi() }
+                            documents = documentsWithFavorites.map { it.toApi() }
                         )
                     )
                 } catch (e: Exception) {
@@ -251,6 +263,7 @@ fun Routing.documentsRoute(
                         parentFolderId = parentFolderId,
                         title = request.title,
                         workspaceId = workspaceId,
+                        icon = request.icon?.toModel(),
                         writeopiaDb = writeopiaDb
                     )
 
@@ -258,6 +271,48 @@ fun Routing.documentsRoute(
                         status = HttpStatusCode.Created,
                         message = folder.toApi()
                     )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        put<UpdateFolderRequest>("/api/docs/workspace/{workspaceId}/folder/{folderId}") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val folderId = call.pathParameters["folderId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val icon = request.icon?.let { iconApi ->
+                        MenuItem.Icon(iconApi.label, iconApi.tint)
+                    }
+
+                    val folder = DocumentsService.updateFolder(
+                        folderId = folderId,
+                        workspaceId = workspaceId,
+                        title = request.title,
+                        icon = icon,
+                        favorite = request.favorite,
+                        writeopiaDb = writeopiaDb
+                    )
+
+                    if (folder != null) {
+                        call.respond(
+                            status = HttpStatusCode.OK,
+                            message = folder.toApi()
+                        )
+                    } else {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Folder not found"
+                        )
+                    }
                 } catch (e: Exception) {
                     call.respond(
                         status = HttpStatusCode.InternalServerError,
@@ -407,18 +462,27 @@ fun Routing.documentsRoute(
                     println("orderBy: ${folderDiff.orderBy}")
 
                     val documents =
-                        writeopiaDb.documentsDiffByFolder(
+                        DocumentsService.getDocumentsDiffByFolder(
                             folderDiff.folderId,
                             folderDiff.workspaceId,
                             folderDiff.lastFolderSync,
-                            folderDiff.orderBy
+                            folderDiff.orderBy,
+                            writeopiaDb
                         )
 
-                    println("returning ${documents.count()} documents")
+                    // Get user's favorite document IDs
+                    val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                        userId, workspaceId, writeopiaDb
+                    ).toSet()
+
+                    // Set favorite status on each document
+                    val documentsWithFavorites = documents.map { doc ->
+                        doc.copy(favorite = userFavoriteIds.contains(doc.id))
+                    }
 
                     call.respond(
                         status = HttpStatusCode.OK,
-                        message = documents.map { document -> document.toApi() }
+                        message = documentsWithFavorites.map { document -> document.toApi() }
                     )
                 } catch (e: Exception) {
                     call.respond(
@@ -442,10 +506,11 @@ fun Routing.documentsRoute(
                     println("last sync: ${Instant.fromEpochMilliseconds(workspaceDiff.lastSync)}")
                     println("orderBy: ${workspaceDiff.orderBy}")
 
-                    val documents = writeopiaDb.documentsDiffByWorkspace(
+                    val documents = DocumentsService.getDocumentsDiffByWorkspace(
                         workspaceDiff.workspaceId,
                         workspaceDiff.lastSync,
-                        workspaceDiff.orderBy
+                        workspaceDiff.orderBy,
+                        writeopiaDb
                     )
                     val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceDiff.workspaceId)
 

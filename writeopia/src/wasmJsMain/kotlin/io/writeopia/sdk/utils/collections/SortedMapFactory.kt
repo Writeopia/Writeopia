@@ -27,23 +27,13 @@ private class SortedMutableMap<K : Comparable<K>, V> : MutableMap<K, V> {
 
     override fun put(key: K, value: V): V? {
         val oldValue = delegate.remove(key)
-        // Insert in sorted order
-        val sortedEntries = delegate.entries.toMutableList()
-        sortedEntries.add(object : MutableMap.MutableEntry<K, V> {
-            override val key: K = key
-            private var _value: V = value
-            override val value: V get() = _value
-
-            override fun setValue(newValue: V): V {
-                val old = _value
-                _value = newValue
-                return old
-            }
-        })
-        sortedEntries.sortBy { it.key }
+        // Copy entries to pairs to avoid ConcurrentModificationException
+        val sortedPairs = delegate.entries.map { it.key to it.value }.toMutableList()
+        sortedPairs.add(key to value)
+        sortedPairs.sortBy { it.first }
 
         delegate.clear()
-        sortedEntries.forEach { delegate[it.key] = it.value }
+        sortedPairs.forEach { (k, v) -> delegate[k] = v }
 
         return oldValue
     }

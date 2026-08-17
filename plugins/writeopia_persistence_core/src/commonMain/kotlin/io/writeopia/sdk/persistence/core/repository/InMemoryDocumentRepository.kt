@@ -16,23 +16,20 @@ import kotlin.time.Instant
 class InMemoryDocumentRepository : DocumentRepository {
 
     private val documentsMap: MutableMap<String, Document> = mutableMapOf()
-    private val _documentsMapState = MutableStateFlow(documentsMap)
-    private val documentsMapState = _documentsMapState.map { map ->
-        map.mapValues { (_, document) ->
-            listOf(document)
-        }
-    }
+
+    // Holds documents grouped by parentId for reactive updates
+    private val documentsGroupedByParentIdFlow = MutableStateFlow<Map<String, List<Document>>>(emptyMap())
 
     override suspend fun loadDocumentsWorkspace(
         workspaceId: String
     ): List<Document> =
-        documentsMap.values.toList()
+        documentsMap.values.filter { it.workspaceId == workspaceId }
 
     override suspend fun loadDocumentsForFolder(
         folderId: String,
         workspaceId: String
     ): List<Document> =
-        documentsMap.values.toList()
+        documentsMap.values.filter { it.parentId == folderId && it.workspaceId == workspaceId }
 
     override suspend fun loadFavDocumentsForWorkspace(
         orderBy: String,
@@ -47,7 +44,7 @@ class InMemoryDocumentRepository : DocumentRepository {
     ): List<Document> = documentsMap.values.toList()
 
     override suspend fun loadDocumentById(id: String, workspaceId: String): Document? =
-        documentsMap["root"]
+        documentsMap[id]
 
     override suspend fun loadDocumentByIds(ids: List<String>, workspaceId: String): List<Document> =
         ids.mapNotNull { id ->
@@ -57,11 +54,14 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun listenForDocumentsByParentId(
         parentId: String,
         workspaceId: String
-    ): Flow<Map<String, List<Document>>> = documentsMapState
+    ): Flow<Map<String, List<Document>>> {
+        refreshDocuments()
+        return documentsGroupedByParentIdFlow
+    }
 
     override suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo> =
-        documentsMapState.map {  documentsMap ->
-            documentsMap.values.flatten().find { document ->
+        documentsGroupedByParentIdFlow.map { groupedDocs ->
+            groupedDocs.values.flatten().find { document ->
                 document.id == id
             }?.info() ?: DocumentInfo.empty()
         }
@@ -77,37 +77,42 @@ class InMemoryDocumentRepository : DocumentRepository {
     }
 
     override suspend fun saveDocument(document: Document) {
-        documentsMap["root"] = document
+        documentsMap[document.id] = document
+        refreshDocuments()
     }
 
     override suspend fun saveDocumentMetadata(document: Document) {
-        documentsMap["root"]?.let { currentDocument ->
-            documentsMap["root"] = currentDocument.copy(title = document.title)
+        documentsMap[document.id]?.let { currentDocument ->
+            documentsMap[document.id] = currentDocument.copy(title = document.title)
+            refreshDocuments()
         }
     }
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
-        documentsMap["root"]?.let { document ->
+        documentsMap[documentId]?.let { document ->
             val newContent = document.content + (position to storyStep)
-            documentsMap["root"] = document.copy(content = newContent)
+            documentsMap[documentId] = document.copy(content = newContent)
+            refreshDocuments()
         }
     }
 
     override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
-        documentsMap["root"]?.let { document ->
+        documentsMap[documentId]?.let { document ->
             val newContent = document.content.toMutableMap()
             steps.forEach { (position, storyStep) ->
                 newContent[position] = storyStep
             }
-            documentsMap["root"] = document.copy(content = newContent)
+            documentsMap[documentId] = document.copy(content = newContent)
+            refreshDocuments()
         }
     }
 
     override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {
-        documentsMap["root"]?.let { document ->
+        documentsMap[documentId]?.let { document ->
             val newContent = document.content.filterNot { (_, step) -> step.id == storyStepId }
                 .values.mapIndexed { index, step -> index.toDouble() to step }.toMap()
-            documentsMap["root"] = document.copy(content = newContent)
+            documentsMap[documentId] = document.copy(content = newContent)
+            refreshDocuments()
         }
     }
 
@@ -116,14 +121,17 @@ class InMemoryDocumentRepository : DocumentRepository {
 
     override suspend fun deleteDocument(document: Document) {
         documentsMap.remove(document.id)
+        refreshDocuments()
     }
 
     override suspend fun deleteDocumentByIds(ids: Set<String>) {
         ids.forEach(documentsMap::remove)
+        refreshDocuments()
     }
 
     override suspend fun deleteByWorkspace(userId: String) {
         documentsMap.clear()
+        refreshDocuments()
     }
 
     override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
@@ -146,22 +154,30 @@ class InMemoryDocumentRepository : DocumentRepository {
         setFavorite(ids, false)
     }
 
-    private fun setFavorite(ids: Set<String>, isFavorite: Boolean) {
+    private suspend fun setFavorite(ids: Set<String>, isFavorite: Boolean) {
         ids.forEach { id ->
-            documentsMap["root"]?.copy(favorite = isFavorite)?.let { document ->
-                documentsMap["root"] = document
+            documentsMap[id]?.copy(favorite = isFavorite)?.let { document ->
+                documentsMap[id] = document
             }
         }
+        refreshDocuments()
     }
 
     override suspend fun deleteDocumentByFolder(folderId: String) {
+        val keysToRemove = documentsMap.filter { (_, doc) -> doc.parentId == folderId }.keys
+        keysToRemove.forEach { documentsMap.remove(it) }
+        refreshDocuments()
     }
 
     override suspend fun moveToFolder(documentId: String, parentId: String) {
+        documentsMap[documentId]?.let { document ->
+            documentsMap[documentId] = document.copy(parentId = parentId)
+            refreshDocuments()
+        }
     }
 
     override suspend fun refreshDocuments() {
-        _documentsMapState.value = documentsMap
+        documentsGroupedByParentIdFlow.value = documentsMap.values.groupBy { it.parentId }
     }
 
     override suspend fun queryUnsyncedImagesSteps(): List<StoryStep> = emptyList()
@@ -175,5 +191,5 @@ class InMemoryDocumentRepository : DocumentRepository {
         emptyList()
 
     override suspend fun loadDocumentsByParentId(parentId: String, workspaceId: String): List<Document> =
-        documentsMap.values.toList()
+        documentsMap.values.filter { it.parentId == parentId && it.workspaceId == workspaceId }
 }

@@ -16,6 +16,7 @@ import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
+import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
@@ -64,6 +65,7 @@ internal class ChooseNoteKmpViewModel(
     private val notesUseCase: NotesUseCase,
     private val notesConfig: ConfigurationRepository,
     private val authRepository: AuthRepository,
+    private val documentsApi: DocumentsApi,
     private val ollamaRepository: OllamaRepository? = null,
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
@@ -71,7 +73,8 @@ internal class ChooseNoteKmpViewModel(
     private val folderSync: FolderSync,
     private val folderController: FolderStateController = FolderStateController.singleton(
         notesUseCase,
-        authRepository
+        authRepository,
+        documentsApi
     ),
     private val notesNavigation: NotesNavigation = NotesNavigation.Root,
     private val previewParser: PreviewParser = PreviewParser(),
@@ -218,6 +221,9 @@ internal class ChooseNoteKmpViewModel(
     private val _showAiOptionsState = MutableStateFlow(false)
     override val showAiOptionsState: StateFlow<Boolean> = _showAiOptionsState.asStateFlow()
 
+    private val _showCreateFolderDialogState = MutableStateFlow(false)
+    override val showCreateFolderDialogState: StateFlow<Boolean> = _showCreateFolderDialogState.asStateFlow()
+
     override val editFolderState: StateFlow<Folder?> by lazy {
         combine(
             folderController.editingFolderState,
@@ -323,11 +329,13 @@ internal class ChooseNoteKmpViewModel(
 
     override fun copySelectedNotes() {
         viewModelScope.launch(Dispatchers.Default) {
-            notesUseCase.duplicateDocuments(
+            val duplicatedDocuments = notesUseCase.duplicateDocuments(
                 selectedNotes.value.toList(),
                 getUserId(),
                 getWorkspaceId()
             )
+
+            syncDocumentsToBackend(duplicatedDocuments)
         }
     }
 
@@ -335,9 +343,58 @@ internal class ChooseNoteKmpViewModel(
         val selected = selectedNotes.value
 
         viewModelScope.launch(Dispatchers.Default) {
+            // Delete locally first (optimistic delete)
             notesUseCase.deleteNotes(selected)
             clearSelection()
             askToDelete.value = false
+
+            // Sync deletion to backend if logged in with premium tier
+            syncDeletionToBackend(selected.toList())
+        }
+    }
+
+    private suspend fun syncDeletionToBackend(documentIds: List<String>) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+        val token = authRepository.getAuthToken() ?: return
+
+        documentsApi.deleteDocuments(
+            documentIds = documentIds,
+            workspaceId = workspace.id,
+            token = token
+        )
+    }
+
+    private suspend fun syncDocumentsToBackend(documents: List<Document>) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+        val token = authRepository.getAuthToken() ?: return
+
+        documentsApi.sendDocuments(
+            documents = documents,
+            workspaceId = workspace.id,
+            token = token
+        )
+    }
+
+    private suspend fun syncFavoriteToBackend(documentIds: Set<String>, favorite: Boolean) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+        val token = authRepository.getAuthToken() ?: return
+
+        documentIds.forEach { documentId ->
+            documentsApi.favoriteDocument(
+                documentId = documentId,
+                favorite = favorite,
+                workspaceId = workspace.id,
+                token = token
+            )
         }
     }
 
@@ -353,8 +410,10 @@ internal class ChooseNoteKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             if (allFavorites) {
                 notesUseCase.unFavoriteDocuments(selectedIds)
+                syncFavoriteToBackend(selectedIds, favorite = false)
             } else {
                 notesUseCase.favoriteDocuments(selectedIds)
+                syncFavoriteToBackend(selectedIds, favorite = true)
             }
         }
     }
@@ -409,6 +468,7 @@ internal class ChooseNoteKmpViewModel(
                         Result.failure(Exception("Failed to parse AI response"))
                     } else {
                         notesUseCase.saveDocumentDb(document)
+                        syncDocumentsToBackend(listOf(document))
                         Result.success(Unit)
                     }
                 }
@@ -559,14 +619,27 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun newFolder() {
+        showCreateFolderDialog()
+    }
+
+    override fun showCreateFolderDialog() {
+        _showCreateFolderDialogState.value = true
+    }
+
+    override fun hideCreateFolderDialog() {
+        _showCreateFolderDialogState.value = false
+    }
+
+    override fun createFolderWithDetails(name: String, icon: MenuItem.Icon?) {
         viewModelScope.launch(Dispatchers.Default) {
             val parentId = if (notesNavigation.navigationType == NotesNavigationType.FOLDER) {
                 notesNavigation.id
             } else {
                 Folder.ROOT_PATH
             }
-
-            folderController.addFolder(parentId = parentId)
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            notesUseCase.createFolder(name, workspace.id, parentId, icon)
+            hideCreateFolderDialog()
         }
     }
 

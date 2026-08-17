@@ -8,6 +8,7 @@ import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -19,10 +20,13 @@ import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.data.FolderApi
+import io.writeopia.sdk.serialization.data.IconApi
+import io.writeopia.sdk.serialization.request.UpdateFolderRequest
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
+import io.writeopia.sdk.serialization.request.CloneDocumentsRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
@@ -62,7 +66,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         token: String,
         orderBy: String = "last_updated_at"
     ): ResultData<Pair<List<Document>, List<Folder>>> {
-        val url = "$baseUrl/api/workspace/diff"
+        val url = "$baseUrl/api/docs/workspace/diff"
         val response = client.post(url) {
             contentType(ContentType.Application.Json)
             setBody(WorkspaceDiffRequest(workspaceId, lastSync.toEpochMilliseconds(), orderBy))
@@ -105,7 +109,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Unit> {
-        val response = client.post("$baseUrl/api/workspace/folder") {
+        val response = client.post("$baseUrl/api/docs/workspace/folder") {
             contentType(ContentType.Application.Json)
             setBody(SendFoldersRequest(folders.map { it.toApi() }, workspaceId))
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -123,11 +127,12 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         parentFolderId: String,
         title: String,
         workspaceId: String,
+        icon: IconApi? = null,
         token: String
     ): ResultData<Folder> {
-        val response = client.post("$baseUrl/api/workspace/$workspaceId/folder/$parentFolderId/create") {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/folder/$parentFolderId/create") {
             contentType(ContentType.Application.Json)
-            setBody(CreateFolderRequest(title))
+            setBody(CreateFolderRequest(title, icon))
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
@@ -139,12 +144,34 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         }
     }
 
+    suspend fun updateFolder(
+        folderId: String,
+        workspaceId: String,
+        title: String? = null,
+        icon: IconApi? = null,
+        favorite: Boolean? = null,
+        token: String
+    ): ResultData<Folder> {
+        val response = client.put("$baseUrl/api/docs/workspace/$workspaceId/folder/$folderId") {
+            contentType(ContentType.Application.Json)
+            setBody(UpdateFolderRequest(title = title, icon = icon, favorite = favorite))
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<FolderApi>().toModel())
+        } else {
+            println("error updating folder: $response")
+            ResultData.Error()
+        }
+    }
+
     suspend fun getFolderContents(
         folderId: String,
         workspaceId: String,
         token: String
     ): ResultData<FolderContentResponse> {
-        val response = client.get("$baseUrl/api/workspace/$workspaceId/folder/$folderId/contents") {
+        val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/folder/$folderId/contents") {
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
@@ -161,7 +188,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Unit> {
-        val response = client.delete("$baseUrl/api/workspace/$workspaceId/folder/$folderId") {
+        val response = client.delete("$baseUrl/api/docs/workspace/$workspaceId/folder/$folderId") {
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
@@ -178,7 +205,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Unit> {
-        val response = client.post("$baseUrl/api/workspace/$workspaceId/document/delete") {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/delete") {
             contentType(ContentType.Application.Json)
             setBody(DeleteDocumentsRequest(documentIds))
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -198,7 +225,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Unit> {
-        val response = client.post("$baseUrl/api/workspace/$workspaceId/folder/$folderId/move") {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/folder/$folderId/move") {
             contentType(ContentType.Application.Json)
             setBody(MoveFolderRequest(targetParentId))
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -218,7 +245,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         token: String
     ): ResultData<Unit> {
-        val response = client.post("$baseUrl/api/workspace/$workspaceId/document/$documentId/favorite") {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/$documentId/favorite") {
             contentType(ContentType.Application.Json)
             setBody(FavoriteDocumentRequest(favorite))
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -232,11 +259,30 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         }
     }
 
+    suspend fun cloneDocuments(
+        documentIds: List<String>,
+        workspaceId: String,
+        token: String
+    ): ResultData<List<Document>> {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/clone") {
+            contentType(ContentType.Application.Json)
+            setBody(CloneDocumentsRequest(documentIds))
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<List<DocumentApi>>().map { it.toModel() })
+        } else {
+            println("error cloning documents: $response")
+            ResultData.Error()
+        }
+    }
+
     suspend fun getUserFavorites(
         workspaceId: String,
         token: String
     ): ResultData<List<String>> {
-        val response = client.get("$baseUrl/api/workspace/$workspaceId/user/favorites") {
+        val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/user/favorites") {
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 

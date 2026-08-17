@@ -5,7 +5,6 @@ package io.writeopia.core.folders.sync
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.FolderRepository
-import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
@@ -44,28 +43,16 @@ class FolderSync(
             val now = Clock.System.now()
             if (!force && now - lastSuccessfulSync < minSyncInternal) {
                 println("Skipping sync for $workspaceId. Last sync was less than $minSyncInternal ago.")
+                return
             }
 
             val authToken = authRepository.getAuthToken() ?: return
 
-            println("syncFolder folderId: $folderId")
-            val folder: Folder = folderRepository.getFolderById(folderId) ?: run {
-                val folder = Folder(
-                    id = "root",
-                    parentId = "null",
-                    title = "root",
-                    createdAt = Instant.DISTANT_PAST,
-                    lastUpdatedAt = Instant.DISTANT_PAST,
-                    itemCount = 0,
-                    workspaceId = workspaceId,
-                )
+            val existingFolder = folderRepository.getFolderById(folderId)
 
-                folderRepository.createFolder(folder)
-                folder
-            }
-
-            val lastSync = folder.lastSyncedAt
-            println("Sync. lastSync: $lastSync")
+            // Use the existing folder's lastSyncedAt, or DISTANT_PAST if folder doesn't exist
+            // We don't create a fallback folder to avoid creating unwanted "root" folders
+            val lastSync = existingFolder?.lastSyncedAt
 
             // First, receive the documents for the backend.
             val response = documentsApi.getFolderNewDocuments(
@@ -79,16 +66,12 @@ class FolderSync(
             val newDocuments = if (response is ResultData.Complete) {
                 response.data
             } else {
-                println("newDocuments failed.")
                 return
             }
-            println("Sync. received ${newDocuments.size} new documents")
-//        println("Documents: ${newDocuments.joinToString(separator = "\n\n")}")
 
             // Then, load the outdated documents.
             // These documents were updated locally, but were not sent to the backend yet
             val localOutdatedDocs = documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId)
-            println("Sync. loaded ${localOutdatedDocs.size} outdated documents")
 
             // Resolve conflicts of documents that were updated both locally and in the backend.
             // Documents will be saved locally by documentConflictHandler.handleConflict
@@ -96,14 +79,10 @@ class FolderSync(
                 documentConflictHandler.handleConflict(localOutdatedDocs, newDocuments)
             documentRepository.refreshDocuments()
 
-//        println("Sync. sending ${documentsNotSent.size} documents")
-//        println("Documents sent: ${documentsNotSent.joinToString(separator = "\n\n")}")
-
             // Send documents to backend
             val resultSend = documentsApi.sendDocuments(documentsNotSent, workspaceId, authToken)
 
             if (resultSend is ResultData.Complete) {
-                println("documents sent")
                 val now = Clock.System.now()
                 // If everything ran accordingly, update the sync time of the folder.
                 documentsNotSent.forEach { document ->
@@ -112,15 +91,16 @@ class FolderSync(
                 }
 
                 documentRepository.refreshDocuments()
-                folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
 
-                println("folders sync OK")
+                // Only update folder sync time if folder exists locally
+                existingFolder?.let { folder ->
+                    folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
+                }
 
                 lastSuccessfulSync = now
             }
         } catch (e: Exception) {
 //            e.printStackTrace()
-            println("Error in folder sync: ${e.message}")
         }
     }
 }

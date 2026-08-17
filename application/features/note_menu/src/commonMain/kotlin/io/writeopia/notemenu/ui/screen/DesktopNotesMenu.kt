@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.file.directoryChooserSave
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.ui.LocalToastInfo
@@ -43,6 +45,8 @@ import io.writeopia.ai.task.ui.AiTaskIndicator
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.notemenu.ui.screen.documents.NotesCardsScreen
 import io.writeopia.notemenu.ui.screen.file.fileChooserLoad
+import io.writeopia.notemenu.ui.screen.menu.CreateFolderDialog
+import io.writeopia.notemenu.ui.screen.menu.EditFileDialog
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
 import io.writeopia.notemenu.viewmodel.getPath
@@ -109,7 +113,10 @@ fun DesktopNotesMenu(
                         },
                         moveRequest = chooseNoteViewModel::moveToFolder,
                         modifier = Modifier.weight(1F).fillMaxHeight()
-                            .padding(end = 10.dp, top = 20.dp),
+                            .padding(
+                                end = 10.dp,
+                                top = if (LocalPlatform.current == PlatformType.WEB) 0.dp else 20.dp
+                            ),
                         changeIcon = chooseNoteViewModel::changeIcons,
                         onSelection = chooseNoteViewModel::toggleSelection,
                         sharedTransitionScope = sharedTransitionScope,
@@ -137,25 +144,28 @@ fun DesktopNotesMenu(
                 }
             }
 
-            DesktopNoteActionsMenu(
-                modifier = Modifier.align(Alignment.TopEnd).padding(top = 12.dp),
-                showExtraOptions = chooseNoteViewModel.editState,
-                showExtraOptionsRequest = chooseNoteViewModel::showEditMenu,
-                hideExtraOptionsRequest = chooseNoteViewModel::cancelEditMenu,
-                exportAsMarkdownClick = {
-                    directoryChooserSave("")?.let(chooseNoteViewModel::directoryFilesAsMarkdown)
-                },
-                exportAsTxtClick = {
-                    directoryChooserSave("")?.let(chooseNoteViewModel::directoryFilesAsTxt)
-                },
-                importClick = {
-                    chooseNoteViewModel.loadFiles(fileChooserLoad(""))
-                },
-                syncInProgressState = chooseNoteViewModel.syncInProgress,
-                onSyncLocallySelected = chooseNoteViewModel::onSyncLocallySelected,
-                onWriteLocallySelected = chooseNoteViewModel::onWriteLocallySelected,
-                onForceGraphSelected = navigateToForceGraph
-            )
+            // Hide actions menu on web platform
+            if (LocalPlatform.current != PlatformType.WEB) {
+                DesktopNoteActionsMenu(
+                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 12.dp),
+                    showExtraOptions = chooseNoteViewModel.editState,
+                    showExtraOptionsRequest = chooseNoteViewModel::showEditMenu,
+                    hideExtraOptionsRequest = chooseNoteViewModel::cancelEditMenu,
+                    exportAsMarkdownClick = {
+                        directoryChooserSave("")?.let(chooseNoteViewModel::directoryFilesAsMarkdown)
+                    },
+                    exportAsTxtClick = {
+                        directoryChooserSave("")?.let(chooseNoteViewModel::directoryFilesAsTxt)
+                    },
+                    importClick = {
+                        chooseNoteViewModel.loadFiles(fileChooserLoad(""))
+                    },
+                    syncInProgressState = chooseNoteViewModel.syncInProgress,
+                    onSyncLocallySelected = chooseNoteViewModel::onSyncLocallySelected,
+                    onWriteLocallySelected = chooseNoteViewModel::onWriteLocallySelected,
+                    onForceGraphSelected = navigateToForceGraph
+                )
+            }
 
             val showOnboard by chooseNoteViewModel.showOnboardingState.collectAsState()
 
@@ -224,7 +234,7 @@ fun DesktopNotesMenu(
                 onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
                 onCopy = chooseNoteViewModel::copySelectedNotes,
                 onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
-                onSummary = chooseNoteViewModel::showAiOptions,
+                onSummary = if (ollamaConfigController != null) chooseNoteViewModel::showAiOptions else null,
                 onClose = chooseNoteViewModel::clearSelection,
                 shape = RoundedCornerShape(CornerSize(16.dp)),
                 exitAnimationOffset = 2.3F,
@@ -253,6 +263,26 @@ fun DesktopNotesMenu(
                 DeleteConfirmationDialog(
                     onConfirmation = chooseNoteViewModel::deleteSelectedNotes,
                     onCancel = chooseNoteViewModel::cancelDeletion,
+                )
+            }
+
+            val folderEdit by chooseNoteViewModel.editFolderState.collectAsState()
+
+            if (folderEdit != null) {
+                EditFileDialog(
+                    folderEdit = folderEdit!!,
+                    onDismissRequest = chooseNoteViewModel::stopEditingFolder,
+                    deleteFolder = chooseNoteViewModel::deleteFolder,
+                    editFolder = chooseNoteViewModel::updateFolder
+                )
+            }
+
+            val showCreateFolderDialog by chooseNoteViewModel.showCreateFolderDialogState.collectAsState()
+
+            if (showCreateFolderDialog) {
+                CreateFolderDialog(
+                    onDismissRequest = chooseNoteViewModel::hideCreateFolderDialog,
+                    onCreate = chooseNoteViewModel::createFolderWithDetails
                 )
             }
         }

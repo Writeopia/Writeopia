@@ -10,6 +10,8 @@ import io.ktor.http.isSuccess
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.addUserFavorite
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByFolderId
+import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
+import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByIds
 import io.writeopia.api.documents.documents.repository.deleteFolder
 import io.writeopia.api.documents.documents.repository.deleteStoryStepById
@@ -30,6 +32,7 @@ import io.writeopia.api.documents.documents.repository.getDocumentWithContentByI
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.documents.repository.setDocumentPublished
+import io.writeopia.api.documents.documents.repository.updateDocumentTitle
 import io.writeopia.api.documents.documents.repository.upsertStoryStep
 import io.writeopia.api.documents.search.SearchDocument
 import io.writeopia.connection.ResultData
@@ -37,8 +40,10 @@ import io.writeopia.connection.Urls
 import io.writeopia.connection.wrWebClient
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
@@ -82,7 +87,10 @@ object DocumentsService {
         id: String,
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
-    ): Document? = writeopiaDb.getDocumentWithContentById(id, workspaceId)
+    ): Document? {
+        val document = writeopiaDb.getDocumentWithContentById(id, workspaceId) ?: return null
+        return ensureTitleInSync(document)
+    }
 
     suspend fun getDocumentByTitle(
         title: String,
@@ -100,6 +108,7 @@ object DocumentsService {
         parentFolderId: String,
         title: String,
         workspaceId: String,
+        icon: MenuItem.Icon? = null,
         writeopiaDb: WriteopiaDbBackend
     ): Folder {
         val now = Clock.System.now()
@@ -110,11 +119,33 @@ object DocumentsService {
             createdAt = now,
             lastUpdatedAt = now,
             workspaceId = workspaceId,
-            itemCount = 0
+            itemCount = 0,
+            icon = icon
         )
 
         writeopiaDb.saveFolder(folder)
         return folder
+    }
+
+    suspend fun updateFolder(
+        folderId: String,
+        workspaceId: String,
+        title: String?,
+        icon: MenuItem.Icon?,
+        favorite: Boolean?,
+        writeopiaDb: WriteopiaDbBackend
+    ): Folder? {
+        val existingFolder = writeopiaDb.getFolderById(folderId, workspaceId) ?: return null
+
+        val updatedFolder = existingFolder.copy(
+            title = title ?: existingFolder.title,
+            icon = icon ?: existingFolder.icon,
+            favorite = favorite ?: existingFolder.favorite,
+            lastUpdatedAt = Clock.System.now()
+        )
+
+        writeopiaDb.saveFolder(updatedFolder)
+        return updatedFolder
     }
 
     suspend fun upsertDocument(
@@ -300,6 +331,49 @@ object DocumentsService {
         return false
     }
 
+    /**
+     * Ensures document title metadata is in sync with the title from content.
+     * Returns the document with corrected title if needed.
+     */
+    private fun ensureTitleInSync(document: Document): Document {
+        val titleFromContent = document.content.values.find { storyStep ->
+            storyStep.type.name == "title"
+        }?.text
+
+        return if (titleFromContent != null && titleFromContent != document.title) {
+            document.copy(title = titleFromContent)
+        } else {
+            document
+        }
+    }
+
+    /**
+     * Gets documents diff by folder with titles synchronized from content.
+     */
+    suspend fun getDocumentsDiffByFolder(
+        folderId: String,
+        workspaceId: String,
+        lastSync: Long,
+        orderBy: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): List<Document> {
+        return writeopiaDb.documentsDiffByFolder(folderId, workspaceId, lastSync, orderBy)
+            .map { ensureTitleInSync(it) }
+    }
+
+    /**
+     * Gets documents diff by workspace with titles synchronized from content.
+     */
+    suspend fun getDocumentsDiffByWorkspace(
+        workspaceId: String,
+        lastSync: Long,
+        orderBy: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): List<Document> {
+        return writeopiaDb.documentsDiffByWorkspace(workspaceId, lastSync, orderBy)
+            .map { ensureTitleInSync(it) }
+    }
+
     private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String) =
         wrWebClient.post("${Urls.AI_HUB}/documents/") {
             contentType(ContentType.Application.Json)
@@ -345,13 +419,34 @@ object DocumentsService {
      * 4. Process deletions
      * 5. Return steps newer than client's lastSync (excluding client's changes)
      */
-    fun syncStorySteps(
+    suspend fun syncStorySteps(
         documentId: String,
         workspaceId: String,
         request: StoryStepSyncRequest,
         writeopiaDb: WriteopiaDbBackend
     ): StoryStepSyncResponse {
         val serverTimestamp = Clock.System.now().toEpochMilliseconds()
+
+        // Check if document exists, create it if not
+        val existingDocument = writeopiaDb.getDocumentById(documentId, workspaceId)
+        if (existingDocument == null) {
+            // Extract title from the first title-type story step, or use a default
+            val titleStep = request.changes.firstOrNull { it.storyStep.type.name == "title" }
+            val title = titleStep?.storyStep?.text ?: "Untitled"
+
+            val now = Clock.System.now()
+            val newDocument = Document(
+                id = documentId,
+                title = title,
+                content = emptyMap(),
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                parentId = "root",
+                workspaceId = workspaceId
+            )
+            writeopiaDb.saveDocument(newDocument)
+        }
 
         // Get server steps updated after client's last sync
         val serverUpdatedSteps = writeopiaDb.getStoryStepsAfterTime(
@@ -366,6 +461,7 @@ object DocumentsService {
 
         // Track which step IDs the client is updating (to exclude from response)
         val clientUpdatedStepIds = mutableSetOf<String>()
+        var updatedTitle: String? = null
 
         // Process client changes
         for (change in request.changes) {
@@ -382,6 +478,19 @@ object DocumentsService {
                     lastUpdatedAt = request.requestTimestamp
                 )
                 clientUpdatedStepIds.add(clientStep.id)
+
+                // Track title updates
+                if (change.storyStep.type.name == "title") {
+                    updatedTitle = change.storyStep.text
+                }
+            }
+        }
+
+        // Update document title if title step was changed
+        if (updatedTitle != null) {
+            val currentDoc = writeopiaDb.getDocumentById(documentId, workspaceId)
+            if (currentDoc != null && currentDoc.title != updatedTitle) {
+                writeopiaDb.updateDocumentTitle(documentId, updatedTitle)
             }
         }
 

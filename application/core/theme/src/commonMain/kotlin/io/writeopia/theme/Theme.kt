@@ -140,7 +140,7 @@ fun WriteopiaTheme(
     CompositionLocalProvider(LocalWriteopiaColors provides writeopiaColors) {
         MaterialTheme(
             colorScheme = colors,
-            typography = Typography,
+            typography = robotoTypography(),
             shapes = Shapes,
             content = content
         )

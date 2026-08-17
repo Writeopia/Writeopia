@@ -59,7 +59,8 @@ class NotesMenuKmpInjection private constructor(
     private fun provideFolderStateController(): FolderStateController =
         FolderStateController.singleton(
             provideNotesUseCase(),
-            authCoreInjection.provideAuthRepository()
+            authCoreInjection.provideAuthRepository(),
+            provideDocumentsApi()
         )
 
     private fun provideDocumentsApi() =
@@ -92,6 +93,7 @@ class NotesMenuKmpInjection private constructor(
             notesUseCase = notesUseCase,
             notesConfig = notesConfig,
             authRepository = authCoreInjection.provideAuthRepository(),
+            documentsApi = provideDocumentsApi(),
             ollamaRepository = ollamaRepository,
             selectionState = selectionState,
             notesNavigation = notesNavigation,
