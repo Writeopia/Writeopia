@@ -192,4 +192,10 @@
   <string name="select_lines_first">Select lines in the document first</string>
   <string name="premium_feature">Premium Feature</string>
   <string name="premium_feature_message">This feature is only available for premium users using an online workspace</string>
+  <string name="export_workspace">Export Workspace</string>
+  <string name="export_workspace_description">Export all documents and folders from a workspace</string>
+  <string name="select_workspace_to_export">Select a workspace to export</string>
+  <string name="export_started">Export started. A download link will be sent to your email when ready.</string>
+  <string name="export_failed">Failed to start export. Please try again.</string>
+  <string name="start_export">Start Export</string>
 </resources>

@@ -276,6 +276,9 @@ class GlobalShellKmpViewModel(
     override val usersOfWorkspaceToEdit: Flow<ResultData<List<String>>> =
         workspaceHandler.usersOfSelectedWorkspace
 
+    override val exportWorkspaceState: StateFlow<ResultData<Unit>> =
+        workspaceHandler.exportWorkspaceState
+
     init {
         folderStateController.initCoroutine(viewModelScope)
         workspaceHandler.initScope(viewModelScope)
@@ -572,6 +575,14 @@ class GlobalShellKmpViewModel(
 
     override fun selectWorkspaceToManage(workspaceId: String) {
         workspaceHandler.selectWorkspaceToManage(workspaceId)
+    }
+
+    override fun exportWorkspace(workspaceId: String) {
+        workspaceHandler.exportWorkspace(workspaceId)
+    }
+
+    override fun resetExportState() {
+        workspaceHandler.resetExportState()
     }
 
     private suspend fun getUserId(): String =

@@ -35,6 +35,8 @@ dependencies {
     implementation(libs.logback.classic)
     implementation(libs.sqldelight.jvm)
     implementation(libs.google.cloud.storage)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
 
     testImplementation(libs.kotlin.test)
 }

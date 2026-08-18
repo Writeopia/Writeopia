@@ -45,6 +45,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     val usersOfWorkspaceToEdit: Flow<ResultData<List<String>>>
 
+    val exportWorkspaceState: StateFlow<ResultData<Unit>>
+
     override val ollamaSelectedModelState: StateFlow<String>
 
     override val ollamaUrl: StateFlow<String>
@@ -90,6 +92,10 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
     fun addUserToTeam(userEmail: String)
 
     fun selectWorkspaceToManage(workspaceId: String)
+
+    fun exportWorkspace(workspaceId: String)
+
+    fun resetExportState()
 
     override fun changeOllamaUrl(url: String)
 

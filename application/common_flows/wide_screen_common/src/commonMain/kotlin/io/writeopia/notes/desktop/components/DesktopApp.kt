@@ -286,6 +286,9 @@ fun DesktopApp(
                                     selectWorkspaceToManage =
                                         globalShellViewModel::selectWorkspaceToManage,
                                     usersInSelectedWorkspace = globalShellViewModel.usersOfWorkspaceToEdit,
+                                    exportWorkspaceState = globalShellViewModel.exportWorkspaceState,
+                                    onExportWorkspace = globalShellViewModel::exportWorkspace,
+                                    onResetExportState = globalShellViewModel::resetExportState,
                                 )
                             }
 
