@@ -1555,4 +1555,3 @@ private fun transparentTextInputColors() =
         disabledIndicatorColor = Color.Transparent,
         cursorColor = MaterialTheme.colorScheme.primary
     )
-
