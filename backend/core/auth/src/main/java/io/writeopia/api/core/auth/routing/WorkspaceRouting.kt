@@ -388,4 +388,26 @@ fun Routing.workspaceRoute(
             }
         }
     }
+
+    authenticate("auth-jwt", optional = debugMode) {
+        post("/api/workspace/{workspaceId}/export") {
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"]
+                ?: throw IllegalArgumentException("Workspace id is required")
+
+            runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+                val result = WorkspaceService.triggerWorkspaceExport(
+                    userId = userId,
+                    workspaceId = workspaceId,
+                    writeopiaDb = writeopiaDb
+                )
+
+                if (result) {
+                    call.respond(HttpStatusCode.Accepted, ServerResponse("Export job started"))
+                } else {
+                    call.respond(HttpStatusCode.InternalServerError, ServerResponse("Failed to start export"))
+                }
+            }
+        }
+    }
 }

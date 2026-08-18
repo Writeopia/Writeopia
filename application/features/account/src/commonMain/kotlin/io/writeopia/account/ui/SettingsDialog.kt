@@ -119,7 +119,10 @@ fun SettingsDialog(
     onAutoSyncToggle: (Boolean) -> Unit,
     addUserToTeam: (String) -> Unit,
     selectWorkspaceToManage: (String) -> Unit,
-    usersInSelectedWorkspace: Flow<ResultData<List<String>>>
+    usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
+    exportWorkspaceState: StateFlow<ResultData<Unit>>,
+    onExportWorkspace: (String) -> Unit,
+    onResetExportState: () -> Unit,
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -143,16 +146,19 @@ fun SettingsDialog(
                 modifier = Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
                 accountScreen = {
                     AccountScreen(
-                        userOnlineState,
-                        workspaces,
-                        showDeleteConfirmation,
-                        signIn,
-                        changeWorkspace,
-                        resetPassword,
-                        logout,
-                        dismissDeleteConfirm,
-                        showDeleteConfirm,
-                        deleteAccount
+                        userOnlineState = userOnlineState,
+                        workspaces = workspaces,
+                        showDeleteConfirmation = showDeleteConfirmation,
+                        exportWorkspaceState = exportWorkspaceState,
+                        signIn = signIn,
+                        changeWorkspace = changeWorkspace,
+                        resetPassword = resetPassword,
+                        logout = logout,
+                        dismissDeleteConfirm = dismissDeleteConfirm,
+                        showDeleteConfirm = showDeleteConfirm,
+                        deleteAccount = deleteAccount,
+                        onExportWorkspace = onExportWorkspace,
+                        onResetExportState = onResetExportState,
                     )
                 },
                 appearanceScreen = {
@@ -382,6 +388,7 @@ private fun AccountScreen(
     userOnlineState: StateFlow<WriteopiaUser>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
     showDeleteConfirmation: StateFlow<Boolean>,
+    exportWorkspaceState: StateFlow<ResultData<Unit>>,
     signIn: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
@@ -389,6 +396,8 @@ private fun AccountScreen(
     dismissDeleteConfirm: () -> Unit,
     showDeleteConfirm: () -> Unit,
     deleteAccount: () -> Unit,
+    onExportWorkspace: (String) -> Unit,
+    onResetExportState: () -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -445,14 +454,54 @@ private fun AccountScreen(
                 CommonButton(text = WrStrings.logout(), modifier = Modifier.fillMaxWidth()) {
                     logout()
                 }
+            }
 
-                Spacer(modifier = Modifier.height(4.dp))
+            // Export section
+            var showExportDialog by remember { mutableStateOf(false) }
 
+            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+            Text(WrStrings.export(), style = titleStyle, color = titleColor)
+
+            Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
+
+            Text(
+                WrStrings.exportWorkspaceDescription(),
+                style = MaterialTheme.typography.bodySmall,
+                color = titleColor
+            )
+
+            Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
+
+            Column(modifier = Modifier.width(IntrinsicSize.Max)) {
+                CommonButton(
+                    text = WrStrings.exportWorkspace(),
+                    modifier = Modifier.fillMaxWidth(),
+                    clickListener = { showExportDialog = true }
+                )
+            }
+
+            if (showExportDialog) {
+                ExportWorkspaceDialog(
+                    workspacesState = workspaces,
+                    exportState = exportWorkspaceState,
+                    onExport = onExportWorkspace,
+                    onDismiss = {
+                        showExportDialog = false
+                        onResetExportState()
+                    }
+                )
+            }
+
+            // Danger zone section
+            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+            Text("Danger zone", style = titleStyle, color = titleColor)
+
+            Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
+
+            Column(modifier = Modifier.width(IntrinsicSize.Max)) {
                 val showDelete by showDeleteConfirmation.collectAsState()
-
-                Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-
-                Text("Danger zone", style = titleStyle, color = titleColor)
 
                 Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
 
@@ -1506,3 +1555,4 @@ private fun transparentTextInputColors() =
         disabledIndicatorColor = Color.Transparent,
         cursorColor = MaterialTheme.colorScheme.primary
     )
+

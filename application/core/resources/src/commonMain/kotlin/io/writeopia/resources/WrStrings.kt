@@ -171,6 +171,12 @@ import writeopia.application.core.resources.generated.resources.cursor
 import writeopia.application.core.resources.generated.resources.select_lines_first
 import writeopia.application.core.resources.generated.resources.premium_feature
 import writeopia.application.core.resources.generated.resources.premium_feature_message
+import writeopia.application.core.resources.generated.resources.export_workspace
+import writeopia.application.core.resources.generated.resources.export_workspace_description
+import writeopia.application.core.resources.generated.resources.select_workspace_to_export
+import writeopia.application.core.resources.generated.resources.export_started
+import writeopia.application.core.resources.generated.resources.export_failed
+import writeopia.application.core.resources.generated.resources.start_export
 
 object WrStrings {
 
@@ -683,4 +689,22 @@ object WrStrings {
 
     @Composable
     fun premiumFeatureMessage() = stringResource(Res.string.premium_feature_message)
+
+    @Composable
+    fun exportWorkspace() = stringResource(Res.string.export_workspace)
+
+    @Composable
+    fun exportWorkspaceDescription() = stringResource(Res.string.export_workspace_description)
+
+    @Composable
+    fun selectWorkspaceToExport() = stringResource(Res.string.select_workspace_to_export)
+
+    @Composable
+    fun exportStarted() = stringResource(Res.string.export_started)
+
+    @Composable
+    fun exportFailed() = stringResource(Res.string.export_failed)
+
+    @Composable
+    fun startExport() = stringResource(Res.string.start_export)
 }

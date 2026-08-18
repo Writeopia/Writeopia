@@ -245,4 +245,22 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         e.printStackTrace()
         ResultData.Error(e)
     }
+
+    suspend fun exportWorkspace(
+        workspaceId: String,
+        token: String
+    ): ResultData<Unit> = try {
+        val response = client.post("$baseUrl/api/workspace/$workspaceId/export") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            ResultData.Error()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
 }

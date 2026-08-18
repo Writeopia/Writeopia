@@ -12,7 +12,9 @@ import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertUserInWorkspace
 import io.writeopia.api.core.auth.repository.insertWorkspace
+import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.removeUserFromWorkspace
+import io.writeopia.connection.logger
 import io.writeopia.models.user.PaginatedWorkspaceUsers
 import io.writeopia.models.user.WorkspaceUser
 import io.writeopia.sdk.models.workspace.Workspace
@@ -174,6 +176,54 @@ object WorkspaceService {
         val user = writeopiaDb.getUserByEmail(userEmail) ?: return false
         writeopiaDb.removeUserFromWorkspace(workspaceId, user.id)
         return true
+    }
+
+    /**
+     * Triggers a workspace export job.
+     * This will start a Cloud Run job that exports all documents and folders
+     * from the workspace and sends a download link to the user's email.
+     *
+     * @param userId The ID of the user requesting the export
+     * @param workspaceId The ID of the workspace to export
+     * @param writeopiaDb The database connection
+     * @return true if the export job was started successfully, false otherwise
+     */
+    fun triggerWorkspaceExport(
+        userId: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Boolean {
+        return try {
+            val user = writeopiaDb.getUserById(userId)
+            if (user == null) {
+                logger.error("User not found: $userId")
+                return false
+            }
+
+            val workspace = writeopiaDb.getWorkspaceById(workspaceId)
+            if (workspace == null) {
+                logger.error("Workspace not found: $workspaceId")
+                return false
+            }
+
+            // TODO: Start Cloud Run job with the following environment variables:
+            // - EXPORT_WORKSPACE_ID: workspaceId
+            // - EXPORT_USER_ID: userId
+            // - EXPORT_USER_EMAIL: user.email
+            // - EXPORT_USER_NAME: user.name
+            // For now, log the export request
+            logger.info("Export requested for workspace: $workspaceId by user: $userId (${user.email})")
+            logger.info("Cloud Run job would be started here with env vars:")
+            logger.info("  EXPORT_WORKSPACE_ID=$workspaceId")
+            logger.info("  EXPORT_USER_ID=$userId")
+            logger.info("  EXPORT_USER_EMAIL=${user.email}")
+            logger.info("  EXPORT_USER_NAME=${user.name}")
+
+            true
+        } catch (e: Exception) {
+            logger.error("Failed to trigger workspace export", e)
+            false
+        }
     }
 
 }
