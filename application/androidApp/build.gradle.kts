@@ -34,6 +34,9 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            resValue("string", "app_name", "Writeopia Debug")
         }
         release {
             // Todo: Re enable the minification and fix R8 bugs
@@ -43,6 +46,7 @@ android {
                 "proguard-rules-android.pro"
             )
             signingConfig = signingConfigs.getByName("release")
+            resValue("string", "app_name", "Writeopia")
         }
     }
     compileOptions {
@@ -64,6 +68,7 @@ android {
 
     buildFeatures {
         buildConfig = true
+        resValues = true
     }
 }
 

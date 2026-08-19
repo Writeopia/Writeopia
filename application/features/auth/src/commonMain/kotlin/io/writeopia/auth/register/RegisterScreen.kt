@@ -45,6 +45,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import io.writeopia.auth.utils.PasswordValidationResult
+import io.writeopia.auth.utils.PasswordValidator
 import io.writeopia.auth.utils.arrowPadding
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
@@ -66,6 +68,8 @@ fun RegisterScreen(
     companyState: StateFlow<String>,
     passwordState: StateFlow<String>,
     registerState: StateFlow<ResultData<Boolean>>,
+    passwordValidationState: StateFlow<PasswordValidationResult>,
+    canRegisterState: StateFlow<Boolean>,
     nameChanged: (String) -> Unit,
     companyChanged: (String) -> Unit,
     emailChanged: (String) -> Unit,
@@ -96,6 +100,8 @@ fun RegisterScreen(
                 emailState,
                 companyState,
                 passwordState,
+                passwordValidationState,
+                canRegisterState,
                 nameChanged,
                 emailChanged,
                 companyChanged,
@@ -160,6 +166,8 @@ private fun BoxScope.RegisterContent(
     emailState: StateFlow<String>,
     companyState: StateFlow<String>,
     passwordState: StateFlow<String>,
+    passwordValidationState: StateFlow<PasswordValidationResult>,
+    canRegisterState: StateFlow<Boolean>,
     nameChanged: (String) -> Unit,
     emailChanged: (String) -> Unit,
     companyChanged: (String) -> Unit,
@@ -171,6 +179,8 @@ private fun BoxScope.RegisterContent(
     val company by companyState.collectAsState()
     val email by emailState.collectAsState()
     val password by passwordState.collectAsState()
+    val passwordValidation by passwordValidationState.collectAsState()
+    val canRegister by canRegisterState.collectAsState()
     var showPassword by remember { mutableStateOf(false) }
     val shape = MaterialTheme.shapes.large
 
@@ -287,18 +297,32 @@ private fun BoxScope.RegisterContent(
             }
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        PasswordStrengthIndicator(
+            validationResult = passwordValidation,
+            password = password,
+            modifier = Modifier
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(
             modifier = Modifier
                 .padding(horizontal = 24.dp)
-                .background(MaterialTheme.colorScheme.primary, shape = shape)
+                .background(
+                    if (canRegister) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    shape = shape
+                )
                 .fillMaxWidth(),
-            onClick = onRegisterRequest
+            onClick = onRegisterRequest,
+            enabled = canRegister
         ) {
             Text(
                 text = WrStrings.createAccount(),
-                color = MaterialTheme.colorScheme.onPrimary
+                color = if (canRegister) MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
             )
         }
     }
@@ -313,6 +337,8 @@ fun AuthScreenPreview() {
         companyState = MutableStateFlow(""),
         passwordState = MutableStateFlow(""),
         registerState = MutableStateFlow(ResultData.Idle()),
+        passwordValidationState = MutableStateFlow(PasswordValidator.validate("")),
+        canRegisterState = MutableStateFlow(false),
         nameChanged = {},
         companyChanged = {},
         emailChanged = {},

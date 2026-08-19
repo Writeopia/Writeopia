@@ -198,4 +198,12 @@
   <string name="export_started">Export started. A download link will be sent to your email when ready.</string>
   <string name="export_failed">Failed to start export. Please try again.</string>
   <string name="start_export">Start Export</string>
+  <string name="password_weak">Weak password</string>
+  <string name="password_medium">Medium password</string>
+  <string name="password_strong">Strong password</string>
+  <string name="password_req_min_length">At least 8 characters</string>
+  <string name="password_req_lowercase">One lowercase letter</string>
+  <string name="password_req_uppercase">One uppercase letter</string>
+  <string name="password_req_digit">One number</string>
+  <string name="password_req_special_char">One special character (!@#$%^&amp;*)</string>
 </resources>
