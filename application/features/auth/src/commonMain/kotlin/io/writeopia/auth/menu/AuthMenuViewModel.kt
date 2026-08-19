@@ -72,21 +72,56 @@ class AuthMenuViewModel(
             return@flow
         }
 
-        val user = authRepository.getUser()
-        val workspace = authRepository.getWorkspace()
-        val loggedId = authRepository.isLoggedIn() || user.id != WriteopiaUser.DISCONNECTED
+        val token = authRepository.getAuthToken()
 
-        val status = when {
-            loggedId && workspace != null -> LoginStatus.ONLINE
-
-            loggedId && workspace == null -> LoginStatus.CHOOSE_WORKSPACE
-
-            !loggedId && workspace != null -> LoginStatus.OFFLINE_CHOSEN
-
-            else -> LoginStatus.OFFLINE_NOT_CHOSEN
+        // If no token exists, user needs to log in
+        if (token.isNullOrEmpty()) {
+            emit(LoginStatus.OFFLINE_NOT_CHOSEN)
+            return@flow
         }
 
-        emit(status)
+        // Token exists - verify it against the backend
+        when (val verifyResult = authApi.getCurrentUser(token)) {
+            is ResultData.Complete -> {
+                // Token is valid - proceed with normal flow
+                val workspace = authRepository.getWorkspace()
+
+                val status = when {
+                    workspace != null -> LoginStatus.ONLINE
+                    else -> LoginStatus.CHOOSE_WORKSPACE
+                }
+                emit(status)
+            }
+
+            is ResultData.Error -> {
+                // Check if this is a network error or an auth error
+                // Network error: exception is NOT null
+                // Auth error (401): exception IS null
+                val isNetworkError = verifyResult.exception != null
+
+                if (isNetworkError) {
+                    // Network unreachable - allow offline access if previously authenticated
+                    val user = authRepository.getUser()
+                    val workspace = authRepository.getWorkspace()
+
+                    if (user.id != WriteopiaUser.DISCONNECTED && workspace != null) {
+                        emit(LoginStatus.OFFLINE_CHOSEN)
+                    } else if (user.id != WriteopiaUser.DISCONNECTED) {
+                        emit(LoginStatus.CHOOSE_WORKSPACE)
+                    } else {
+                        emit(LoginStatus.OFFLINE_NOT_CHOSEN)
+                    }
+                } else {
+                    // Token is invalid/expired (401) - clear and require login
+                    authRepository.logout()
+                    emit(LoginStatus.OFFLINE_NOT_CHOSEN)
+                }
+            }
+
+            else -> {
+                emit(LoginStatus.OFFLINE_NOT_CHOSEN)
+            }
+        }
     }
 
     fun useOffline(sideEffect: () -> Unit) {
