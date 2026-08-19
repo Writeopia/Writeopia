@@ -177,6 +177,11 @@ import writeopia.application.core.resources.generated.resources.select_workspace
 import writeopia.application.core.resources.generated.resources.export_started
 import writeopia.application.core.resources.generated.resources.export_failed
 import writeopia.application.core.resources.generated.resources.start_export
+import writeopia.application.core.resources.generated.resources.password_weak
+import writeopia.application.core.resources.generated.resources.password_medium
+import writeopia.application.core.resources.generated.resources.password_strong
+import writeopia.application.core.resources.generated.resources.password_req_min_length
+import writeopia.application.core.resources.generated.resources.password_req_special_char
 
 object WrStrings {
 
@@ -707,4 +712,19 @@ object WrStrings {
 
     @Composable
     fun startExport() = stringResource(Res.string.start_export)
+
+    @Composable
+    fun passwordWeak() = stringResource(Res.string.password_weak)
+
+    @Composable
+    fun passwordMedium() = stringResource(Res.string.password_medium)
+
+    @Composable
+    fun passwordStrong() = stringResource(Res.string.password_strong)
+
+    @Composable
+    fun passwordReqMinLength() = stringResource(Res.string.password_req_min_length)
+
+    @Composable
+    fun passwordReqSpecialChar() = stringResource(Res.string.password_req_special_char)
 }

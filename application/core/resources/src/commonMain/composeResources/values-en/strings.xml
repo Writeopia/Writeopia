@@ -176,4 +176,9 @@
   <string name="select_lines_first">Select lines in the document first</string>
   <string name="premium_feature">Premium Feature</string>
   <string name="premium_feature_message">This feature is only available for premium users using an online workspace</string>
+  <string name="password_weak">Weak password</string>
+  <string name="password_medium">Medium password</string>
+  <string name="password_strong">Strong password</string>
+  <string name="password_req_min_length">At least 8 characters</string>
+  <string name="password_req_special_char">One special character (!@#$%^&amp;*)</string>
 </resources>
