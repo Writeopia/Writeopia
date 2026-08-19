@@ -63,7 +63,7 @@ class PasswordValidatorTest {
 
     @Test
     fun `various special characters are recognized`() {
-        val specialChars = listOf("!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+", "-", "=", "[", "]", "{", "}", "|", ";", "'", ":", "\"", ",", ".", "/", "<", ">", "?", "`", "~")
+        val specialChars = "!@#\$%^&*()_+-=[]{}|;':\",./<>?`~"
 
         for (char in specialChars) {
             val result = PasswordValidator.validate("abcdefg$char")

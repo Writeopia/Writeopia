@@ -307,22 +307,29 @@ private fun BoxScope.RegisterContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        val buttonColor = if (canRegister) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+        }
+
+        val textColor = if (canRegister) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
+        }
+
         TextButton(
             modifier = Modifier
                 .padding(horizontal = 24.dp)
-                .background(
-                    if (canRegister) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                    shape = shape
-                )
+                .background(buttonColor, shape = shape)
                 .fillMaxWidth(),
             onClick = onRegisterRequest,
             enabled = canRegister
         ) {
             Text(
                 text = WrStrings.createAccount(),
-                color = if (canRegister) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
+                color = textColor
             )
         }
     }

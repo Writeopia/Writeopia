@@ -141,21 +141,19 @@ private fun StrengthSegment(
 }
 
 @Composable
-private fun getColorForStrength(strength: PasswordStrength): Color {
-    return when (strength) {
+private fun getColorForStrength(strength: PasswordStrength): Color =
+    when (strength) {
         PasswordStrength.NONE -> Color(0xFFE53935) // Red for NONE too when typing
         PasswordStrength.WEAK -> Color(0xFFE53935) // Red
         PasswordStrength.MEDIUM -> Color(0xFFFB8C00) // Orange
         PasswordStrength.STRONG -> Color(0xFF43A047) // Green
     }
-}
 
 @Composable
-private fun getStrengthLabel(strength: PasswordStrength): String {
-    return when (strength) {
+private fun getStrengthLabel(strength: PasswordStrength): String =
+    when (strength) {
         PasswordStrength.NONE -> WrStrings.passwordWeak()
         PasswordStrength.WEAK -> WrStrings.passwordWeak()
         PasswordStrength.MEDIUM -> WrStrings.passwordMedium()
         PasswordStrength.STRONG -> WrStrings.passwordStrong()
     }
-}
