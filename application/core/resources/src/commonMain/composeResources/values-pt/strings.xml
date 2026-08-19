@@ -168,4 +168,9 @@
   <string name="select_lines_first">Selecione linhas no documento primeiro</string>
   <string name="premium_feature">Recurso Premium</string>
   <string name="premium_feature_message">Este recurso está disponível apenas para usuários premium usando uma área de trabalho online</string>
+  <string name="password_weak">Senha fraca</string>
+  <string name="password_medium">Senha média</string>
+  <string name="password_strong">Senha forte</string>
+  <string name="password_req_min_length">Pelo menos 8 caracteres</string>
+  <string name="password_req_special_char">Um caractere especial (!@#$%^&amp;*)</string>
 </resources>

@@ -181,9 +181,6 @@ import writeopia.application.core.resources.generated.resources.password_weak
 import writeopia.application.core.resources.generated.resources.password_medium
 import writeopia.application.core.resources.generated.resources.password_strong
 import writeopia.application.core.resources.generated.resources.password_req_min_length
-import writeopia.application.core.resources.generated.resources.password_req_lowercase
-import writeopia.application.core.resources.generated.resources.password_req_uppercase
-import writeopia.application.core.resources.generated.resources.password_req_digit
 import writeopia.application.core.resources.generated.resources.password_req_special_char
 
 object WrStrings {
@@ -727,15 +724,6 @@ object WrStrings {
 
     @Composable
     fun passwordReqMinLength() = stringResource(Res.string.password_req_min_length)
-
-    @Composable
-    fun passwordReqLowercase() = stringResource(Res.string.password_req_lowercase)
-
-    @Composable
-    fun passwordReqUppercase() = stringResource(Res.string.password_req_uppercase)
-
-    @Composable
-    fun passwordReqDigit() = stringResource(Res.string.password_req_digit)
 
     @Composable
     fun passwordReqSpecialChar() = stringResource(Res.string.password_req_special_char)
