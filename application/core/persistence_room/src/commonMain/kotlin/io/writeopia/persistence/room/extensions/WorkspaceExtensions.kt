@@ -13,6 +13,7 @@ fun WorkspaceEntity.toDomain(): Workspace = Workspace(
     userId = userId,
     name = name,
     lastSync = Instant.fromEpochMilliseconds(lastSyncedAt),
+    lastEventSync = lastEventSyncAt,
     selected = selected,
     role = ""
 )
@@ -22,6 +23,7 @@ fun Workspace.toEntity(selected: Boolean): WorkspaceEntity = WorkspaceEntity(
     userId = userId,
     name = name,
     lastSyncedAt = lastSync.toEpochMilliseconds(),
+    lastEventSyncAt = lastEventSync,
     icon = null,
     iconTint = null,
     selected = selected

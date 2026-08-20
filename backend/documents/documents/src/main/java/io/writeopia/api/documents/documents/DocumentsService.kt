@@ -9,6 +9,7 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.addUserFavorite
+import io.writeopia.api.documents.documents.repository.createSyncEvent
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByFolderId
 import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
 import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
@@ -19,12 +20,14 @@ import io.writeopia.api.documents.documents.repository.deleteStoryStepsByIds
 import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.getFolderById
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
+import io.writeopia.api.documents.documents.repository.getIdsByParentId
 import io.writeopia.api.documents.documents.repository.getPublishedDocumentById
 import io.writeopia.api.documents.documents.repository.getStoryStepById
 import io.writeopia.api.documents.documents.repository.getStoryStepsAfterTime
 import io.writeopia.api.documents.documents.repository.getUserFavoriteDocumentIds
 import io.writeopia.api.documents.documents.repository.isDocumentPublished
 import io.writeopia.api.documents.documents.repository.isUserFavorite
+import io.writeopia.api.documents.documents.repository.moveDocumentToFolder
 import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.removeUserFavorite
 import io.writeopia.api.documents.documents.repository.getDocumentByTitle
@@ -32,6 +35,7 @@ import io.writeopia.api.documents.documents.repository.getDocumentWithContentByI
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.documents.repository.setDocumentPublished
+import io.writeopia.api.documents.documents.repository.SyncEventType
 import io.writeopia.api.documents.documents.repository.updateDocumentTitle
 import io.writeopia.api.documents.documents.repository.upsertStoryStep
 import io.writeopia.api.documents.search.SearchDocument
@@ -222,20 +226,44 @@ object DocumentsService {
     /**
      * Recursively deletes a folder and all its contents (child folders and documents).
      * This follows the same pattern as NotesUseCase.deleteFolderById.
+     * Creates sync events for all deleted folders and documents.
      */
     suspend fun deleteFolder(
         folderId: String,
+        workspaceId: String,
+        userId: String,
         writeopiaDb: WriteopiaDbBackend
     ) {
         val childFolders = writeopiaDb.getFoldersByParentId(folderId)
 
         // Recursively delete all child folders
         childFolders.forEach { childFolder ->
-            deleteFolder(childFolder.id, writeopiaDb)
+            deleteFolder(childFolder.id, workspaceId, userId, writeopiaDb)
+        }
+
+        // Get document IDs in this folder before deleting them
+        val documentIds = writeopiaDb.getIdsByParentId(folderId)
+
+        // Create DELETE_DOCUMENT events for all documents in this folder
+        documentIds.forEach { documentId ->
+            writeopiaDb.createSyncEvent(
+                workspaceId = workspaceId,
+                eventType = SyncEventType.DELETE_DOCUMENT,
+                entityId = documentId,
+                userId = userId
+            )
         }
 
         // Delete all documents in this folder
         writeopiaDb.deleteDocumentsByFolderId(folderId)
+
+        // Create DELETE_FOLDER event
+        writeopiaDb.createSyncEvent(
+            workspaceId = workspaceId,
+            eventType = SyncEventType.DELETE_FOLDER,
+            entityId = folderId,
+            userId = userId
+        )
 
         // Finally delete the folder itself
         writeopiaDb.deleteFolder(folderId)
@@ -243,8 +271,20 @@ object DocumentsService {
 
     suspend fun deleteDocuments(
         documentIds: List<String>,
+        workspaceId: String,
+        userId: String,
         writeopiaDb: WriteopiaDbBackend
     ) {
+        // Create DELETE_DOCUMENT events for all documents
+        documentIds.forEach { documentId ->
+            writeopiaDb.createSyncEvent(
+                workspaceId = workspaceId,
+                eventType = SyncEventType.DELETE_DOCUMENT,
+                entityId = documentId,
+                userId = userId
+            )
+        }
+
         writeopiaDb.deleteDocumentsByIds(documentIds)
     }
 
@@ -285,6 +325,7 @@ object DocumentsService {
         folderId: String,
         targetParentId: String,
         workspaceId: String,
+        userId: String,
         writeopiaDb: WriteopiaDbBackend
     ): Boolean {
         // Prevent moving a folder into itself
@@ -298,7 +339,55 @@ object DocumentsService {
             return false
         }
 
+        // Get current parent for the sync event
+        val currentFolder = writeopiaDb.getFolderById(folderId, workspaceId)
+        val oldParentId = currentFolder?.parentId
+
         writeopiaDb.moveFolderToFolder(folderId, targetParentId)
+
+        // Create MOVE_FOLDER sync event
+        writeopiaDb.createSyncEvent(
+            workspaceId = workspaceId,
+            eventType = SyncEventType.MOVE_FOLDER,
+            entityId = folderId,
+            userId = userId,
+            oldParentId = oldParentId,
+            newParentId = targetParentId
+        )
+
+        return true
+    }
+
+    /**
+     * Moves a document to a different folder.
+     * Creates a MOVE_DOCUMENT sync event.
+     */
+    suspend fun moveDocument(
+        documentId: String,
+        targetParentId: String,
+        workspaceId: String,
+        userId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Boolean {
+        // Get current document to find old parent
+        val currentDocument = writeopiaDb.getDocumentById(documentId, workspaceId)
+            ?: return false
+
+        val oldParentId = currentDocument.parentId
+
+        // Move the document
+        writeopiaDb.moveDocumentToFolder(documentId, targetParentId)
+
+        // Create MOVE_DOCUMENT sync event
+        writeopiaDb.createSyncEvent(
+            workspaceId = workspaceId,
+            eventType = SyncEventType.MOVE_DOCUMENT,
+            entityId = documentId,
+            userId = userId,
+            oldParentId = oldParentId,
+            newParentId = targetParentId
+        )
+
         return true
     }
 

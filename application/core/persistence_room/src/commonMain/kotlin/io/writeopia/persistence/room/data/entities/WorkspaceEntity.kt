@@ -9,6 +9,7 @@ data class WorkspaceEntity(
     val userId: String,
     val name: String,
     val lastSyncedAt: Long,
+    val lastEventSyncAt: Long = 0L,
     val icon: String?,
     val iconTint: Int?,
     val selected: Boolean
