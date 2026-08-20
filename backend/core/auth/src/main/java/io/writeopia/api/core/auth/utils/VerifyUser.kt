@@ -18,6 +18,7 @@ suspend fun RoutingContext.runIfMember(
 
     if (shouldContinue || debug) {
         block()
+        return
     }
 
     this.call.respond(HttpStatusCode.Forbidden)
@@ -34,6 +35,7 @@ suspend fun RoutingContext.runIfAdmin(
 
     if (shouldContinue || debug) {
         block()
+        return
     }
 
     this.call.respond(HttpStatusCode.Forbidden)

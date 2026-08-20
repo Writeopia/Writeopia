@@ -30,4 +30,9 @@ dependencies {
 
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
+
+    testImplementation(libs.ktor.server.tests)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
