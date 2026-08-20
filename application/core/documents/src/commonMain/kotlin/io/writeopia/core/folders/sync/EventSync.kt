@@ -62,6 +62,7 @@ class EventSync(
                 is ResultData.Error -> ResultData.Error(null)
                 is ResultData.Loading -> ResultData.Loading()
                 is ResultData.Idle -> ResultData.Idle()
+                is ResultData.InProgress -> ResultData.Loading()
             }
         } catch (e: Exception) {
             println("Error syncing events: ${e.message}")
