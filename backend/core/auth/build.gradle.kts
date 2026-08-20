@@ -31,6 +31,8 @@ dependencies {
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
 
+    implementation(libs.google.cloud.run)
+
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.mockk)

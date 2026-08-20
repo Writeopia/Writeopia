@@ -2,6 +2,10 @@
 
 package io.writeopia.api.core.auth.service
 
+import com.google.cloud.run.v2.EnvVar
+import com.google.cloud.run.v2.JobName
+import com.google.cloud.run.v2.JobsClient
+import com.google.cloud.run.v2.RunJobRequest
 import io.writeopia.api.core.auth.models.AddUserResult
 import io.writeopia.api.core.auth.repository.countUsersInWorkspace
 import io.writeopia.api.core.auth.repository.getUserByEmail
@@ -178,6 +182,11 @@ object WorkspaceService {
         return true
     }
 
+    // Cloud Run Job configuration - read from environment variables
+    private val gcpProject: String? = System.getenv("GCP_PROJECT")
+    private val gcpRegion: String? = System.getenv("GCP_REGION")
+    private val exportJobName: String = System.getenv("EXPORT_JOB_NAME") ?: "writeopia-export"
+
     /**
      * Triggers a workspace export job.
      * This will start a Cloud Run job that exports all documents and folders
@@ -196,32 +205,61 @@ object WorkspaceService {
         return try {
             val user = writeopiaDb.getUserById(userId)
             if (user == null) {
-                logger.error("User not found: $userId")
+                logger.error("[Export] User not found: $userId")
                 return false
             }
 
             val workspace = writeopiaDb.getWorkspaceById(workspaceId)
             if (workspace == null) {
-                logger.error("Workspace not found: $workspaceId")
+                logger.error("[Export] Workspace not found: $workspaceId")
                 return false
             }
 
-            // TODO: Start Cloud Run job with the following environment variables:
-            // - EXPORT_WORKSPACE_ID: workspaceId
-            // - EXPORT_USER_ID: userId
-            // - EXPORT_USER_EMAIL: user.email
-            // - EXPORT_USER_NAME: user.name
-            // For now, log the export request
-            logger.info("Export requested for workspace: $workspaceId by user: $userId (${user.email})")
-            logger.info("Cloud Run job would be started here with env vars:")
-            logger.info("  EXPORT_WORKSPACE_ID=$workspaceId")
-            logger.info("  EXPORT_USER_ID=$userId")
-            logger.info("  EXPORT_USER_EMAIL=${user.email}")
-            logger.info("  EXPORT_USER_NAME=${user.name}")
+            // Check if GCP configuration is available
+            if (gcpProject == null || gcpRegion == null) {
+                logger.error("[Export] GCP_PROJECT or GCP_REGION environment variables not set")
+                logger.error("[Export] GCP_PROJECT: $gcpProject, GCP_REGION: $gcpRegion")
+                return false
+            }
+
+            logger.info("[Export] Triggering Cloud Run Job...")
+            logger.info("[Export] Project: $gcpProject, Region: $gcpRegion, Job: $exportJobName")
+            logger.info("[Export] User: ${user.email}, Workspace: $workspaceId")
+
+            // Create the job client and run the job
+            JobsClient.create().use { jobsClient ->
+                val jobName = JobName.of(gcpProject, gcpRegion, exportJobName)
+
+                // Build environment variable overrides
+                val envVars = listOf(
+                    EnvVar.newBuilder().setName("EXPORT_WORKSPACE_ID").setValue(workspaceId).build(),
+                    EnvVar.newBuilder().setName("EXPORT_USER_ID").setValue(userId).build(),
+                    EnvVar.newBuilder().setName("EXPORT_USER_EMAIL").setValue(user.email).build(),
+                    EnvVar.newBuilder().setName("EXPORT_USER_NAME").setValue(user.name).build()
+                )
+
+                // Create the run job request with environment overrides
+                val request = RunJobRequest.newBuilder()
+                    .setName(jobName.toString())
+                    .setOverrides(
+                        RunJobRequest.Overrides.newBuilder()
+                            .addContainerOverrides(
+                                RunJobRequest.Overrides.ContainerOverride.newBuilder()
+                                    .addAllEnv(envVars)
+                                    .build()
+                            )
+                            .build()
+                    )
+                    .build()
+
+                // Execute the job asynchronously (non-blocking)
+                val operation = jobsClient.runJobAsync(request)
+                logger.info("[Export] Job triggered successfully. Operation name: ${operation.name}")
+            }
 
             true
         } catch (e: Exception) {
-            logger.error("Failed to trigger workspace export", e)
+            logger.error("[Export] Failed to trigger workspace export", e)
             false
         }
     }
