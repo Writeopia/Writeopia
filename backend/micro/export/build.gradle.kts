@@ -34,6 +34,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.logback.classic)
     implementation(libs.sqldelight.jvm)
+    implementation(platform(libs.google.cloud.bom))
     implementation(libs.google.cloud.storage)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)

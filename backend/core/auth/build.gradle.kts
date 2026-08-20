@@ -31,6 +31,8 @@ dependencies {
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
 
+    // Google Cloud BOM for version alignment
+    implementation(platform(libs.google.cloud.bom))
     implementation(libs.google.cloud.run)
 
     testImplementation(libs.ktor.server.tests)
