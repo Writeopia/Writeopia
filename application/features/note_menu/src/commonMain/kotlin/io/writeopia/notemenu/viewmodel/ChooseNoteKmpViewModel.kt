@@ -18,6 +18,7 @@ import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.NotesUseCase
+import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
@@ -71,6 +72,7 @@ internal class ChooseNoteKmpViewModel(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val folderSync: FolderSync,
+    private val eventSync: EventSync? = null,
     private val folderController: FolderStateController = FolderStateController.singleton(
         notesUseCase,
         authRepository,
@@ -244,6 +246,10 @@ internal class ChooseNoteKmpViewModel(
         folderController.initCoroutine(viewModelScope)
 
         viewModelScope.launch(Dispatchers.Default) {
+            // Sync delete/move events from server before loading documents
+            // This ensures local state reflects any deletions/moves from other devices
+            syncEventsOnStartup()
+
             val onboarded = notesConfig.isOnboarded()
 
             _showOnboardingState.value = if (onboarded) {
@@ -615,6 +621,21 @@ internal class ChooseNoteKmpViewModel(
                     orderBy = orderByState.value.type
                 )
             }
+        }
+    }
+
+    private suspend fun syncEventsOnStartup() {
+        if (eventSync == null) return
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+
+        try {
+            eventSync.syncEvents(workspace.id)
+        } catch (e: Exception) {
+            // Log but don't fail app startup
+            println("Error syncing events on startup: ${e.message}")
         }
     }
 

@@ -19,6 +19,7 @@ import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
+import io.writeopia.api.documents.documents.repository.getSyncEventsAfterTime
 import io.writeopia.backend.models.ImageStorageService
 import io.writeopia.buckets.GcpBucketImageStorageService
 import io.writeopia.connection.ResultData
@@ -33,13 +34,17 @@ import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.UpdateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
+import io.writeopia.sdk.serialization.request.EventDiffRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
+import io.writeopia.sdk.serialization.request.MoveDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
+import io.writeopia.sdk.serialization.response.EventDiffResponse
 import io.writeopia.sdk.serialization.response.FolderContentResponse
+import io.writeopia.sdk.serialization.response.SyncEventApi
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
@@ -570,7 +575,7 @@ fun Routing.documentsRoute(
                         return@runIfMember
                     }
 
-                    DocumentsService.deleteFolder(folderId, writeopiaDb)
+                    DocumentsService.deleteFolder(folderId, workspaceId, userId, writeopiaDb)
 
                     call.respond(
                         status = HttpStatusCode.OK,
@@ -601,7 +606,7 @@ fun Routing.documentsRoute(
                         return@runIfMember
                     }
 
-                    DocumentsService.deleteDocuments(request.documentIds, writeopiaDb)
+                    DocumentsService.deleteDocuments(request.documentIds, workspaceId, userId, writeopiaDb)
 
                     call.respond(
                         status = HttpStatusCode.OK,
@@ -639,6 +644,7 @@ fun Routing.documentsRoute(
                         folderId,
                         request.targetParentId,
                         workspaceId,
+                        userId,
                         writeopiaDb
                     )
 
@@ -885,6 +891,93 @@ fun Routing.documentsRoute(
                         status = HttpStatusCode.OK,
                         message = response
                     )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<EventDiffRequest>("/api/docs/workspace/events/diff") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = request.workspaceId
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val events = writeopiaDb.getSyncEventsAfterTime(
+                        workspaceId = workspaceId,
+                        afterTime = request.lastEventSync
+                    )
+
+                    val response = EventDiffResponse(
+                        events = events.map { event ->
+                            SyncEventApi(
+                                id = event.id,
+                                eventType = event.event_type,
+                                entityId = event.entity_id,
+                                oldParentId = event.old_parent_id,
+                                newParentId = event.new_parent_id,
+                                createdAt = event.created_at
+                            )
+                        },
+                        serverTimestamp = Clock.System.now().toEpochMilliseconds()
+                    )
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = response
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<MoveDocumentRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/move") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val documentId = call.pathParameters["documentId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    // Verify document exists and belongs to workspace
+                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                    if (document == null) {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Document not found"
+                        )
+                        return@runIfMember
+                    }
+
+                    val moved = DocumentsService.moveDocument(
+                        documentId,
+                        request.targetParentId,
+                        workspaceId,
+                        userId,
+                        writeopiaDb
+                    )
+
+                    if (moved) {
+                        call.respond(
+                            status = HttpStatusCode.OK,
+                            message = "Document moved successfully"
+                        )
+                    } else {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = "Failed to move document"
+                        )
+                    }
                 } catch (e: Exception) {
                     call.respond(
                         status = HttpStatusCode.InternalServerError,

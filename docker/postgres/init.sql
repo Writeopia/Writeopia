@@ -87,3 +87,13 @@ CREATE TABLE user_favorite_entity (
   PRIMARY KEY (user_id, document_id)
 );
 
+CREATE TABLE sync_event (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  entity_id TEXT NOT NULL,
+  old_parent_id TEXT,
+  new_parent_id TEXT,
+  created_at BIGINT NOT NULL,
+  user_id TEXT NOT NULL
+);

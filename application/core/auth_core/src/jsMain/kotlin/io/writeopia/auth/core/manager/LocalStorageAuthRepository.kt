@@ -77,6 +77,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
         val userId = localStorage.getItem(KEY_WORKSPACE_USER_ID) ?: return null
         val name = localStorage.getItem(KEY_WORKSPACE_NAME) ?: ""
         val lastSyncMs = localStorage.getItem(KEY_WORKSPACE_LAST_SYNC)?.toLongOrNull() ?: 0L
+        val lastEventSync = localStorage.getItem(KEY_WORKSPACE_LAST_EVENT_SYNC)?.toLongOrNull() ?: 0L
         val selected = localStorage.getItem(KEY_WORKSPACE_SELECTED)?.toBoolean() ?: false
         val role = localStorage.getItem(KEY_WORKSPACE_ROLE) ?: ""
 
@@ -85,6 +86,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
             userId = userId,
             name = name,
             lastSync = Instant.fromEpochMilliseconds(lastSyncMs),
+            lastEventSync = lastEventSync,
             selected = selected,
             role = role
         )
@@ -95,12 +97,17 @@ internal class LocalStorageAuthRepository : AuthRepository {
         localStorage.setItem(KEY_WORKSPACE_USER_ID, workspace.userId)
         localStorage.setItem(KEY_WORKSPACE_NAME, workspace.name)
         localStorage.setItem(KEY_WORKSPACE_LAST_SYNC, workspace.lastSync.toEpochMilliseconds().toString())
+        localStorage.setItem(KEY_WORKSPACE_LAST_EVENT_SYNC, workspace.lastEventSync.toString())
         localStorage.setItem(KEY_WORKSPACE_SELECTED, workspace.selected.toString())
         localStorage.setItem(KEY_WORKSPACE_ROLE, workspace.role)
     }
 
     override suspend fun unselectAllWorkspaces() {
         localStorage.setItem(KEY_WORKSPACE_SELECTED, false.toString())
+    }
+
+    override suspend fun updateLastEventSync(workspaceId: String, lastEventSync: Long) {
+        localStorage.setItem(KEY_WORKSPACE_LAST_EVENT_SYNC, lastEventSync.toString())
     }
 
     override suspend fun unselectAllUsers() {
@@ -145,6 +152,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
         private const val KEY_WORKSPACE_USER_ID = "writeopia_workspace_user_id"
         private const val KEY_WORKSPACE_NAME = "writeopia_workspace_name"
         private const val KEY_WORKSPACE_LAST_SYNC = "writeopia_workspace_last_sync"
+        private const val KEY_WORKSPACE_LAST_EVENT_SYNC = "writeopia_workspace_last_event_sync"
         private const val KEY_WORKSPACE_SELECTED = "writeopia_workspace_selected"
         private const val KEY_WORKSPACE_ROLE = "writeopia_workspace_role"
     }

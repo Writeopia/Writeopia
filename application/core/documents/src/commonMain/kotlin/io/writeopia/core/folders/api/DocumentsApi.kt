@@ -29,9 +29,12 @@ import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CloneDocumentsRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
+import io.writeopia.sdk.serialization.request.EventDiffRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
+import io.writeopia.sdk.serialization.request.MoveDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
+import io.writeopia.sdk.serialization.response.EventDiffResponse
 import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import kotlin.time.ExperimentalTime
@@ -370,6 +373,45 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
             ResultData.Complete(body["published"] ?: false)
         } else {
             println("error checking document published status: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun getEventsDiff(
+        workspaceId: String,
+        lastEventSync: Long,
+        token: String
+    ): ResultData<EventDiffResponse> {
+        val response = client.post("$baseUrl/api/docs/workspace/events/diff") {
+            contentType(ContentType.Application.Json)
+            setBody(EventDiffRequest(workspaceId, lastEventSync))
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<EventDiffResponse>())
+        } else {
+            println("error getting events diff: $response")
+            ResultData.Error()
+        }
+    }
+
+    suspend fun moveDocument(
+        documentId: String,
+        targetParentId: String,
+        workspaceId: String,
+        token: String
+    ): ResultData<Unit> {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/$documentId/move") {
+            contentType(ContentType.Application.Json)
+            setBody(MoveDocumentRequest(targetParentId))
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            println("error moving document: $response")
             ResultData.Error()
         }
     }
