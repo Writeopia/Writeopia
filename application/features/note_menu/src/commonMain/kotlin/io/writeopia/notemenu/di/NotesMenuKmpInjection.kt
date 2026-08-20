@@ -12,6 +12,7 @@ import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.DocumentConflictHandler
+import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.di.OllamaInjection
@@ -82,6 +83,14 @@ class NotesMenuKmpInjection private constructor(
         )
     }
 
+    private fun provideEventSync(): EventSync =
+        EventSync(
+            documentRepository = repositoryInjection.provideDocumentRepository(),
+            folderRepository = provideFolderRepository(),
+            authRepository = authCoreInjection.provideAuthRepository(),
+            documentsApi = provideDocumentsApi()
+        )
+
     private fun provideChooseKmpNoteViewModel(
         notesNavigation: NotesNavigation,
         notesUseCase: NotesUseCase = provideNotesUseCase(),
@@ -101,6 +110,7 @@ class NotesMenuKmpInjection private constructor(
             keyboardEventFlow = keyboardEventFlow,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             folderSync = provideDocumentSync(),
+            eventSync = provideEventSync(),
         )
 
     @Composable
