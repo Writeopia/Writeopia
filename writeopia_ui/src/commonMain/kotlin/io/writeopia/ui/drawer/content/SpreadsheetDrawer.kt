@@ -100,6 +100,18 @@ class SpreadsheetDrawer(
         val showAddRowButton = isLastRowHovered || isAddRowAreaHovered
         val showAddColumnButton = isLastColumnHovered || isAddColumnAreaHovered
 
+        // Alpha: 100% when hovering on button area, 50% when hovering on last row/column only
+        val addRowButtonAlpha = when {
+            isAddRowAreaHovered -> 1f
+            isLastRowHovered -> 0.5f
+            else -> 0f
+        }
+        val addColumnButtonAlpha = when {
+            isAddColumnAreaHovered -> 1f
+            isLastColumnHovered -> 0.5f
+            else -> 0f
+        }
+
         SelectableByDrag(
             modifier = Modifier.dragAndDropTarget(
                 shouldStartDragAndDrop = ::shouldAcceptImageDrop,
@@ -235,12 +247,12 @@ class SpreadsheetDrawer(
                                                 if (showAddColumnButton) {
                                                     Modifier
                                                         .background(
-                                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f),
+                                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f * addColumnButtonAlpha),
                                                             shape = RoundedCornerShape(6.dp)
                                                         )
                                                         .border(
                                                             width = 1.dp,
-                                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f * addColumnButtonAlpha),
                                                             shape = RoundedCornerShape(6.dp)
                                                         )
                                                         .clip(RoundedCornerShape(6.dp))
@@ -256,7 +268,7 @@ class SpreadsheetDrawer(
                                                 imageVector = WrSdkIcons.plus,
                                                 contentDescription = "Add column",
                                                 modifier = Modifier.size(14.dp),
-                                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f * addColumnButtonAlpha)
                                             )
                                         }
                                     }
@@ -278,12 +290,12 @@ class SpreadsheetDrawer(
                                             if (showAddRowButton) {
                                                 Modifier
                                                     .background(
-                                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f),
+                                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f * addRowButtonAlpha),
                                                         shape = RoundedCornerShape(6.dp)
                                                     )
                                                     .border(
                                                         width = 1.dp,
-                                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f * addRowButtonAlpha),
                                                         shape = RoundedCornerShape(6.dp)
                                                     )
                                                     .clip(RoundedCornerShape(6.dp))
@@ -299,7 +311,7 @@ class SpreadsheetDrawer(
                                             imageVector = WrSdkIcons.plus,
                                             contentDescription = "Add row",
                                             modifier = Modifier.size(14.dp),
-                                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f * addRowButtonAlpha)
                                         )
                                     }
                                 }
