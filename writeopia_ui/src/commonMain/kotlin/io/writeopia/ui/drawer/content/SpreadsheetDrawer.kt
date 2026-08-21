@@ -80,11 +80,13 @@ class SpreadsheetDrawer(
         ) {
             // Row containing spreadsheet + column button
             Row(
-                modifier = Modifier.height(IntrinsicSize.Min)
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)
             ) {
                 // Scrollable spreadsheet content
                 Box(
-                    modifier = Modifier.horizontalScroll(scrollState)
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .horizontalScroll(scrollState)
                 ) {
                     Column(
                         modifier = Modifier
