@@ -247,6 +247,7 @@ private fun SpreadsheetCell(
             .hoverable(interactionSource)
             .then(extraModifier)
             .width(120.dp)
+            .fillMaxHeight()
             .defaultMinSize(minHeight = 40.dp)
             .background(backgroundColor)
             .then(
