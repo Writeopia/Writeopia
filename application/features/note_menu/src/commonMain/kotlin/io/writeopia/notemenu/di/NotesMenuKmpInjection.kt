@@ -13,6 +13,7 @@ import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.DocumentConflictHandler
 import io.writeopia.core.folders.sync.EventSync
+import io.writeopia.core.folders.sync.FolderConflictHandler
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.di.OllamaInjection
@@ -69,16 +70,18 @@ class NotesMenuKmpInjection private constructor(
 
     private fun provideDocumentSync(): FolderSync {
         val documentRepository = repositoryInjection.provideDocumentRepository()
+        val folderRepository = provideFolderRepository()
 
         return FolderSync(
             documentRepository = documentRepository,
             documentsApi = provideDocumentsApi(),
             documentConflictHandler = DocumentConflictHandler(
-                documentRepository = documentRepository,
-                folderRepository = provideFolderRepository(),
-                authCoreInjection.provideAuthRepository()
+                documentRepository = documentRepository
             ),
-            folderRepository = provideFolderRepository(),
+            folderConflictHandler = FolderConflictHandler(
+                folderRepository = folderRepository
+            ),
+            folderRepository = folderRepository,
             authRepository = authCoreInjection.provideAuthRepository()
         )
     }
