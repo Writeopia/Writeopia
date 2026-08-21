@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -51,21 +52,35 @@ class SpreadsheetDrawer(
     override fun Step(step: StoryStep, drawInfo: DrawInfo) {
         val scrollState = rememberScrollState()
         val rows = step.steps
+        val columnCount = rows.firstOrNull()?.steps?.size ?: 0
 
-        // Interaction source for the whole spreadsheet to detect hover
-        val spreadsheetInteractionSource = remember { MutableInteractionSource() }
-        val isSpreadsheetHovered by spreadsheetInteractionSource.collectIsHoveredAsState()
+        // Interaction source for the last row
+        val lastRowInteractionSource = remember { MutableInteractionSource() }
+        val isLastRowHovered by lastRowInteractionSource.collectIsHoveredAsState()
 
-        Row(
+        // Interaction source for the add row button area
+        val addRowAreaInteractionSource = remember { MutableInteractionSource() }
+        val isAddRowAreaHovered by addRowAreaInteractionSource.collectIsHoveredAsState()
+
+        // Interaction source for the last column
+        val lastColumnInteractionSource = remember { MutableInteractionSource() }
+        val isLastColumnHovered by lastColumnInteractionSource.collectIsHoveredAsState()
+
+        // Interaction source for the add column button area
+        val addColumnAreaInteractionSource = remember { MutableInteractionSource() }
+        val isAddColumnAreaHovered by addColumnAreaInteractionSource.collectIsHoveredAsState()
+
+        val showAddRowButton = isLastRowHovered || isAddRowAreaHovered
+        val showAddColumnButton = isLastColumnHovered || isAddColumnAreaHovered
+
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 4.dp)
-                .hoverable(spreadsheetInteractionSource)
-                .height(IntrinsicSize.Min)
+                .widthIn(max = 10000.dp) // Allow natural sizing but with a max
         ) {
-            // Left side: spreadsheet content + add row button (column layout)
-            Column(
-                modifier = Modifier.weight(1f, fill = false)
+            // Row containing spreadsheet + column button
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Min)
             ) {
                 // Scrollable spreadsheet content
                 Box(
@@ -82,11 +97,14 @@ class SpreadsheetDrawer(
                     ) {
                         rows.forEachIndexed { rowIndex, row ->
                             val isHeader = rowIndex == 0
+                            val isLastRow = rowIndex == rows.size - 1
 
                             Row(
                                 modifier = Modifier.height(IntrinsicSize.Min)
                             ) {
                                 row.steps.forEachIndexed { cellIndex, cell ->
+                                    val isLastColumn = cellIndex == row.steps.size - 1
+
                                     SpreadsheetCell(
                                         text = cell.text ?: "",
                                         isHeader = isHeader,
@@ -97,7 +115,15 @@ class SpreadsheetDrawer(
                                             onCellAction(step.id, rowIndex, cellIndex)
                                         },
                                         showBorderEnd = cellIndex < row.steps.size - 1,
-                                        showBorderBottom = rowIndex < rows.size - 1
+                                        showBorderBottom = rowIndex < rows.size - 1,
+                                        extraModifier = when {
+                                            isLastRow && isLastColumn -> Modifier
+                                                .hoverable(lastRowInteractionSource)
+                                                .hoverable(lastColumnInteractionSource)
+                                            isLastRow -> Modifier.hoverable(lastRowInteractionSource)
+                                            isLastColumn -> Modifier.hoverable(lastColumnInteractionSource)
+                                            else -> Modifier
+                                        }
                                     )
                                 }
                             }
@@ -105,26 +131,81 @@ class SpreadsheetDrawer(
                     }
                 }
 
-                // Add row button at the bottom (matches spreadsheet width)
-                if (isSpreadsheetHovered) {
-                    Spacer(modifier = Modifier.height(6.dp))
+                // Add column button area (includes spacer for hover detection)
+                Row(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .hoverable(addColumnAreaInteractionSource)
+                ) {
+                    Spacer(modifier = Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(20.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f),
-                                shape = RoundedCornerShape(6.dp)
-                            )
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
-                                shape = RoundedCornerShape(6.dp)
-                            )
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { onAddRow(step.id) },
+                            .fillMaxHeight()
+                            .width(20.dp)
+                            .then(
+                                if (showAddColumnButton) {
+                                    Modifier
+                                        .background(
+                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f),
+                                            shape = RoundedCornerShape(6.dp)
+                                        )
+                                        .border(
+                                            width = 1.dp,
+                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                                            shape = RoundedCornerShape(6.dp)
+                                        )
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .clickable { onAddColumn(step.id) }
+                                } else {
+                                    Modifier
+                                }
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
+                        if (showAddColumnButton) {
+                            Icon(
+                                imageVector = WrSdkIcons.plus,
+                                contentDescription = "Add column",
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Add row button area (includes spacer for hover detection)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .hoverable(addRowAreaInteractionSource)
+            ) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(20.dp)
+                        .then(
+                            if (showAddRowButton) {
+                                Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f),
+                                        shape = RoundedCornerShape(6.dp)
+                                    )
+                                    .border(
+                                        width = 1.dp,
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                                        shape = RoundedCornerShape(6.dp)
+                                    )
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { onAddRow(step.id) }
+                            } else {
+                                Modifier
+                            }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (showAddRowButton) {
                         Icon(
                             imageVector = WrSdkIcons.plus,
                             contentDescription = "Add row",
@@ -132,35 +213,6 @@ class SpreadsheetDrawer(
                             tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                         )
                     }
-                }
-            }
-
-            // Add column button on the right (outside scroll, next to spreadsheet)
-            if (isSpreadsheetHovered) {
-                Spacer(modifier = Modifier.width(6.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(20.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f),
-                            shape = RoundedCornerShape(6.dp)
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(6.dp)
-                        )
-                        .clip(RoundedCornerShape(6.dp))
-                        .clickable { onAddColumn(step.id) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = WrSdkIcons.plus,
-                        contentDescription = "Add column",
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                    )
                 }
             }
         }
@@ -175,7 +227,8 @@ private fun SpreadsheetCell(
     onActionClick: () -> Unit,
     showBorderEnd: Boolean,
     showBorderBottom: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    extraModifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
@@ -190,6 +243,7 @@ private fun SpreadsheetCell(
     Box(
         modifier = modifier
             .hoverable(interactionSource)
+            .then(extraModifier)
             .defaultMinSize(minWidth = 120.dp, minHeight = 40.dp)
             .background(backgroundColor)
             .then(
