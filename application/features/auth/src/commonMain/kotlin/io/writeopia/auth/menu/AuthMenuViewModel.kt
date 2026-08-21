@@ -72,56 +72,27 @@ class AuthMenuViewModel(
             return@flow
         }
 
-        val token = authRepository.getAuthToken()
+        // Check if user is in offline mode first
+        val user = authRepository.getUser()
+        if (user.id == WriteopiaUser.DISCONNECTED) {
+            emit(LoginStatus.OFFLINE_CHOSEN)
+            return@flow
+        }
 
-        // If no token exists, user needs to log in
+        // Online mode - check if token is available
+        val token = authRepository.getAuthToken()
         if (token.isNullOrEmpty()) {
             emit(LoginStatus.OFFLINE_NOT_CHOSEN)
             return@flow
         }
 
-        // Token exists - verify it against the backend
-        when (val verifyResult = authApi.getCurrentUser(token)) {
-            is ResultData.Complete -> {
-                // Token is valid - proceed with normal flow
-                val workspace = authRepository.getWorkspace()
-
-                val status = when {
-                    workspace != null -> LoginStatus.ONLINE
-                    else -> LoginStatus.CHOOSE_WORKSPACE
-                }
-                emit(status)
-            }
-
-            is ResultData.Error -> {
-                // Check if this is a network error or an auth error
-                // Network error: exception is NOT null
-                // Auth error (401): exception IS null
-                val isNetworkError = verifyResult.exception != null
-
-                if (isNetworkError) {
-                    // Network unreachable - allow offline access if previously authenticated
-                    val user = authRepository.getUser()
-                    val workspace = authRepository.getWorkspace()
-
-                    if (user.id != WriteopiaUser.DISCONNECTED && workspace != null) {
-                        emit(LoginStatus.OFFLINE_CHOSEN)
-                    } else if (user.id != WriteopiaUser.DISCONNECTED) {
-                        emit(LoginStatus.CHOOSE_WORKSPACE)
-                    } else {
-                        emit(LoginStatus.OFFLINE_NOT_CHOSEN)
-                    }
-                } else {
-                    // Token is invalid/expired (401) - clear and require login
-                    authRepository.logout()
-                    emit(LoginStatus.OFFLINE_NOT_CHOSEN)
-                }
-            }
-
-            else -> {
-                emit(LoginStatus.OFFLINE_NOT_CHOSEN)
-            }
+        // Token exists - check workspace
+        val workspace = authRepository.getWorkspace()
+        val status = when {
+            workspace != null -> LoginStatus.ONLINE
+            else -> LoginStatus.CHOOSE_WORKSPACE
         }
+        emit(status)
     }
 
     fun useOffline(sideEffect: () -> Unit) {
