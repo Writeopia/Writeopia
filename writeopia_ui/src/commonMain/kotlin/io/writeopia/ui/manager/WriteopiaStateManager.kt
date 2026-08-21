@@ -1759,6 +1759,24 @@ class WriteopiaStateManager(
         )
     }
 
+    /**
+     * Updates the width of a specific column in a spreadsheet.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @param columnIndex The index of the column to update (0-based)
+     * @param newWidth The new width for the column in dp
+     */
+    fun updateSpreadsheetColumnWidth(spreadsheetId: String, columnIndex: Int, newWidth: Int) {
+        if (!isEditable) return
+
+        _currentStory.value = writeopiaManager.updateSpreadsheetColumnWidth(
+            _currentStory.value,
+            spreadsheetId,
+            columnIndex,
+            newWidth
+        )
+    }
+
     private fun getStories() = _currentStory.value.stories
 
     private fun currentPosition(): Double? =

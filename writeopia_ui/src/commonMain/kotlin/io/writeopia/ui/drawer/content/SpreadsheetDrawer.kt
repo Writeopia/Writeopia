@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -40,6 +41,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -59,6 +63,10 @@ import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
 
+private const val DEFAULT_COLUMN_WIDTH = 120
+private const val MIN_COLUMN_WIDTH = 50
+private const val MAX_COLUMN_WIDTH = 500
+
 class SpreadsheetDrawer(
     private val dragIconWidth: Dp = 24.dp,
     private val config: DrawConfig,
@@ -72,6 +80,7 @@ class SpreadsheetDrawer(
     private val onCellTextChange: (spreadsheetId: String, rowIndex: Int, cellIndex: Int, newText: String) -> Unit,
     private val onAddRow: (spreadsheetId: String) -> Unit,
     private val onAddColumn: (spreadsheetId: String) -> Unit,
+    private val onColumnWidthChange: (spreadsheetId: String, columnIndex: Int, newWidth: Int) -> Unit = { _, _, _ -> },
     private val onCellAction: (spreadsheetId: String, rowIndex: Int, cellIndex: Int) -> Unit = { _, _, _ -> },
 ) : StoryStepDrawer {
 
@@ -82,6 +91,17 @@ class SpreadsheetDrawer(
         val dropInfo = DropInfo(step, drawInfo.position)
         val interactionSource = remember { MutableInteractionSource() }
         val isHovered by interactionSource.collectIsHoveredAsState()
+
+        // Parse column widths from spreadsheet metadata (JSON format: {"columnWidths":[120,150,100]})
+        val columnCount = rows.firstOrNull()?.steps?.size ?: 0
+        val persistedColumnWidths = remember(step.text, columnCount) {
+            parseColumnWidths(step.text, columnCount)
+        }
+
+        // Local state for smooth dragging - updated in real-time, persisted on drag end
+        var localColumnWidths by remember(persistedColumnWidths) {
+            mutableStateOf(persistedColumnWidths)
+        }
 
         // Interaction source for the last row
         val lastRowInteractionSource = remember { MutableInteractionSource() }
@@ -214,18 +234,37 @@ class SpreadsheetDrawer(
                                             ) {
                                                 row.steps.forEachIndexed { cellIndex, cell ->
                                                     val isLastColumn = cellIndex == row.steps.size - 1
+                                                    val cellWidth = localColumnWidths.getOrElse(cellIndex) { DEFAULT_COLUMN_WIDTH }
 
                                                     SpreadsheetCell(
                                                         text = cell.text ?: "",
                                                         isHeader = isHeader,
+                                                        width = cellWidth.dp,
                                                         onTextChange = { newText ->
                                                             onCellTextChange(step.id, rowIndex, cellIndex, newText)
                                                         },
                                                         onActionClick = {
                                                             onCellAction(step.id, rowIndex, cellIndex)
                                                         },
-                                                        showBorderEnd = cellIndex < row.steps.size - 1,
+                                                        showBorderEnd = !isLastColumn,
                                                         showBorderBottom = rowIndex < rows.size - 1,
+                                                        onBorderDrag = { delta ->
+                                                            val newWidth = (cellWidth + delta.toInt()).coerceIn(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH)
+                                                            if (newWidth != cellWidth) {
+                                                                // Update local state for smooth UI during drag
+                                                                localColumnWidths = localColumnWidths.toMutableList().apply {
+                                                                    if (cellIndex < size) {
+                                                                        this[cellIndex] = newWidth
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        onBorderDragEnd = { cellIndex ->
+                                                            // Persist the final width when drag ends
+                                                            val finalWidth = localColumnWidths.getOrElse(cellIndex) { DEFAULT_COLUMN_WIDTH }
+                                                            onColumnWidthChange(step.id, cellIndex, finalWidth)
+                                                        },
+                                                        cellIndex = cellIndex,
                                                         extraModifier = when {
                                                             isLastRow && isLastColumn -> Modifier
                                                                 .hoverable(lastRowInteractionSource)
@@ -333,10 +372,14 @@ class SpreadsheetDrawer(
 private fun SpreadsheetCell(
     text: String,
     isHeader: Boolean,
+    width: Dp,
     onTextChange: (String) -> Unit,
     onActionClick: () -> Unit,
     showBorderEnd: Boolean,
     showBorderBottom: Boolean,
+    onBorderDrag: (Float) -> Unit,
+    onBorderDragEnd: (Int) -> Unit,
+    cellIndex: Int,
     modifier: Modifier = Modifier,
     extraModifier: Modifier = Modifier
 ) {
@@ -350,72 +393,139 @@ private fun SpreadsheetCell(
         MaterialTheme.colorScheme.background
     }
 
-    Box(
+    val borderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+
+    Row(
         modifier = modifier
             .hoverable(interactionSource)
             .then(extraModifier)
-            .width(120.dp)
             .fillMaxHeight()
-            .defaultMinSize(minHeight = 40.dp)
-            .background(backgroundColor)
-            .then(
-                if (showBorderEnd) {
-                    Modifier.border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
-                    ).padding(end = 1.dp)
-                } else {
-                    Modifier
-                }
-            )
-            .then(
-                if (showBorderBottom) {
-                    Modifier.border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
-                    ).padding(bottom = 1.dp)
-                } else {
-                    Modifier
-                }
-            )
-            .padding(8.dp)
     ) {
-        BasicTextField(
-            value = localText,
-            onValueChange = { newValue ->
-                localText = newValue
-                onTextChange(newValue)
-            },
+        // Cell content
+        Box(
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .fillMaxWidth(),
-            textStyle = TextStyle(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = MaterialTheme.typography.bodyMedium.fontSize
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            singleLine = false
-        )
-
-        // Action button on hover
-        if (isHovered) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(20.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f))
-                    .clickable { onActionClick() }
-                    .padding(2.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = WrSdkIcons.moreVert,
-                    contentDescription = "Cell actions",
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                .width(width)
+                .fillMaxHeight()
+                .defaultMinSize(minHeight = 40.dp)
+                .background(backgroundColor)
+                .then(
+                    if (showBorderBottom) {
+                        Modifier.border(
+                            width = 1.dp,
+                            color = borderColor
+                        ).padding(bottom = 1.dp)
+                    } else {
+                        Modifier
+                    }
                 )
+                .padding(8.dp)
+        ) {
+            BasicTextField(
+                value = localText,
+                onValueChange = { newValue ->
+                    localText = newValue
+                    onTextChange(newValue)
+                },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth(),
+                textStyle = TextStyle(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = MaterialTheme.typography.bodyMedium.fontSize
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                singleLine = false
+            )
+
+            // Action button on hover
+            if (isHovered) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(20.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f))
+                        .clickable { onActionClick() }
+                        .padding(2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = WrSdkIcons.moreVert,
+                        contentDescription = "Cell actions",
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    )
+                }
             }
         }
+
+        // Draggable border/resizer
+        if (showBorderEnd) {
+            var isDragging by remember { mutableStateOf(false) }
+            val resizerInteractionSource = remember { MutableInteractionSource() }
+            val isResizerHovered by resizerInteractionSource.collectIsHoveredAsState()
+
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .hoverable(resizerInteractionSource)
+                    .pointerHoverIcon(PointerIcon.Crosshair)
+                    .pointerInput(cellIndex) {
+                        detectHorizontalDragGestures(
+                            onDragStart = { isDragging = true },
+                            onDragEnd = {
+                                isDragging = false
+                                onBorderDragEnd(cellIndex)
+                            },
+                            onDragCancel = {
+                                isDragging = false
+                                onBorderDragEnd(cellIndex)
+                            },
+                            onHorizontalDrag = { _, dragAmount ->
+                                onBorderDrag(dragAmount)
+                            }
+                        )
+                    }
+                    .background(
+                        if (isDragging || isResizerHovered) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        } else {
+                            borderColor
+                        }
+                    )
+            )
+        }
+    }
+}
+
+/**
+ * Parses column widths from the spreadsheet metadata JSON.
+ * Returns a list of widths with the specified column count, using defaults for missing values.
+ * Format: {"columnWidths":[120,150,100]}
+ */
+private fun parseColumnWidths(text: String?, columnCount: Int): List<Int> {
+    if (text.isNullOrBlank() || columnCount == 0) {
+        return List(columnCount) { DEFAULT_COLUMN_WIDTH }
+    }
+
+    return try {
+        // Simple regex to extract the columnWidths array
+        val regex = """"columnWidths"\s*:\s*\[([^\]]*)]""".toRegex()
+        val match = regex.find(text)
+        val arrayContent = match?.groupValues?.getOrNull(1) ?: ""
+
+        val widths = if (arrayContent.isBlank()) {
+            emptyList()
+        } else {
+            arrayContent.split(",").mapNotNull { it.trim().toIntOrNull() }
+        }
+
+        // Ensure we have the right number of columns, using defaults for missing
+        (0 until columnCount).map { index ->
+            widths.getOrElse(index) { DEFAULT_COLUMN_WIDTH }
+        }
+    } catch (e: Exception) {
+        List(columnCount) { DEFAULT_COLUMN_WIDTH }
     }
 }

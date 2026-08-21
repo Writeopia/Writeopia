@@ -339,6 +339,9 @@ object CommonDrawers {
                     onAddColumn = { spreadsheetId ->
                         manager.addSpreadsheetColumn(spreadsheetId)
                     },
+                    onColumnWidthChange = { spreadsheetId, columnIndex, newWidth ->
+                        manager.updateSpreadsheetColumnWidth(spreadsheetId, columnIndex, newWidth)
+                    },
                     onCellAction = { _, _, _ -> }
                 )
             )

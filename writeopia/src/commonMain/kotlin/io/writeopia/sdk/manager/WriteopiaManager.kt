@@ -483,6 +483,39 @@ class WriteopiaManager(
         )
     }
 
+    /**
+     * Updates the width of a specific column in a spreadsheet.
+     *
+     * @param storyState The current story state
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @param columnIndex The index of the column to update (0-based)
+     * @param newWidth The new width for the column in dp
+     * @return Updated story state, or original state if update failed
+     */
+    fun updateSpreadsheetColumnWidth(
+        storyState: StoryState,
+        spreadsheetId: String,
+        columnIndex: Int,
+        newWidth: Int
+    ): StoryState {
+        val newStories = contentHandler.updateSpreadsheetColumnWidth(
+            storyState.stories,
+            spreadsheetId,
+            columnIndex,
+            newWidth
+        ) ?: return storyState
+
+        val spreadsheetEntry = newStories.entries.find { it.value.id == spreadsheetId }
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheetEntry != null) {
+                LastEdit.LineEdition(spreadsheetEntry.key, spreadsheetEntry.value)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
     suspend fun generateSuggestionsList(
         storyState: () -> StoryState,
         storyType: StoryType,
