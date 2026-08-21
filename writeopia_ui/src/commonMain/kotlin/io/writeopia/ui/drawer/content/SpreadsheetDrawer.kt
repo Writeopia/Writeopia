@@ -27,6 +27,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -97,20 +99,27 @@ class SpreadsheetDrawer(
         val addColumnAreaInteractionSource = remember { MutableInteractionSource() }
         val isAddColumnAreaHovered by addColumnAreaInteractionSource.collectIsHoveredAsState()
 
-        val showAddRowButton = isLastRowHovered || isAddRowAreaHovered
-        val showAddColumnButton = isLastColumnHovered || isAddColumnAreaHovered
-
-        // Alpha: 100% when hovering on button area, 50% when hovering on last row/column only
-        val addRowButtonAlpha = when {
+        // Target alpha: 100% when hovering on button area, 50% when hovering on last row/column only
+        val targetAddRowButtonAlpha = when {
             isAddRowAreaHovered -> 1f
             isLastRowHovered -> 0.5f
             else -> 0f
         }
-        val addColumnButtonAlpha = when {
+        val targetAddColumnButtonAlpha = when {
             isAddColumnAreaHovered -> 1f
             isLastColumnHovered -> 0.5f
             else -> 0f
         }
+
+        // Animate the alpha values
+        val addRowButtonAlpha by animateFloatAsState(
+            targetValue = targetAddRowButtonAlpha,
+            animationSpec = tween(durationMillis = 150)
+        )
+        val addColumnButtonAlpha by animateFloatAsState(
+            targetValue = targetAddColumnButtonAlpha,
+            animationSpec = tween(durationMillis = 150)
+        )
 
         SelectableByDrag(
             modifier = Modifier.dragAndDropTarget(
@@ -243,34 +252,25 @@ class SpreadsheetDrawer(
                                         modifier = Modifier
                                             .fillMaxHeight()
                                             .width(20.dp)
-                                            .then(
-                                                if (showAddColumnButton) {
-                                                    Modifier
-                                                        .background(
-                                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f * addColumnButtonAlpha),
-                                                            shape = RoundedCornerShape(6.dp)
-                                                        )
-                                                        .border(
-                                                            width = 1.dp,
-                                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f * addColumnButtonAlpha),
-                                                            shape = RoundedCornerShape(6.dp)
-                                                        )
-                                                        .clip(RoundedCornerShape(6.dp))
-                                                        .clickable { onAddColumn(step.id) }
-                                                } else {
-                                                    Modifier
-                                                }
-                                            ),
+                                            .background(
+                                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f * addColumnButtonAlpha),
+                                                shape = RoundedCornerShape(6.dp)
+                                            )
+                                            .border(
+                                                width = 1.dp,
+                                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f * addColumnButtonAlpha),
+                                                shape = RoundedCornerShape(6.dp)
+                                            )
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .clickable { onAddColumn(step.id) },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        if (showAddColumnButton) {
-                                            Icon(
-                                                imageVector = WrSdkIcons.plus,
-                                                contentDescription = "Add column",
-                                                modifier = Modifier.size(14.dp),
-                                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f * addColumnButtonAlpha)
-                                            )
-                                        }
+                                        Icon(
+                                            imageVector = WrSdkIcons.plus,
+                                            contentDescription = "Add column",
+                                            modifier = Modifier.size(14.dp),
+                                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f * addColumnButtonAlpha)
+                                        )
                                     }
                                 }
                             }
@@ -286,34 +286,25 @@ class SpreadsheetDrawer(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(20.dp)
-                                        .then(
-                                            if (showAddRowButton) {
-                                                Modifier
-                                                    .background(
-                                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f * addRowButtonAlpha),
-                                                        shape = RoundedCornerShape(6.dp)
-                                                    )
-                                                    .border(
-                                                        width = 1.dp,
-                                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f * addRowButtonAlpha),
-                                                        shape = RoundedCornerShape(6.dp)
-                                                    )
-                                                    .clip(RoundedCornerShape(6.dp))
-                                                    .clickable { onAddRow(step.id) }
-                                            } else {
-                                                Modifier
-                                            }
-                                        ),
+                                        .background(
+                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f * addRowButtonAlpha),
+                                            shape = RoundedCornerShape(6.dp)
+                                        )
+                                        .border(
+                                            width = 1.dp,
+                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f * addRowButtonAlpha),
+                                            shape = RoundedCornerShape(6.dp)
+                                        )
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .clickable { onAddRow(step.id) },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    if (showAddRowButton) {
-                                        Icon(
-                                            imageVector = WrSdkIcons.plus,
-                                            contentDescription = "Add row",
-                                            modifier = Modifier.size(14.dp),
-                                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f * addRowButtonAlpha)
-                                        )
-                                    }
+                                    Icon(
+                                        imageVector = WrSdkIcons.plus,
+                                        contentDescription = "Add row",
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f * addRowButtonAlpha)
+                                    )
                                 }
                             }
                         }
