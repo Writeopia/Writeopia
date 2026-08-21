@@ -1,6 +1,6 @@
 [versions]
 coilVersion = "3.4.0"
-media3 = "1.10.1"
+media3 = "1.11.0"
 espressoCore = "3.7.0"
 firebaseAdmin = "9.10.0"
 googleCloudBom = "26.86.0"
