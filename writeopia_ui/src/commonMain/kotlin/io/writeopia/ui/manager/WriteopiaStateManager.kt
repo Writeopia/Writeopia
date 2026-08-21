@@ -1691,6 +1691,74 @@ class WriteopiaStateManager(
 
     fun getStory(position: Double): StoryStep? = _currentStory.value.stories[position]
 
+    /**
+     * Creates a new spreadsheet with one initial row containing the specified number of empty cells.
+     *
+     * @param columnCount The number of columns in the spreadsheet
+     */
+    fun addSpreadsheet(columnCount: Int) {
+        if (!isEditable) return
+
+        val position = currentPosition() ?: return
+
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.createSpreadsheet(
+            _currentStory.value,
+            position,
+            columnCount
+        )
+    }
+
+    /**
+     * Updates the text of a specific cell within a spreadsheet.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @param rowIndex The index of the row (0-based)
+     * @param cellIndex The index of the cell within the row (0-based)
+     * @param newText The new text for the cell
+     */
+    fun updateSpreadsheetCell(spreadsheetId: String, rowIndex: Int, cellIndex: Int, newText: String) {
+        if (!isEditable) return
+
+        _currentStory.value = writeopiaManager.updateSpreadsheetCell(
+            _currentStory.value,
+            spreadsheetId,
+            rowIndex,
+            cellIndex,
+            newText
+        )
+    }
+
+    /**
+     * Adds a new row to a spreadsheet with the same number of columns as existing rows.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     */
+    fun addSpreadsheetRow(spreadsheetId: String) {
+        if (!isEditable) return
+
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetRow(
+            _currentStory.value,
+            spreadsheetId
+        )
+    }
+
+    /**
+     * Adds a new column to a spreadsheet by adding a cell to each row.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     */
+    fun addSpreadsheetColumn(spreadsheetId: String) {
+        if (!isEditable) return
+
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetColumn(
+            _currentStory.value,
+            spreadsheetId
+        )
+    }
+
     private fun getStories() = _currentStory.value.stories
 
     private fun currentPosition(): Double? =

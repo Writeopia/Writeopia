@@ -41,6 +41,7 @@ import io.writeopia.ui.drawer.content.createTypeCommands
 import io.writeopia.ui.drawer.content.headerDrawer
 import io.writeopia.ui.drawer.content.swipeTextDrawer
 import io.writeopia.ui.drawer.content.unOrderedListItemDrawer
+import io.writeopia.ui.drawer.content.SpreadsheetDrawer
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
@@ -317,6 +318,21 @@ object CommonDrawers {
             put(StoryTypes.DOCUMENT_LINK.type.number, documentLinkDrawer)
             put(StoryTypes.DIVIDER.type.number, dividerDrawer)
             put(StoryTypes.EQUATION.type.number, equationsDrawer)
+            put(
+                StoryTypes.SPREADSHEET.type.number,
+                SpreadsheetDrawer(
+                    onCellTextChange = { spreadsheetId, rowIndex, cellIndex, newText ->
+                        manager.updateSpreadsheetCell(spreadsheetId, rowIndex, cellIndex, newText)
+                    },
+                    onAddRow = { spreadsheetId ->
+                        manager.addSpreadsheetRow(spreadsheetId)
+                    },
+                    onAddColumn = { spreadsheetId ->
+                        manager.addSpreadsheetColumn(spreadsheetId)
+                    },
+                    onCellAction = { _, _, _ -> }
+                )
+            )
         }
     }
 }
