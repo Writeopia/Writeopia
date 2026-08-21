@@ -44,7 +44,8 @@ class FolderStateController private constructor(
     override fun addFolder(parentId: String) {
         coroutineScope.launch(Dispatchers.Default) {
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-            notesUseCase.createFolder("Untitled", workspace.id, parentId)
+            val folder = notesUseCase.createFolder("Untitled", workspace.id, parentId)
+            syncFolderToBackend(folder)
         }
     }
 
@@ -54,7 +55,9 @@ class FolderStateController private constructor(
 
     override fun updateFolder(folderEdit: Folder) {
         coroutineScope.launch(Dispatchers.Default) {
-            notesUseCase.updateFolder(folderEdit.copy(lastUpdatedAt = Clock.System.now()))
+            val updatedFolder = folderEdit.copy(lastUpdatedAt = Clock.System.now())
+            notesUseCase.updateFolder(updatedFolder)
+            syncFolderToBackend(updatedFolder)
         }
     }
 
@@ -77,6 +80,20 @@ class FolderStateController private constructor(
 
         documentsApi.deleteFolder(
             folderId = folderId,
+            workspaceId = workspace.id,
+            token = token
+        )
+    }
+
+    private suspend fun syncFolderToBackend(folder: Folder) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+        val token = authRepository.getAuthToken() ?: return
+
+        documentsApi.sendFolders(
+            folders = listOf(folder),
             workspaceId = workspace.id,
             token = token
         )
@@ -125,11 +142,14 @@ class FolderStateController private constructor(
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
 
             when (iconChange) {
-                IconChange.FOLDER -> notesUseCase.updateFolderById(menuItemId) { folder ->
-                    folder.copy(
-                        icon = MenuItem.Icon(icon, tint),
-                        lastUpdatedAt = Clock.System.now()
-                    )
+                IconChange.FOLDER -> {
+                    val updatedFolder = notesUseCase.updateFolderById(menuItemId) { folder ->
+                        folder.copy(
+                            icon = MenuItem.Icon(icon, tint),
+                            lastUpdatedAt = Clock.System.now()
+                        )
+                    }
+                    updatedFolder?.let { syncFolderToBackend(it) }
                 }
 
                 IconChange.DOCUMENT -> notesUseCase.updateDocumentById(

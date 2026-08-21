@@ -42,13 +42,13 @@ import kotlin.time.Instant
 
 class DocumentsApi(private val client: HttpClient, private val baseUrl: String) {
 
-    suspend fun getFolderNewDocuments(
+    suspend fun getFolderNewData(
         folderId: String,
         workspaceId: String,
         lastSync: Instant,
         token: String,
         orderBy: String = "last_updated_at"
-    ): ResultData<List<Document>> {
+    ): ResultData<FolderContentResponse> {
         val response = client.post("$baseUrl/api/docs/workspace/document/folder/diff") {
             contentType(ContentType.Application.Json)
             setBody(FolderDiffRequest(folderId, workspaceId, lastSync.toEpochMilliseconds(), orderBy))
@@ -56,9 +56,9 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         }
 
         return if (response.status.isSuccess()) {
-            ResultData.Complete(response.body<List<DocumentApi>>().map { it.toModel() })
+            ResultData.Complete(response.body<FolderContentResponse>())
         } else {
-            println("getFolderNewDocuments failed. response: $response")
+            println("getFolderNewData failed. response: $response")
             ResultData.Error()
         }
     }
