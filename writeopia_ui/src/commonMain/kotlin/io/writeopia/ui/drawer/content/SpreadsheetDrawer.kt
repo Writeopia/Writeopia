@@ -246,7 +246,8 @@ private fun SpreadsheetCell(
         modifier = modifier
             .hoverable(interactionSource)
             .then(extraModifier)
-            .defaultMinSize(minWidth = 120.dp, minHeight = 40.dp)
+            .width(120.dp)
+            .defaultMinSize(minHeight = 40.dp)
             .background(backgroundColor)
             .then(
                 if (showBorderEnd) {
@@ -277,14 +278,14 @@ private fun SpreadsheetCell(
                 onTextChange(newValue)
             },
             modifier = Modifier
-                .align(Alignment.CenterStart)
-                .defaultMinSize(minWidth = 104.dp),
+                .align(Alignment.TopStart)
+                .fillMaxWidth(),
             textStyle = TextStyle(
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = MaterialTheme.typography.bodyMedium.fontSize
             ),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            singleLine = true
+            singleLine = false
         )
 
         // Action button on hover
