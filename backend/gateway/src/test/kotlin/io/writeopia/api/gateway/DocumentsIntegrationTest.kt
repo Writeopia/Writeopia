@@ -213,7 +213,7 @@ class DocumentationIntegrationTests {
     }
 
     @Test
-    fun `it should be possible to get diff of folders`() = testApplication {
+    fun `it should be possible to get diff of folders with documents`() = testApplication {
         application {
             module(db, debugMode = true)
         }
@@ -271,12 +271,143 @@ class DocumentationIntegrationTests {
 
         assertEquals(HttpStatusCode.OK, response2.status)
 
-        val diff = response2.body<List<DocumentApi>>()
+        val diff = response2.body<FolderContentResponse>()
 
-        assertEquals(listOf(documentApi2), diff)
+        assertEquals(listOf(documentApi2), diff.documents)
+        assertEquals(emptyList<FolderApi>(), diff.folders)
 
         db.deleteDocumentById(documentApi.id)
         db.deleteDocumentById(documentApi2.id)
+    }
+
+    @Test
+    fun `folder diff should return subfolders along with documents`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+        val parentFolderId = "parentFolder_${Random.nextInt()}"
+
+        // Create subfolders inside the parent folder
+        val subfolder1 = FolderApi(
+            id = "subfolder1_${Random.nextInt()}",
+            title = "Subfolder 1",
+            parentId = parentFolderId,
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val subfolder2 = FolderApi(
+            id = "subfolder2_${Random.nextInt()}",
+            title = "Subfolder 2",
+            parentId = parentFolderId,
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        // Create a folder that is NOT a child of parentFolder (should not be returned)
+        val unrelatedFolder = FolderApi(
+            id = "unrelatedFolder_${Random.nextInt()}",
+            title = "Unrelated Folder",
+            parentId = "someOtherParent",
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        // Create a document inside the parent folder
+        val document = DocumentApi(
+            id = "doc_${Random.nextInt()}",
+            title = "Document in Parent",
+            workspaceId = workspaceId,
+            parentId = parentFolderId,
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        // Save folders
+        val folderResponse = client.post("/api/docs/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(listOf(subfolder1, subfolder2, unrelatedFolder), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, folderResponse.status)
+
+        // Save document
+        val documentResponse = client.post("/api/docs/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, documentResponse.status)
+
+        // Request folder diff
+        val request = FolderDiffRequest(
+            folderId = parentFolderId,
+            workspaceId = workspaceId,
+            lastFolderSync = 0L
+        )
+
+        val diffResponse = client.post("/api/docs/workspace/document/folder/diff") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+
+        assertEquals(HttpStatusCode.OK, diffResponse.status)
+
+        val diff = diffResponse.body<FolderContentResponse>()
+
+        // Verify subfolders are returned
+        assertEquals(2, diff.folders.size)
+        assertTrue(diff.folders.any { it.id == subfolder1.id })
+        assertTrue(diff.folders.any { it.id == subfolder2.id })
+        // Verify unrelated folder is NOT returned
+        assertFalse(diff.folders.any { it.id == unrelatedFolder.id })
+
+        // Verify document is returned
+        assertEquals(1, diff.documents.size)
+        assertEquals(document.id, diff.documents.first().id)
+
+        // Clean up
+        db.deleteDocumentById(document.id)
+    }
+
+    @Test
+    fun `folder diff should return empty lists when folder has no children`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+        val emptyFolderId = "emptyFolder_${Random.nextInt()}"
+
+        // Request folder diff for a folder with no children
+        val request = FolderDiffRequest(
+            folderId = emptyFolderId,
+            workspaceId = workspaceId,
+            lastFolderSync = 0L
+        )
+
+        val diffResponse = client.post("/api/docs/workspace/document/folder/diff") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+
+        assertEquals(HttpStatusCode.OK, diffResponse.status)
+
+        val diff = diffResponse.body<FolderContentResponse>()
+
+        // Verify empty lists are returned
+        assertEquals(0, diff.folders.size)
+        assertEquals(0, diff.documents.size)
     }
 
     @Test

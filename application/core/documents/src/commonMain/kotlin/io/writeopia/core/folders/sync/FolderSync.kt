@@ -8,6 +8,7 @@ import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.serialization.extensions.toModel
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.time.Duration
@@ -54,8 +55,8 @@ class FolderSync(
             // We don't create a fallback folder to avoid creating unwanted "root" folders
             val lastSync = existingFolder?.lastSyncedAt
 
-            // First, receive the documents for the backend.
-            val response = documentsApi.getFolderNewDocuments(
+            // First, receive the documents and subfolders from the backend.
+            val response = documentsApi.getFolderNewData(
                 folderId,
                 workspaceId,
                 lastSync ?: Instant.DISTANT_PAST,
@@ -63,26 +64,43 @@ class FolderSync(
                 orderBy
             )
 
-            val newDocuments = if (response is ResultData.Complete) {
+            val folderContent = if (response is ResultData.Complete) {
                 response.data
             } else {
                 return
             }
 
+            val newDocuments = folderContent.documents.map { it.toModel() }
+            val newFolders = folderContent.folders.map { it.toModel() }
+
             // Then, load the outdated documents.
             // These documents were updated locally, but were not sent to the backend yet
             val localOutdatedDocs = documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId)
+
+            // Load local outdated subfolders
+            val localOutdatedFolders = folderRepository.getFolderByParentId(folderId, workspaceId)
 
             // Resolve conflicts of documents that were updated both locally and in the backend.
             // Documents will be saved locally by documentConflictHandler.handleConflict
             val documentsNotSent =
                 documentConflictHandler.handleConflict(localOutdatedDocs, newDocuments)
+
+            // Resolve conflicts for subfolders
+            val foldersNotSent = documentConflictHandler.handleConflictForFolders(
+                localFolders = localOutdatedFolders,
+                externalFolders = newFolders
+            )
+
             documentRepository.refreshDocuments()
+            folderRepository.refreshFolders()
 
             // Send documents to backend
-            val resultSend = documentsApi.sendDocuments(documentsNotSent, workspaceId, authToken)
+            val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent, workspaceId, authToken)
 
-            if (resultSend is ResultData.Complete) {
+            // Send subfolders to backend
+            val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId, authToken)
+
+            if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
                 val now = Clock.System.now()
                 // If everything ran accordingly, update the sync time of the folder.
                 documentsNotSent.forEach { document ->
@@ -91,6 +109,7 @@ class FolderSync(
                 }
 
                 documentRepository.refreshDocuments()
+                folderRepository.refreshFolders()
 
                 // Only update folder sync time if folder exists locally
                 existingFolder?.let { folder ->

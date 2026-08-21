@@ -475,6 +475,9 @@ fun Routing.documentsRoute(
                             writeopiaDb
                         )
 
+                    // Get subfolders for this folder
+                    val subfolders = writeopiaDb.getFoldersByParentId(folderDiff.folderId)
+
                     // Get user's favorite document IDs
                     val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
                         userId, workspaceId, writeopiaDb
@@ -487,7 +490,10 @@ fun Routing.documentsRoute(
 
                     call.respond(
                         status = HttpStatusCode.OK,
-                        message = documentsWithFavorites.map { document -> document.toApi() }
+                        message = FolderContentResponse(
+                            folders = subfolders.map { it.toApi() },
+                            documents = documentsWithFavorites.map { document -> document.toApi() }
+                        )
                     )
                 } catch (e: Exception) {
                     call.respond(
