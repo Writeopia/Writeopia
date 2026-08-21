@@ -321,6 +321,15 @@ object CommonDrawers {
             put(
                 StoryTypes.SPREADSHEET.type.number,
                 SpreadsheetDrawer(
+                    dragIconWidth = dragIconWidth,
+                    config = drawConfig,
+                    onSelected = manager::onSelected,
+                    onDragHover = manager::onDragHover,
+                    onDragStart = manager::onDragStart,
+                    onDragStop = manager::onDragStop,
+                    moveRequest = manager::moveRequest,
+                    enabled = editable,
+                    receiveExternalFile = receiveExternalFile,
                     onCellTextChange = { spreadsheetId, rowIndex, cellIndex, newText ->
                         manager.updateSpreadsheetCell(spreadsheetId, rowIndex, cellIndex, newText)
                     },
