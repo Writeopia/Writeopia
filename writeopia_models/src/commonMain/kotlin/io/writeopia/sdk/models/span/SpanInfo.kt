@@ -104,7 +104,9 @@ data class SpanInfo private constructor(
             val extra = if (parts.size >= 4) {
                 val extraValue = parts.drop(3).joinToString(":")
                 if (extraValue == "null") null else extraValue
-            } else null
+            } else {
+                null
+            }
 
             return SpanInfo(start, end, span, extra)
         }
