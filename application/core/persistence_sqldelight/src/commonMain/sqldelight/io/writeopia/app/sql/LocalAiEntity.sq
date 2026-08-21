@@ -1,0 +1,19 @@
+CREATE TABLE localAiEntity (
+  id TEXT PRIMARY KEY,
+  model_path TEXT NOT NULL,
+  temperature REAL NOT NULL DEFAULT 0.7,
+  max_tokens INTEGER NOT NULL DEFAULT 256,
+  context_length INTEGER NOT NULL DEFAULT 2048
+);
+
+query:
+SELECT *
+FROM localAiEntity
+WHERE localAiEntity.id = ?;
+
+insert:
+INSERT INTO localAiEntity(id, model_path, temperature, max_tokens, context_length)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET id=excluded.id, model_path=excluded.model_path, temperature=excluded.temperature,
+           max_tokens=excluded.max_tokens, context_length=excluded.context_length;

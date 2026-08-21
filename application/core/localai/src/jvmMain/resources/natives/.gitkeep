@@ -1,0 +1,42 @@
+# Native Libraries Directory
+
+This directory contains pre-built llama.cpp native libraries for each platform.
+
+## Directory Structure
+
+```
+natives/
+├── macos-arm64/
+│   └── libllama.dylib
+├── macos-x64/
+│   └── libllama.dylib
+├── linux-x64/
+│   └── libllama.so
+├── linux-arm64/
+│   └── libllama.so
+└── windows-x64/
+    └── llama.dll
+```
+
+## Building Libraries
+
+Run the GitHub Actions workflow `build-llama-cpp.yml` to build all libraries:
+
+1. Go to Actions → "Build llama.cpp Native Libraries"
+2. Click "Run workflow"
+3. Enter the llama.cpp version (e.g., `b4239`)
+4. Download the `llama-natives-all` artifact
+5. Extract and copy libraries to this directory
+
+## Manual Build
+
+To build manually for your platform:
+
+```bash
+git clone https://github.com/ggerganov/llama.cpp
+cd llama.cpp
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+cmake --build build --config Release
+```
+
+Then copy the resulting library to the appropriate directory.

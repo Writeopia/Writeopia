@@ -1,0 +1,119 @@
+package = io.writeopia.localai.llama.native
+
+# Point these to your local llama.cpp installation
+# Users should set LLAMA_CPP_PATH environment variable or update these paths
+headers = llama.h
+compilerOpts = -I/usr/local/include
+linkerOpts = -L/usr/local/lib -lllama
+
+# Alternatively, users can provide static library:
+# staticLibraries = libllama.a
+# libraryPaths = /path/to/llama.cpp/build
+
+---
+
+// Stub header for compilation when llama.cpp is not available
+// This allows the project to compile without the actual library
+
+typedef void* llama_model;
+typedef void* llama_context;
+typedef void* llama_sampler;
+typedef int llama_token;
+typedef int llama_pos;
+typedef int llama_seq_id;
+
+struct llama_model_params {
+    int n_gpu_layers;
+    int split_mode;
+    int main_gpu;
+    void* tensor_split;
+    void* rpc_servers;
+    void* progress_callback;
+    void* progress_callback_user_data;
+    void* kv_overrides;
+    int vocab_only;
+    int use_mmap;
+    int use_mlock;
+    int check_tensors;
+};
+
+struct llama_context_params {
+    int n_ctx;
+    int n_batch;
+    int n_ubatch;
+    int n_seq_max;
+    int n_threads;
+    int n_threads_batch;
+    int rope_scaling_type;
+    int pooling_type;
+    int attention_type;
+    float rope_freq_base;
+    float rope_freq_scale;
+    float yarn_ext_factor;
+    float yarn_attn_factor;
+    float yarn_beta_fast;
+    float yarn_beta_slow;
+    int yarn_orig_ctx;
+    float defrag_thold;
+    void* cb_eval;
+    void* cb_eval_user_data;
+    int type_k;
+    int type_v;
+    int logits_all;
+    int embeddings;
+    int offload_kqv;
+    int flash_attn;
+    int no_perf;
+    void* abort_callback;
+    void* abort_callback_data;
+};
+
+struct llama_batch {
+    int n_tokens;
+    llama_token* token;
+    float* embd;
+    llama_pos* pos;
+    int* n_seq_id;
+    llama_seq_id** seq_id;
+    signed char* logits;
+};
+
+struct llama_sampler_chain_params {
+    int no_perf;
+};
+
+void llama_backend_init(void);
+void llama_backend_free(void);
+
+struct llama_model_params llama_model_default_params(void);
+struct llama_context_params llama_context_default_params(void);
+
+llama_model* llama_load_model_from_file(const char* path_model, struct llama_model_params params);
+void llama_free_model(llama_model* model);
+
+llama_context* llama_new_context_with_model(llama_model* model, struct llama_context_params params);
+void llama_free(llama_context* ctx);
+
+int llama_n_ctx(const llama_context* ctx);
+int llama_n_vocab(const llama_model* model);
+
+int llama_tokenize(const llama_model* model, const char* text, int text_len, llama_token* tokens, int n_tokens_max, int add_special, int parse_special);
+int llama_token_to_piece(const llama_model* model, llama_token token, char* buf, int length, int lstrip, int special);
+
+int llama_decode(llama_context* ctx, struct llama_batch batch);
+float* llama_get_logits(llama_context* ctx);
+
+llama_token llama_token_eos(const llama_model* model);
+llama_token llama_token_bos(const llama_model* model);
+
+void llama_kv_cache_clear(llama_context* ctx);
+
+struct llama_batch llama_batch_init(int n_tokens, int embd, int n_seq_max);
+void llama_batch_free(struct llama_batch batch);
+
+llama_sampler* llama_sampler_chain_init(struct llama_sampler_chain_params params);
+void llama_sampler_chain_add(llama_sampler* chain, llama_sampler* smpl);
+void llama_sampler_chain_free(llama_sampler* chain);
+llama_sampler* llama_sampler_init_temp(float t);
+llama_sampler* llama_sampler_init_dist(int seed);
+llama_token llama_sampler_sample(llama_sampler* smpl, llama_context* ctx, int idx);

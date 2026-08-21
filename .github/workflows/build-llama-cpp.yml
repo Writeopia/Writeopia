@@ -1,0 +1,295 @@
+name: Build llama.cpp Native Libraries
+
+on:
+  workflow_dispatch:
+    inputs:
+      llama_cpp_version:
+        description: 'llama.cpp version/tag (e.g., b4239)'
+        required: true
+        default: 'b4239'
+  schedule:
+    # Run monthly to check for updates
+    - cron: '0 0 1 * *'
+
+env:
+  LLAMA_CPP_VERSION: ${{ github.event.inputs.llama_cpp_version || 'b4239' }}
+
+jobs:
+  build-macos-arm64:
+    runs-on: macos-14  # M1/M2 runner
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone llama.cpp
+        run: |
+          git clone --depth 1 --branch ${{ env.LLAMA_CPP_VERSION }} https://github.com/ggerganov/llama.cpp.git
+          cd llama.cpp
+
+      - name: Build llama.cpp
+        run: |
+          cd llama.cpp
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DGGML_METAL=ON \
+            -DGGML_ACCELERATE=ON \
+            -DBUILD_SHARED_LIBS=ON \
+            -DGGML_NATIVE=OFF
+          cmake --build build --config Release -j $(sysctl -n hw.ncpu)
+
+      - name: Copy library
+        run: |
+          mkdir -p output/macos-arm64
+          cp llama.cpp/build/src/libllama.dylib output/macos-arm64/
+          # Also copy ggml dependency if separate
+          cp llama.cpp/build/ggml/src/libggml*.dylib output/macos-arm64/ 2>/dev/null || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-macos-arm64
+          path: output/macos-arm64/
+
+  build-macos-x64:
+    runs-on: macos-13  # Intel runner
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone llama.cpp
+        run: |
+          git clone --depth 1 --branch ${{ env.LLAMA_CPP_VERSION }} https://github.com/ggerganov/llama.cpp.git
+
+      - name: Build llama.cpp
+        run: |
+          cd llama.cpp
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DGGML_METAL=ON \
+            -DGGML_ACCELERATE=ON \
+            -DBUILD_SHARED_LIBS=ON \
+            -DGGML_NATIVE=OFF
+          cmake --build build --config Release -j $(sysctl -n hw.ncpu)
+
+      - name: Copy library
+        run: |
+          mkdir -p output/macos-x64
+          cp llama.cpp/build/src/libllama.dylib output/macos-x64/
+          cp llama.cpp/build/ggml/src/libggml*.dylib output/macos-x64/ 2>/dev/null || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-macos-x64
+          path: output/macos-x64/
+
+  build-linux-x64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+
+      - name: Clone llama.cpp
+        run: |
+          git clone --depth 1 --branch ${{ env.LLAMA_CPP_VERSION }} https://github.com/ggerganov/llama.cpp.git
+
+      - name: Build llama.cpp
+        run: |
+          cd llama.cpp
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DGGML_NATIVE=OFF
+          cmake --build build --config Release -j $(nproc)
+
+      - name: Copy library
+        run: |
+          mkdir -p output/linux-x64
+          cp llama.cpp/build/src/libllama.so output/linux-x64/
+          cp llama.cpp/build/ggml/src/libggml*.so output/linux-x64/ 2>/dev/null || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-linux-x64
+          path: output/linux-x64/
+
+  build-linux-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build in ARM64 container
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            arm64v8/ubuntu:22.04 \
+            bash -c "
+              apt-get update && apt-get install -y build-essential cmake git
+              git clone --depth 1 --branch ${{ env.LLAMA_CPP_VERSION }} https://github.com/ggerganov/llama.cpp.git
+              cd llama.cpp
+              cmake -B build \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_SHARED_LIBS=ON \
+                -DGGML_NATIVE=OFF
+              cmake --build build --config Release -j \$(nproc)
+              mkdir -p /workspace/output/linux-arm64
+              cp build/src/libllama.so /workspace/output/linux-arm64/
+              cp build/ggml/src/libggml*.so /workspace/output/linux-arm64/ 2>/dev/null || true
+            "
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-linux-arm64
+          path: output/linux-arm64/
+
+  build-windows-x64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone llama.cpp
+        run: |
+          git clone --depth 1 --branch ${{ env.LLAMA_CPP_VERSION }} https://github.com/ggerganov/llama.cpp.git
+
+      - name: Build llama.cpp
+        run: |
+          cd llama.cpp
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DGGML_NATIVE=OFF
+          cmake --build build --config Release
+
+      - name: Copy library
+        run: |
+          mkdir -p output/windows-x64
+          cp llama.cpp/build/bin/Release/llama.dll output/windows-x64/
+          cp llama.cpp/build/bin/Release/ggml*.dll output/windows-x64/ 2>$null
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-windows-x64
+          path: output/windows-x64/
+
+  build-android:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a, x86_64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26b
+
+      - name: Clone llama.cpp
+        run: |
+          git clone --depth 1 --branch ${{ env.LLAMA_CPP_VERSION }} https://github.com/ggerganov/llama.cpp.git
+
+      - name: Build llama.cpp for Android
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          cd llama.cpp
+
+          # Set architecture-specific flags
+          case "${{ matrix.abi }}" in
+            arm64-v8a)
+              ANDROID_ABI="arm64-v8a"
+              ;;
+            armeabi-v7a)
+              ANDROID_ABI="armeabi-v7a"
+              ;;
+            x86_64)
+              ANDROID_ABI="x86_64"
+              ;;
+          esac
+
+          cmake -B build \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=$ANDROID_ABI \
+            -DANDROID_PLATFORM=android-26 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DGGML_NATIVE=OFF
+          cmake --build build --config Release -j $(nproc)
+
+      - name: Copy library
+        run: |
+          mkdir -p output/${{ matrix.abi }}
+          cp llama.cpp/build/src/libllama.so output/${{ matrix.abi }}/
+          cp llama.cpp/build/ggml/src/libggml*.so output/${{ matrix.abi }}/ 2>/dev/null || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-android-${{ matrix.abi }}
+          path: output/${{ matrix.abi }}/
+
+  package-all:
+    needs: [build-macos-arm64, build-macos-x64, build-linux-x64, build-linux-arm64, build-windows-x64, build-android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Organize libraries
+        run: |
+          # Desktop libraries for JVM
+          mkdir -p natives
+          cp -r artifacts/llama-macos-arm64 natives/macos-arm64
+          cp -r artifacts/llama-macos-x64 natives/macos-x64
+          cp -r artifacts/llama-linux-x64 natives/linux-x64
+          cp -r artifacts/llama-linux-arm64 natives/linux-arm64
+          cp -r artifacts/llama-windows-x64 natives/windows-x64
+
+          # Android libraries
+          mkdir -p jniLibs
+          cp -r artifacts/llama-android-arm64-v8a jniLibs/arm64-v8a
+          cp -r artifacts/llama-android-armeabi-v7a jniLibs/armeabi-v7a
+          cp -r artifacts/llama-android-x86_64 jniLibs/x86_64
+
+      - name: Create release archive
+        run: |
+          tar -czvf llama-natives-${{ env.LLAMA_CPP_VERSION }}.tar.gz natives jniLibs
+
+      - name: Upload combined artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-natives-all
+          path: |
+            natives/
+            jniLibs/
+
+      - name: Upload release archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-natives-release
+          path: llama-natives-${{ env.LLAMA_CPP_VERSION }}.tar.gz
+
+      - name: Copy to project (for local testing)
+        run: |
+          # This step shows where to copy the files
+          echo "To integrate the libraries into the project:"
+          echo ""
+          echo "Desktop (JVM):"
+          echo "  cp -r natives/* application/core/localai/src/jvmMain/resources/natives/"
+          echo ""
+          echo "Android:"
+          echo "  cp -r jniLibs/* application/core/localai/src/androidMain/jniLibs/"

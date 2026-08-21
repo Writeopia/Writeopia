@@ -47,6 +47,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,9 +78,11 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.toBoolean
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.localai.di.LocalAiInjection
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 private const val SPACE_AFTER_TITLE = 12
 private const val SPACE_AFTER_SUB_TITLE = 6
@@ -189,17 +192,23 @@ fun SettingsDialog(
                     )
                 },
                 aiScreen = {
-                    AiSection(
-                        ollamaUrl,
-                        ollamaAvailableModels,
-                        ollamaSelectedModel,
-                        downloadModelState,
-                        ollamaUrlChange,
-                        ollamaModelChange,
-                        ollamaModelsRetry,
-                        downloadModel,
-                        deleteModel
-                    )
+                    Column {
+                        AiSection(
+                            ollamaUrl,
+                            ollamaAvailableModels,
+                            ollamaSelectedModel,
+                            downloadModelState,
+                            ollamaUrlChange,
+                            ollamaModelChange,
+                            ollamaModelsRetry,
+                            downloadModel,
+                            deleteModel
+                        )
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        LocalAiTestSection()
+                    }
                 },
                 teamsScreen = {
                     TeamsSection(
@@ -305,6 +314,10 @@ fun SettingsScreen(
             downloadModel,
             deleteModel
         )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        LocalAiTestSection()
     }
 
     Spacer(modifier = Modifier.height(30.dp))
@@ -835,6 +848,98 @@ private fun AiSection(
         )
 
         DownloadModels(downloadModelState, downloadModel)
+    }
+}
+
+@Composable
+private fun LocalAiTestSection() {
+    val scope = rememberCoroutineScope()
+    var modelPath by remember { mutableStateOf("") }
+    var testResult by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val titleStyle = MaterialTheme.typography.titleLarge
+    val titleColor = MaterialTheme.colorScheme.onBackground
+
+    Column {
+        Text("Local AI (llama.cpp)", style = titleStyle, color = titleColor)
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        Text(
+            "Model path (.gguf file):",
+            style = MaterialTheme.typography.bodySmall,
+            color = titleColor
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        BasicTextField(
+            value = modelPath,
+            onValueChange = { modelPath = it },
+            modifier = Modifier
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                    MaterialTheme.shapes.medium
+                )
+                .padding(10.dp)
+                .fillMaxWidth(),
+            textStyle = MaterialTheme.typography.bodySmall.copy(
+                color = MaterialTheme.colorScheme.onBackground
+            ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.onBackground)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        CommonButton(
+            text = if (isLoading) "Running..." else "Test Local AI",
+            clickListener = {
+                println("[LocalAI] Button clicked. isLoading=$isLoading, modelPath='$modelPath'")
+                if (isLoading) {
+                    println("[LocalAI] Already loading, ignoring click")
+                    return@CommonButton
+                }
+                if (modelPath.isBlank()) {
+                    println("[LocalAI] Model path is blank")
+                    testResult = "Error: Please enter a model path"
+                    return@CommonButton
+                }
+                isLoading = true
+                testResult = null
+                println("[LocalAI] Starting test with model: $modelPath")
+                scope.launch {
+                    try {
+                        println("[LocalAI] Getting repository...")
+                        val repository = LocalAiInjection.singleton().provideRepository()
+                        println("[LocalAI] Repository obtained. Engine available: ${repository.isEngineAvailable()}")
+                        println("[LocalAI] Calling runTest...")
+                        val result = repository.runTest(modelPath)
+                        println("[LocalAI] runTest completed: $result")
+                        result.fold(
+                            onSuccess = { testResult = "Success: $it" },
+                            onFailure = { testResult = "Error: ${it.message}" }
+                        )
+                    } catch (e: Exception) {
+                        println("[LocalAI] Exception: ${e.message}")
+                        e.printStackTrace()
+                        testResult = "Error: ${e.message}"
+                    }
+                    isLoading = false
+                }
+            }
+        )
+
+        testResult?.let {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                it,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (it.startsWith("Success")) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.error
+            )
+        }
     }
 }
 

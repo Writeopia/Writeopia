@@ -1,0 +1,21 @@
+# Android JNI Libraries Directory
+
+This directory contains pre-built llama.cpp native libraries for Android.
+
+## Directory Structure
+
+```
+jniLibs/
+├── arm64-v8a/
+│   └── libllama.so
+├── armeabi-v7a/
+│   └── libllama.so
+└── x86_64/
+    └── libllama.so
+```
+
+## Building Libraries
+
+Run the GitHub Actions workflow `build-llama-cpp.yml` to build all libraries.
+
+The Android builds use the NDK to cross-compile for each ABI.
