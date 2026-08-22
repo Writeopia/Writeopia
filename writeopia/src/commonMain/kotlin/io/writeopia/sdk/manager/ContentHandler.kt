@@ -581,38 +581,40 @@ class ContentHandler(
     }
 
     /**
-     * Creates a spreadsheet with the specified number of columns and one initial row.
+     * Creates a spreadsheet with the specified number of columns and rows.
      *
      * @param currentStory The current story map
      * @param position The position to add the spreadsheet
      * @param columnCount The number of columns in the spreadsheet
+     * @param rowCount The number of rows in the spreadsheet
      * @return The updated story map with the new spreadsheet
      */
     fun createSpreadsheet(
         currentStory: Map<Double, StoryStep>,
         position: Double,
-        columnCount: Int
+        columnCount: Int,
+        rowCount: Int = 3
     ): Map<Double, StoryStep> {
         val mutable = currentStory.toSortedMutableMap()
 
-        // Create cells for the initial row
-        val cells = (0 until columnCount).map {
+        // Create rows with cells
+        val rows = (0 until rowCount).map {
+            val cells = (0 until columnCount).map {
+                StoryStep(
+                    type = StoryTypes.SPREADSHEET_CELL.type,
+                    text = ""
+                )
+            }
             StoryStep(
-                type = StoryTypes.SPREADSHEET_CELL.type,
-                text = ""
+                type = StoryTypes.SPREADSHEET_ROW.type,
+                steps = cells
             )
         }
 
-        // Create the initial row with the cells
-        val initialRow = StoryStep(
-            type = StoryTypes.SPREADSHEET_ROW.type,
-            steps = cells
-        )
-
-        // Create the spreadsheet with one row
+        // Create the spreadsheet with the rows
         val spreadsheet = StoryStep(
             type = StoryTypes.SPREADSHEET.type,
-            steps = listOf(initialRow)
+            steps = rows
         )
 
         mutable[position] = spreadsheet
@@ -776,6 +778,155 @@ class ContentHandler(
         val updatedSpreadsheet = spreadsheet.copy(text = jsonText)
 
         val mutable = currentStory.toSortedMutableMap()
+        mutable[position] = updatedSpreadsheet
+        return mutable
+    }
+
+    fun deleteSpreadsheetRow(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        rowIndex: Int
+    ): Map<Double, StoryStep>? {
+        val mutable = currentStory.toSortedMutableMap()
+        val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
+            ?: return null
+
+        val rows = spreadsheet.steps.toMutableList()
+        if (rowIndex < 0 || rowIndex >= rows.size || rows.size <= 1) return null
+
+        rows.removeAt(rowIndex)
+        val updatedSpreadsheet = spreadsheet.copy(steps = rows)
+        mutable[position] = updatedSpreadsheet
+        return mutable
+    }
+
+    fun deleteSpreadsheetColumn(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        columnIndex: Int
+    ): Map<Double, StoryStep>? {
+        val mutable = currentStory.toSortedMutableMap()
+        val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
+            ?: return null
+
+        val rows = spreadsheet.steps
+        if (rows.isEmpty()) return null
+
+        val columnCount = rows.firstOrNull()?.steps?.size ?: return null
+        if (columnIndex < 0 || columnIndex >= columnCount || columnCount <= 1) return null
+
+        val updatedRows = rows.map { row ->
+            val cells = row.steps.toMutableList()
+            cells.removeAt(columnIndex)
+            row.copy(steps = cells)
+        }
+
+        val updatedSpreadsheet = spreadsheet.copy(steps = updatedRows)
+        mutable[position] = updatedSpreadsheet
+        return mutable
+    }
+
+    fun addSpreadsheetRowAt(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        rowIndex: Int
+    ): Map<Double, StoryStep>? {
+        val mutable = currentStory.toSortedMutableMap()
+        val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
+            ?: return null
+
+        val rows = spreadsheet.steps.toMutableList()
+        val columnCount = rows.firstOrNull()?.steps?.size ?: return null
+
+        val newCells = (0 until columnCount).map {
+            StoryStep(type = StoryTypes.SPREADSHEET_CELL.type, text = "")
+        }
+        val newRow = StoryStep(type = StoryTypes.SPREADSHEET_ROW.type, steps = newCells)
+
+        val insertIndex = rowIndex.coerceIn(0, rows.size)
+        rows.add(insertIndex, newRow)
+
+        val updatedSpreadsheet = spreadsheet.copy(steps = rows)
+        mutable[position] = updatedSpreadsheet
+        return mutable
+    }
+
+    fun addSpreadsheetColumnAt(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        columnIndex: Int
+    ): Map<Double, StoryStep>? {
+        val mutable = currentStory.toSortedMutableMap()
+        val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
+            ?: return null
+
+        val rows = spreadsheet.steps
+        if (rows.isEmpty()) return null
+
+        val columnCount = rows.firstOrNull()?.steps?.size ?: return null
+        val insertIndex = columnIndex.coerceIn(0, columnCount)
+
+        val updatedRows = rows.map { row ->
+            val cells = row.steps.toMutableList()
+            val newCell = StoryStep(type = StoryTypes.SPREADSHEET_CELL.type, text = "")
+            cells.add(insertIndex, newCell)
+            row.copy(steps = cells)
+        }
+
+        val updatedSpreadsheet = spreadsheet.copy(steps = updatedRows)
+        mutable[position] = updatedSpreadsheet
+        return mutable
+    }
+
+    fun moveSpreadsheetRow(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        fromIndex: Int,
+        toIndex: Int
+    ): Map<Double, StoryStep>? {
+        val mutable = currentStory.toSortedMutableMap()
+        val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
+            ?: return null
+
+        val rows = spreadsheet.steps.toMutableList()
+        if (fromIndex < 0 || fromIndex >= rows.size) return null
+        if (toIndex < 0 || toIndex >= rows.size) return null
+        if (fromIndex == toIndex) return null
+
+        val row = rows.removeAt(fromIndex)
+        rows.add(toIndex, row)
+
+        val updatedSpreadsheet = spreadsheet.copy(steps = rows)
+        mutable[position] = updatedSpreadsheet
+        return mutable
+    }
+
+    fun moveSpreadsheetColumn(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        fromIndex: Int,
+        toIndex: Int
+    ): Map<Double, StoryStep>? {
+        val mutable = currentStory.toSortedMutableMap()
+        val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
+            ?: return null
+
+        val rows = spreadsheet.steps
+        if (rows.isEmpty()) return null
+
+        val columnCount = rows.firstOrNull()?.steps?.size ?: return null
+        if (fromIndex < 0 || fromIndex >= columnCount) return null
+        if (toIndex < 0 || toIndex >= columnCount) return null
+        if (fromIndex == toIndex) return null
+
+        val updatedRows = rows.map { row ->
+            val cells = row.steps.toMutableList()
+            val cell = cells.removeAt(fromIndex)
+            cells.add(toIndex, cell)
+            row.copy(steps = cells)
+        }
+
+        val updatedSpreadsheet = spreadsheet.copy(steps = updatedRows)
         mutable[position] = updatedSpreadsheet
         return mutable
     }

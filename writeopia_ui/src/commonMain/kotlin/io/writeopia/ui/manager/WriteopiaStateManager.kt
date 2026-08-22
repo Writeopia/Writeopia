@@ -1777,6 +1777,68 @@ class WriteopiaStateManager(
         )
     }
 
+    fun deleteSpreadsheetRow(spreadsheetId: String, rowIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.deleteSpreadsheetRow(
+            _currentStory.value,
+            spreadsheetId,
+            rowIndex
+        )
+    }
+
+    fun deleteSpreadsheetColumn(spreadsheetId: String, columnIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.deleteSpreadsheetColumn(
+            _currentStory.value,
+            spreadsheetId,
+            columnIndex
+        )
+    }
+
+    fun addSpreadsheetRowAt(spreadsheetId: String, rowIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetRowAt(
+            _currentStory.value,
+            spreadsheetId,
+            rowIndex
+        )
+    }
+
+    fun addSpreadsheetColumnAt(spreadsheetId: String, columnIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetColumnAt(
+            _currentStory.value,
+            spreadsheetId,
+            columnIndex
+        )
+    }
+
+    fun moveSpreadsheetRow(spreadsheetId: String, fromIndex: Int, toIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.moveSpreadsheetRow(
+            _currentStory.value,
+            spreadsheetId,
+            fromIndex,
+            toIndex
+        )
+    }
+
+    fun moveSpreadsheetColumn(spreadsheetId: String, fromIndex: Int, toIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.moveSpreadsheetColumn(
+            _currentStory.value,
+            spreadsheetId,
+            fromIndex,
+            toIndex
+        )
+    }
+
     /**
      * Disables drag selection box (e.g., during column resizing in spreadsheet).
      */

@@ -59,6 +59,9 @@ import io.writeopia.ui.draganddrop.target.DropTargetVerticalDivision
 import io.writeopia.ui.draganddrop.target.InBounds
 import io.writeopia.ui.draganddrop.target.external.externalImageDropTarget
 import io.writeopia.ui.draganddrop.target.external.shouldAcceptImageDrop
+import io.writeopia.ui.dialogs.EditSpreadsheetDialog
+import io.writeopia.ui.dialogs.SpreadsheetAction
+import io.writeopia.ui.dialogs.SpreadsheetActionType
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.model.DrawConfig
@@ -84,8 +87,12 @@ class SpreadsheetDrawer(
     private val onColumnWidthChange: (spreadsheetId: String, columnIndex: Int, newWidth: Int) -> Unit = { _, _, _ -> },
     private val onColumnResizeStart: () -> Unit = {},
     private val onColumnResizeEnd: () -> Unit = {},
-    private val onRowAction: (spreadsheetId: String, rowIndex: Int) -> Unit = { _, _ -> },
-    private val onColumnAction: (spreadsheetId: String, columnIndex: Int) -> Unit = { _, _ -> },
+    private val onDeleteRow: (spreadsheetId: String, rowIndex: Int) -> Unit = { _, _ -> },
+    private val onDeleteColumn: (spreadsheetId: String, columnIndex: Int) -> Unit = { _, _ -> },
+    private val onAddRowAt: (spreadsheetId: String, rowIndex: Int) -> Unit = { _, _ -> },
+    private val onAddColumnAt: (spreadsheetId: String, columnIndex: Int) -> Unit = { _, _ -> },
+    private val onMoveRow: (spreadsheetId: String, fromIndex: Int, toIndex: Int) -> Unit = { _, _, _ -> },
+    private val onMoveColumn: (spreadsheetId: String, fromIndex: Int, toIndex: Int) -> Unit = { _, _, _ -> },
 ) : StoryStepDrawer {
 
     @Composable
@@ -116,6 +123,11 @@ class SpreadsheetDrawer(
         // Track which row/column is currently hovered for action buttons
         var hoveredRowIndex by remember { mutableStateOf(-1) }
         var hoveredColumnIndex by remember { mutableStateOf(-1) }
+
+        // Dialog state for row/column actions
+        var showActionDialog by remember { mutableStateOf(false) }
+        var actionDialogType by remember { mutableStateOf(SpreadsheetActionType.COLUMN) }
+        var actionDialogIndex by remember { mutableStateOf(-1) }
 
         // Interaction source for the last row
         val lastRowInteractionSource = remember { MutableInteractionSource() }
@@ -272,7 +284,11 @@ class SpreadsheetDrawer(
                                                                         alpha = 0.1f * rowActionAlpha
                                                                     )
                                                                 )
-                                                                .clickable { onRowAction(step.id, rowIndex) }
+                                                                .clickable {
+                                                                    actionDialogType = SpreadsheetActionType.ROW
+                                                                    actionDialogIndex = rowIndex
+                                                                    showActionDialog = true
+                                                                }
                                                                 .padding(2.dp),
                                                             contentAlignment = Alignment.Center
                                                         ) {
@@ -345,7 +361,11 @@ class SpreadsheetDrawer(
                                                                             alpha = 0.1f * columnActionAlpha
                                                                         )
                                                                     )
-                                                                    .clickable { onColumnAction(step.id, cellIndex) }
+                                                                    .clickable {
+                                                                        actionDialogType = SpreadsheetActionType.COLUMN
+                                                                        actionDialogIndex = cellIndex
+                                                                        showActionDialog = true
+                                                                    }
                                                                     .padding(2.dp),
                                                                 contentAlignment = Alignment.Center
                                                             ) {
@@ -525,6 +545,45 @@ class SpreadsheetDrawer(
                     }
                 }
             }
+        }
+
+        // Action dialog for row/column operations
+        if (showActionDialog) {
+            EditSpreadsheetDialog(
+                actionType = actionDialogType,
+                onDismissRequest = { showActionDialog = false },
+                onAction = { action ->
+                    val index = actionDialogIndex
+                    when (actionDialogType) {
+                        SpreadsheetActionType.COLUMN -> {
+                            when (action) {
+                                SpreadsheetAction.AddBefore -> onAddColumnAt(step.id, index)
+                                SpreadsheetAction.AddAfter -> onAddColumnAt(step.id, index + 1)
+                                SpreadsheetAction.MoveBefore -> {
+                                    if (index > 0) onMoveColumn(step.id, index, index - 1)
+                                }
+                                SpreadsheetAction.MoveAfter -> {
+                                    onMoveColumn(step.id, index, index + 1)
+                                }
+                                SpreadsheetAction.Delete -> onDeleteColumn(step.id, index)
+                            }
+                        }
+                        SpreadsheetActionType.ROW -> {
+                            when (action) {
+                                SpreadsheetAction.AddBefore -> onAddRowAt(step.id, index)
+                                SpreadsheetAction.AddAfter -> onAddRowAt(step.id, index + 1)
+                                SpreadsheetAction.MoveBefore -> {
+                                    if (index > 0) onMoveRow(step.id, index, index - 1)
+                                }
+                                SpreadsheetAction.MoveAfter -> {
+                                    onMoveRow(step.id, index, index + 1)
+                                }
+                                SpreadsheetAction.Delete -> onDeleteRow(step.id, index)
+                            }
+                        }
+                    }
+                }
+            )
         }
     }
 

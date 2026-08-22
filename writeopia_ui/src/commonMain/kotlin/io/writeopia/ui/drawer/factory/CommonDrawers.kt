@@ -344,8 +344,24 @@ object CommonDrawers {
                     },
                     onColumnResizeStart = manager::disableDragSelection,
                     onColumnResizeEnd = manager::enableDragSelection,
-                    onRowAction = { _, _ -> },
-                    onColumnAction = { _, _ -> }
+                    onDeleteRow = { spreadsheetId, rowIndex ->
+                        manager.deleteSpreadsheetRow(spreadsheetId, rowIndex)
+                    },
+                    onDeleteColumn = { spreadsheetId, columnIndex ->
+                        manager.deleteSpreadsheetColumn(spreadsheetId, columnIndex)
+                    },
+                    onAddRowAt = { spreadsheetId, rowIndex ->
+                        manager.addSpreadsheetRowAt(spreadsheetId, rowIndex)
+                    },
+                    onAddColumnAt = { spreadsheetId, columnIndex ->
+                        manager.addSpreadsheetColumnAt(spreadsheetId, columnIndex)
+                    },
+                    onMoveRow = { spreadsheetId, fromIndex, toIndex ->
+                        manager.moveSpreadsheetRow(spreadsheetId, fromIndex, toIndex)
+                    },
+                    onMoveColumn = { spreadsheetId, fromIndex, toIndex ->
+                        manager.moveSpreadsheetColumn(spreadsheetId, fromIndex, toIndex)
+                    }
                 )
             )
         }

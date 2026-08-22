@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
-import io.writeopia.editor.features.editor.ui.dialogs.CreateSpreadsheetDialog
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
 import io.writeopia.editor.features.editor.ui.publish.PublishDialog
@@ -74,10 +73,6 @@ fun DesktopNoteEditorScreen(
     var showFolderSelection by remember {
         mutableStateOf(false)
     }
-    var showSpreadsheetDialog by remember {
-        mutableStateOf(false)
-    }
-
     Box(
         modifier = Modifier.clickable(
             onClick = {
@@ -227,7 +222,7 @@ fun DesktopNoteEditorScreen(
             checkItemClick = noteEditorViewModel::onAddCheckListClick,
             listItemClick = noteEditorViewModel::onAddListItemClick,
             codeBlockClick = noteEditorViewModel::onAddCodeBlockClick,
-            spreadsheetClick = { showSpreadsheetDialog = true },
+            spreadsheetClick = { noteEditorViewModel.onAddSpreadsheetClick(3) },
             highLightBlockClick = noteEditorViewModel::toggleHighLightBlock,
             cardBlockClick = noteEditorViewModel::toggleCardBlock,
             onPresentationClick = onPresentationClick,
@@ -345,16 +340,6 @@ fun DesktopNoteEditorScreen(
         val showPremiumDialog by noteEditorViewModel.showPremiumDialog.collectAsState()
         if (showPremiumDialog) {
             PremiumOnlyDialog(onDismiss = noteEditorViewModel::hidePremiumDialog)
-        }
-
-        if (showSpreadsheetDialog) {
-            CreateSpreadsheetDialog(
-                onDismissRequest = { showSpreadsheetDialog = false },
-                onCreate = { columnCount ->
-                    noteEditorViewModel.onAddSpreadsheetClick(columnCount)
-                    showSpreadsheetDialog = false
-                }
-            )
         }
     }
 }
