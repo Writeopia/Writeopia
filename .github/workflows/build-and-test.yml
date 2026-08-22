@@ -25,6 +25,24 @@ jobs:
           java-version: '21'
       - name: Ktlint
         run: ./gradlew ktlintCheck --no-daemon
+  mac_app_build:
+    name: Mac App Build
+    runs-on: ubuntu-22.04
+    env:
+      isCI: "true"
+      JWT_SECRET: "testingsecret"
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: '21'
+      - name: Generate signed mac app
+        run: ./gradlew packageReleaseDmg
+        env:
+          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
   ui_jvm_tests:
     name: Jvm UI Compose tests
     runs-on: ubuntu-22.04
@@ -43,10 +61,6 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
-      - name: Generate signed mac app
-        run: ./gradlew packageReleaseDmg
-        env:
-          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
       - name: JVM tests
         run: ./gradlew jvmTest
       - name: Upload test reports
