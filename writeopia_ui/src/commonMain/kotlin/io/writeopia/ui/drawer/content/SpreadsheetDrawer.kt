@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -82,6 +83,8 @@ class SpreadsheetDrawer(
     private val onAddRow: (spreadsheetId: String) -> Unit,
     private val onAddColumn: (spreadsheetId: String) -> Unit,
     private val onColumnWidthChange: (spreadsheetId: String, columnIndex: Int, newWidth: Int) -> Unit = { _, _, _ -> },
+    private val onColumnResizeStart: () -> Unit = {},
+    private val onColumnResizeEnd: () -> Unit = {},
     private val onCellAction: (spreadsheetId: String, rowIndex: Int, cellIndex: Int) -> Unit = { _, _, _ -> },
 ) : StoryStepDrawer {
 
@@ -249,22 +252,20 @@ class SpreadsheetDrawer(
                                                         },
                                                         showBorderEnd = !isLastColumn,
                                                         showBorderBottom = rowIndex < rows.size - 1,
-                                                        onBorderDrag = { delta ->
-                                                            val newWidth = (cellWidth + delta.toInt()).coerceIn(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH)
-                                                            if (newWidth != cellWidth) {
-                                                                // Update local state for smooth UI during drag
-                                                                localColumnWidths = localColumnWidths.toMutableList().apply {
-                                                                    if (cellIndex < size) {
-                                                                        this[cellIndex] = newWidth
-                                                                    }
+                                                        onWidthChange = { newWidth ->
+                                                            // Update local state for smooth UI during drag
+                                                            localColumnWidths = localColumnWidths.toMutableList().apply {
+                                                                if (cellIndex < size) {
+                                                                    this[cellIndex] = newWidth
                                                                 }
                                                             }
                                                         },
-                                                        onBorderDragEnd = { cellIndex ->
+                                                        onWidthChangeEnd = { finalWidth ->
                                                             // Persist the final width when drag ends
-                                                            val finalWidth = localColumnWidths.getOrElse(cellIndex) { DEFAULT_COLUMN_WIDTH }
                                                             onColumnWidthChange(step.id, cellIndex, finalWidth)
                                                         },
+                                                        onResizeStart = onColumnResizeStart,
+                                                        onResizeEnd = onColumnResizeEnd,
                                                         cellIndex = cellIndex,
                                                         extraModifier = when {
                                                             isLastRow && isLastColumn -> Modifier
@@ -378,8 +379,10 @@ private fun SpreadsheetCell(
     onActionClick: () -> Unit,
     showBorderEnd: Boolean,
     showBorderBottom: Boolean,
-    onBorderDrag: (Float) -> Unit,
-    onBorderDragEnd: (Int) -> Unit,
+    onWidthChange: (Int) -> Unit,
+    onWidthChangeEnd: (Int) -> Unit,
+    onResizeStart: () -> Unit,
+    onResizeEnd: () -> Unit,
     cellIndex: Int,
     modifier: Modifier = Modifier,
     extraModifier: Modifier = Modifier
@@ -477,23 +480,33 @@ private fun SpreadsheetCell(
                             val down = awaitFirstDown(requireUnconsumed = false)
                             down.consume()
                             isDragging = true
+                            onResizeStart()
 
-                            var lastPosition = down.position.x
+                            // Capture initial width at drag start (width.value is stable during gesture)
+                            val initialWidth = width.value
+                            var accumulatedDelta = 0f
 
-                            do {
-                                val event = awaitPointerEvent()
-                                event.changes.forEach { change ->
-                                    if (change.pressed) {
-                                        val dragAmount = change.position.x - lastPosition
-                                        lastPosition = change.position.x
-                                        onBorderDrag(dragAmount)
-                                        change.consume()
-                                    }
-                                }
-                            } while (event.changes.any { it.pressed })
+                            horizontalDrag(down.id) { change ->
+                                val dragAmount = change.position.x - change.previousPosition.x
+                                accumulatedDelta += dragAmount
+
+                                // Calculate new width from initial + accumulated delta
+                                val newWidth = (initialWidth + accumulatedDelta)
+                                    .toInt()
+                                    .coerceIn(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH)
+                                onWidthChange(newWidth)
+
+                                change.consume()
+                            }
+
+                            // Report final width
+                            val finalWidth = (initialWidth + accumulatedDelta)
+                                .toInt()
+                                .coerceIn(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH)
 
                             isDragging = false
-                            onBorderDragEnd(cellIndex)
+                            onResizeEnd()
+                            onWidthChangeEnd(finalWidth)
                         }
                     }
                     .background(

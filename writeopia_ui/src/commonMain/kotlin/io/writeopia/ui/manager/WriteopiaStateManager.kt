@@ -1777,6 +1777,20 @@ class WriteopiaStateManager(
         )
     }
 
+    /**
+     * Disables drag selection box (e.g., during column resizing in spreadsheet).
+     */
+    fun disableDragSelection() {
+        textSelectionActiveState.value = true
+    }
+
+    /**
+     * Re-enables drag selection box.
+     */
+    fun enableDragSelection() {
+        textSelectionActiveState.value = false
+    }
+
     private fun getStories() = _currentStory.value.stories
 
     private fun currentPosition(): Double? =

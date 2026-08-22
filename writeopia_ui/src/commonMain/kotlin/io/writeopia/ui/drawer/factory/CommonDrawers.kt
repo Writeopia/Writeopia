@@ -342,6 +342,8 @@ object CommonDrawers {
                     onColumnWidthChange = { spreadsheetId, columnIndex, newWidth ->
                         manager.updateSpreadsheetColumnWidth(spreadsheetId, columnIndex, newWidth)
                     },
+                    onColumnResizeStart = manager::disableDragSelection,
+                    onColumnResizeEnd = manager::enableDragSelection,
                     onCellAction = { _, _, _ -> }
                 )
             )
