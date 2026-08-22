@@ -198,6 +198,8 @@ object WrIcons {
 
     val published: ImageVector = GlobeCheck
 
+    val spreadsheet: ImageVector = LayoutGrid
+
     val allIcons: Map<String, ImageVector> =
         mapOf(
             "settings" to settings,

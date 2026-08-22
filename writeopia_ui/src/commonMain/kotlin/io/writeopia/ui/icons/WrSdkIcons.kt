@@ -31,6 +31,8 @@ import io.writeopia.ui.icons.all.aLargeSmall
 import io.writeopia.ui.icons.all.pencil
 import io.writeopia.ui.icons.all.spotlight
 import io.writeopia.ui.icons.all.Highlighter
+import io.writeopia.ui.icons.all.Ellipsis
+import io.writeopia.ui.icons.all.EllipsisVertical
 
 object WrSdkIcons {
 
@@ -92,7 +94,13 @@ object WrSdkIcons {
 
     val add: ImageVector = Plus
 
+    val plus: ImageVector = Plus
+
     val play: ImageVector = Play
 
     val refresh: ImageVector = RefreshCw
+
+    val moreVert: ImageVector = EllipsisVertical
+
+    val moreHoriz: ImageVector = Ellipsis
 }

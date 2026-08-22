@@ -579,6 +579,237 @@ class ContentHandler(
             focus = position
         )
     }
+
+    /**
+     * Creates a spreadsheet with the specified number of columns and one initial row.
+     *
+     * @param currentStory The current story map
+     * @param position The position to add the spreadsheet
+     * @param columnCount The number of columns in the spreadsheet
+     * @return The updated story map with the new spreadsheet
+     */
+    fun createSpreadsheet(
+        currentStory: Map<Double, StoryStep>,
+        position: Double,
+        columnCount: Int
+    ): Map<Double, StoryStep> {
+        val mutable = currentStory.toSortedMutableMap()
+
+        // Create cells for the initial row
+        val cells = (0 until columnCount).map {
+            StoryStep(
+                type = StoryTypes.SPREADSHEET_CELL.type,
+                text = ""
+            )
+        }
+
+        // Create the initial row with the cells
+        val initialRow = StoryStep(
+            type = StoryTypes.SPREADSHEET_ROW.type,
+            steps = cells
+        )
+
+        // Create the spreadsheet with one row
+        val spreadsheet = StoryStep(
+            type = StoryTypes.SPREADSHEET.type,
+            steps = listOf(initialRow)
+        )
+
+        mutable[position] = spreadsheet
+        return mutable
+    }
+
+    /**
+     * Updates the text of a specific cell within a spreadsheet.
+     *
+     * @param currentStory The current story map
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @param rowIndex The index of the row (0-based)
+     * @param cellIndex The index of the cell within the row (0-based)
+     * @param newText The new text for the cell
+     * @return The updated story map, or null if the spreadsheet wasn't found
+     */
+    fun updateSpreadsheetCell(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        rowIndex: Int,
+        cellIndex: Int,
+        newText: String
+    ): Map<Double, StoryStep>? {
+        val spreadsheetEntry = currentStory.entries.find { it.value.id == spreadsheetId } ?: return null
+        val position = spreadsheetEntry.key
+        val spreadsheet = spreadsheetEntry.value
+
+        val rows = spreadsheet.steps.toMutableList()
+        if (rowIndex !in rows.indices) return null
+
+        val row = rows[rowIndex]
+        val cells = row.steps.toMutableList()
+        if (cellIndex !in cells.indices) return null
+
+        // Update the cell text
+        cells[cellIndex] = cells[cellIndex].copy(text = newText)
+
+        // Update the row with new cells
+        rows[rowIndex] = row.copy(steps = cells)
+
+        // Update the spreadsheet with new rows
+        val updatedSpreadsheet = spreadsheet.copy(steps = rows)
+
+        val mutable = currentStory.toSortedMutableMap()
+        mutable[position] = updatedSpreadsheet
+        return mutable
+    }
+
+    /**
+     * Adds a new row to a spreadsheet with the same number of columns as existing rows.
+     *
+     * @param currentStory The current story map
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @return The updated story map, or null if the spreadsheet wasn't found
+     */
+    fun addSpreadsheetRow(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String
+    ): Map<Double, StoryStep>? {
+        val spreadsheetEntry = currentStory.entries.find { it.value.id == spreadsheetId } ?: return null
+        val position = spreadsheetEntry.key
+        val spreadsheet = spreadsheetEntry.value
+
+        val existingRows = spreadsheet.steps
+        if (existingRows.isEmpty()) return null
+
+        // Get column count from first row
+        val columnCount = existingRows.first().steps.size
+
+        // Create new cells
+        val newCells = (0 until columnCount).map {
+            StoryStep(
+                type = StoryTypes.SPREADSHEET_CELL.type,
+                text = ""
+            )
+        }
+
+        // Create new row
+        val newRow = StoryStep(
+            type = StoryTypes.SPREADSHEET_ROW.type,
+            steps = newCells
+        )
+
+        // Add the new row to the spreadsheet
+        val updatedSpreadsheet = spreadsheet.copy(steps = existingRows + newRow)
+
+        val mutable = currentStory.toSortedMutableMap()
+        mutable[position] = updatedSpreadsheet
+        return mutable
+    }
+
+    /**
+     * Adds a new column to a spreadsheet by adding a cell to each row.
+     *
+     * @param currentStory The current story map
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @return The updated story map, or null if the spreadsheet wasn't found
+     */
+    fun addSpreadsheetColumn(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String
+    ): Map<Double, StoryStep>? {
+        val spreadsheetEntry = currentStory.entries.find { it.value.id == spreadsheetId } ?: return null
+        val position = spreadsheetEntry.key
+        val spreadsheet = spreadsheetEntry.value
+
+        val existingRows = spreadsheet.steps
+        if (existingRows.isEmpty()) return null
+
+        // Add a new cell to each row
+        val updatedRows = existingRows.map { row ->
+            val newCell = StoryStep(
+                type = StoryTypes.SPREADSHEET_CELL.type,
+                text = ""
+            )
+            row.copy(steps = row.steps + newCell)
+        }
+
+        val updatedSpreadsheet = spreadsheet.copy(steps = updatedRows)
+
+        val mutable = currentStory.toSortedMutableMap()
+        mutable[position] = updatedSpreadsheet
+        return mutable
+    }
+
+    /**
+     * Updates the width of a specific column in a spreadsheet.
+     * Column widths are stored as JSON metadata in the spreadsheet's text field.
+     * Format: {"columnWidths":[120,150,100]}
+     *
+     * @param currentStory The current story map
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @param columnIndex The index of the column to update (0-based)
+     * @param newWidth The new width for the column in dp
+     * @return The updated story map, or null if the spreadsheet wasn't found
+     */
+    fun updateSpreadsheetColumnWidth(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        columnIndex: Int,
+        newWidth: Int
+    ): Map<Double, StoryStep>? {
+        val spreadsheetEntry = currentStory.entries.find { it.value.id == spreadsheetId } ?: return null
+        val position = spreadsheetEntry.key
+        val spreadsheet = spreadsheetEntry.value
+
+        // Get the column count from the first row
+        val columnCount = spreadsheet.steps.firstOrNull()?.steps?.size ?: return null
+        if (columnIndex !in 0 until columnCount) return null
+
+        // Parse existing column widths from JSON or use defaults
+        val existingWidths = parseColumnWidths(spreadsheet.text, columnCount)
+
+        // Update the column width at the specified index
+        val updatedWidths = existingWidths.toMutableList().apply {
+            this[columnIndex] = newWidth
+        }
+
+        // Serialize back to JSON
+        val jsonText = """{"columnWidths":[${updatedWidths.joinToString(",")}]}"""
+        val updatedSpreadsheet = spreadsheet.copy(text = jsonText)
+
+        val mutable = currentStory.toSortedMutableMap()
+        mutable[position] = updatedSpreadsheet
+        return mutable
+    }
+
+    /**
+     * Parses column widths from the spreadsheet metadata JSON.
+     * Returns a list of widths with the specified column count, using defaults for missing values.
+     */
+    private fun parseColumnWidths(text: String?, columnCount: Int): List<Int> {
+        val defaultWidth = 120
+        if (text.isNullOrBlank()) {
+            return List(columnCount) { defaultWidth }
+        }
+
+        return try {
+            // Simple regex to extract the columnWidths array: {"columnWidths":[120,150,100]}
+            val regex = """"columnWidths"\s*:\s*\[([^\]]*)]""".toRegex()
+            val match = regex.find(text)
+            val arrayContent = match?.groupValues?.getOrNull(1) ?: ""
+
+            val widths = if (arrayContent.isBlank()) {
+                emptyList()
+            } else {
+                arrayContent.split(",").mapNotNull { it.trim().toIntOrNull() }
+            }
+
+            // Ensure we have the right number of columns, using defaults for missing
+            (0 until columnCount).map { index ->
+                widths.getOrElse(index) { defaultWidth }
+            }
+        } catch (e: Exception) {
+            List(columnCount) { defaultWidth }
+        }
+    }
 }
 
 private fun defaultLineBreakMap(storyType: StoryType): StoryType =

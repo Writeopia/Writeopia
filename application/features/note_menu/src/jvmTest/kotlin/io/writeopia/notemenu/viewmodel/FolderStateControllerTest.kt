@@ -25,6 +25,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FolderStateControllerTest {
@@ -54,8 +55,11 @@ class FolderStateControllerTest {
 
         val workspace = Workspace(
             id = workspaceId,
+            userId = "ownerId",
             name = "Test Workspace",
-            ownerId = "ownerId"
+            lastSync = Instant.DISTANT_PAST,
+            selected = true,
+            role = "admin"
         )
 
         val premiumUser = WriteopiaUser(
@@ -104,8 +108,11 @@ class FolderStateControllerTest {
 
         val workspace = Workspace(
             id = workspaceId,
+            userId = "ownerId",
             name = "Test Workspace",
-            ownerId = "ownerId"
+            lastSync = Instant.DISTANT_PAST,
+            selected = true,
+            role = "admin"
         )
 
         val freeUser = WriteopiaUser(
@@ -149,8 +156,11 @@ class FolderStateControllerTest {
 
         val workspace = Workspace(
             id = workspaceId,
+            userId = "ownerId",
             name = "Test Workspace",
-            ownerId = "ownerId"
+            lastSync = Instant.DISTANT_PAST,
+            selected = true,
+            role = "admin"
         )
 
         coEvery { authRepository.getWorkspace() } returns workspace
@@ -185,8 +195,11 @@ class FolderStateControllerTest {
 
         val workspace = Workspace(
             id = workspaceId,
+            userId = "ownerId",
             name = "Test Workspace",
-            ownerId = "ownerId"
+            lastSync = Instant.DISTANT_PAST,
+            selected = true,
+            role = "admin"
         )
 
         val premiumUser = WriteopiaUser(
@@ -228,8 +241,11 @@ class FolderStateControllerTest {
 
         val workspace = Workspace(
             id = workspaceId,
+            userId = "ownerId",
             name = "Test Workspace",
-            ownerId = "ownerId"
+            lastSync = Instant.DISTANT_PAST,
+            selected = true,
+            role = "admin"
         )
 
         val premiumUser = WriteopiaUser(
