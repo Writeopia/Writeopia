@@ -579,6 +579,7 @@ class ContentHandler(
             focus = position
         )
     }
+
     /**
      * Creates a spreadsheet with the specified number of columns and one initial row.
      *
