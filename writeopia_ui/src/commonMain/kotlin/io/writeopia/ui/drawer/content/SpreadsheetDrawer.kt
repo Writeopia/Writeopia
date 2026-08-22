@@ -214,11 +214,11 @@ class SpreadsheetDrawer(
                         Column(
                             modifier = Modifier
                                 .padding(vertical = 4.dp)
-                                .widthIn(max = 10000.dp)
+                                .width(IntrinsicSize.Max)
                         ) {
                             // Row containing spreadsheet + column button
                             Row(
-                                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)
+                                modifier = Modifier.height(IntrinsicSize.Min)
                             ) {
                                 // Scrollable spreadsheet content
                                 Box(
