@@ -406,11 +406,13 @@ class SpreadsheetDrawer(
                                                                 onTextChange = { newText ->
                                                                     onCellTextChange(step.id, rowIndex, cellIndex, newText)
                                                                 },
-                                                                onHoverChanged = { isHovered ->
-                                                                    if (isHovered) {
+                                                                onHoverChanged = { cellHovered ->
+                                                                    if (cellHovered) {
                                                                         hoveredRowIndex = rowIndex
                                                                         hoveredColumnIndex = cellIndex
-                                                                    } else if (hoveredRowIndex == rowIndex && hoveredColumnIndex == cellIndex) {
+                                                                    } else if (hoveredRowIndex == rowIndex &&
+                                                                        hoveredColumnIndex == cellIndex
+                                                                    ) {
                                                                         hoveredRowIndex = -1
                                                                         hoveredColumnIndex = -1
                                                                     }
