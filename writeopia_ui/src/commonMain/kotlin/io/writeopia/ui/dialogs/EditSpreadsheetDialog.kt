@@ -62,6 +62,11 @@ fun EditSpreadsheetDialog(
         SpreadsheetActionType.ROW -> WrSdkIcons.smallArrowUp to WrSdkIcons.smallArrowDown
     }
 
+    val (addBeforeIcon, addAfterIcon) = when (actionType) {
+        SpreadsheetActionType.COLUMN -> WrSdkIcons.addLeft to WrSdkIcons.addRight
+        SpreadsheetActionType.ROW -> WrSdkIcons.addUp to WrSdkIcons.addDown
+    }
+
     Dialog(onDismissRequest = onDismissRequest) {
         Card(
             modifier = modifier
@@ -85,7 +90,7 @@ fun EditSpreadsheetDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 DialogOption(
-                    icon = WrSdkIcons.plus,
+                    icon = addBeforeIcon,
                     text = "Add $beforeLabel",
                     onClick = {
                         onAction(SpreadsheetAction.AddBefore)
@@ -94,7 +99,7 @@ fun EditSpreadsheetDialog(
                 )
 
                 DialogOption(
-                    icon = WrSdkIcons.plus,
+                    icon = addAfterIcon,
                     text = "Add $afterLabel",
                     onClick = {
                         onAction(SpreadsheetAction.AddAfter)

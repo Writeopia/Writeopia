@@ -5,9 +5,13 @@ import io.writeopia.ui.icons.all.Bold
 import io.writeopia.ui.icons.all.Calendar
 import io.writeopia.ui.icons.all.Check
 import io.writeopia.ui.icons.all.ChevronDown
+import io.writeopia.ui.icons.all.ChevronDownPlus
 import io.writeopia.ui.icons.all.ChevronLeft
+import io.writeopia.ui.icons.all.ChevronLeftPlus
 import io.writeopia.ui.icons.all.ChevronRight
+import io.writeopia.ui.icons.all.ChevronRightPlus
 import io.writeopia.ui.icons.all.ChevronUp
+import io.writeopia.ui.icons.all.ChevronUpPlus
 import io.writeopia.ui.icons.all.Clock
 import io.writeopia.ui.icons.all.Code
 import io.writeopia.ui.icons.all.ExternalLink
@@ -46,6 +50,14 @@ object WrSdkIcons {
     val smallArrowRight: ImageVector = ChevronRight
 
     val smallArrowLeft: ImageVector = ChevronLeft
+
+    val addLeft: ImageVector = ChevronLeftPlus
+
+    val addRight: ImageVector = ChevronRightPlus
+
+    val addUp: ImageVector = ChevronUpPlus
+
+    val addDown: ImageVector = ChevronDownPlus
 
     val smallArrowDown: ImageVector = ChevronDown
 
