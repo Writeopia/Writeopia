@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -85,7 +84,8 @@ class SpreadsheetDrawer(
     private val onColumnWidthChange: (spreadsheetId: String, columnIndex: Int, newWidth: Int) -> Unit = { _, _, _ -> },
     private val onColumnResizeStart: () -> Unit = {},
     private val onColumnResizeEnd: () -> Unit = {},
-    private val onCellAction: (spreadsheetId: String, rowIndex: Int, cellIndex: Int) -> Unit = { _, _, _ -> },
+    private val onRowAction: (spreadsheetId: String, rowIndex: Int) -> Unit = { _, _ -> },
+    private val onColumnAction: (spreadsheetId: String, columnIndex: Int) -> Unit = { _, _ -> },
 ) : StoryStepDrawer {
 
     @Composable
@@ -112,6 +112,10 @@ class SpreadsheetDrawer(
         // columnDragOffset is in Dp (converted from pixels using density)
         var resizingColumnIndex by remember { mutableStateOf(-1) }
         var columnDragOffset by remember { mutableStateOf(0f) }
+
+        // Track which row/column is currently hovered for action buttons
+        var hoveredRowIndex by remember { mutableStateOf(-1) }
+        var hoveredColumnIndex by remember { mutableStateOf(-1) }
 
         // Interaction source for the last row
         val lastRowInteractionSource = remember { MutableInteractionSource() }
@@ -228,27 +232,79 @@ class SpreadsheetDrawer(
                                 Box(
                                     modifier = Modifier.horizontalScroll(scrollState)
                                 ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .border(
-                                                width = 1.dp,
-                                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
-                                            .clip(RoundedCornerShape(8.dp))
-                                    ) {
-                                        rows.forEachIndexed { rowIndex, row ->
-                                            val isHeader = rowIndex == 0
-                                            val isLastRow = rowIndex == rows.size - 1
+                                    Row {
+                                        // Row action buttons column (on the left)
+                                        Column(
+                                            modifier = Modifier.padding(end = 4.dp)
+                                        ) {
+                                            // Empty space for alignment with column action buttons
+                                            Spacer(modifier = Modifier.height(24.dp))
 
+                                            rows.forEachIndexed { rowIndex, _ ->
+                                                val rowActionInteractionSource = remember { MutableInteractionSource() }
+                                                val isRowActionHovered by rowActionInteractionSource.collectIsHoveredAsState()
+
+                                                val targetAlpha = when {
+                                                    isRowActionHovered -> 1f
+                                                    hoveredRowIndex == rowIndex -> 1f
+                                                    else -> 0f
+                                                }
+                                                val rowActionAlpha by animateFloatAsState(
+                                                    targetValue = targetAlpha,
+                                                    animationSpec = tween(durationMillis = 150)
+                                                )
+
+                                                Box(
+                                                    modifier = Modifier
+                                                        .width(20.dp)
+                                                        .defaultMinSize(minHeight = 40.dp)
+                                                        .height(IntrinsicSize.Min)
+                                                        .hoverable(rowActionInteractionSource),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    if (rowActionAlpha > 0f) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(20.dp)
+                                                                .clip(RoundedCornerShape(4.dp))
+                                                                .background(
+                                                                    MaterialTheme.colorScheme.onBackground.copy(
+                                                                        alpha = 0.1f * rowActionAlpha
+                                                                    )
+                                                                )
+                                                                .clickable { onRowAction(step.id, rowIndex) }
+                                                                .padding(2.dp),
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = WrSdkIcons.moreVert,
+                                                                contentDescription = "Row actions",
+                                                                modifier = Modifier.size(14.dp),
+                                                                tint = MaterialTheme.colorScheme.onBackground.copy(
+                                                                    alpha = 0.6f * rowActionAlpha
+                                                                )
+                                                            )
+                                                        }
+                                                    }
+                                                }
+
+                                                // Add spacing for border between rows
+                                                if (rowIndex < rows.size - 1) {
+                                                    Spacer(modifier = Modifier.height(1.dp))
+                                                }
+                                            }
+                                        }
+
+                                        // Main spreadsheet grid
+                                        Column {
+                                            // Column action buttons row (on top)
                                             Row(
-                                                modifier = Modifier.height(IntrinsicSize.Min)
+                                                modifier = Modifier
+                                                    .height(24.dp)
+                                                    .padding(bottom = 4.dp)
                                             ) {
-                                                row.steps.forEachIndexed { cellIndex, cell ->
-                                                    val isLastColumn = cellIndex == row.steps.size - 1
+                                                rows.firstOrNull()?.steps?.forEachIndexed { cellIndex, _ ->
                                                     val cellWidth = localColumnWidths.getOrElse(cellIndex) { DEFAULT_COLUMN_WIDTH }
-
-                                                    // Calculate effective width including drag offset if this column is being resized
                                                     val effectiveWidth = if (resizingColumnIndex == cellIndex) {
                                                         (cellWidth + columnDragOffset).coerceIn(
                                                             MIN_COLUMN_WIDTH.toFloat(),
@@ -257,48 +313,140 @@ class SpreadsheetDrawer(
                                                     } else {
                                                         cellWidth.toFloat()
                                                     }
+                                                    val isLastColumn = cellIndex == (rows.firstOrNull()?.steps?.size ?: 1) - 1
 
-                                                    SpreadsheetCell(
-                                                        text = cell.text ?: "",
-                                                        isHeader = isHeader,
-                                                        width = effectiveWidth.dp,
-                                                        onTextChange = { newText ->
-                                                            onCellTextChange(step.id, rowIndex, cellIndex, newText)
-                                                        },
-                                                        onActionClick = {
-                                                            onCellAction(step.id, rowIndex, cellIndex)
-                                                        },
-                                                        showBorderEnd = !isLastColumn,
-                                                        showBorderBottom = rowIndex < rows.size - 1,
-                                                        onDragStart = {
-                                                            resizingColumnIndex = cellIndex
-                                                            columnDragOffset = 0f
-                                                            onColumnResizeStart()
-                                                        },
-                                                        onDrag = { deltaPx ->
-                                                            // Convert pixel delta to Dp
-                                                            columnDragOffset += with(density) { deltaPx.toDp().value }
-                                                        },
-                                                        onDragEnd = {
-                                                            val finalWidth = (cellWidth + columnDragOffset)
-                                                                .toInt()
-                                                                .coerceIn(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH)
-                                                            resizingColumnIndex = -1
-                                                            columnDragOffset = 0f
-                                                            onColumnResizeEnd()
-                                                            onColumnWidthChange(step.id, cellIndex, finalWidth)
-                                                        },
-                                                        cellIndex = cellIndex,
-                                                        extraModifier = when {
-                                                            isLastRow && isLastColumn ->
-                                                                Modifier
-                                                                    .hoverable(lastRowInteractionSource)
-                                                                    .hoverable(lastColumnInteractionSource)
-                                                            isLastRow -> Modifier.hoverable(lastRowInteractionSource)
-                                                            isLastColumn -> Modifier.hoverable(lastColumnInteractionSource)
-                                                            else -> Modifier
-                                                        }
+                                                    val columnActionInteractionSource = remember { MutableInteractionSource() }
+                                                    val isColumnActionHovered by columnActionInteractionSource.collectIsHoveredAsState()
+
+                                                    val targetAlpha = when {
+                                                        isColumnActionHovered -> 1f
+                                                        hoveredColumnIndex == cellIndex -> 1f
+                                                        else -> 0f
+                                                    }
+                                                    val columnActionAlpha by animateFloatAsState(
+                                                        targetValue = targetAlpha,
+                                                        animationSpec = tween(durationMillis = 150)
                                                     )
+
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .width(effectiveWidth.dp)
+                                                            .fillMaxHeight()
+                                                            .hoverable(columnActionInteractionSource),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        if (columnActionAlpha > 0f) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(20.dp)
+                                                                    .clip(RoundedCornerShape(4.dp))
+                                                                    .background(
+                                                                        MaterialTheme.colorScheme.onBackground.copy(
+                                                                            alpha = 0.1f * columnActionAlpha
+                                                                        )
+                                                                    )
+                                                                    .clickable { onColumnAction(step.id, cellIndex) }
+                                                                    .padding(2.dp),
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                Icon(
+                                                                    imageVector = WrSdkIcons.moreHoriz,
+                                                                    contentDescription = "Column actions",
+                                                                    modifier = Modifier.size(14.dp),
+                                                                    tint = MaterialTheme.colorScheme.onBackground.copy(
+                                                                        alpha = 0.6f * columnActionAlpha
+                                                                    )
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+
+                                                    // Add spacing for resizer between columns
+                                                    if (!isLastColumn) {
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                    }
+                                                }
+                                            }
+
+                                            // Spreadsheet cells
+                                            Column(
+                                                modifier = Modifier
+                                                    .border(
+                                                        width = 1.dp,
+                                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
+                                                        shape = RoundedCornerShape(8.dp)
+                                                    )
+                                                    .clip(RoundedCornerShape(8.dp))
+                                            ) {
+                                                rows.forEachIndexed { rowIndex, row ->
+                                                    val isHeader = rowIndex == 0
+                                                    val isLastRow = rowIndex == rows.size - 1
+
+                                                    Row(
+                                                        modifier = Modifier.height(IntrinsicSize.Min)
+                                                    ) {
+                                                        row.steps.forEachIndexed { cellIndex, cell ->
+                                                            val isLastColumn = cellIndex == row.steps.size - 1
+                                                            val cellWidth = localColumnWidths.getOrElse(cellIndex) { DEFAULT_COLUMN_WIDTH }
+
+                                                            // Calculate effective width including drag offset if this column is being resized
+                                                            val effectiveWidth = if (resizingColumnIndex == cellIndex) {
+                                                                (cellWidth + columnDragOffset).coerceIn(
+                                                                    MIN_COLUMN_WIDTH.toFloat(),
+                                                                    MAX_COLUMN_WIDTH.toFloat()
+                                                                )
+                                                            } else {
+                                                                cellWidth.toFloat()
+                                                            }
+
+                                                            SpreadsheetCell(
+                                                                text = cell.text ?: "",
+                                                                isHeader = isHeader,
+                                                                width = effectiveWidth.dp,
+                                                                onTextChange = { newText ->
+                                                                    onCellTextChange(step.id, rowIndex, cellIndex, newText)
+                                                                },
+                                                                onHoverChanged = { isHovered ->
+                                                                    if (isHovered) {
+                                                                        hoveredRowIndex = rowIndex
+                                                                        hoveredColumnIndex = cellIndex
+                                                                    } else if (hoveredRowIndex == rowIndex && hoveredColumnIndex == cellIndex) {
+                                                                        hoveredRowIndex = -1
+                                                                        hoveredColumnIndex = -1
+                                                                    }
+                                                                },
+                                                                showBorderEnd = !isLastColumn,
+                                                                showBorderBottom = rowIndex < rows.size - 1,
+                                                                onDragStart = {
+                                                                    resizingColumnIndex = cellIndex
+                                                                    columnDragOffset = 0f
+                                                                    onColumnResizeStart()
+                                                                },
+                                                                onDrag = { deltaPx ->
+                                                                    // Convert pixel delta to Dp
+                                                                    columnDragOffset += with(density) { deltaPx.toDp().value }
+                                                                },
+                                                                onDragEnd = {
+                                                                    val finalWidth = (cellWidth + columnDragOffset)
+                                                                        .toInt()
+                                                                        .coerceIn(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH)
+                                                                    resizingColumnIndex = -1
+                                                                    columnDragOffset = 0f
+                                                                    onColumnResizeEnd()
+                                                                    onColumnWidthChange(step.id, cellIndex, finalWidth)
+                                                                },
+                                                                extraModifier = when {
+                                                                    isLastRow && isLastColumn ->
+                                                                        Modifier
+                                                                            .hoverable(lastRowInteractionSource)
+                                                                            .hoverable(lastColumnInteractionSource)
+                                                                    isLastRow -> Modifier.hoverable(lastRowInteractionSource)
+                                                                    isLastColumn -> Modifier.hoverable(lastColumnInteractionSource)
+                                                                    else -> Modifier
+                                                                }
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -399,19 +547,22 @@ private fun SpreadsheetCell(
     isHeader: Boolean,
     width: Dp,
     onTextChange: (String) -> Unit,
-    onActionClick: () -> Unit,
+    onHoverChanged: (Boolean) -> Unit,
     showBorderEnd: Boolean,
     showBorderBottom: Boolean,
     onDragStart: () -> Unit,
     onDrag: (Float) -> Unit,
     onDragEnd: () -> Unit,
-    cellIndex: Int,
     modifier: Modifier = Modifier,
     extraModifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     var localText by remember(text) { mutableStateOf(text) }
+
+    LaunchedEffect(isHovered) {
+        onHoverChanged(isHovered)
+    }
 
     val backgroundColor = if (isHeader) {
         MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f)
@@ -462,27 +613,6 @@ private fun SpreadsheetCell(
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 singleLine = false
             )
-
-            // Action button on hover
-            if (isHovered) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(20.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f))
-                        .clickable { onActionClick() }
-                        .padding(2.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = WrSdkIcons.moreVert,
-                        contentDescription = "Cell actions",
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                    )
-                }
-            }
         }
 
         // Draggable border/resizer

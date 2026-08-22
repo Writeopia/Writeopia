@@ -344,7 +344,8 @@ object CommonDrawers {
                     },
                     onColumnResizeStart = manager::disableDragSelection,
                     onColumnResizeEnd = manager::enableDragSelection,
-                    onCellAction = { _, _, _ -> }
+                    onRowAction = { _, _ -> },
+                    onColumnAction = { _, _ -> }
                 )
             )
         }
