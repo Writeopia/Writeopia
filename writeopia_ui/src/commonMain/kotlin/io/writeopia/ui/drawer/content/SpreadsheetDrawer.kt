@@ -288,9 +288,10 @@ class SpreadsheetDrawer(
                                                         },
                                                         cellIndex = cellIndex,
                                                         extraModifier = when {
-                                                            isLastRow && isLastColumn -> Modifier
-                                                                .hoverable(lastRowInteractionSource)
-                                                                .hoverable(lastColumnInteractionSource)
+                                                            isLastRow && isLastColumn ->
+                                                                Modifier
+                                                                    .hoverable(lastRowInteractionSource)
+                                                                    .hoverable(lastColumnInteractionSource)
                                                             isLastRow -> Modifier.hoverable(lastRowInteractionSource)
                                                             isLastColumn -> Modifier.hoverable(lastColumnInteractionSource)
                                                             else -> Modifier

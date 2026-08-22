@@ -100,7 +100,7 @@ fun DocumentApi.toModel(): Document =
             .associate { story -> story.position to story.toModel() },
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
-        lastSyncedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
+        lastSyncedAt = lastSyncedAt?.let { Instant.fromEpochMilliseconds(it) },
         workspaceId = workspaceId,
         parentId = parentId ?: "",
         isLocked = isLocked,
