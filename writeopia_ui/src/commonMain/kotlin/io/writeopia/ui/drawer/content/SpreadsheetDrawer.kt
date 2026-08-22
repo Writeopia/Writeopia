@@ -476,9 +476,11 @@ class SpreadsheetDrawer(
                                 }
 
                                 // Add column button area (includes spacer for hover detection)
+                                // Offset by 24dp to account for column action buttons row at top
                                 Row(
                                     modifier = Modifier
                                         .fillMaxHeight()
+                                        .padding(top = 24.dp)
                                         .hoverable(addColumnAreaInteractionSource)
                                 ) {
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -510,8 +512,10 @@ class SpreadsheetDrawer(
                             }
 
                             // Add row button area (includes spacer for hover detection)
+                            // Offset by 24dp to account for row action buttons column on left
                             Column(
                                 modifier = Modifier
+                                    .padding(start = 24.dp)
                                     .width(totalSpreadsheetWidth.dp)
                                     .hoverable(addRowAreaInteractionSource)
                             ) {
