@@ -4,9 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.horizontalDrag
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -45,7 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -95,6 +95,7 @@ class SpreadsheetDrawer(
         val dropInfo = DropInfo(step, drawInfo.position)
         val interactionSource = remember { MutableInteractionSource() }
         val isHovered by interactionSource.collectIsHoveredAsState()
+        val density = LocalDensity.current
 
         // Parse column widths from spreadsheet metadata (JSON format: {"columnWidths":[120,150,100]})
         val columnCount = rows.firstOrNull()?.steps?.size ?: 0
@@ -106,6 +107,11 @@ class SpreadsheetDrawer(
         var localColumnWidths by remember(persistedColumnWidths) {
             mutableStateOf(persistedColumnWidths)
         }
+
+        // Column resize drag state - lifted up so all cells in the column can use it
+        // columnDragOffset is in Dp (converted from pixels using density)
+        var resizingColumnIndex by remember { mutableStateOf(-1) }
+        var columnDragOffset by remember { mutableStateOf(0f) }
 
         // Interaction source for the last row
         val lastRowInteractionSource = remember { MutableInteractionSource() }
@@ -240,10 +246,20 @@ class SpreadsheetDrawer(
                                                     val isLastColumn = cellIndex == row.steps.size - 1
                                                     val cellWidth = localColumnWidths.getOrElse(cellIndex) { DEFAULT_COLUMN_WIDTH }
 
+                                                    // Calculate effective width including drag offset if this column is being resized
+                                                    val effectiveWidth = if (resizingColumnIndex == cellIndex) {
+                                                        (cellWidth + columnDragOffset).coerceIn(
+                                                            MIN_COLUMN_WIDTH.toFloat(),
+                                                            MAX_COLUMN_WIDTH.toFloat()
+                                                        )
+                                                    } else {
+                                                        cellWidth.toFloat()
+                                                    }
+
                                                     SpreadsheetCell(
                                                         text = cell.text ?: "",
                                                         isHeader = isHeader,
-                                                        width = cellWidth.dp,
+                                                        width = effectiveWidth.dp,
                                                         onTextChange = { newText ->
                                                             onCellTextChange(step.id, rowIndex, cellIndex, newText)
                                                         },
@@ -252,20 +268,24 @@ class SpreadsheetDrawer(
                                                         },
                                                         showBorderEnd = !isLastColumn,
                                                         showBorderBottom = rowIndex < rows.size - 1,
-                                                        onWidthChange = { newWidth ->
-                                                            // Update local state for smooth UI during drag
-                                                            localColumnWidths = localColumnWidths.toMutableList().apply {
-                                                                if (cellIndex < size) {
-                                                                    this[cellIndex] = newWidth
-                                                                }
-                                                            }
+                                                        onDragStart = {
+                                                            resizingColumnIndex = cellIndex
+                                                            columnDragOffset = 0f
+                                                            onColumnResizeStart()
                                                         },
-                                                        onWidthChangeEnd = { finalWidth ->
-                                                            // Persist the final width when drag ends
+                                                        onDrag = { deltaPx ->
+                                                            // Convert pixel delta to Dp
+                                                            columnDragOffset += with(density) { deltaPx.toDp().value }
+                                                        },
+                                                        onDragEnd = {
+                                                            val finalWidth = (cellWidth + columnDragOffset)
+                                                                .toInt()
+                                                                .coerceIn(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH)
+                                                            resizingColumnIndex = -1
+                                                            columnDragOffset = 0f
+                                                            onColumnResizeEnd()
                                                             onColumnWidthChange(step.id, cellIndex, finalWidth)
                                                         },
-                                                        onResizeStart = onColumnResizeStart,
-                                                        onResizeEnd = onColumnResizeEnd,
                                                         cellIndex = cellIndex,
                                                         extraModifier = when {
                                                             isLastRow && isLastColumn -> Modifier
@@ -379,10 +399,9 @@ private fun SpreadsheetCell(
     onActionClick: () -> Unit,
     showBorderEnd: Boolean,
     showBorderBottom: Boolean,
-    onWidthChange: (Int) -> Unit,
-    onWidthChangeEnd: (Int) -> Unit,
-    onResizeStart: () -> Unit,
-    onResizeEnd: () -> Unit,
+    onDragStart: () -> Unit,
+    onDrag: (Float) -> Unit,
+    onDragEnd: () -> Unit,
     cellIndex: Int,
     modifier: Modifier = Modifier,
     extraModifier: Modifier = Modifier
@@ -469,46 +488,28 @@ private fun SpreadsheetCell(
             val resizerInteractionSource = remember { MutableInteractionSource() }
             val isResizerHovered by resizerInteractionSource.collectIsHoveredAsState()
 
+            val draggableState = rememberDraggableState { delta ->
+                onDrag(delta)
+            }
+
             Box(
                 modifier = Modifier
                     .width(4.dp)
                     .fillMaxHeight()
                     .hoverable(resizerInteractionSource)
                     .pointerHoverIcon(PointerIcon.Crosshair)
-                    .pointerInput(cellIndex) {
-                        awaitEachGesture {
-                            val down = awaitFirstDown(requireUnconsumed = false)
-                            down.consume()
+                    .draggable(
+                        state = draggableState,
+                        orientation = Orientation.Horizontal,
+                        onDragStarted = {
                             isDragging = true
-                            onResizeStart()
-
-                            // Capture initial width at drag start (width.value is stable during gesture)
-                            val initialWidth = width.value
-                            var accumulatedDelta = 0f
-
-                            horizontalDrag(down.id) { change ->
-                                val dragAmount = change.position.x - change.previousPosition.x
-                                accumulatedDelta += dragAmount
-
-                                // Calculate new width from initial + accumulated delta
-                                val newWidth = (initialWidth + accumulatedDelta)
-                                    .toInt()
-                                    .coerceIn(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH)
-                                onWidthChange(newWidth)
-
-                                change.consume()
-                            }
-
-                            // Report final width
-                            val finalWidth = (initialWidth + accumulatedDelta)
-                                .toInt()
-                                .coerceIn(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH)
-
+                            onDragStart()
+                        },
+                        onDragStopped = {
                             isDragging = false
-                            onResizeEnd()
-                            onWidthChangeEnd(finalWidth)
+                            onDragEnd()
                         }
-                    }
+                    )
                     .background(
                         if (isDragging || isResizerHovered) {
                             MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
