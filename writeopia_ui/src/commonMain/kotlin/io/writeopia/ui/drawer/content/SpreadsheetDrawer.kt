@@ -121,6 +121,12 @@ class SpreadsheetDrawer(
         val addRowAreaInteractionSource = remember { MutableInteractionSource() }
         val isAddRowAreaHovered by addRowAreaInteractionSource.collectIsHoveredAsState()
 
+        // Calculate total spreadsheet content width (cells + borders between cells)
+        val totalSpreadsheetWidth = remember(localColumnWidths) {
+            localColumnWidths.sum() +
+                maxOf(0, (localColumnWidths.size - 1) * 4) // 4dp border/resizer between columns
+        }
+
         // Interaction source for the last column
         val lastColumnInteractionSource = remember { MutableInteractionSource() }
         val isLastColumnHovered by lastColumnInteractionSource.collectIsHoveredAsState()
@@ -212,19 +218,15 @@ class SpreadsheetDrawer(
                         }
                     ) {
                         Column(
-                            modifier = Modifier
-                                .padding(vertical = 4.dp)
-                                .width(IntrinsicSize.Max)
+                            modifier = Modifier.padding(vertical = 4.dp)
                         ) {
-                            // Row containing spreadsheet + column button
+                            // Row containing spreadsheet + add column button
                             Row(
                                 modifier = Modifier.height(IntrinsicSize.Min)
                             ) {
                                 // Scrollable spreadsheet content
                                 Box(
-                                    modifier = Modifier
-                                        .weight(1f, fill = false)
-                                        .horizontalScroll(scrollState)
+                                    modifier = Modifier.horizontalScroll(scrollState)
                                 ) {
                                     Column(
                                         modifier = Modifier
@@ -340,7 +342,7 @@ class SpreadsheetDrawer(
                             // Add row button area (includes spacer for hover detection)
                             Column(
                                 modifier = Modifier
-                                    .fillMaxWidth()
+                                    .width(totalSpreadsheetWidth.dp)
                                     .hoverable(addRowAreaInteractionSource)
                             ) {
                                 Spacer(modifier = Modifier.height(6.dp))
