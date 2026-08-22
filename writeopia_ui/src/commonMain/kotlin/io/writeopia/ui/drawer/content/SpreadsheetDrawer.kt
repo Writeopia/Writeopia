@@ -4,7 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -472,20 +473,28 @@ private fun SpreadsheetCell(
                     .hoverable(resizerInteractionSource)
                     .pointerHoverIcon(PointerIcon.Crosshair)
                     .pointerInput(cellIndex) {
-                        detectHorizontalDragGestures(
-                            onDragStart = { isDragging = true },
-                            onDragEnd = {
-                                isDragging = false
-                                onBorderDragEnd(cellIndex)
-                            },
-                            onDragCancel = {
-                                isDragging = false
-                                onBorderDragEnd(cellIndex)
-                            },
-                            onHorizontalDrag = { _, dragAmount ->
-                                onBorderDrag(dragAmount)
-                            }
-                        )
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            down.consume()
+                            isDragging = true
+
+                            var lastPosition = down.position.x
+
+                            do {
+                                val event = awaitPointerEvent()
+                                event.changes.forEach { change ->
+                                    if (change.pressed) {
+                                        val dragAmount = change.position.x - lastPosition
+                                        lastPosition = change.position.x
+                                        onBorderDrag(dragAmount)
+                                        change.consume()
+                                    }
+                                }
+                            } while (event.changes.any { it.pressed })
+
+                            isDragging = false
+                            onBorderDragEnd(cellIndex)
+                        }
                     }
                     .background(
                         if (isDragging || isResizerHovered) {
