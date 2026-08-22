@@ -20,6 +20,7 @@ class WorkspaceSync(
     private val authRepository: AuthRepository,
     private val documentsApi: DocumentsApi,
     private val documentConflictHandler: DocumentConflictHandler,
+    private val folderConflictHandler: FolderConflictHandler,
     private val imageSync: ImageSync,
     private val minSyncInternal: Duration = 3.seconds
 ) {
@@ -59,7 +60,7 @@ class WorkspaceSync(
                 newDocuments,
             )
 
-            val foldersNotSent = documentConflictHandler.handleConflictForFolders(
+            val foldersNotSent = folderConflictHandler.handleConflict(
                 localFolders = localOutdatedFolders,
                 externalFolders = newFolders,
             )
