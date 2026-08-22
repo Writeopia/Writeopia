@@ -57,6 +57,11 @@ fun EditSpreadsheetDialog(
         SpreadsheetActionType.ROW -> "above" to "below"
     }
 
+    val (moveBeforeIcon, moveAfterIcon) = when (actionType) {
+        SpreadsheetActionType.COLUMN -> WrSdkIcons.smallArrowLeft to WrSdkIcons.smallArrowRight
+        SpreadsheetActionType.ROW -> WrSdkIcons.smallArrowUp to WrSdkIcons.smallArrowDown
+    }
+
     Dialog(onDismissRequest = onDismissRequest) {
         Card(
             modifier = modifier
@@ -98,7 +103,7 @@ fun EditSpreadsheetDialog(
                 )
 
                 DialogOption(
-                    icon = WrSdkIcons.smallArrowUp,
+                    icon = moveBeforeIcon,
                     text = "Move $beforeLabel",
                     onClick = {
                         onAction(SpreadsheetAction.MoveBefore)
@@ -107,7 +112,7 @@ fun EditSpreadsheetDialog(
                 )
 
                 DialogOption(
-                    icon = WrSdkIcons.smallArrowDown,
+                    icon = moveAfterIcon,
                     text = "Move $afterLabel",
                     onClick = {
                         onAction(SpreadsheetAction.MoveAfter)

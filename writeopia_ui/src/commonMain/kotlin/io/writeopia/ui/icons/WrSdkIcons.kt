@@ -5,6 +5,7 @@ import io.writeopia.ui.icons.all.Bold
 import io.writeopia.ui.icons.all.Calendar
 import io.writeopia.ui.icons.all.Check
 import io.writeopia.ui.icons.all.ChevronDown
+import io.writeopia.ui.icons.all.ChevronLeft
 import io.writeopia.ui.icons.all.ChevronRight
 import io.writeopia.ui.icons.all.ChevronUp
 import io.writeopia.ui.icons.all.Clock
@@ -43,6 +44,8 @@ object WrSdkIcons {
     val close: ImageVector = X
 
     val smallArrowRight: ImageVector = ChevronRight
+
+    val smallArrowLeft: ImageVector = ChevronLeft
 
     val smallArrowDown: ImageVector = ChevronDown
 
