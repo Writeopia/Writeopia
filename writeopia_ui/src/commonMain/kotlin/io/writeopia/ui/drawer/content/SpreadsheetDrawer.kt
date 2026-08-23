@@ -75,6 +75,7 @@ private const val MAX_COLUMN_WIDTH = 500
 class SpreadsheetDrawer(
     private val dragIconWidth: Dp = 24.dp,
     private val config: DrawConfig,
+    private val isDesktop: Boolean = true,
     private val onSelected: (Boolean, Double) -> Unit = { _, _ -> },
     private val onDragHover: (Double) -> Unit = {},
     private val onDragStart: () -> Unit = {},
@@ -424,11 +425,12 @@ class SpreadsheetDrawer(
                                                                 text = cell.text ?: "",
                                                                 isHeader = isHeader,
                                                                 width = effectiveWidth.dp,
+                                                                isDesktop = isDesktop,
                                                                 onTextChange = { newText ->
                                                                     onCellTextChange(step.id, rowIndex, cellIndex, newText)
                                                                 },
-                                                                onHoverOrFocusChanged = { cellHoveredOrFocused ->
-                                                                    if (cellHoveredOrFocused) {
+                                                                onActiveChanged = { cellActive ->
+                                                                    if (cellActive) {
                                                                         hoveredRowIndex = rowIndex
                                                                         hoveredColumnIndex = cellIndex
                                                                     } else if (hoveredRowIndex == rowIndex &&
@@ -612,8 +614,9 @@ private fun SpreadsheetCell(
     text: String,
     isHeader: Boolean,
     width: Dp,
+    isDesktop: Boolean,
     onTextChange: (String) -> Unit,
-    onHoverOrFocusChanged: (Boolean) -> Unit,
+    onActiveChanged: (Boolean) -> Unit,
     showBorderEnd: Boolean,
     showBorderBottom: Boolean,
     onDragStart: () -> Unit,
@@ -627,8 +630,11 @@ private fun SpreadsheetCell(
     var isFocused by remember { mutableStateOf(false) }
     var localText by remember(text) { mutableStateOf(text) }
 
-    LaunchedEffect(isHovered, isFocused) {
-        onHoverOrFocusChanged(isHovered || isFocused)
+    // Desktop uses hover, mobile uses focus
+    val isActive = if (isDesktop) isHovered else isFocused
+
+    LaunchedEffect(isActive) {
+        onActiveChanged(isActive)
     }
 
     val backgroundColor = if (isHeader) {

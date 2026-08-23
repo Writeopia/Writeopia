@@ -323,6 +323,7 @@ object CommonDrawers {
                 SpreadsheetDrawer(
                     dragIconWidth = dragIconWidth,
                     config = drawConfig,
+                    isDesktop = isDesktop,
                     onSelected = manager::onSelected,
                     onDragHover = manager::onDragHover,
                     onDragStart = manager::onDragStart,
