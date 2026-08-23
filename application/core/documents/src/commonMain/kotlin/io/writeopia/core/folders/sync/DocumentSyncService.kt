@@ -106,8 +106,8 @@ class DocumentSyncService(
     private fun getOutdatedStorySteps(
         document: Document,
         lastSyncTimestamp: Long
-    ): List<Pair<Double, StoryStep>> {
-        return document.content.entries
+    ): List<Pair<Double, StoryStep>> =
+        document.content.entries
             .filter { (_, storyStep) ->
                 val stepLastUpdated = storyStep.lastUpdatedAt ?: 0L
                 // Include steps that were updated after the last sync
@@ -116,7 +116,6 @@ class DocumentSyncService(
             }
             .map { (position, storyStep) -> position to storyStep }
             .sortedBy { it.first }
-    }
 
     /**
      * Applies server updates to the local document.

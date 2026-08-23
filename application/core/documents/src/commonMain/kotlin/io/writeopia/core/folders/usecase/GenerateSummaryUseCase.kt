@@ -18,8 +18,11 @@ import kotlin.time.ExperimentalTime
  */
 sealed class GenerateSummaryResult {
     data class Success(val document: Document) : GenerateSummaryResult()
+
     data class NeedsSync(val unsyncedDocuments: List<UnsyncedDocumentInfo>) : GenerateSummaryResult()
+
     data object GenAiUnavailable : GenerateSummaryResult()
+
     data class Error(val message: String) : GenerateSummaryResult()
 }
 
@@ -74,14 +77,16 @@ class GenerateSummaryUseCase(
         }
 
         // Call the API
-        return when (val result = documentsApi.generateSummary(
+        val result = documentsApi.generateSummary(
             documents = documentSyncInfos,
             targetFolderId = targetFolderId,
             workspaceId = workspaceId,
             summaryTitle = summaryTitle,
             model = model,
             token = token
-        )) {
+        )
+
+        return when (result) {
             is GenerateSummaryApiResult.Success -> {
                 // Save the new document to local repository
                 documentRepository.saveDocument(result.document)
@@ -189,8 +194,8 @@ class GenerateSummaryUseCase(
         model: String? = null,
         documentSyncService: DocumentSyncService,
         maxRetries: Int = 1
-    ): GenerateSummaryResult {
-        return generateSummaryWithAutoSync(
+    ): GenerateSummaryResult =
+        generateSummaryWithAutoSync(
             documentIds = documentIds,
             targetFolderId = targetFolderId,
             workspaceId = workspaceId,
@@ -201,7 +206,6 @@ class GenerateSummaryUseCase(
             },
             maxRetries = maxRetries
         )
-    }
 
     companion object {
         fun create(

@@ -479,7 +479,12 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
  */
 sealed class GenerateSummaryApiResult {
     data class Success(val document: Document) : GenerateSummaryApiResult()
-    data class NeedsSync(val unsyncedDocuments: List<io.writeopia.sdk.serialization.response.UnsyncedDocumentInfo>) : GenerateSummaryApiResult()
+
+    data class NeedsSync(
+        val unsyncedDocuments: List<io.writeopia.sdk.serialization.response.UnsyncedDocumentInfo>
+    ) : GenerateSummaryApiResult()
+
     data object GenAiUnavailable : GenerateSummaryApiResult()
+
     data class Error(val message: String) : GenerateSummaryApiResult()
 }
