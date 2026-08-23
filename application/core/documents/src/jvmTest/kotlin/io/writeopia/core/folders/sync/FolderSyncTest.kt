@@ -45,6 +45,9 @@ class FolderSyncTest {
         val newDocument = Document(
             id = "doc1",
             title = "New Document",
+            createdAt = Instant.DISTANT_PAST,
+            lastUpdatedAt = Instant.DISTANT_PAST,
+            lastSyncedAt = null,
             workspaceId = workspaceId,
             parentId = folderId
         )
@@ -91,8 +94,8 @@ class FolderSyncTest {
         coVerify { documentsApi.getFolderNewData(folderId, workspaceId, any(), authToken, any()) }
 
         // Verify that conflict handlers were called for both documents and folders
-        coVerify { documentConflictHandler.handleConflict(any(), listOf(newDocument)) }
-        coVerify { documentConflictHandler.handleConflictForFolders(any(), listOf(newSubfolder)) }
+        coVerify { documentConflictHandler.handleConflict(any(), match { it.size == 1 && it.first().id == newDocument.id }) }
+        coVerify { documentConflictHandler.handleConflictForFolders(any(), match { it.size == 1 && it.first().id == newSubfolder.id }) }
 
         // Verify that both sendDocuments and sendFolders were called
         coVerify { documentsApi.sendDocuments(any(), workspaceId, authToken) }
@@ -202,6 +205,9 @@ class FolderSyncTest {
         val documentToSend = Document(
             id = "doc1",
             title = "Document to Send",
+            createdAt = Instant.DISTANT_PAST,
+            lastUpdatedAt = Instant.DISTANT_PAST,
+            lastSyncedAt = null,
             workspaceId = workspaceId,
             parentId = folderId
         )

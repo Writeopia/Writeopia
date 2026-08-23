@@ -56,6 +56,9 @@ enum class StoryTypes(val type: StoryType) {
     DIVIDER(StoryType("divider", 21)),
     EQUATION(StoryType("equation", 22)),
     DRAWING(StoryType("drawing", 100)),
+    SPREADSHEET(StoryType("spreadsheet", 101)),
+    SPREADSHEET_ROW(StoryType("spreadsheet_row", 102)),
+    SPREADSHEET_CELL(StoryType("spreadsheet_cell", 103)),
     ;
 
     companion object {

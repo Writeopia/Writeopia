@@ -41,6 +41,7 @@ import io.writeopia.ui.drawer.content.createTypeCommands
 import io.writeopia.ui.drawer.content.headerDrawer
 import io.writeopia.ui.drawer.content.swipeTextDrawer
 import io.writeopia.ui.drawer.content.unOrderedListItemDrawer
+import io.writeopia.ui.drawer.content.SpreadsheetDrawer
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
@@ -317,6 +318,53 @@ object CommonDrawers {
             put(StoryTypes.DOCUMENT_LINK.type.number, documentLinkDrawer)
             put(StoryTypes.DIVIDER.type.number, dividerDrawer)
             put(StoryTypes.EQUATION.type.number, equationsDrawer)
+            put(
+                StoryTypes.SPREADSHEET.type.number,
+                SpreadsheetDrawer(
+                    dragIconWidth = dragIconWidth,
+                    config = drawConfig,
+                    isDesktop = isDesktop,
+                    onSelected = manager::onSelected,
+                    onDragHover = manager::onDragHover,
+                    onDragStart = manager::onDragStart,
+                    onDragStop = manager::onDragStop,
+                    moveRequest = manager::moveRequest,
+                    enabled = editable,
+                    receiveExternalFile = receiveExternalFile,
+                    onCellTextChange = { spreadsheetId, rowIndex, cellIndex, newText ->
+                        manager.updateSpreadsheetCell(spreadsheetId, rowIndex, cellIndex, newText)
+                    },
+                    onAddRow = { spreadsheetId ->
+                        manager.addSpreadsheetRow(spreadsheetId)
+                    },
+                    onAddColumn = { spreadsheetId ->
+                        manager.addSpreadsheetColumn(spreadsheetId)
+                    },
+                    onColumnWidthChange = { spreadsheetId, columnIndex, newWidth ->
+                        manager.updateSpreadsheetColumnWidth(spreadsheetId, columnIndex, newWidth)
+                    },
+                    onColumnResizeStart = manager::disableDragSelection,
+                    onColumnResizeEnd = manager::enableDragSelection,
+                    onDeleteRow = { spreadsheetId, rowIndex ->
+                        manager.deleteSpreadsheetRow(spreadsheetId, rowIndex)
+                    },
+                    onDeleteColumn = { spreadsheetId, columnIndex ->
+                        manager.deleteSpreadsheetColumn(spreadsheetId, columnIndex)
+                    },
+                    onAddRowAt = { spreadsheetId, rowIndex ->
+                        manager.addSpreadsheetRowAt(spreadsheetId, rowIndex)
+                    },
+                    onAddColumnAt = { spreadsheetId, columnIndex ->
+                        manager.addSpreadsheetColumnAt(spreadsheetId, columnIndex)
+                    },
+                    onMoveRow = { spreadsheetId, fromIndex, toIndex ->
+                        manager.moveSpreadsheetRow(spreadsheetId, fromIndex, toIndex)
+                    },
+                    onMoveColumn = { spreadsheetId, fromIndex, toIndex ->
+                        manager.moveSpreadsheetColumn(spreadsheetId, fromIndex, toIndex)
+                    }
+                )
+            )
         }
     }
 }
