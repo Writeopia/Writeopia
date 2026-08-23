@@ -587,16 +587,16 @@ class ContentHandler(
      * @param position The position to add the spreadsheet
      * @param columnCount The number of columns in the spreadsheet
      * @param rowCount The number of rows in the spreadsheet
+     * @param insertMode If true, inserts the spreadsheet without replacing existing content
      * @return The updated story map with the new spreadsheet
      */
     fun createSpreadsheet(
         currentStory: Map<Double, StoryStep>,
         position: Double,
         columnCount: Int,
-        rowCount: Int = 3
+        rowCount: Int = 3,
+        insertMode: Boolean = false
     ): Map<Double, StoryStep> {
-        val mutable = currentStory.toSortedMutableMap()
-
         // Create rows with cells
         val rows = (0 until rowCount).map {
             val cells = (0 until columnCount).map {
@@ -617,8 +617,13 @@ class ContentHandler(
             steps = rows
         )
 
-        mutable[position] = spreadsheet
-        return mutable
+        return if (insertMode) {
+            currentStory.addElementInPosition(spreadsheet, position)
+        } else {
+            val mutable = currentStory.toSortedMutableMap()
+            mutable[position] = spreadsheet
+            mutable
+        }
     }
 
     /**

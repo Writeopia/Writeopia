@@ -370,17 +370,20 @@ class WriteopiaManager(
      * @param storyState The current story state
      * @param position The position to add the spreadsheet
      * @param columnCount The number of columns in the spreadsheet
+     * @param insertMode If true, inserts the spreadsheet without replacing existing content
      * @return Updated story state with the new spreadsheet
      */
     fun createSpreadsheet(
         storyState: StoryState,
         position: Double,
-        columnCount: Int
+        columnCount: Int,
+        insertMode: Boolean = false
     ): StoryState {
         val newStories = contentHandler.createSpreadsheet(
             storyState.stories,
             position,
-            columnCount
+            columnCount,
+            insertMode = insertMode
         )
         val spreadsheet = newStories[position]
         return storyState.copy(

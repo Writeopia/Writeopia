@@ -1698,6 +1698,7 @@ class WriteopiaStateManager(
 
     /**
      * Creates a new spreadsheet with one initial row containing the specified number of empty cells.
+     * If the cursor is on the title, the spreadsheet is added after the title instead of replacing it.
      *
      * @param columnCount The number of columns in the spreadsheet
      */
@@ -1705,12 +1706,22 @@ class WriteopiaStateManager(
         if (!isEditable) return
 
         val position = currentPosition() ?: return
+        val currentStep = _currentStory.value.stories[position]
+
+        // Don't replace the title - insert the spreadsheet after it instead
+        val isOnTitle = currentStep?.type == StoryTypes.TITLE.type
+        val targetPosition = if (isOnTitle) {
+            position + 1
+        } else {
+            position
+        }
 
         backStackManager.addState(_currentStory.value)
         _currentStory.value = writeopiaManager.createSpreadsheet(
             _currentStory.value,
-            position,
-            columnCount
+            targetPosition,
+            columnCount,
+            insertMode = isOnTitle
         )
     }
 
