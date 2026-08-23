@@ -793,7 +793,12 @@ class WriteopiaStateManager(
 
         // Don't preserve lastEdit on focus change - it would cause the save to be
         // cancelled and re-triggered, potentially interrupting in-progress saves
-        _currentStory.value = story.copy(focus = position, lastEdit = LastEdit.Nothing)
+        // Also update selection position so the manager knows which line is active
+        _currentStory.value = story.copy(
+            focus = position,
+            lastEdit = LastEdit.Nothing,
+            selection = story.selection.copy(position = position)
+        )
     }
 
     fun scrollToPosition(position: Int) {
