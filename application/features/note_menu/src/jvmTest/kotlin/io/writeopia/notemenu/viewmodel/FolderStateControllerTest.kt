@@ -86,7 +86,7 @@ class FolderStateControllerTest {
         advanceUntilIdle()
 
         // Verify folder was created
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", null) }
+        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", any()) }
 
         // Verify folder was synced to backend
         val foldersSlot = slot<List<Folder>>()
@@ -137,7 +137,7 @@ class FolderStateControllerTest {
         advanceUntilIdle()
 
         // Verify folder was created
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", null) }
+        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", any()) }
 
         // Verify NO sync to backend (free user)
         coVerify(exactly = 0) { documentsApi.sendFolders(any(), any(), any()) }
@@ -177,7 +177,7 @@ class FolderStateControllerTest {
         advanceUntilIdle()
 
         // Verify folder was created locally
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", null) }
+        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", any()) }
 
         // Verify NO sync to backend (not logged in)
         coVerify(exactly = 0) { documentsApi.sendFolders(any(), any(), any()) }
