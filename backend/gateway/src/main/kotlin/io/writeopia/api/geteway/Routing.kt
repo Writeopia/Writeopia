@@ -4,6 +4,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import io.writeopia.api.ai.routing.aiRoute
 import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.passwordResetRoute
@@ -18,6 +19,8 @@ fun Application.configureRouting(
     debugMode: Boolean = false,
     adminKey: String?
 ) {
+    val useVertexAi = System.getenv("WRITEOPIA_USE_VERTEX_AI")?.toBoolean() == true
+
     routing {
         if (writeopiaDb != null) {
             documentsRoute(writeopiaDb, useAi, debugMode)
@@ -34,6 +37,13 @@ fun Application.configureRouting(
             } else {
                 logger.info("Admin key is null. Admin routes are disabled.")
             }
+        }
+
+        if (useVertexAi) {
+            logger.info("Vertex AI routes are enabled.")
+            aiRoute(debugMode)
+        } else {
+            logger.info("Vertex AI routes are disabled. Set WRITEOPIA_USE_VERTEX_AI=true to enable.")
         }
 
         get {
