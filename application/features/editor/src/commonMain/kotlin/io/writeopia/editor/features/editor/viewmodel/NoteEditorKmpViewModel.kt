@@ -1097,4 +1097,9 @@ class NoteEditorKmpViewModel(
             copyManager.copyText(url)
         }
     }
+
+    override fun onAddSpreadsheetClick(columnCount: Int) {
+        if (!isEditable.value) return
+        writeopiaManager.addSpreadsheet(columnCount)
+    }
 }

@@ -25,6 +25,24 @@ jobs:
           java-version: '21'
       - name: Ktlint
         run: ./gradlew ktlintCheck --no-daemon
+  mac_app_build:
+    name: Mac App Build
+    runs-on: ubuntu-22.04
+    env:
+      isCI: "true"
+      JWT_SECRET: "testingsecret"
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: '21'
+      - name: Generate signed mac app
+        run: ./gradlew packageReleaseDmg
+        env:
+          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
   ui_jvm_tests:
     name: Jvm UI Compose tests
     runs-on: ubuntu-22.04
@@ -43,18 +61,17 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
-      - name: Generate signed mac app
-        run: ./gradlew packageReleaseDmg
-        env:
-          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
       - name: JVM tests
         run: ./gradlew jvmTest
-      - name: upload results
-        uses: actions/upload-artifact@v7
-        if: failure()
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: test-results-jvm
-          path: ./application/desktopApp/build/reports/
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          retention-days: 7
   general_build:
     name: General - Build debug
     runs-on: ubuntu-22.04
@@ -102,6 +119,15 @@ jobs:
           PGPASSWORD: postgres
       - name: Build debug
         run: ./gradlew assembleDebug test --no-daemon
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-general
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          retention-days: 7
   ios_build:
     name: iOS build
     runs-on: ubuntu-22.04
@@ -165,12 +191,15 @@ jobs:
         run: ./gradlew :backend:gateway:assemble --no-daemon
       - name: Test backend
         run: ./gradlew :backend:gateway:test --no-daemon
-      - name: upload results
-        uses: actions/upload-artifact@v7
-        if: failure()
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: test-results-backend
-          path: backend/gateway/build/
+          path: |
+            backend/**/build/reports/tests/
+            backend/**/build/test-results/
+          retention-days: 7
   web_build:
     name: Web - Build debug
     runs-on: ubuntu-22.04

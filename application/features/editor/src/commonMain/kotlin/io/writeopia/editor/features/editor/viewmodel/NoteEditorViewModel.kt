@@ -175,6 +175,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun unpublishDocument()
 
     fun copyPublishLink()
+
+    fun onAddSpreadsheetClick(columnCount: Int)
 }
 
 data class ShareDocument(val content: String, val title: String, val type: String)

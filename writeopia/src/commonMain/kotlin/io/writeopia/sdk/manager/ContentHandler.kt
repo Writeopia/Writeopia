@@ -38,7 +38,8 @@ class ContentHandler(
     },
     private val focusHandler: FocusHandler = FocusHandler { typeNumber ->
         focusableTypes.contains(typeNumber)
-    }
+    },
+    private val spreadsheetHandler: SpreadsheetHandler = SpreadsheetHandler()
 ) {
 
     fun changeStoryStepState(
@@ -579,6 +580,120 @@ class ContentHandler(
             focus = position
         )
     }
+
+    fun createSpreadsheet(
+        currentStory: Map<Double, StoryStep>,
+        position: Double,
+        columnCount: Int,
+        rowCount: Int = 3,
+        insertMode: Boolean = false
+    ): Map<Double, StoryStep> = spreadsheetHandler.createSpreadsheet(
+        currentStory,
+        position,
+        columnCount,
+        rowCount,
+        insertMode
+    )
+
+    fun updateSpreadsheetCell(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        rowIndex: Int,
+        cellIndex: Int,
+        newText: String
+    ): Map<Double, StoryStep>? = spreadsheetHandler.updateSpreadsheetCell(
+        currentStory,
+        spreadsheetId,
+        rowIndex,
+        cellIndex,
+        newText
+    )
+
+    fun addSpreadsheetRow(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String
+    ): Map<Double, StoryStep>? = spreadsheetHandler.addSpreadsheetRow(currentStory, spreadsheetId)
+
+    fun addSpreadsheetColumn(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String
+    ): Map<Double, StoryStep>? = spreadsheetHandler.addSpreadsheetColumn(currentStory, spreadsheetId)
+
+    fun updateSpreadsheetColumnWidth(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        columnIndex: Int,
+        newWidth: Int
+    ): Map<Double, StoryStep>? = spreadsheetHandler.updateSpreadsheetColumnWidth(
+        currentStory,
+        spreadsheetId,
+        columnIndex,
+        newWidth
+    )
+
+    fun deleteSpreadsheetRow(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        rowIndex: Int
+    ): Map<Double, StoryStep>? = spreadsheetHandler.deleteSpreadsheetRow(
+        currentStory,
+        spreadsheetId,
+        rowIndex
+    )
+
+    fun deleteSpreadsheetColumn(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        columnIndex: Int
+    ): Map<Double, StoryStep>? = spreadsheetHandler.deleteSpreadsheetColumn(
+        currentStory,
+        spreadsheetId,
+        columnIndex
+    )
+
+    fun addSpreadsheetRowAt(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        rowIndex: Int
+    ): Map<Double, StoryStep>? = spreadsheetHandler.addSpreadsheetRowAt(
+        currentStory,
+        spreadsheetId,
+        rowIndex
+    )
+
+    fun addSpreadsheetColumnAt(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        columnIndex: Int
+    ): Map<Double, StoryStep>? = spreadsheetHandler.addSpreadsheetColumnAt(
+        currentStory,
+        spreadsheetId,
+        columnIndex
+    )
+
+    fun moveSpreadsheetRow(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        fromIndex: Int,
+        toIndex: Int
+    ): Map<Double, StoryStep>? = spreadsheetHandler.moveSpreadsheetRow(
+        currentStory,
+        spreadsheetId,
+        fromIndex,
+        toIndex
+    )
+
+    fun moveSpreadsheetColumn(
+        currentStory: Map<Double, StoryStep>,
+        spreadsheetId: String,
+        fromIndex: Int,
+        toIndex: Int
+    ): Map<Double, StoryStep>? = spreadsheetHandler.moveSpreadsheetColumn(
+        currentStory,
+        spreadsheetId,
+        fromIndex,
+        toIndex
+    )
 }
 
 private fun defaultLineBreakMap(storyType: StoryType): StoryType =

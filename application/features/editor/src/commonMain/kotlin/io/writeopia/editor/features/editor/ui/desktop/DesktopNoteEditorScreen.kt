@@ -73,7 +73,6 @@ fun DesktopNoteEditorScreen(
     var showFolderSelection by remember {
         mutableStateOf(false)
     }
-
     Box(
         modifier = Modifier.clickable(
             onClick = {
@@ -223,6 +222,7 @@ fun DesktopNoteEditorScreen(
             checkItemClick = noteEditorViewModel::onAddCheckListClick,
             listItemClick = noteEditorViewModel::onAddListItemClick,
             codeBlockClick = noteEditorViewModel::onAddCodeBlockClick,
+            spreadsheetClick = { noteEditorViewModel.onAddSpreadsheetClick(3) },
             highLightBlockClick = noteEditorViewModel::toggleHighLightBlock,
             cardBlockClick = noteEditorViewModel::toggleCardBlock,
             onPresentationClick = onPresentationClick,

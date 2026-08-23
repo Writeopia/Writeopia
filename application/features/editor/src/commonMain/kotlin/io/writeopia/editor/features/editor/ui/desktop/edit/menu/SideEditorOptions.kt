@@ -90,6 +90,7 @@ fun SideEditorOptions(
     checkItemClick: () -> Unit,
     listItemClick: () -> Unit,
     codeBlockClick: () -> Unit,
+    spreadsheetClick: () -> Unit = {},
     highLightBlockClick: () -> Unit,
     cardBlockClick: () -> Unit,
     onPresentationClick: () -> Unit,
@@ -170,6 +171,10 @@ fun SideEditorOptions(
                                 checkItemClick,
                                 listItemClick,
                                 codeBlockClick,
+                                spreadsheetClick = {
+                                    changeSideMenuTab(SideMenuTab.NONE)
+                                    spreadsheetClick()
+                                },
                                 highLightBlockClick,
                                 cardBlockClick,
                                 addImage,
@@ -716,94 +721,123 @@ private fun InsertCommand(
     checkItemClick: () -> Unit,
     listItemClick: () -> Unit,
     codeBlockClick: () -> Unit,
+    spreadsheetClick: () -> Unit,
 ) {
     val selectedMetadata by selectedMetadataState.collectAsState()
 
-    Row(modifier = Modifier.horizontalOptionsRow()) {
-        val shapeLeft = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)
+    Column {
+        // Row 1: Checkbox, List
+        Row(modifier = Modifier.horizontalOptionsRow()) {
+            val shapeLeft = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)
+            val shapeRight = RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)
 
-        Icon(
-            imageVector = WrSdkIcons.checkbox,
-            contentDescription = "Check box",
-            modifier = Modifier.weight(1F)
-                .border(
-                    width = 1.dp,
-                    shape = shapeLeft,
-                    color = if (selectedMetadata.contains(SelectionMetadata.CHECK_ITEM)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    }
-                )
-                .background(
-                    color = if (selectedMetadata.contains(SelectionMetadata.CHECK_ITEM)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    },
-                    shape = shapeLeft
-                )
-                .clip(RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp))
-                .size(32.dp)
-                .clickable(onClick = checkItemClick)
-                .padding(horizontal = 8.dp, vertical = 7.dp),
-            tint = MaterialTheme.colorScheme.onBackground
-        )
+            Icon(
+                imageVector = WrSdkIcons.checkbox,
+                contentDescription = "Check box",
+                modifier = Modifier.weight(1F)
+                    .border(
+                        width = 1.dp,
+                        shape = shapeLeft,
+                        color = if (selectedMetadata.contains(SelectionMetadata.CHECK_ITEM)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        }
+                    )
+                    .background(
+                        color = if (selectedMetadata.contains(SelectionMetadata.CHECK_ITEM)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        },
+                        shape = shapeLeft
+                    )
+                    .clip(shapeLeft)
+                    .size(32.dp)
+                    .clickable(onClick = checkItemClick)
+                    .padding(horizontal = 8.dp, vertical = 7.dp),
+                tint = MaterialTheme.colorScheme.onBackground
+            )
 
-        Icon(
-            imageVector = WrSdkIcons.list,
-            contentDescription = "List item",
-            modifier = Modifier.weight(1F)
-                .border(
-                    width = 1.dp,
-                    color = if (selectedMetadata.contains(SelectionMetadata.UNORDERED_LIST_ITEM)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    }
-                )
-                .background(
-                    color = if (selectedMetadata.contains(SelectionMetadata.UNORDERED_LIST_ITEM)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    },
-                )
-                .size(32.dp)
-                .clickable(onClick = listItemClick)
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            tint = MaterialTheme.colorScheme.onBackground
-        )
+            Icon(
+                imageVector = WrSdkIcons.list,
+                contentDescription = "List item",
+                modifier = Modifier.weight(1F)
+                    .border(
+                        width = 1.dp,
+                        shape = shapeRight,
+                        color = if (selectedMetadata.contains(SelectionMetadata.UNORDERED_LIST_ITEM)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        }
+                    )
+                    .background(
+                        color = if (selectedMetadata.contains(SelectionMetadata.UNORDERED_LIST_ITEM)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        },
+                        shape = shapeRight
+                    )
+                    .clip(shapeRight)
+                    .size(32.dp)
+                    .clickable(onClick = listItemClick)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
 
-        val shapeRight = RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)
+        Spacer(modifier = Modifier.height(4.dp))
 
-        Icon(
-            imageVector = WrIcons.code,
-            contentDescription = "Code block",
-            modifier = Modifier.weight(1F)
-                .border(
-                    width = 1.dp,
-                    shape = shapeRight,
-                    color = if (selectedMetadata.contains(SelectionMetadata.CODE_BLOCK)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    }
-                )
-                .background(
-                    color = if (selectedMetadata.contains(SelectionMetadata.CODE_BLOCK)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    },
-                    shape = shapeRight
-                )
-                .clip(shapeRight)
-                .size(32.dp)
-                .clickable(onClick = codeBlockClick)
-                .padding(horizontal = 8.dp, vertical = 7.dp),
-            tint = MaterialTheme.colorScheme.onBackground
-        )
+        // Row 2: Code, Spreadsheet
+        Row(modifier = Modifier.horizontalOptionsRow()) {
+            val shapeLeft = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)
+            val shapeRight = RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)
+
+            Icon(
+                imageVector = WrIcons.code,
+                contentDescription = "Code block",
+                modifier = Modifier.weight(1F)
+                    .border(
+                        width = 1.dp,
+                        shape = shapeLeft,
+                        color = if (selectedMetadata.contains(SelectionMetadata.CODE_BLOCK)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        }
+                    )
+                    .background(
+                        color = if (selectedMetadata.contains(SelectionMetadata.CODE_BLOCK)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        },
+                        shape = shapeLeft
+                    )
+                    .clip(shapeLeft)
+                    .size(32.dp)
+                    .clickable(onClick = codeBlockClick)
+                    .padding(horizontal = 8.dp, vertical = 7.dp),
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+
+            Icon(
+                imageVector = WrIcons.spreadsheet,
+                contentDescription = "Spreadsheet",
+                modifier = Modifier.weight(1F)
+                    .background(
+                        color = Color.Transparent,
+                        shape = shapeRight
+                    )
+                    .clip(shapeRight)
+                    .size(32.dp)
+                    .clickable(onClick = spreadsheetClick)
+                    .padding(horizontal = 8.dp, vertical = 7.dp),
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
     }
 }
 
@@ -869,6 +903,7 @@ private fun TextOptions(
     checkItemClick: () -> Unit,
     listItemClick: () -> Unit,
     codeBlockClick: () -> Unit,
+    spreadsheetClick: () -> Unit,
     highLightBlockClick: () -> Unit,
     cardBlockClick: () -> Unit,
     addImage: (String) -> Unit,
@@ -905,7 +940,7 @@ private fun TextOptions(
 
         Title(WrStrings.insert())
         Spacer(modifier = Modifier.height(4.dp))
-        InsertCommand(selectedMetadataState, checkItemClick, listItemClick, codeBlockClick)
+        InsertCommand(selectedMetadataState, checkItemClick, listItemClick, codeBlockClick, spreadsheetClick)
         Spacer(modifier = Modifier.height(8.dp))
 
         Title(WrStrings.decoration())
