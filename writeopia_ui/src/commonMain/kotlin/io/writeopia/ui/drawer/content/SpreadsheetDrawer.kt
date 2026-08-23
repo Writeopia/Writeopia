@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -426,8 +427,8 @@ class SpreadsheetDrawer(
                                                                 onTextChange = { newText ->
                                                                     onCellTextChange(step.id, rowIndex, cellIndex, newText)
                                                                 },
-                                                                onHoverChanged = { cellHovered ->
-                                                                    if (cellHovered) {
+                                                                onHoverOrFocusChanged = { cellHoveredOrFocused ->
+                                                                    if (cellHoveredOrFocused) {
                                                                         hoveredRowIndex = rowIndex
                                                                         hoveredColumnIndex = cellIndex
                                                                     } else if (hoveredRowIndex == rowIndex &&
@@ -612,7 +613,7 @@ private fun SpreadsheetCell(
     isHeader: Boolean,
     width: Dp,
     onTextChange: (String) -> Unit,
-    onHoverChanged: (Boolean) -> Unit,
+    onHoverOrFocusChanged: (Boolean) -> Unit,
     showBorderEnd: Boolean,
     showBorderBottom: Boolean,
     onDragStart: () -> Unit,
@@ -623,10 +624,11 @@ private fun SpreadsheetCell(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
+    val isFocused by interactionSource.collectIsFocusedAsState()
     var localText by remember(text) { mutableStateOf(text) }
 
-    LaunchedEffect(isHovered) {
-        onHoverChanged(isHovered)
+    LaunchedEffect(isHovered, isFocused) {
+        onHoverOrFocusChanged(isHovered || isFocused)
     }
 
     val backgroundColor = if (isHeader) {
@@ -676,7 +678,8 @@ private fun SpreadsheetCell(
                     fontSize = MaterialTheme.typography.bodyMedium.fontSize
                 ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                singleLine = false
+                singleLine = false,
+                interactionSource = interactionSource
             )
         }
 

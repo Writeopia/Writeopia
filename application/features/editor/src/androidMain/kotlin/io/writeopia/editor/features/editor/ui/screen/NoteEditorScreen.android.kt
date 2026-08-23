@@ -220,6 +220,7 @@ internal fun NoteEditorScreen(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
                     },
+                    onSpreadsheetClick = { noteEditorViewModel.onAddSpreadsheetClick(3) },
                     onBoxClick = noteEditorViewModel::toggleHighLightBlock,
                     onCardClick = noteEditorViewModel::toggleCardBlock
                 )
@@ -427,6 +428,7 @@ private fun BottomScreen(
     titleClick: (Tag) -> Unit,
     onDrawingClick: () -> Unit = {},
     onImageClick: () -> Unit = {},
+    onSpreadsheetClick: () -> Unit = {},
     onBoxClick: () -> Unit = {},
     onCardClick: () -> Unit = {}
 ) {
@@ -463,7 +465,8 @@ private fun BottomScreen(
                     canUndoState = canUndo,
                     canRedoState = canRedo,
                     onDrawingClick = onDrawingClick,
-                    onImageClick = onImageClick
+                    onImageClick = onImageClick,
+                    onSpreadsheetClick = onSpreadsheetClick
                 )
             }
 
