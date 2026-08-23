@@ -18,10 +18,11 @@ class GenAiRepository(
 
     private var generatingListItems = false
 
+    // url parameter is ignored for GenAI - backend URL is configured in API
     override suspend fun generateListItems(
         model: String,
         context: String,
-        url: String // Ignored for GenAI - backend URL is configured in API
+        url: String
     ): ResultData<List<String>> {
         try {
             if (generatingListItems) return ResultData.Loading()

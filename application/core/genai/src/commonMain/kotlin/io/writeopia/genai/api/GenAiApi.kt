@@ -33,19 +33,17 @@ class GenAiApi(
 ) {
     private val generateMutex = Mutex()
 
-    suspend fun checkStatus(): ResultData<Boolean> {
-        return try {
-            val response = client.get("$baseUrl/${EndPoints.aiStatus()}") {
-                contentType(ContentType.Application.Json)
-                getAuthToken()?.let { token ->
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                }
+    suspend fun checkStatus(): ResultData<Boolean> = try {
+        val response = client.get("$baseUrl/${EndPoints.aiStatus()}") {
+            contentType(ContentType.Application.Json)
+            getAuthToken()?.let { token ->
+                header(HttpHeaders.Authorization, "Bearer $token")
             }
-            val body = response.body<Map<String, Boolean>>()
-            ResultData.Complete(body["available"] == true)
-        } catch (e: Exception) {
-            ResultData.Error(e)
         }
+        val body = response.body<Map<String, Boolean>>()
+        ResultData.Complete(body["available"] == true)
+    } catch (e: Exception) {
+        ResultData.Error(e)
     }
 
     suspend fun generate(prompt: String, model: String? = null): ResultData<GenAiResponse> =

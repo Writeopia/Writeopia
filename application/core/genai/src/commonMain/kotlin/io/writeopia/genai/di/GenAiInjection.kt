@@ -37,15 +37,13 @@ class GenAiInjection private constructor(
             baseUrl: String,
             getAuthToken: suspend () -> String?,
             defaultModel: String? = null
-        ): GenAiInjection {
-            return GenAiInjection(
-                appConnectionInjection = appConnectionInjection,
-                baseUrl = baseUrl,
-                getAuthToken = getAuthToken,
-                defaultModel = defaultModel
-            ).also {
-                instance = it
-            }
+        ): GenAiInjection = GenAiInjection(
+            appConnectionInjection = appConnectionInjection,
+            baseUrl = baseUrl,
+            getAuthToken = getAuthToken,
+            defaultModel = defaultModel
+        ).also {
+            instance = it
         }
 
         fun singleton(): GenAiInjection? = instance
