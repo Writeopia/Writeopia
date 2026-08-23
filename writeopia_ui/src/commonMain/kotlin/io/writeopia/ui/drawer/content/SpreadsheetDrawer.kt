@@ -271,7 +271,7 @@ class SpreadsheetDrawer(
                                                 Box(
                                                     modifier = Modifier
                                                         .width(20.dp)
-                                                        .defaultMinSize(minHeight = 40.dp)
+                                                        .defaultMinSize(minHeight = 32.dp)
                                                         .height(IntrinsicSize.Min)
                                                         .hoverable(rowActionInteractionSource),
                                                     contentAlignment = Alignment.Center
@@ -656,7 +656,7 @@ private fun SpreadsheetCell(
             modifier = Modifier
                 .width(width)
                 .fillMaxHeight()
-                .defaultMinSize(minHeight = 40.dp)
+                .defaultMinSize(minHeight = 32.dp)
                 .background(backgroundColor)
                 .then(
                     if (showBorderBottom) {
