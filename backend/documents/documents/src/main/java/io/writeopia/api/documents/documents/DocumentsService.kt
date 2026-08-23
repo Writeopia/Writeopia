@@ -50,6 +50,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.sdk.serialization.request.DocumentSyncInfo
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import io.writeopia.sdk.serialization.response.UnsyncedDocumentInfo
@@ -626,15 +627,15 @@ object DocumentsService {
      * Generates a summary document from multiple documents.
      *
      * Flow:
-     * 1. Validate documentIds not empty
-     * 2. Check sync status for each document
+     * 1. Validate documents list not empty
+     * 2. Check sync status for each document (compare client's lastSyncedAt with server's)
      * 3. If unsynced documents exist, return NeedsSync
      * 4. Extract text content from all documents
      * 5. Generate summary using GenAI
      * 6. Create and save summary document
      */
     suspend fun generateSummaryDocument(
-        documentIds: List<String>,
+        documents: List<DocumentSyncInfo>,
         targetFolderId: String,
         workspaceId: String,
         summaryTitle: String?,
@@ -647,32 +648,38 @@ object DocumentsService {
             return GenerateSummaryResult.GenAiUnavailable
         }
 
-        // Validate documentIds
-        if (documentIds.isEmpty()) {
-            return GenerateSummaryResult.Error("Document IDs list cannot be empty")
+        // Validate documents
+        if (documents.isEmpty()) {
+            return GenerateSummaryResult.Error("Documents list cannot be empty")
         }
 
         // Fetch all documents and check sync status
         val unsyncedDocuments = mutableListOf<UnsyncedDocumentInfo>()
         val documentsToProcess = mutableListOf<Document>()
 
-        for (documentId in documentIds) {
-            val document = writeopiaDb.getDocumentWithContentById(documentId, workspaceId)
+        for (docSyncInfo in documents) {
+            val document = writeopiaDb.getDocumentWithContentById(docSyncInfo.documentId, workspaceId)
             if (document == null) {
-                return GenerateSummaryResult.Error("Document not found: $documentId")
+                return GenerateSummaryResult.Error("Document not found: ${docSyncInfo.documentId}")
             }
 
-            // Check sync status: lastSyncedAt must be non-null and >= lastUpdatedAt
-            val lastUpdatedAtMillis = document.lastUpdatedAt.toEpochMilliseconds()
-            val lastSyncedAtMillis = document.lastSyncedAt?.toEpochMilliseconds()
+            // Check sync status: compare client's lastSyncedAt with server's lastSyncedAt
+            // They must match for the document to be considered synced
+            val serverLastSyncedAt = document.lastSyncedAt?.toEpochMilliseconds()
+            val clientLastSyncedAt = docSyncInfo.lastSyncedAt
 
-            if (lastSyncedAtMillis == null || lastSyncedAtMillis < lastUpdatedAtMillis) {
+            // Document is synced if both lastSyncedAt values match
+            val isSynced = serverLastSyncedAt != null &&
+                           clientLastSyncedAt != null &&
+                           serverLastSyncedAt == clientLastSyncedAt
+
+            if (!isSynced) {
                 unsyncedDocuments.add(
                     UnsyncedDocumentInfo(
                         documentId = document.id,
                         documentTitle = document.title,
-                        lastUpdatedAt = lastUpdatedAtMillis,
-                        lastSyncedAt = lastSyncedAtMillis
+                        lastUpdatedAt = document.lastUpdatedAt.toEpochMilliseconds(),
+                        lastSyncedAt = serverLastSyncedAt
                     )
                 )
             } else {

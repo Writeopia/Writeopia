@@ -731,17 +731,17 @@ fun Routing.documentsRoute(
                 }
 
                 // Validate request
-                if (request.documentIds.isEmpty()) {
+                if (request.documents.isEmpty()) {
                     call.respond(
                         status = HttpStatusCode.BadRequest,
-                        message = GenerateSummaryResponse(error = "Document IDs list cannot be empty")
+                        message = GenerateSummaryResponse(error = "Documents list cannot be empty")
                     )
                     return@runIfMember
                 }
 
                 try {
                     val result = DocumentsService.generateSummaryDocument(
-                        documentIds = request.documentIds,
+                        documents = request.documents,
                         targetFolderId = request.targetFolderId,
                         workspaceId = workspaceId,
                         summaryTitle = request.summaryTitle,
