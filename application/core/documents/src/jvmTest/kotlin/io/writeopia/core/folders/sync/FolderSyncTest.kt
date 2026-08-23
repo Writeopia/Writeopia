@@ -34,6 +34,7 @@ class FolderSyncTest {
         val documentRepository = mockk<DocumentRepository>(relaxed = true)
         val documentsApi = mockk<DocumentsApi>()
         val documentConflictHandler = mockk<DocumentConflictHandler>()
+        val folderConflictHandler = mockk<FolderConflictHandler>()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
         val authRepository = mockk<AuthRepository>()
 
@@ -73,7 +74,7 @@ class FolderSyncTest {
         coEvery { folderRepository.getFolderByParentId(folderId, workspaceId) } returns emptyList()
 
         coEvery { documentConflictHandler.handleConflict(any(), any()) } returns emptyList()
-        coEvery { documentConflictHandler.handleConflictForFolders(any(), any()) } returns emptyList()
+        coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
 
         coEvery { documentsApi.sendDocuments(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
         coEvery { documentsApi.sendFolders(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
@@ -82,6 +83,7 @@ class FolderSyncTest {
             documentRepository = documentRepository,
             documentsApi = documentsApi,
             documentConflictHandler = documentConflictHandler,
+            folderConflictHandler = folderConflictHandler,
             folderRepository = folderRepository,
             authRepository = authRepository,
             minSyncInternal = 0.milliseconds
@@ -95,7 +97,7 @@ class FolderSyncTest {
 
         // Verify that conflict handlers were called for both documents and folders
         coVerify { documentConflictHandler.handleConflict(any(), match { it.size == 1 && it.first().id == newDocument.id }) }
-        coVerify { documentConflictHandler.handleConflictForFolders(any(), match { it.size == 1 && it.first().id == newSubfolder.id }) }
+        coVerify { folderConflictHandler.handleConflict(any(), match { it.size == 1 && it.first().id == newSubfolder.id }) }
 
         // Verify that both sendDocuments and sendFolders were called
         coVerify { documentsApi.sendDocuments(any(), workspaceId, authToken) }
@@ -108,6 +110,7 @@ class FolderSyncTest {
         val documentRepository = mockk<DocumentRepository>(relaxed = true)
         val documentsApi = mockk<DocumentsApi>()
         val documentConflictHandler = mockk<DocumentConflictHandler>()
+        val folderConflictHandler = mockk<FolderConflictHandler>()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
         val authRepository = mockk<AuthRepository>()
 
@@ -136,7 +139,7 @@ class FolderSyncTest {
         // Local subfolder should be marked as not sent (needs to sync to backend)
         val foldersNotSentSlot = slot<List<Folder>>()
         coEvery {
-            documentConflictHandler.handleConflictForFolders(capture(foldersNotSentSlot), any())
+            folderConflictHandler.handleConflict(capture(foldersNotSentSlot), any())
         } returns listOf(localSubfolder)
 
         coEvery { documentsApi.sendDocuments(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
@@ -146,6 +149,7 @@ class FolderSyncTest {
             documentRepository = documentRepository,
             documentsApi = documentsApi,
             documentConflictHandler = documentConflictHandler,
+            folderConflictHandler = folderConflictHandler,
             folderRepository = folderRepository,
             authRepository = authRepository,
             minSyncInternal = 0.milliseconds
@@ -166,6 +170,7 @@ class FolderSyncTest {
         val documentRepository = mockk<DocumentRepository>(relaxed = true)
         val documentsApi = mockk<DocumentsApi>()
         val documentConflictHandler = mockk<DocumentConflictHandler>()
+        val folderConflictHandler = mockk<FolderConflictHandler>()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
         val authRepository = mockk<AuthRepository>()
 
@@ -176,6 +181,7 @@ class FolderSyncTest {
             documentRepository = documentRepository,
             documentsApi = documentsApi,
             documentConflictHandler = documentConflictHandler,
+            folderConflictHandler = folderConflictHandler,
             folderRepository = folderRepository,
             authRepository = authRepository,
             minSyncInternal = 0.milliseconds
@@ -194,6 +200,7 @@ class FolderSyncTest {
         val documentRepository = mockk<DocumentRepository>(relaxed = true)
         val documentsApi = mockk<DocumentsApi>()
         val documentConflictHandler = mockk<DocumentConflictHandler>()
+        val folderConflictHandler = mockk<FolderConflictHandler>()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
         val authRepository = mockk<AuthRepository>()
 
@@ -222,7 +229,7 @@ class FolderSyncTest {
         coEvery { folderRepository.getFolderByParentId(folderId, workspaceId) } returns emptyList()
 
         coEvery { documentConflictHandler.handleConflict(any(), any()) } returns listOf(documentToSend)
-        coEvery { documentConflictHandler.handleConflictForFolders(any(), any()) } returns emptyList()
+        coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
 
         coEvery { documentsApi.sendDocuments(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
         coEvery { documentsApi.sendFolders(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
@@ -231,6 +238,7 @@ class FolderSyncTest {
             documentRepository = documentRepository,
             documentsApi = documentsApi,
             documentConflictHandler = documentConflictHandler,
+            folderConflictHandler = folderConflictHandler,
             folderRepository = folderRepository,
             authRepository = authRepository,
             minSyncInternal = 0.milliseconds
@@ -255,6 +263,7 @@ class FolderSyncTest {
         val documentRepository = mockk<DocumentRepository>(relaxed = true)
         val documentsApi = mockk<DocumentsApi>()
         val documentConflictHandler = mockk<DocumentConflictHandler>()
+        val folderConflictHandler = mockk<FolderConflictHandler>()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
         val authRepository = mockk<AuthRepository>()
 
@@ -273,7 +282,7 @@ class FolderSyncTest {
         coEvery { folderRepository.getFolderByParentId(folderId, workspaceId) } returns emptyList()
 
         coEvery { documentConflictHandler.handleConflict(any(), any()) } returns emptyList()
-        coEvery { documentConflictHandler.handleConflictForFolders(any(), any()) } returns emptyList()
+        coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
 
         coEvery { documentsApi.sendDocuments(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
         // sendFolders fails
@@ -283,6 +292,7 @@ class FolderSyncTest {
             documentRepository = documentRepository,
             documentsApi = documentsApi,
             documentConflictHandler = documentConflictHandler,
+            folderConflictHandler = folderConflictHandler,
             folderRepository = folderRepository,
             authRepository = authRepository,
             minSyncInternal = 0.milliseconds
