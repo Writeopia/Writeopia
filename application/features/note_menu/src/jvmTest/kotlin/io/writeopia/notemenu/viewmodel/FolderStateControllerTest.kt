@@ -25,6 +25,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FolderStateControllerTest {
@@ -54,8 +55,11 @@ class FolderStateControllerTest {
 
         val workspace = Workspace(
             id = workspaceId,
+            userId = "ownerId",
             name = "Test Workspace",
-            ownerId = "ownerId"
+            lastSync = Instant.DISTANT_PAST,
+            selected = true,
+            role = "admin"
         )
 
         val premiumUser = WriteopiaUser(
@@ -82,7 +86,7 @@ class FolderStateControllerTest {
         advanceUntilIdle()
 
         // Verify folder was created
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", null) }
+        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", any()) }
 
         // Verify folder was synced to backend
         val foldersSlot = slot<List<Folder>>()
@@ -104,8 +108,11 @@ class FolderStateControllerTest {
 
         val workspace = Workspace(
             id = workspaceId,
+            userId = "ownerId",
             name = "Test Workspace",
-            ownerId = "ownerId"
+            lastSync = Instant.DISTANT_PAST,
+            selected = true,
+            role = "admin"
         )
 
         val freeUser = WriteopiaUser(
@@ -130,7 +137,7 @@ class FolderStateControllerTest {
         advanceUntilIdle()
 
         // Verify folder was created
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", null) }
+        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", any()) }
 
         // Verify NO sync to backend (free user)
         coVerify(exactly = 0) { documentsApi.sendFolders(any(), any(), any()) }
@@ -149,8 +156,11 @@ class FolderStateControllerTest {
 
         val workspace = Workspace(
             id = workspaceId,
+            userId = "ownerId",
             name = "Test Workspace",
-            ownerId = "ownerId"
+            lastSync = Instant.DISTANT_PAST,
+            selected = true,
+            role = "admin"
         )
 
         coEvery { authRepository.getWorkspace() } returns workspace
@@ -167,7 +177,7 @@ class FolderStateControllerTest {
         advanceUntilIdle()
 
         // Verify folder was created locally
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", null) }
+        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", any()) }
 
         // Verify NO sync to backend (not logged in)
         coVerify(exactly = 0) { documentsApi.sendFolders(any(), any(), any()) }
@@ -185,8 +195,11 @@ class FolderStateControllerTest {
 
         val workspace = Workspace(
             id = workspaceId,
+            userId = "ownerId",
             name = "Test Workspace",
-            ownerId = "ownerId"
+            lastSync = Instant.DISTANT_PAST,
+            selected = true,
+            role = "admin"
         )
 
         val premiumUser = WriteopiaUser(
@@ -228,8 +241,11 @@ class FolderStateControllerTest {
 
         val workspace = Workspace(
             id = workspaceId,
+            userId = "ownerId",
             name = "Test Workspace",
-            ownerId = "ownerId"
+            lastSync = Instant.DISTANT_PAST,
+            selected = true,
+            role = "admin"
         )
 
         val premiumUser = WriteopiaUser(

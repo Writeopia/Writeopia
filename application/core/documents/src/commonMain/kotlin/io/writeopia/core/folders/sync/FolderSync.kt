@@ -19,6 +19,7 @@ class FolderSync(
     private val documentRepository: DocumentRepository,
     private val documentsApi: DocumentsApi,
     private val documentConflictHandler: DocumentConflictHandler,
+    private val folderConflictHandler: FolderConflictHandler,
     private val folderRepository: FolderRepository,
     private val authRepository: AuthRepository,
     private val minSyncInternal: Duration = 2.seconds
@@ -42,10 +43,7 @@ class FolderSync(
             if (workspaceId == Workspace.disconnectedWorkspace().id) return
 
             val now = Clock.System.now()
-            if (!force && now - lastSuccessfulSync < minSyncInternal) {
-                println("Skipping sync for $workspaceId. Last sync was less than $minSyncInternal ago.")
-                return
-            }
+            if (!force && now - lastSuccessfulSync < minSyncInternal) return
 
             val authToken = authRepository.getAuthToken() ?: return
 
@@ -86,7 +84,7 @@ class FolderSync(
                 documentConflictHandler.handleConflict(localOutdatedDocs, newDocuments)
 
             // Resolve conflicts for subfolders
-            val foldersNotSent = documentConflictHandler.handleConflictForFolders(
+            val foldersNotSent = folderConflictHandler.handleConflict(
                 localFolders = localOutdatedFolders,
                 externalFolders = newFolders
             )
@@ -119,7 +117,7 @@ class FolderSync(
                 lastSuccessfulSync = now
             }
         } catch (e: Exception) {
-//            e.printStackTrace()
+            // Sync failed, will retry on next sync
         }
     }
 }

@@ -2,18 +2,13 @@
 
 package io.writeopia.core.folders.sync
 
-import io.writeopia.auth.core.manager.AuthRepository
-import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Document
-import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class DocumentConflictHandler(
-    private val documentRepository: DocumentRepository,
-    private val folderRepository: FolderRepository,
-    private val authRepository: AuthRepository
+    private val documentRepository: DocumentRepository
 ) {
 
     /**
@@ -49,18 +44,5 @@ class DocumentConflictHandler(
 
         // Determine which documents to return.
         return resolvedDocuments
-    }
-
-    suspend fun handleConflictForFolders(
-        localFolders: List<Folder>,
-        externalFolders: List<Folder>,
-    ): List<Folder> {
-        val now = Clock.System.now()
-
-        externalFolders.forEach { folder ->
-            folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
-        }
-
-        return (localFolders.toSet() - externalFolders.toSet()).toList()
     }
 }

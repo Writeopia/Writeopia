@@ -15,6 +15,9 @@ object InTextMarkdownHandler {
     // (?!\*) means "not followed by *"
     private val ITALIC_REGEX = Regex("""(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)""")
 
+    // URL: Matches http:// or https:// followed by non-whitespace characters
+    private val URL_REGEX = Regex("""(https?://[^\s]+)""")
+
     fun handleMarkdown(storyStep: StoryStep): StoryStep {
         val originalText = storyStep.text ?: return storyStep
 
@@ -25,6 +28,9 @@ object InTextMarkdownHandler {
         // before the italic logic runs.
         processedText = processPattern(processedText, BOLD_REGEX, Span.BOLD, newSpans)
         processedText = processPattern(processedText, ITALIC_REGEX, Span.ITALIC, newSpans)
+
+        // Process URLs - they don't modify text, just add spans
+        processUrlPattern(processedText, URL_REGEX, newSpans)
 
         return if (newSpans.isNotEmpty()) {
             storyStep.copy(
@@ -68,5 +74,31 @@ object InTextMarkdownHandler {
             match = regex.find(currentText)
         }
         return currentText
+    }
+
+    private fun processUrlPattern(
+        text: String,
+        regex: Regex,
+        spanSet: MutableSet<SpanInfo>
+    ) {
+        var match = regex.find(text)
+
+        while (match != null) {
+            val url = match.value
+            val range = match.range
+
+            if (url.isNotEmpty()) {
+                spanSet.add(
+                    SpanInfo.create(
+                        start = range.first,
+                        end = range.last + 1,
+                        span = Span.LINK,
+                        extra = url
+                    )
+                )
+            }
+
+            match = regex.find(text, range.last + 1)
+        }
     }
 }
