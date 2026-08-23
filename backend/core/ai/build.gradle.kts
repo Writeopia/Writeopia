@@ -30,9 +30,7 @@ dependencies {
 
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
-
-    // Google Gen AI Kotlin SDK (Vertex AI / Gemini)
-    implementation(libs.google.genai.kotlin)
+    implementation(project(":backend:core:genai_service"))
 
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.kotlin.test)

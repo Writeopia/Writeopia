@@ -52,6 +52,8 @@ import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
+import io.writeopia.sdk.serialization.response.UnsyncedDocumentInfo
+import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -608,5 +610,194 @@ object DocumentsService {
             updatedSteps = stepsToReturn,
             deletedIds = serverDeletedIds
         )
+    }
+
+    /**
+     * Result type for generateSummaryDocument operation.
+     */
+    sealed class GenerateSummaryResult {
+        data class Success(val document: Document) : GenerateSummaryResult()
+        data class NeedsSync(val unsyncedDocuments: List<UnsyncedDocumentInfo>) : GenerateSummaryResult()
+        data class Error(val message: String) : GenerateSummaryResult()
+        data object GenAiUnavailable : GenerateSummaryResult()
+    }
+
+    /**
+     * Generates a summary document from multiple documents.
+     *
+     * Flow:
+     * 1. Validate documentIds not empty
+     * 2. Check sync status for each document
+     * 3. If unsynced documents exist, return NeedsSync
+     * 4. Extract text content from all documents
+     * 5. Generate summary using GenAI
+     * 6. Create and save summary document
+     */
+    suspend fun generateSummaryDocument(
+        documentIds: List<String>,
+        targetFolderId: String,
+        workspaceId: String,
+        summaryTitle: String?,
+        model: String?,
+        genAiService: GenAiService,
+        writeopiaDb: WriteopiaDbBackend
+    ): GenerateSummaryResult {
+        // Check if GenAI is available
+        if (!genAiService.isAvailable()) {
+            return GenerateSummaryResult.GenAiUnavailable
+        }
+
+        // Validate documentIds
+        if (documentIds.isEmpty()) {
+            return GenerateSummaryResult.Error("Document IDs list cannot be empty")
+        }
+
+        // Fetch all documents and check sync status
+        val unsyncedDocuments = mutableListOf<UnsyncedDocumentInfo>()
+        val documentsToProcess = mutableListOf<Document>()
+
+        for (documentId in documentIds) {
+            val document = writeopiaDb.getDocumentWithContentById(documentId, workspaceId)
+            if (document == null) {
+                return GenerateSummaryResult.Error("Document not found: $documentId")
+            }
+
+            // Check sync status: lastSyncedAt must be non-null and >= lastUpdatedAt
+            val lastUpdatedAtMillis = document.lastUpdatedAt.toEpochMilliseconds()
+            val lastSyncedAtMillis = document.lastSyncedAt?.toEpochMilliseconds()
+
+            if (lastSyncedAtMillis == null || lastSyncedAtMillis < lastUpdatedAtMillis) {
+                unsyncedDocuments.add(
+                    UnsyncedDocumentInfo(
+                        documentId = document.id,
+                        documentTitle = document.title,
+                        lastUpdatedAt = lastUpdatedAtMillis,
+                        lastSyncedAt = lastSyncedAtMillis
+                    )
+                )
+            } else {
+                documentsToProcess.add(document)
+            }
+        }
+
+        // If there are unsynced documents, return NeedsSync
+        if (unsyncedDocuments.isNotEmpty()) {
+            return GenerateSummaryResult.NeedsSync(unsyncedDocuments)
+        }
+
+        // Extract text content from all documents
+        val combinedText = extractTextFromDocuments(documentsToProcess)
+
+        if (combinedText.isBlank()) {
+            return GenerateSummaryResult.Error("No text content found in the provided documents")
+        }
+
+        // Generate summary using GenAI
+        val aiResponse = genAiService.generateSummary(combinedText, model)
+
+        val errorMessage = aiResponse.error
+        if (errorMessage != null) {
+            return GenerateSummaryResult.Error(errorMessage)
+        }
+
+        val summaryText = aiResponse.response
+        if (summaryText.isNullOrBlank()) {
+            return GenerateSummaryResult.Error("AI generated an empty summary")
+        }
+
+        // Create summary document
+        val now = Clock.System.now()
+        val title = summaryTitle ?: "Summary of ${documentsToProcess.size} documents"
+        val documentId = GenerateId.generate()
+
+        // Build content map
+        val content = buildSummaryContent(title, summaryText)
+
+        val summaryDocument = Document(
+            id = documentId,
+            title = title,
+            content = content,
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = now,
+            parentId = targetFolderId,
+            workspaceId = workspaceId
+        )
+
+        // Save the document
+        writeopiaDb.saveDocument(summaryDocument)
+
+        return GenerateSummaryResult.Success(summaryDocument)
+    }
+
+    /**
+     * Extracts text content from a list of documents.
+     * Concatenates text from title, message, check_item, unordered_list_item, and code_block types.
+     */
+    private fun extractTextFromDocuments(documents: List<Document>): String {
+        val textTypes = setOf("title", "message", "check_item", "unordered_list_item", "code_block")
+        val textParts = mutableListOf<String>()
+
+        for (document in documents) {
+            val documentParts = mutableListOf<String>()
+
+            // Add document title as header
+            documentParts.add("# ${document.title}")
+
+            // Sort content by position and extract text
+            val sortedContent = document.content.entries.sortedBy { it.key }
+            for ((_, storyStep) in sortedContent) {
+                val text = storyStep.text
+                if (storyStep.type.name in textTypes && !text.isNullOrBlank()) {
+                    documentParts.add(text)
+                }
+            }
+
+            if (documentParts.size > 1) { // More than just the title
+                textParts.add(documentParts.joinToString("\n"))
+            }
+        }
+
+        return textParts.joinToString("\n\n---\n\n")
+    }
+
+    /**
+     * Builds the content map for a summary document.
+     * Creates TITLE, TEXT paragraphs, and LAST_SPACE StorySteps.
+     */
+    private fun buildSummaryContent(title: String, summaryText: String): Map<Double, StoryStep> {
+        val content = mutableMapOf<Double, StoryStep>()
+        var position = 0.0
+
+        // Add TITLE StoryStep
+        content[position] = StoryStep(
+            id = GenerateId.generate(),
+            localId = GenerateId.generate(),
+            type = StoryTypes.TITLE.type,
+            text = title
+        )
+        position += 1.0
+
+        // Split summary into paragraphs and create TEXT StorySteps
+        val paragraphs = summaryText.split("\n\n").filter { it.isNotBlank() }
+        for (paragraph in paragraphs) {
+            content[position] = StoryStep(
+                id = GenerateId.generate(),
+                localId = GenerateId.generate(),
+                type = StoryTypes.TEXT.type,
+                text = paragraph.trim()
+            )
+            position += 1.0
+        }
+
+        // Add LAST_SPACE StoryStep
+        content[position] = StoryStep(
+            id = GenerateId.generate(),
+            localId = GenerateId.generate(),
+            type = StoryTypes.LAST_SPACE.type,
+            text = ""
+        )
+
+        return content
     }
 }

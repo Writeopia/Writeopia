@@ -10,6 +10,7 @@ import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.passwordResetRoute
 import io.writeopia.api.core.auth.routing.workspaceRoute
 import io.writeopia.api.documents.routing.documentsRoute
+import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.connection.logger
 import io.writeopia.sql.WriteopiaDbBackend
 
@@ -20,10 +21,11 @@ fun Application.configureRouting(
     adminKey: String?
 ) {
     val useVertexAi = System.getenv("WRITEOPIA_USE_VERTEX_AI")?.toBoolean() == true
+    val genAiService = if (useVertexAi) GenAiService() else null
 
     routing {
         if (writeopiaDb != null) {
-            documentsRoute(writeopiaDb, useAi, debugMode)
+            documentsRoute(writeopiaDb, useAi, debugMode, genAiService = genAiService)
 
             authRoute(writeopiaDb, debugMode)
 

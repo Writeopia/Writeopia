@@ -1,7 +1,7 @@
-package io.writeopia.api.ai.service
+package io.writeopia.api.genai.service
 
 import com.google.genai.kotlin.Client
-import io.writeopia.api.ai.model.AiGenerateResponse
+import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.connection.logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

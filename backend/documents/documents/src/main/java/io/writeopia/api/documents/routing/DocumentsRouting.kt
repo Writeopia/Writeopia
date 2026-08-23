@@ -42,10 +42,13 @@ import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
+import io.writeopia.sdk.serialization.request.GenerateSummaryRequest
 import io.writeopia.sdk.serialization.response.EventDiffResponse
 import io.writeopia.sdk.serialization.response.FolderContentResponse
+import io.writeopia.sdk.serialization.response.GenerateSummaryResponse
 import io.writeopia.sdk.serialization.response.SyncEventApi
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
+import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -57,7 +60,8 @@ fun Routing.documentsRoute(
     writeopiaDb: WriteopiaDbBackend,
     useAi: Boolean,
     debug: Boolean = false,
-    imageStorageService: ImageStorageService = GcpBucketImageStorageService
+    imageStorageService: ImageStorageService = GcpBucketImageStorageService,
+    genAiService: GenAiService? = null
 ) {
     // Public site endpoint - no authentication required
     get("/api/site/{documentId}") {
@@ -705,6 +709,77 @@ fun Routing.documentsRoute(
                     call.respond(
                         status = HttpStatusCode.InternalServerError,
                         message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<GenerateSummaryRequest>("/api/docs/workspace/{workspaceId}/document/generate-summary") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                // Check if GenAI service is provided
+                if (genAiService == null) {
+                    call.respond(
+                        status = HttpStatusCode.ServiceUnavailable,
+                        message = GenerateSummaryResponse(error = "GenAI service is not available")
+                    )
+                    return@runIfMember
+                }
+
+                // Validate request
+                if (request.documentIds.isEmpty()) {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = GenerateSummaryResponse(error = "Document IDs list cannot be empty")
+                    )
+                    return@runIfMember
+                }
+
+                try {
+                    val result = DocumentsService.generateSummaryDocument(
+                        documentIds = request.documentIds,
+                        targetFolderId = request.targetFolderId,
+                        workspaceId = workspaceId,
+                        summaryTitle = request.summaryTitle,
+                        model = request.model,
+                        genAiService = genAiService,
+                        writeopiaDb = writeopiaDb
+                    )
+
+                    when (result) {
+                        is DocumentsService.GenerateSummaryResult.Success -> {
+                            call.respond(
+                                status = HttpStatusCode.Created,
+                                message = GenerateSummaryResponse(document = result.document.toApi())
+                            )
+                        }
+                        is DocumentsService.GenerateSummaryResult.NeedsSync -> {
+                            call.respond(
+                                status = HttpStatusCode.Conflict,
+                                message = GenerateSummaryResponse(unsyncedDocuments = result.unsyncedDocuments)
+                            )
+                        }
+                        is DocumentsService.GenerateSummaryResult.GenAiUnavailable -> {
+                            call.respond(
+                                status = HttpStatusCode.ServiceUnavailable,
+                                message = GenerateSummaryResponse(error = "GenAI service is not configured")
+                            )
+                        }
+                        is DocumentsService.GenerateSummaryResult.Error -> {
+                            call.respond(
+                                status = HttpStatusCode.InternalServerError,
+                                message = GenerateSummaryResponse(error = result.message)
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = GenerateSummaryResponse(error = e.message ?: "Unknown error")
                     )
                 }
             }

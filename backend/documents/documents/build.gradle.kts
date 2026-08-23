@@ -27,6 +27,7 @@ dependencies {
     implementation(project(":backend:core:auth"))
     implementation(project(":backend:core:models"))
     implementation(project(":backend:core:buckets"))
+    implementation(project(":backend:core:genai_service"))
 
     //
 

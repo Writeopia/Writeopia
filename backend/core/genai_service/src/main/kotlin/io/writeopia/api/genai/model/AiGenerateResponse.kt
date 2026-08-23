@@ -1,4 +1,4 @@
-package io.writeopia.api.ai.model
+package io.writeopia.api.genai.model
 
 import kotlinx.serialization.Serializable
 

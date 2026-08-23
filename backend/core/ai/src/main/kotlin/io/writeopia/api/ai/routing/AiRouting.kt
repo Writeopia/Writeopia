@@ -9,9 +9,9 @@ import io.ktor.server.response.respondTextWriter
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
-import io.writeopia.api.ai.model.AiGenerateRequest
-import io.writeopia.api.ai.model.AiGenerateResponse
-import io.writeopia.api.ai.service.GenAiService
+import io.writeopia.api.genai.model.AiGenerateRequest
+import io.writeopia.api.genai.model.AiGenerateResponse
+import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.connection.logger
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
