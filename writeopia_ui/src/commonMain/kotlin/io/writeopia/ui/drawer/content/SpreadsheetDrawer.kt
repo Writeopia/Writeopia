@@ -10,7 +10,6 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalDensity
@@ -259,7 +259,7 @@ class SpreadsheetDrawer(
 
                                                 val targetAlpha = when {
                                                     isRowActionHovered -> 1f
-                                                    hoveredRowIndex == rowIndex -> 1f
+                                                    hoveredRowIndex == rowIndex -> 0.5f
                                                     else -> 0f
                                                 }
                                                 val rowActionAlpha by animateFloatAsState(
@@ -337,7 +337,7 @@ class SpreadsheetDrawer(
 
                                                     val targetAlpha = when {
                                                         isColumnActionHovered -> 1f
-                                                        hoveredColumnIndex == cellIndex -> 1f
+                                                        hoveredColumnIndex == cellIndex -> 0.5f
                                                         else -> 0f
                                                     }
                                                     val columnActionAlpha by animateFloatAsState(
@@ -624,7 +624,7 @@ private fun SpreadsheetCell(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
-    val isFocused by interactionSource.collectIsFocusedAsState()
+    var isFocused by remember { mutableStateOf(false) }
     var localText by remember(text) { mutableStateOf(text) }
 
     LaunchedEffect(isHovered, isFocused) {
@@ -672,14 +672,16 @@ private fun SpreadsheetCell(
                 },
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .onFocusChanged { focusState ->
+                        isFocused = focusState.isFocused
+                    },
                 textStyle = TextStyle(
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = MaterialTheme.typography.bodyMedium.fontSize
                 ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                singleLine = false,
-                interactionSource = interactionSource
+                singleLine = false
             )
         }
 
