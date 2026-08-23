@@ -32,6 +32,9 @@ internal class AccountMenuKmpViewModel(
     override val usersOfSelectedWorkspace: Flow<ResultData<List<String>>> =
         workspaceHandler.usersOfSelectedWorkspace
 
+    override val exportWorkspaceState: StateFlow<ResultData<Unit>> =
+        workspaceHandler.exportWorkspaceState
+
     override val isLoggedIn: StateFlow<ResultData<Boolean>> by lazy {
         authRepository.listenForUser().map {
             ResultData.Complete(it.id != WriteopiaUser.DISCONNECTED)
@@ -76,5 +79,13 @@ internal class AccountMenuKmpViewModel(
 
     override fun addUserToWorkspace(userEmail: String) {
         workspaceHandler.addUserToWorkspace(userEmail)
+    }
+
+    override fun exportWorkspace(workspaceId: String) {
+        workspaceHandler.exportWorkspace(workspaceId)
+    }
+
+    override fun resetExportState() {
+        workspaceHandler.resetExportState()
     }
 }

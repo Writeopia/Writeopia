@@ -4,6 +4,8 @@ package io.writeopia.notemenu.viewmodel
 
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.icons.IconChange
+import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.common.utils.anyNode
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.sdk.models.document.Folder
@@ -22,6 +24,7 @@ import kotlin.time.ExperimentalTime
 class FolderStateController private constructor(
     private val notesUseCase: NotesUseCase,
     private val authRepository: AuthRepository,
+    private val documentsApi: DocumentsApi,
 ) : FolderController {
     private lateinit var coroutineScope: CoroutineScope
 
@@ -31,8 +34,8 @@ class FolderStateController private constructor(
     override val selectedNotes: StateFlow<Set<String>> = _selectedNotes.asStateFlow()
 
     // Todo: Change this to a usecase
-    private val _editingFolder = MutableStateFlow<MenuItemUi.FolderUi?>(null)
-    val editingFolderState = _editingFolder.asStateFlow()
+    private val editingFolderMutable = MutableStateFlow<MenuItemUi.FolderUi?>(null)
+    val editingFolderState = editingFolderMutable.asStateFlow()
 
     fun initCoroutine(coroutineScope: CoroutineScope) {
         this.coroutineScope = coroutineScope
@@ -41,17 +44,20 @@ class FolderStateController private constructor(
     override fun addFolder(parentId: String) {
         coroutineScope.launch(Dispatchers.Default) {
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-            notesUseCase.createFolder("Untitled", workspace.id, parentId)
+            val folder = notesUseCase.createFolder("Untitled", workspace.id, parentId)
+            syncFolderToBackend(folder)
         }
     }
 
     override fun editFolder(folder: MenuItemUi.FolderUi) {
-        _editingFolder.value = folder
+        editingFolderMutable.value = folder
     }
 
     override fun updateFolder(folderEdit: Folder) {
         coroutineScope.launch(Dispatchers.Default) {
-            notesUseCase.updateFolder(folderEdit.copy(lastUpdatedAt = Clock.System.now()))
+            val updatedFolder = folderEdit.copy(lastUpdatedAt = Clock.System.now())
+            notesUseCase.updateFolder(updatedFolder)
+            syncFolderToBackend(updatedFolder)
         }
     }
 
@@ -59,11 +65,42 @@ class FolderStateController private constructor(
         coroutineScope.launch(Dispatchers.Default) {
             notesUseCase.deleteFolderById(id)
             stopEditingFolder()
+
+            // Sync folder deletion to backend
+            syncFolderDeletionToBackend(id)
         }
     }
 
+    private suspend fun syncFolderDeletionToBackend(folderId: String) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+        val token = authRepository.getAuthToken() ?: return
+
+        documentsApi.deleteFolder(
+            folderId = folderId,
+            workspaceId = workspace.id,
+            token = token
+        )
+    }
+
+    private suspend fun syncFolderToBackend(folder: Folder) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+        val token = authRepository.getAuthToken() ?: return
+
+        documentsApi.sendFolders(
+            folders = listOf(folder),
+            workspaceId = workspace.id,
+            token = token
+        )
+    }
+
     override fun stopEditingFolder() {
-        _editingFolder.value = null
+        editingFolderMutable.value = null
     }
 
     override fun moveToFolder(menuItemUi: MenuItemUi, parentId: String) {
@@ -105,11 +142,14 @@ class FolderStateController private constructor(
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
 
             when (iconChange) {
-                IconChange.FOLDER -> notesUseCase.updateFolderById(menuItemId) { folder ->
-                    folder.copy(
-                        icon = MenuItem.Icon(icon, tint),
-                        lastUpdatedAt = Clock.System.now()
-                    )
+                IconChange.FOLDER -> {
+                    val updatedFolder = notesUseCase.updateFolderById(menuItemId) { folder ->
+                        folder.copy(
+                            icon = MenuItem.Icon(icon, tint),
+                            lastUpdatedAt = Clock.System.now()
+                        )
+                    }
+                    updatedFolder?.let { syncFolderToBackend(it) }
                 }
 
                 IconChange.DOCUMENT -> notesUseCase.updateDocumentById(
@@ -148,8 +188,12 @@ class FolderStateController private constructor(
     companion object {
         var instance: FolderStateController? = null
 
-        fun singleton(notesUseCase: NotesUseCase, authRepository: AuthRepository) =
-            instance ?: FolderStateController(notesUseCase, authRepository)
+        fun singleton(
+            notesUseCase: NotesUseCase,
+            authRepository: AuthRepository,
+            documentsApi: DocumentsApi
+        ) =
+            instance ?: FolderStateController(notesUseCase, authRepository, documentsApi)
                 .also {
                     instance = it
                 }

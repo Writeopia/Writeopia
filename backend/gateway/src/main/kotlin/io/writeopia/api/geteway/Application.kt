@@ -47,6 +47,8 @@ fun Application.installCORS() {
         allowHeader("X-Admin-KEY")
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Options)
     }
 }

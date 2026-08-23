@@ -52,7 +52,6 @@ fun EditFileDialog(
                     value = fileText,
                     onValueChange = { title ->
                         fileText = title
-                        editFolder(folderEdit.copy(title = title.takeIf { it.isNotEmpty() } ?: " "))
                     }
                 )
 
@@ -65,7 +64,10 @@ fun EditFileDialog(
                         Text("Delete folder")
                     }
 
-                    TextButton(onClick = onDismissRequest) {
+                    TextButton(onClick = {
+                        editFolder(folderEdit.copy(title = fileText.takeIf { it.isNotEmpty() } ?: " "))
+                        onDismissRequest()
+                    }) {
                         Text("Done")
                     }
                 }

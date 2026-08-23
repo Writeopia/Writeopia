@@ -85,6 +85,7 @@ internal class SqlDelightAuthRepository(
                     userId = entity.user_id,
                     name = entity.name,
                     lastSync = Instant.fromEpochMilliseconds(entity.last_synced_at),
+                    lastEventSync = entity.last_event_sync_at,
                     selected = entity.selected.toBoolean(),
                     role = ""
                 )
@@ -97,10 +98,15 @@ internal class SqlDelightAuthRepository(
                 user_id = workspace.userId,
                 name = workspace.name,
                 last_synced_at = workspace.lastSync.toEpochMilliseconds(),
+                last_event_sync_at = workspace.lastEventSync,
                 icon = null,
                 icon_tint = null,
                 selected = workspace.selected.toLong(),
             )
+    }
+
+    override suspend fun updateLastEventSync(workspaceId: String, lastEventSync: Long) {
+        writeopiaDb?.workspaceEntityQueries?.updateLastEventSync(lastEventSync, workspaceId)
     }
 
     override suspend fun unselectAllWorkspaces() {

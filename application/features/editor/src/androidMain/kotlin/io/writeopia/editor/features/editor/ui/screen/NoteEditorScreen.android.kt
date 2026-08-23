@@ -3,7 +3,11 @@ package io.writeopia.editor.features.editor.ui.screen
 // import androidx.compose.ui.tooling.preview.Preview
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -58,6 +62,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
+import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
 import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
@@ -86,6 +91,7 @@ internal fun NoteEditorScreen(
     navigateBack: () -> Unit,
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit = {},
+    onNewImageClick: () -> Unit = {},
     onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
@@ -95,6 +101,24 @@ internal fun NoteEditorScreen(
         noteEditorViewModel.handleBackAction(navigateBack = {
             navigateBack()
         })
+    }
+
+    val context = LocalContext.current
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        uri?.let {
+            // Copy the image to app storage for persistence
+            val fileName = "image_${System.currentTimeMillis()}.jpg"
+            val destinationFile = java.io.File(context.filesDir, fileName)
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                destinationFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            noteEditorViewModel.addImage(destinationFile.absolutePath)
+        }
     }
 
     if (documentId != null) {
@@ -107,7 +131,6 @@ internal fun NoteEditorScreen(
         )
     }
 
-    val context = LocalContext.current
     val document = noteEditorViewModel.documentToShareInfo.collectAsState().value
 
     if (document != null) {
@@ -192,6 +215,12 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::addPage,
                     noteEditorViewModel::titleClick,
                     onDrawingClick = onNewDrawingClick,
+                    onImageClick = {
+                        imagePickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    onSpreadsheetClick = { noteEditorViewModel.onAddSpreadsheetClick(3) },
                     onBoxClick = noteEditorViewModel::toggleHighLightBlock,
                     onCardClick = noteEditorViewModel::toggleCardBlock
                 )
@@ -251,6 +280,11 @@ internal fun NoteEditorScreen(
                     onUnpublish = noteEditorViewModel::unpublishDocument,
                     onCopyLink = noteEditorViewModel::copyPublishLink
                 )
+            }
+
+            val showPremiumDialog by noteEditorViewModel.showPremiumDialog.collectAsState()
+            if (showPremiumDialog) {
+                PremiumOnlyDialog(onDismiss = noteEditorViewModel::hidePremiumDialog)
             }
         }
     }
@@ -393,6 +427,8 @@ private fun BottomScreen(
     onAddPage: () -> Unit = {},
     titleClick: (Tag) -> Unit,
     onDrawingClick: () -> Unit = {},
+    onImageClick: () -> Unit = {},
+    onSpreadsheetClick: () -> Unit = {},
     onBoxClick: () -> Unit = {},
     onCardClick: () -> Unit = {}
 ) {
@@ -428,7 +464,9 @@ private fun BottomScreen(
                     onForwardPress = reDo,
                     canUndoState = canUndo,
                     canRedoState = canRedo,
-                    onDrawingClick = onDrawingClick
+                    onDrawingClick = onDrawingClick,
+                    onImageClick = onImageClick,
+                    onSpreadsheetClick = onSpreadsheetClick
                 )
             }
 

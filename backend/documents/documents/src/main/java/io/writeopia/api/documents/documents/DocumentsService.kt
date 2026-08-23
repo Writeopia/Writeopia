@@ -9,7 +9,10 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.api.documents.documents.repository.addUserFavorite
+import io.writeopia.api.documents.documents.repository.createSyncEvent
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByFolderId
+import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
+import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByIds
 import io.writeopia.api.documents.documents.repository.deleteFolder
 import io.writeopia.api.documents.documents.repository.deleteStoryStepById
@@ -17,12 +20,14 @@ import io.writeopia.api.documents.documents.repository.deleteStoryStepsByIds
 import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.getFolderById
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
+import io.writeopia.api.documents.documents.repository.getIdsByParentId
 import io.writeopia.api.documents.documents.repository.getPublishedDocumentById
 import io.writeopia.api.documents.documents.repository.getStoryStepById
 import io.writeopia.api.documents.documents.repository.getStoryStepsAfterTime
 import io.writeopia.api.documents.documents.repository.getUserFavoriteDocumentIds
 import io.writeopia.api.documents.documents.repository.isDocumentPublished
 import io.writeopia.api.documents.documents.repository.isUserFavorite
+import io.writeopia.api.documents.documents.repository.moveDocumentToFolder
 import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.removeUserFavorite
 import io.writeopia.api.documents.documents.repository.getDocumentByTitle
@@ -30,6 +35,8 @@ import io.writeopia.api.documents.documents.repository.getDocumentWithContentByI
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.documents.repository.setDocumentPublished
+import io.writeopia.api.documents.documents.repository.SyncEventType
+import io.writeopia.api.documents.documents.repository.updateDocumentTitle
 import io.writeopia.api.documents.documents.repository.upsertStoryStep
 import io.writeopia.api.documents.search.SearchDocument
 import io.writeopia.connection.ResultData
@@ -37,8 +44,10 @@ import io.writeopia.connection.Urls
 import io.writeopia.connection.wrWebClient
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
@@ -82,7 +91,10 @@ object DocumentsService {
         id: String,
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
-    ): Document? = writeopiaDb.getDocumentWithContentById(id, workspaceId)
+    ): Document? {
+        val document = writeopiaDb.getDocumentWithContentById(id, workspaceId) ?: return null
+        return ensureTitleInSync(document)
+    }
 
     suspend fun getDocumentByTitle(
         title: String,
@@ -100,6 +112,7 @@ object DocumentsService {
         parentFolderId: String,
         title: String,
         workspaceId: String,
+        icon: MenuItem.Icon? = null,
         writeopiaDb: WriteopiaDbBackend
     ): Folder {
         val now = Clock.System.now()
@@ -110,11 +123,33 @@ object DocumentsService {
             createdAt = now,
             lastUpdatedAt = now,
             workspaceId = workspaceId,
-            itemCount = 0
+            itemCount = 0,
+            icon = icon
         )
 
         writeopiaDb.saveFolder(folder)
         return folder
+    }
+
+    suspend fun updateFolder(
+        folderId: String,
+        workspaceId: String,
+        title: String?,
+        icon: MenuItem.Icon?,
+        favorite: Boolean?,
+        writeopiaDb: WriteopiaDbBackend
+    ): Folder? {
+        val existingFolder = writeopiaDb.getFolderById(folderId, workspaceId) ?: return null
+
+        val updatedFolder = existingFolder.copy(
+            title = title ?: existingFolder.title,
+            icon = icon ?: existingFolder.icon,
+            favorite = favorite ?: existingFolder.favorite,
+            lastUpdatedAt = Clock.System.now()
+        )
+
+        writeopiaDb.saveFolder(updatedFolder)
+        return updatedFolder
     }
 
     suspend fun upsertDocument(
@@ -191,20 +226,44 @@ object DocumentsService {
     /**
      * Recursively deletes a folder and all its contents (child folders and documents).
      * This follows the same pattern as NotesUseCase.deleteFolderById.
+     * Creates sync events for all deleted folders and documents.
      */
     suspend fun deleteFolder(
         folderId: String,
+        workspaceId: String,
+        userId: String,
         writeopiaDb: WriteopiaDbBackend
     ) {
         val childFolders = writeopiaDb.getFoldersByParentId(folderId)
 
         // Recursively delete all child folders
         childFolders.forEach { childFolder ->
-            deleteFolder(childFolder.id, writeopiaDb)
+            deleteFolder(childFolder.id, workspaceId, userId, writeopiaDb)
+        }
+
+        // Get document IDs in this folder before deleting them
+        val documentIds = writeopiaDb.getIdsByParentId(folderId)
+
+        // Create DELETE_DOCUMENT events for all documents in this folder
+        documentIds.forEach { documentId ->
+            writeopiaDb.createSyncEvent(
+                workspaceId = workspaceId,
+                eventType = SyncEventType.DELETE_DOCUMENT,
+                entityId = documentId,
+                userId = userId
+            )
         }
 
         // Delete all documents in this folder
         writeopiaDb.deleteDocumentsByFolderId(folderId)
+
+        // Create DELETE_FOLDER event
+        writeopiaDb.createSyncEvent(
+            workspaceId = workspaceId,
+            eventType = SyncEventType.DELETE_FOLDER,
+            entityId = folderId,
+            userId = userId
+        )
 
         // Finally delete the folder itself
         writeopiaDb.deleteFolder(folderId)
@@ -212,8 +271,20 @@ object DocumentsService {
 
     suspend fun deleteDocuments(
         documentIds: List<String>,
+        workspaceId: String,
+        userId: String,
         writeopiaDb: WriteopiaDbBackend
     ) {
+        // Create DELETE_DOCUMENT events for all documents
+        documentIds.forEach { documentId ->
+            writeopiaDb.createSyncEvent(
+                workspaceId = workspaceId,
+                eventType = SyncEventType.DELETE_DOCUMENT,
+                entityId = documentId,
+                userId = userId
+            )
+        }
+
         writeopiaDb.deleteDocumentsByIds(documentIds)
     }
 
@@ -254,6 +325,7 @@ object DocumentsService {
         folderId: String,
         targetParentId: String,
         workspaceId: String,
+        userId: String,
         writeopiaDb: WriteopiaDbBackend
     ): Boolean {
         // Prevent moving a folder into itself
@@ -267,7 +339,55 @@ object DocumentsService {
             return false
         }
 
+        // Get current parent for the sync event
+        val currentFolder = writeopiaDb.getFolderById(folderId, workspaceId)
+        val oldParentId = currentFolder?.parentId
+
         writeopiaDb.moveFolderToFolder(folderId, targetParentId)
+
+        // Create MOVE_FOLDER sync event
+        writeopiaDb.createSyncEvent(
+            workspaceId = workspaceId,
+            eventType = SyncEventType.MOVE_FOLDER,
+            entityId = folderId,
+            userId = userId,
+            oldParentId = oldParentId,
+            newParentId = targetParentId
+        )
+
+        return true
+    }
+
+    /**
+     * Moves a document to a different folder.
+     * Creates a MOVE_DOCUMENT sync event.
+     */
+    suspend fun moveDocument(
+        documentId: String,
+        targetParentId: String,
+        workspaceId: String,
+        userId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): Boolean {
+        // Get current document to find old parent
+        val currentDocument = writeopiaDb.getDocumentById(documentId, workspaceId)
+            ?: return false
+
+        val oldParentId = currentDocument.parentId
+
+        // Move the document
+        writeopiaDb.moveDocumentToFolder(documentId, targetParentId)
+
+        // Create MOVE_DOCUMENT sync event
+        writeopiaDb.createSyncEvent(
+            workspaceId = workspaceId,
+            eventType = SyncEventType.MOVE_DOCUMENT,
+            entityId = documentId,
+            userId = userId,
+            oldParentId = oldParentId,
+            newParentId = targetParentId
+        )
+
         return true
     }
 
@@ -298,6 +418,49 @@ object DocumentsService {
         }
 
         return false
+    }
+
+    /**
+     * Ensures document title metadata is in sync with the title from content.
+     * Returns the document with corrected title if needed.
+     */
+    private fun ensureTitleInSync(document: Document): Document {
+        val titleFromContent = document.content.values.find { storyStep ->
+            storyStep.type.name == "title"
+        }?.text
+
+        return if (titleFromContent != null && titleFromContent != document.title) {
+            document.copy(title = titleFromContent)
+        } else {
+            document
+        }
+    }
+
+    /**
+     * Gets documents diff by folder with titles synchronized from content.
+     */
+    suspend fun getDocumentsDiffByFolder(
+        folderId: String,
+        workspaceId: String,
+        lastSync: Long,
+        orderBy: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): List<Document> {
+        return writeopiaDb.documentsDiffByFolder(folderId, workspaceId, lastSync, orderBy)
+            .map { ensureTitleInSync(it) }
+    }
+
+    /**
+     * Gets documents diff by workspace with titles synchronized from content.
+     */
+    suspend fun getDocumentsDiffByWorkspace(
+        workspaceId: String,
+        lastSync: Long,
+        orderBy: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): List<Document> {
+        return writeopiaDb.documentsDiffByWorkspace(workspaceId, lastSync, orderBy)
+            .map { ensureTitleInSync(it) }
     }
 
     private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String) =
@@ -345,13 +508,34 @@ object DocumentsService {
      * 4. Process deletions
      * 5. Return steps newer than client's lastSync (excluding client's changes)
      */
-    fun syncStorySteps(
+    suspend fun syncStorySteps(
         documentId: String,
         workspaceId: String,
         request: StoryStepSyncRequest,
         writeopiaDb: WriteopiaDbBackend
     ): StoryStepSyncResponse {
         val serverTimestamp = Clock.System.now().toEpochMilliseconds()
+
+        // Check if document exists, create it if not
+        val existingDocument = writeopiaDb.getDocumentById(documentId, workspaceId)
+        if (existingDocument == null) {
+            // Extract title from the first title-type story step, or use a default
+            val titleStep = request.changes.firstOrNull { it.storyStep.type.name == "title" }
+            val title = titleStep?.storyStep?.text ?: "Untitled"
+
+            val now = Clock.System.now()
+            val newDocument = Document(
+                id = documentId,
+                title = title,
+                content = emptyMap(),
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                parentId = "root",
+                workspaceId = workspaceId
+            )
+            writeopiaDb.saveDocument(newDocument)
+        }
 
         // Get server steps updated after client's last sync
         val serverUpdatedSteps = writeopiaDb.getStoryStepsAfterTime(
@@ -366,6 +550,7 @@ object DocumentsService {
 
         // Track which step IDs the client is updating (to exclude from response)
         val clientUpdatedStepIds = mutableSetOf<String>()
+        var updatedTitle: String? = null
 
         // Process client changes
         for (change in request.changes) {
@@ -382,6 +567,19 @@ object DocumentsService {
                     lastUpdatedAt = request.requestTimestamp
                 )
                 clientUpdatedStepIds.add(clientStep.id)
+
+                // Track title updates
+                if (change.storyStep.type.name == "title") {
+                    updatedTitle = change.storyStep.text
+                }
+            }
+        }
+
+        // Update document title if title step was changed
+        if (updatedTitle != null) {
+            val currentDoc = writeopiaDb.getDocumentById(documentId, workspaceId)
+            if (currentDoc != null && currentDoc.title != updatedTitle) {
+                writeopiaDb.updateDocumentTitle(documentId, updatedTitle)
             }
         }
 

@@ -14,6 +14,7 @@ kotlin {
 
 dependencies {
     implementation(project(":backend:core:models"))
+    implementation(platform(libs.google.cloud.bom))
     implementation(libs.google.cloud.storage)
 
     implementation(libs.ktor.client.core)

@@ -49,6 +49,7 @@ import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNoteMobile
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
+import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
 import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
@@ -81,6 +82,8 @@ fun DesktopApp(
     modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
     startDestination: String = startDestination(),
+    notesMenuInjection: NotesMenuInjection? = null,
+    sideMenuInjector: SideMenuKmpInjector? = null,
 ) {
     val editorInjector = remember {
         EditorKmpInjector.desktop(
@@ -90,14 +93,14 @@ fun DesktopApp(
         )
     }
 
-    val notesMenuInjection = remember {
+    val actualNotesMenuInjection = notesMenuInjection ?: remember {
         NotesMenuKmpInjection.desktop(
             selectionState = selectionState,
             keyboardEventFlow = keyboardEventFlow,
         )
     }
 
-    val sideMenuInjector = remember {
+    val actualSideMenuInjector = sideMenuInjector ?: remember {
         SideMenuKmpInjector()
     }
 
@@ -107,7 +110,7 @@ fun DesktopApp(
         DocumentsGraphInjection(repositoryInjection = RepositoryInjector.singleton())
 
     val globalShellViewModel: GlobalShellViewModel =
-        sideMenuInjector.provideSideMenuViewModel(keyboardEventFlow)
+        actualSideMenuInjector.provideSideMenuViewModel(keyboardEventFlow)
     val colorTheme by colorThemeOption.collectAsState()
     val accentColor by accentColorOption.collectAsState()
     val navigationController: NavHostController = rememberNavController()
@@ -136,7 +139,8 @@ fun DesktopApp(
     ) {
         val density = LocalDensity.current
         val globalBackground = WriteopiaTheme.colorScheme.globalBackground
-        DragSelectionBox(modifier = modifier) {
+        val isTextSelected by editorInjector.textSelectionActiveState.collectAsState()
+        DragSelectionBox(modifier = modifier, isTextSelected = isTextSelected) {
             DraggableScreen {
                 Row(Modifier.background(globalBackground)) {
                     val sideMenuWidth by globalShellViewModel.showSideMenuState.collectAsState()
@@ -201,8 +205,8 @@ fun DesktopApp(
                             Navigation(
                                 isDarkTheme = colorTheme.isDarkTheme(),
                                 startDestination = startDestination,
-                                notesMenuInjection = notesMenuInjection,
-                                sideMenuKmpInjector = sideMenuInjector,
+                                notesMenuInjection = actualNotesMenuInjection,
+                                sideMenuKmpInjector = actualSideMenuInjector,
                                 documentsGraphInjection = documentsGraphInjection,
                                 editorInjector = editorInjector,
                                 drawingInjection = drawingInjection,
@@ -282,6 +286,9 @@ fun DesktopApp(
                                     selectWorkspaceToManage =
                                         globalShellViewModel::selectWorkspaceToManage,
                                     usersInSelectedWorkspace = globalShellViewModel.usersOfWorkspaceToEdit,
+                                    exportWorkspaceState = globalShellViewModel.exportWorkspaceState,
+                                    onExportWorkspace = globalShellViewModel::exportWorkspace,
+                                    onResetExportState = globalShellViewModel::resetExportState,
                                 )
                             }
 

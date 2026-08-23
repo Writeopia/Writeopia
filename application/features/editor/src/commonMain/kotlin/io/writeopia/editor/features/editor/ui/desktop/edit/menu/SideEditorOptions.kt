@@ -54,9 +54,11 @@ import androidx.compose.ui.window.PopupProperties
 import io.writeopia.common.utils.collections.inBatches
 import io.writeopia.common.utils.colors.highlightColors
 import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
@@ -82,11 +84,13 @@ fun SideEditorOptions(
     isFavorite: StateFlow<Boolean>,
     selectedMetadataState: StateFlow<Set<SelectionMetadata>>,
     sideMenuTabState: StateFlow<SideMenuTab>,
+    hasSelectedLinesState: StateFlow<Boolean>,
     boldClick: (Span) -> Unit,
     setEditable: () -> Unit,
     checkItemClick: () -> Unit,
     listItemClick: () -> Unit,
     codeBlockClick: () -> Unit,
+    spreadsheetClick: () -> Unit = {},
     highLightBlockClick: () -> Unit,
     cardBlockClick: () -> Unit,
     onPresentationClick: () -> Unit,
@@ -96,11 +100,11 @@ fun SideEditorOptions(
     exportMarkdown: (String) -> Unit,
     moveToRoot: () -> Unit,
     moveToClick: () -> Unit,
-    askAiBySelection: () -> Unit,
-    aiSummary: () -> Unit,
-    aiActionPoints: () -> Unit,
-    aiFaq: () -> Unit,
-    aiTags: () -> Unit,
+    askAiWithMode: (AiTargetMode) -> Unit,
+    aiSummary: (AiTargetMode) -> Unit,
+    aiActionPoints: (AiTargetMode) -> Unit,
+    aiFaq: (AiTargetMode) -> Unit,
+    aiTags: (AiTargetMode) -> Unit,
     addPage: () -> Unit,
     deleteDocument: () -> Unit,
     toggleFavorite: () -> Unit,
@@ -167,6 +171,10 @@ fun SideEditorOptions(
                                 checkItemClick,
                                 listItemClick,
                                 codeBlockClick,
+                                spreadsheetClick = {
+                                    changeSideMenuTab(SideMenuTab.NONE)
+                                    spreadsheetClick()
+                                },
                                 highLightBlockClick,
                                 cardBlockClick,
                                 addImage,
@@ -191,7 +199,8 @@ fun SideEditorOptions(
                             AiOptions(
                                 currentModel = currentModel,
                                 models = models,
-                                askAiBySelection = askAiBySelection,
+                                hasSelectedLinesState = hasSelectedLinesState,
+                                askAiWithMode = askAiWithMode,
                                 aiSummary = aiSummary,
                                 aiActionPoints = aiActionPoints,
                                 aiFaq = aiFaq,
@@ -208,6 +217,8 @@ fun SideEditorOptions(
             }
 
             Spacer(modifier = Modifier.width(4.dp))
+
+            val currentPlatform = LocalPlatform.current
 
             Column(
                 modifier = Modifier.border(
@@ -280,26 +291,29 @@ fun SideEditorOptions(
                     tint = tint(SideMenuTab.TEXT_OPTIONS)
                 )
 
-                Icon(
-                    imageVector = WrIcons.ai,
-                    contentDescription = "AI",
-                    modifier = Modifier
-                        .padding(horizontal = spacing)
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(background(SideMenuTab.AI))
-                        .clickable {
-                            val menuType = if (menuType != SideMenuTab.AI) {
-                                SideMenuTab.AI
-                            } else {
-                                SideMenuTab.NONE
-                            }
+                // Hide AI button for web platform
+                if (currentPlatform != PlatformType.WEB) {
+                    Icon(
+                        imageVector = WrIcons.ai,
+                        contentDescription = "AI",
+                        modifier = Modifier
+                            .padding(horizontal = spacing)
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(background(SideMenuTab.AI))
+                            .clickable {
+                                val menuType = if (menuType != SideMenuTab.AI) {
+                                    SideMenuTab.AI
+                                } else {
+                                    SideMenuTab.NONE
+                                }
 
-                            changeSideMenuTab(menuType)
-                        }
-                        .size(40.dp)
-                        .padding(9.dp),
-                    tint = tint(SideMenuTab.AI)
-                )
+                                changeSideMenuTab(menuType)
+                            }
+                            .size(40.dp)
+                            .padding(9.dp),
+                        tint = tint(SideMenuTab.AI)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(spacing))
 
@@ -343,6 +357,8 @@ private fun PageOptions(
     toggleFavorite: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val currentPlatform = LocalPlatform.current
+
     Column(
         modifier = modifier.border(
             1.dp,
@@ -352,11 +368,14 @@ private fun PageOptions(
             .width(MENU_WIDTH.dp)
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
-        Title("Font")
-        Spacer(modifier = Modifier.height(4.dp))
-        FontOptions(changeFontFamily, selectedState)
+        // Hide font options for web platform
+        if (currentPlatform != PlatformType.WEB) {
+            Title("Font")
+            Spacer(modifier = Modifier.height(4.dp))
+            FontOptions(changeFontFamily, selectedState)
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         Title("Actions")
         Spacer(modifier = Modifier.height(6.dp))
@@ -605,6 +624,7 @@ private fun TextButton(
     modifier: Modifier = Modifier,
     text: String,
     highlight: Boolean = false,
+    enabled: Boolean = true,
     paddingValues: PaddingValues = PaddingValues(
         horizontal = 8.dp,
         vertical = 8.dp
@@ -614,12 +634,19 @@ private fun TextButton(
     onClick: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.medium
+    val alpha = if (enabled) 1f else 0.4f
 
     Text(
         modifier = modifier
             .padding(start = 2.dp, end = 2.dp, bottom = 3.dp)
             .clip(shape)
-            .clickable(onClick = onClick)
+            .then(
+                if (enabled) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+            )
             .border(
                 width = 1.dp,
                 color = if (highlight) {
@@ -639,10 +666,52 @@ private fun TextButton(
             )
             .padding(paddingValues),
         text = text,
-        color = MaterialTheme.colorScheme.onBackground,
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = alpha),
         style = textStyle,
         fontWeight = fontWeight,
         textAlign = TextAlign.Center
+    )
+}
+
+@Composable
+private fun AiTargetButton(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(6.dp)
+    val backgroundColor = if (isSelected) {
+        WriteopiaTheme.colorScheme.optionsSelector
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val borderColor = if (isSelected) {
+        WriteopiaTheme.colorScheme.optionsSelector
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    Text(
+        modifier = modifier
+            .clip(shape)
+            .clickable(onClick = onClick)
+            .border(
+                width = 1.dp,
+                color = borderColor,
+                shape = shape
+            )
+            .background(
+                color = backgroundColor,
+                shape = shape
+            )
+            .padding(horizontal = 6.dp, vertical = 6.dp),
+        text = text,
+        color = MaterialTheme.colorScheme.onBackground,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+        textAlign = TextAlign.Center,
+        maxLines = 1
     )
 }
 
@@ -652,94 +721,123 @@ private fun InsertCommand(
     checkItemClick: () -> Unit,
     listItemClick: () -> Unit,
     codeBlockClick: () -> Unit,
+    spreadsheetClick: () -> Unit,
 ) {
     val selectedMetadata by selectedMetadataState.collectAsState()
 
-    Row(modifier = Modifier.horizontalOptionsRow()) {
-        val shapeLeft = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)
+    Column {
+        // Row 1: Checkbox, List
+        Row(modifier = Modifier.horizontalOptionsRow()) {
+            val shapeLeft = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)
+            val shapeRight = RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)
 
-        Icon(
-            imageVector = WrSdkIcons.checkbox,
-            contentDescription = "Check box",
-            modifier = Modifier.weight(1F)
-                .border(
-                    width = 1.dp,
-                    shape = shapeLeft,
-                    color = if (selectedMetadata.contains(SelectionMetadata.CHECK_ITEM)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    }
-                )
-                .background(
-                    color = if (selectedMetadata.contains(SelectionMetadata.CHECK_ITEM)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    },
-                    shape = shapeLeft
-                )
-                .clip(RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp))
-                .size(32.dp)
-                .clickable(onClick = checkItemClick)
-                .padding(horizontal = 8.dp, vertical = 7.dp),
-            tint = MaterialTheme.colorScheme.onBackground
-        )
+            Icon(
+                imageVector = WrSdkIcons.checkbox,
+                contentDescription = "Check box",
+                modifier = Modifier.weight(1F)
+                    .border(
+                        width = 1.dp,
+                        shape = shapeLeft,
+                        color = if (selectedMetadata.contains(SelectionMetadata.CHECK_ITEM)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        }
+                    )
+                    .background(
+                        color = if (selectedMetadata.contains(SelectionMetadata.CHECK_ITEM)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        },
+                        shape = shapeLeft
+                    )
+                    .clip(shapeLeft)
+                    .size(32.dp)
+                    .clickable(onClick = checkItemClick)
+                    .padding(horizontal = 8.dp, vertical = 7.dp),
+                tint = MaterialTheme.colorScheme.onBackground
+            )
 
-        Icon(
-            imageVector = WrSdkIcons.list,
-            contentDescription = "List item",
-            modifier = Modifier.weight(1F)
-                .border(
-                    width = 1.dp,
-                    color = if (selectedMetadata.contains(SelectionMetadata.UNORDERED_LIST_ITEM)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    }
-                )
-                .background(
-                    color = if (selectedMetadata.contains(SelectionMetadata.UNORDERED_LIST_ITEM)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    },
-                )
-                .size(32.dp)
-                .clickable(onClick = listItemClick)
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            tint = MaterialTheme.colorScheme.onBackground
-        )
+            Icon(
+                imageVector = WrSdkIcons.list,
+                contentDescription = "List item",
+                modifier = Modifier.weight(1F)
+                    .border(
+                        width = 1.dp,
+                        shape = shapeRight,
+                        color = if (selectedMetadata.contains(SelectionMetadata.UNORDERED_LIST_ITEM)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        }
+                    )
+                    .background(
+                        color = if (selectedMetadata.contains(SelectionMetadata.UNORDERED_LIST_ITEM)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        },
+                        shape = shapeRight
+                    )
+                    .clip(shapeRight)
+                    .size(32.dp)
+                    .clickable(onClick = listItemClick)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
 
-        val shapeRight = RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)
+        Spacer(modifier = Modifier.height(4.dp))
 
-        Icon(
-            imageVector = WrIcons.code,
-            contentDescription = "Code block",
-            modifier = Modifier.weight(1F)
-                .border(
-                    width = 1.dp,
-                    shape = shapeRight,
-                    color = if (selectedMetadata.contains(SelectionMetadata.CODE_BLOCK)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    }
-                )
-                .background(
-                    color = if (selectedMetadata.contains(SelectionMetadata.CODE_BLOCK)) {
-                        WriteopiaTheme.colorScheme.optionsSelector
-                    } else {
-                        Color.Transparent
-                    },
-                    shape = shapeRight
-                )
-                .clip(shapeRight)
-                .size(32.dp)
-                .clickable(onClick = codeBlockClick)
-                .padding(horizontal = 8.dp, vertical = 7.dp),
-            tint = MaterialTheme.colorScheme.onBackground
-        )
+        // Row 2: Code, Spreadsheet
+        Row(modifier = Modifier.horizontalOptionsRow()) {
+            val shapeLeft = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)
+            val shapeRight = RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)
+
+            Icon(
+                imageVector = WrIcons.code,
+                contentDescription = "Code block",
+                modifier = Modifier.weight(1F)
+                    .border(
+                        width = 1.dp,
+                        shape = shapeLeft,
+                        color = if (selectedMetadata.contains(SelectionMetadata.CODE_BLOCK)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        }
+                    )
+                    .background(
+                        color = if (selectedMetadata.contains(SelectionMetadata.CODE_BLOCK)) {
+                            WriteopiaTheme.colorScheme.optionsSelector
+                        } else {
+                            Color.Transparent
+                        },
+                        shape = shapeLeft
+                    )
+                    .clip(shapeLeft)
+                    .size(32.dp)
+                    .clickable(onClick = codeBlockClick)
+                    .padding(horizontal = 8.dp, vertical = 7.dp),
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+
+            Icon(
+                imageVector = WrIcons.spreadsheet,
+                contentDescription = "Spreadsheet",
+                modifier = Modifier.weight(1F)
+                    .background(
+                        color = Color.Transparent,
+                        shape = shapeRight
+                    )
+                    .clip(shapeRight)
+                    .size(32.dp)
+                    .clickable(onClick = spreadsheetClick)
+                    .padding(horizontal = 8.dp, vertical = 7.dp),
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
     }
 }
 
@@ -805,6 +903,7 @@ private fun TextOptions(
     checkItemClick: () -> Unit,
     listItemClick: () -> Unit,
     codeBlockClick: () -> Unit,
+    spreadsheetClick: () -> Unit,
     highLightBlockClick: () -> Unit,
     cardBlockClick: () -> Unit,
     addImage: (String) -> Unit,
@@ -841,7 +940,7 @@ private fun TextOptions(
 
         Title(WrStrings.insert())
         Spacer(modifier = Modifier.height(4.dp))
-        InsertCommand(selectedMetadataState, checkItemClick, listItemClick, codeBlockClick)
+        InsertCommand(selectedMetadataState, checkItemClick, listItemClick, codeBlockClick, spreadsheetClick)
         Spacer(modifier = Modifier.height(8.dp))
 
         Title(WrStrings.decoration())
@@ -896,6 +995,8 @@ private fun Actions(
     onPublishClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val currentPlatform = LocalPlatform.current
+
     Column(
         modifier = modifier.border(
             1.dp,
@@ -905,31 +1006,34 @@ private fun Actions(
             .width(MENU_WIDTH.dp)
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
-        Title(WrStrings.export())
+        // Hide export options for web platform
+        if (currentPlatform != PlatformType.WEB) {
+            Title(WrStrings.export())
 
-        Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-        Row {
-            TextButton(
-                text = WrStrings.json(),
-                modifier = Modifier.weight(1F),
-                paddingValues = smallButtonPadding()
-            ) {
-                fileChooserSave()?.let {
-                    exportJson(it)
+            Row {
+                TextButton(
+                    text = WrStrings.json(),
+                    modifier = Modifier.weight(1F),
+                    paddingValues = smallButtonPadding()
+                ) {
+                    fileChooserSave()?.let {
+                        exportJson(it)
+                    }
+                }
+
+                TextButton(
+                    text = WrStrings.markdown(),
+                    modifier = Modifier.weight(1F),
+                    paddingValues = smallButtonPadding()
+                ) {
+                    fileChooserSave()?.let(exportMarkdown)
                 }
             }
 
-            TextButton(
-                text = WrStrings.markdown(),
-                modifier = Modifier.weight(1F),
-                paddingValues = smallButtonPadding()
-            ) {
-                fileChooserSave()?.let(exportMarkdown)
-            }
+            Spacer(modifier = Modifier.height(12.dp))
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
 
         Title(WrStrings.publish())
 
@@ -950,14 +1054,21 @@ private fun Actions(
 private fun AiOptions(
     currentModel: Flow<String>,
     models: Flow<List<String>>,
+    hasSelectedLinesState: StateFlow<Boolean>,
     selectModel: (String) -> Unit,
-    askAiBySelection: () -> Unit,
-    aiSummary: () -> Unit,
-    aiActionPoints: () -> Unit,
-    aiFaq: () -> Unit,
-    aiTags: () -> Unit,
+    askAiWithMode: (AiTargetMode) -> Unit,
+    aiSummary: (AiTargetMode) -> Unit,
+    aiActionPoints: (AiTargetMode) -> Unit,
+    aiFaq: (AiTargetMode) -> Unit,
+    aiTags: (AiTargetMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var selectedTargetMode by remember { mutableStateOf(AiTargetMode.DOCUMENT) }
+    val hasSelectedLines by hasSelectedLinesState.collectAsState()
+
+    // Buttons are disabled when Selected Lines mode is active but no lines are selected
+    val actionsEnabled = selectedTargetMode != AiTargetMode.SELECTED_LINES || hasSelectedLines
+
     Column(
         modifier = modifier.border(
             1.dp,
@@ -969,13 +1080,59 @@ private fun AiOptions(
     ) {
         Title(WrStrings.askAi())
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Apply to section
+        Text(
+            text = WrStrings.applyTo(),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            AiTargetButton(
+                text = WrStrings.document(),
+                isSelected = selectedTargetMode == AiTargetMode.DOCUMENT,
+                onClick = { selectedTargetMode = AiTargetMode.DOCUMENT },
+                modifier = Modifier.weight(1f)
+            )
+            AiTargetButton(
+                text = WrStrings.selectedLines(),
+                isSelected = selectedTargetMode == AiTargetMode.SELECTED_LINES,
+                onClick = { selectedTargetMode = AiTargetMode.SELECTED_LINES },
+                modifier = Modifier.weight(1f)
+            )
+            AiTargetButton(
+                text = WrStrings.cursor(),
+                isSelected = selectedTargetMode == AiTargetMode.CURSOR,
+                onClick = { selectedTargetMode = AiTargetMode.CURSOR },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // Show warning when Selected Lines is chosen but no lines are selected
+        if (selectedTargetMode == AiTargetMode.SELECTED_LINES && !hasSelectedLines) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = WrStrings.selectLinesFirst(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         TextButton(
             modifier = Modifier.fillMaxWidth(),
             text = "Prompt",
             paddingValues = smallButtonPadding(),
-            onClick = askAiBySelection
+            enabled = actionsEnabled,
+            onClick = { askAiWithMode(selectedTargetMode) }
         )
 
         Spacer(modifier = Modifier.height(2.dp))
@@ -984,7 +1141,8 @@ private fun AiOptions(
             modifier = Modifier.fillMaxWidth(),
             text = WrStrings.summary(),
             paddingValues = smallButtonPadding(),
-            onClick = aiSummary
+            enabled = actionsEnabled,
+            onClick = { aiSummary(selectedTargetMode) }
         )
 
         Spacer(modifier = Modifier.height(2.dp))
@@ -993,7 +1151,8 @@ private fun AiOptions(
             modifier = Modifier.fillMaxWidth(),
             text = WrStrings.actionPoints(),
             paddingValues = smallButtonPadding(),
-            onClick = aiActionPoints
+            enabled = actionsEnabled,
+            onClick = { aiActionPoints(selectedTargetMode) }
         )
 
         Spacer(modifier = Modifier.height(2.dp))
@@ -1002,7 +1161,8 @@ private fun AiOptions(
             modifier = Modifier.fillMaxWidth(),
             text = "FAQ",
             paddingValues = smallButtonPadding(),
-            onClick = aiFaq
+            enabled = actionsEnabled,
+            onClick = { aiFaq(selectedTargetMode) }
         )
 
         Spacer(modifier = Modifier.height(2.dp))
@@ -1011,7 +1171,8 @@ private fun AiOptions(
             modifier = Modifier.fillMaxWidth(),
             text = "Tags",
             paddingValues = smallButtonPadding(),
-            onClick = aiTags
+            enabled = actionsEnabled,
+            onClick = { aiTags(selectedTargetMode) }
         )
 
         Spacer(modifier = Modifier.height(8.dp))

@@ -165,6 +165,23 @@ import writeopia.application.core.resources.generated.resources.publish_to_web
 import writeopia.application.core.resources.generated.resources.view_site
 import writeopia.application.core.resources.generated.resources.copy_link
 import writeopia.application.core.resources.generated.resources.link_copied
+import writeopia.application.core.resources.generated.resources.apply_to
+import writeopia.application.core.resources.generated.resources.selected_lines
+import writeopia.application.core.resources.generated.resources.cursor
+import writeopia.application.core.resources.generated.resources.select_lines_first
+import writeopia.application.core.resources.generated.resources.premium_feature
+import writeopia.application.core.resources.generated.resources.premium_feature_message
+import writeopia.application.core.resources.generated.resources.export_workspace
+import writeopia.application.core.resources.generated.resources.export_workspace_description
+import writeopia.application.core.resources.generated.resources.select_workspace_to_export
+import writeopia.application.core.resources.generated.resources.export_started
+import writeopia.application.core.resources.generated.resources.export_failed
+import writeopia.application.core.resources.generated.resources.start_export
+import writeopia.application.core.resources.generated.resources.password_weak
+import writeopia.application.core.resources.generated.resources.password_medium
+import writeopia.application.core.resources.generated.resources.password_strong
+import writeopia.application.core.resources.generated.resources.password_req_min_length
+import writeopia.application.core.resources.generated.resources.password_req_special_char
 
 object WrStrings {
 
@@ -659,4 +676,55 @@ object WrStrings {
 
     @Composable
     fun linkCopied() = stringResource(Res.string.link_copied)
+
+    @Composable
+    fun applyTo() = stringResource(Res.string.apply_to)
+
+    @Composable
+    fun selectedLines() = stringResource(Res.string.selected_lines)
+
+    @Composable
+    fun cursor() = stringResource(Res.string.cursor)
+
+    @Composable
+    fun selectLinesFirst() = stringResource(Res.string.select_lines_first)
+
+    @Composable
+    fun premiumFeature() = stringResource(Res.string.premium_feature)
+
+    @Composable
+    fun premiumFeatureMessage() = stringResource(Res.string.premium_feature_message)
+
+    @Composable
+    fun exportWorkspace() = stringResource(Res.string.export_workspace)
+
+    @Composable
+    fun exportWorkspaceDescription() = stringResource(Res.string.export_workspace_description)
+
+    @Composable
+    fun selectWorkspaceToExport() = stringResource(Res.string.select_workspace_to_export)
+
+    @Composable
+    fun exportStarted() = stringResource(Res.string.export_started)
+
+    @Composable
+    fun exportFailed() = stringResource(Res.string.export_failed)
+
+    @Composable
+    fun startExport() = stringResource(Res.string.start_export)
+
+    @Composable
+    fun passwordWeak() = stringResource(Res.string.password_weak)
+
+    @Composable
+    fun passwordMedium() = stringResource(Res.string.password_medium)
+
+    @Composable
+    fun passwordStrong() = stringResource(Res.string.password_strong)
+
+    @Composable
+    fun passwordReqMinLength() = stringResource(Res.string.password_req_min_length)
+
+    @Composable
+    fun passwordReqSpecialChar() = stringResource(Res.string.password_req_special_char)
 }

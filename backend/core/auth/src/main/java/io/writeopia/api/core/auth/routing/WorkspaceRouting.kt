@@ -31,6 +31,9 @@ import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sdk.serialization.request.WorkspaceNameChangeRequest
 import io.writeopia.sdk.serialization.request.WorkspaceRoleChangeRequest
 import io.writeopia.sql.WriteopiaDbBackend
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("WorkspaceRouting")
 
 fun Routing.workspaceRoute(
     apiKey: String?,
@@ -386,6 +389,46 @@ fun Routing.workspaceRoute(
             } else {
                 call.respond(HttpStatusCode.NotFound, ServerResponse("User not removed"))
             }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debugMode) {
+        post("/api/workspace/{workspaceId}/export") {
+            logger.info("[Export] ========== EXPORT REQUEST RECEIVED ==========")
+            logger.info("[Export] debugMode: $debugMode")
+
+            val authHeader = call.request.header("Authorization")
+            logger.info("[Export] Authorization header present: ${authHeader != null}")
+            logger.info("[Export] Authorization header length: ${authHeader?.length ?: 0}")
+
+            val userId = getUserId()
+            logger.info("[Export] getUserId() returned: ${userId ?: "NULL"}")
+
+            val userIdOrEmpty = userId ?: ""
+            val workspaceId = call.pathParameters["workspaceId"]
+                ?: throw IllegalArgumentException("Workspace id is required")
+
+            logger.info("[Export] userId: '$userIdOrEmpty', workspaceId: '$workspaceId'")
+            logger.info("[Export] Calling runIfAdmin...")
+
+            runIfAdmin(userIdOrEmpty, workspaceId, writeopiaDb, debugMode) {
+                logger.info("[Export] Inside runIfAdmin block - user IS admin!")
+                logger.info("[Export] Triggering export...")
+                val result = WorkspaceService.triggerWorkspaceExport(
+                    userId = userIdOrEmpty,
+                    workspaceId = workspaceId,
+                    writeopiaDb = writeopiaDb
+                )
+
+                if (result) {
+                    logger.info("[Export] Export triggered successfully")
+                    call.respond(HttpStatusCode.Accepted, ServerResponse("Export job started"))
+                } else {
+                    logger.error("[Export] Failed to trigger export")
+                    call.respond(HttpStatusCode.InternalServerError, ServerResponse("Failed to start export"))
+                }
+            }
+            logger.info("[Export] ========== EXPORT REQUEST COMPLETED ==========")
         }
     }
 }

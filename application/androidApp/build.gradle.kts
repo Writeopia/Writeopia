@@ -16,8 +16,8 @@ android {
         applicationId = "io.writeopia"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 63
-        versionName = "0.50.0"
+        versionCode = 67
+        versionName = "0.54.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,6 +34,9 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            resValue("string", "app_name", "Writeopia Debug")
         }
         release {
             // Todo: Re enable the minification and fix R8 bugs
@@ -43,6 +46,7 @@ android {
                 "proguard-rules-android.pro"
             )
             signingConfig = signingConfigs.getByName("release")
+            resValue("string", "app_name", "Writeopia")
         }
     }
     compileOptions {
@@ -64,6 +68,7 @@ android {
 
     buildFeatures {
         buildConfig = true
+        resValues = true
     }
 }
 
@@ -78,6 +83,7 @@ dependencies {
     implementation(project(":application:core:utils"))
     implementation(project(":application:core:theme"))
     implementation(project(":application:core:models"))
+    implementation(project(":application:core:documents"))
 
     implementation(project(":application:features:editor"))
     implementation(project(":application:features:note_menu"))

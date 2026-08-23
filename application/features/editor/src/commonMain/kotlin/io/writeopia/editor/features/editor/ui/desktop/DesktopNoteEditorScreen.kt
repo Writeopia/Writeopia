@@ -45,6 +45,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
+import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
 import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
@@ -72,7 +73,6 @@ fun DesktopNoteEditorScreen(
     var showFolderSelection by remember {
         mutableStateOf(false)
     }
-
     Box(
         modifier = Modifier.clickable(
             onClick = {
@@ -216,11 +216,13 @@ fun DesktopNoteEditorScreen(
             isFavorite = noteEditorViewModel.notFavorite,
             selectedMetadataState = noteEditorViewModel.selectionMetadataState,
             sideMenuTabState = noteEditorViewModel.sideMenuTabState,
+            hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
             boldClick = noteEditorViewModel::onAddSpanClick,
             setEditable = noteEditorViewModel::toggleEditable,
             checkItemClick = noteEditorViewModel::onAddCheckListClick,
             listItemClick = noteEditorViewModel::onAddListItemClick,
             codeBlockClick = noteEditorViewModel::onAddCodeBlockClick,
+            spreadsheetClick = { noteEditorViewModel.onAddSpreadsheetClick(3) },
             highLightBlockClick = noteEditorViewModel::toggleHighLightBlock,
             cardBlockClick = noteEditorViewModel::toggleCardBlock,
             onPresentationClick = onPresentationClick,
@@ -232,7 +234,7 @@ fun DesktopNoteEditorScreen(
             moveToClick = {
                 showFolderSelection = true
             },
-            askAiBySelection = noteEditorViewModel::askAiBySelection,
+            askAiWithMode = noteEditorViewModel::askAiWithMode,
             addPage = noteEditorViewModel::addPage,
             deleteDocument = {
                 showDeleteConfirmation = true
@@ -333,6 +335,11 @@ fun DesktopNoteEditorScreen(
                 onUnpublish = noteEditorViewModel::unpublishDocument,
                 onCopyLink = noteEditorViewModel::copyPublishLink
             )
+        }
+
+        val showPremiumDialog by noteEditorViewModel.showPremiumDialog.collectAsState()
+        if (showPremiumDialog) {
+            PremiumOnlyDialog(onDismiss = noteEditorViewModel::hidePremiumDialog)
         }
     }
 }

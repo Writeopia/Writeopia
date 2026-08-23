@@ -97,7 +97,8 @@ class WriteopiaStateManager(
         StoryTypes.UNORDERED_LIST_ITEM.type.number,
     ),
     private val inTextMarkdownHandler: InTextMarkdownHandler? = InTextMarkdownHandler,
-    private val imageUploader: ImageUploader? = null
+    private val imageUploader: ImageUploader? = null,
+    private val textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false)
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     private val selectionBuffer: EventBuffer<Pair<Boolean, Double>> = EventBuffer(coroutineScope)
@@ -792,7 +793,12 @@ class WriteopiaStateManager(
 
         // Don't preserve lastEdit on focus change - it would cause the save to be
         // cancelled and re-triggered, potentially interrupting in-progress saves
-        _currentStory.value = story.copy(focus = position, lastEdit = LastEdit.Nothing)
+        // Also update selection position so the manager knows which line is active
+        _currentStory.value = story.copy(
+            focus = position,
+            lastEdit = LastEdit.Nothing,
+            selection = story.selection.copy(position = position)
+        )
     }
 
     fun scrollToPosition(position: Int) {
@@ -1073,6 +1079,13 @@ class WriteopiaStateManager(
         _currentStory.value = currentStory.value.copy(lastEdit = LastEdit.Metadata)
     }
 
+    fun setFavorite(isFavorite: Boolean) {
+        val info = _documentInfo.value
+        if (info.isFavorite != isFavorite) {
+            _documentInfo.value = info.copy(isFavorite = isFavorite)
+        }
+    }
+
     fun toggleSpan(span: Span, extra: String? = null) {
         if (isEditable) {
             val onEdit = _onEditPositions.value
@@ -1214,6 +1227,10 @@ class WriteopiaStateManager(
         trackIt: Boolean = true
     ) {
         if (!isEditable) return
+
+        // Track when text is being selected (start != end) for disabling drag selection
+        textSelectionActiveState.value = input.start != input.end
+
         val text = input.text
         val step = _currentStory.value.stories[position] ?: return
 
@@ -1679,6 +1696,179 @@ class WriteopiaStateManager(
 
     fun getStory(position: Double): StoryStep? = _currentStory.value.stories[position]
 
+    /**
+     * Creates a new spreadsheet with one initial row containing the specified number of empty cells.
+     * If the cursor is on the title, the spreadsheet is added after the title instead of replacing it.
+     *
+     * @param columnCount The number of columns in the spreadsheet
+     */
+    fun addSpreadsheet(columnCount: Int) {
+        if (!isEditable) return
+
+        val position = currentPosition() ?: return
+        val currentStep = _currentStory.value.stories[position]
+
+        // Don't replace the title - insert the spreadsheet after it instead
+        val isOnTitle = currentStep?.type == StoryTypes.TITLE.type
+        val targetPosition = if (isOnTitle) {
+            position + 1
+        } else {
+            position
+        }
+
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.createSpreadsheet(
+            _currentStory.value,
+            targetPosition,
+            columnCount,
+            insertMode = isOnTitle
+        )
+    }
+
+    /**
+     * Updates the text of a specific cell within a spreadsheet.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @param rowIndex The index of the row (0-based)
+     * @param cellIndex The index of the cell within the row (0-based)
+     * @param newText The new text for the cell
+     */
+    fun updateSpreadsheetCell(spreadsheetId: String, rowIndex: Int, cellIndex: Int, newText: String) {
+        if (!isEditable) return
+
+        _currentStory.value = writeopiaManager.updateSpreadsheetCell(
+            _currentStory.value,
+            spreadsheetId,
+            rowIndex,
+            cellIndex,
+            newText
+        )
+    }
+
+    /**
+     * Adds a new row to a spreadsheet with the same number of columns as existing rows.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     */
+    fun addSpreadsheetRow(spreadsheetId: String) {
+        if (!isEditable) return
+
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetRow(
+            _currentStory.value,
+            spreadsheetId
+        )
+    }
+
+    /**
+     * Adds a new column to a spreadsheet by adding a cell to each row.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     */
+    fun addSpreadsheetColumn(spreadsheetId: String) {
+        if (!isEditable) return
+
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetColumn(
+            _currentStory.value,
+            spreadsheetId
+        )
+    }
+
+    /**
+     * Updates the width of a specific column in a spreadsheet.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @param columnIndex The index of the column to update (0-based)
+     * @param newWidth The new width for the column in dp
+     */
+    fun updateSpreadsheetColumnWidth(spreadsheetId: String, columnIndex: Int, newWidth: Int) {
+        if (!isEditable) return
+
+        _currentStory.value = writeopiaManager.updateSpreadsheetColumnWidth(
+            _currentStory.value,
+            spreadsheetId,
+            columnIndex,
+            newWidth
+        )
+    }
+
+    fun deleteSpreadsheetRow(spreadsheetId: String, rowIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.deleteSpreadsheetRow(
+            _currentStory.value,
+            spreadsheetId,
+            rowIndex
+        )
+    }
+
+    fun deleteSpreadsheetColumn(spreadsheetId: String, columnIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.deleteSpreadsheetColumn(
+            _currentStory.value,
+            spreadsheetId,
+            columnIndex
+        )
+    }
+
+    fun addSpreadsheetRowAt(spreadsheetId: String, rowIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetRowAt(
+            _currentStory.value,
+            spreadsheetId,
+            rowIndex
+        )
+    }
+
+    fun addSpreadsheetColumnAt(spreadsheetId: String, columnIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetColumnAt(
+            _currentStory.value,
+            spreadsheetId,
+            columnIndex
+        )
+    }
+
+    fun moveSpreadsheetRow(spreadsheetId: String, fromIndex: Int, toIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.moveSpreadsheetRow(
+            _currentStory.value,
+            spreadsheetId,
+            fromIndex,
+            toIndex
+        )
+    }
+
+    fun moveSpreadsheetColumn(spreadsheetId: String, fromIndex: Int, toIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.moveSpreadsheetColumn(
+            _currentStory.value,
+            spreadsheetId,
+            fromIndex,
+            toIndex
+        )
+    }
+
+    /**
+     * Disables drag selection box (e.g., during column resizing in spreadsheet).
+     */
+    fun disableDragSelection() {
+        textSelectionActiveState.value = true
+    }
+
+    /**
+     * Re-enables drag selection box.
+     */
+    fun enableDragSelection() {
+        textSelectionActiveState.value = false
+    }
+
     private fun getStories() = _currentStory.value.stories
 
     private fun currentPosition(): Double? =
@@ -1728,7 +1918,8 @@ class WriteopiaStateManager(
             coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext),
             backStackManager: SnapshotBackstackManager = SnapshotBackstackManager(),
             userRepository: UserRepository? = null,
-            imageUploader: ImageUploader? = null
+            imageUploader: ImageUploader? = null,
+            textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false)
         ) = WriteopiaStateManager(
             stepsNormalizer,
             dispatcher,
@@ -1741,7 +1932,8 @@ class WriteopiaStateManager(
             documentRepository,
             setOf("jpg", "jpeg", "png"),
             StepsModifier::modify,
-            imageUploader = imageUploader
+            imageUploader = imageUploader,
+            textSelectionActiveState = textSelectionActiveState
         )
     }
 }

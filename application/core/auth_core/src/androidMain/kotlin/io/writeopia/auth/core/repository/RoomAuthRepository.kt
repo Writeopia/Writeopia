@@ -60,6 +60,10 @@ class RoomAuthRepository(
         workspaceCommonDao.unselectAllWorkspaces()
     }
 
+    override suspend fun updateLastEventSync(workspaceId: String, lastEventSync: Long) {
+        workspaceCommonDao.updateLastEventSync(workspaceId, lastEventSync)
+    }
+
     override suspend fun unselectAllUsers() {
         userDao.unselectAllUsers()
     }

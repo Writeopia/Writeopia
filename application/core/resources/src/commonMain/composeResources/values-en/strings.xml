@@ -164,4 +164,21 @@
   <string name="failed_to_update_role">Failed to update role. Please try again.</string>
   <string name="workspace_must_have_admin">Workspace must have at least one admin.</string>
   <string name="save">Save</string>
+  <string name="publish">Publish</string>
+  <string name="unpublish">Unpublish</string>
+  <string name="publish_to_web">Publish to Web</string>
+  <string name="view_site">View Site</string>
+  <string name="copy_link">Copy Link</string>
+  <string name="link_copied">Link copied!</string>
+  <string name="apply_to">Apply to:</string>
+  <string name="selected_lines">Selected Lines</string>
+  <string name="cursor">Cursor</string>
+  <string name="select_lines_first">Select lines in the document first</string>
+  <string name="premium_feature">Premium Feature</string>
+  <string name="premium_feature_message">This feature is only available for premium users using an online workspace</string>
+  <string name="password_weak">Weak password</string>
+  <string name="password_medium">Medium password</string>
+  <string name="password_strong">Strong password</string>
+  <string name="password_req_min_length">At least 8 characters</string>
+  <string name="password_req_special_char">One special character (!@#$%^&amp;*)</string>
 </resources>

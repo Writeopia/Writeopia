@@ -96,6 +96,10 @@ fun WriteopiaDbBackend.moveFolderToFolder(folderId: String, parentId: String) {
     getDocumentDaoFn().moveFolderToFolder(folderId, parentId)
 }
 
+fun WriteopiaDbBackend.moveDocumentToFolder(documentId: String, parentId: String) {
+    getDocumentDaoFn().moveToFolder(documentId, parentId)
+}
+
 suspend fun WriteopiaDbBackend.deleteDocumentsByIds(documentIds: List<String>) {
     val dao = getDocumentDaoFn()
     dao.deleteDocumentByIds(documentIds.toSet())
@@ -183,4 +187,17 @@ fun WriteopiaDbBackend.setDocumentPublished(documentId: String, published: Boole
  */
 fun WriteopiaDbBackend.isDocumentPublished(documentId: String): Boolean {
     return getDocumentDaoFn().isDocumentPublished(documentId)
+}
+
+/**
+ * Gets all document IDs in a workspace (lightweight query for memory-efficient processing).
+ */
+fun WriteopiaDbBackend.getDocumentIdsByWorkspaceId(workspaceId: String): List<String> =
+    getDocumentDaoFn().loadDocumentIdsByWorkspaceId(workspaceId)
+
+/**
+ * Updates only the document title without affecting story steps.
+ */
+fun WriteopiaDbBackend.updateDocumentTitle(documentId: String, title: String) {
+    getDocumentDaoFn().updateDocumentTitle(documentId, title)
 }

@@ -48,15 +48,20 @@ class WriteopiaConnectionInjector private constructor(
         var instance: WriteopiaConnectionInjector? = null
 
         private var baseUrl: String? = null
+        private var disableWebsocket: Boolean = false
 
         fun setBaseUrl(baseUrl: String) {
             this.baseUrl = baseUrl
         }
 
+        fun setDisableWebsocket(disable: Boolean) {
+            this.disableWebsocket = disable
+        }
+
         fun singleton(): WriteopiaConnectionInjector {
             val thisBaseUrl = baseUrl ?: throw IllegalStateException("Base url was not set!")
 
-            return WriteopiaConnectionInjector(thisBaseUrl)
+            return WriteopiaConnectionInjector(thisBaseUrl, disableWebsocket = disableWebsocket)
         }
     }
 }

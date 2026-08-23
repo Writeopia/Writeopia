@@ -41,6 +41,7 @@ kotlin {
                 implementation(project(":common:endpoints"))
                 implementation(project(":writeopia_models"))
                 implementation(project(":writeopia"))
+                implementation(project(":writeopia_ui"))
 
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:utils"))
@@ -53,6 +54,7 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(compose.foundation)
+                implementation(compose.material3)
             }
         }
     }

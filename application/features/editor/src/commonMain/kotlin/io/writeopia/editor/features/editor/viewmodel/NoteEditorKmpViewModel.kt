@@ -36,6 +36,7 @@ import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.sync.DocumentSyncManager
@@ -124,7 +125,8 @@ class NoteEditorKmpViewModel(
                         }
 
                         KeyboardEvent.AI_QUESTION -> {
-                            askAiBySelection()
+                            // Keyboard shortcut uses CURSOR mode by default
+                            askAiWithMode(AiTargetMode.CURSOR)
                         }
 
                         KeyboardEvent.CANCEL -> {
@@ -313,6 +315,9 @@ class NoteEditorKmpViewModel(
 
     private val _publishLoading = MutableStateFlow(false)
     override val publishLoading: StateFlow<Boolean> = _publishLoading.asStateFlow()
+
+    private val _showPremiumDialog = MutableStateFlow(false)
+    override val showPremiumDialog: StateFlow<Boolean> = _showPremiumDialog.asStateFlow()
 
     /**
      * This property defines if the document is favorite
@@ -536,12 +541,20 @@ class NoteEditorKmpViewModel(
                 )
             }
 
-            // Step 3: Fetch published status from API if online
+            // Step 3: Fetch document metadata from API if online
             if (!isDisconnected && documentsApi != null) {
                 val token = authRepository.getAuthToken() ?: return@launch
-                val result = documentsApi.isDocumentPublished(documentId, workspace.id, token)
-                if (result is ResultData.Complete) {
-                    _isDocumentPublished.value = result.data
+
+                // Fetch favorite status from backend
+                val docResult = documentsApi.getDocumentById(documentId, workspace.id, token)
+                if (docResult is ResultData.Complete) {
+                    writeopiaManager.setFavorite(docResult.data.favorite)
+                }
+
+                // Fetch published status
+                val publishedResult = documentsApi.isDocumentPublished(documentId, workspace.id, token)
+                if (publishedResult is ResultData.Complete) {
+                    _isDocumentPublished.value = publishedResult.data
                 }
             }
         }
@@ -737,40 +750,41 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun askAiBySelection() {
+    override fun askAiWithMode(targetMode: AiTargetMode) {
         if (ollamaRepository == null) return
 
         aiJob = viewModelScope.launch(Dispatchers.Default) {
-            PromptService.promptBySelection(
+            PromptService.promptWithMode(
                 authRepository.getUser().id,
+                targetMode,
                 writeopiaManager,
                 ollamaRepository
             )
         }
     }
 
-    override fun aiSummary() {
+    override fun aiSummary(targetMode: AiTargetMode) {
         if (ollamaRepository == null) return
 
-        documentPrompt(ollamaRepository::streamSummary)
+        documentPrompt(targetMode, ollamaRepository::streamSummary)
     }
 
-    override fun aiActionPoints() {
+    override fun aiActionPoints(targetMode: AiTargetMode) {
         if (ollamaRepository == null) return
 
-        documentPrompt(ollamaRepository::streamActionsPoints)
+        documentPrompt(targetMode, ollamaRepository::streamActionsPoints)
     }
 
-    override fun aiFaq() {
+    override fun aiFaq(targetMode: AiTargetMode) {
         if (ollamaRepository == null) return
 
-        documentPrompt(ollamaRepository::streamFaq)
+        documentPrompt(targetMode, ollamaRepository::streamFaq)
     }
 
-    override fun aiTags() {
+    override fun aiTags(targetMode: AiTargetMode) {
         if (ollamaRepository == null) return
 
-        documentPrompt(ollamaRepository::streamTags)
+        documentPrompt(targetMode, ollamaRepository::streamTags)
     }
 
     override fun aiSection(position: Double) {
@@ -922,15 +936,19 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    private fun documentPrompt(promptFn: (String, String, String) -> Flow<ResultData<String>>) {
+    private fun documentPrompt(
+        targetMode: AiTargetMode,
+        promptFn: (String, String, String) -> Flow<ResultData<String>>
+    ) {
         if (ollamaRepository == null) return
 
         aiJob = viewModelScope.launch(Dispatchers.Default) {
             PromptService.documentPrompt(
                 userId = authRepository.getUser().id,
-                promptFn,
-                writeopiaManager,
-                ollamaRepository
+                targetMode = targetMode,
+                promptFn = promptFn,
+                writeopiaManager = writeopiaManager,
+                ollamaRepository = ollamaRepository
             )
         }
     }
@@ -1004,9 +1022,16 @@ class NoteEditorKmpViewModel(
     }
 
     override fun showPublishDialog() {
-        _showPublishDialog.value = true
-        // Fetch current publish status from server
         viewModelScope.launch(Dispatchers.Default) {
+            // Check if user is on free tier
+            val user = authRepository.getUser()
+            if (user.tier != Tier.PREMIUM) {
+                _showPremiumDialog.value = true
+                return@launch
+            }
+
+            _showPublishDialog.value = true
+            // Fetch current publish status from server
             val docId = documentId.value
             if (docId.isNotEmpty() && documentsApi != null) {
                 val token = authRepository.getAuthToken() ?: return@launch
@@ -1021,6 +1046,10 @@ class NoteEditorKmpViewModel(
 
     override fun hidePublishDialog() {
         _showPublishDialog.value = false
+    }
+
+    override fun hidePremiumDialog() {
+        _showPremiumDialog.value = false
     }
 
     override fun publishDocument() {
@@ -1067,5 +1096,10 @@ class NoteEditorKmpViewModel(
             val url = "https://app.writeopia.io/site/$docId"
             copyManager.copyText(url)
         }
+    }
+
+    override fun onAddSpreadsheetClick(columnCount: Int) {
+        if (!isEditable.value) return
+        writeopiaManager.addSpreadsheet(columnCount)
     }
 }

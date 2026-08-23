@@ -200,8 +200,11 @@ private fun RoleOption(
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
             .background(
-                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else WriteopiaTheme.colorScheme.optionsSelector
+                if (selected) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                } else {
+                    WriteopiaTheme.colorScheme.optionsSelector
+                }
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp),

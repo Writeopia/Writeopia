@@ -62,3 +62,9 @@ deleteByIds:
 DELETE
 FROM story_step_entity
 WHERE id IN ?;
+
+selectByParentId:
+SELECT *
+FROM story_step_entity
+WHERE parent_id = ?
+ORDER BY position;

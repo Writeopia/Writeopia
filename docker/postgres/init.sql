@@ -32,7 +32,7 @@ CREATE TABLE story_step_entity (
   tags TEXT NOT NULL,
   spans TEXT NOT NULL,
   link_to_document TEXT,
-  last_updated_at BIGINT
+  last_updated_at INTEGER
 );
 
 CREATE TABLE user_entity (
@@ -65,7 +65,7 @@ CREATE TABLE folder_entity (
   workspace_id TEXT NOT NULL,
   title TEXT NOT NULL,
   created_at INTEGER NOT NULL,
-  last_updated_at BIGINT NOT NULL,
+  last_updated_at BIGINT,
   last_synced_at BIGINT,
   favorite BOOLEAN NOT NULL,
   icon TEXT,
@@ -87,3 +87,13 @@ CREATE TABLE user_favorite_entity (
   PRIMARY KEY (user_id, document_id)
 );
 
+CREATE TABLE sync_event (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  entity_id TEXT NOT NULL,
+  old_parent_id TEXT,
+  new_parent_id TEXT,
+  created_at BIGINT NOT NULL,
+  user_id TEXT NOT NULL
+);
