@@ -64,7 +64,7 @@ jobs:
       - name: JVM tests
         run: ./gradlew jvmTest
       - name: Upload test reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results-jvm
@@ -120,7 +120,7 @@ jobs:
       - name: Build debug
         run: ./gradlew assembleDebug test --no-daemon
       - name: Upload test reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results-general
@@ -192,7 +192,7 @@ jobs:
       - name: Test backend
         run: ./gradlew :backend:gateway:test --no-daemon
       - name: Upload test reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results-backend
