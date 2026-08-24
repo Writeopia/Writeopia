@@ -16,6 +16,12 @@ kotlin {
     }
 }
 
+// This module is a library, not an application.
+// Disable shadowJar since there's no main class.
+tasks.named("shadowJar") {
+    enabled = false
+}
+
 dependencies {
     implementation(project(":writeopia"))
     implementation(project(":writeopia_models"))

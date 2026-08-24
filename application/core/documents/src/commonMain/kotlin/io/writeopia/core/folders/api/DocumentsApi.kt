@@ -437,14 +437,14 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         summaryTitle: String?,
         model: String?,
         token: String
-    ): GenerateSummaryApiResult {
+    ): GenerateSummaryApiResult = try {
         val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/generate-summary") {
             contentType(ContentType.Application.Json)
             setBody(GenerateSummaryRequest(documents, targetFolderId, summaryTitle, model))
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
-        return when (response.status) {
+        when (response.status) {
             HttpStatusCode.Created -> {
                 val body = response.body<GenerateSummaryResponse>()
                 val document = body.document?.toModel()
@@ -471,6 +471,8 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
                 GenerateSummaryApiResult.Error(body?.error ?: "Request failed with status ${response.status}")
             }
         }
+    } catch (e: Exception) {
+        GenerateSummaryApiResult.Error(e.message ?: "Network or deserialization error")
     }
 }
 
