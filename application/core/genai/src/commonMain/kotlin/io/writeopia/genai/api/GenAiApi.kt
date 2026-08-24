@@ -19,11 +19,13 @@ import io.writeopia.genai.model.GenAiRequest
 import io.writeopia.genai.model.GenAiResponse
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import kotlin.coroutines.cancellation.CancellationException
 
 class GenAiApi(
     private val client: HttpClient,
@@ -62,52 +64,8 @@ class GenAiApi(
             }
         }
 
-    fun streamGenerate(prompt: String, model: String? = null): Flow<ResultData<String>> = flow {
-        try {
-            client.preparePost {
-                url("$baseUrl/${EndPoints.aiGenerate()}")
-                contentType(ContentType.Application.Json)
-                getAuthToken()?.let { token ->
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                }
-                setBody(GenAiRequest(prompt, model, stream = true))
-            }.execute { response ->
-                try {
-                    val channel = response.body<ByteReadChannel>()
-
-                    while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
-                        val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
-
-                        // SSE format: "data: {...}"
-                        val jsonData = if (line.startsWith("data: ")) {
-                            line.removePrefix("data: ")
-                        } else {
-                            continue
-                        }
-
-                        val parsed: GenAiResponse = json.decodeFromString(jsonData)
-
-                        if (parsed.error?.isNotEmpty() == true) {
-                            emit(ResultData.Error(RuntimeException(parsed.error)))
-                            break
-                        }
-
-                        if (parsed.response != null) {
-                            emit(ResultData.Complete(parsed.response))
-                        }
-
-                        if (parsed.done) {
-                            break
-                        }
-                    }
-                } catch (e: Exception) {
-                    emit(ResultData.Error(e))
-                }
-            }
-        } catch (e: Exception) {
-            emit(ResultData.Error(e))
-        }
-    }
+    fun streamGenerate(prompt: String, model: String? = null): Flow<ResultData<String>> =
+        streamFromEndpoint(EndPoints.aiGenerate(), prompt, model)
 
     suspend fun generateSummary(prompt: String, model: String? = null): ResultData<GenAiResponse> =
         generateMutex.withLock {
@@ -125,51 +83,8 @@ class GenAiApi(
             }
         }
 
-    fun streamSummary(prompt: String, model: String? = null): Flow<ResultData<String>> = flow {
-        try {
-            client.preparePost {
-                url("$baseUrl/${EndPoints.aiSummary()}")
-                contentType(ContentType.Application.Json)
-                getAuthToken()?.let { token ->
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                }
-                setBody(GenAiRequest(prompt, model, stream = true))
-            }.execute { response ->
-                try {
-                    val channel = response.body<ByteReadChannel>()
-
-                    while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
-                        val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
-
-                        val jsonData = if (line.startsWith("data: ")) {
-                            line.removePrefix("data: ")
-                        } else {
-                            continue
-                        }
-
-                        val parsed: GenAiResponse = json.decodeFromString(jsonData)
-
-                        if (parsed.error?.isNotEmpty() == true) {
-                            emit(ResultData.Error(RuntimeException(parsed.error)))
-                            break
-                        }
-
-                        if (parsed.response != null) {
-                            emit(ResultData.Complete(parsed.response))
-                        }
-
-                        if (parsed.done) {
-                            break
-                        }
-                    }
-                } catch (e: Exception) {
-                    emit(ResultData.Error(e))
-                }
-            }
-        } catch (e: Exception) {
-            emit(ResultData.Error(e))
-        }
-    }
+    fun streamSummary(prompt: String, model: String? = null): Flow<ResultData<String>> =
+        streamFromEndpoint(EndPoints.aiSummary(), prompt, model)
 
     suspend fun generateActionPoints(prompt: String, model: String? = null): ResultData<GenAiResponse> =
         generateMutex.withLock {
@@ -187,51 +102,8 @@ class GenAiApi(
             }
         }
 
-    fun streamActionPoints(prompt: String, model: String? = null): Flow<ResultData<String>> = flow {
-        try {
-            client.preparePost {
-                url("$baseUrl/${EndPoints.aiActionPoints()}")
-                contentType(ContentType.Application.Json)
-                getAuthToken()?.let { token ->
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                }
-                setBody(GenAiRequest(prompt, model, stream = true))
-            }.execute { response ->
-                try {
-                    val channel = response.body<ByteReadChannel>()
-
-                    while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
-                        val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
-
-                        val jsonData = if (line.startsWith("data: ")) {
-                            line.removePrefix("data: ")
-                        } else {
-                            continue
-                        }
-
-                        val parsed: GenAiResponse = json.decodeFromString(jsonData)
-
-                        if (parsed.error?.isNotEmpty() == true) {
-                            emit(ResultData.Error(RuntimeException(parsed.error)))
-                            break
-                        }
-
-                        if (parsed.response != null) {
-                            emit(ResultData.Complete(parsed.response))
-                        }
-
-                        if (parsed.done) {
-                            break
-                        }
-                    }
-                } catch (e: Exception) {
-                    emit(ResultData.Error(e))
-                }
-            }
-        } catch (e: Exception) {
-            emit(ResultData.Error(e))
-        }
-    }
+    fun streamActionPoints(prompt: String, model: String? = null): Flow<ResultData<String>> =
+        streamFromEndpoint(EndPoints.aiActionPoints(), prompt, model)
 
     suspend fun generateFaq(prompt: String, model: String? = null): ResultData<GenAiResponse> =
         generateMutex.withLock {
@@ -249,51 +121,8 @@ class GenAiApi(
             }
         }
 
-    fun streamFaq(prompt: String, model: String? = null): Flow<ResultData<String>> = flow {
-        try {
-            client.preparePost {
-                url("$baseUrl/${EndPoints.aiFaq()}")
-                contentType(ContentType.Application.Json)
-                getAuthToken()?.let { token ->
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                }
-                setBody(GenAiRequest(prompt, model, stream = true))
-            }.execute { response ->
-                try {
-                    val channel = response.body<ByteReadChannel>()
-
-                    while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
-                        val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
-
-                        val jsonData = if (line.startsWith("data: ")) {
-                            line.removePrefix("data: ")
-                        } else {
-                            continue
-                        }
-
-                        val parsed: GenAiResponse = json.decodeFromString(jsonData)
-
-                        if (parsed.error?.isNotEmpty() == true) {
-                            emit(ResultData.Error(RuntimeException(parsed.error)))
-                            break
-                        }
-
-                        if (parsed.response != null) {
-                            emit(ResultData.Complete(parsed.response))
-                        }
-
-                        if (parsed.done) {
-                            break
-                        }
-                    }
-                } catch (e: Exception) {
-                    emit(ResultData.Error(e))
-                }
-            }
-        } catch (e: Exception) {
-            emit(ResultData.Error(e))
-        }
-    }
+    fun streamFaq(prompt: String, model: String? = null): Flow<ResultData<String>> =
+        streamFromEndpoint(EndPoints.aiFaq(), prompt, model)
 
     suspend fun generateTags(prompt: String, model: String? = null): ResultData<GenAiResponse> =
         generateMutex.withLock {
@@ -311,49 +140,67 @@ class GenAiApi(
             }
         }
 
-    fun streamTags(prompt: String, model: String? = null): Flow<ResultData<String>> = flow {
-        try {
-            client.preparePost {
-                url("$baseUrl/${EndPoints.aiTags()}")
-                contentType(ContentType.Application.Json)
-                getAuthToken()?.let { token ->
-                    header(HttpHeaders.Authorization, "Bearer $token")
+    fun streamTags(prompt: String, model: String? = null): Flow<ResultData<String>> =
+        streamFromEndpoint(EndPoints.aiTags(), prompt, model)
+
+    /**
+     * Shared streaming implementation that properly handles Flow exception transparency.
+     * Uses catch operator instead of try-catch around emit to avoid violating Flow contracts.
+     */
+    private fun streamFromEndpoint(
+        endpoint: String,
+        prompt: String,
+        model: String?
+    ): Flow<ResultData<String>> = flow<ResultData<String>> {
+        client.preparePost {
+            url("$baseUrl/$endpoint")
+            contentType(ContentType.Application.Json)
+            getAuthToken()?.let { token ->
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+            setBody(GenAiRequest(prompt, model, stream = true))
+        }.execute { response ->
+            val channel = response.body<ByteReadChannel>()
+
+            while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
+                val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
+
+                // SSE format: "data: {...}"
+                val jsonData = if (line.startsWith("data: ")) {
+                    line.removePrefix("data: ")
+                } else {
+                    continue
                 }
-                setBody(GenAiRequest(prompt, model, stream = true))
-            }.execute { response ->
-                try {
-                    val channel = response.body<ByteReadChannel>()
 
-                    while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
-                        val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
+                val parsed: GenAiResponse = json.decodeFromString(jsonData)
 
-                        val jsonData = if (line.startsWith("data: ")) {
-                            line.removePrefix("data: ")
-                        } else {
-                            continue
-                        }
+                if (parsed.error?.isNotEmpty() == true) {
+                    throw GenAiException(parsed.error)
+                }
 
-                        val parsed: GenAiResponse = json.decodeFromString(jsonData)
+                if (parsed.response != null) {
+                    emit(ResultData.Complete(parsed.response))
+                }
 
-                        if (parsed.error?.isNotEmpty() == true) {
-                            emit(ResultData.Error(RuntimeException(parsed.error)))
-                            break
-                        }
-
-                        if (parsed.response != null) {
-                            emit(ResultData.Complete(parsed.response))
-                        }
-
-                        if (parsed.done) {
-                            break
-                        }
-                    }
-                } catch (e: Exception) {
-                    emit(ResultData.Error(e))
+                if (parsed.done) {
+                    break
                 }
             }
-        } catch (e: Exception) {
-            emit(ResultData.Error(e))
         }
+    }.catch { e ->
+        // Don't convert cancellation exceptions to errors - let them propagate
+        if (e is CancellationException) throw e
+        emit(ResultData.Error<String>(e.toException()))
     }
 }
+
+/**
+ * Exception for GenAI API errors returned in the response body.
+ */
+class GenAiException(message: String) : Exception(message)
+
+/**
+ * Converts a Throwable to an Exception for use with ResultData.Error.
+ */
+private fun Throwable.toException(): Exception =
+    this as? Exception ?: Exception(this.message, this)
