@@ -31,13 +31,17 @@ class GenAiServiceIntegrationTest {
     }
 
     /**
-     * Verifies that the Google GenAI Client can be instantiated.
+     * Verifies that the Google GenAI Client can be instantiated with required Ktor dependencies.
      *
      * This test specifically catches the NoClassDefFoundError for HttpTimeout
      * that would occur if ktor-client-core is not on the classpath.
      *
      * The Client constructor internally creates a Ktor HttpClient with HttpTimeout,
-     * so if the dependency is missing, this test will fail.
+     * so if the dependency is missing, this test will fail with NoClassDefFoundError.
+     *
+     * In CI environments without Google Cloud credentials, the client will throw
+     * IOException about missing credentials - this is expected and still proves
+     * the Ktor dependencies loaded correctly.
      *
      * This module uses Ktor 2.3.8 to match google-genai-kotlin:0.5.0's compiled dependencies.
      */
@@ -45,13 +49,22 @@ class GenAiServiceIntegrationTest {
     fun `Google GenAI Client can be instantiated with required Ktor dependencies`() {
         // This test verifies that all transitive dependencies are available.
         // If ktor-client-core is missing, this will throw NoClassDefFoundError.
-        val client = com.google.genai.kotlin.Client(
-            project = "test-project",
-            location = "us-central1",
-            enterprise = true
-        )
-
-        assertNotNull(client)
+        // In CI without credentials, IOException is expected - that's fine,
+        // it means the Ktor classes loaded successfully.
+        try {
+            val client = com.google.genai.kotlin.Client(
+                project = "test-project",
+                location = "us-central1",
+                enterprise = true
+            )
+            assertNotNull(client)
+        } catch (e: java.io.IOException) {
+            // Expected in CI - credentials not configured.
+            // The important thing is we didn't get NoClassDefFoundError.
+            assert(e.message?.contains("credentials") == true) {
+                "Expected credentials error, got: ${e.message}"
+            }
+        }
     }
 
     /**
