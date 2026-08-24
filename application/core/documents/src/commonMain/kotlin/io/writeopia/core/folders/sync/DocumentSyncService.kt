@@ -30,7 +30,7 @@ class DocumentSyncService(
      * This function:
      * 1. Loads the document with its content
      * 2. Identifies story steps that have been modified since last sync
-     * 3. Sends those steps to the backend
+     * 3. Sends those steps to the backend in batches (to handle large documents)
      * 4. Applies any server updates locally
      * 5. Updates the document's lastSyncedAt
      *
@@ -57,40 +57,82 @@ class DocumentSyncService(
             return true
         }
 
-        val requestTimestamp = Clock.System.now().toEpochMilliseconds()
-
-        // Build the sync request
-        val request = StoryStepSyncRequest(
-            documentId = documentId,
+        // Send steps in batches to handle large documents
+        return syncStepsInBatches(
+            document = document,
+            outdatedSteps = outdatedSteps,
             workspaceId = workspaceId,
             lastSyncTimestamp = lastSyncTimestamp,
-            requestTimestamp = requestTimestamp,
-            changes = outdatedSteps.map { (position, storyStep) ->
-                StoryStepChangeApi(
-                    storyStep = storyStep.toApi(position),
-                    position = position
-                )
-            },
-            deletions = emptyList() // We don't track deletions here - they're handled elsewhere
+            token = token
         )
+    }
 
-        return try {
-            val response = syncApi(request, token)
+    /**
+     * Sends story steps to the backend in batches.
+     *
+     * Large documents (especially on first sync) may have many story steps.
+     * Batching prevents request payload limits and improves reliability.
+     *
+     * @param document The document being synced
+     * @param outdatedSteps All steps that need syncing
+     * @param workspaceId The workspace ID
+     * @param lastSyncTimestamp The document's last sync timestamp
+     * @param token The auth token
+     * @return true if all batches synced successfully
+     */
+    private suspend fun syncStepsInBatches(
+        document: Document,
+        outdatedSteps: List<Pair<Double, StoryStep>>,
+        workspaceId: String,
+        lastSyncTimestamp: Long,
+        token: String
+    ): Boolean {
+        val batches = outdatedSteps.chunked(MAX_STEPS_PER_BATCH)
+        var currentSyncTimestamp = lastSyncTimestamp
+        var lastServerTimestamp: Long? = null
 
-            // Apply server updates locally
-            applyServerUpdates(document, response)
+        for ((batchIndex, batch) in batches.withIndex()) {
+            val requestTimestamp = Clock.System.now().toEpochMilliseconds()
 
-            // Update document's lastSyncedAt using the SERVER timestamp
-            // This ensures client and server have matching lastSyncedAt values
-            val serverSyncTime = Instant.fromEpochMilliseconds(response.serverTimestamp)
+            val request = StoryStepSyncRequest(
+                documentId = document.id,
+                workspaceId = workspaceId,
+                lastSyncTimestamp = currentSyncTimestamp,
+                requestTimestamp = requestTimestamp,
+                changes = batch.map { (position, storyStep) ->
+                    StoryStepChangeApi(
+                        storyStep = storyStep.toApi(position),
+                        position = position
+                    )
+                },
+                deletions = emptyList()
+            )
+
+            try {
+                val response = syncApi(request, token)
+
+                // Apply server updates locally (only on first batch to avoid duplicates)
+                if (batchIndex == 0) {
+                    applyServerUpdates(document, response)
+                }
+
+                // Update timestamp for next batch
+                lastServerTimestamp = response.serverTimestamp
+                currentSyncTimestamp = lastServerTimestamp
+            } catch (e: Exception) {
+                println("Error syncing document ${document.id} (batch $batchIndex): ${e.message}")
+                return false
+            }
+        }
+
+        // Update document's lastSyncedAt using the final SERVER timestamp
+        if (lastServerTimestamp != null) {
+            val serverSyncTime = Instant.fromEpochMilliseconds(lastServerTimestamp)
             val updatedDocument = document.copy(lastSyncedAt = serverSyncTime)
             documentRepository.saveDocumentMetadata(updatedDocument)
-
-            true
-        } catch (e: Exception) {
-            println("Error syncing document $documentId: ${e.message}")
-            false
         }
+
+        return true
     }
 
     /**
@@ -98,11 +140,14 @@ class DocumentSyncService(
      *
      * A step is considered outdated if:
      * - It has a lastUpdatedAt timestamp greater than the document's lastSyncedAt
-     * - The document has never been synced (lastSyncedAt is null)
+     * - The document has never been synced (lastSyncedAt is null/0)
+     *
+     * Note: For first-sync scenarios (lastSyncTimestamp == 0), this returns ALL steps.
+     * The caller should use batching to handle large documents.
      *
      * @param document The document to check
      * @param lastSyncTimestamp The document's last sync timestamp in milliseconds
-     * @return List of (position, storyStep) pairs that need syncing
+     * @return List of (position, storyStep) pairs that need syncing, sorted by position
      */
     private fun getOutdatedStorySteps(
         document: Document,
@@ -142,6 +187,12 @@ class DocumentSyncService(
     }
 
     companion object {
+        /**
+         * Maximum number of story steps to send in a single sync request.
+         * This prevents request payload limits and improves reliability for large documents.
+         */
+        private const val MAX_STEPS_PER_BATCH = 50
+
         fun create(
             documentRepository: DocumentRepository,
             syncApi: suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse,
