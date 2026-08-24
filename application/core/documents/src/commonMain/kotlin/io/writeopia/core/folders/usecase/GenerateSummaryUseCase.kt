@@ -130,11 +130,8 @@ class GenerateSummaryUseCase(
         syncDocument: suspend (documentId: String) -> Boolean,
         maxRetries: Int = 1
     ): GenerateSummaryResult {
-        var attempts = 0
-        var lastResult: GenerateSummaryResult
-
-        do {
-            lastResult = generateSummary(
+        repeat(maxRetries + 1) { attempt ->
+            val result = generateSummary(
                 documentIds = documentIds,
                 targetFolderId = targetFolderId,
                 workspaceId = workspaceId,
@@ -142,32 +139,23 @@ class GenerateSummaryUseCase(
                 model = model
             )
 
-            when (lastResult) {
-                is GenerateSummaryResult.NeedsSync -> {
-                    if (attempts >= maxRetries) {
-                        return lastResult
-                    }
-
+            when {
+                result !is GenerateSummaryResult.NeedsSync -> return result
+                attempt == maxRetries -> return result
+                else -> {
                     // Sync each unsynced document
-                    var allSynced = true
-                    for (unsyncedDoc in lastResult.unsyncedDocuments) {
-                        val synced = syncDocument(unsyncedDoc.documentId)
-                        if (!synced) {
-                            allSynced = false
-                        }
+                    val allSynced = result.unsyncedDocuments.all { unsyncedDoc ->
+                        syncDocument(unsyncedDoc.documentId)
                     }
 
                     if (!allSynced) {
                         return GenerateSummaryResult.Error("Failed to sync some documents")
                     }
-
-                    attempts++
                 }
-                else -> return lastResult
             }
-        } while (attempts <= maxRetries)
+        }
 
-        return lastResult
+        error("Unreachable: all code paths return from within the loop")
     }
 
     /**
