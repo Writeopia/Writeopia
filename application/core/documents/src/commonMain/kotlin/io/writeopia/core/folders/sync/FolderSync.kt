@@ -75,8 +75,12 @@ class FolderSync(
             // These documents were updated locally, but were not sent to the backend yet
             val localOutdatedDocs = documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId)
 
-            // Load local outdated subfolders
-            val localOutdatedFolders = folderRepository.getFolderByParentId(folderId, workspaceId)
+            // Load local outdated subfolders (where lastSyncedAt is null or lastUpdatedAt > lastSyncedAt)
+            val allLocalFolders = folderRepository.getFolderByParentId(folderId, workspaceId)
+            val localOutdatedFolders = allLocalFolders.filter { folder ->
+                val syncedAt = folder.lastSyncedAt
+                syncedAt == null || folder.lastUpdatedAt > syncedAt
+            }
 
             // Resolve conflicts of documents that were updated both locally and in the backend.
             // Documents will be saved locally by documentConflictHandler.handleConflict
@@ -99,14 +103,26 @@ class FolderSync(
             val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId, authToken)
 
             if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
-                // Documents were sent successfully.
-                // Do NOT update lastSyncedAt with client clock - it must come from server.
-                // The next sync will fetch documents from server with correct lastSyncedAt.
+                // Documents and folders were sent successfully.
+                // Update lastSyncedAt for sent items to prevent re-sending them.
+                val syncTime = Clock.System.now()
+
+                // Update lastSyncedAt for documents that were sent
+                documentsNotSent.forEach { doc ->
+                    val updatedDoc = doc.copy(lastSyncedAt = syncTime)
+                    documentRepository.saveDocument(updatedDoc)
+                }
+
+                // Update lastSyncedAt for folders that were sent
+                foldersNotSent.forEach { folder ->
+                    val updatedFolder = folder.copy(lastSyncedAt = syncTime)
+                    folderRepository.updateFolder(updatedFolder)
+                }
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()
 
-                lastSuccessfulSync = Clock.System.now()
+                lastSuccessfulSync = syncTime
             }
         } catch (e: Exception) {
             // Sync failed, will retry on next sync
