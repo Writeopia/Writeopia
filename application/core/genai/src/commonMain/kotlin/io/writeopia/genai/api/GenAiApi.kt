@@ -145,13 +145,16 @@ class GenAiApi(
 
     /**
      * Shared streaming implementation that properly handles Flow exception transparency.
-     * Uses catch operator instead of try-catch around emit to avoid violating Flow contracts.
+     * Buffers results inside execute callback and emits after execute returns to avoid
+     * calling emit from within a non-suspending callback context.
      */
     private fun streamFromEndpoint(
         endpoint: String,
         prompt: String,
         model: String?
     ): Flow<ResultData<String>> = flow<ResultData<String>> {
+        val bufferedResults = mutableListOf<ResultData<String>>()
+
         client.preparePost {
             url("$baseUrl/$endpoint")
             contentType(ContentType.Application.Json)
@@ -179,13 +182,18 @@ class GenAiApi(
                 }
 
                 if (parsed.response != null) {
-                    emit(ResultData.Complete(parsed.response))
+                    bufferedResults.add(ResultData.Complete(parsed.response))
                 }
 
                 if (parsed.done) {
                     break
                 }
             }
+        }
+
+        // Emit buffered results after execute returns
+        for (result in bufferedResults) {
+            emit(result)
         }
     }.catch { e ->
         // Don't convert cancellation exceptions to errors - let them propagate

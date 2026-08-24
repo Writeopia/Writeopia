@@ -105,10 +105,10 @@ private suspend fun RoutingContext.handleAiRequest(
     val request = try {
         call.receive<AiGenerateRequest>()
     } catch (e: ContentTransformationException) {
-        logger.warn("Bad request in AI $endpointName endpoint: ${e.message}")
+        logger.warn("Bad request in AI {} endpoint: {}", endpointName, e::class.simpleName)
         call.respond(
             HttpStatusCode.BadRequest,
-            AiGenerateResponse(error = "Invalid request format: ${e.message}")
+            AiGenerateResponse(error = "Invalid request format")
         )
         return
     }
@@ -142,10 +142,13 @@ private suspend fun RoutingContext.handleAiRequest(
             }
         }
     } catch (e: Exception) {
-        logger.error("Error in AI $endpointName endpoint", e)
-        call.respond(
-            HttpStatusCode.InternalServerError,
-            AiGenerateResponse(error = e.message ?: "Unknown error")
-        )
+        logger.error("Error in AI {} endpoint", endpointName, e)
+        // Only respond if the response hasn't been committed (e.g., during streaming)
+        if (!call.response.isCommitted) {
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                AiGenerateResponse(error = "An unexpected error occurred")
+            )
+        }
     }
 }

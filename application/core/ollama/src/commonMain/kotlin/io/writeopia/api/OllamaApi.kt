@@ -121,11 +121,17 @@ class OllamaApi(
         }
     }
 
+    /**
+     * Streams reply from Ollama, buffering results inside execute callback
+     * and emitting after execute returns to avoid Flow contract violations.
+     */
     fun streamReply(
         model: String,
         prompt: String,
         url: String
     ): Flow<ResultData<String>> = flow<ResultData<String>> {
+        val bufferedResults = mutableListOf<ResultData<String>>()
+
         client.preparePost {
             url("$url/api/${EndPoints.ollamaGenerate()}")
             contentType(ContentType.Application.Json)
@@ -145,8 +151,13 @@ class OllamaApi(
 
                 stringBuilder.append(value.response)
 
-                emit(ResultData.Complete(stringBuilder.toString()))
+                bufferedResults.add(ResultData.Complete(stringBuilder.toString()))
             }
+        }
+
+        // Emit buffered results after execute returns
+        for (result in bufferedResults) {
+            emit(result)
         }
     }.catch { e ->
         if (e is CancellationException) throw e

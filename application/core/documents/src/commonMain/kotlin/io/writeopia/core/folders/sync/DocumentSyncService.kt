@@ -4,6 +4,7 @@ package io.writeopia.core.folders.sync
 
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
@@ -39,6 +40,11 @@ class DocumentSyncService(
      * @return true if sync was successful, false otherwise
      */
     suspend fun syncDocument(documentId: String, workspaceId: String): Boolean {
+        // Don't sync for offline workspaces - no network calls should be made
+        if (workspaceId == Workspace.disconnectedWorkspace().id) {
+            return false
+        }
+
         val token = tokenProvider() ?: return false
 
         // Load the document with its content
