@@ -5,6 +5,8 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.genai.api.GenAiApi
 import io.writeopia.genai.model.GenAiResponse
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 private const val SUGGESTION_PROMPT =
     """
@@ -16,7 +18,7 @@ class GenAiRepository(
     private val defaultModel: String? = null
 ) : AiClient {
 
-    private var generatingListItems = false
+    private val generateListItemsMutex = Mutex()
 
     // url parameter is ignored for GenAI - backend URL is configured in API
     override suspend fun generateListItems(
@@ -24,13 +26,18 @@ class GenAiRepository(
         context: String,
         url: String
     ): ResultData<List<String>> {
-        try {
-            if (generatingListItems) return ResultData.Loading()
+        // Use tryLock to return Loading if another call is in progress
+        if (!generateListItemsMutex.tryLock()) {
+            return ResultData.Loading()
+        }
 
-            generatingListItems = true
-            val result = genAiApi.generate("$SUGGESTION_PROMPT $context", model.takeIf { it.isNotBlank() } ?: defaultModel)
+        return try {
+            val result = genAiApi.generate(
+                "$SUGGESTION_PROMPT $context",
+                model.takeIf { it.isNotBlank() } ?: defaultModel
+            )
 
-            return when (result) {
+            when (result) {
                 is ResultData.Complete -> {
                     val response = result.data
                     if (response.response?.isNotEmpty() == true) {
@@ -50,9 +57,9 @@ class GenAiRepository(
                 else -> ResultData.Error()
             }
         } catch (e: Exception) {
-            return ResultData.Error(e)
+            ResultData.Error(e)
         } finally {
-            generatingListItems = false
+            generateListItemsMutex.unlock()
         }
     }
 
