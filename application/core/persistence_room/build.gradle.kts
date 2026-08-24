@@ -32,7 +32,7 @@ kotlin {
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "WriteopiaFeaturesRoom"
+            baseName = "WriteopiaCorePersistenceRoom"
             isStatic = true
         }
     }
