@@ -838,17 +838,15 @@ object DocumentsService {
         return content
     }
 
-    companion object {
-        /**
-         * Maximum number of documents that can be summarized in a single request.
-         * Prevents excessive processing time and memory usage.
-         */
-        private const val MAX_DOCUMENTS_FOR_SUMMARY = 20
+    /**
+     * Maximum number of documents that can be summarized in a single request.
+     * Prevents excessive processing time and memory usage.
+     */
+    private const val MAX_DOCUMENTS_FOR_SUMMARY = 20
 
-        /**
-         * Maximum total character count for combined document text before sending to GenAI.
-         * Prevents exceeding model context limits and controls costs.
-         */
-        private const val MAX_COMBINED_TEXT_LENGTH = 100_000
-    }
+    /**
+     * Maximum total character count for combined document text before sending to GenAI.
+     * Prevents exceeding model context limits and controls costs.
+     */
+    private const val MAX_COMBINED_TEXT_LENGTH = 100_000
 }
