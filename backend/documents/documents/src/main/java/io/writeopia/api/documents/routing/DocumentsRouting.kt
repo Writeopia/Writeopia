@@ -23,6 +23,7 @@ import io.writeopia.api.documents.documents.repository.getSyncEventsAfterTime
 import io.writeopia.backend.models.ImageStorageService
 import io.writeopia.buckets.GcpBucketImageStorageService
 import io.writeopia.connection.ResultData
+import io.writeopia.connection.logger
 import io.writeopia.connection.map
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -782,16 +783,18 @@ fun Routing.documentsRoute(
                             )
                         }
                         is DocumentsService.GenerateSummaryResult.Error -> {
+                            logger.error("Summary generation failed for workspace $workspaceId: ${result.message}")
                             call.respond(
                                 status = HttpStatusCode.InternalServerError,
-                                message = GenerateSummaryResponse(error = result.message)
+                                message = GenerateSummaryResponse(error = "Failed to generate summary")
                             )
                         }
                     }
                 } catch (e: Exception) {
+                    logger.error("Error generating summary for workspace $workspaceId", e)
                     call.respond(
                         status = HttpStatusCode.InternalServerError,
-                        message = GenerateSummaryResponse(error = e.message ?: "Unknown error")
+                        message = GenerateSummaryResponse(error = "An unexpected error occurred while generating the summary")
                     )
                 }
             }
