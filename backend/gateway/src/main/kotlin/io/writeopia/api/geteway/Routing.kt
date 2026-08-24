@@ -20,8 +20,8 @@ fun Application.configureRouting(
     debugMode: Boolean = false,
     adminKey: String?
 ) {
-    val useVertexAi = System.getenv("WRITEOPIA_USE_VERTEX_AI")?.toBoolean() == true
-    val genAiService = if (useVertexAi) GenAiService() else null
+    val useCloudAi = System.getenv("WRITEOPIA_USE_CLOUD_AI")?.toBoolean() == true
+    val genAiService = if (useCloudAi) GenAiService() else null
 
     routing {
         if (writeopiaDb != null) {
@@ -41,11 +41,11 @@ fun Application.configureRouting(
             }
         }
 
-        if (useVertexAi) {
-            logger.info("Vertex AI routes are enabled.")
+        if (useCloudAi) {
+            logger.info("Cloud AI routes are enabled.")
             aiRoute(debugMode)
         } else {
-            logger.info("Vertex AI routes are disabled. Set WRITEOPIA_USE_VERTEX_AI=true to enable.")
+            logger.info("Cloud AI routes are disabled. Set WRITEOPIA_USE_CLOUD_AI=true to enable.")
         }
 
         get {
