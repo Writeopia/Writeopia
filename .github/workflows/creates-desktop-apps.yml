@@ -15,6 +15,8 @@ jobs:
         with:
           distribution: adopt
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Generate windows app
         run: ./gradlew packageReleaseMsi
       - name: upload unsigned artifact
@@ -45,6 +47,8 @@ jobs:
         with:
           distribution: adopt
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Generate linux app
         run: ./gradlew packageReleaseDeb
       - name: Upload App
@@ -63,13 +67,15 @@ jobs:
         with:
           distribution: adopt
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: import certs
         uses: apple-actions/import-codesign-certs@v7
         with:
           p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
           p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
       - name: Generate signed mac app
-        run: ./gradlew packageReleaseDmg --no-daemon
+        run: ./gradlew packageReleaseDmg
         env:
           SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
       - name: Notarize
@@ -95,13 +101,15 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           architecture: 'x64'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: import certs
         uses: apple-actions/import-codesign-certs@v7
         with:
           p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
           p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
       - name: Generate signed mac app
-        run: ./gradlew packageReleaseDmg -Pcompose.desktop.macos.arch=x64 --no-daemon
+        run: ./gradlew packageReleaseDmg -Pcompose.desktop.macos.arch=x64
         env:
           SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
       - name: Notarize

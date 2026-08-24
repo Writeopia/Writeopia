@@ -35,6 +35,7 @@ embedded-postgres = "2.2.2"
 publish = "0.33.0"
 lifecycleViewmodelCompose = "2.11.0"
 jna = "5.19.1"
+googleGenAiKotlin = "0.5.0"
 compileSdk = "37"
 targetSdk = "37"
 minSdk = "26"
@@ -54,6 +55,7 @@ firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = 
 google-cloud-bom = { module = "com.google.cloud:libraries-bom", version.ref = "googleCloudBom" }
 google-cloud-storage = { module = "com.google.cloud:google-cloud-storage" }
 google-cloud-run = { module = "com.google.cloud:google-cloud-run" }
+google-genai-kotlin = { module = "com.google.genai:google-genai-kotlin", version.ref = "googleGenAiKotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }

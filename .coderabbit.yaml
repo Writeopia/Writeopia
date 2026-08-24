@@ -1,0 +1,124 @@
+# CodeRabbit Configuration
+# Documentation: https://docs.coderabbit.ai/guides/configure-coderabbit
+
+language: "en-US"
+
+early_access: false
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+      - develop
+
+  # CRITICAL: Privacy is a core principle of this project.
+  # Offline workspaces must NEVER have their documents sent to any cloud service.
+  path_instructions:
+    - path: "**"
+      instructions: |
+        CRITICAL PRIVACY REQUIREMENT:
+        This project supports both online and offline workspaces. Documents in offline
+        workspaces must NEVER be sent to any cloud service, API, or external endpoint.
+
+        When reviewing code that handles documents, folders, or workspace data, verify:
+        1. Network calls (HTTP clients, API calls, sync operations) check workspace type BEFORE sending data
+        2. Offline workspace documents are never passed to sync services, AI services, or analytics
+        3. Workspace isolation is maintained - data from one workspace cannot leak to another
+        4. Cloud features (sync, AI generation, sharing, publishing) are gated by online workspace checks
+        5. No telemetry or logging exposes document content from offline workspaces
+
+        Flag any code path where document content could be transmitted without explicit
+        online workspace verification.
+    - path: "backend/**"
+      instructions: |
+        Review backend Kotlin/Ktor code for:
+        - Proper error handling and HTTP status codes (400 for client errors, 500 for server errors)
+        - Authentication and authorization checks
+        - Input validation before processing
+        - SQL injection prevention
+        - Proper use of coroutines and suspend functions
+        - Resource cleanup and connection management
+        - Workspace authorization (users can only access their own workspace data)
+
+    - path: "application/**"
+      instructions: |
+        Review Kotlin Multiplatform application code for:
+        - Proper separation of concerns (UI, business logic, data)
+        - Correct use of Compose state management
+        - Memory leak prevention (proper scope management)
+        - Flow exception transparency (don't catch around emit)
+        - Thread safety with shared mutable state
+
+    - path: "**/sync/**"
+      instructions: |
+        PRIVACY CRITICAL - Review sync code carefully:
+        - Verify workspace type is checked BEFORE any sync operation
+        - Offline workspaces must skip all network sync operations
+        - Documents must not be queued for sync if workspace is offline
+        - Sync status/timestamps should not imply cloud connectivity for offline workspaces
+
+    - path: "**/api/**"
+      instructions: |
+        PRIVACY CRITICAL - Review API client code carefully:
+        - All API calls that transmit document data must verify online workspace first
+        - AI features (summary, generation) must be gated by online workspace check
+        - Publishing/sharing features must verify online workspace
+        - No document content in error logs or analytics
+
+    - path: "**/genai/**"
+      instructions: |
+        PRIVACY CRITICAL - AI features transmit document content:
+        - Verify caller has checked workspace is online before calling AI services
+        - Document text sent to AI must come from online workspaces only
+        - Consider adding workspace type parameter and validation in AI service calls
+
+    - path: "plugins/**"
+      instructions: |
+        Review plugin/library code for:
+        - API stability and backwards compatibility
+        - Proper serialization annotations
+        - Clear documentation for public APIs
+
+    - path: "**/*Test*.kt"
+      instructions: |
+        Review test code for:
+        - Adequate test coverage for edge cases
+        - Proper use of test fixtures and mocks
+        - Clear test naming and organization
+
+    - path: "**/Dockerfile"
+      instructions: |
+        Review Dockerfiles for:
+        - Running as non-root user
+        - Minimal base images
+        - Multi-stage builds where appropriate
+        - No secrets in build args
+
+    - path: ".github/workflows/**"
+      instructions: |
+        Review GitHub Actions workflows for:
+        - Minimal required permissions
+        - Pinned action versions
+        - Proper secret handling
+        - No hardcoded credentials
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: "auto"
+  issues:
+    scope: "auto"
+  pull_requests:
+    scope: "auto"

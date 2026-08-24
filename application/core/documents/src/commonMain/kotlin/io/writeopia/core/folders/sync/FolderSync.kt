@@ -99,22 +99,14 @@ class FolderSync(
             val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId, authToken)
 
             if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
-                val now = Clock.System.now()
-                // If everything ran accordingly, update the sync time of the folder.
-                documentsNotSent.forEach { document ->
-                    val newDocument = document.copy(lastSyncedAt = now)
-                    documentRepository.saveDocumentMetadata(newDocument)
-                }
+                // Documents were sent successfully.
+                // Do NOT update lastSyncedAt with client clock - it must come from server.
+                // The next sync will fetch documents from server with correct lastSyncedAt.
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()
 
-                // Only update folder sync time if folder exists locally
-                existingFolder?.let { folder ->
-                    folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
-                }
-
-                lastSuccessfulSync = now
+                lastSuccessfulSync = Clock.System.now()
             }
         } catch (e: Exception) {
             // Sync failed, will retry on next sync
