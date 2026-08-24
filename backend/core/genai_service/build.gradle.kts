@@ -15,6 +15,9 @@ kotlin {
     }
 }
 
+// Ktor version that google-genai-kotlin:0.5.0 was compiled against
+val ktorVersion = "2.3.8"
+
 dependencies {
     implementation(project(":backend:core:connection"))
 
@@ -22,13 +25,13 @@ dependencies {
     implementation(libs.google.genai.kotlin)
     implementation(libs.kotlinx.serialization.json)
 
-    // Required by google-genai-kotlin for HttpTimeout plugin and OkHttp engine
-    // Force Ktor 3.x versions to resolve conflicts with google-genai-kotlin's transitive dependencies
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.okhttp)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.client.websockets)
-    implementation(libs.ktor.serialization.json)
+    // Use Ktor 2.x to match google-genai-kotlin's compiled dependencies
+    // google-genai-kotlin:0.5.0 was compiled against Ktor 2.3.8
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-client-websockets:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -37,9 +40,12 @@ dependencies {
 
 configurations.all {
     resolutionStrategy {
-        // Force Ktor 3.x to resolve version conflicts
-        force("io.ktor:ktor-client-core:3.5.1")
-        force("io.ktor:ktor-client-okhttp:3.5.1")
-        force("io.ktor:ktor-client-websockets:3.5.1")
+        // Force Ktor 2.x for compatibility with google-genai-kotlin:0.5.0
+        force("io.ktor:ktor-client-core:$ktorVersion")
+        force("io.ktor:ktor-client-okhttp:$ktorVersion")
+        force("io.ktor:ktor-client-websockets:$ktorVersion")
+        force("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+        force("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     }
 }
+
