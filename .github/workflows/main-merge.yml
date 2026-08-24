@@ -41,6 +41,8 @@ jobs:
         with:
           distribution: adopt
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Wait for Postgres to be healthy
         run: |
           for i in {1..10}; do
@@ -68,6 +70,8 @@ jobs:
         with:
           distribution: adopt
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: import certs
         uses: apple-actions/import-codesign-certs@v7
         with:
@@ -92,6 +96,8 @@ jobs:
         with:
           distribution: adopt
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Build development webpack
         run: ./gradlew jsBrowserDevelopmentWebpack
       - name: Upload JS webpack

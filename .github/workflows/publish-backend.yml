@@ -61,10 +61,10 @@ jobs:
           java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Build ${{ matrix.service }}
-        run: ./gradlew ${{ matrix.gradle_module }} --no-daemon
+        run: ./gradlew ${{ matrix.gradle_module }}
 
       - name: Authenticate to Google Cloud
         id: auth
