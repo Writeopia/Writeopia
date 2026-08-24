@@ -12,6 +12,7 @@ import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /**
  * Service for syncing document story steps with the backend.
@@ -49,11 +50,10 @@ class DocumentSyncService(
         // Find story steps that need to be synced
         val outdatedSteps = getOutdatedStorySteps(document, lastSyncTimestamp)
 
-        // If no steps need syncing, just update the lastSyncedAt
+        // If no steps need syncing, the document is already in sync.
+        // Do NOT update lastSyncedAt here since we don't have a server timestamp.
+        // The existing lastSyncedAt already matches the server's value.
         if (outdatedSteps.isEmpty()) {
-            val now = Clock.System.now()
-            val updatedDocument = document.copy(lastSyncedAt = now)
-            documentRepository.saveDocumentMetadata(updatedDocument)
             return true
         }
 
@@ -80,9 +80,10 @@ class DocumentSyncService(
             // Apply server updates locally
             applyServerUpdates(document, response)
 
-            // Update document's lastSyncedAt
-            val now = Clock.System.now()
-            val updatedDocument = document.copy(lastSyncedAt = now)
+            // Update document's lastSyncedAt using the SERVER timestamp
+            // This ensures client and server have matching lastSyncedAt values
+            val serverSyncTime = Instant.fromEpochMilliseconds(response.serverTimestamp)
+            val updatedDocument = document.copy(lastSyncedAt = serverSyncTime)
             documentRepository.saveDocumentMetadata(updatedDocument)
 
             true
