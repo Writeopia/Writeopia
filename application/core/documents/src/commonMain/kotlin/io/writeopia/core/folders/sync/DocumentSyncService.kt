@@ -171,12 +171,18 @@ class DocumentSyncService(
 
     /**
      * Applies server updates to the local document.
+     * Processes both updated steps and deletions before the sync timestamp is advanced.
      *
      * @param document The local document
      * @param response The sync response from the server
      */
     private suspend fun applyServerUpdates(document: Document, response: StoryStepSyncResponse) {
-        // Apply updated steps from server
+        // First, apply deletions from server to prevent stale content from being re-uploaded
+        for (deletedId in response.deletedIds) {
+            documentRepository.deleteStoryStep(deletedId, document.id)
+        }
+
+        // Then, apply updated steps from server
         val serverSteps = response.updatedSteps.map { stepApi ->
             stepApi.position to stepApi.toModel()
         }
@@ -187,9 +193,6 @@ class DocumentSyncService(
                 documentRepository.saveStoryStep(storyStep, position, document.id)
             }
         }
-
-        // Note: deletedIds handling would require additional logic
-        // to remove steps from local storage if needed
     }
 
     companion object {
