@@ -196,7 +196,7 @@ class FolderSyncTest {
     }
 
     @Test
-    fun `syncFolder should update folder and document sync timestamps on success`() = runBlocking {
+    fun `syncFolder should send documents and refresh on success without updating local timestamps`() = runBlocking {
         val documentRepository = mockk<DocumentRepository>(relaxed = true)
         val documentsApi = mockk<DocumentsApi>()
         val documentConflictHandler = mockk<DocumentConflictHandler>()
@@ -247,15 +247,16 @@ class FolderSyncTest {
         // Execute
         folderSync.syncFolder(folderId, workspaceId, force = true)
 
-        // Verify document metadata was updated with new sync timestamp
-        coVerify { documentRepository.saveDocumentMetadata(match { it.id == documentToSend.id && it.lastSyncedAt != null }) }
+        // Verify documents were sent to the backend
+        coVerify { documentsApi.sendDocuments(listOf(documentToSend), workspaceId, authToken) }
 
-        // Verify folder sync time was updated
-        coVerify { folderRepository.updateFolder(match { it.id == folderId && it.lastSyncedAt != null }) }
+        // Verify NO local timestamp updates - lastSyncedAt must come from server
+        coVerify(exactly = 0) { documentRepository.saveDocumentMetadata(any()) }
+        coVerify(exactly = 0) { folderRepository.updateFolder(any()) }
 
-        // Verify refresh was called
-        coVerify { documentRepository.refreshDocuments() }
-        coVerify { folderRepository.refreshFolders() }
+        // Verify refresh was called (twice: once after conflict resolution, once after sending)
+        coVerify(atLeast = 2) { documentRepository.refreshDocuments() }
+        coVerify(atLeast = 2) { folderRepository.refreshFolders() }
     }
 
     @Test

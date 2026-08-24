@@ -34,9 +34,13 @@ import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
+import io.writeopia.sdk.serialization.request.GenerateSummaryRequest
+import io.writeopia.sdk.serialization.request.DocumentSyncInfo
 import io.writeopia.sdk.serialization.response.EventDiffResponse
 import io.writeopia.sdk.serialization.response.FolderContentResponse
+import io.writeopia.sdk.serialization.response.GenerateSummaryResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
+import io.ktor.http.HttpStatusCode
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -414,4 +418,75 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
             ResultData.Error()
         }
     }
+
+    /**
+     * Generates a summary document from multiple documents.
+     *
+     * @param documents List of documents with their sync info (documentId and lastSyncedAt)
+     * @param targetFolderId The folder where the summary document will be created
+     * @param workspaceId The workspace ID
+     * @param summaryTitle Optional custom title for the summary document
+     * @param model Optional AI model override
+     * @param token Authentication token
+     * @return GenerateSummaryApiResult - Success with document, NeedsSync with unsynced docs, or Error
+     */
+    suspend fun generateSummary(
+        documents: List<DocumentSyncInfo>,
+        targetFolderId: String,
+        workspaceId: String,
+        summaryTitle: String?,
+        model: String?,
+        token: String
+    ): GenerateSummaryApiResult = try {
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/generate-summary") {
+            contentType(ContentType.Application.Json)
+            setBody(GenerateSummaryRequest(documents, targetFolderId, summaryTitle, model))
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        when (response.status) {
+            HttpStatusCode.Created -> {
+                val body = response.body<GenerateSummaryResponse>()
+                val document = body.document?.toModel()
+                if (document != null) {
+                    GenerateSummaryApiResult.Success(document)
+                } else {
+                    GenerateSummaryApiResult.Error("Response missing document")
+                }
+            }
+            HttpStatusCode.Conflict -> {
+                val body = response.body<GenerateSummaryResponse>()
+                val unsyncedDocuments = body.unsyncedDocuments
+                if (unsyncedDocuments != null) {
+                    GenerateSummaryApiResult.NeedsSync(unsyncedDocuments)
+                } else {
+                    GenerateSummaryApiResult.Error("Conflict response missing unsynced documents")
+                }
+            }
+            HttpStatusCode.ServiceUnavailable -> {
+                GenerateSummaryApiResult.GenAiUnavailable
+            }
+            else -> {
+                val body = runCatching { response.body<GenerateSummaryResponse>() }.getOrNull()
+                GenerateSummaryApiResult.Error(body?.error ?: "Request failed with status ${response.status}")
+            }
+        }
+    } catch (e: Exception) {
+        GenerateSummaryApiResult.Error(e.message ?: "Network or deserialization error")
+    }
+}
+
+/**
+ * Result type for the generateSummary API call.
+ */
+sealed class GenerateSummaryApiResult {
+    data class Success(val document: Document) : GenerateSummaryApiResult()
+
+    data class NeedsSync(
+        val unsyncedDocuments: List<io.writeopia.sdk.serialization.response.UnsyncedDocumentInfo>
+    ) : GenerateSummaryApiResult()
+
+    data object GenAiUnavailable : GenerateSummaryApiResult()
+
+    data class Error(val message: String) : GenerateSummaryApiResult()
 }

@@ -4,7 +4,6 @@ package io.writeopia.core.folders.sync
 
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Folder
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class FolderConflictHandler(
@@ -23,7 +22,6 @@ class FolderConflictHandler(
         localFolders: List<Folder>,
         externalFolders: List<Folder>,
     ): List<Folder> {
-        val now = Clock.System.now()
         val localFoldersById = localFolders.associateBy { it.id }
         val foldersToSend = mutableListOf<Folder>()
 
@@ -32,17 +30,19 @@ class FolderConflictHandler(
             val localFolder = localFoldersById[externalFolder.id]
 
             if (localFolder == null) {
-                // Folder doesn't exist locally - create it
-                folderRepository.createFolder(externalFolder.copy(lastSyncedAt = now))
+                // Folder doesn't exist locally - create it with server's lastSyncedAt
+                folderRepository.createFolder(externalFolder)
             } else {
                 // Folder exists both locally and externally - resolve conflict (most recent wins)
                 val winner = if (localFolder.lastUpdatedAt >= externalFolder.lastUpdatedAt) {
                     foldersToSend.add(localFolder) // Local is newer, send to backend
+                    // Keep local folder as-is, don't update lastSyncedAt with client time
                     localFolder
                 } else {
+                    // External folder wins - keep its lastSyncedAt from server
                     externalFolder
                 }
-                folderRepository.updateFolder(winner.copy(lastSyncedAt = now))
+                folderRepository.updateFolder(winner)
             }
         }
 
