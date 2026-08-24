@@ -6,7 +6,6 @@ import io.writeopia.genai.api.GenAiApi
 import io.writeopia.genai.model.GenAiResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 private const val SUGGESTION_PROMPT =
     """

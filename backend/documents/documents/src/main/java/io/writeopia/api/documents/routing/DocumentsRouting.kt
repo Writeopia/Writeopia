@@ -763,6 +763,18 @@ fun Routing.documentsRoute(
                                 message = GenerateSummaryResponse(unsyncedDocuments = result.unsyncedDocuments)
                             )
                         }
+                        is DocumentsService.GenerateSummaryResult.InvalidRequest -> {
+                            call.respond(
+                                status = HttpStatusCode.BadRequest,
+                                message = GenerateSummaryResponse(error = result.message)
+                            )
+                        }
+                        is DocumentsService.GenerateSummaryResult.NotFound -> {
+                            call.respond(
+                                status = HttpStatusCode.NotFound,
+                                message = GenerateSummaryResponse(error = result.message)
+                            )
+                        }
                         is DocumentsService.GenerateSummaryResult.GenAiUnavailable -> {
                             call.respond(
                                 status = HttpStatusCode.ServiceUnavailable,

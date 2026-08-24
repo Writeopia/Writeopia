@@ -619,7 +619,16 @@ object DocumentsService {
     sealed class GenerateSummaryResult {
         data class Success(val document: Document) : GenerateSummaryResult()
         data class NeedsSync(val unsyncedDocuments: List<UnsyncedDocumentInfo>) : GenerateSummaryResult()
+
+        /** Client input validation error (maps to HTTP 400) */
+        data class InvalidRequest(val message: String) : GenerateSummaryResult()
+
+        /** Resource not found error (maps to HTTP 404) */
+        data class NotFound(val message: String) : GenerateSummaryResult()
+
+        /** Server/AI processing error (maps to HTTP 500) */
         data class Error(val message: String) : GenerateSummaryResult()
+
         data object GenAiUnavailable : GenerateSummaryResult()
     }
 
@@ -650,7 +659,15 @@ object DocumentsService {
 
         // Validate documents
         if (documents.isEmpty()) {
-            return GenerateSummaryResult.Error("Documents list cannot be empty")
+            return GenerateSummaryResult.InvalidRequest("Documents list cannot be empty")
+        }
+
+        // Validate target folder exists (unless it's the root folder)
+        if (targetFolderId != Folder.ROOT_PATH) {
+            val targetFolder = writeopiaDb.getFolderById(targetFolderId, workspaceId)
+            if (targetFolder == null) {
+                return GenerateSummaryResult.NotFound("Target folder not found: $targetFolderId")
+            }
         }
 
         // Fetch all documents and check sync status
@@ -660,7 +677,7 @@ object DocumentsService {
         for (docSyncInfo in documents) {
             val document = writeopiaDb.getDocumentWithContentById(docSyncInfo.documentId, workspaceId)
             if (document == null) {
-                return GenerateSummaryResult.Error("Document not found: ${docSyncInfo.documentId}")
+                return GenerateSummaryResult.NotFound("Document not found: ${docSyncInfo.documentId}")
             }
 
             // Check sync status: compare client's lastSyncedAt with server's lastSyncedAt
@@ -696,7 +713,7 @@ object DocumentsService {
         val combinedText = extractTextFromDocuments(documentsToProcess)
 
         if (combinedText.isBlank()) {
-            return GenerateSummaryResult.Error("No text content found in the provided documents")
+            return GenerateSummaryResult.InvalidRequest("No text content found in the provided documents")
         }
 
         // Generate summary using GenAI

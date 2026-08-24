@@ -49,7 +49,7 @@ class GenAiService(
                     )
                 }
 
-                val targetModel = modelName ?: defaultModel
+                val targetModel = modelName?.takeIf { it.isNotBlank() } ?: defaultModel
                 val genAiClient = getClient()
 
                 val response = genAiClient.models.generateContent(
@@ -83,7 +83,7 @@ class GenAiService(
                 return@flow
             }
 
-            val targetModel = modelName ?: defaultModel
+            val targetModel = modelName?.takeIf { it.isNotBlank() } ?: defaultModel
             val genAiClient = getClient()
 
             val responseFlow = genAiClient.models.generateContentStream(
