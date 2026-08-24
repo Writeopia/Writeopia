@@ -21,8 +21,10 @@ import io.writeopia.requests.OllamaGenerateRequest
 import io.writeopia.responses.DownloadModelResponse
 import io.writeopia.responses.OllamaResponse
 import io.writeopia.sdk.models.utils.ResultData
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
@@ -122,46 +124,47 @@ class OllamaApi(
     }
 
     /**
-     * Streams reply from Ollama, buffering results inside execute callback
-     * and emitting after execute returns to avoid Flow contract violations.
+     * Streams reply from Ollama, delivering results incrementally as they arrive.
+     * Uses callbackFlow to safely emit from within the HTTP execute callback,
+     * preserving real-time streaming behavior for callers.
      */
     fun streamReply(
         model: String,
         prompt: String,
         url: String
-    ): Flow<ResultData<String>> = flow<ResultData<String>> {
-        val bufferedResults = mutableListOf<ResultData<String>>()
+    ): Flow<ResultData<String>> = callbackFlow {
+        try {
+            client.preparePost {
+                url("$url/api/${EndPoints.ollamaGenerate()}")
+                contentType(ContentType.Application.Json)
+                setBody(OllamaGenerateRequest(model, prompt, true))
+            }.execute { response ->
+                val stringBuilder = StringBuilder()
+                val channel = response.body<ByteReadChannel>()
 
-        client.preparePost {
-            url("$url/api/${EndPoints.ollamaGenerate()}")
-            contentType(ContentType.Application.Json)
-            setBody(OllamaGenerateRequest(model, prompt, true))
-        }.execute { response ->
-            val stringBuilder = StringBuilder()
-            val channel = response.body<ByteReadChannel>()
+                while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
+                    val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
 
-            while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
-                val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
+                    val value: OllamaResponse = json.decodeFromString(line)
 
-                val value: OllamaResponse = json.decodeFromString(line)
+                    if (value.error?.isNotEmpty() == true) {
+                        throw OllamaException(value.error)
+                    }
 
-                if (value.error?.isNotEmpty() == true) {
-                    throw OllamaException(value.error)
+                    stringBuilder.append(value.response)
+
+                    // Emit immediately for incremental delivery
+                    trySend(ResultData.Complete(stringBuilder.toString()))
                 }
-
-                stringBuilder.append(value.response)
-
-                bufferedResults.add(ResultData.Complete(stringBuilder.toString()))
             }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            trySend(ResultData.Error(e.toException()))
         }
 
-        // Emit buffered results after execute returns
-        for (result in bufferedResults) {
-            emit(result)
-        }
-    }.catch { e ->
-        if (e is CancellationException) throw e
-        emit(ResultData.Error<String>(e.toException()))
+        close()
+        awaitClose()
     }
 
     fun streamSummary(

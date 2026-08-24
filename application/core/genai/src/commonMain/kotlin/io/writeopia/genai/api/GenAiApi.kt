@@ -19,8 +19,8 @@ import io.writeopia.genai.model.GenAiRequest
 import io.writeopia.genai.model.GenAiResponse
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -144,61 +144,60 @@ class GenAiApi(
         streamFromEndpoint(EndPoints.aiTags(), prompt, model)
 
     /**
-     * Shared streaming implementation that properly handles Flow exception transparency.
-     * Buffers results inside execute callback and emits after execute returns to avoid
-     * calling emit from within a non-suspending callback context.
+     * Shared streaming implementation that delivers results incrementally as they arrive.
+     * Uses callbackFlow to safely emit from within the HTTP execute callback,
+     * preserving real-time streaming behavior for callers.
      */
     private fun streamFromEndpoint(
         endpoint: String,
         prompt: String,
         model: String?
-    ): Flow<ResultData<String>> = flow<ResultData<String>> {
-        val bufferedResults = mutableListOf<ResultData<String>>()
+    ): Flow<ResultData<String>> = callbackFlow {
+        try {
+            client.preparePost {
+                url("$baseUrl/$endpoint")
+                contentType(ContentType.Application.Json)
+                getAuthToken()?.let { token ->
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
+                setBody(GenAiRequest(prompt, model, stream = true))
+            }.execute { response ->
+                val channel = response.body<ByteReadChannel>()
 
-        client.preparePost {
-            url("$baseUrl/$endpoint")
-            contentType(ContentType.Application.Json)
-            getAuthToken()?.let { token ->
-                header(HttpHeaders.Authorization, "Bearer $token")
+                while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
+                    val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
+
+                    // SSE format: "data: {...}"
+                    val jsonData = if (line.startsWith("data: ")) {
+                        line.removePrefix("data: ")
+                    } else {
+                        continue
+                    }
+
+                    val parsed: GenAiResponse = json.decodeFromString(jsonData)
+
+                    if (parsed.error?.isNotEmpty() == true) {
+                        throw GenAiException(parsed.error)
+                    }
+
+                    if (parsed.response != null) {
+                        // Emit immediately for incremental delivery
+                        trySend(ResultData.Complete(parsed.response))
+                    }
+
+                    if (parsed.done) {
+                        break
+                    }
+                }
             }
-            setBody(GenAiRequest(prompt, model, stream = true))
-        }.execute { response ->
-            val channel = response.body<ByteReadChannel>()
-
-            while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
-                val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
-
-                // SSE format: "data: {...}"
-                val jsonData = if (line.startsWith("data: ")) {
-                    line.removePrefix("data: ")
-                } else {
-                    continue
-                }
-
-                val parsed: GenAiResponse = json.decodeFromString(jsonData)
-
-                if (parsed.error?.isNotEmpty() == true) {
-                    throw GenAiException(parsed.error)
-                }
-
-                if (parsed.response != null) {
-                    bufferedResults.add(ResultData.Complete(parsed.response))
-                }
-
-                if (parsed.done) {
-                    break
-                }
-            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            trySend(ResultData.Error(e.toException()))
         }
 
-        // Emit buffered results after execute returns
-        for (result in bufferedResults) {
-            emit(result)
-        }
-    }.catch { e ->
-        // Don't convert cancellation exceptions to errors - let them propagate
-        if (e is CancellationException) throw e
-        emit(ResultData.Error<String>(e.toException()))
+        close()
+        awaitClose()
     }
 }
 
