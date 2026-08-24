@@ -23,7 +23,7 @@ jobs:
           java-version: '21'
 
       - name: Build all backend modules
-        run: ./gradlew :backend:gateway:buildFatJar :backend:micro:auth:buildFatJar :backend:micro:documents:buildFatJar :backend:micro:media:buildFatJar :backend:micro:export:buildFatJar --no-daemon
+        run: ./gradlew :backend:gateway:buildFatJar :backend:micro:auth:buildFatJar :backend:micro:documents:buildFatJar :backend:micro:media:buildFatJar :backend:micro:export:buildFatJar :backend:micro:ai:buildFatJar --no-daemon
 
       - name: Upload gateway JAR
         uses: actions/upload-artifact@v4
@@ -58,6 +58,13 @@ jobs:
         with:
           name: export-jar
           path: backend/micro/export/build/libs/export-all.jar
+          retention-days: 1
+
+      - name: Upload AI JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-jar
+          path: backend/micro/ai/build/libs/ai-all.jar
           retention-days: 1
 
   push-gateway:
@@ -126,7 +133,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
       id-token: write
     steps:
       - name: Check out code
@@ -178,7 +184,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
       id-token: write
     steps:
       - name: Check out code
@@ -230,7 +235,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
       id-token: write
     steps:
       - name: Check out code
@@ -282,7 +286,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
       id-token: write
     steps:
       - name: Check out code
@@ -323,6 +326,57 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: ./backend/micro/export
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
+
+  push-ai:
+    name: Push AI image
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Download JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-jar
+          path: backend/micro/ai/build/libs
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: 'projects/640912732949/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
+          service_account: 'github-actions-deployer@writeopia.iam.gserviceaccount.com'
+          token_format: 'access_token'
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: |
+            europe-west4-docker.pkg.dev/writeopia/writeopia-images/writeopia-ai
+          tags: |
+            type=semver,pattern={{version}}
+            type=sha
+
+      - name: Log in to Google Artifact Registry
+        uses: docker/login-action@v4
+        with:
+          registry: europe-west4-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend/micro/ai
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -73,7 +73,7 @@ class FolderStateControllerTest {
         coEvery { authRepository.isLoggedIn() } returns true
         coEvery { authRepository.getUser() } returns premiumUser
         coEvery { authRepository.getAuthToken() } returns authToken
-        coEvery { notesUseCase.createFolder(any(), any(), any(), any()) } returns createdFolder
+        coEvery { notesUseCase.createFolder(any(), any(), any()) } returns createdFolder
         coEvery { documentsApi.sendFolders(any(), any(), any()) } returns ResultData.Complete(Unit)
 
         val controller = FolderStateController.singleton(notesUseCase, authRepository, documentsApi)
@@ -86,7 +86,7 @@ class FolderStateControllerTest {
         advanceUntilIdle()
 
         // Verify folder was created
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", any()) }
+        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId") }
 
         // Verify folder was synced to backend
         val foldersSlot = slot<List<Folder>>()
@@ -125,7 +125,7 @@ class FolderStateControllerTest {
         coEvery { authRepository.getWorkspace() } returns workspace
         coEvery { authRepository.isLoggedIn() } returns true
         coEvery { authRepository.getUser() } returns freeUser
-        coEvery { notesUseCase.createFolder(any(), any(), any(), any()) } returns createdFolder
+        coEvery { notesUseCase.createFolder(any(), any(), any()) } returns createdFolder
 
         val controller = FolderStateController.singleton(notesUseCase, authRepository, documentsApi)
         val scope = CoroutineScope(StandardTestDispatcher(testScheduler) + Job())
@@ -137,7 +137,7 @@ class FolderStateControllerTest {
         advanceUntilIdle()
 
         // Verify folder was created
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", any()) }
+        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId") }
 
         // Verify NO sync to backend (free user)
         coVerify(exactly = 0) { documentsApi.sendFolders(any(), any(), any()) }
@@ -165,7 +165,7 @@ class FolderStateControllerTest {
 
         coEvery { authRepository.getWorkspace() } returns workspace
         coEvery { authRepository.isLoggedIn() } returns false
-        coEvery { notesUseCase.createFolder(any(), any(), any(), any()) } returns createdFolder
+        coEvery { notesUseCase.createFolder(any(), any(), any()) } returns createdFolder
 
         val controller = FolderStateController.singleton(notesUseCase, authRepository, documentsApi)
         val scope = CoroutineScope(StandardTestDispatcher(testScheduler) + Job())
@@ -177,7 +177,7 @@ class FolderStateControllerTest {
         advanceUntilIdle()
 
         // Verify folder was created locally
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", any()) }
+        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId") }
 
         // Verify NO sync to backend (not logged in)
         coVerify(exactly = 0) { documentsApi.sendFolders(any(), any(), any()) }
