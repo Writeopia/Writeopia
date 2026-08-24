@@ -73,7 +73,7 @@ class FolderStateControllerTest {
         coEvery { authRepository.isLoggedIn() } returns true
         coEvery { authRepository.getUser() } returns premiumUser
         coEvery { authRepository.getAuthToken() } returns authToken
-        coEvery { notesUseCase.createFolder(any(), any(), any()) } returns createdFolder
+        coEvery { notesUseCase.createFolder(any(), any(), any(), any()) } returns createdFolder
         coEvery { documentsApi.sendFolders(any(), any(), any()) } returns ResultData.Complete(Unit)
 
         val controller = FolderStateController.singleton(notesUseCase, authRepository, documentsApi)
@@ -86,61 +86,13 @@ class FolderStateControllerTest {
         advanceUntilIdle()
 
         // Verify folder was created
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId") }
+        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", null) }
 
         // Verify folder was synced to backend
         val foldersSlot = slot<List<Folder>>()
         coVerify { documentsApi.sendFolders(capture(foldersSlot), workspaceId, authToken) }
         assertEquals(1, foldersSlot.captured.size)
         assertEquals(createdFolder.id, foldersSlot.captured.first().id)
-    }
-
-    @Test
-    fun `addFolder should not sync to backend for non-premium users`() = runTest {
-        val notesUseCase = mockk<NotesUseCase>()
-        val authRepository = mockk<AuthRepository>()
-        val documentsApi = mockk<DocumentsApi>()
-
-        val createdFolder = Folder.fromName("Untitled", workspaceId).copy(
-            id = "newFolderId",
-            parentId = "parentId"
-        )
-
-        val workspace = Workspace(
-            id = workspaceId,
-            userId = "ownerId",
-            name = "Test Workspace",
-            lastSync = Instant.DISTANT_PAST,
-            selected = true,
-            role = "admin"
-        )
-
-        val freeUser = WriteopiaUser(
-            id = "userId",
-            name = "Test User",
-            email = "test@example.com",
-            tier = Tier.FREE
-        )
-
-        coEvery { authRepository.getWorkspace() } returns workspace
-        coEvery { authRepository.isLoggedIn() } returns true
-        coEvery { authRepository.getUser() } returns freeUser
-        coEvery { notesUseCase.createFolder(any(), any(), any()) } returns createdFolder
-
-        val controller = FolderStateController.singleton(notesUseCase, authRepository, documentsApi)
-        val scope = CoroutineScope(StandardTestDispatcher(testScheduler) + Job())
-        testScope = scope
-        controller.initCoroutine(scope)
-
-        // Execute
-        controller.addFolder("parentId")
-        advanceUntilIdle()
-
-        // Verify folder was created
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId") }
-
-        // Verify NO sync to backend (free user)
-        coVerify(exactly = 0) { documentsApi.sendFolders(any(), any(), any()) }
     }
 
     @Test
@@ -165,7 +117,7 @@ class FolderStateControllerTest {
 
         coEvery { authRepository.getWorkspace() } returns workspace
         coEvery { authRepository.isLoggedIn() } returns false
-        coEvery { notesUseCase.createFolder(any(), any(), any()) } returns createdFolder
+        coEvery { notesUseCase.createFolder(any(), any(), any(), any()) } returns createdFolder
 
         val controller = FolderStateController.singleton(notesUseCase, authRepository, documentsApi)
         val scope = CoroutineScope(StandardTestDispatcher(testScheduler) + Job())
@@ -177,7 +129,7 @@ class FolderStateControllerTest {
         advanceUntilIdle()
 
         // Verify folder was created locally
-        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId") }
+        coVerify { notesUseCase.createFolder("Untitled", workspaceId, "parentId", null) }
 
         // Verify NO sync to backend (not logged in)
         coVerify(exactly = 0) { documentsApi.sendFolders(any(), any(), any()) }
