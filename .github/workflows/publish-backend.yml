@@ -80,7 +80,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download JAR
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: gateway-jar
           path: backend/gateway/build/libs
@@ -139,7 +139,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download JAR
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: auth-jar
           path: backend/micro/auth/build/libs
@@ -190,7 +190,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download JAR
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: documents-jar
           path: backend/micro/documents/build/libs
@@ -241,7 +241,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download JAR
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: media-jar
           path: backend/micro/media/build/libs
@@ -292,7 +292,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download JAR
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: export-jar
           path: backend/micro/export/build/libs
