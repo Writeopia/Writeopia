@@ -26,35 +26,35 @@ jobs:
         run: ./gradlew :backend:gateway:buildFatJar :backend:micro:auth:buildFatJar :backend:micro:documents:buildFatJar :backend:micro:media:buildFatJar :backend:micro:export:buildFatJar --no-daemon
 
       - name: Upload gateway JAR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gateway-jar
           path: backend/gateway/build/libs/gateway-all.jar
           retention-days: 1
 
       - name: Upload auth JAR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: auth-jar
           path: backend/micro/auth/build/libs/auth-all.jar
           retention-days: 1
 
       - name: Upload documents JAR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: documents-jar
           path: backend/micro/documents/build/libs/documents-all.jar
           retention-days: 1
 
       - name: Upload media JAR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: media-jar
           path: backend/micro/media/build/libs/media-all.jar
           retention-days: 1
 
       - name: Upload export JAR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: export-jar
           path: backend/micro/export/build/libs/export-all.jar
