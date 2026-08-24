@@ -42,7 +42,7 @@ class GenAiServiceIntegrationTest {
     @Test
     fun `Google GenAI Client can be instantiated with required dependencies`() {
         // This test verifies that all transitive dependencies are available.
-        // In CI without credentials, IOException is expected - that's fine,
+        // In CI without credentials, GenAiIOException/IOException is expected - that's fine,
         // it means the SDK classes loaded successfully.
         try {
             val client = com.google.genai.Client.builder()
@@ -51,9 +51,15 @@ class GenAiServiceIntegrationTest {
                 .enterprise(true)
                 .build()
             assertNotNull(client)
-        } catch (e: java.io.IOException) {
+        } catch (e: com.google.genai.errors.GenAiIOException) {
             // Expected in CI - credentials not configured.
             // The important thing is we didn't get NoClassDefFoundError.
+            val message = e.message ?: e.cause?.message ?: ""
+            assert(message.contains("credentials") || message.contains("credential")) {
+                "Expected credentials error, got: $message"
+            }
+        } catch (e: java.io.IOException) {
+            // Also acceptable - may be thrown directly in some cases
             assert(e.message?.contains("credentials") == true || e.message?.contains("credential") == true) {
                 "Expected credentials error, got: ${e.message}"
             }
