@@ -662,6 +662,12 @@ object DocumentsService {
             return GenerateSummaryResult.InvalidRequest("Documents list cannot be empty")
         }
 
+        if (documents.size > MAX_DOCUMENTS_FOR_SUMMARY) {
+            return GenerateSummaryResult.InvalidRequest(
+                "Too many documents: ${documents.size}. Maximum allowed is $MAX_DOCUMENTS_FOR_SUMMARY"
+            )
+        }
+
         // Validate target folder exists (unless it's the root folder)
         if (targetFolderId != Folder.ROOT_PATH) {
             val targetFolder = writeopiaDb.getFolderById(targetFolderId, workspaceId)
@@ -716,6 +722,13 @@ object DocumentsService {
             return GenerateSummaryResult.InvalidRequest("No text content found in the provided documents")
         }
 
+        if (combinedText.length > MAX_COMBINED_TEXT_LENGTH) {
+            return GenerateSummaryResult.InvalidRequest(
+                "Combined document text exceeds maximum length: ${combinedText.length} characters. " +
+                    "Maximum allowed is $MAX_COMBINED_TEXT_LENGTH characters"
+            )
+        }
+
         // Generate summary using GenAI
         val aiResponse = genAiService.generateSummary(combinedText, model)
 
@@ -757,6 +770,7 @@ object DocumentsService {
     /**
      * Extracts text content from a list of documents.
      * Concatenates text from title, message, check_item, unordered_list_item, and code_block types.
+     * Every document contributes at least its title to ensure all requested documents are represented.
      */
     private fun extractTextFromDocuments(documents: List<Document>): String {
         val textTypes = setOf("title", "message", "check_item", "unordered_list_item", "code_block")
@@ -777,9 +791,8 @@ object DocumentsService {
                 }
             }
 
-            if (documentParts.size > 1) { // More than just the title
-                textParts.add(documentParts.joinToString("\n"))
-            }
+            // Include all documents, even those with only a title
+            textParts.add(documentParts.joinToString("\n"))
         }
 
         return textParts.joinToString("\n\n---\n\n")
@@ -823,5 +836,19 @@ object DocumentsService {
         )
 
         return content
+    }
+
+    companion object {
+        /**
+         * Maximum number of documents that can be summarized in a single request.
+         * Prevents excessive processing time and memory usage.
+         */
+        private const val MAX_DOCUMENTS_FOR_SUMMARY = 20
+
+        /**
+         * Maximum total character count for combined document text before sending to GenAI.
+         * Prevents exceeding model context limits and controls costs.
+         */
+        private const val MAX_COMBINED_TEXT_LENGTH = 100_000
     }
 }
