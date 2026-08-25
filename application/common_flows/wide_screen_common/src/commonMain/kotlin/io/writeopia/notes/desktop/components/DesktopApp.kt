@@ -35,7 +35,6 @@ import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
-import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.drawing.di.DrawingInjection
