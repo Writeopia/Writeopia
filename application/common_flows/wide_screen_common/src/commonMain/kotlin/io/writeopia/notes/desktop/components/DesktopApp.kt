@@ -33,6 +33,9 @@ import io.writeopia.account.ui.SettingsDialog
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
+import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
+import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.drawing.di.DrawingInjection
@@ -85,12 +88,20 @@ fun DesktopApp(
     notesMenuInjection: NotesMenuInjection? = null,
     sideMenuInjector: SideMenuKmpInjector? = null,
 ) {
-    val editorInjector = remember {
-        EditorKmpInjector.desktop(
-            selectionState = selectionState,
-            keyboardEventFlow = keyboardEventFlow,
-            imageUploader = WorkspaceInjection.singleton().provideImageUploader(),
-        )
+    val platform = LocalPlatform.current
+    val editorInjector = remember(platform) {
+        when (platform) {
+            PlatformType.WEB -> EditorKmpInjector.web(
+                selectionState = selectionState,
+                keyboardEventFlow = keyboardEventFlow,
+                imageUploader = WorkspaceInjection.singleton().provideImageUploader(),
+            )
+            else -> EditorKmpInjector.desktop(
+                selectionState = selectionState,
+                keyboardEventFlow = keyboardEventFlow,
+                imageUploader = WorkspaceInjection.singleton().provideImageUploader(),
+            )
+        }
     }
 
     val actualNotesMenuInjection = notesMenuInjection ?: remember {
