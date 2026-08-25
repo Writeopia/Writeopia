@@ -46,6 +46,7 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.markdown.InlineMarkdownParser
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -67,11 +68,15 @@ object DocumentsService {
         writeopiaDb: WriteopiaDbBackend,
         useAi: Boolean
     ): Boolean {
-        documents.forEach { document ->
+        val parsedDocuments = documents.map { document ->
+            parseDocumentMarkdown(document)
+        }
+
+        parsedDocuments.forEach { document ->
             writeopiaDb.saveDocument(document)
         }
 
-        return if (useAi) sendToAiHub(documents, workspaceId) else true
+        return if (useAi) sendToAiHub(parsedDocuments, workspaceId) else true
     }
 
     suspend fun receiveFolders(
@@ -161,7 +166,8 @@ object DocumentsService {
         writeopiaDb: WriteopiaDbBackend,
         useAi: Boolean
     ): Document {
-        val documentWithWorkspace = document.copy(
+        val parsedDocument = parseDocumentMarkdown(document)
+        val documentWithWorkspace = parsedDocument.copy(
             workspaceId = workspaceId,
             lastUpdatedAt = Clock.System.now(),
             lastSyncedAt = Clock.System.now()
@@ -557,7 +563,7 @@ object DocumentsService {
 
         // Process client changes
         for (change in request.changes) {
-            val clientStep = change.storyStep.toModel()
+            val clientStep = InlineMarkdownParser.parseMarkdown(change.storyStep.toModel())
             val clientTimestamp = change.storyStep.lastUpdatedAt ?: 0L
             val serverStepTimestamp = serverStepTimestamps[clientStep.id]
 
@@ -842,6 +848,17 @@ object DocumentsService {
         )
 
         return content
+    }
+
+    /**
+     * Parses markdown syntax in all StorySteps of a document.
+     * Converts markdown markers (bold, italic, URLs) to SpanInfo objects.
+     */
+    private fun parseDocumentMarkdown(document: Document): Document {
+        val parsedContent = document.content.mapValues { (_, storyStep) ->
+            InlineMarkdownParser.parseMarkdown(storyStep)
+        }
+        return document.copy(content = parsedContent)
     }
 
     /**
