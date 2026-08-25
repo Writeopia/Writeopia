@@ -649,6 +649,7 @@ object DocumentsService {
         workspaceId: String,
         summaryTitle: String?,
         model: String?,
+        ignoreSyncCheck: Boolean,
         genAiService: GenAiService,
         writeopiaDb: WriteopiaDbBackend
     ): GenerateSummaryResult {
@@ -676,7 +677,7 @@ object DocumentsService {
             }
         }
 
-        // Fetch all documents and check sync status
+        // Fetch all documents and check sync status (unless ignoreSyncCheck is true)
         val unsyncedDocuments = mutableListOf<UnsyncedDocumentInfo>()
         val documentsToProcess = mutableListOf<Document>()
 
@@ -686,27 +687,32 @@ object DocumentsService {
                 return GenerateSummaryResult.NotFound("Document not found: ${docSyncInfo.documentId}")
             }
 
-            // Check sync status: compare client's lastSyncedAt with server's lastSyncedAt
-            // They must match for the document to be considered synced
-            val serverLastSyncedAt = document.lastSyncedAt?.toEpochMilliseconds()
-            val clientLastSyncedAt = docSyncInfo.lastSyncedAt
-
-            // Document is synced if both lastSyncedAt values match
-            val isSynced = serverLastSyncedAt != null &&
-                           clientLastSyncedAt != null &&
-                           serverLastSyncedAt == clientLastSyncedAt
-
-            if (!isSynced) {
-                unsyncedDocuments.add(
-                    UnsyncedDocumentInfo(
-                        documentId = document.id,
-                        documentTitle = document.title,
-                        lastUpdatedAt = document.lastUpdatedAt.toEpochMilliseconds(),
-                        lastSyncedAt = serverLastSyncedAt
-                    )
-                )
-            } else {
+            if (ignoreSyncCheck) {
+                // Web clients skip sync check - they always use server version
                 documentsToProcess.add(document)
+            } else {
+                // Check sync status: compare client's lastSyncedAt with server's lastSyncedAt
+                // They must match for the document to be considered synced
+                val serverLastSyncedAt = document.lastSyncedAt?.toEpochMilliseconds()
+                val clientLastSyncedAt = docSyncInfo.lastSyncedAt
+
+                // Document is synced if both lastSyncedAt values match
+                val isSynced = serverLastSyncedAt != null &&
+                               clientLastSyncedAt != null &&
+                               serverLastSyncedAt == clientLastSyncedAt
+
+                if (!isSynced) {
+                    unsyncedDocuments.add(
+                        UnsyncedDocumentInfo(
+                            documentId = document.id,
+                            documentTitle = document.title,
+                            lastUpdatedAt = document.lastUpdatedAt.toEpochMilliseconds(),
+                            lastSyncedAt = serverLastSyncedAt
+                        )
+                    )
+                } else {
+                    documentsToProcess.add(document)
+                }
             }
         }
 

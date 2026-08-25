@@ -747,6 +747,7 @@ fun Routing.documentsRoute(
                         workspaceId = workspaceId,
                         summaryTitle = request.summaryTitle,
                         model = request.model,
+                        ignoreSyncCheck = request.ignoreSyncCheck,
                         genAiService = genAiService,
                         writeopiaDb = writeopiaDb
                     )

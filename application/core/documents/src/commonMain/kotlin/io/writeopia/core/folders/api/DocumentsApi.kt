@@ -427,6 +427,7 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
      * @param workspaceId The workspace ID
      * @param summaryTitle Optional custom title for the summary document
      * @param model Optional AI model override
+     * @param ignoreSyncCheck If true, skip sync validation (used by web clients without local storage)
      * @param token Authentication token
      * @return GenerateSummaryApiResult - Success with document, NeedsSync with unsynced docs, or Error
      */
@@ -436,11 +437,12 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         summaryTitle: String?,
         model: String?,
+        ignoreSyncCheck: Boolean = false,
         token: String
     ): GenerateSummaryApiResult = try {
         val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/generate-summary") {
             contentType(ContentType.Application.Json)
-            setBody(GenerateSummaryRequest(documents, targetFolderId, summaryTitle, model))
+            setBody(GenerateSummaryRequest(documents, targetFolderId, summaryTitle, model, ignoreSyncCheck))
             header(HttpHeaders.Authorization, "Bearer $token")
         }
 
