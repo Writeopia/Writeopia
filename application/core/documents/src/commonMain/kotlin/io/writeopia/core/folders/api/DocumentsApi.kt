@@ -437,8 +437,8 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         summaryTitle: String?,
         model: String?,
-        ignoreSyncCheck: Boolean = false,
-        token: String
+        token: String,
+        ignoreSyncCheck: Boolean = false
     ): GenerateSummaryApiResult = try {
         val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/document/generate-summary") {
             contentType(ContentType.Application.Json)

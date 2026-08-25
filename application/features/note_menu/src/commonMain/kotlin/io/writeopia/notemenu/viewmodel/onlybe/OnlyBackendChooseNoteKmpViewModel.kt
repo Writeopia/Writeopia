@@ -408,8 +408,8 @@ internal class OnlyBackendChooseNoteKmpViewModel(
                     workspaceId = workspace.id,
                     summaryTitle = null,
                     model = null,
-                    ignoreSyncCheck = true,
-                    token = token
+                    token = token,
+                    ignoreSyncCheck = true
                 )
 
                 when (result) {
