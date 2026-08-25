@@ -8,10 +8,7 @@ import kotlin.test.assertFalse
  * Integration tests for GenAiService.
  *
  * These tests verify that the service can be instantiated correctly and that
- * all required dependencies (like Ktor HttpTimeout) are available on the classpath.
- *
- * These tests would have caught the NoClassDefFoundError for HttpTimeout
- * that occurred when the google-genai-kotlin library tried to create a Ktor client.
+ * all required dependencies are available on the classpath.
  */
 class GenAiServiceIntegrationTest {
 
@@ -31,37 +28,44 @@ class GenAiServiceIntegrationTest {
     }
 
     /**
-     * Verifies that the Google GenAI Client can be instantiated with required Ktor dependencies.
+     * Verifies that the Google GenAI Client can be instantiated with required dependencies.
      *
-     * This test specifically catches the NoClassDefFoundError for HttpTimeout
-     * that would occur if ktor-client-core is not on the classpath.
+     * This test ensures all transitive dependencies (OkHttp, etc.) are available on the classpath.
      *
-     * The Client constructor internally creates a Ktor HttpClient with HttpTimeout,
-     * so if the dependency is missing, this test will fail with NoClassDefFoundError.
-     *
-     * In CI environments without Google Cloud credentials, the client will throw
+     * In CI environments without Google Cloud credentials, the client may throw
      * IOException about missing credentials - this is expected and still proves
-     * the Ktor dependencies loaded correctly.
+     * the dependencies loaded correctly.
      *
-     * This module uses Ktor 2.3.8 to match google-genai-kotlin:0.5.0's compiled dependencies.
+     * This module uses the Java SDK (com.google.genai:google-genai) which uses OkHttp
+     * directly, avoiding Ktor version conflicts.
      */
     @Test
-    fun `Google GenAI Client can be instantiated with required Ktor dependencies`() {
+    fun `Google GenAI Client can be instantiated with required dependencies`() {
         // This test verifies that all transitive dependencies are available.
-        // If ktor-client-core is missing, this will throw NoClassDefFoundError.
-        // In CI without credentials, IOException is expected - that's fine,
-        // it means the Ktor classes loaded successfully.
+        // In CI without credentials, GenAiIOException/IOException is expected - that's fine,
+        // it means the SDK classes loaded successfully.
         try {
-            val client = com.google.genai.kotlin.Client(
-                project = "test-project",
-                location = "us-central1",
-                enterprise = true
-            )
+            val client = com.google.genai.Client.builder()
+                .project("test-project")
+                .location("us-central1")
+                .enterprise(true)
+                .build()
             assertNotNull(client)
-        } catch (e: java.io.IOException) {
+        } catch (e: com.google.genai.errors.GenAiIOException) {
             // Expected in CI - credentials not configured.
             // The important thing is we didn't get NoClassDefFoundError.
-            assert(e.message?.contains("credentials") == true) {
+            val message = e.message ?: e.cause?.message ?: ""
+            assert(message.contains("credentials") || message.contains("credential")) {
+                "Expected credentials error, got: $message"
+            }
+        } catch (e: java.io.IOException) {
+            // Also acceptable - may be thrown directly in some cases
+            assert(e.message?.contains("credentials") == true || e.message?.contains("credential") == true) {
+                "Expected credentials error, got: ${e.message}"
+            }
+        } catch (e: IllegalStateException) {
+            // Also acceptable - SDK may throw this when credentials are missing
+            assert(e.message?.contains("credentials") == true || e.message?.contains("credential") == true) {
                 "Expected credentials error, got: ${e.message}"
             }
         }

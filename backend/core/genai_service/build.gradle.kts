@@ -15,37 +15,21 @@ kotlin {
     }
 }
 
-// Ktor version that google-genai-kotlin:0.5.0 was compiled against
-val ktorVersion = "2.3.8"
-
 dependencies {
     implementation(project(":backend:core:connection"))
 
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.google.genai.kotlin)
     implementation(libs.kotlinx.serialization.json)
 
-    // Use Ktor 2.x to match google-genai-kotlin's compiled dependencies
-    // google-genai-kotlin:0.5.0 was compiled against Ktor 2.3.8
-    implementation("io.ktor:ktor-client-core:$ktorVersion")
-    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
-    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-    implementation("io.ktor:ktor-client-websockets:$ktorVersion")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    // Use Java SDK instead of Kotlin SDK to avoid Ktor version conflicts
+    // Java SDK uses OkHttp directly, no Ktor dependency
+    implementation(libs.google.genai)
+
+    // SLF4J for logging (required by connection module's logger)
+    implementation(libs.slf4j.api)
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
-}
-
-configurations.all {
-    resolutionStrategy {
-        // Force Ktor 2.x for compatibility with google-genai-kotlin:0.5.0
-        force("io.ktor:ktor-client-core:$ktorVersion")
-        force("io.ktor:ktor-client-okhttp:$ktorVersion")
-        force("io.ktor:ktor-client-websockets:$ktorVersion")
-        force("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-        force("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-    }
 }
 

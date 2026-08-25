@@ -1,6 +1,6 @@
 package io.writeopia.api.genai.service
 
-import com.google.genai.kotlin.Client
+import com.google.genai.Client
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.connection.logger
 import kotlinx.coroutines.Dispatchers
@@ -29,11 +29,12 @@ class GenAiService(
     private var client: Client? = null
 
     private fun getClient(): Client {
-        return client ?: Client(
-            project = projectId,
-            location = location,
-            enterprise = true
-        ).also { client = it }
+        return client ?: Client.builder()
+            .project(projectId)
+            .location(location)
+            .enterprise(true)
+            .build()
+            .also { client = it }
     }
 
     fun isAvailable(): Boolean {
@@ -53,11 +54,12 @@ class GenAiService(
                 val genAiClient = getClient()
 
                 val response = genAiClient.models.generateContent(
-                    model = targetModel,
-                    text = prompt
+                    targetModel,
+                    prompt,
+                    null
                 )
 
-                val responseText = response.text
+                val responseText = response.text()
 
                 AiGenerateResponse(
                     response = responseText,
@@ -86,24 +88,28 @@ class GenAiService(
             val targetModel = modelName?.takeIf { it.isNotBlank() } ?: defaultModel
             val genAiClient = getClient()
 
-            val responseFlow = genAiClient.models.generateContentStream(
-                model = targetModel,
-                text = prompt
+            val responseStream = genAiClient.models.generateContentStream(
+                targetModel,
+                prompt,
+                null
             )
 
             val accumulatedText = StringBuilder()
 
-            responseFlow.collect { response ->
-                val chunk = response.text
+            // ResponseStream is iterable
+            responseStream.use { stream ->
+                for (response in stream) {
+                    val chunk = response.text()
 
-                if (chunk != null) {
-                    accumulatedText.append(chunk)
-                    emit(
-                        AiGenerateResponse(
-                            response = accumulatedText.toString(),
-                            done = false
+                    if (chunk != null) {
+                        accumulatedText.append(chunk)
+                        emit(
+                            AiGenerateResponse(
+                                response = accumulatedText.toString(),
+                                done = false
+                            )
                         )
-                    )
+                    }
                 }
             }
 
