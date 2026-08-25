@@ -2,6 +2,8 @@ package io.writeopia.notemenu.viewmodel.onlybe
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
@@ -22,6 +24,7 @@ import io.writeopia.notemenu.viewmodel.UserState
 import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.user.WriteopiaUser
@@ -376,12 +379,14 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         if (!hasSelectedNotes.value) return
 
         val selectedIds = selectedNotes.value.toList()
+        val documentCount = selectedIds.size
         hideAiOptions()
         clearSelection()
 
         viewModelScope.launch(Dispatchers.Default) {
             val token = authRepository.getAuthToken() ?: return@launch
             val workspace = authRepository.getWorkspace() ?: return@launch
+            val taskId = GenerateId.generate()
 
             val targetFolderId = when (notesNavigation.navigationType) {
                 NotesNavigationType.FOLDER -> notesNavigation.id
@@ -392,28 +397,36 @@ internal class OnlyBackendChooseNoteKmpViewModel(
                 DocumentSyncInfo(documentId = documentId, lastSyncedAt = null)
             }
 
-            val result = documentsApi.generateSummary(
-                documents = documents,
-                targetFolderId = targetFolderId,
-                workspaceId = workspace.id,
-                summaryTitle = null,
-                model = null,
-                token = token
-            )
+            AiTaskManager.singleton().enqueueTask(
+                id = taskId,
+                type = AiTaskType.SUMMARIZATION,
+                description = "Summarizing $documentCount document${if (documentCount > 1) "s" else ""}"
+            ) {
+                val result = documentsApi.generateSummary(
+                    documents = documents,
+                    targetFolderId = targetFolderId,
+                    workspaceId = workspace.id,
+                    summaryTitle = null,
+                    model = null,
+                    token = token,
+                    ignoreSyncCheck = true
+                )
 
-            when (result) {
-                is GenerateSummaryApiResult.Success -> {
-                    // Refresh the folder contents to show the new summary document
-                    loadFolderContents()
-                }
-                is GenerateSummaryApiResult.NeedsSync -> {
-                    // Documents need sync - but user said not to sync, so just log/ignore
-                }
-                is GenerateSummaryApiResult.GenAiUnavailable -> {
-                    // GenAI is not available
-                }
-                is GenerateSummaryApiResult.Error -> {
-                    // Handle error
+                when (result) {
+                    is GenerateSummaryApiResult.Success -> {
+                        // Refresh the folder contents to show the new summary document
+                        loadFolderContents()
+                        Result.success(Unit)
+                    }
+                    is GenerateSummaryApiResult.NeedsSync -> {
+                        Result.failure(Exception("Documents need sync"))
+                    }
+                    is GenerateSummaryApiResult.GenAiUnavailable -> {
+                        Result.failure(Exception("GenAI is not available"))
+                    }
+                    is GenerateSummaryApiResult.Error -> {
+                        Result.failure(Exception(result.message ?: "Unknown error"))
+                    }
                 }
             }
         }
