@@ -18,6 +18,8 @@ import io.writeopia.global.shell.di.SideMenuKmpInjector
 import io.writeopia.notemenu.di.NotesMenuWebInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
+import io.writeopia.auth.core.di.AuthCoreInjectionNeo
+import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
@@ -43,6 +45,11 @@ fun CreateAppInMemory() {
     WriteopiaConnectionInjector.setBaseUrl(
         "https://writeopia.io"
 //                        "http://localhost:8080"
+    )
+
+    GenAiInjection.initialize(
+        baseUrl = WriteopiaConnectionInjector.singleton().baseUrl(),
+        getAuthToken = { AuthCoreInjectionNeo.singleton().provideAuthRepository().getAuthToken() }
     )
 
     val uiConfigurationViewModel = UiConfigurationInjector.singleton()
@@ -124,6 +131,7 @@ fun CreateAppInMemory() {
                 useBackendOnly = true,
                 menuItemsRepository = NotesMenuWebInjection.singleton().provideMenuItemsRepository()
             ),
+            platformType = PlatformType.WEB,
         )
     }
 }

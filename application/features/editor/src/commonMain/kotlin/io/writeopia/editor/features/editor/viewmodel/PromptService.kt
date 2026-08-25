@@ -44,6 +44,22 @@ object PromptService {
         }
     }
 
+    /**
+     * GenAI-compatible version of documentPrompt that only needs the prompt text.
+     * Used for cloud AI services where model/URL are configured server-side.
+     */
+    suspend fun documentPromptGenAi(
+        targetMode: AiTargetMode,
+        promptFn: (String) -> Flow<ResultData<String>>,
+        writeopiaManager: WriteopiaStateManager
+    ) {
+        val (text, position) = getTextAndPosition(targetMode, writeopiaManager)
+
+        if (text == null) return
+
+        promptFn(text).handleStream(writeopiaManager, position)
+    }
+
     suspend fun promptWithMode(
         userId: String,
         targetMode: AiTargetMode,
@@ -111,6 +127,22 @@ object PromptService {
                 ollamaRepository.streamReply(model, prompt, url)
                     .handleStream(writeopiaManager, position)
             }
+        }
+    }
+
+    /**
+     * GenAI-compatible version of prompt that only needs the prompt text.
+     */
+    suspend fun promptGenAi(
+        prompt: String?,
+        writeopiaManager: WriteopiaStateManager,
+        streamFn: (String) -> Flow<ResultData<String>>,
+        promptPosition: Double? = null
+    ) {
+        val position = promptPosition ?: writeopiaManager.getNextPosition()
+
+        if (prompt != null && position != null) {
+            streamFn(prompt).handleStream(writeopiaManager, position)
         }
     }
 

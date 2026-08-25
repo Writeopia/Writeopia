@@ -291,29 +291,26 @@ fun SideEditorOptions(
                     tint = tint(SideMenuTab.TEXT_OPTIONS)
                 )
 
-                // Hide AI button for web platform
-                if (currentPlatform != PlatformType.WEB) {
-                    Icon(
-                        imageVector = WrIcons.ai,
-                        contentDescription = "AI",
-                        modifier = Modifier
-                            .padding(horizontal = spacing)
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(background(SideMenuTab.AI))
-                            .clickable {
-                                val menuType = if (menuType != SideMenuTab.AI) {
-                                    SideMenuTab.AI
-                                } else {
-                                    SideMenuTab.NONE
-                                }
-
-                                changeSideMenuTab(menuType)
+                Icon(
+                    imageVector = WrIcons.ai,
+                    contentDescription = "AI",
+                    modifier = Modifier
+                        .padding(horizontal = spacing)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(background(SideMenuTab.AI))
+                        .clickable {
+                            val menuType = if (menuType != SideMenuTab.AI) {
+                                SideMenuTab.AI
+                            } else {
+                                SideMenuTab.NONE
                             }
-                            .size(40.dp)
-                            .padding(9.dp),
-                        tint = tint(SideMenuTab.AI)
-                    )
-                }
+
+                            changeSideMenuTab(menuType)
+                        }
+                        .size(40.dp)
+                        .padding(9.dp),
+                    tint = tint(SideMenuTab.AI)
+                )
 
                 Spacer(modifier = Modifier.height(spacing))
 

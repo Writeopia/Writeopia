@@ -6,6 +6,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
+import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.core.folders.api.DocumentsApi
@@ -90,6 +91,7 @@ class NoteEditorKmpViewModel(
     private val documentToJson: DocumentToJson = DocumentToJson(),
     private val folderRepository: FolderRepository,
     private val ollamaRepository: OllamaRepository? = null,
+    private val genAiRepository: GenAiRepository? = null,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val copyManager: CopyManager,
@@ -751,40 +753,64 @@ class NoteEditorKmpViewModel(
     }
 
     override fun askAiWithMode(targetMode: AiTargetMode) {
-        if (ollamaRepository == null) return
-
-        aiJob = viewModelScope.launch(Dispatchers.Default) {
-            PromptService.promptWithMode(
-                authRepository.getUser().id,
-                targetMode,
-                writeopiaManager,
-                ollamaRepository
-            )
+        if (ollamaRepository != null) {
+            aiJob = viewModelScope.launch(Dispatchers.Default) {
+                PromptService.promptWithMode(
+                    authRepository.getUser().id,
+                    targetMode,
+                    writeopiaManager,
+                    ollamaRepository
+                )
+            }
+        } else if (genAiRepository != null) {
+            aiJob = viewModelScope.launch(Dispatchers.Default) {
+                val (text, position) = when (targetMode) {
+                    AiTargetMode.DOCUMENT -> writeopiaManager.getDocumentText() to writeopiaManager.lastPosition() + 1
+                    AiTargetMode.SELECTED_LINES -> writeopiaManager.getCurrentSelectionText() to (writeopiaManager.positionAfterSelection() ?: writeopiaManager.getNextPosition() ?: writeopiaManager.lastPosition() + 1)
+                    AiTargetMode.CURSOR -> writeopiaManager.getCurrentText() to (writeopiaManager.getNextPosition() ?: writeopiaManager.lastPosition() + 1)
+                }
+                if (text != null) {
+                    PromptService.promptGenAi(
+                        text,
+                        writeopiaManager,
+                        genAiRepository::streamGenerate,
+                        position
+                    )
+                }
+            }
         }
     }
 
     override fun aiSummary(targetMode: AiTargetMode) {
-        if (ollamaRepository == null) return
-
-        documentPrompt(targetMode, ollamaRepository::streamSummary)
+        if (ollamaRepository != null) {
+            documentPrompt(targetMode, ollamaRepository::streamSummary)
+        } else if (genAiRepository != null) {
+            documentPromptGenAi(targetMode, genAiRepository::streamSummary)
+        }
     }
 
     override fun aiActionPoints(targetMode: AiTargetMode) {
-        if (ollamaRepository == null) return
-
-        documentPrompt(targetMode, ollamaRepository::streamActionsPoints)
+        if (ollamaRepository != null) {
+            documentPrompt(targetMode, ollamaRepository::streamActionsPoints)
+        } else if (genAiRepository != null) {
+            documentPromptGenAi(targetMode, genAiRepository::streamActionPoints)
+        }
     }
 
     override fun aiFaq(targetMode: AiTargetMode) {
-        if (ollamaRepository == null) return
-
-        documentPrompt(targetMode, ollamaRepository::streamFaq)
+        if (ollamaRepository != null) {
+            documentPrompt(targetMode, ollamaRepository::streamFaq)
+        } else if (genAiRepository != null) {
+            documentPromptGenAi(targetMode, genAiRepository::streamFaq)
+        }
     }
 
     override fun aiTags(targetMode: AiTargetMode) {
-        if (ollamaRepository == null) return
-
-        documentPrompt(targetMode, ollamaRepository::streamTags)
+        if (ollamaRepository != null) {
+            documentPrompt(targetMode, ollamaRepository::streamTags)
+        } else if (genAiRepository != null) {
+            documentPromptGenAi(targetMode, genAiRepository::streamTags)
+        }
     }
 
     override fun aiSection(position: Double) {
@@ -949,6 +975,19 @@ class NoteEditorKmpViewModel(
                 promptFn = promptFn,
                 writeopiaManager = writeopiaManager,
                 ollamaRepository = ollamaRepository
+            )
+        }
+    }
+
+    private fun documentPromptGenAi(
+        targetMode: AiTargetMode,
+        promptFn: (String) -> Flow<ResultData<String>>
+    ) {
+        aiJob = viewModelScope.launch(Dispatchers.Default) {
+            PromptService.documentPromptGenAi(
+                targetMode = targetMode,
+                promptFn = promptFn,
+                writeopiaManager = writeopiaManager
             )
         }
     }
