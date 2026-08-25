@@ -226,6 +226,10 @@ fun DesktopNotesMenu(
             }
 
             val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
+            val currentPlatform = LocalPlatform.current
+
+            // Enable AI summary for desktop (with Ollama) or web (with GenAI backend)
+            val showAiSummary = ollamaConfigController != null || currentPlatform == PlatformType.WEB
 
             NotesSelectionMenu(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp)
@@ -234,7 +238,7 @@ fun DesktopNotesMenu(
                 onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
                 onCopy = chooseNoteViewModel::copySelectedNotes,
                 onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
-                onSummary = if (ollamaConfigController != null) chooseNoteViewModel::showAiOptions else null,
+                onSummary = if (showAiSummary) chooseNoteViewModel::showAiOptions else null,
                 onClose = chooseNoteViewModel::clearSelection,
                 shape = RoundedCornerShape(CornerSize(16.dp)),
                 exitAnimationOffset = 2.3F,

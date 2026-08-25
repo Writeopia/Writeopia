@@ -10,7 +10,9 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.api.GenerateSummaryApiResult
 import io.writeopia.core.folders.repository.MenuItemsRepository
+import io.writeopia.sdk.serialization.request.DocumentSyncInfo
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
@@ -371,11 +373,54 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun summarizeDocuments() {
-        // Not supported in backend-only mode
+        if (!hasSelectedNotes.value) return
+
+        val selectedIds = selectedNotes.value.toList()
+        hideAiOptions()
+        clearSelection()
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+
+            val targetFolderId = when (notesNavigation.navigationType) {
+                NotesNavigationType.FOLDER -> notesNavigation.id
+                else -> Folder.ROOT_PATH
+            }
+
+            val documents = selectedIds.map { documentId ->
+                DocumentSyncInfo(documentId = documentId, lastSyncedAt = null)
+            }
+
+            val result = documentsApi.generateSummary(
+                documents = documents,
+                targetFolderId = targetFolderId,
+                workspaceId = workspace.id,
+                summaryTitle = null,
+                model = null,
+                token = token
+            )
+
+            when (result) {
+                is GenerateSummaryApiResult.Success -> {
+                    // Refresh the folder contents to show the new summary document
+                    loadFolderContents()
+                }
+                is GenerateSummaryApiResult.NeedsSync -> {
+                    // Documents need sync - but user said not to sync, so just log/ignore
+                }
+                is GenerateSummaryApiResult.GenAiUnavailable -> {
+                    // GenAI is not available
+                }
+                is GenerateSummaryApiResult.Error -> {
+                    // Handle error
+                }
+            }
+        }
     }
 
     override fun showAiOptions() {
-        // Not supported in backend-only mode
+        _showAiOptionsState.value = true
     }
 
     override fun hideAiOptions() {
