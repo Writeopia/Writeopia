@@ -765,9 +765,23 @@ class NoteEditorKmpViewModel(
         } else if (genAiRepository != null) {
             aiJob = viewModelScope.launch(Dispatchers.Default) {
                 val (text, position) = when (targetMode) {
-                    AiTargetMode.DOCUMENT -> writeopiaManager.getDocumentText() to writeopiaManager.lastPosition() + 1
-                    AiTargetMode.SELECTED_LINES -> writeopiaManager.getCurrentSelectionText() to (writeopiaManager.positionAfterSelection() ?: writeopiaManager.getNextPosition() ?: writeopiaManager.lastPosition() + 1)
-                    AiTargetMode.CURSOR -> writeopiaManager.getCurrentText() to (writeopiaManager.getNextPosition() ?: writeopiaManager.lastPosition() + 1)
+                    AiTargetMode.DOCUMENT -> {
+                        writeopiaManager.getDocumentText() to
+                            writeopiaManager.lastPosition() + 1
+                    }
+
+                    AiTargetMode.SELECTED_LINES -> {
+                        val pos = writeopiaManager.positionAfterSelection()
+                            ?: writeopiaManager.getNextPosition()
+                            ?: writeopiaManager.lastPosition() + 1
+                        writeopiaManager.getCurrentSelectionText() to pos
+                    }
+
+                    AiTargetMode.CURSOR -> {
+                        val pos = writeopiaManager.getNextPosition()
+                            ?: writeopiaManager.lastPosition() + 1
+                        writeopiaManager.getCurrentText() to pos
+                    }
                 }
                 if (text != null) {
                     PromptService.promptGenAi(
