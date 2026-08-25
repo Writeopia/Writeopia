@@ -68,15 +68,11 @@ object DocumentsService {
         writeopiaDb: WriteopiaDbBackend,
         useAi: Boolean
     ): Boolean {
-        val parsedDocuments = documents.map { document ->
-            parseDocumentMarkdown(document)
-        }
-
-        parsedDocuments.forEach { document ->
+        documents.forEach { document ->
             writeopiaDb.saveDocument(document)
         }
 
-        return if (useAi) sendToAiHub(parsedDocuments, workspaceId) else true
+        return if (useAi) sendToAiHub(documents, workspaceId) else true
     }
 
     suspend fun receiveFolders(
@@ -166,8 +162,7 @@ object DocumentsService {
         writeopiaDb: WriteopiaDbBackend,
         useAi: Boolean
     ): Document {
-        val parsedDocument = parseDocumentMarkdown(document)
-        val documentWithWorkspace = parsedDocument.copy(
+        val documentWithWorkspace = document.copy(
             workspaceId = workspaceId,
             lastUpdatedAt = Clock.System.now(),
             lastSyncedAt = Clock.System.now()
@@ -563,7 +558,7 @@ object DocumentsService {
 
         // Process client changes
         for (change in request.changes) {
-            val clientStep = InlineMarkdownParser.parseMarkdown(change.storyStep.toModel())
+            val clientStep = change.storyStep.toModel()
             val clientTimestamp = change.storyStep.lastUpdatedAt ?: 0L
             val serverStepTimestamp = serverStepTimestamps[clientStep.id]
 
@@ -762,15 +757,17 @@ object DocumentsService {
         // Build content map
         val content = buildSummaryContent(title, summaryText)
 
-        val summaryDocument = Document(
-            id = documentId,
-            title = title,
-            content = content,
-            createdAt = now,
-            lastUpdatedAt = now,
-            lastSyncedAt = now,
-            parentId = targetFolderId,
-            workspaceId = workspaceId
+        val summaryDocument = parseDocumentMarkdown(
+            Document(
+                id = documentId,
+                title = title,
+                content = content,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                parentId = targetFolderId,
+                workspaceId = workspaceId
+            )
         )
 
         // Save the document
