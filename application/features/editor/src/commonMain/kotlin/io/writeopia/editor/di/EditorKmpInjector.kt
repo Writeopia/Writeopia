@@ -10,6 +10,7 @@ import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.di.InDocumentSearchInjection
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.di.OllamaInjection
+import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorKmpViewModel
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
@@ -59,6 +60,7 @@ class EditorKmpInjector private constructor(
     private val appConfigurationInjector: AppConfigurationInjector =
         AppConfigurationInjector.singleton(),
     private val ollamaInjection: OllamaInjection? = null,
+    private val genAiInjection: GenAiInjection? = null,
     private val inDocumentSearchInjection: InDocumentSearchInjection =
         InDocumentSearchInjection.singleton(),
     private val workspaceInjection: WorkspaceInjection =
@@ -108,6 +110,7 @@ class EditorKmpInjector private constructor(
                 .provideUiConfigurationRepository(),
             folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
             ollamaRepository = ollamaInjection?.provideRepository(),
+            genAiRepository = genAiInjection?.provideRepository(),
             keyboardEventFlow = keyboardEventFlow,
             copyManager = copyManager,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
@@ -220,6 +223,26 @@ class EditorKmpInjector private constructor(
             selectionState,
             keyboardEventFlow,
             ollamaInjection = ollamaInjection,
+            imageUploader = imageUploader,
+        )
+
+        fun web(
+            authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
+            repositoryInjection: RepositoryInjector = RepositoryInjector.singleton(),
+            connectionInjection: WriteopiaConnectionInjector =
+                WriteopiaConnectionInjector.singleton(),
+            selectionState: StateFlow<Boolean>,
+            keyboardEventFlow: Flow<KeyboardEvent>,
+            genAiInjection: GenAiInjection? = GenAiInjection.singleton(),
+            imageUploader: ImageUploader? = null,
+        ) = EditorKmpInjector(
+            authCoreInjection,
+            repositoryInjection,
+            connectionInjection,
+            selectionState,
+            keyboardEventFlow,
+            ollamaInjection = null,
+            genAiInjection = genAiInjection,
             imageUploader = imageUploader,
         )
     }

@@ -196,6 +196,11 @@ fun SideEditorOptions(
                         }
 
                         SideMenuTab.AI -> {
+                            val platform = LocalPlatform.current
+                            // Desktop uses Ollama (local AI) with model selection
+                            // Web uses GenAI (Gemini) without model selection
+                            val showModelSelection = platform != PlatformType.WEB
+
                             AiOptions(
                                 currentModel = currentModel,
                                 models = models,
@@ -205,7 +210,8 @@ fun SideEditorOptions(
                                 aiActionPoints = aiActionPoints,
                                 aiFaq = aiFaq,
                                 aiTags = aiTags,
-                                selectModel = selectModel
+                                selectModel = selectModel,
+                                showModelSelection = showModelSelection
                             )
                         }
 
@@ -291,29 +297,26 @@ fun SideEditorOptions(
                     tint = tint(SideMenuTab.TEXT_OPTIONS)
                 )
 
-                // Hide AI button for web platform
-                if (currentPlatform != PlatformType.WEB) {
-                    Icon(
-                        imageVector = WrIcons.ai,
-                        contentDescription = "AI",
-                        modifier = Modifier
-                            .padding(horizontal = spacing)
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(background(SideMenuTab.AI))
-                            .clickable {
-                                val menuType = if (menuType != SideMenuTab.AI) {
-                                    SideMenuTab.AI
-                                } else {
-                                    SideMenuTab.NONE
-                                }
-
-                                changeSideMenuTab(menuType)
+                Icon(
+                    imageVector = WrIcons.ai,
+                    contentDescription = "AI",
+                    modifier = Modifier
+                        .padding(horizontal = spacing)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(background(SideMenuTab.AI))
+                        .clickable {
+                            val menuType = if (menuType != SideMenuTab.AI) {
+                                SideMenuTab.AI
+                            } else {
+                                SideMenuTab.NONE
                             }
-                            .size(40.dp)
-                            .padding(9.dp),
-                        tint = tint(SideMenuTab.AI)
-                    )
-                }
+
+                            changeSideMenuTab(menuType)
+                        }
+                        .size(40.dp)
+                        .padding(9.dp),
+                    tint = tint(SideMenuTab.AI)
+                )
 
                 Spacer(modifier = Modifier.height(spacing))
 
@@ -1061,6 +1064,7 @@ private fun AiOptions(
     aiActionPoints: (AiTargetMode) -> Unit,
     aiFaq: (AiTargetMode) -> Unit,
     aiTags: (AiTargetMode) -> Unit,
+    showModelSelection: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     var selectedTargetMode by remember { mutableStateOf(AiTargetMode.DOCUMENT) }
@@ -1175,48 +1179,52 @@ private fun AiOptions(
             onClick = { aiTags(selectedTargetMode) }
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        // Model selection is only shown for desktop (Ollama)
+        // Web uses GenAI with server-side model configuration
+        if (showModelSelection) {
+            Spacer(modifier = Modifier.height(8.dp))
 
-        val currentModelValue by currentModel.collectAsState(WrStrings.noModelsFound())
+            val currentModelValue by currentModel.collectAsState(WrStrings.noModelsFound())
 
-        Title(WrStrings.aiModel())
+            Title(WrStrings.aiModel())
 
-        var showModels by remember {
-            mutableStateOf(false)
-        }
-
-        Spacer(modifier = Modifier.height(2.dp))
-
-        Text(
-            text = currentModelValue,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(4.dp).clickable {
-                showModels = !showModels
+            var showModels by remember {
+                mutableStateOf(false)
             }
-        )
 
-        val modelsValue by models.collectAsState(emptyList())
+            Spacer(modifier = Modifier.height(2.dp))
 
-        DropdownMenu(
-            expanded = showModels,
-            onDismissRequest = { showModels = false },
-            modifier = Modifier.background(MaterialTheme.colorScheme.background),
-            offset = DpOffset(y = 6.dp, x = 6.dp)
-        ) {
-            modelsValue.forEach { model ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = model,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                    },
-                    onClick = {
-                        selectModel(model)
-                    }
-                )
+            Text(
+                text = currentModelValue,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(4.dp).clickable {
+                    showModels = !showModels
+                }
+            )
+
+            val modelsValue by models.collectAsState(emptyList())
+
+            DropdownMenu(
+                expanded = showModels,
+                onDismissRequest = { showModels = false },
+                modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                offset = DpOffset(y = 6.dp, x = 6.dp)
+            ) {
+                modelsValue.forEach { model ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = model,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                        },
+                        onClick = {
+                            selectModel(model)
+                        }
+                    )
+                }
             }
         }
 
