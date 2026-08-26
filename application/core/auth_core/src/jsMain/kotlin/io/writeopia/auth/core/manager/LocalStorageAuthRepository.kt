@@ -12,6 +12,10 @@ import kotlin.time.Instant
 
 internal class LocalStorageAuthRepository : AuthRepository {
 
+    // Session-scoped storage for sensitive reset flow data (not persisted to localStorage)
+    private var forgotPasswordEmail: String? = null
+    private var forgotPasswordCode: String? = null
+
     override suspend fun getUser(): WriteopiaUser {
         val userId = localStorage.getItem(KEY_USER_ID) ?: return WriteopiaUser.disconnectedUser()
         val email = localStorage.getItem(KEY_USER_EMAIL) ?: ""
@@ -42,6 +46,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
         localStorage.removeItem(KEY_WORKSPACE_LAST_SYNC)
         localStorage.removeItem(KEY_WORKSPACE_SELECTED)
         localStorage.removeItem(KEY_WORKSPACE_ROLE)
+        clearForgotPasswordData()
 
         return ResultData.Complete(true)
     }
@@ -122,22 +127,20 @@ internal class LocalStorageAuthRepository : AuthRepository {
     }
 
     override suspend fun saveForgotPasswordEmail(email: String) {
-        localStorage.setItem(KEY_FORGOT_PASSWORD_EMAIL, email)
+        forgotPasswordEmail = email
     }
 
-    override suspend fun getForgotPasswordEmail(): String? =
-        localStorage.getItem(KEY_FORGOT_PASSWORD_EMAIL)
+    override suspend fun getForgotPasswordEmail(): String? = forgotPasswordEmail
 
     override suspend fun saveForgotPasswordCode(code: String) {
-        localStorage.setItem(KEY_FORGOT_PASSWORD_CODE, code)
+        forgotPasswordCode = code
     }
 
-    override suspend fun getForgotPasswordCode(): String? =
-        localStorage.getItem(KEY_FORGOT_PASSWORD_CODE)
+    override suspend fun getForgotPasswordCode(): String? = forgotPasswordCode
 
     override suspend fun clearForgotPasswordData() {
-        localStorage.removeItem(KEY_FORGOT_PASSWORD_EMAIL)
-        localStorage.removeItem(KEY_FORGOT_PASSWORD_CODE)
+        forgotPasswordEmail = null
+        forgotPasswordCode = null
     }
 
     companion object {
@@ -155,7 +158,5 @@ internal class LocalStorageAuthRepository : AuthRepository {
         private const val KEY_WORKSPACE_SELECTED = "writeopia_workspace_selected"
         private const val KEY_WORKSPACE_ROLE = "writeopia_workspace_role"
         private const val KEY_PENDING_CONFIRMATION_EMAIL = "writeopia_pending_confirmation_email"
-        private const val KEY_FORGOT_PASSWORD_EMAIL = "writeopia_forgot_password_email"
-        private const val KEY_FORGOT_PASSWORD_CODE = "writeopia_forgot_password_code"
     }
 }

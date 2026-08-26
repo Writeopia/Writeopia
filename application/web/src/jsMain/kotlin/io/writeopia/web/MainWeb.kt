@@ -113,7 +113,8 @@ fun CreateAppInMemory() {
     val keyboardEventFlow = MutableStateFlow<KeyboardEvent?>(null)
 
     RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
-    val baseUrl = "https://writeopia.io/dev"
+    // Use the current origin for API calls (works for both production and development)
+    val baseUrl = window.location.origin
     WriteopiaConnectionInjector.setBaseUrl(baseUrl)
     WriteopiaConnectionInjector.setDisableWebsocket(true)
 
