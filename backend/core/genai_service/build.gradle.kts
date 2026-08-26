@@ -19,6 +19,17 @@ dependencies {
     implementation(project(":backend:core:connection"))
 
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.google.genai.kotlin)
     implementation(libs.kotlinx.serialization.json)
+
+    // Use Java SDK instead of Kotlin SDK to avoid Ktor version conflicts
+    // Java SDK uses OkHttp directly, no Ktor dependency
+    implementation(libs.google.genai)
+
+    // SLF4J for logging (required by connection module's logger)
+    implementation(libs.slf4j.api)
+
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
 }
+

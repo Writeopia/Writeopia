@@ -7,7 +7,8 @@ data class GenerateSummaryRequest(
     val documents: List<DocumentSyncInfo>,
     val targetFolderId: String,
     val summaryTitle: String? = null,
-    val model: String? = null
+    val model: String? = null,
+    val ignoreSyncCheck: Boolean = false
 )
 
 @Serializable

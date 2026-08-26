@@ -46,6 +46,7 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.markdown.InlineMarkdownParser
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -649,6 +650,7 @@ object DocumentsService {
         workspaceId: String,
         summaryTitle: String?,
         model: String?,
+        ignoreSyncCheck: Boolean,
         genAiService: GenAiService,
         writeopiaDb: WriteopiaDbBackend
     ): GenerateSummaryResult {
@@ -676,7 +678,7 @@ object DocumentsService {
             }
         }
 
-        // Fetch all documents and check sync status
+        // Fetch all documents and check sync status (unless ignoreSyncCheck is true)
         val unsyncedDocuments = mutableListOf<UnsyncedDocumentInfo>()
         val documentsToProcess = mutableListOf<Document>()
 
@@ -686,27 +688,32 @@ object DocumentsService {
                 return GenerateSummaryResult.NotFound("Document not found: ${docSyncInfo.documentId}")
             }
 
-            // Check sync status: compare client's lastSyncedAt with server's lastSyncedAt
-            // They must match for the document to be considered synced
-            val serverLastSyncedAt = document.lastSyncedAt?.toEpochMilliseconds()
-            val clientLastSyncedAt = docSyncInfo.lastSyncedAt
-
-            // Document is synced if both lastSyncedAt values match
-            val isSynced = serverLastSyncedAt != null &&
-                           clientLastSyncedAt != null &&
-                           serverLastSyncedAt == clientLastSyncedAt
-
-            if (!isSynced) {
-                unsyncedDocuments.add(
-                    UnsyncedDocumentInfo(
-                        documentId = document.id,
-                        documentTitle = document.title,
-                        lastUpdatedAt = document.lastUpdatedAt.toEpochMilliseconds(),
-                        lastSyncedAt = serverLastSyncedAt
-                    )
-                )
-            } else {
+            if (ignoreSyncCheck) {
+                // Web clients skip sync check - they always use server version
                 documentsToProcess.add(document)
+            } else {
+                // Check sync status: compare client's lastSyncedAt with server's lastSyncedAt
+                // They must match for the document to be considered synced
+                val serverLastSyncedAt = document.lastSyncedAt?.toEpochMilliseconds()
+                val clientLastSyncedAt = docSyncInfo.lastSyncedAt
+
+                // Document is synced if both lastSyncedAt values match
+                val isSynced = serverLastSyncedAt != null &&
+                               clientLastSyncedAt != null &&
+                               serverLastSyncedAt == clientLastSyncedAt
+
+                if (!isSynced) {
+                    unsyncedDocuments.add(
+                        UnsyncedDocumentInfo(
+                            documentId = document.id,
+                            documentTitle = document.title,
+                            lastUpdatedAt = document.lastUpdatedAt.toEpochMilliseconds(),
+                            lastSyncedAt = serverLastSyncedAt
+                        )
+                    )
+                } else {
+                    documentsToProcess.add(document)
+                }
             }
         }
 
@@ -750,15 +757,17 @@ object DocumentsService {
         // Build content map
         val content = buildSummaryContent(title, summaryText)
 
-        val summaryDocument = Document(
-            id = documentId,
-            title = title,
-            content = content,
-            createdAt = now,
-            lastUpdatedAt = now,
-            lastSyncedAt = now,
-            parentId = targetFolderId,
-            workspaceId = workspaceId
+        val summaryDocument = parseDocumentMarkdown(
+            Document(
+                id = documentId,
+                title = title,
+                content = content,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                parentId = targetFolderId,
+                workspaceId = workspaceId
+            )
         )
 
         // Save the document
@@ -836,6 +845,17 @@ object DocumentsService {
         )
 
         return content
+    }
+
+    /**
+     * Parses markdown syntax in all StorySteps of a document.
+     * Converts markdown markers (bold, italic, URLs) to SpanInfo objects.
+     */
+    private fun parseDocumentMarkdown(document: Document): Document {
+        val parsedContent = document.content.mapValues { (_, storyStep) ->
+            InlineMarkdownParser.parseMarkdown(storyStep)
+        }
+        return document.copy(content = parsedContent)
     }
 
     /**

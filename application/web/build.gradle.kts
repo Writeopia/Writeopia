@@ -35,6 +35,7 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.material3)
 
+                implementation(project(":writeopia"))
                 implementation(project(":writeopia_ui"))
 
                 implementation(project(":plugins:writeopia_persistence_core"))
