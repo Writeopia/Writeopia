@@ -1,5 +1,6 @@
 [versions]
 coilVersion = "3.5.0"
+googleGenai = "1.67.0"
 media3 = "1.11.0"
 espressoCore = "3.7.0"
 firebaseAdmin = "9.10.0"
@@ -19,6 +20,7 @@ room = "2.8.4"
 agp = "9.3.0"
 kotlin = "2.4.10"
 composeTest = "1.11.4"
+slf4jApi = "2.0.18"
 webWorkerDriver = "2.2.1"
 mockk = "1.14.11"
 sqldelight = "2.3.2"
@@ -35,6 +37,7 @@ embedded-postgres = "2.2.2"
 publish = "0.33.0"
 lifecycleViewmodelCompose = "2.11.0"
 jna = "5.19.1"
+googleGenAiKotlin = "0.5.0"
 compileSdk = "37"
 targetSdk = "37"
 minSdk = "26"
@@ -54,6 +57,8 @@ firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = 
 google-cloud-bom = { module = "com.google.cloud:libraries-bom", version.ref = "googleCloudBom" }
 google-cloud-storage = { module = "com.google.cloud:google-cloud-storage" }
 google-cloud-run = { module = "com.google.cloud:google-cloud-run" }
+google-genai = { module = "com.google.genai:google-genai", version.ref = "googleGenai" }
+google-genai-kotlin = { module = "com.google.genai:google-genai-kotlin", version.ref = "googleGenAiKotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
@@ -89,6 +94,7 @@ room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "
 room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4jApi" }
 sqldelight-jvm = { group = "app.cash.sqldelight", name = "sqlite-driver", version.ref = "sqldelight" }
 sqldelight-dialect-postgres = { group = "app.cash.sqldelight", name = "postgresql-dialect", version.ref = "sqldelight" }
 sqldelight-dialect-sqlite = { group = "app.cash.sqldelight", name = "sqlite-3-30-dialect", version.ref = "sqldelight" }

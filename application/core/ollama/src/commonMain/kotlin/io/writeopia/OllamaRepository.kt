@@ -10,6 +10,7 @@ import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.sync.Mutex
 
 private const val SUGGESTION_PROMPT =
     """
@@ -21,20 +22,22 @@ class OllamaRepository(
     private val ollamaDao: OllamaDao?
 ) : AiClient {
 
-    private var generatingListItems = false
+    private val generateListItemsMutex = Mutex()
 
     override suspend fun generateListItems(
         model: String,
         context: String,
         url: String
     ): ResultData<List<String>> {
-        try {
-            if (generatingListItems) return ResultData.Loading()
+        // Use tryLock to return Loading if another call is in progress
+        if (!generateListItemsMutex.tryLock()) {
+            return ResultData.Loading()
+        }
 
-            generatingListItems = true
+        return try {
             val result = ollamaApi.generateReply(model, "$SUGGESTION_PROMPT $context", url)
 
-            return if (result.done == true && result.response?.isNotEmpty() == true) {
+            if (result.done == true && result.response?.isNotEmpty() == true) {
                 result.response
                     .split("\n")
                     .filter { line -> line.trim().startsWith("-") }
@@ -47,17 +50,14 @@ class OllamaRepository(
                 ResultData.Error()
             }
         } catch (e: Exception) {
-            return ResultData.Error()
+            ResultData.Error(e)
         } finally {
-            generatingListItems = false
+            generateListItemsMutex.unlock()
         }
     }
 
-    suspend fun generateReply(model: String, prompt: String, url: String): String = ollamaApi.generateReply(
-        model,
-        prompt,
-        url
-    ).response ?: ""
+    suspend fun generateReply(model: String, prompt: String, url: String): String =
+        ollamaApi.generateReply(model, prompt, url).response ?: ""
 
     suspend fun generateCompleteSummary(
         model: String,

@@ -21,13 +21,17 @@ import io.writeopia.requests.OllamaGenerateRequest
 import io.writeopia.responses.DownloadModelResponse
 import io.writeopia.responses.OllamaResponse
 import io.writeopia.sdk.models.utils.ResultData
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import kotlin.coroutines.cancellation.CancellationException
 
 private const val SUMMARY_PROMPT =
     "A user has made a request. Summarize the following text while preserving its key points and main ideas. Use at most 12 lines. Keep the summary concise and clear. If the text contains multiple sections, highlight the most important aspects of each. Maintain the original tone and intent where possible. Detect the language of the text and write in the same language"
@@ -67,44 +71,38 @@ class OllamaApi(
     fun downloadModel(
         model: String,
         url: String,
-    ): Flow<ResultData<DownloadModelResponse>> = flow {
-        try {
-            client.preparePost {
-                url("$url/api/pull")
-                contentType(ContentType.Application.Json)
-                setBody(DownloadModelRequest(model))
-            }.execute { response ->
-                try {
-                    val channel = response.body<ByteReadChannel>()
+    ): Flow<ResultData<DownloadModelResponse>> = flow<ResultData<DownloadModelResponse>> {
+        client.preparePost {
+            url("$url/api/pull")
+            contentType(ContentType.Application.Json)
+            setBody(DownloadModelRequest(model))
+        }.execute { response ->
+            val channel = response.body<ByteReadChannel>()
 
-                    while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
-                        val line = channel.readUTF8Line()
-                            ?.takeUnless { it.isEmpty() }
-                            ?: continue
+            while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
+                val line = channel.readUTF8Line()
+                    ?.takeUnless { it.isEmpty() }
+                    ?: continue
 
-                        val parsed: DownloadModelResponse =
-                            json.decodeFromString<DownloadModelResponse>(line)
-                                .copy(modelName = model)
+                val parsed: DownloadModelResponse =
+                    json.decodeFromString<DownloadModelResponse>(line)
+                        .copy(modelName = model)
 
-                        if (parsed.error?.isNotEmpty() == true) {
-                            emit(ResultData.Error(RuntimeException("Error - ${parsed.error}")))
-                            break
-                        }
+                if (parsed.error?.isNotEmpty() == true) {
+                    throw OllamaException("Error - ${parsed.error}")
+                }
 
-                        emit(ResultData.InProgress(parsed))
+                emit(ResultData.InProgress(parsed))
 
-                        if (parsed.status == "success") {
-                            emit(ResultData.Complete(parsed))
-                            break
-                        }
-                    }
-                } catch (e: Exception) {
-                    emit(ResultData.Error(e))
+                if (parsed.status == "success") {
+                    emit(ResultData.Complete(parsed))
+                    break
                 }
             }
-        } catch (e: Exception) {
-            emit(ResultData.Error(e))
         }
+    }.catch { e ->
+        if (e is CancellationException) throw e
+        emit(ResultData.Error<DownloadModelResponse>(e.toException()))
     }
 
     suspend fun removeModel(
@@ -125,45 +123,49 @@ class OllamaApi(
         }
     }
 
+    /**
+     * Streams reply from Ollama, delivering results incrementally as they arrive.
+     * Uses callbackFlow to safely emit from within the HTTP execute callback,
+     * preserving real-time streaming behavior for callers.
+     */
     fun streamReply(
         model: String,
         prompt: String,
         url: String
-    ): Flow<ResultData<String>> =
-        flow {
-            try {
-                client.preparePost {
-                    url("$url/api/${EndPoints.ollamaGenerate()}")
-                    contentType(ContentType.Application.Json)
-                    setBody(OllamaGenerateRequest(model, prompt, true))
-                }.execute { response ->
-                    try {
-                        val stringBuilder = StringBuilder()
-                        val channel = response.body<ByteReadChannel>()
+    ): Flow<ResultData<String>> = callbackFlow {
+        try {
+            client.preparePost {
+                url("$url/api/${EndPoints.ollamaGenerate()}")
+                contentType(ContentType.Application.Json)
+                setBody(OllamaGenerateRequest(model, prompt, true))
+            }.execute { response ->
+                val stringBuilder = StringBuilder()
+                val channel = response.body<ByteReadChannel>()
 
-                        while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
-                            val line =
-                                channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
+                while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
+                    val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
 
-                            val value: OllamaResponse = json.decodeFromString(line)
+                    val value: OllamaResponse = json.decodeFromString(line)
 
-                            if (value.error?.isNotEmpty() == true) {
-                                emit(ResultData.Error(RuntimeException(value.error)))
-                                break
-                            }
-
-                            stringBuilder.append(value.response)
-
-                            emit(ResultData.Complete(stringBuilder.toString()))
-                        }
-                    } catch (e: Exception) {
-                        emit(ResultData.Error(e))
+                    if (value.error?.isNotEmpty() == true) {
+                        throw OllamaException(value.error)
                     }
+
+                    stringBuilder.append(value.response)
+
+                    // Emit immediately for incremental delivery
+                    trySend(ResultData.Complete(stringBuilder.toString()))
                 }
-            } catch (e: Exception) {
-                emit(ResultData.Error(e))
             }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            trySend(ResultData.Error(e.toException()))
         }
+
+        close()
+        awaitClose()
+    }
 
     fun streamSummary(
         model: String,
@@ -199,27 +201,26 @@ class OllamaApi(
         url: String,
         markdownResult: Boolean = false,
     ): String {
-        val prompt = buildString {
+        val finalPrompt = buildString {
             append(SUMMARY_PROMPT_COMPLETE)
             if (markdownResult) append(" $MARKDOWN_RESULT")
             append(": \n ```\n$prompt\n```")
         }
 
-        return generateReply(model, prompt, url).response ?: ""
+        return generateReply(model, finalPrompt, url).response ?: ""
     }
 
-    fun getModelsAsFlow(url: String): Flow<ResultData<ModelsResponse>> = flow {
-        try {
-            emit(ResultData.Loading())
+    fun getModelsAsFlow(url: String): Flow<ResultData<ModelsResponse>> = flow<ResultData<ModelsResponse>> {
+        emit(ResultData.Loading())
 
-            val request = client.get("${url.trim()}/${EndPoints.ollamaModels()}") {
-                contentType(ContentType.Application.Json)
-            }
-
-            emit(ResultData.Complete(request.body()))
-        } catch (e: Exception) {
-            emit(ResultData.Error(e))
+        val request = client.get("${url.trim()}/${EndPoints.ollamaModels()}") {
+            contentType(ContentType.Application.Json)
         }
+
+        emit(ResultData.Complete(request.body()))
+    }.catch { e ->
+        if (e is CancellationException) throw e
+        emit(ResultData.Error<ModelsResponse>(e.toException()))
     }
 
     suspend fun getModels(url: String): ResultData<ModelsResponse> =
@@ -237,3 +238,14 @@ class OllamaApi(
         fun defaultUrl() = "http://localhost:11434"
     }
 }
+
+/**
+ * Exception for Ollama API errors returned in the response body.
+ */
+class OllamaException(message: String) : Exception(message)
+
+/**
+ * Converts a Throwable to an Exception for use with ResultData.Error.
+ */
+private fun Throwable.toException(): Exception =
+    this as? Exception ?: Exception(this.message, this)
