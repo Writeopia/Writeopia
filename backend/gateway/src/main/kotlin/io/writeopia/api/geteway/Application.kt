@@ -26,11 +26,12 @@ fun Application.module(
     writeopiaDb: WriteopiaDbBackend? = null,
     useAi: Boolean = System.getenv("WRITEOPIA_USE_AI")?.toBoolean() ?: false,
     debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false,
+    stagingMode: Boolean = System.getenv("WRITEOPIA_STAGING_MODE")?.toBoolean() ?: false,
     adminKey: String? = System.getenv("ADMIN_KEY")
 ) {
     val db = writeopiaDb ?: configurePersistence()
-    logger.info("debug: $debugMode")
-    installCORS()
+    logger.info("debug: $debugMode, staging: $stagingMode")
+    installCORS(stagingMode)
     installAuth()
     configureRouting(db, useAi, debugMode = debugMode, adminKey = adminKey)
     configureSerialization()
@@ -38,10 +39,16 @@ fun Application.module(
     configureHTTP()
 }
 
-fun Application.installCORS() {
+fun Application.installCORS(stagingMode: Boolean = false) {
     install(CORS) {
         allowHost("writeopia.io", schemes = listOf("https"))
         allowHost("app.writeopia.io", schemes = listOf("https"))
+
+        // Allow any origin in staging mode for local development
+        if (stagingMode) {
+            anyHost()
+        }
+
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
         allowHeader("X-Admin-KEY")
