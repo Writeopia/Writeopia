@@ -35,6 +35,8 @@ import io.writeopia.global.shell.di.SideMenuKmpInjector
 import io.writeopia.notemenu.di.NotesMenuWebInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
+import io.writeopia.auth.core.di.AuthCoreInjectionNeo
+import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
@@ -113,10 +115,16 @@ fun CreateAppInMemory() {
     val keyboardEventFlow = MutableStateFlow<KeyboardEvent?>(null)
 
     RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
-    // Use the current origin for API calls (works for both production and development)
     val baseUrl = window.location.origin
     WriteopiaConnectionInjector.setBaseUrl(baseUrl)
     WriteopiaConnectionInjector.setDisableWebsocket(true)
+
+    // Initialize GenAI (Gemini) for the webapp
+    val authRepository = AuthCoreInjectionNeo.singleton().provideAuthRepository()
+    GenAiInjection.initialize(
+        baseUrl = baseUrl,
+        getAuthToken = authRepository::getAuthToken
+    )
 
     val uiConfigurationViewModel = UiConfigurationInjector.singleton()
         .provideUiConfigurationViewModel()
