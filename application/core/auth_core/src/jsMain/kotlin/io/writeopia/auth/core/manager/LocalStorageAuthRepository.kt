@@ -47,6 +47,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
         localStorage.removeItem(KEY_WORKSPACE_SELECTED)
         localStorage.removeItem(KEY_WORKSPACE_ROLE)
         clearForgotPasswordData()
+        clearPendingConfirmationEmail()
 
         return ResultData.Complete(true)
     }
