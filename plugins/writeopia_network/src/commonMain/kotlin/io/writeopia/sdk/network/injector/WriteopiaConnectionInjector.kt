@@ -2,7 +2,6 @@ package io.writeopia.sdk.network.injector
 
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
@@ -18,10 +17,16 @@ import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import kotlinx.serialization.json.Json
 
+private val consoleLogger = object : Logger {
+    override fun log(message: String) {
+        println("[Writeopia HTTP] $message")
+    }
+}
+
 class WriteopiaConnectionInjector private constructor(
     private val baseUrl: String,
 //    private val bearerTokenHandler: BearerTokenHandler,
-    private val apiLogger: Logger = Logger.Companion.DEFAULT,
+    private val apiLogger: Logger = consoleLogger,
     private val client: HttpClient =
         ApiInjectorDefaults.httpClient(
 //            bearerTokenHandler = bearerTokenHandler,
@@ -80,7 +85,7 @@ private object ApiInjectorDefaults {
 
         install(Logging) {
             logger = apiLogger
-            level = LogLevel.ALL
+            level = LogLevel.HEADERS
             sanitizeHeader { header -> header == HttpHeaders.Authorization }
         }
 

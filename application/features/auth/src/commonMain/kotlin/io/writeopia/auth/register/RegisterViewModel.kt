@@ -101,15 +101,18 @@ internal class RegisterViewModel(
                         authRepository.saveUser(user = user, selected = true)
 
                         // Check if email confirmation is required
-                        if (!result.data.enabled) {
-                            // Save pending confirmation email for the confirmation screen
-                            authRepository.savePendingConfirmationEmail(_email.value)
-                            result.map { true }
-                        } else {
+                        if (result.data.emailConfirmationRequired) {
+                            // If we have an admin key, enable the user directly
                             EnvUtils.getAdminKey()?.let { adminKey ->
                                 authApi.enableUser(_email.value, adminKey)
-                                    .map { true }
-                            } ?: result.map { true }
+                                ResultData.Complete(true)
+                            } ?: run {
+                                // Save pending confirmation email for the confirmation screen
+                                authRepository.savePendingConfirmationEmail(_email.value)
+                                ResultData.Complete(true)
+                            }
+                        } else {
+                            ResultData.Complete(true)
                         }
                     }
 

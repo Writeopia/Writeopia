@@ -12,7 +12,7 @@ import kotlin.time.Instant
 
 internal class LocalStorageAuthRepository : AuthRepository {
 
-    private var pendingConfirmationEmail: String? = null
+    // Session-scoped storage for sensitive reset flow data (not persisted to localStorage)
     private var forgotPasswordEmail: String? = null
     private var forgotPasswordCode: String? = null
 
@@ -46,6 +46,8 @@ internal class LocalStorageAuthRepository : AuthRepository {
         localStorage.removeItem(KEY_WORKSPACE_LAST_SYNC)
         localStorage.removeItem(KEY_WORKSPACE_SELECTED)
         localStorage.removeItem(KEY_WORKSPACE_ROLE)
+        clearForgotPasswordData()
+        clearPendingConfirmationEmail()
 
         return ResultData.Complete(true)
     }
@@ -115,13 +117,14 @@ internal class LocalStorageAuthRepository : AuthRepository {
     }
 
     override suspend fun savePendingConfirmationEmail(email: String) {
-        pendingConfirmationEmail = email
+        localStorage.setItem(KEY_PENDING_CONFIRMATION_EMAIL, email)
     }
 
-    override suspend fun getPendingConfirmationEmail(): String? = pendingConfirmationEmail
+    override suspend fun getPendingConfirmationEmail(): String? =
+        localStorage.getItem(KEY_PENDING_CONFIRMATION_EMAIL)
 
     override suspend fun clearPendingConfirmationEmail() {
-        pendingConfirmationEmail = null
+        localStorage.removeItem(KEY_PENDING_CONFIRMATION_EMAIL)
     }
 
     override suspend fun saveForgotPasswordEmail(email: String) {
@@ -155,5 +158,6 @@ internal class LocalStorageAuthRepository : AuthRepository {
         private const val KEY_WORKSPACE_LAST_EVENT_SYNC = "writeopia_workspace_last_event_sync"
         private const val KEY_WORKSPACE_SELECTED = "writeopia_workspace_selected"
         private const val KEY_WORKSPACE_ROLE = "writeopia_workspace_role"
+        private const val KEY_PENDING_CONFIRMATION_EMAIL = "writeopia_pending_confirmation_email"
     }
 }

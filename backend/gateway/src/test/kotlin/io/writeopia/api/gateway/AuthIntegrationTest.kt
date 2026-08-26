@@ -23,6 +23,7 @@ import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
+import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import kotlin.random.Random
 import kotlin.test.AfterTest
@@ -270,7 +271,7 @@ class AuthIntegrationTest {
         }
 
         assertEquals(HttpStatusCode.Created, response.status)
-        assertNotNull(response.body<AuthResponse>().writeopiaUser)
+        assertNotNull(response.body<RegisterResponse>().writeopiaUser)
     }
 
     @Test
@@ -294,7 +295,7 @@ class AuthIntegrationTest {
         }
 
         assertEquals(HttpStatusCode.Created, response.status)
-        assertNotNull(response.body<AuthResponse>().writeopiaUser)
+        assertNotNull(response.body<RegisterResponse>().writeopiaUser)
 
         val response1 = client.post("api/auth/login") {
             contentType(ContentType.Application.Json)
@@ -302,7 +303,7 @@ class AuthIntegrationTest {
         }
 
         assertEquals(HttpStatusCode.OK, response1.status)
-        assertNotNull(response.body<AuthResponse>().writeopiaUser)
+        assertNotNull(response1.body<AuthResponse>().writeopiaUser)
     }
 
     @Test

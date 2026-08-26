@@ -31,6 +31,7 @@ import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
+import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
@@ -117,12 +118,18 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 if (created) {
                     call.respond(
                         HttpStatusCode.Created,
-                        AuthResponse(null, wUser.toApi(), enabled = false),
+                        RegisterResponse(
+                            writeopiaUser = wUser.toApi(),
+                            emailConfirmationRequired = true
+                        ),
                     )
                 } else {
                     call.respond(
                         HttpStatusCode.InternalServerError,
-                        AuthResponse(null, wUser.toApi(), enabled = false),
+                        RegisterResponse(
+                            writeopiaUser = wUser.toApi(),
+                            emailConfirmationRequired = true
+                        ),
                     )
                 }
             } else {

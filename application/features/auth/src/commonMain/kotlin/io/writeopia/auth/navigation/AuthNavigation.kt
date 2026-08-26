@@ -39,7 +39,8 @@ import kotlin.time.ExperimentalTime
 fun NavGraphBuilder.startScreen(
     navigationController: NavController,
     colorTheme: StateFlow<ColorThemeOption?>,
-    authInjection: AuthInjection = AuthInjection.singleton()
+    authInjection: AuthInjection = AuthInjection.singleton(),
+    isWeb: Boolean = false
 ) {
     composable(route = Destinations.START_APP.id) {
         val authMenuViewModel: AuthMenuViewModel =
@@ -47,17 +48,24 @@ fun NavGraphBuilder.startScreen(
 
         IntroScreen(colorTheme.value)
 
-        LaunchedEffect(Unit) {
+        LaunchedEffect(isWeb) {
             authMenuViewModel.isLoggedIn().collect { loggedIn ->
                 delay(300)
-                navigationController.navigate(
-                    when (loggedIn) {
-                        LoginStatus.OFFLINE_NOT_CHOSEN -> Destinations.AUTH_MENU_INNER_NAVIGATION.id
-                        LoginStatus.CHOOSE_WORKSPACE -> Destinations.CHOOSE_WORKSPACE.id
-                        LoginStatus.EMAIL_NOT_CONFIRMED -> Destinations.EMAIL_CONFIRM.id
-                        LoginStatus.ONLINE, LoginStatus.OFFLINE_CHOSEN -> Destinations.MAIN_APP.id
-                    }
-                )
+
+                // On web, treat OFFLINE_CHOSEN as needing to login since web is backend-only
+                val effectiveStatus = if (isWeb && loggedIn == LoginStatus.OFFLINE_CHOSEN) {
+                    LoginStatus.OFFLINE_NOT_CHOSEN
+                } else {
+                    loggedIn
+                }
+
+                val destination = when (effectiveStatus) {
+                    LoginStatus.OFFLINE_NOT_CHOSEN -> Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                    LoginStatus.CHOOSE_WORKSPACE -> Destinations.CHOOSE_WORKSPACE.id
+                    LoginStatus.EMAIL_NOT_CONFIRMED -> Destinations.EMAIL_CONFIRM.id
+                    LoginStatus.ONLINE, LoginStatus.OFFLINE_CHOSEN -> Destinations.MAIN_APP.id
+                }
+                navigationController.navigate(destination)
             }
         }
     }
