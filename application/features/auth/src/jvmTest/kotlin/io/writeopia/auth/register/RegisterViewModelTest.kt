@@ -8,7 +8,7 @@ import io.mockk.mockk
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.sdk.models.utils.ResultData
-import io.writeopia.sdk.serialization.data.auth.AuthResponse
+import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,12 +48,12 @@ class RegisterViewModelTest {
             name = "Test User",
             email = "test@example.com"
         )
-        val authResponse = AuthResponse(
+        val registerResponse = RegisterResponse(
             writeopiaUser = testUser,
-            token = "jwt-token"
+            emailConfirmationRequired = true
         )
 
-        coEvery { authApi.register(any(), any(), any(), any()) } returns ResultData.Complete(authResponse)
+        coEvery { authApi.register(any(), any(), any(), any()) } returns ResultData.Complete(registerResponse)
         coEvery { authRepository.saveUser(any(), any()) } just Runs
         coEvery { authApi.enableUser(any(), any()) } returns ResultData.Complete(Unit)
 
