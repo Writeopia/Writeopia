@@ -18,12 +18,15 @@ jobs:
           distribution: zulu
           java-version: '21'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
       - name: Decode Keystore
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > upload-keystore.jks
 
       - name: Build Release AAB
-        run: ./gradlew :application:androidApp:bundleRelease --no-daemon
+        run: ./gradlew :application:androidApp:bundleRelease
         env:
           WR_ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.WR_ANDROID_SIGNING_STORE_PASSWORD }}
           WR_ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.WR_ANDROID_SIGNING_KEY_ALIAS }}

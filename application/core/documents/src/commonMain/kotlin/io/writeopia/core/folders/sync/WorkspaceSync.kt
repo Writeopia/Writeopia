@@ -74,17 +74,26 @@ class WorkspaceSync(
                 resultSendDocuments is ResultData.Complete &&
                 resultSendFolders is ResultData.Complete
             ) {
-                val now = Clock.System.now()
-                // If everything ran accordingly, update the sync time of the folder.
-                documentsNotSent.forEach { document ->
-                    val newDocument = document.copy(lastSyncedAt = now)
-                    documentRepository.saveDocumentMetadata(newDocument)
+                // Documents and folders were sent successfully.
+                // Update lastSyncedAt for sent items to prevent re-sending them.
+                val syncTime = Clock.System.now()
+
+                // Update lastSyncedAt for documents that were sent
+                documentsNotSent.forEach { doc ->
+                    val updatedDoc = doc.copy(lastSyncedAt = syncTime)
+                    documentRepository.saveDocument(updatedDoc)
+                }
+
+                // Update lastSyncedAt for folders that were sent
+                foldersNotSent.forEach { folder ->
+                    val updatedFolder = folder.copy(lastSyncedAt = syncTime)
+                    folderRepository.updateFolder(updatedFolder)
                 }
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()
 
-                lastSuccessfulSync = now
+                lastSuccessfulSync = syncTime
 
                 imageSync.syncAllImages(workspaceId = workspaceId, token = authToken)
 

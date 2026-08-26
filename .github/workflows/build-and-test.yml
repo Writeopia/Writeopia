@@ -23,8 +23,10 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Ktlint
-        run: ./gradlew ktlintCheck --no-daemon
+        run: ./gradlew ktlintCheck
   mac_app_build:
     name: Mac App Build
     runs-on: ubuntu-22.04
@@ -39,6 +41,8 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Generate signed mac app
         run: ./gradlew packageReleaseDmg
         env:
@@ -61,10 +65,12 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: JVM tests
         run: ./gradlew jvmTest
       - name: Upload test reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results-jvm
@@ -105,6 +111,8 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Wait for Postgres to be healthy
         run: |
           for i in {1..10}; do
@@ -118,9 +126,9 @@ jobs:
         env:
           PGPASSWORD: postgres
       - name: Build debug
-        run: ./gradlew assembleDebug test --no-daemon
+        run: ./gradlew assembleDebug test
       - name: Upload test reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results-general
@@ -141,8 +149,10 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Build debug
-        run: ./gradlew compileKotlinIosArm64 --no-daemon
+        run: ./gradlew compileKotlinIosArm64
   backend_build_and_test:
     name: Backend - build
     runs-on: ubuntu-22.04
@@ -175,6 +185,8 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Wait for Postgres to be healthy
         run: |
           for i in {1..10}; do
@@ -188,11 +200,11 @@ jobs:
         env:
           PGPASSWORD: postgres
       - name: Build backend
-        run: ./gradlew :backend:gateway:assemble --no-daemon
+        run: ./gradlew :backend:gateway:assemble
       - name: Test backend
-        run: ./gradlew :backend:gateway:test --no-daemon
+        run: ./gradlew :backend:gateway:test
       - name: Upload test reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results-backend
@@ -214,10 +226,12 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Build web debug
         run: |
           ./gradlew kotlinUpgradeYarnLock
-          ./gradlew jsBrowserDevelopmentWebpack --no-daemon
+          ./gradlew jsBrowserDevelopmentWebpack
   test_docusaurus:
     name: Test docusaurus
     runs-on: ubuntu-latest

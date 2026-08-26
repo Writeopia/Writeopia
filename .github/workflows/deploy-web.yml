@@ -47,7 +47,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3
 
       - name: Build Web App (Production)
-        run: ./gradlew :application:web:jsBrowserDistribution --no-daemon
+        run: ./gradlew :application:web:jsBrowserDistribution
 
       - name: Deploy to Cloud Storage
         run: |

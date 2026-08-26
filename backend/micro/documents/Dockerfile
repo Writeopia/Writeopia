@@ -1,6 +1,16 @@
 FROM ghcr.io/graalvm/jdk-community:21
 
+# Create non-root user for security
+RUN groupadd --gid 1001 appgroup && \
+    useradd --uid 1001 --gid appgroup --shell /bin/false appuser
+
+WORKDIR /app
+
 COPY ./build/libs/documents-all.jar documents-all.jar
+
+RUN chown -R appuser:appgroup /app
+
+USER appuser
 
 # Cloud Run will inject PORT env var (defaults to 8080)
 EXPOSE 8080

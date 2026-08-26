@@ -59,6 +59,12 @@ internal class InMemoryAuthRepository : AuthRepository {
         currentWorkspace = currentWorkspace?.copy(selected = false)
     }
 
+    override suspend fun updateLastEventSync(workspaceId: String, lastEventSync: Long) {
+        if (currentWorkspace?.id == workspaceId) {
+            currentWorkspace = currentWorkspace?.copy(lastEventSync = lastEventSync)
+        }
+    }
+
     override suspend fun unselectAllUsers() {
         userSelected = false
     }
