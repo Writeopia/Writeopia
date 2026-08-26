@@ -64,3 +64,9 @@ selectByDocumentIdAfterTime:
 SELECT *
 FROM storyStepEntity
 WHERE document_id = ? AND last_updated_at > ?;
+
+selectByParentId:
+SELECT *
+FROM storyStepEntity
+WHERE parent_id = ?
+ORDER BY position;

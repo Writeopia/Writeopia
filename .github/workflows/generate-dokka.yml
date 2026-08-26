@@ -15,8 +15,10 @@ jobs:
         with:
           distribution: adopt
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Generate Dokka
-        run: ./gradlew dokkaHtmlMultiModule --no-daemon
+        run: ./gradlew dokkaHtmlMultiModule
       - name: Upload Dokka
         uses: actions/upload-artifact@v7
         with:

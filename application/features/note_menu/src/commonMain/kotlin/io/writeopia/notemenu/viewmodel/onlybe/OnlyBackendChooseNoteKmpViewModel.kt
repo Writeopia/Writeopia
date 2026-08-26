@@ -2,6 +2,8 @@ package io.writeopia.notemenu.viewmodel.onlybe
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
@@ -10,6 +12,9 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.api.GenerateSummaryApiResult
+import io.writeopia.core.folders.repository.MenuItemsRepository
+import io.writeopia.sdk.serialization.request.DocumentSyncInfo
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
@@ -19,6 +24,7 @@ import io.writeopia.notemenu.viewmodel.UserState
 import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.user.WriteopiaUser
@@ -26,31 +32,35 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.preview.PreviewParser
-import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.sdk.serialization.data.IconApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 /**
  * ViewModel that only interacts with the backend, without any local database operations.
  * All data is fetched from and sent to the backend API.
  */
+@OptIn(ExperimentalTime::class)
 internal class OnlyBackendChooseNoteKmpViewModel(
     private val documentsApi: DocumentsApi,
     private val authRepository: AuthRepository,
+    private val menuItemsRepository: MenuItemsRepository,
     private val notesNavigation: NotesNavigation = NotesNavigation.Root,
     private val previewParser: PreviewParser = PreviewParser(),
 ) : ChooseNoteViewModel, ViewModel(), FolderController {
 
-    private val _menuItemsPerFolderId = MutableStateFlow<Map<String, List<MenuItem>>>(emptyMap())
+    // Use the shared repository's state flow
     override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> =
-        _menuItemsPerFolderId.asStateFlow()
+        menuItemsRepository.menuItemsPerFolderId
 
     private val _menuItemsState = MutableStateFlow<ResultData<List<MenuItem>>>(ResultData.Loading())
     override val menuItemsState: StateFlow<ResultData<List<MenuItem>>> =
@@ -104,17 +114,27 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     private val _showAddMenuState = MutableStateFlow(false)
     override val showAddMenuState: StateFlow<Boolean> = _showAddMenuState.asStateFlow()
 
-    private val _editingFolder = MutableStateFlow<MenuItemUi.FolderUi?>(null)
+    private val _showAiOptionsState = MutableStateFlow(false)
+    override val showAiOptionsState: StateFlow<Boolean> = _showAiOptionsState.asStateFlow()
+
+    private val _showCreateFolderDialogState = MutableStateFlow(false)
+    override val showCreateFolderDialogState: StateFlow<Boolean> = _showCreateFolderDialogState.asStateFlow()
+
+    private val _editFolderState = MutableStateFlow<MenuItemUi.FolderUi?>(null)
     override val editFolderState: StateFlow<Folder?> by lazy {
-        combine(
-            _editingFolder,
-            _menuItemsPerFolderId,
-        ) { selectedFolder, menuItems ->
-            if (selectedFolder != null) {
-                menuItems[selectedFolder.parentId]
-                    ?.find { menuItem -> menuItem.id == selectedFolder.id } as? Folder
-            } else {
-                null
+        _editFolderState.map { folderUi ->
+            folderUi?.let {
+                Folder(
+                    id = it.documentId,
+                    parentId = it.parentId,
+                    title = it.title,
+                    createdAt = Clock.System.now(),
+                    lastUpdatedAt = Clock.System.now(),
+                    workspaceId = "",
+                    favorite = it.isFavorite,
+                    icon = it.icon,
+                    itemCount = it.itemsCount
+                )
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, null)
     }
@@ -186,18 +206,11 @@ internal class OnlyBackendChooseNoteKmpViewModel(
                 NotesNavigation.Root, NotesNavigation.Favorites -> Folder.ROOT_PATH
             }
 
-            val result = documentsApi.getFolderContents(folderId, workspace.id, token)
+            // Use the shared repository to load folder contents
+            val result = menuItemsRepository.loadFolderContents(folderId, workspace.id, token)
 
             if (result is ResultData.Complete) {
-                val contents = result.data
-                val folders: List<MenuItem> = contents.folders.map { it.toModel() }
-                val documents: List<MenuItem> = contents.documents.map { it.toModel() }
-                val allItems = folders + documents
-
-                // Update the menu items map
-                val newMap = _menuItemsPerFolderId.value.toMutableMap()
-                newMap[folderId] = allItems
-                _menuItemsPerFolderId.value = newMap
+                val allItems = result.data
 
                 // Filter for favorites if needed
                 val pageItems = when (notesNavigation) {
@@ -285,7 +298,20 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun copySelectedNotes() {
-        // Not supported in backend-only mode
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+            val selectedIds = _selectedNotes.value.toList()
+
+            if (selectedIds.isEmpty()) return@launch
+
+            val result = documentsApi.cloneDocuments(selectedIds, workspace.id, token)
+
+            if (result is ResultData.Complete) {
+                clearSelection()
+                loadFolderContents()
+            }
+        }
     }
 
     override fun deleteSelectedNotes() {
@@ -326,30 +352,92 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun favoriteSelectedNotes() {
-//        viewModelScope.launch(Dispatchers.Default) {
-//            val token = authRepository.getAuthToken() ?: return@launch
-//            val workspace = authRepository.getWorkspace() ?: return@launch
-//            val selectedIds = _selectedNotes.value
-//
-//            // Check if all selected notes are already favorited
-//            val currentItems = (_menuItemsState.value as? ResultData.Complete)?.data ?: emptyList()
-//            val allFavorites = currentItems
-//                .filter { selectedIds.contains(it.id) }
-//                .all { it.favorite }
-//
-//            // Toggle: if all are favorites, unfavorite them; otherwise favorite them
-//            val newFavoriteState = !allFavorites
-//
-//            selectedIds.forEach { id ->
-//                documentsApi.favoriteDocument(id, newFavoriteState, workspace.id, token)
-//            }
-//
-//            loadFolderContents()
-//        }
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+            val selectedIds = _selectedNotes.value
+
+            // Check if all selected notes are already favorited
+            val currentItems = (_menuItemsState.value as? ResultData.Complete)?.data ?: emptyList()
+            val allFavorites = currentItems
+                .filter { selectedIds.contains(it.id) }
+                .all { it.favorite }
+
+            // Toggle: if all are favorites, unfavorite them; otherwise favorite them
+            val newFavoriteState = !allFavorites
+
+            selectedIds.forEach { id ->
+                documentsApi.favoriteDocument(id, newFavoriteState, workspace.id, token)
+            }
+
+            clearSelection()
+            loadFolderContents()
+        }
     }
 
     override fun summarizeDocuments() {
-        // Not supported in backend-only mode
+        if (!hasSelectedNotes.value) return
+
+        val selectedIds = selectedNotes.value.toList()
+        val documentCount = selectedIds.size
+        hideAiOptions()
+        clearSelection()
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+            val taskId = GenerateId.generate()
+
+            val targetFolderId = when (notesNavigation.navigationType) {
+                NotesNavigationType.FOLDER -> notesNavigation.id
+                else -> Folder.ROOT_PATH
+            }
+
+            val documents = selectedIds.map { documentId ->
+                DocumentSyncInfo(documentId = documentId, lastSyncedAt = null)
+            }
+
+            AiTaskManager.singleton().enqueueTask(
+                id = taskId,
+                type = AiTaskType.SUMMARIZATION,
+                description = "Summarizing $documentCount document${if (documentCount > 1) "s" else ""}"
+            ) {
+                val result = documentsApi.generateSummary(
+                    documents = documents,
+                    targetFolderId = targetFolderId,
+                    workspaceId = workspace.id,
+                    summaryTitle = null,
+                    model = null,
+                    token = token,
+                    ignoreSyncCheck = true
+                )
+
+                when (result) {
+                    is GenerateSummaryApiResult.Success -> {
+                        // Refresh the folder contents to show the new summary document
+                        loadFolderContents()
+                        Result.success(Unit)
+                    }
+                    is GenerateSummaryApiResult.NeedsSync -> {
+                        Result.failure(Exception("Documents need sync"))
+                    }
+                    is GenerateSummaryApiResult.GenAiUnavailable -> {
+                        Result.failure(Exception("GenAI is not available"))
+                    }
+                    is GenerateSummaryApiResult.Error -> {
+                        Result.failure(Exception(result.message ?: "Unknown error"))
+                    }
+                }
+            }
+        }
+    }
+
+    override fun showAiOptions() {
+        _showAiOptionsState.value = true
+    }
+
+    override fun hideAiOptions() {
+        _showAiOptionsState.value = false
     }
 
     override fun requestPermissionToDeleteSelection() {
@@ -366,8 +454,21 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun newFolder() {
+        showCreateFolderDialog()
+    }
+
+    override fun showCreateFolderDialog() {
+        _showCreateFolderDialogState.value = true
+    }
+
+    override fun hideCreateFolderDialog() {
+        _showCreateFolderDialogState.value = false
+    }
+
+    override fun createFolderWithDetails(name: String, icon: MenuItem.Icon?) {
         viewModelScope.launch(Dispatchers.Default) {
             val token = authRepository.getAuthToken() ?: return@launch
+
             val workspace = authRepository.getWorkspace() ?: return@launch
 
             val parentId = when (notesNavigation.navigationType) {
@@ -375,10 +476,13 @@ internal class OnlyBackendChooseNoteKmpViewModel(
                 else -> Folder.ROOT_PATH
             }
 
+            val iconApi = icon?.let { IconApi(label = it.label, tint = it.tint) }
+
             val result = documentsApi.createFolder(
                 parentFolderId = parentId,
-                title = "Untitled",
+                title = name,
                 workspaceId = workspace.id,
+                icon = iconApi,
                 token = token
             )
 
@@ -412,11 +516,32 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun editFolder(folder: MenuItemUi.FolderUi) {
-        _editingFolder.value = folder
+        _editFolderState.value = folder
     }
 
     override fun updateFolder(folderEdit: Folder) {
-        // Would need an update folder API endpoint
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+
+            val iconApi = folderEdit.icon?.let { icon ->
+                IconApi(label = icon.label, tint = icon.tint)
+            }
+
+            val result = documentsApi.updateFolder(
+                folderId = folderEdit.id,
+                workspaceId = workspace.id,
+                title = folderEdit.title,
+                icon = iconApi,
+                favorite = folderEdit.favorite,
+                token = token
+            )
+
+            if (result is ResultData.Complete) {
+                stopEditingFolder()
+                loadFolderContents()
+            }
+        }
     }
 
     override fun deleteFolder(id: String) {
@@ -431,7 +556,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun stopEditingFolder() {
-        _editingFolder.value = null
+        _editFolderState.value = null
     }
 
     override fun moveToFolder(menuItemUi: MenuItemUi, parentId: String) {
@@ -455,7 +580,30 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun changeIcons(menuItemId: String, icon: String, tint: Int, iconChange: IconChange) {
-        // Would need an update icon API endpoint
+        viewModelScope.launch(Dispatchers.Default) {
+            val token = authRepository.getAuthToken() ?: return@launch
+            val workspace = authRepository.getWorkspace() ?: return@launch
+
+            when (iconChange) {
+                IconChange.FOLDER -> {
+                    val iconApi = IconApi(label = icon, tint = tint)
+                    val result = documentsApi.updateFolder(
+                        folderId = menuItemId,
+                        workspaceId = workspace.id,
+                        icon = iconApi,
+                        token = token
+                    )
+
+                    if (result is ResultData.Complete) {
+                        loadFolderContents()
+                    }
+                }
+
+                IconChange.DOCUMENT -> {
+                    // Would need an update document icon API endpoint
+                }
+            }
+        }
     }
 
     override fun toggleSelection(id: String) {

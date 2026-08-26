@@ -156,4 +156,21 @@
   <string name="failed_to_update_role">Falha ao atualizar função. Tente novamente.</string>
   <string name="workspace_must_have_admin">A área de trabalho deve ter pelo menos um administrador.</string>
   <string name="save">Salvar</string>
+  <string name="publish">Publicar</string>
+  <string name="unpublish">Despublicar</string>
+  <string name="publish_to_web">Publicar na Web</string>
+  <string name="view_site">Ver Site</string>
+  <string name="copy_link">Copiar Link</string>
+  <string name="link_copied">Link copiado!</string>
+  <string name="apply_to">Aplicar em:</string>
+  <string name="selected_lines">Linhas Selecionadas</string>
+  <string name="cursor">Cursor</string>
+  <string name="select_lines_first">Selecione linhas no documento primeiro</string>
+  <string name="premium_feature">Recurso Premium</string>
+  <string name="premium_feature_message">Este recurso está disponível apenas para usuários premium usando uma área de trabalho online</string>
+  <string name="password_weak">Senha fraca</string>
+  <string name="password_medium">Senha média</string>
+  <string name="password_strong">Senha forte</string>
+  <string name="password_req_min_length">Pelo menos 8 caracteres</string>
+  <string name="password_req_special_char">Um caractere especial (!@#$%^&amp;*)</string>
 </resources>

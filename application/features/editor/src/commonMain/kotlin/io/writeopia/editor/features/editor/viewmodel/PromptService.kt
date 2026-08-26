@@ -15,15 +15,14 @@ object PromptService {
 
     suspend fun documentPrompt(
         userId: String,
+        targetMode: AiTargetMode,
         promptFn: (String, String, String) -> Flow<ResultData<String>>,
         writeopiaManager: WriteopiaStateManager,
         ollamaRepository: OllamaRepository
     ) {
-        val text = writeopiaManager.getCurrentSelectionText()
-            ?: writeopiaManager.getDocumentText()
+        val (text, position) = getTextAndPosition(targetMode, writeopiaManager)
 
-        val position =
-            writeopiaManager.positionAfterSelection() ?: writeopiaManager.lastPosition()
+        if (text == null) return
 
         val url = ollamaRepository.getConfiguredUrl(userId)?.trim()
 
@@ -45,14 +44,43 @@ object PromptService {
         }
     }
 
-    suspend fun promptBySelection(
+    suspend fun promptWithMode(
         userId: String,
+        targetMode: AiTargetMode,
         writeopiaManager: WriteopiaStateManager,
         ollamaRepository: OllamaRepository
     ) {
-        val text = writeopiaManager.getCurrentText()
+        val (text, position) = getTextAndPosition(targetMode, writeopiaManager)
+        prompt(userId, text, writeopiaManager, ollamaRepository, position)
+    }
 
-        prompt(userId, text, writeopiaManager, ollamaRepository)
+    private fun getTextAndPosition(
+        targetMode: AiTargetMode,
+        writeopiaManager: WriteopiaStateManager
+    ): Pair<String?, Double> {
+        val lastPos = writeopiaManager.lastPosition()
+        return when (targetMode) {
+            AiTargetMode.DOCUMENT -> {
+                val docText = writeopiaManager.getDocumentText()
+                val pos = writeopiaManager.getStory(lastPos)?.nextPosition ?: (lastPos + 1)
+                docText to pos
+            }
+            AiTargetMode.SELECTED_LINES -> {
+                val selText = writeopiaManager.getCurrentSelectionText()
+                val pos = writeopiaManager.positionAfterSelection()
+                    ?: writeopiaManager.getNextPosition()
+                    ?: writeopiaManager.getStory(lastPos)?.nextPosition
+                    ?: (lastPos + 1)
+                selText to pos
+            }
+            AiTargetMode.CURSOR -> {
+                val cursorText = writeopiaManager.getCurrentText()
+                val pos = writeopiaManager.getNextPosition()
+                    ?: writeopiaManager.getStory(lastPos)?.nextPosition
+                    ?: (lastPos + 1)
+                cursorText to pos
+            }
+        }
     }
 
     suspend fun prompt(
@@ -78,12 +106,43 @@ object PromptService {
                     )
                 )
             } else {
-                val model = ollamaRepository.getSelectedModel(userId)
-                    ?: return
+                val model = ollamaRepository.getSelectedModel(userId) ?: return
 
                 ollamaRepository.streamReply(model, prompt, url)
                     .handleStream(writeopiaManager, position)
             }
+        }
+    }
+
+    /**
+     * GenAI-compatible version of documentPrompt that only needs the prompt text.
+     * Used for cloud AI services where model/URL are configured server-side.
+     */
+    suspend fun documentPromptGenAi(
+        targetMode: AiTargetMode,
+        promptFn: (String) -> Flow<ResultData<String>>,
+        writeopiaManager: WriteopiaStateManager
+    ) {
+        val (text, position) = getTextAndPosition(targetMode, writeopiaManager)
+
+        if (text == null) return
+
+        promptFn(text).handleStream(writeopiaManager, position)
+    }
+
+    /**
+     * GenAI-compatible version of prompt that only needs the prompt text.
+     */
+    suspend fun promptGenAi(
+        prompt: String?,
+        writeopiaManager: WriteopiaStateManager,
+        streamFn: (String) -> Flow<ResultData<String>>,
+        promptPosition: Double? = null
+    ) {
+        val position = promptPosition ?: writeopiaManager.getNextPosition()
+
+        if (prompt != null && position != null) {
+            streamFn(prompt).handleStream(writeopiaManager, position)
         }
     }
 

@@ -32,6 +32,7 @@ dependencies {
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
     implementation(project(":backend:core:buckets"))
+    implementation(project(":backend:core:genai_service"))
 
     // Ktor
     implementation(libs.ktor.server.cors)

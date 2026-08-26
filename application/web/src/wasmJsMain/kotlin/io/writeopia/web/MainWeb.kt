@@ -14,6 +14,8 @@ import androidx.navigation.compose.rememberNavController
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
+import io.writeopia.global.shell.di.SideMenuKmpInjector
+import io.writeopia.notemenu.di.NotesMenuWebInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
@@ -116,7 +118,12 @@ fun CreateAppInMemory() {
                 navigationController.navigate(Destinations.START_APP.id) {
                     popUpTo(navigationController.graph.startDestinationId) { inclusive = true }
                 }
-            }
+            },
+            notesMenuInjection = NotesMenuWebInjection.singleton(),
+            sideMenuInjector = SideMenuKmpInjector(
+                useBackendOnly = true,
+                menuItemsRepository = NotesMenuWebInjection.singleton().provideMenuItemsRepository()
+            ),
         )
     }
 }

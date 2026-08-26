@@ -30,7 +30,6 @@ import io.writeopia.sdk.serialization.data.toModel
 import io.writeopia.sdk.serialization.request.WorkspaceRoleChangeRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) {
@@ -69,12 +68,10 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
             header(HttpHeaders.Authorization, "Bearer $token")
         }.body<List<WorkspaceApi>>()
 
-        println("Workspaces returned from API: $workspaces")
-
-        val now = Clock.System.now()
-
+        // Use default lastSync (DISTANT_PAST) so new workspaces will fetch all data on first sync.
+        // The actual lastSync should be updated from server timestamps after successful syncs.
         ResultData.Complete(
-            workspaces.map { workspaceApi -> workspaceApi.toModel(now) }
+            workspaces.map { workspaceApi -> workspaceApi.toModel() }
         )
     } catch (e: Exception) {
         e.printStackTrace()
@@ -242,6 +239,24 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
             response.status.isSuccess() -> ResultData.Complete(Unit)
             response.status == HttpStatusCode.Conflict -> ResultData.Error(LastAdminException())
             else -> ResultData.Error()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    suspend fun exportWorkspace(
+        workspaceId: String,
+        token: String
+    ): ResultData<Unit> = try {
+        val response = client.post("$baseUrl/api/workspace/$workspaceId/export") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            ResultData.Error()
         }
     } catch (e: Exception) {
         e.printStackTrace()

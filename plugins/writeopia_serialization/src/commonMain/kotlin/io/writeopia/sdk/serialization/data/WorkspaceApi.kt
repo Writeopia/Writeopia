@@ -3,7 +3,6 @@
 package io.writeopia.sdk.serialization.data
 
 import io.writeopia.sdk.models.workspace.Workspace
-import kotlin.time.Clock
 import kotlinx.serialization.Serializable
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -17,7 +16,14 @@ data class WorkspaceApi(
     val documentCount: Int = 0,
 )
 
-fun WorkspaceApi.toModel(lastSync: Instant = Clock.System.now()) =
+/**
+ * Converts WorkspaceApi to Workspace model.
+ *
+ * @param lastSync The last sync timestamp. Defaults to DISTANT_PAST so new workspaces
+ *                 will fetch all their data on first sync. Should only be updated with
+ *                 server-provided timestamps after successful syncs.
+ */
+fun WorkspaceApi.toModel(lastSync: Instant = Instant.DISTANT_PAST) =
     Workspace(
         this.id,
         this.userId,

@@ -11,18 +11,19 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.routing.getUserId
 import io.writeopia.api.core.auth.utils.runIfMember
 import io.writeopia.api.documents.documents.DocumentsService
 import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
-import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
-import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
+import io.writeopia.api.documents.documents.repository.getSyncEventsAfterTime
 import io.writeopia.backend.models.ImageStorageService
 import io.writeopia.buckets.GcpBucketImageStorageService
 import io.writeopia.connection.ResultData
+import io.writeopia.connection.logger
 import io.writeopia.connection.map
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -30,16 +31,25 @@ import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CloneDocumentsRequest
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
+import io.writeopia.sdk.serialization.request.UpdateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
+import io.writeopia.sdk.serialization.request.EventDiffRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
+import io.writeopia.sdk.serialization.request.MoveDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
+import io.writeopia.sdk.serialization.request.GenerateSummaryRequest
+import io.writeopia.sdk.serialization.response.EventDiffResponse
 import io.writeopia.sdk.serialization.response.FolderContentResponse
+import io.writeopia.sdk.serialization.response.GenerateSummaryResponse
+import io.writeopia.sdk.serialization.response.SyncEventApi
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
+import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -51,7 +61,8 @@ fun Routing.documentsRoute(
     writeopiaDb: WriteopiaDbBackend,
     useAi: Boolean,
     debug: Boolean = false,
-    imageStorageService: ImageStorageService = GcpBucketImageStorageService
+    imageStorageService: ImageStorageService = GcpBucketImageStorageService,
+    genAiService: GenAiService? = null
 ) {
     // Public site endpoint - no authentication required
     get("/api/site/{documentId}") {
@@ -222,11 +233,22 @@ fun Routing.documentsRoute(
                     val folders = writeopiaDb.getFoldersByParentId(folderId)
                     val documents = writeopiaDb.getDocumentsByParentId(folderId)
 
+                    // Get user's favorite document IDs
+                    val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                        userId, workspaceId, writeopiaDb
+                    ).toSet()
+
+                    // Set favorite status on each document
+                    val documentsWithFavorites = documents.map { doc ->
+                        val isFavorite = userFavoriteIds.contains(doc.id)
+                        doc.copy(favorite = isFavorite)
+                    }
+
                     call.respond(
                         status = HttpStatusCode.OK,
                         message = FolderContentResponse(
                             folders = folders.map { it.toApi() },
-                            documents = documents.map { it.toApi() }
+                            documents = documentsWithFavorites.map { it.toApi() }
                         )
                     )
                 } catch (e: Exception) {
@@ -251,6 +273,7 @@ fun Routing.documentsRoute(
                         parentFolderId = parentFolderId,
                         title = request.title,
                         workspaceId = workspaceId,
+                        icon = request.icon?.toModel(),
                         writeopiaDb = writeopiaDb
                     )
 
@@ -258,6 +281,48 @@ fun Routing.documentsRoute(
                         status = HttpStatusCode.Created,
                         message = folder.toApi()
                     )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        put<UpdateFolderRequest>("/api/docs/workspace/{workspaceId}/folder/{folderId}") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val folderId = call.pathParameters["folderId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val icon = request.icon?.let { iconApi ->
+                        MenuItem.Icon(iconApi.label, iconApi.tint)
+                    }
+
+                    val folder = DocumentsService.updateFolder(
+                        folderId = folderId,
+                        workspaceId = workspaceId,
+                        title = request.title,
+                        icon = icon,
+                        favorite = request.favorite,
+                        writeopiaDb = writeopiaDb
+                    )
+
+                    if (folder != null) {
+                        call.respond(
+                            status = HttpStatusCode.OK,
+                            message = folder.toApi()
+                        )
+                    } else {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Folder not found"
+                        )
+                    }
                 } catch (e: Exception) {
                     call.respond(
                         status = HttpStatusCode.InternalServerError,
@@ -407,18 +472,33 @@ fun Routing.documentsRoute(
                     println("orderBy: ${folderDiff.orderBy}")
 
                     val documents =
-                        writeopiaDb.documentsDiffByFolder(
+                        DocumentsService.getDocumentsDiffByFolder(
                             folderDiff.folderId,
                             folderDiff.workspaceId,
                             folderDiff.lastFolderSync,
-                            folderDiff.orderBy
+                            folderDiff.orderBy,
+                            writeopiaDb
                         )
 
-                    println("returning ${documents.count()} documents")
+                    // Get subfolders for this folder
+                    val subfolders = writeopiaDb.getFoldersByParentId(folderDiff.folderId)
+
+                    // Get user's favorite document IDs
+                    val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                        userId, workspaceId, writeopiaDb
+                    ).toSet()
+
+                    // Set favorite status on each document
+                    val documentsWithFavorites = documents.map { doc ->
+                        doc.copy(favorite = userFavoriteIds.contains(doc.id))
+                    }
 
                     call.respond(
                         status = HttpStatusCode.OK,
-                        message = documents.map { document -> document.toApi() }
+                        message = FolderContentResponse(
+                            folders = subfolders.map { it.toApi() },
+                            documents = documentsWithFavorites.map { document -> document.toApi() }
+                        )
                     )
                 } catch (e: Exception) {
                     call.respond(
@@ -442,10 +522,11 @@ fun Routing.documentsRoute(
                     println("last sync: ${Instant.fromEpochMilliseconds(workspaceDiff.lastSync)}")
                     println("orderBy: ${workspaceDiff.orderBy}")
 
-                    val documents = writeopiaDb.documentsDiffByWorkspace(
+                    val documents = DocumentsService.getDocumentsDiffByWorkspace(
                         workspaceDiff.workspaceId,
                         workspaceDiff.lastSync,
-                        workspaceDiff.orderBy
+                        workspaceDiff.orderBy,
+                        writeopiaDb
                     )
                     val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceDiff.workspaceId)
 
@@ -505,7 +586,7 @@ fun Routing.documentsRoute(
                         return@runIfMember
                     }
 
-                    DocumentsService.deleteFolder(folderId, writeopiaDb)
+                    DocumentsService.deleteFolder(folderId, workspaceId, userId, writeopiaDb)
 
                     call.respond(
                         status = HttpStatusCode.OK,
@@ -536,7 +617,7 @@ fun Routing.documentsRoute(
                         return@runIfMember
                     }
 
-                    DocumentsService.deleteDocuments(request.documentIds, writeopiaDb)
+                    DocumentsService.deleteDocuments(request.documentIds, workspaceId, userId, writeopiaDb)
 
                     call.respond(
                         status = HttpStatusCode.OK,
@@ -574,6 +655,7 @@ fun Routing.documentsRoute(
                         folderId,
                         request.targetParentId,
                         workspaceId,
+                        userId,
                         writeopiaDb
                     )
 
@@ -628,6 +710,92 @@ fun Routing.documentsRoute(
                     call.respond(
                         status = HttpStatusCode.InternalServerError,
                         message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<GenerateSummaryRequest>("/api/docs/workspace/{workspaceId}/document/generate-summary") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                // Check if GenAI service is provided
+                if (genAiService == null) {
+                    call.respond(
+                        status = HttpStatusCode.ServiceUnavailable,
+                        message = GenerateSummaryResponse(error = "GenAI service is not available")
+                    )
+                    return@runIfMember
+                }
+
+                // Validate request
+                if (request.documents.isEmpty()) {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = GenerateSummaryResponse(error = "Documents list cannot be empty")
+                    )
+                    return@runIfMember
+                }
+
+                try {
+                    val result = DocumentsService.generateSummaryDocument(
+                        documents = request.documents,
+                        targetFolderId = request.targetFolderId,
+                        workspaceId = workspaceId,
+                        summaryTitle = request.summaryTitle,
+                        model = request.model,
+                        ignoreSyncCheck = request.ignoreSyncCheck,
+                        genAiService = genAiService,
+                        writeopiaDb = writeopiaDb
+                    )
+
+                    when (result) {
+                        is DocumentsService.GenerateSummaryResult.Success -> {
+                            call.respond(
+                                status = HttpStatusCode.Created,
+                                message = GenerateSummaryResponse(document = result.document.toApi())
+                            )
+                        }
+                        is DocumentsService.GenerateSummaryResult.NeedsSync -> {
+                            call.respond(
+                                status = HttpStatusCode.Conflict,
+                                message = GenerateSummaryResponse(unsyncedDocuments = result.unsyncedDocuments)
+                            )
+                        }
+                        is DocumentsService.GenerateSummaryResult.InvalidRequest -> {
+                            call.respond(
+                                status = HttpStatusCode.BadRequest,
+                                message = GenerateSummaryResponse(error = result.message)
+                            )
+                        }
+                        is DocumentsService.GenerateSummaryResult.NotFound -> {
+                            call.respond(
+                                status = HttpStatusCode.NotFound,
+                                message = GenerateSummaryResponse(error = result.message)
+                            )
+                        }
+                        is DocumentsService.GenerateSummaryResult.GenAiUnavailable -> {
+                            call.respond(
+                                status = HttpStatusCode.ServiceUnavailable,
+                                message = GenerateSummaryResponse(error = "GenAI service is not configured")
+                            )
+                        }
+                        is DocumentsService.GenerateSummaryResult.Error -> {
+                            logger.error("Summary generation failed for workspace $workspaceId: ${result.message}")
+                            call.respond(
+                                status = HttpStatusCode.InternalServerError,
+                                message = GenerateSummaryResponse(error = "Failed to generate summary")
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    logger.error("Error generating summary for workspace $workspaceId", e)
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = GenerateSummaryResponse(error = "An unexpected error occurred while generating the summary")
                     )
                 }
             }
@@ -820,6 +988,93 @@ fun Routing.documentsRoute(
                         status = HttpStatusCode.OK,
                         message = response
                     )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<EventDiffRequest>("/api/docs/workspace/events/diff") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = request.workspaceId
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val events = writeopiaDb.getSyncEventsAfterTime(
+                        workspaceId = workspaceId,
+                        afterTime = request.lastEventSync
+                    )
+
+                    val response = EventDiffResponse(
+                        events = events.map { event ->
+                            SyncEventApi(
+                                id = event.id,
+                                eventType = event.event_type,
+                                entityId = event.entity_id,
+                                oldParentId = event.old_parent_id,
+                                newParentId = event.new_parent_id,
+                                createdAt = event.created_at
+                            )
+                        },
+                        serverTimestamp = Clock.System.now().toEpochMilliseconds()
+                    )
+
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = response
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post<MoveDocumentRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/move") { request ->
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val documentId = call.pathParameters["documentId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    // Verify document exists and belongs to workspace
+                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                    if (document == null) {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = "Document not found"
+                        )
+                        return@runIfMember
+                    }
+
+                    val moved = DocumentsService.moveDocument(
+                        documentId,
+                        request.targetParentId,
+                        workspaceId,
+                        userId,
+                        writeopiaDb
+                    )
+
+                    if (moved) {
+                        call.respond(
+                            status = HttpStatusCode.OK,
+                            message = "Document moved successfully"
+                        )
+                    } else {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = "Failed to move document"
+                        )
+                    }
                 } catch (e: Exception) {
                     call.respond(
                         status = HttpStatusCode.InternalServerError,

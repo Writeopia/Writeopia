@@ -32,9 +32,13 @@ data class SpanInfo private constructor(
     fun isBefore(position: Int) = position < start
 
     /**
-     *  Serialize the object as a string: "start:end:span"
+     *  Serialize the object as a string: "start:end:span" or "start:end:span:extra"
      */
-    fun toText(): String = "$start:$end:${span.toText()}:$extra"
+    fun toText(): String = if (extra != null) {
+        "$start:$end:${span.toText()}:$extra"
+    } else {
+        "$start:$end:${span.toText()}"
+    }
 
     fun size() = abs(end - start)
 
@@ -91,12 +95,18 @@ data class SpanInfo private constructor(
 
         fun fromString(serialized: String): SpanInfo {
             val parts = serialized.split(":")
-            require(parts.size == 3 || parts.size == 4) { "Invalid serialized format" }
+            require(parts.size >= 3) { "Invalid serialized format" }
 
             val start = parts[0].toIntOrNull() ?: error("Invalid start value")
             val end = parts[1].toIntOrNull() ?: error("Invalid end value")
             val span = Span.textFromString(parts[2])
-            val extra = if (parts.size >= 4) parts[3] else null
+            // Join remaining parts with ":" to handle URLs that contain colons
+            val extra = if (parts.size >= 4) {
+                val extraValue = parts.drop(3).joinToString(":")
+                if (extraValue == "null") null else extraValue
+            } else {
+                null
+            }
 
             return SpanInfo(start, end, span, extra)
         }

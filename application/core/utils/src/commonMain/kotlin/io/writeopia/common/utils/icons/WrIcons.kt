@@ -7,6 +7,7 @@ import io.writeopia.common.utils.icons.all.ArrowDownUp
 import io.writeopia.common.utils.icons.all.Bell
 import io.writeopia.common.utils.icons.all.Bold
 import io.writeopia.common.utils.icons.all.Bolt
+import io.writeopia.common.utils.icons.all.Check
 import io.writeopia.common.utils.icons.all.CalendarArrowDown
 import io.writeopia.common.utils.icons.all.ChartScatter
 import io.writeopia.common.utils.icons.all.ChevronDown
@@ -62,6 +63,7 @@ import io.writeopia.common.utils.icons.all.WandSparkles
 import io.writeopia.common.utils.icons.all.X
 import io.writeopia.common.utils.icons.all.Zap
 import io.writeopia.common.utils.icons.all.highlighter
+import com.composables.GlobeCheck
 
 object WrIcons {
     val settings: ImageVector = Bolt
@@ -125,6 +127,8 @@ object WrIcons {
     val layoutList: ImageVector = Rows3
 
     val close: ImageVector = X
+
+    val check: ImageVector = Check
 
     val delete: ImageVector = Trash2
 
@@ -191,6 +195,10 @@ object WrIcons {
     val highlight = highlighter
 
     val drawing: ImageVector = PencilLine
+
+    val published: ImageVector = GlobeCheck
+
+    val spreadsheet: ImageVector = LayoutGrid
 
     val allIcons: Map<String, ImageVector> =
         mapOf(

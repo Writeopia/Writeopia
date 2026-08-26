@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -44,6 +45,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
+import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
 import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
@@ -71,7 +73,6 @@ fun DesktopNoteEditorScreen(
     var showFolderSelection by remember {
         mutableStateOf(false)
     }
-
     Box(
         modifier = Modifier.clickable(
             onClick = {
@@ -215,11 +216,13 @@ fun DesktopNoteEditorScreen(
             isFavorite = noteEditorViewModel.notFavorite,
             selectedMetadataState = noteEditorViewModel.selectionMetadataState,
             sideMenuTabState = noteEditorViewModel.sideMenuTabState,
+            hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
             boldClick = noteEditorViewModel::onAddSpanClick,
             setEditable = noteEditorViewModel::toggleEditable,
             checkItemClick = noteEditorViewModel::onAddCheckListClick,
             listItemClick = noteEditorViewModel::onAddListItemClick,
             codeBlockClick = noteEditorViewModel::onAddCodeBlockClick,
+            spreadsheetClick = { noteEditorViewModel.onAddSpreadsheetClick(3) },
             highLightBlockClick = noteEditorViewModel::toggleHighLightBlock,
             cardBlockClick = noteEditorViewModel::toggleCardBlock,
             onPresentationClick = onPresentationClick,
@@ -231,7 +234,7 @@ fun DesktopNoteEditorScreen(
             moveToClick = {
                 showFolderSelection = true
             },
-            askAiBySelection = noteEditorViewModel::askAiBySelection,
+            askAiWithMode = noteEditorViewModel::askAiWithMode,
             addPage = noteEditorViewModel::addPage,
             deleteDocument = {
                 showDeleteConfirmation = true
@@ -261,14 +264,30 @@ fun DesktopNoteEditorScreen(
             )
         }
 
-        if (!isEditable) {
-            Icon(
-                imageVector = WrIcons.lock,
-                contentDescription = "Lock",
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
-                    .size(16.dp)
-            )
+        val isPublished by noteEditorViewModel.isDocumentPublished.collectAsState()
+
+        if (!isEditable || isPublished) {
+            Row(
+                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (!isEditable) {
+                    Icon(
+                        imageVector = WrIcons.lock,
+                        contentDescription = "Locked",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                if (isPublished) {
+                    Icon(
+                        imageVector = WrIcons.published,
+                        contentDescription = "Published",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
 
         if (showFolderSelection) {
@@ -304,19 +323,23 @@ fun DesktopNoteEditorScreen(
         }
 
         val showPublishDialog by noteEditorViewModel.showPublishDialog.collectAsState()
-        val isDocumentPublished by noteEditorViewModel.isDocumentPublished.collectAsState()
         val publishLoading by noteEditorViewModel.publishLoading.collectAsState()
 
         if (showPublishDialog && documentId != null) {
             PublishDialog(
                 documentId = documentId,
-                isPublished = isDocumentPublished,
+                isPublished = isPublished,
                 isLoading = publishLoading,
                 onDismiss = noteEditorViewModel::hidePublishDialog,
                 onPublishAndView = noteEditorViewModel::publishDocument,
                 onUnpublish = noteEditorViewModel::unpublishDocument,
                 onCopyLink = noteEditorViewModel::copyPublishLink
             )
+        }
+
+        val showPremiumDialog by noteEditorViewModel.showPremiumDialog.collectAsState()
+        if (showPremiumDialog) {
+            PremiumOnlyDialog(onDismiss = noteEditorViewModel::hidePremiumDialog)
         }
     }
 }

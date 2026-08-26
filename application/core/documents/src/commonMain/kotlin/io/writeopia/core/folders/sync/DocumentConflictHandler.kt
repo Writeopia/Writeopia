@@ -2,18 +2,12 @@
 
 package io.writeopia.core.folders.sync
 
-import io.writeopia.auth.core.manager.AuthRepository
-import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Document
-import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.repository.DocumentRepository
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class DocumentConflictHandler(
-    private val documentRepository: DocumentRepository,
-    private val folderRepository: FolderRepository,
-    private val authRepository: AuthRepository
+    private val documentRepository: DocumentRepository
 ) {
 
     /**
@@ -28,39 +22,35 @@ class DocumentConflictHandler(
         localDocuments: List<Document>,
         externalDocuments: List<Document>
     ): List<Document> {
-        val now = Clock.System.now()
-
+        val externalDocIds = externalDocuments.map { it.id }.toSet()
         val allDocumentsById = (localDocuments + externalDocuments).groupBy { it.id }
 
         // Resolve conflicts for each document ID.
-        val resolvedDocuments = allDocumentsById.map { (_, documents) ->
+        val resolvedDocuments = allDocumentsById.map { (id, documents) ->
             // Select the document with the newest lastUpdatedAt
             val winner = documents.maxByOrNull { it.lastUpdatedAt }
                 ?: throw IllegalStateException("Document list for ID cannot be empty.")
 
-            // Mark the winner as synced (or keep existing lastSyncedAt if it's external and already set)
-            winner.copy(lastSyncedAt = now)
+            // Keep the winner as-is. Don't update lastSyncedAt with client time.
+            // - If winner is from server, it already has the correct server lastSyncedAt
+            // - If winner is local, it will get server lastSyncedAt when sent to server
+            winner
         }
 
-        // Save the resolved (winning and synced) documents to the repository.
+        // Save the resolved (winning) documents to the repository.
         resolvedDocuments.forEach { document ->
             documentRepository.saveDocument(document)
         }
 
-        // Determine which documents to return.
-        return resolvedDocuments
-    }
+        // Return documents that need to be sent to the server (local winners or local-only docs)
+        return resolvedDocuments.filter { doc ->
+            // Document needs to be sent if it's a local document that won the conflict
+            // or if it's a local-only document (not in external)
+            val isLocalOnly = doc.id !in externalDocIds
+            val localDoc = localDocuments.find { it.id == doc.id }
+            val isLocalWinner = localDoc != null && localDoc.lastUpdatedAt == doc.lastUpdatedAt
 
-    suspend fun handleConflictForFolders(
-        localFolders: List<Folder>,
-        externalFolders: List<Folder>,
-    ): List<Folder> {
-        val now = Clock.System.now()
-
-        externalFolders.forEach { folder ->
-            folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
+            isLocalOnly || isLocalWinner
         }
-
-        return (localFolders.toSet() - externalFolders.toSet()).toList()
     }
 }

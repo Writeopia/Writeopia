@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -50,6 +52,8 @@ internal fun MobileInputScreen(
     canUndoState: StateFlow<Boolean>,
     canRedoState: StateFlow<Boolean>,
     onDrawingClick: () -> Unit = {},
+    onImageClick: () -> Unit = {},
+    onSpreadsheetClick: () -> Unit = {},
 ) {
     val canUndo by canUndoState.collectAsState()
     val canRedo by canRedoState.collectAsState()
@@ -79,7 +83,8 @@ internal fun MobileInputScreen(
 
                 Row(
                     modifier = Modifier
-                        .align(Alignment.Center)
+                        .align(Alignment.CenterStart)
+                        .horizontalScroll(rememberScrollState())
                         .padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -187,7 +192,35 @@ internal fun MobileInputScreen(
                         tint = buttonColor
                     )
 
-                    Spacer(modifier = Modifier.weight(1F))
+                    Spacer(modifier = Modifier.width(15.dp))
+
+                    Icon(
+                        modifier = Modifier
+                            .clip(buttonShape)
+                            .clickable {
+                                onImageClick()
+                            }
+                            .padding(iconPadding),
+                        imageVector = WrIcons.image,
+                        contentDescription = "Image",
+                        tint = buttonColor
+                    )
+
+                    Spacer(modifier = Modifier.width(15.dp))
+
+                    Icon(
+                        modifier = Modifier
+                            .clip(buttonShape)
+                            .clickable {
+                                onSpreadsheetClick()
+                            }
+                            .padding(iconPadding),
+                        imageVector = WrIcons.spreadsheet,
+                        contentDescription = "Spreadsheet",
+                        tint = buttonColor
+                    )
+
+                    Spacer(modifier = Modifier.width(15.dp))
 
                     Icon(
                         modifier = Modifier

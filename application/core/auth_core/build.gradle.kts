@@ -86,9 +86,18 @@ kotlin {
             }
         }
 
+        val webMain by creating {
+            dependsOn(commonMain)
+        }
+
         val jsMain by getting {
+            dependsOn(webMain)
             dependencies {
             }
+        }
+
+        val wasmJsMain by getting {
+            dependsOn(webMain)
         }
 
         val androidMain by getting {
@@ -96,7 +105,16 @@ kotlin {
             }
         }
 
-        nativeMain.dependencies {
+        val nativeMain by creating {
+            dependsOn(commonMain)
+        }
+
+        val iosArm64Main by getting {
+            dependsOn(nativeMain)
+        }
+
+        val iosSimulatorArm64Main by getting {
+            dependsOn(nativeMain)
         }
     }
 }

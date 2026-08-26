@@ -8,6 +8,7 @@ import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
 import io.writeopia.api.core.auth.utils.installAuth
+import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.connection.logger
 import io.writeopia.sql.WriteopiaDbBackend
 
@@ -26,18 +27,22 @@ fun main() {
 fun Application.module(
     writeopiaDb: WriteopiaDbBackend? = configurePersistence(),
     useAi: Boolean = System.getenv("WRITEOPIA_USE_AI")?.toBoolean() ?: false,
-    debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false
+    debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false,
+    useCloudAi: Boolean = System.getenv("WRITEOPIA_USE_CLOUD_AI")?.toBoolean() ?: false
 ) {
-    logger.info("Documents microservice starting - debug: $debugMode, useAi: $useAi")
+    val genAiService = if (useCloudAi) GenAiService() else null
+
+    logger.info("Documents microservice starting - debug: $debugMode, useAi: $useAi, useCloudAi: $useCloudAi")
     installCORS()
     installAuth()
-    configureRouting(writeopiaDb, useAi, debugMode = debugMode)
+    configureRouting(writeopiaDb, useAi, debugMode = debugMode, genAiService = genAiService)
     configureSerialization()
 }
 
 fun Application.installCORS() {
     install(CORS) {
         allowHost("writeopia.io", schemes = listOf("https"))
+        allowHost("app.writeopia.io", schemes = listOf("https"))
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
         allowMethod(HttpMethod.Get)

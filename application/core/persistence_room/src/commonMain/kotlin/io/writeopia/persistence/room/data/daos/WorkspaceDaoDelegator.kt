@@ -27,4 +27,8 @@ class WorkspaceDaoDelegator(private val workspaceDao: WorkspaceDao): WorkspaceCo
     override suspend fun unselectAllWorkspaces() {
         workspaceDao.unselectAllWorkspaces()
     }
+
+    override suspend fun updateLastEventSync(workspaceId: String, lastEventSync: Long) {
+        workspaceDao.updateLastEventSync(workspaceId, lastEventSync)
+    }
 }

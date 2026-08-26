@@ -23,8 +23,30 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Ktlint
-        run: ./gradlew ktlintCheck --no-daemon
+        run: ./gradlew ktlintCheck
+  mac_app_build:
+    name: Mac App Build
+    runs-on: ubuntu-22.04
+    env:
+      isCI: "true"
+      JWT_SECRET: "testingsecret"
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+      - name: Generate signed mac app
+        run: ./gradlew packageReleaseDmg
+        env:
+          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
   ui_jvm_tests:
     name: Jvm UI Compose tests
     runs-on: ubuntu-22.04
@@ -43,18 +65,19 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
-      - name: Generate signed mac app
-        run: ./gradlew packageReleaseDmg
-        env:
-          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: JVM tests
         run: ./gradlew jvmTest
-      - name: upload results
+      - name: Upload test reports
         uses: actions/upload-artifact@v7
-        if: failure()
+        if: always()
         with:
           name: test-results-jvm
-          path: ./application/desktopApp/build/reports/
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          retention-days: 7
   general_build:
     name: General - Build debug
     runs-on: ubuntu-22.04
@@ -88,6 +111,8 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Wait for Postgres to be healthy
         run: |
           for i in {1..10}; do
@@ -101,7 +126,16 @@ jobs:
         env:
           PGPASSWORD: postgres
       - name: Build debug
-        run: ./gradlew assembleDebug test --no-daemon
+        run: ./gradlew assembleDebug test
+      - name: Upload test reports
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-results-general
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          retention-days: 7
   ios_build:
     name: iOS build
     runs-on: ubuntu-22.04
@@ -115,8 +149,10 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Build debug
-        run: ./gradlew compileKotlinIosArm64 --no-daemon
+        run: ./gradlew compileKotlinIosArm64
   backend_build_and_test:
     name: Backend - build
     runs-on: ubuntu-22.04
@@ -149,6 +185,8 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Wait for Postgres to be healthy
         run: |
           for i in {1..10}; do
@@ -162,15 +200,18 @@ jobs:
         env:
           PGPASSWORD: postgres
       - name: Build backend
-        run: ./gradlew :backend:gateway:assemble --no-daemon
+        run: ./gradlew :backend:gateway:assemble
       - name: Test backend
-        run: ./gradlew :backend:gateway:test --no-daemon
-      - name: upload results
+        run: ./gradlew :backend:gateway:test
+      - name: Upload test reports
         uses: actions/upload-artifact@v7
-        if: failure()
+        if: always()
         with:
           name: test-results-backend
-          path: backend/gateway/build/
+          path: |
+            backend/**/build/reports/tests/
+            backend/**/build/test-results/
+          retention-days: 7
   web_build:
     name: Web - Build debug
     runs-on: ubuntu-22.04
@@ -185,10 +226,12 @@ jobs:
         with:
           distribution: zulu
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Build web debug
         run: |
           ./gradlew kotlinUpgradeYarnLock
-          ./gradlew jsBrowserDevelopmentWebpack --no-daemon
+          ./gradlew jsBrowserDevelopmentWebpack
   test_docusaurus:
     name: Test docusaurus
     runs-on: ubuntu-latest

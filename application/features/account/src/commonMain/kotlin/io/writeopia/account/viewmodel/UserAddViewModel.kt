@@ -28,8 +28,11 @@ class UserAddViewModel(
     val addUserState: StateFlow<ResultData<Unit>> = _addUserState.asStateFlow()
 
     fun getWorkspaceName(): String = workspaceName
+
     fun getUserId(): String = userId
+
     fun getUserName(): String = userName
+
     fun getUserEmail(): String = userEmail
 
     fun selectRole(role: Role) {

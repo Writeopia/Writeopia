@@ -39,7 +39,7 @@ import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 
-private const val SITE_BASE_URL = "https://writeopia.io/site/"
+private const val SITE_BASE_URL = "https://app.writeopia.io/site/"
 
 @Composable
 fun PublishDialog(

@@ -20,6 +20,7 @@ class WorkspaceSync(
     private val authRepository: AuthRepository,
     private val documentsApi: DocumentsApi,
     private val documentConflictHandler: DocumentConflictHandler,
+    private val folderConflictHandler: FolderConflictHandler,
     private val imageSync: ImageSync,
     private val minSyncInternal: Duration = 3.seconds
 ) {
@@ -33,11 +34,9 @@ class WorkspaceSync(
 
             val now = Clock.System.now()
             if (!force && now - lastSuccessfulSync < minSyncInternal) {
-                println("Skipping sync for $workspaceId. Last sync was less than $minSyncInternal ago.")
                 return ResultData.Idle()
             }
 
-            println("start to sync workspace")
             val authToken = authRepository.getAuthToken() ?: return ResultData.Error(null)
             val workspace = authRepository.getWorkspace() ?: return ResultData.Idle()
 
@@ -47,10 +46,8 @@ class WorkspaceSync(
                 authToken
             )
             val (newDocuments, newFolders) = if (response is ResultData.Complete) {
-                println("Received response from API")
                 response.data
             } else {
-                println("Error syncing workspace")
                 return ResultData.Error()
             }
 
@@ -58,48 +55,50 @@ class WorkspaceSync(
                 documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
             val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
 
-            println("local outdated folders: ${localOutdatedFolders.size}")
-            println("local outdated docs: ${localOutdatedDocs.size}")
-
             val documentsNotSent = documentConflictHandler.handleConflict(
                 localOutdatedDocs,
                 newDocuments,
             )
 
-            val foldersNotSent = documentConflictHandler.handleConflictForFolders(
+            val foldersNotSent = folderConflictHandler.handleConflict(
                 localFolders = localOutdatedFolders,
                 externalFolders = newFolders,
             )
 
-            println("sending ${documentsNotSent.size} documents")
             val resultSendDocuments =
                 documentsApi.sendDocuments(documentsNotSent, workspaceId, authToken)
 
-            println("sending ${foldersNotSent.size} folders")
             val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId, authToken)
 
             if (
                 resultSendDocuments is ResultData.Complete &&
                 resultSendFolders is ResultData.Complete
             ) {
-                println("documents sent")
-                val now = Clock.System.now()
-                // If everything ran accordingly, update the sync time of the folder.
-                documentsNotSent.forEach { document ->
-                    val newDocument = document.copy(lastSyncedAt = now)
-                    documentRepository.saveDocumentMetadata(newDocument)
+                // Documents and folders were sent successfully.
+                // Update lastSyncedAt for sent items to prevent re-sending them.
+                val syncTime = Clock.System.now()
+
+                // Update lastSyncedAt for documents that were sent
+                documentsNotSent.forEach { doc ->
+                    val updatedDoc = doc.copy(lastSyncedAt = syncTime)
+                    documentRepository.saveDocument(updatedDoc)
+                }
+
+                // Update lastSyncedAt for folders that were sent
+                foldersNotSent.forEach { folder ->
+                    val updatedFolder = folder.copy(lastSyncedAt = syncTime)
+                    folderRepository.updateFolder(updatedFolder)
                 }
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()
 
-                lastSuccessfulSync = now
+                lastSuccessfulSync = syncTime
 
                 imageSync.syncAllImages(workspaceId = workspaceId, token = authToken)
 
                 return ResultData.Complete(Unit)
             } else {
-                println("documents NOT sent")
                 return ResultData.Error()
             }
         } catch (e: Exception) {

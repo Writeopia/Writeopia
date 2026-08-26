@@ -72,20 +72,26 @@ class AuthMenuViewModel(
             return@flow
         }
 
+        // Check if user is in offline mode first
         val user = authRepository.getUser()
-        val workspace = authRepository.getWorkspace()
-        val loggedId = authRepository.isLoggedIn() || user.id != WriteopiaUser.DISCONNECTED
-
-        val status = when {
-            loggedId && workspace != null -> LoginStatus.ONLINE
-
-            loggedId && workspace == null -> LoginStatus.CHOOSE_WORKSPACE
-
-            !loggedId && workspace != null -> LoginStatus.OFFLINE_CHOSEN
-
-            else -> LoginStatus.OFFLINE_NOT_CHOSEN
+        if (user.id == WriteopiaUser.DISCONNECTED) {
+            emit(LoginStatus.OFFLINE_CHOSEN)
+            return@flow
         }
 
+        // Online mode - check if token is available
+        val token = authRepository.getAuthToken()
+        if (token.isNullOrEmpty()) {
+            emit(LoginStatus.OFFLINE_NOT_CHOSEN)
+            return@flow
+        }
+
+        // Token exists - check workspace
+        val workspace = authRepository.getWorkspace()
+        val status = when {
+            workspace != null -> LoginStatus.ONLINE
+            else -> LoginStatus.CHOOSE_WORKSPACE
+        }
         emit(status)
     }
 

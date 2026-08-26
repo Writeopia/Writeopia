@@ -93,6 +93,9 @@ class WorkspaceHandlerImpl(
     private val _localSyncRequired = MutableSharedFlow<Unit>(replay = 0)
     override val localSyncRequired: Flow<Unit> = _localSyncRequired.asSharedFlow()
 
+    private val _exportWorkspaceState = MutableStateFlow<ResultData<Unit>>(ResultData.Idle())
+    override val exportWorkspaceState: StateFlow<ResultData<Unit>> = _exportWorkspaceState.asStateFlow()
+
     override fun loadAvailableWorkspaces() {
         coroutineScope.launch {
             val result = authRepository.getAuthToken()?.let { token ->
@@ -195,5 +198,23 @@ class WorkspaceHandlerImpl(
     override fun stopAutoSync() {
         configFileWatcher.stopWatching()
         _isAutoSyncEnabled.value = false
+    }
+
+    override fun exportWorkspace(workspaceId: String) {
+        coroutineScope.launch {
+            _exportWorkspaceState.value = ResultData.Loading()
+
+            val token = authRepository.getAuthToken()
+            if (token != null) {
+                val result = workspaceApi.exportWorkspace(workspaceId, token)
+                _exportWorkspaceState.value = result
+            } else {
+                _exportWorkspaceState.value = ResultData.Error(Exception("Not authenticated"))
+            }
+        }
+    }
+
+    override fun resetExportState() {
+        _exportWorkspaceState.value = ResultData.Idle()
     }
 }

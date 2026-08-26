@@ -172,6 +172,9 @@ WHERE workspace_id = ? AND deleted = FALSE;
 setPublished:
 UPDATE document_entity SET published = ?, last_updated_at = ? WHERE id = ?;
 
+updateTitle:
+UPDATE document_entity SET title = ?, last_updated_at = ?, last_synced = ? WHERE id = ?;
+
 selectPublishedWithContentById:
 SELECT *
 FROM document_entity
@@ -181,3 +184,8 @@ ORDER BY position;
 
 isPublished:
 SELECT published FROM document_entity WHERE id = ? AND deleted = FALSE;
+
+selectIdsByWorkspaceId:
+SELECT id
+FROM document_entity
+WHERE workspace_id = ? AND deleted = FALSE;

@@ -3,6 +3,7 @@ package io.writeopia.auth.core.data
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
+import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.put
@@ -24,6 +25,7 @@ import io.writeopia.sdk.serialization.data.auth.ManageUserRequest
 import io.writeopia.sdk.serialization.data.auth.PasswordResetWithCodeRequest
 import io.writeopia.sdk.serialization.data.auth.PasswordVerifyCodeRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
+import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
 class AuthApi(private val client: HttpClient, private val baseUrl: String) {
@@ -184,6 +186,31 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
     } catch (e: Exception) {
         println("resetPasswordWithCode error: ${e.message}")
         e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    /**
+     * Verifies the current user's token against the backend.
+     * Returns:
+     * - ResultData.Complete with user data if token is valid
+     * - ResultData.Error with null exception if token is invalid (401/403)
+     * - ResultData.Error with exception if network error occurred
+     */
+    suspend fun getCurrentUser(token: String): ResultData<WriteopiaUserApi> = try {
+        val response = client.get("$baseUrl/api/auth/user/current") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<WriteopiaUserApi>())
+        } else {
+            // HTTP error (401, 403, etc.) - token is invalid
+            // Return Error with null exception to distinguish from network errors
+            ResultData.Error()
+        }
+    } catch (e: Exception) {
+        // Network error - return with exception to indicate connectivity issue
+        println("getCurrentUser error: ${e.message}")
         ResultData.Error(e)
     }
 }

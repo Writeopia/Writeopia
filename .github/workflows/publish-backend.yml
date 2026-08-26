@@ -9,13 +9,47 @@ on:
       - 'v*'
 
 jobs:
-  publish_backend:
-    name: Generate docker image and publish
+  build-and-push:
+    name: Build and push ${{ matrix.service }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      id-token: write  # Required for Workload Identity Federation
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: gateway
+            gradle_module: ':backend:gateway:buildFatJar'
+            context: './backend/gateway'
+            image: writeopia-backend
+            ghcr: true
+          - service: auth
+            gradle_module: ':backend:micro:auth:buildFatJar'
+            context: './backend/micro/auth'
+            image: writeopia-auth
+            ghcr: false
+          - service: documents
+            gradle_module: ':backend:micro:documents:buildFatJar'
+            context: './backend/micro/documents'
+            image: writeopia-documents
+            ghcr: false
+          - service: media
+            gradle_module: ':backend:micro:media:buildFatJar'
+            context: './backend/micro/media'
+            image: writeopia-media
+            ghcr: false
+          - service: export
+            gradle_module: ':backend:micro:export:buildFatJar'
+            context: './backend/micro/export'
+            image: writeopia-export
+            ghcr: false
+          - service: ai
+            gradle_module: ':backend:micro:ai:buildFatJar'
+            context: './backend/micro/ai'
+            image: writeopia-ai
+            ghcr: false
     steps:
       - name: Check out code
         uses: actions/checkout@v7
@@ -26,6 +60,12 @@ jobs:
           distribution: adopt
           java-version: '21'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build ${{ matrix.service }}
+        run: ./gradlew ${{ matrix.gradle_module }}
+
       - name: Authenticate to Google Cloud
         id: auth
         uses: google-github-actions/auth@v3
@@ -34,41 +74,19 @@ jobs:
           service_account: 'github-actions-deployer@writeopia.iam.gserviceaccount.com'
           token_format: 'access_token'
 
-      - name: Docker meta (gateway)
+      - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
         with:
           images: |
-            ghcr.io/writeopia/writeopia-backend
-            europe-west4-docker.pkg.dev/writeopia/writeopia-images/writeopia-backend
+            europe-west4-docker.pkg.dev/writeopia/writeopia-images/${{ matrix.image }}
+            ${{ matrix.ghcr && format('ghcr.io/writeopia/{0}', matrix.image) || '' }}
           tags: |
             type=semver,pattern={{version}}
             type=sha
-
-      - name: Docker meta (auth)
-        id: meta-auth
-        uses: docker/metadata-action@v6
-        with:
-          images: |
-            europe-west4-docker.pkg.dev/writeopia/writeopia-images/writeopia-auth
-          tags: |
-            type=semver,pattern={{version}}
-            type=sha
-
-      - name: Docker meta (documents)
-        id: meta-documents
-        uses: docker/metadata-action@v6
-        with:
-          images: |
-            europe-west4-docker.pkg.dev/writeopia/writeopia-images/writeopia-documents
-          tags: |
-            type=semver,pattern={{version}}
-            type=sha
-
-      - name: Release build
-        run: ./gradlew :backend:gateway:buildFatJar :backend:micro:auth:buildFatJar :backend:micro:documents:buildFatJar --no-daemon
 
       - name: Log in to GitHub Container Registry
+        if: matrix.ghcr
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -82,29 +100,11 @@ jobs:
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
-      - name: Build and push Docker image (gateway)
+      - name: Build and push Docker image
         uses: docker/build-push-action@v7
         with:
-          context: ./backend/gateway
+          context: ${{ matrix.context }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          provenance: false
-
-      - name: Build and push Docker image (auth)
-        uses: docker/build-push-action@v7
-        with:
-          context: ./backend/micro/auth
-          push: true
-          tags: ${{ steps.meta-auth.outputs.tags }}
-          labels: ${{ steps.meta-auth.outputs.labels }}
-          provenance: false
-
-      - name: Build and push Docker image (documents)
-        uses: docker/build-push-action@v7
-        with:
-          context: ./backend/micro/documents
-          push: true
-          tags: ${{ steps.meta-documents.outputs.tags }}
-          labels: ${{ steps.meta-documents.outputs.labels }}
           provenance: false

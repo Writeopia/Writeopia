@@ -37,7 +37,7 @@ kotlin {
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "WriteopiaFolders"
+            baseName = "WriteopiaCoreDocuments"
             isStatic = true
         }
     }
@@ -47,6 +47,7 @@ kotlin {
             dependencies {
                 implementation(project(":writeopia"))
                 implementation(project(":writeopia_models"))
+                implementation(project(":writeopia_ui"))
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_serialization"))
                 implementation(project(":plugins:writeopia_network"))

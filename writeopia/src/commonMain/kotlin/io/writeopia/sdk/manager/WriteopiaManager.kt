@@ -364,6 +364,297 @@ class WriteopiaManager(
         )
     }
 
+    /**
+     * Creates a spreadsheet with the specified number of columns at the given position.
+     *
+     * @param storyState The current story state
+     * @param position The position to add the spreadsheet
+     * @param columnCount The number of columns in the spreadsheet
+     * @param insertMode If true, inserts the spreadsheet without replacing existing content
+     * @return Updated story state with the new spreadsheet
+     */
+    fun createSpreadsheet(
+        storyState: StoryState,
+        position: Double,
+        columnCount: Int,
+        insertMode: Boolean = false
+    ): StoryState {
+        val newStories = contentHandler.createSpreadsheet(
+            storyState.stories,
+            position,
+            columnCount,
+            insertMode = insertMode
+        )
+        val spreadsheet = newStories[position]
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheet != null) {
+                LastEdit.LineEdition(position, spreadsheet)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
+    /**
+     * Updates the text of a specific cell within a spreadsheet.
+     *
+     * @param storyState The current story state
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @param rowIndex The index of the row (0-based)
+     * @param cellIndex The index of the cell within the row (0-based)
+     * @param newText The new text for the cell
+     * @return Updated story state, or original state if update failed
+     */
+    fun updateSpreadsheetCell(
+        storyState: StoryState,
+        spreadsheetId: String,
+        rowIndex: Int,
+        cellIndex: Int,
+        newText: String
+    ): StoryState {
+        val newStories = contentHandler.updateSpreadsheetCell(
+            storyState.stories,
+            spreadsheetId,
+            rowIndex,
+            cellIndex,
+            newText
+        ) ?: return storyState
+
+        val spreadsheetEntry = newStories.entries.find { it.value.id == spreadsheetId }
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheetEntry != null) {
+                LastEdit.LineEdition(spreadsheetEntry.key, spreadsheetEntry.value)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
+    /**
+     * Adds a new row to a spreadsheet with the same number of columns as existing rows.
+     *
+     * @param storyState The current story state
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @return Updated story state, or original state if update failed
+     */
+    fun addSpreadsheetRow(
+        storyState: StoryState,
+        spreadsheetId: String
+    ): StoryState {
+        val newStories = contentHandler.addSpreadsheetRow(
+            storyState.stories,
+            spreadsheetId
+        ) ?: return storyState
+
+        val spreadsheetEntry = newStories.entries.find { it.value.id == spreadsheetId }
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheetEntry != null) {
+                LastEdit.LineEdition(spreadsheetEntry.key, spreadsheetEntry.value)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
+    /**
+     * Adds a new column to a spreadsheet by adding a cell to each row.
+     *
+     * @param storyState The current story state
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @return Updated story state, or original state if update failed
+     */
+    fun addSpreadsheetColumn(
+        storyState: StoryState,
+        spreadsheetId: String
+    ): StoryState {
+        val newStories = contentHandler.addSpreadsheetColumn(
+            storyState.stories,
+            spreadsheetId
+        ) ?: return storyState
+
+        val spreadsheetEntry = newStories.entries.find { it.value.id == spreadsheetId }
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheetEntry != null) {
+                LastEdit.LineEdition(spreadsheetEntry.key, spreadsheetEntry.value)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
+    /**
+     * Updates the width of a specific column in a spreadsheet.
+     *
+     * @param storyState The current story state
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @param columnIndex The index of the column to update (0-based)
+     * @param newWidth The new width for the column in dp
+     * @return Updated story state, or original state if update failed
+     */
+    fun updateSpreadsheetColumnWidth(
+        storyState: StoryState,
+        spreadsheetId: String,
+        columnIndex: Int,
+        newWidth: Int
+    ): StoryState {
+        val newStories = contentHandler.updateSpreadsheetColumnWidth(
+            storyState.stories,
+            spreadsheetId,
+            columnIndex,
+            newWidth
+        ) ?: return storyState
+
+        val spreadsheetEntry = newStories.entries.find { it.value.id == spreadsheetId }
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheetEntry != null) {
+                LastEdit.LineEdition(spreadsheetEntry.key, spreadsheetEntry.value)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
+    fun deleteSpreadsheetRow(
+        storyState: StoryState,
+        spreadsheetId: String,
+        rowIndex: Int
+    ): StoryState {
+        val newStories = contentHandler.deleteSpreadsheetRow(
+            storyState.stories,
+            spreadsheetId,
+            rowIndex
+        ) ?: return storyState
+
+        val spreadsheetEntry = newStories.entries.find { it.value.id == spreadsheetId }
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheetEntry != null) {
+                LastEdit.LineEdition(spreadsheetEntry.key, spreadsheetEntry.value)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
+    fun deleteSpreadsheetColumn(
+        storyState: StoryState,
+        spreadsheetId: String,
+        columnIndex: Int
+    ): StoryState {
+        val newStories = contentHandler.deleteSpreadsheetColumn(
+            storyState.stories,
+            spreadsheetId,
+            columnIndex
+        ) ?: return storyState
+
+        val spreadsheetEntry = newStories.entries.find { it.value.id == spreadsheetId }
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheetEntry != null) {
+                LastEdit.LineEdition(spreadsheetEntry.key, spreadsheetEntry.value)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
+    fun addSpreadsheetRowAt(
+        storyState: StoryState,
+        spreadsheetId: String,
+        rowIndex: Int
+    ): StoryState {
+        val newStories = contentHandler.addSpreadsheetRowAt(
+            storyState.stories,
+            spreadsheetId,
+            rowIndex
+        ) ?: return storyState
+
+        val spreadsheetEntry = newStories.entries.find { it.value.id == spreadsheetId }
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheetEntry != null) {
+                LastEdit.LineEdition(spreadsheetEntry.key, spreadsheetEntry.value)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
+    fun addSpreadsheetColumnAt(
+        storyState: StoryState,
+        spreadsheetId: String,
+        columnIndex: Int
+    ): StoryState {
+        val newStories = contentHandler.addSpreadsheetColumnAt(
+            storyState.stories,
+            spreadsheetId,
+            columnIndex
+        ) ?: return storyState
+
+        val spreadsheetEntry = newStories.entries.find { it.value.id == spreadsheetId }
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheetEntry != null) {
+                LastEdit.LineEdition(spreadsheetEntry.key, spreadsheetEntry.value)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
+    fun moveSpreadsheetRow(
+        storyState: StoryState,
+        spreadsheetId: String,
+        fromIndex: Int,
+        toIndex: Int
+    ): StoryState {
+        val newStories = contentHandler.moveSpreadsheetRow(
+            storyState.stories,
+            spreadsheetId,
+            fromIndex,
+            toIndex
+        ) ?: return storyState
+
+        val spreadsheetEntry = newStories.entries.find { it.value.id == spreadsheetId }
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheetEntry != null) {
+                LastEdit.LineEdition(spreadsheetEntry.key, spreadsheetEntry.value)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
+    fun moveSpreadsheetColumn(
+        storyState: StoryState,
+        spreadsheetId: String,
+        fromIndex: Int,
+        toIndex: Int
+    ): StoryState {
+        val newStories = contentHandler.moveSpreadsheetColumn(
+            storyState.stories,
+            spreadsheetId,
+            fromIndex,
+            toIndex
+        ) ?: return storyState
+
+        val spreadsheetEntry = newStories.entries.find { it.value.id == spreadsheetId }
+        return storyState.copy(
+            stories = newStories,
+            lastEdit = if (spreadsheetEntry != null) {
+                LastEdit.LineEdition(spreadsheetEntry.key, spreadsheetEntry.value)
+            } else {
+                LastEdit.Nothing
+            }
+        )
+    }
+
     suspend fun generateSuggestionsList(
         storyState: () -> StoryState,
         storyType: StoryType,

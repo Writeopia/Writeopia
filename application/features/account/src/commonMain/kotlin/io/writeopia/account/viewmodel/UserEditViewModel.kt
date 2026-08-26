@@ -29,9 +29,13 @@ class UserEditViewModel(
     val updateUserState: StateFlow<ResultData<Unit>> = _updateUserState.asStateFlow()
 
     fun getWorkspaceName(): String = workspaceName
+
     fun getUserId(): String = userId
+
     fun getUserName(): String = userName
+
     fun getUserEmail(): String = userEmail
+
     fun getCurrentRole(): String = currentRole
 
     fun selectRole(role: Role) {

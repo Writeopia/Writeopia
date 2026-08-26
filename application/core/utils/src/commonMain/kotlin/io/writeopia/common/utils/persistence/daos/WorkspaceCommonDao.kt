@@ -13,4 +13,6 @@ interface WorkspaceCommonDao {
     suspend fun selectCurrentWorkspace(): Workspace?
 
     suspend fun unselectAllWorkspaces()
+
+    suspend fun updateLastEventSync(workspaceId: String, lastEventSync: Long)
 }

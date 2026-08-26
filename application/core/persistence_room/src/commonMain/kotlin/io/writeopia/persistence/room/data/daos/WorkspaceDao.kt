@@ -20,4 +20,7 @@ interface WorkspaceDao {
 
     @Query("UPDATE workspace_entity SET selected = 0")
     suspend fun unselectAllWorkspaces()
+
+    @Query("UPDATE workspace_entity SET lastEventSyncAt = :lastEventSync WHERE id = :workspaceId")
+    suspend fun updateLastEventSync(workspaceId: String, lastEventSync: Long)
 }

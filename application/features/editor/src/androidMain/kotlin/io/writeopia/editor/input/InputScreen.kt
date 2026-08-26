@@ -20,6 +20,8 @@ internal fun InputScreen(
     canUndoState: StateFlow<Boolean>,
     canRedoState: StateFlow<Boolean>,
     onDrawingClick: () -> Unit = {},
+    onImageClick: () -> Unit = {},
+    onSpreadsheetClick: () -> Unit = {},
 ) {
     MobileInputScreen(
         modifier = modifier,
@@ -31,5 +33,7 @@ internal fun InputScreen(
         canUndoState = canUndoState,
         canRedoState = canRedoState,
         onDrawingClick = onDrawingClick,
+        onImageClick = onImageClick,
+        onSpreadsheetClick = onSpreadsheetClick,
     )
 }

@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.ALLOW_BACKEND
 import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 
@@ -56,7 +57,7 @@ fun SettingsPanel(
                 pageState = page
             }
 
-            if (currentPlatform.isDesktop()) {
+            if (currentPlatform == PlatformType.DESKTOP) {
                 SettingsButton("AI", SettingsPage.AI, pageState) { page ->
                     pageState = page
                 }

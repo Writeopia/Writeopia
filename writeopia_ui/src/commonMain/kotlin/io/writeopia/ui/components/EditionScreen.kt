@@ -546,6 +546,47 @@ fun EditionScreenForText(
                         tint = tint
                     )
 
+                    Spacer(modifier = Modifier.width(spaceWidth))
+
+                    Icon(
+                        modifier = Modifier
+                            .clip(clipShape)
+                            .clickable {
+                                onSpanClick(Span.HIGHLIGHT_YELLOW)
+                            }
+                            .size(iconSize)
+                            .padding(iconPadding),
+                        imageVector = WrSdkIcons.highlight,
+                        contentDescription = "Highlight Yellow",
+                        tint = Color(0xFFFFEB3B)
+                    )
+
+                    Icon(
+                        modifier = Modifier
+                            .clip(clipShape)
+                            .clickable {
+                                onSpanClick(Span.HIGHLIGHT_GREEN)
+                            }
+                            .size(iconSize)
+                            .padding(iconPadding),
+                        imageVector = WrSdkIcons.highlight,
+                        contentDescription = "Highlight Green",
+                        tint = Color(0xFF4CAF50)
+                    )
+
+                    Icon(
+                        modifier = Modifier
+                            .clip(clipShape)
+                            .clickable {
+                                onSpanClick(Span.HIGHLIGHT_RED)
+                            }
+                            .size(iconSize)
+                            .padding(iconPadding),
+                        imageVector = WrSdkIcons.highlight,
+                        contentDescription = "Highlight Red",
+                        tint = Color(0xFFF44336)
+                    )
+
 //            Spacer(modifier = Modifier.width(spaceWidth))
 //
 //            Icon(
