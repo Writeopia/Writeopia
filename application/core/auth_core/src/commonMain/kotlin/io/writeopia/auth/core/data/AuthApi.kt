@@ -25,6 +25,7 @@ import io.writeopia.sdk.serialization.data.auth.ManageUserRequest
 import io.writeopia.sdk.serialization.data.auth.PasswordResetWithCodeRequest
 import io.writeopia.sdk.serialization.data.auth.PasswordVerifyCodeRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
+import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
@@ -47,11 +48,11 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         email: String,
         workspaceName: String,
         password: String
-    ): ResultData<AuthResponse> = try {
+    ): ResultData<RegisterResponse> = try {
         val response = client.post("$baseUrl/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(RegisterRequest(name, email, workspaceName, password))
-        }.body<AuthResponse>()
+        }.body<RegisterResponse>()
 
         ResultData.Complete(response)
     } catch (e: Exception) {
@@ -104,16 +105,18 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         ResultData.Error(e)
     }
 
-    suspend fun confirmEmail(email: String, code: String): ResultData<Boolean> = try {
+    suspend fun confirmEmail(email: String, code: String): ResultData<AuthResponse> = try {
         val response = client.post("$baseUrl/api/auth/email/confirm") {
             contentType(ContentType.Application.Json)
             setBody(EmailConfirmRequest(email, code))
-        }.body<EmailConfirmResponse>()
+        }
 
-        if (response.success) {
-            ResultData.Complete(true)
+        if (response.status.isSuccess()) {
+            val authResponse = response.body<AuthResponse>()
+            ResultData.Complete(authResponse)
         } else {
-            ResultData.Error(Exception(response.message ?: "Invalid code"))
+            val errorResponse = response.body<EmailConfirmResponse>()
+            ResultData.Error(Exception(errorResponse.message ?: "Invalid code"))
         }
     } catch (e: Exception) {
         println("confirmEmail error: ${e.message}")

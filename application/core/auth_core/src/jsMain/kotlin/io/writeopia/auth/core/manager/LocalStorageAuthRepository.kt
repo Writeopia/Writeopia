@@ -12,10 +12,6 @@ import kotlin.time.Instant
 
 internal class LocalStorageAuthRepository : AuthRepository {
 
-    private var pendingConfirmationEmail: String? = null
-    private var forgotPasswordEmail: String? = null
-    private var forgotPasswordCode: String? = null
-
     override suspend fun getUser(): WriteopiaUser {
         val userId = localStorage.getItem(KEY_USER_ID) ?: return WriteopiaUser.disconnectedUser()
         val email = localStorage.getItem(KEY_USER_EMAIL) ?: ""
@@ -115,30 +111,33 @@ internal class LocalStorageAuthRepository : AuthRepository {
     }
 
     override suspend fun savePendingConfirmationEmail(email: String) {
-        pendingConfirmationEmail = email
+        localStorage.setItem(KEY_PENDING_CONFIRMATION_EMAIL, email)
     }
 
-    override suspend fun getPendingConfirmationEmail(): String? = pendingConfirmationEmail
+    override suspend fun getPendingConfirmationEmail(): String? =
+        localStorage.getItem(KEY_PENDING_CONFIRMATION_EMAIL)
 
     override suspend fun clearPendingConfirmationEmail() {
-        pendingConfirmationEmail = null
+        localStorage.removeItem(KEY_PENDING_CONFIRMATION_EMAIL)
     }
 
     override suspend fun saveForgotPasswordEmail(email: String) {
-        forgotPasswordEmail = email
+        localStorage.setItem(KEY_FORGOT_PASSWORD_EMAIL, email)
     }
 
-    override suspend fun getForgotPasswordEmail(): String? = forgotPasswordEmail
+    override suspend fun getForgotPasswordEmail(): String? =
+        localStorage.getItem(KEY_FORGOT_PASSWORD_EMAIL)
 
     override suspend fun saveForgotPasswordCode(code: String) {
-        forgotPasswordCode = code
+        localStorage.setItem(KEY_FORGOT_PASSWORD_CODE, code)
     }
 
-    override suspend fun getForgotPasswordCode(): String? = forgotPasswordCode
+    override suspend fun getForgotPasswordCode(): String? =
+        localStorage.getItem(KEY_FORGOT_PASSWORD_CODE)
 
     override suspend fun clearForgotPasswordData() {
-        forgotPasswordEmail = null
-        forgotPasswordCode = null
+        localStorage.removeItem(KEY_FORGOT_PASSWORD_EMAIL)
+        localStorage.removeItem(KEY_FORGOT_PASSWORD_CODE)
     }
 
     companion object {
@@ -155,5 +154,8 @@ internal class LocalStorageAuthRepository : AuthRepository {
         private const val KEY_WORKSPACE_LAST_EVENT_SYNC = "writeopia_workspace_last_event_sync"
         private const val KEY_WORKSPACE_SELECTED = "writeopia_workspace_selected"
         private const val KEY_WORKSPACE_ROLE = "writeopia_workspace_role"
+        private const val KEY_PENDING_CONFIRMATION_EMAIL = "writeopia_pending_confirmation_email"
+        private const val KEY_FORGOT_PASSWORD_EMAIL = "writeopia_forgot_password_email"
+        private const val KEY_FORGOT_PASSWORD_CODE = "writeopia_forgot_password_code"
     }
 }

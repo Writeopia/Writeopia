@@ -113,9 +113,8 @@ fun CreateAppInMemory() {
     val keyboardEventFlow = MutableStateFlow<KeyboardEvent?>(null)
 
     RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
-    WriteopiaConnectionInjector.setBaseUrl(
-        "https://writeopia.io"
-    )
+    val baseUrl = "https://writeopia.io/dev"
+    WriteopiaConnectionInjector.setBaseUrl(baseUrl)
     WriteopiaConnectionInjector.setDisableWebsocket(true)
 
     val uiConfigurationViewModel = UiConfigurationInjector.singleton()
@@ -154,7 +153,7 @@ fun CreateAppInMemory() {
                         Destinations.MAIN_APP.id
                     }
                 ) {
-                    startScreen(navigationController, colorTheme)
+                    startScreen(navigationController, colorTheme, isWeb = true)
 
                     composable(route = Destinations.MAIN_APP.id) {
                         DesktopApp(

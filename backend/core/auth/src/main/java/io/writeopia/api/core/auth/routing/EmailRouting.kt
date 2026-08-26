@@ -5,13 +5,16 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
+import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.clearConfirmationCode
 import io.writeopia.api.core.auth.repository.enableUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.isCodeValid
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
 import io.writeopia.api.core.auth.service.EmailService
+import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.connection.logger
+import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.EmailConfirmRequest
 import io.writeopia.sdk.serialization.data.auth.EmailConfirmResponse
 import io.writeopia.sdk.serialization.data.auth.EmailResendRequest
@@ -29,11 +32,22 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
                 writeopiaDb.enableUserByEmail(request.email)
                 writeopiaDb.clearConfirmationCode(request.email)
 
-                logger.info("Email confirmed successfully for: ${request.email}")
-                call.respond(
-                    HttpStatusCode.OK,
-                    EmailConfirmResponse(success = true, message = "Email confirmed successfully")
-                )
+                // Get the user and generate a JWT token
+                val user = writeopiaDb.getUserByEmail(request.email)
+                if (user != null) {
+                    val token = JwtConfig.generateToken(user.id)
+                    logger.info("Email confirmed successfully for: ${request.email}")
+                    call.respond(
+                        HttpStatusCode.OK,
+                        AuthResponse(token = token, writeopiaUser = user.toApi(), enabled = true)
+                    )
+                } else {
+                    logger.error("User not found after email confirmation: ${request.email}")
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        EmailConfirmResponse(success = false, message = "User not found")
+                    )
+                }
             } else {
                 logger.warn("Invalid or expired confirmation code for: ${request.email}")
                 call.respond(

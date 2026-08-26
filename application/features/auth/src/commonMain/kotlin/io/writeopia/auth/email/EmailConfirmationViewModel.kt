@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.serialization.data.toModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,13 +61,21 @@ internal class EmailConfirmationViewModel(
 
                 _confirmState.value = when (result) {
                     is ResultData.Complete -> {
+                        // Save the token and user from the response
+                        val authResponse = result.data
+                        val user = authResponse.writeopiaUser.toModel()
+                        authRepository.saveUser(user = user, selected = true)
+                        authResponse.token?.let { token ->
+                            authRepository.saveToken(user.id, token)
+                        }
+
                         authRepository.clearPendingConfirmationEmail()
                         onSuccess()
-                        result
+                        ResultData.Complete(true)
                     }
                     is ResultData.Error -> {
                         delay(300)
-                        result
+                        ResultData.Error(result.exception)
                     }
                     else -> {
                         delay(300)
