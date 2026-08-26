@@ -569,7 +569,9 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun requestPermissionToDeleteSelection() {
-        askToDelete.value = true
+        if (selectedNotes.value.isNotEmpty()) {
+            askToDelete.value = true
+        }
     }
 
     override fun cancelDeletion() {

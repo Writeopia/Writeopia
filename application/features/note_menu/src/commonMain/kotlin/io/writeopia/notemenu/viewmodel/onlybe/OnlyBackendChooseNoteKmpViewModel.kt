@@ -441,7 +441,9 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     }
 
     override fun requestPermissionToDeleteSelection() {
-        askToDelete.value = true
+        if (_selectedNotes.value.isNotEmpty()) {
+            askToDelete.value = true
+        }
     }
 
     override fun cancelDeletion() {
