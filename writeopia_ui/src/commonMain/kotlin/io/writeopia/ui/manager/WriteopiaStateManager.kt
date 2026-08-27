@@ -743,8 +743,10 @@ class WriteopiaStateManager(
      * of the same, if possible, or the next line will be a Message.
      *
      * @param lineBreak [Action.LineBreak]
+     * @param processCommands If true, processes markdown commands (like ###, -, etc.) on each
+     *                        new line after splitting. Useful when accepting AI responses.
      */
-    fun onLineBreak(lineBreak: Action.LineBreak) {
+    fun onLineBreak(lineBreak: Action.LineBreak, processCommands: Boolean = false) {
         if (!isEditable) return
         val lastBreak = lastLineBreak
 
@@ -781,7 +783,30 @@ class WriteopiaStateManager(
             writeopiaManager.onLineBreak(lineBreak, expanded).let { (_, newState) ->
                 // Todo: Fix this when the inner position are completed
                 //  backStackManager.addAction(BackstackAction.Add(newStory, newPosition))
+
+                // First apply the line break state
                 _currentStory.value = newState.copy(selection = Selection.start())
+
+                // Process markdown commands on each newly created line
+                if (processCommands) {
+                    val lastEdit = newState.lastEdit
+                    val stepsToProcess = when (lastEdit) {
+                        is LastEdit.BulkEdition -> lastEdit.steps
+                        is LastEdit.LineBreakEdition -> listOf(
+                            lastEdit.originalStep,
+                            lastEdit.newStep
+                        )
+                        else -> emptyList()
+                    }
+
+                    stepsToProcess.forEach { (pos, step) ->
+                        val text = step.text
+                        if (text != null) {
+                            commandHandler.handleCommand(text, step, pos)
+                        }
+                    }
+                }
+
                 _scrollToPosition.value = -1
             }
         }
@@ -1224,7 +1249,8 @@ class WriteopiaStateManager(
         input: TextInput,
         position: Double,
         lineBreakByContent: Boolean,
-        trackIt: Boolean = true
+        trackIt: Boolean = true,
+        processCommands: Boolean = false
     ) {
         if (!isEditable) return
 
@@ -1236,7 +1262,7 @@ class WriteopiaStateManager(
 
         if (lineBreakByContent && text.contains("\n")) {
             val newStep = step.copy(text = text)
-            onLineBreak(Action.LineBreak(newStep, position))
+            onLineBreak(Action.LineBreak(newStep, position), processCommands = processCommands)
         } else {
             val newText = text.replace("\n", "")
             val newStep = step.copy(text = newText, spans = input.spans)
@@ -1469,7 +1495,8 @@ class WriteopiaStateManager(
                 TextInput(text ?: ""),
                 position,
                 lineBreakByContent = true,
-                trackIt = false
+                trackIt = false,
+                processCommands = true
             )
             trackState()
         }
