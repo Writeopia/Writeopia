@@ -1567,4 +1567,61 @@ class WriteopiaStateManagerTest {
             )
         }
     }
+
+    @Test
+    fun acceptStoryStepShouldParseInlineMarkdown() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithInlineMarkdown(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // Accept the AI answer
+        storyManager.acceptStoryStep(0.0)
+
+        // Wait for coroutine to complete
+        advanceUntilIdle()
+
+        // Verify the stories were processed
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        assertEquals(3, sortedStories.size, "Should have 3 stories")
+
+        // First line: **For The Cake** should have bold span and ** removed
+        val firstStory = sortedStories[0].value
+        assertEquals("For The Cake", firstStory.text, "Bold markers should be removed")
+        assertTrue(
+            firstStory.spans.any { it.span == Span.BOLD },
+            "First story should have BOLD span"
+        )
+
+        // Second line: This is *italic* text should have italic span and * removed
+        val secondStory = sortedStories[1].value
+        assertEquals("This is italic text", secondStory.text, "Italic markers should be removed")
+        assertTrue(
+            secondStory.spans.any { it.span == Span.ITALIC },
+            "Second story should have ITALIC span"
+        )
+
+        // Third line: URL should have link span
+        val thirdStory = sortedStories[2].value
+        assertEquals("Visit https://example.com", thirdStory.text, "URL text should remain")
+        assertTrue(
+            thirdStory.spans.any { it.span == Span.LINK },
+            "Third story should have LINK span"
+        )
+    }
 }

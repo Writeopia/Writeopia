@@ -370,6 +370,14 @@ object MapStoryData {
         )
     )
 
+    fun aiAnswerWithInlineMarkdown(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            localId = "0",
+            type = StoryTypes.AI_ANSWER.type,
+            text = "**For The Cake**\nThis is *italic* text\nVisit https://example.com",
+        )
+    )
+
     fun syncHistory(): Map<Double, StoryStep> =
         mapOf(
             0.0 to
