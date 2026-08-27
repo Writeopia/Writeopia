@@ -789,20 +789,37 @@ class WriteopiaStateManager(
 
                 // Process markdown commands on each newly created line
                 if (processCommands) {
-                    val lastEdit = newState.lastEdit
-                    val stepsToProcess = when (lastEdit) {
-                        is LastEdit.BulkEdition -> lastEdit.steps
+                    val originalLastEdit = newState.lastEdit
+                    val stepsToProcess = when (originalLastEdit) {
+                        is LastEdit.BulkEdition -> originalLastEdit.steps
                         is LastEdit.LineBreakEdition -> listOf(
-                            lastEdit.originalStep,
-                            lastEdit.newStep
+                            originalLastEdit.originalStep,
+                            originalLastEdit.newStep
                         )
                         else -> emptyList()
                     }
+
+                    // Get positions that will be modified by command processing
+                    val positionsToTrack = stepsToProcess.map { it.first }.toSet()
 
                     stepsToProcess.forEach { (pos, step) ->
                         val text = step.text
                         if (text != null) {
                             commandHandler.handleCommand(text, step, pos)
+                        }
+                    }
+
+                    // After command processing, restore a merged LastEdit that includes
+                    // all modified steps (preserving both line-break and type changes)
+                    if (positionsToTrack.isNotEmpty()) {
+                        val currentStories = _currentStory.value.stories
+                        val mergedSteps = positionsToTrack.mapNotNull { pos ->
+                            currentStories[pos]?.let { step -> pos to step }
+                        }
+                        if (mergedSteps.isNotEmpty()) {
+                            _currentStory.value = _currentStory.value.copy(
+                                lastEdit = LastEdit.BulkEdition(mergedSteps)
+                            )
                         }
                     }
                 }

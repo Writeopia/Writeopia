@@ -4,6 +4,7 @@ package io.writeopia.ui.manager
 
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.model.action.Action
+import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
@@ -1516,5 +1517,54 @@ class WriteopiaStateManagerTest {
         // Fifth should be regular text (no command, no leading space)
         assertEquals(StoryTypes.TEXT.type, sortedStories[4].value.type)
         assertEquals("Regular text", sortedStories[4].value.text)
+    }
+
+    @Test
+    fun acceptStoryStepShouldPreserveLastEditForSaveAndSync() = runTest {
+        // This test verifies that after accepting a multiline AI response,
+        // the LastEdit contains all modified steps for proper save/sync
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithListItems(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // Accept the AI answer (3 list items)
+        storyManager.acceptStoryStep(0.0)
+
+        // Wait for coroutine to complete
+        advanceUntilIdle()
+
+        // Verify the lastEdit is a BulkEdition containing all modified steps
+        val lastEdit = storyManager.currentStory.value.lastEdit
+        require(lastEdit is LastEdit.BulkEdition) {
+            "LastEdit should be BulkEdition to preserve all modified steps, but was ${lastEdit::class.simpleName}"
+        }
+        assertEquals(
+            3,
+            lastEdit.steps.size,
+            "BulkEdition should contain all 3 modified list items"
+        )
+
+        // Verify each step in the BulkEdition has the correct type
+        lastEdit.steps.forEach { (_, step) ->
+            assertEquals(
+                StoryTypes.UNORDERED_LIST_ITEM.type,
+                step.type,
+                "Each step in BulkEdition should be UNORDERED_LIST_ITEM"
+            )
+        }
     }
 }
