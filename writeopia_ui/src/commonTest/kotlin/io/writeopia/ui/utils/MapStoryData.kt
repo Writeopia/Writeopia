@@ -425,7 +425,9 @@ object MapStoryData {
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.TEXT_BOX.type,
-                    text = "And it was super awesome!! \n\nUt enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur?",
+                    text = "And it was super awesome!! \n\nUt enim ad minima veniam, " +
+                        "quis nostrum exercitationem ullam corporis suscipit laboriosam, " +
+                        "nisi ut aliquid ex ea commodi consequatur?",
                 ),
             9.0 to
                 StoryStep(
