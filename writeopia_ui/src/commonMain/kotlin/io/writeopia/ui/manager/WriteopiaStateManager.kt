@@ -20,7 +20,6 @@ import io.writeopia.sdk.models.command.TypeInfo
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
-import io.writeopia.sdk.models.markdown.InlineMarkdownParser
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
@@ -99,7 +98,8 @@ class WriteopiaStateManager(
     ),
     private val inTextMarkdownHandler: InTextMarkdownHandler? = InTextMarkdownHandler,
     private val imageUploader: ImageUploader? = null,
-    private val textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false),
+    private val bulkStyleParseHandler: BulkStyleParseHandler = BulkStyleParseHandler()
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     private val selectionBuffer: EventBuffer<Pair<Boolean, Double>> = EventBuffer(coroutineScope)
@@ -790,52 +790,18 @@ class WriteopiaStateManager(
 
                 // Process markdown commands on each newly created line
                 if (processCommands) {
-                    val stepsToProcess = when (val originalLastEdit = newState.lastEdit) {
-                        is LastEdit.BulkEdition -> originalLastEdit.steps
-                        is LastEdit.LineBreakEdition -> listOf(
-                            originalLastEdit.originalStep,
-                            originalLastEdit.newStep
-                        )
-                        else -> emptyList()
-                    }
-
-                    // Get positions that will be modified by command processing
-                    val positionsToTrack = stepsToProcess.map { it.first }.toSet()
-
-                    stepsToProcess.forEach { (pos, step) ->
-                        val text = step.text
-                        if (text != null) {
+                    val parseResult = bulkStyleParseHandler.processMarkdown(
+                        lastEdit = newState.lastEdit,
+                        currentStories = { _currentStory.value.stories },
+                        onCommandProcess = { pos, step, text ->
                             commandHandler.handleCommand(text, step, pos)
                         }
-                    }
+                    )
 
-                    // Apply inline markdown parsing (bold, italic, URLs) to each step
-                    // and create merged LastEdit with all modified steps
-                    if (positionsToTrack.isNotEmpty()) {
-                        val currentStories = _currentStory.value.stories
-                        val parsedSteps = positionsToTrack.mapNotNull { pos ->
-                            currentStories[pos]?.let { step ->
-                                pos to InlineMarkdownParser.parseMarkdown(step)
-                            }
-                        }
-
-                        // Only update stories map if there are changes
-                        val hasChanges = parsedSteps.any { (pos, step) ->
-                            currentStories[pos] !== step
-                        }
-                        val updatedStories = if (hasChanges) {
-                            currentStories + parsedSteps.toMap()
-                        } else {
-                            currentStories
-                        }
-
+                    parseResult?.let { result ->
                         _currentStory.value = _currentStory.value.copy(
-                            stories = updatedStories,
-                            lastEdit = if (parsedSteps.isNotEmpty()) {
-                                LastEdit.BulkEdition(parsedSteps)
-                            } else {
-                                _currentStory.value.lastEdit
-                            }
+                            stories = result.stories,
+                            lastEdit = result.lastEdit ?: _currentStory.value.lastEdit
                         )
                     }
                 }
