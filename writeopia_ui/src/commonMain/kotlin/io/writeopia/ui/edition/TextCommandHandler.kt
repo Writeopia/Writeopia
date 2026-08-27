@@ -22,7 +22,16 @@ class TextCommandHandler(
     }
 
     fun handleCommand(text: String, step: StoryStep, position: Double): Boolean {
-        if (excludeTypes.contains(step.type.number) || !text.contains(' ')) return false
+        if (excludeTypes.contains(step.type.number)) return false
+
+        // First, check if the entire text is an exact command match (e.g., "---" for divider)
+        if (trie.search(text)) {
+            commandsMap[text]!!.invoke(step.copy(text = text), position)
+            return true
+        }
+
+        // Fall back to space-based command detection (e.g., "### heading")
+        if (!text.contains(' ')) return false
 
         val textArray = text.split(" ")
         if (textArray.isEmpty()) return false
