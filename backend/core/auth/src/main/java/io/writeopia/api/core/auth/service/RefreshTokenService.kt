@@ -15,21 +15,9 @@ data class TokenPair(
     val refreshToken: String
 )
 
-data class RefreshTokenData(
-    val id: String,
-    val userId: String,
-    val tokenHash: String,
-    val expiresAt: Long,
-    val createdAt: Long,
-    val revoked: Boolean
-)
-
 object RefreshTokenService {
 
-    fun generateAndStoreTokens(
-        writeopiaDb: WriteopiaDbBackend,
-        userId: String
-    ): TokenPair {
+    fun WriteopiaDbBackend.generateAndStoreTokens(userId: String): TokenPair {
         val tokenId = UUID.randomUUID().toString()
         val accessToken = JwtConfig.generateAccessToken(userId)
         val refreshToken = JwtConfig.generateRefreshToken(userId, tokenId)
@@ -38,7 +26,7 @@ object RefreshTokenService {
         val expiresAt = JwtConfig.getRefreshTokenExpiry().toEpochMilli()
         val createdAt = Clock.System.now().toEpochMilliseconds()
 
-        writeopiaDb.refreshTokenEntityQueries.insertRefreshToken(
+        refreshTokenEntityQueries.insertRefreshToken(
             id = tokenId,
             user_id = userId,
             token_hash = tokenHash,
@@ -50,15 +38,12 @@ object RefreshTokenService {
         return TokenPair(accessToken, refreshToken)
     }
 
-    fun validateAndRotate(
-        writeopiaDb: WriteopiaDbBackend,
-        refreshToken: String
-    ): TokenPair? {
+    fun WriteopiaDbBackend.validateAndRotate(refreshToken: String): TokenPair? {
         val tokenId = JwtConfig.extractTokenId(refreshToken) ?: return null
         val userId = JwtConfig.extractUserId(refreshToken, isRefreshToken = true) ?: return null
 
         val currentTime = Clock.System.now().toEpochMilliseconds()
-        val storedToken = writeopiaDb.refreshTokenEntityQueries
+        val storedToken = refreshTokenEntityQueries
             .selectRefreshTokenById(tokenId, currentTime)
             .executeAsOneOrNull() ?: return null
 
@@ -71,24 +56,24 @@ object RefreshTokenService {
             return null
         }
 
-        writeopiaDb.refreshTokenEntityQueries.revokeRefreshToken(tokenId)
+        refreshTokenEntityQueries.revokeRefreshToken(tokenId)
 
-        return generateAndStoreTokens(writeopiaDb, userId)
+        return generateAndStoreTokens(userId)
     }
 
-    fun revokeAllUserTokens(writeopiaDb: WriteopiaDbBackend, userId: String) {
-        writeopiaDb.refreshTokenEntityQueries.revokeAllUserRefreshTokens(userId)
+    fun WriteopiaDbBackend.revokeAllUserTokens(userId: String) {
+        refreshTokenEntityQueries.revokeAllUserRefreshTokens(userId)
     }
 
-    fun revokeToken(writeopiaDb: WriteopiaDbBackend, refreshToken: String): Boolean {
+    fun WriteopiaDbBackend.revokeToken(refreshToken: String): Boolean {
         val tokenId = JwtConfig.extractTokenId(refreshToken) ?: return false
-        writeopiaDb.refreshTokenEntityQueries.revokeRefreshToken(tokenId)
+        refreshTokenEntityQueries.revokeRefreshToken(tokenId)
         return true
     }
 
-    fun cleanupExpiredTokens(writeopiaDb: WriteopiaDbBackend) {
+    fun WriteopiaDbBackend.cleanupExpiredTokens() {
         val currentTime = Clock.System.now().toEpochMilliseconds()
-        writeopiaDb.refreshTokenEntityQueries.deleteExpiredTokens(currentTime)
+        refreshTokenEntityQueries.deleteExpiredTokens(currentTime)
     }
 
     private fun hashToken(token: String): String {

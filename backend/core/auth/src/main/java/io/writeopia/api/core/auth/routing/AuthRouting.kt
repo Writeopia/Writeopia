@@ -1,6 +1,7 @@
 package io.writeopia.api.core.auth.routing
 
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.plugins.ContentTransformationException
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
@@ -59,7 +60,9 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
                 if (isVerified) {
                     if (user.enabled || debugMode) {
-                        val tokenPair = RefreshTokenService.generateAndStoreTokens(writeopiaDb, user.id)
+                        val tokenPair = with(RefreshTokenService) {
+                            writeopiaDb.generateAndStoreTokens(user.id)
+                        }
                         call.respond(
                             HttpStatusCode.OK,
                             AuthResponse(
@@ -95,7 +98,9 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     post("/api/auth/refresh") {
         try {
             val request = call.receive<RefreshTokenRequest>()
-            val tokenPair = RefreshTokenService.validateAndRotate(writeopiaDb, request.refreshToken)
+            val tokenPair = with(RefreshTokenService) {
+                writeopiaDb.validateAndRotate(request.refreshToken)
+            }
 
             if (tokenPair != null) {
                 call.respond(
@@ -108,6 +113,9 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             } else {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid or expired refresh token")
             }
+        } catch (e: ContentTransformationException) {
+            logger.warn("Token refresh bad request: ${e.message}")
+            call.respond(HttpStatusCode.BadRequest, "Invalid request body")
         } catch (e: Exception) {
             logger.error("Token refresh error: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, "Token refresh failed")
@@ -117,13 +125,18 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     post("/api/auth/logout") {
         try {
             val request = call.receive<RefreshTokenRequest>()
-            val revoked = RefreshTokenService.revokeToken(writeopiaDb, request.refreshToken)
+            val revoked = with(RefreshTokenService) {
+                writeopiaDb.revokeToken(request.refreshToken)
+            }
 
             if (revoked) {
                 call.respond(HttpStatusCode.OK, "Logged out successfully")
             } else {
                 call.respond(HttpStatusCode.BadRequest, "Invalid token")
             }
+        } catch (e: ContentTransformationException) {
+            logger.warn("Logout bad request: ${e.message}")
+            call.respond(HttpStatusCode.BadRequest, "Invalid request body")
         } catch (e: Exception) {
             logger.error("Logout error: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, "Logout failed")
@@ -135,7 +148,9 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             val userId = getUserId()
 
             if (userId != null) {
-                RefreshTokenService.revokeAllUserTokens(writeopiaDb, userId)
+                with(RefreshTokenService) {
+                    writeopiaDb.revokeAllUserTokens(userId)
+                }
                 call.respond(HttpStatusCode.OK, "All sessions logged out")
             } else {
                 call.respond(HttpStatusCode.Unauthorized, "Not authenticated")

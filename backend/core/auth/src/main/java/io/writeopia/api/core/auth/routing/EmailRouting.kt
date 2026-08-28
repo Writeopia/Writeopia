@@ -35,7 +35,9 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
                 // Get the user and generate tokens
                 val user = writeopiaDb.getUserByEmail(request.email)
                 if (user != null) {
-                    val tokenPair = RefreshTokenService.generateAndStoreTokens(writeopiaDb, user.id)
+                    val tokenPair = with(RefreshTokenService) {
+                        writeopiaDb.generateAndStoreTokens(user.id)
+                    }
                     logger.info("Email confirmed successfully for: ${request.email}")
                     call.respond(
                         HttpStatusCode.OK,
