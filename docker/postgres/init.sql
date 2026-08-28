@@ -47,6 +47,18 @@ CREATE TABLE user_entity (
   confirmation_code_expiry BIGINT
 );
 
+CREATE TABLE refresh_token_entity (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES user_entity(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL,
+  expires_at BIGINT NOT NULL,
+  created_at BIGINT NOT NULL,
+  revoked BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX idx_refresh_token_user_id ON refresh_token_entity(user_id);
+CREATE INDEX idx_refresh_token_hash ON refresh_token_entity(token_hash);
+
 CREATE TABLE company_entity (
   domain TEXT PRIMARY KEY,
   name TEXT NOT NULL
