@@ -37,6 +37,7 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -519,6 +520,9 @@ class GlobalShellKmpViewModel(
             authRepository.clearTokens()
             authRepository.logout()
 
+            // Clear HttpClient to invalidate cached bearer tokens
+            WriteopiaConnectionInjector.clearInstance()
+
             loginStateTrigger.value = GenerateId.generate()
             sideEffect()
         }
@@ -552,6 +556,9 @@ class GlobalShellKmpViewModel(
                     authRepository.unselectAllWorkspaces()
                     authRepository.clearTokens()
                     authRepository.logout()
+
+                    // Clear HttpClient to invalidate cached bearer tokens
+                    WriteopiaConnectionInjector.clearInstance()
 
                     loginStateTrigger.value = GenerateId.generate()
                     dismissDeleteConfirm()

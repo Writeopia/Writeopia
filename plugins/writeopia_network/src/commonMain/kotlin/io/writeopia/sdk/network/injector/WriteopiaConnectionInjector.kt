@@ -73,6 +73,15 @@ class WriteopiaConnectionInjector private constructor(
             this.bearerTokenHandler = handler
         }
 
+        /**
+         * Clears the singleton instance and closes the HttpClient.
+         * Call this on logout to ensure cached bearer tokens are invalidated.
+         */
+        fun clearInstance() {
+            instance?.client?.close()
+            instance = null
+        }
+
         fun singleton(): WriteopiaConnectionInjector {
             val thisBaseUrl = baseUrl ?: throw IllegalStateException("Base url was not set!")
 
