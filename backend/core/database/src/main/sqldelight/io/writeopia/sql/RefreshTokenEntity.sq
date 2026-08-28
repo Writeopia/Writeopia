@@ -1,6 +1,6 @@
 CREATE TABLE refresh_token_entity (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES user_entity(id) ON DELETE CASCADE,
   token_hash TEXT NOT NULL,
   expires_at BIGINT NOT NULL,
   created_at BIGINT NOT NULL,
