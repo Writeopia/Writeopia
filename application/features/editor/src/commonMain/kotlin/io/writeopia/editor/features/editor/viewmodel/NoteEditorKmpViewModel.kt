@@ -6,6 +6,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.common.utils.collections.toNodeTree
@@ -101,7 +103,8 @@ class NoteEditorKmpViewModel(
     private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton(),
     private val documentLoadUseCase: DocumentLoadUseCase? = null,
     private val storyStepSyncApi: (suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse)? = null,
-    private val documentsApi: DocumentsApi? = null
+    private val documentsApi: DocumentsApi? = null,
+    private val aiTaskManager: AiTaskManager = AiTaskManager.singleton()
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -134,6 +137,11 @@ class NoteEditorKmpViewModel(
                         KeyboardEvent.CANCEL -> {
                             writeopiaManager.clearSelection()
                             hideSearch()
+                            // Cancel any running AI tasks for this document
+                            val docId = documentId.value
+                            if (docId.isNotEmpty()) {
+                                aiTaskManager.cancelTasksByPrefix("editor-$docId")
+                            }
                             aiJob?.cancel()
                         }
 
@@ -657,7 +665,18 @@ class NoteEditorKmpViewModel(
     }
 
     override fun onViewModelCleared() {
+        // Cancel any running AI tasks for this document
+        val docId = documentId.value
+        if (docId.isNotEmpty()) {
+            aiTaskManager.cancelTasksByPrefix("editor-$docId")
+        }
+        aiJob?.cancel()
         writeopiaManager.onClear()
+    }
+
+    override fun onCleared() {
+        onViewModelCleared()
+        super.onCleared()
     }
 
     override fun clearSelections() {
@@ -754,13 +773,24 @@ class NoteEditorKmpViewModel(
 
     override fun askAiWithMode(targetMode: AiTargetMode) {
         if (ollamaRepository != null) {
-            aiJob = viewModelScope.launch(Dispatchers.Default) {
-                PromptService.promptWithMode(
-                    authRepository.getUser().id,
-                    targetMode,
-                    writeopiaManager,
-                    ollamaRepository
-                )
+            val docId = documentId.value
+            val taskId = "editor-$docId-${GenerateId.generate()}"
+
+            aiTaskManager.enqueueTask(
+                id = taskId,
+                type = AiTaskType.TEXT_GENERATION,
+                description = "Generating text..."
+            ) {
+                aiJob = viewModelScope.launch(Dispatchers.Default) {
+                    PromptService.promptWithMode(
+                        authRepository.getUser().id,
+                        targetMode,
+                        writeopiaManager,
+                        ollamaRepository
+                    )
+                }
+                aiJob?.join()
+                Result.success(Unit)
             }
         } else if (genAiRepository != null) {
             documentPromptGenAi(targetMode, genAiRepository::streamGenerate)
@@ -804,24 +834,35 @@ class NoteEditorKmpViewModel(
 
         val sectionText = writeopiaManager.getStory(position)?.text ?: return
 
-        viewModelScope.launch(Dispatchers.Default) {
-            val prompt =
-                """
-                Create a document section for a document.
-                The document is:
-                ```
-                ${writeopiaManager.getDocumentText()}
-                ```
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
 
-                Use the language of the text. Do not add titles. Create contect for this section: $sectionText
-                """
-            PromptService.prompt(
-                userId = authRepository.getUser().id,
-                prompt = prompt,
-                writeopiaManager,
-                ollamaRepository,
-                position + 0.001
-            )
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Generating section..."
+        ) {
+            aiJob = viewModelScope.launch(Dispatchers.Default) {
+                val prompt =
+                    """
+                    Create a document section for a document.
+                    The document is:
+                    ```
+                    ${writeopiaManager.getDocumentText()}
+                    ```
+
+                    Use the language of the text. Do not add titles. Create contect for this section: $sectionText
+                    """
+                PromptService.prompt(
+                    userId = authRepository.getUser().id,
+                    prompt = prompt,
+                    writeopiaManager,
+                    ollamaRepository,
+                    position + 0.001
+                )
+            }
+            aiJob?.join()
+            Result.success(Unit)
         }
     }
 
@@ -954,14 +995,25 @@ class NoteEditorKmpViewModel(
     ) {
         if (ollamaRepository == null) return
 
-        aiJob = viewModelScope.launch(Dispatchers.Default) {
-            PromptService.documentPrompt(
-                userId = authRepository.getUser().id,
-                targetMode = targetMode,
-                promptFn = promptFn,
-                writeopiaManager = writeopiaManager,
-                ollamaRepository = ollamaRepository
-            )
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Generating text..."
+        ) {
+            aiJob = viewModelScope.launch(Dispatchers.Default) {
+                PromptService.documentPrompt(
+                    userId = authRepository.getUser().id,
+                    targetMode = targetMode,
+                    promptFn = promptFn,
+                    writeopiaManager = writeopiaManager,
+                    ollamaRepository = ollamaRepository
+                )
+            }
+            aiJob?.join()
+            Result.success(Unit)
         }
     }
 
@@ -969,12 +1021,23 @@ class NoteEditorKmpViewModel(
         targetMode: AiTargetMode,
         promptFn: (String) -> Flow<ResultData<String>>
     ) {
-        aiJob = viewModelScope.launch(Dispatchers.Default) {
-            PromptService.documentPromptGenAi(
-                targetMode = targetMode,
-                promptFn = promptFn,
-                writeopiaManager = writeopiaManager
-            )
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Generating text..."
+        ) {
+            aiJob = viewModelScope.launch(Dispatchers.Default) {
+                PromptService.documentPromptGenAi(
+                    targetMode = targetMode,
+                    promptFn = promptFn,
+                    writeopiaManager = writeopiaManager
+                )
+            }
+            aiJob?.join()
+            Result.success(Unit)
         }
     }
 

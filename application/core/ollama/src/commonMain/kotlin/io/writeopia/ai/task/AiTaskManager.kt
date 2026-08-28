@@ -120,6 +120,19 @@ class AiTaskManager(
     }
 
     /**
+     * Cancels all tasks whose IDs start with the given prefix.
+     *
+     * Useful for cancelling all tasks related to a specific document or context.
+     *
+     * @param prefix The prefix to match task IDs against
+     */
+    fun cancelTasksByPrefix(prefix: String) {
+        _tasks.value
+            .filter { it.id.startsWith(prefix) && (it.status == AiTaskStatus.QUEUED || it.status == AiTaskStatus.RUNNING) }
+            .forEach { cancelTask(it.id) }
+    }
+
+    /**
      * Checks if a task has been cancelled.
      */
     private fun isCancelled(taskId: String): Boolean =
