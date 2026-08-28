@@ -245,10 +245,12 @@ fun DesktopNotesMenu(
                 enterAnimationSpec = spring(dampingRatio = 0.6F)
             )
 
+            val aiTaskManager = AiTaskManager.singleton()
+
             AiTaskIndicator(
-                tasksFlow = AiTaskManager.singleton().tasks,
-                onClearFinished = { AiTaskManager.singleton().clearFinishedTasks() },
-                onCancelTask = { taskId -> AiTaskManager.singleton().cancelTask(taskId) },
+                tasksFlow = aiTaskManager.tasks,
+                onClearFinished = aiTaskManager::clearFinishedTasks,
+                onCancelTask = aiTaskManager::cancelTask,
                 modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 16.dp)
             )
 

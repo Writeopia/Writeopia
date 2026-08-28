@@ -1,7 +1,8 @@
 package io.writeopia.ai.task
 
 enum class AiTaskType {
-    SUMMARIZATION
+    SUMMARIZATION,
+    TEXT_GENERATION
 }
 
 enum class AiTaskStatus {
