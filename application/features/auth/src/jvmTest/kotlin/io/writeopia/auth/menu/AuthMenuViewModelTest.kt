@@ -59,13 +59,14 @@ class AuthMenuViewModelTest {
         )
         val authResponse = AuthResponse(
             writeopiaUser = testUser,
-            token = "jwt-token"
+            accessToken = "jwt-token",
+            refreshToken = "refresh-token"
         )
 
         coEvery { authApi.login(any(), any()) } returns ResultData.Complete(authResponse)
         coEvery { authRepository.unselectAllUsers() } just Runs
         coEvery { authRepository.saveUser(any(), any()) } just Runs
-        coEvery { authRepository.saveToken(any(), any()) } just Runs
+        coEvery { authRepository.saveTokens(any(), any(), any(), any()) } just Runs
         coEvery { authApi.enableUser(any(), any()) } returns ResultData.Complete(Unit)
 
         val viewModel = AuthMenuViewModel(
@@ -86,7 +87,7 @@ class AuthMenuViewModelTest {
         coVerify { authApi.login("test@example.com", "password123") }
         coVerify { authRepository.unselectAllUsers() }
         coVerify { authRepository.saveUser(any(), selected = true) }
-        coVerify { authRepository.saveToken("user-123", "jwt-token") }
+        coVerify { authRepository.saveTokens("user-123", "jwt-token", "refresh-token", any()) }
     }
 
     @Test
@@ -136,7 +137,7 @@ class AuthMenuViewModelTest {
     }
 
     @Test
-    fun `onLoginRequest should save user and token on successful login`() = runTest {
+    fun `onLoginRequest should save user and tokens on successful login`() = runTest {
         // Given
         val testUser = WriteopiaUserApi(
             id = "user-456",
@@ -145,7 +146,8 @@ class AuthMenuViewModelTest {
         )
         val authResponse = AuthResponse(
             writeopiaUser = testUser,
-            token = "new-jwt-token"
+            accessToken = "new-jwt-token",
+            refreshToken = "new-refresh-token"
         )
 
         coEvery { authApi.login(any(), any()) } returns ResultData.Complete(authResponse)
@@ -167,11 +169,11 @@ class AuthMenuViewModelTest {
         // Then
         coVerify { authRepository.unselectAllUsers() }
         coVerify { authRepository.saveUser(match { it.id == "user-456" }, selected = true) }
-        coVerify { authRepository.saveToken("user-456", "new-jwt-token") }
+        coVerify { authRepository.saveTokens("user-456", "new-jwt-token", "new-refresh-token", any()) }
     }
 
     @Test
-    fun `onLoginRequest should not save token when token is null`() = runTest {
+    fun `onLoginRequest should not save tokens when accessToken is null`() = runTest {
         // Given
         val testUser = WriteopiaUserApi(
             id = "user-789",
@@ -180,7 +182,8 @@ class AuthMenuViewModelTest {
         )
         val authResponse = AuthResponse(
             writeopiaUser = testUser,
-            token = null
+            accessToken = null,
+            refreshToken = null
         )
 
         coEvery { authApi.login(any(), any()) } returns ResultData.Complete(authResponse)
@@ -199,7 +202,7 @@ class AuthMenuViewModelTest {
         viewModel.onLoginRequest()
         advanceUntilIdle()
 
-        // Then - saveToken should not be called
-        coVerify(exactly = 0) { authRepository.saveToken(any(), any()) }
+        // Then - saveTokens should not be called
+        coVerify(exactly = 0) { authRepository.saveTokens(any(), any(), any(), any()) }
     }
 }

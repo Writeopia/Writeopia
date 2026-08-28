@@ -1,0 +1,51 @@
+CREATE TABLE refresh_token_entity (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES user_entity(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL,
+  expires_at BIGINT NOT NULL,
+  created_at BIGINT NOT NULL,
+  revoked BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX idx_refresh_token_user_id ON refresh_token_entity(user_id);
+
+insertRefreshToken:
+INSERT INTO refresh_token_entity(id, user_id, token_hash, expires_at, created_at, revoked)
+VALUES (?, ?, ?, ?, ?, ?);
+
+selectRefreshTokenById:
+SELECT *
+FROM refresh_token_entity
+WHERE id = ? AND revoked = FALSE AND expires_at > ?
+LIMIT 1;
+
+selectRefreshTokenByIdIncludingRevoked:
+SELECT *
+FROM refresh_token_entity
+WHERE id = ?
+LIMIT 1;
+
+selectRefreshTokenByHash:
+SELECT *
+FROM refresh_token_entity
+WHERE token_hash = ? AND revoked = FALSE AND expires_at > ?
+LIMIT 1;
+
+revokeRefreshToken:
+UPDATE refresh_token_entity
+SET revoked = TRUE
+WHERE id = ?;
+
+revokeAllUserRefreshTokens:
+UPDATE refresh_token_entity
+SET revoked = TRUE
+WHERE user_id = ?;
+
+deleteExpiredTokens:
+DELETE FROM refresh_token_entity
+WHERE expires_at < ? OR revoked = TRUE;
+
+selectActiveTokensByUserId:
+SELECT *
+FROM refresh_token_entity
+WHERE user_id = ? AND revoked = FALSE AND expires_at > ?;
