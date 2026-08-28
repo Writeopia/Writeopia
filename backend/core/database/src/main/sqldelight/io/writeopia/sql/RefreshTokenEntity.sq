@@ -8,7 +8,6 @@ CREATE TABLE refresh_token_entity (
 );
 
 CREATE INDEX idx_refresh_token_user_id ON refresh_token_entity(user_id);
-CREATE INDEX idx_refresh_token_hash ON refresh_token_entity(token_hash);
 
 insertRefreshToken:
 INSERT INTO refresh_token_entity(id, user_id, token_hash, expires_at, created_at, revoked)

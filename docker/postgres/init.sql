@@ -57,7 +57,6 @@ CREATE TABLE refresh_token_entity (
 );
 
 CREATE INDEX idx_refresh_token_user_id ON refresh_token_entity(user_id);
-CREATE INDEX idx_refresh_token_hash ON refresh_token_entity(token_hash);
 
 CREATE TABLE company_entity (
   domain TEXT PRIMARY KEY,
@@ -109,3 +108,12 @@ CREATE TABLE sync_event (
   created_at BIGINT NOT NULL,
   user_id TEXT NOT NULL
 );
+
+-- Indexes for common query patterns
+CREATE INDEX idx_document_workspace_id ON document_entity(workspace_id);
+CREATE INDEX idx_document_parent_id ON document_entity(parent_document_id);
+CREATE INDEX idx_folder_workspace_id ON folder_entity(workspace_id);
+CREATE INDEX idx_folder_parent_id ON folder_entity(parent_id);
+CREATE INDEX idx_story_step_document_id ON story_step_entity(document_id);
+CREATE INDEX idx_workspace_to_user_user_id ON workspace_to_user(user_id);
+CREATE INDEX idx_sync_event_workspace_id ON sync_event(workspace_id);
