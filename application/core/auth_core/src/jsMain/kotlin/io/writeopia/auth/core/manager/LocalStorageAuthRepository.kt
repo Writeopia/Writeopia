@@ -9,6 +9,7 @@ import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.browser.localStorage
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 internal class LocalStorageAuthRepository : AuthRepository {
 
@@ -34,7 +35,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
         getAuthToken().takeIf { it?.isNotEmpty() == true } != null
 
     override suspend fun logout(): ResultData<Boolean> {
-        localStorage.removeItem(KEY_TOKEN)
+        clearTokens()
         localStorage.removeItem(KEY_USER_ID)
         localStorage.removeItem(KEY_USER_EMAIL)
         localStorage.removeItem(KEY_USER_NAME)
@@ -44,6 +45,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
         localStorage.removeItem(KEY_WORKSPACE_USER_ID)
         localStorage.removeItem(KEY_WORKSPACE_NAME)
         localStorage.removeItem(KEY_WORKSPACE_LAST_SYNC)
+        localStorage.removeItem(KEY_WORKSPACE_LAST_EVENT_SYNC)
         localStorage.removeItem(KEY_WORKSPACE_SELECTED)
         localStorage.removeItem(KEY_WORKSPACE_ROLE)
         clearForgotPasswordData()

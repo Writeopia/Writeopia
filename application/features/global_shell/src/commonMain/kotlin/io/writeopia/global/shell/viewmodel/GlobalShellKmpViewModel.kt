@@ -536,16 +536,26 @@ class GlobalShellKmpViewModel(
             val id = authRepository.getUser().id
 
             if (id != WriteopiaUser.DISCONNECTED) {
-                val result = authRepository.getAuthToken()?.let { token ->
+                // Capture tokens before any cleanup
+                val accessToken = authRepository.getAuthToken()
+                val refreshToken = authRepository.getRefreshToken()
+
+                val result = accessToken?.let { token ->
                     authApi.deleteAccount(token)
                 }
 
                 if (result is ResultData.Complete && result.data) {
+                    // Revoke refresh token on backend
+                    refreshToken?.let { authApi.logout(it) }
+
+                    // Clear local state
                     authRepository.unselectAllWorkspaces()
+                    authRepository.clearTokens()
                     authRepository.logout()
+
                     loginStateTrigger.value = GenerateId.generate()
                     dismissDeleteConfirm()
-                    logout(sideEffect = sideEffect)
+                    sideEffect()
                 }
             }
         }
