@@ -41,24 +41,34 @@ object RefreshTokenService {
     fun WriteopiaDbBackend.validateAndRotate(refreshToken: String): TokenPair? {
         val tokenId = JwtConfig.extractTokenId(refreshToken) ?: return null
         val userId = JwtConfig.extractUserId(refreshToken, isRefreshToken = true) ?: return null
-
         val currentTime = Clock.System.now().toEpochMilliseconds()
+
+        // Validate outside transaction
         val storedToken = refreshTokenEntityQueries
-            .selectRefreshTokenById(tokenId, currentTime)
+            .selectRefreshTokenByIdIncludingRevoked(tokenId)
             .executeAsOneOrNull() ?: return null
 
-        if (storedToken.user_id != userId) {
+        if (storedToken.user_id != userId) return null
+        if (hashToken(refreshToken) != storedToken.token_hash) return null
+        if (storedToken.expires_at <= currentTime) return null
+
+        // If already revoked, this is a replay attack
+        if (storedToken.revoked) {
+            refreshTokenEntityQueries.revokeAllUserRefreshTokens(userId)
             return null
         }
 
-        val providedHash = hashToken(refreshToken)
-        if (providedHash != storedToken.token_hash) {
-            return null
+        // Minimal transaction: re-check state, revoke, and insert
+        val db = this
+        return transactionWithResult {
+            // Re-check token is still active (handles race condition)
+            val currentToken = refreshTokenEntityQueries
+                .selectRefreshTokenById(tokenId, currentTime)
+                .executeAsOneOrNull() ?: return@transactionWithResult null
+
+            refreshTokenEntityQueries.revokeRefreshToken(tokenId)
+            db.generateAndStoreTokens(userId)
         }
-
-        refreshTokenEntityQueries.revokeRefreshToken(tokenId)
-
-        return generateAndStoreTokens(userId)
     }
 
     fun WriteopiaDbBackend.revokeAllUserTokens(userId: String) {

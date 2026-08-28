@@ -20,6 +20,12 @@ FROM refresh_token_entity
 WHERE id = ? AND revoked = FALSE AND expires_at > ?
 LIMIT 1;
 
+selectRefreshTokenByIdIncludingRevoked:
+SELECT *
+FROM refresh_token_entity
+WHERE id = ?
+LIMIT 1;
+
 selectRefreshTokenByHash:
 SELECT *
 FROM refresh_token_entity
