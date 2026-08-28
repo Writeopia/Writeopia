@@ -781,15 +781,12 @@ class NoteEditorKmpViewModel(
                 type = AiTaskType.TEXT_GENERATION,
                 description = "Generating text..."
             ) {
-                aiJob = viewModelScope.launch(Dispatchers.Default) {
-                    PromptService.promptWithMode(
-                        authRepository.getUser().id,
-                        targetMode,
-                        writeopiaManager,
-                        ollamaRepository
-                    )
-                }
-                aiJob?.join()
+                PromptService.promptWithMode(
+                    authRepository.getUser().id,
+                    targetMode,
+                    writeopiaManager,
+                    ollamaRepository
+                )
                 Result.success(Unit)
             }
         } else if (genAiRepository != null) {
@@ -842,26 +839,23 @@ class NoteEditorKmpViewModel(
             type = AiTaskType.TEXT_GENERATION,
             description = "Generating section..."
         ) {
-            aiJob = viewModelScope.launch(Dispatchers.Default) {
-                val prompt =
-                    """
-                    Create a document section for a document.
-                    The document is:
-                    ```
-                    ${writeopiaManager.getDocumentText()}
-                    ```
+            val prompt =
+                """
+                Create a document section for a document.
+                The document is:
+                ```
+                ${writeopiaManager.getDocumentText()}
+                ```
 
-                    Use the language of the text. Do not add titles. Create contect for this section: $sectionText
-                    """
-                PromptService.prompt(
-                    userId = authRepository.getUser().id,
-                    prompt = prompt,
-                    writeopiaManager,
-                    ollamaRepository,
-                    position + 0.001
-                )
-            }
-            aiJob?.join()
+                Use the language of the text. Do not add titles. Create contect for this section: $sectionText
+                """
+            PromptService.prompt(
+                userId = authRepository.getUser().id,
+                prompt = prompt,
+                writeopiaManager,
+                ollamaRepository,
+                position + 0.001
+            )
             Result.success(Unit)
         }
     }
@@ -1003,16 +997,13 @@ class NoteEditorKmpViewModel(
             type = AiTaskType.TEXT_GENERATION,
             description = "Generating text..."
         ) {
-            aiJob = viewModelScope.launch(Dispatchers.Default) {
-                PromptService.documentPrompt(
-                    userId = authRepository.getUser().id,
-                    targetMode = targetMode,
-                    promptFn = promptFn,
-                    writeopiaManager = writeopiaManager,
-                    ollamaRepository = ollamaRepository
-                )
-            }
-            aiJob?.join()
+            PromptService.documentPrompt(
+                userId = authRepository.getUser().id,
+                targetMode = targetMode,
+                promptFn = promptFn,
+                writeopiaManager = writeopiaManager,
+                ollamaRepository = ollamaRepository
+            )
             Result.success(Unit)
         }
     }
@@ -1029,14 +1020,11 @@ class NoteEditorKmpViewModel(
             type = AiTaskType.TEXT_GENERATION,
             description = "Generating text..."
         ) {
-            aiJob = viewModelScope.launch(Dispatchers.Default) {
-                PromptService.documentPromptGenAi(
-                    targetMode = targetMode,
-                    promptFn = promptFn,
-                    writeopiaManager = writeopiaManager
-                )
-            }
-            aiJob?.join()
+            PromptService.documentPromptGenAi(
+                targetMode = targetMode,
+                promptFn = promptFn,
+                writeopiaManager = writeopiaManager
+            )
             Result.success(Unit)
         }
     }
