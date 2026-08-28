@@ -12,7 +12,7 @@ import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.isCodeValid
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
 import io.writeopia.api.core.auth.service.EmailService
-import io.writeopia.api.core.auth.utils.JwtConfig
+import io.writeopia.api.core.auth.service.RefreshTokenService
 import io.writeopia.connection.logger
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.EmailConfirmRequest
@@ -32,14 +32,19 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
                 writeopiaDb.enableUserByEmail(request.email)
                 writeopiaDb.clearConfirmationCode(request.email)
 
-                // Get the user and generate a JWT token
+                // Get the user and generate tokens
                 val user = writeopiaDb.getUserByEmail(request.email)
                 if (user != null) {
-                    val token = JwtConfig.generateToken(user.id)
+                    val tokenPair = RefreshTokenService.generateAndStoreTokens(writeopiaDb, user.id)
                     logger.info("Email confirmed successfully for: ${request.email}")
                     call.respond(
                         HttpStatusCode.OK,
-                        AuthResponse(token = token, writeopiaUser = user.toApi(), enabled = true)
+                        AuthResponse(
+                            accessToken = tokenPair.accessToken,
+                            refreshToken = tokenPair.refreshToken,
+                            writeopiaUser = user.toApi(),
+                            enabled = true
+                        )
                     )
                 } else {
                     logger.error("User not found after email confirmation: ${request.email}")

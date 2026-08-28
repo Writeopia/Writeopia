@@ -15,4 +15,7 @@ interface TokenDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertToken(tokenEntity: TokenEntity)
+
+    @Query("DELETE FROM $TOKEN_ENTITY WHERE user_id = :userId")
+    suspend fun deleteToken(userId: String)
 }

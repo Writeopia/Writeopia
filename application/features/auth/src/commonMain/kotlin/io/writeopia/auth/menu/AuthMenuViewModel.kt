@@ -160,8 +160,17 @@ class AuthMenuViewModel(
                                 user = user.copy(tier = Tier.PREMIUM),
                                 selected = true
                             )
-                            result.data.token?.let { token ->
-                                authRepository.saveToken(user.id, token)
+                            val accessToken = result.data.accessToken
+                            val refreshToken = result.data.refreshToken
+                            if (accessToken != null) {
+                                // Calculate expiry time (14 minutes from now as buffer)
+                                val expiresAt = Clock.System.now().toEpochMilliseconds() + (14 * 60 * 1000L)
+                                authRepository.saveTokens(
+                                    userId = user.id,
+                                    accessToken = accessToken,
+                                    refreshToken = refreshToken,
+                                    expiresAt = expiresAt
+                                )
                             }
 
                             result.map { true }
