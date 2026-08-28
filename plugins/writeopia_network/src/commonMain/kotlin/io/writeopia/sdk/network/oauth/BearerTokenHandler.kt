@@ -10,6 +10,8 @@ interface BearerTokenHandler {
 
 sealed class TokenRefreshResult {
     data class Success(val accessToken: String, val refreshToken: String) : TokenRefreshResult()
+
     data object Failure : TokenRefreshResult()
+
     data object NoRefreshToken : TokenRefreshResult()
 }
