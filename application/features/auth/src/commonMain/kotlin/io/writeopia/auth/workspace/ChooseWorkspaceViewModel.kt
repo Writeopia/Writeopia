@@ -109,7 +109,7 @@ class ChooseWorkspaceViewModel(
                 }
 
                 ollamaRepository.saveOllamaUrl(userId, OllamaApi.defaultUrl())
-                
+
                 if (tutorialsInitialized) {
                     configRepository.setTutorialNotes(true, userId)
                 }

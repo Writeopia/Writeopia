@@ -1097,7 +1097,6 @@ fun Routing.documentsRoute(
                         userId = userId,
                         workspaceId = workspaceId,
                         writeopiaDb = writeopiaDb,
-                        useAi = useAi
                     )
 
                     if (created) {
