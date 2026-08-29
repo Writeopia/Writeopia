@@ -77,11 +77,14 @@ class ChooseWorkspaceViewModel(
             if (!configRepository.hasFirstConfiguration(userId)) {
                 val isOnlineWorkspace = workspaceId != "disconnected_user"
 
-                if (isOnlineWorkspace) {
+                val tutorialsInitialized = if (isOnlineWorkspace) {
                     // For online workspaces, create tutorials on the backend
                     val token = authRepository.getAuthToken()
                     if (token != null) {
-                        workspaceApi.initializeTutorials(workspaceId, token)
+                        val result = workspaceApi.initializeTutorials(workspaceId, token)
+                        result is ResultData.Complete
+                    } else {
+                        false
                     }
                 } else {
                     // For offline mode, create tutorials locally
@@ -102,10 +105,14 @@ class ChooseWorkspaceViewModel(
                                 )
                             )
                         }
+                    true
                 }
 
                 ollamaRepository.saveOllamaUrl(userId, OllamaApi.defaultUrl())
-                configRepository.setTutorialNotes(true, userId)
+                
+                if (tutorialsInitialized) {
+                    configRepository.setTutorialNotes(true, userId)
+                }
             }
 
             ollamaRepository.refreshConfiguration(userId)
