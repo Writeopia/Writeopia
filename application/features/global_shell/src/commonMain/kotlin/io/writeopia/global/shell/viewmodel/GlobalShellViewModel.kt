@@ -77,7 +77,7 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     fun changeWorkspaceLocalPath(path: String)
 
-    fun logout(sideEffect: () -> Unit)
+    fun logout(onSuccessSideEffect: () -> Unit)
 
     fun changeWorkspace(sideEffect: () -> Unit)
 

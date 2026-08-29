@@ -282,7 +282,7 @@ fun DesktopApp(
                                     },
                                     resetPassword = navigateToResetPassword,
                                     logout = {
-                                        globalShellViewModel.logout(sideEffect = navigateToRegister)
+                                        globalShellViewModel.logout(onSuccessSideEffect = navigateToRegister)
                                     },
                                     showDeleteConfirm = globalShellViewModel::showDeleteConfirm,
                                     dismissDeleteConfirm = globalShellViewModel::dismissDeleteConfirm,
