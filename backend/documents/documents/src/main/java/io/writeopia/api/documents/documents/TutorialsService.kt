@@ -21,14 +21,12 @@ object TutorialsService {
      * @param userId The user ID
      * @param workspaceId The workspace ID
      * @param writeopiaDb The database instance
-     * @param useAi Whether to send documents to AI hub
      * @return true if tutorials were created, false if they already existed
      */
     suspend fun initializeTutorialsForUser(
         userId: String,
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend,
-        useAi: Boolean
     ): Boolean {
         // Check if tutorials have already been created for this user/workspace
         val existingStatus = writeopiaDb.workspaceTutorialStatusQueries
@@ -60,7 +58,7 @@ object TutorialsService {
                     document = documentWithWorkspace,
                     workspaceId = workspaceId,
                     writeopiaDb = writeopiaDb,
-                    useAi = useAi
+                    useAi = false
                 )
             }
 
