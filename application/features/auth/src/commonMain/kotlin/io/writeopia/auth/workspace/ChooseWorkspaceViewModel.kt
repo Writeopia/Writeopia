@@ -71,27 +71,38 @@ class ChooseWorkspaceViewModel(
             authRepository.saveWorkspace(space)
 
             val userId = getUserId()
-            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-            val workspaceId = workspace.id
+            val currentWorkspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            val workspaceId = currentWorkspace.id
 
             if (!configRepository.hasFirstConfiguration(userId)) {
-                val now = Clock.System.now()
+                val isOnlineWorkspace = workspaceId != "disconnected_user"
 
-                Tutorials.allTutorialsDocuments()
-                    .map { documentAsJson ->
-                        json.decodeFromString<DocumentApi>(documentAsJson)
-                            .toModel()
+                if (isOnlineWorkspace) {
+                    // For online workspaces, create tutorials on the backend
+                    val token = authRepository.getAuthToken()
+                    if (token != null) {
+                        workspaceApi.initializeTutorials(workspaceId, token)
                     }
-                    .forEach { document ->
-                        notesUseCase.saveDocumentDb(
-                            document.copy(
-                                parentId = document.parentId,
-                                workspaceId = workspaceId,
-                                createdAt = now,
-                                lastUpdatedAt = now
+                } else {
+                    // For offline mode, create tutorials locally
+                    val now = Clock.System.now()
+
+                    Tutorials.allTutorialsDocuments()
+                        .map { documentAsJson ->
+                            json.decodeFromString<DocumentApi>(documentAsJson)
+                                .toModel()
+                        }
+                        .forEach { document ->
+                            notesUseCase.saveDocumentDb(
+                                document.copy(
+                                    parentId = document.parentId,
+                                    workspaceId = workspaceId,
+                                    createdAt = now,
+                                    lastUpdatedAt = now
+                                )
                             )
-                        )
-                    }
+                        }
+                }
 
                 ollamaRepository.saveOllamaUrl(userId, OllamaApi.defaultUrl())
                 configRepository.setTutorialNotes(true, userId)
