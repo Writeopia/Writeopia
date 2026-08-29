@@ -44,9 +44,12 @@ fun Application.installCORS(stagingMode: Boolean = false) {
         allowHost("writeopia.io", schemes = listOf("https"))
         allowHost("app.writeopia.io", schemes = listOf("https"))
 
-        // Allow any origin in staging mode for local development
+        // Allow localhost for development
         if (stagingMode) {
-            anyHost()
+            allowHost("localhost:3000", schemes = listOf("http", "https"))
+            allowHost("localhost:8080", schemes = listOf("http", "https"))
+            allowHost("127.0.0.1:3000", schemes = listOf("http", "https"))
+            allowHost("127.0.0.1:8080", schemes = listOf("http", "https"))
         }
 
         allowHeader(HttpHeaders.ContentType)
@@ -57,5 +60,8 @@ fun Application.installCORS(stagingMode: Boolean = false) {
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Options)
+
+        // Enable credentials for HttpOnly cookie authentication
+        allowCredentials = true
     }
 }

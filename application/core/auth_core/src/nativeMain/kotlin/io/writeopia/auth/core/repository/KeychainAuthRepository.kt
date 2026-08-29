@@ -3,40 +3,44 @@
 package io.writeopia.auth.core.repository
 
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.auth.core.manager.SqlDelightAuthRepository
 import io.writeopia.auth.core.manager.TokenData
-import io.writeopia.common.utils.persistence.daos.UserCommonDao
-import io.writeopia.common.utils.persistence.daos.WorkspaceCommonDao
-import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sql.WriteopiaDb
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.flow.Flow
 
-class RoomAuthRepository(
-    private val userDao: UserCommonDao,
-    private val workspaceCommonDao: WorkspaceCommonDao,
-    private val secureTokenStorage: SecureTokenStorage
+/**
+ * AuthRepository implementation for iOS/macOS that uses Keychain for secure token storage.
+ *
+ * Delegates user and workspace management to SqlDelightAuthRepository,
+ * but overrides token operations to use the iOS Keychain via KeychainTokenStorage.
+ */
+internal class KeychainAuthRepository(
+    writeopiaDb: WriteopiaDb?
 ) : AuthRepository {
 
-    private var pendingConfirmationEmail: String? = null
-    private var forgotPasswordEmail: String? = null
-    private var forgotPasswordCode: String? = null
+    private val delegate = SqlDelightAuthRepository(writeopiaDb)
 
-    override suspend fun getUser(): WriteopiaUser = userDao.selectedCurrentUser()
+    override fun listenForUser(): Flow<WriteopiaUser> = delegate.listenForUser()
+
+    override fun listenForWorkspace(): Flow<Workspace> = delegate.listenForWorkspace()
+
+    override suspend fun getUser(): WriteopiaUser = delegate.getUser()
 
     override suspend fun isLoggedIn(): Boolean = getAuthToken() != null
 
     override suspend fun logout(): ResultData<Boolean> {
         val userId = getUser().id
-        secureTokenStorage.clearTokens(userId)
-        unselectAllWorkspaces()
-        unselectAllUsers()
-
-        return ResultData.Complete(true)
+        KeychainTokenStorage.clearTokens(userId)
+        return delegate.logout()
     }
 
     override suspend fun saveUser(user: WriteopiaUser, selected: Boolean) {
-        userDao.insertUser(user, selected)
+        delegate.saveUser(user, selected)
     }
 
     override suspend fun saveTokens(
@@ -45,7 +49,7 @@ class RoomAuthRepository(
         refreshToken: String?,
         expiresAt: Long?
     ) {
-        secureTokenStorage.saveTokens(
+        KeychainTokenStorage.saveTokens(
             userId = userId,
             accessToken = accessToken,
             refreshToken = refreshToken,
@@ -54,13 +58,13 @@ class RoomAuthRepository(
     }
 
     override suspend fun getAuthToken(): String? =
-        secureTokenStorage.getAccessToken(getUser().id)
+        KeychainTokenStorage.getAccessToken(getUser().id)
 
     override suspend fun getRefreshToken(): String? =
-        secureTokenStorage.getRefreshToken(getUser().id)
+        KeychainTokenStorage.getRefreshToken(getUser().id)
 
     override suspend fun getTokenData(): TokenData? =
-        secureTokenStorage.getTokenData(getUser().id)
+        KeychainTokenStorage.getTokenData(getUser().id)
 
     override suspend fun isAccessTokenExpired(): Boolean {
         val tokenData = getTokenData() ?: return true
@@ -69,59 +73,55 @@ class RoomAuthRepository(
     }
 
     override suspend fun clearTokens() {
-        secureTokenStorage.clearTokens(getUser().id)
+        KeychainTokenStorage.clearTokens(getUser().id)
     }
 
     override suspend fun useOffline() {
-        unselectAllUsers()
-        saveUser(WriteopiaUser.disconnectedUser().copy(id = WriteopiaUser.DISCONNECTED), true)
-
-        unselectAllWorkspaces()
-        saveWorkspace(Workspace.disconnectedWorkspace().copy(selected = true))
+        delegate.useOffline()
     }
 
-    override suspend fun getWorkspace(): Workspace? = workspaceCommonDao.selectCurrentWorkspace()
+    override suspend fun getWorkspace(): Workspace? = delegate.getWorkspace()
 
     override suspend fun saveWorkspace(workspace: Workspace) {
-        workspaceCommonDao.insertWorkspace(workspace, true)
+        delegate.saveWorkspace(workspace)
     }
 
     override suspend fun unselectAllWorkspaces() {
-        workspaceCommonDao.unselectAllWorkspaces()
+        delegate.unselectAllWorkspaces()
     }
 
     override suspend fun updateLastEventSync(workspaceId: String, lastEventSync: Long) {
-        workspaceCommonDao.updateLastEventSync(workspaceId, lastEventSync)
+        delegate.updateLastEventSync(workspaceId, lastEventSync)
     }
 
     override suspend fun unselectAllUsers() {
-        userDao.unselectAllUsers()
+        delegate.unselectAllUsers()
     }
 
     override suspend fun savePendingConfirmationEmail(email: String) {
-        pendingConfirmationEmail = email
+        delegate.savePendingConfirmationEmail(email)
     }
 
-    override suspend fun getPendingConfirmationEmail(): String? = pendingConfirmationEmail
+    override suspend fun getPendingConfirmationEmail(): String? =
+        delegate.getPendingConfirmationEmail()
 
     override suspend fun clearPendingConfirmationEmail() {
-        pendingConfirmationEmail = null
+        delegate.clearPendingConfirmationEmail()
     }
 
     override suspend fun saveForgotPasswordEmail(email: String) {
-        forgotPasswordEmail = email
+        delegate.saveForgotPasswordEmail(email)
     }
 
-    override suspend fun getForgotPasswordEmail(): String? = forgotPasswordEmail
+    override suspend fun getForgotPasswordEmail(): String? = delegate.getForgotPasswordEmail()
 
     override suspend fun saveForgotPasswordCode(code: String) {
-        forgotPasswordCode = code
+        delegate.saveForgotPasswordCode(code)
     }
 
-    override suspend fun getForgotPasswordCode(): String? = forgotPasswordCode
+    override suspend fun getForgotPasswordCode(): String? = delegate.getForgotPasswordCode()
 
     override suspend fun clearForgotPasswordData() {
-        forgotPasswordEmail = null
-        forgotPasswordCode = null
+        delegate.clearForgotPasswordData()
     }
 }

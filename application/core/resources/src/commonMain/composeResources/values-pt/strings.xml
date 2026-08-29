@@ -21,6 +21,7 @@
   <string name="favorite">Favorito</string>
   <string name="delete">Deletar</string>
   <string name="logout">Sair</string>
+  <string name="signing_out">Saindo...</string>
   <string name="export_json">Exportar como JSON</string>
   <string name="export_md">Exportar como Markdown</string>
   <string name="export">Exportar</string>
