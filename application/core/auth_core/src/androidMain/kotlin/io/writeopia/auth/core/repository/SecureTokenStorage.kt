@@ -54,16 +54,14 @@ class SecureTokenStorage(context: Context) {
     /**
      * Retrieves the access token for a given user.
      */
-    fun getAccessToken(userId: String): String? {
-        return encryptedPrefs.getString(keyAccessToken(userId), null)
-    }
+    fun getAccessToken(userId: String): String? =
+        encryptedPrefs.getString(keyAccessToken(userId), null)
 
     /**
      * Retrieves the refresh token for a given user.
      */
-    fun getRefreshToken(userId: String): String? {
-        return encryptedPrefs.getString(keyRefreshToken(userId), null)
-    }
+    fun getRefreshToken(userId: String): String? =
+        encryptedPrefs.getString(keyRefreshToken(userId), null)
 
     /**
      * Retrieves complete token data for a given user.
@@ -98,7 +96,9 @@ class SecureTokenStorage(context: Context) {
     }
 
     private fun keyAccessToken(userId: String) = "access_token_$userId"
+
     private fun keyRefreshToken(userId: String) = "refresh_token_$userId"
+
     private fun keyExpiresAt(userId: String) = "expires_at_$userId"
 
     companion object {

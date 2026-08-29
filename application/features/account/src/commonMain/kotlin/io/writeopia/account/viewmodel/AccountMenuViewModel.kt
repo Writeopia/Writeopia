@@ -19,6 +19,8 @@ interface AccountMenuViewModel {
 
     val exportWorkspaceState: StateFlow<ResultData<Unit>>
 
+    val logoutInProgress: StateFlow<Boolean>
+
     fun logout(onLogOutSuccess: () -> Unit)
 
     fun changeWorkspace(onChangeSuccess: () -> Unit)

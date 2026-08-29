@@ -77,16 +77,14 @@ object KeychainTokenStorage {
     /**
      * Retrieves the access token for a given user.
      */
-    fun getAccessToken(userId: String): String? {
-        return getItem(KEY_ACCESS_TOKEN_PREFIX + userId)
-    }
+    fun getAccessToken(userId: String): String? =
+        getItem(KEY_ACCESS_TOKEN_PREFIX + userId)
 
     /**
      * Retrieves the refresh token for a given user.
      */
-    fun getRefreshToken(userId: String): String? {
-        return getItem(KEY_REFRESH_TOKEN_PREFIX + userId)
-    }
+    fun getRefreshToken(userId: String): String? =
+        getItem(KEY_REFRESH_TOKEN_PREFIX + userId)
 
     /**
      * Retrieves complete token data for a given user.
@@ -103,9 +101,8 @@ object KeychainTokenStorage {
     /**
      * Retrieves the token expiration timestamp for a given user.
      */
-    fun getExpiresAt(userId: String): Long? {
-        return getItem(KEY_EXPIRES_AT_PREFIX + userId)?.toLongOrNull()
-    }
+    fun getExpiresAt(userId: String): Long? =
+        getItem(KEY_EXPIRES_AT_PREFIX + userId)?.toLongOrNull()
 
     /**
      * Clears all tokens for a given user.

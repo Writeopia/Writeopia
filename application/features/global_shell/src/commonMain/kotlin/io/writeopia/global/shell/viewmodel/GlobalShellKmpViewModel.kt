@@ -88,6 +88,9 @@ class GlobalShellKmpViewModel(
     private val _showSearchDialog = MutableStateFlow(false)
     override val showSearchDialog: StateFlow<Boolean> = _showSearchDialog.asStateFlow()
 
+    private val _logoutInProgress = MutableStateFlow(false)
+    override val logoutInProgress: StateFlow<Boolean> = _logoutInProgress.asStateFlow()
+
     override val workspaceLocalPath: StateFlow<String> = workspaceHandler.workspaceLocalPath
 
     private val retryModels = MutableStateFlow(0)
@@ -511,20 +514,25 @@ class GlobalShellKmpViewModel(
 
     override fun logout(sideEffect: () -> Unit) {
         viewModelScope.launch {
-            // Revoke refresh token on backend
-            authRepository.getRefreshToken()?.let { refreshToken ->
-                authApi.logout(refreshToken)
+            _logoutInProgress.value = true
+            try {
+                // Revoke refresh token on backend
+                authRepository.getRefreshToken()?.let { refreshToken ->
+                    authApi.logout(refreshToken)
+                }
+
+                authRepository.unselectAllWorkspaces()
+                authRepository.clearTokens()
+                authRepository.logout()
+
+                // Clear HttpClient to invalidate cached bearer tokens
+                WriteopiaConnectionInjector.clearInstance()
+
+                loginStateTrigger.value = GenerateId.generate()
+                sideEffect()
+            } finally {
+                _logoutInProgress.value = false
             }
-
-            authRepository.unselectAllWorkspaces()
-            authRepository.clearTokens()
-            authRepository.logout()
-
-            // Clear HttpClient to invalidate cached bearer tokens
-            WriteopiaConnectionInjector.clearInstance()
-
-            loginStateTrigger.value = GenerateId.generate()
-            sideEffect()
         }
     }
 

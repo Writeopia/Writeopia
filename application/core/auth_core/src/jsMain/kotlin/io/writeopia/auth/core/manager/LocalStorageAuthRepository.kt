@@ -6,8 +6,12 @@ import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
+import kotlinx.coroutines.await
+import org.w3c.fetch.RequestCredentials
+import org.w3c.fetch.RequestInit
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -49,8 +53,22 @@ internal class LocalStorageAuthRepository : AuthRepository {
     }
 
     override suspend fun logout(): ResultData<Boolean> {
-        // Note: Actual cookie clearing is done by the backend via /api/auth/logout/web
-        // We just clear local storage data here
+        // Call backend to revoke session and clear HttpOnly cookies
+        try {
+            val baseUrl = WriteopiaConnectionInjector.singleton().baseUrl()
+            kotlinx.browser.window.fetch(
+                "$baseUrl/api/auth/logout/web",
+                RequestInit(
+                    method = "POST",
+                    credentials = RequestCredentials.INCLUDE
+                )
+            ).await()
+        } catch (e: Exception) {
+            // Continue with local cleanup even if backend call fails
+            println("Web logout backend call failed: ${e.message}")
+        }
+
+        // Clear local storage data
         localStorage.removeItem(KEY_USER_ID)
         localStorage.removeItem(KEY_USER_EMAIL)
         localStorage.removeItem(KEY_USER_NAME)
