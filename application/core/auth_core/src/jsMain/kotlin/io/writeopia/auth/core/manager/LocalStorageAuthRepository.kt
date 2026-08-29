@@ -10,7 +10,6 @@ import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.coroutines.await
-import org.w3c.fetch.RequestCredentials
 import org.w3c.fetch.RequestInit
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -54,21 +53,28 @@ internal class LocalStorageAuthRepository : AuthRepository {
 
     override suspend fun logout(): ResultData<Boolean> {
         // Call backend to revoke session and clear HttpOnly cookies
+        var backendSuccess = true
         try {
             val baseUrl = WriteopiaConnectionInjector.singleton().baseUrl()
-            kotlinx.browser.window.fetch(
+            val response = kotlinx.browser.window.fetch(
                 "$baseUrl/api/auth/logout/web",
                 RequestInit(
                     method = "POST",
-                    credentials = RequestCredentials.INCLUDE
+                    credentials = "include".asDynamic()
                 )
             ).await()
+
+            if (!response.ok) {
+                println("Web logout backend returned error: ${response.status}")
+                backendSuccess = false
+            }
         } catch (e: Exception) {
             // Continue with local cleanup even if backend call fails
             println("Web logout backend call failed: ${e.message}")
+            backendSuccess = false
         }
 
-        // Clear local storage data
+        // Always clear local storage data regardless of backend result
         localStorage.removeItem(KEY_USER_ID)
         localStorage.removeItem(KEY_USER_EMAIL)
         localStorage.removeItem(KEY_USER_NAME)
@@ -84,7 +90,11 @@ internal class LocalStorageAuthRepository : AuthRepository {
         clearForgotPasswordData()
         clearPendingConfirmationEmail()
 
-        return ResultData.Complete(true)
+        return if (backendSuccess) {
+            ResultData.Complete(true)
+        } else {
+            ResultData.Error(Exception("Backend logout failed"))
+        }
     }
 
     override suspend fun saveUser(user: WriteopiaUser, selected: Boolean) {

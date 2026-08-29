@@ -203,7 +203,7 @@ fun Routing.cookieAuthRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean 
             logger.error("Web logout error: ${e.message}")
             // Still clear cookies even on error
             clearAuthCookies(secureCookies)
-            call.respond(HttpStatusCode.OK, "Logged out")
+            call.respond(HttpStatusCode.InternalServerError, "Logout failed on server")
         }
     }
 }
