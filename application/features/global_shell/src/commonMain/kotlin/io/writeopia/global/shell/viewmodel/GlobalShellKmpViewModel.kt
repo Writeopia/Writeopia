@@ -512,20 +512,29 @@ class GlobalShellKmpViewModel(
         }
     }
 
-    override fun logout(sideEffect: () -> Unit) {
+    override fun logout(onSuccessSideEffect: () -> Unit) {
         viewModelScope.launch {
             _logoutInProgress.value = true
             try {
                 // Revoke refresh token on backend (non-web platforms)
                 val refreshToken = authRepository.getRefreshToken()
                 if (refreshToken != null) {
-                    authApi.logout(refreshToken)
+                    val apiResult = authApi.logout(refreshToken)
+                    if (apiResult is ResultData.Error) {
+                        // Backend logout failed - don't clean local state
+                        return@launch
+                    }
                 }
 
-                // Call repository logout first - for web this calls the backend
-                // to clear HttpOnly cookies before we clear local state
-                authRepository.logout()
+                // Call repository logout - for web this calls the backend
+                // to clear HttpOnly cookies
+                val repoResult = authRepository.logout()
+                if (repoResult is ResultData.Error) {
+                    // Backend logout failed - don't clean local state
+                    return@launch
+                }
 
+                // Only clean local state after successful backend logout
                 authRepository.unselectAllWorkspaces()
                 authRepository.clearTokens()
 
@@ -533,7 +542,7 @@ class GlobalShellKmpViewModel(
                 WriteopiaConnectionInjector.clearInstance()
 
                 loginStateTrigger.value = GenerateId.generate()
-                sideEffect()
+                onSuccessSideEffect()
             } finally {
                 _logoutInProgress.value = false
             }

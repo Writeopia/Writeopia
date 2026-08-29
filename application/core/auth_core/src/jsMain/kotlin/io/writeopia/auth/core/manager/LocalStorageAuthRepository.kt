@@ -53,7 +53,6 @@ internal class LocalStorageAuthRepository : AuthRepository {
 
     override suspend fun logout(): ResultData<Boolean> {
         // Call backend to revoke session and clear HttpOnly cookies
-        var backendSuccess = true
         try {
             val baseUrl = WriteopiaConnectionInjector.singleton().baseUrl()
             val response = kotlinx.browser.window.fetch(
@@ -66,15 +65,14 @@ internal class LocalStorageAuthRepository : AuthRepository {
 
             if (!response.ok) {
                 println("Web logout backend returned error: ${response.status}")
-                backendSuccess = false
+                return ResultData.Error(Exception("Backend logout failed: ${response.status}"))
             }
         } catch (e: Exception) {
-            // Continue with local cleanup even if backend call fails
             println("Web logout backend call failed: ${e.message}")
-            backendSuccess = false
+            return ResultData.Error(e)
         }
 
-        // Always clear local storage data regardless of backend result
+        // Only clear local storage after successful backend logout
         localStorage.removeItem(KEY_USER_ID)
         localStorage.removeItem(KEY_USER_EMAIL)
         localStorage.removeItem(KEY_USER_NAME)
@@ -90,11 +88,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
         clearForgotPasswordData()
         clearPendingConfirmationEmail()
 
-        return if (backendSuccess) {
-            ResultData.Complete(true)
-        } else {
-            ResultData.Error(Exception("Backend logout failed"))
-        }
+        return ResultData.Complete(true)
     }
 
     override suspend fun saveUser(user: WriteopiaUser, selected: Boolean) {
