@@ -18,7 +18,13 @@ object JwtConfig {
     private val privateKey: RSAPrivateKey? = System.getenv("JWT_PRIVATE_KEY")?.let { loadPrivateKey(it) }
     private val publicKey: RSAPublicKey = loadPublicKey(
         System.getenv("JWT_PUBLIC_KEY")
-            ?: throw IllegalStateException("JWT_PUBLIC_KEY environment variable is required")
+            ?: throw IllegalStateException(
+                """
+                JWT configuration error: JWT_PUBLIC_KEY environment variable is required.
+
+                Set JWT_PUBLIC_KEY (and optionally JWT_PRIVATE_KEY for token signing).
+                """.trimIndent()
+            )
     )
 
     private const val ISSUER = "writeopia"
