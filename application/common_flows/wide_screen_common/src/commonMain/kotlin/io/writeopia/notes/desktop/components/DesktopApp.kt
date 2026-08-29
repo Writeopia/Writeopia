@@ -265,6 +265,7 @@ fun DesktopApp(
                                     syncWorkspaceState = globalShellViewModel.lastWorkspaceSync,
                                     isAutoSyncEnabled = globalShellViewModel.isAutoSyncEnabled,
                                     workspaceToEdit = globalShellViewModel.workspaceToEdit,
+                                    logoutInProgress = globalShellViewModel.logoutInProgress,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
                                     selectAccentColor = selectAccentColor,

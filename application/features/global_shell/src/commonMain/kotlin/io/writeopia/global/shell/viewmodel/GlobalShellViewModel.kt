@@ -47,6 +47,8 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     val exportWorkspaceState: StateFlow<ResultData<Unit>>
 
+    val logoutInProgress: StateFlow<Boolean>
+
     override val ollamaSelectedModelState: StateFlow<String>
 
     override val ollamaUrl: StateFlow<String>

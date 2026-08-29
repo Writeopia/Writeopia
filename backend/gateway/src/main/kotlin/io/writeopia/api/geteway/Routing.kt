@@ -7,6 +7,7 @@ import io.ktor.server.routing.routing
 import io.writeopia.api.ai.routing.aiRoute
 import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
+import io.writeopia.api.core.auth.routing.cookieAuthRoute
 import io.writeopia.api.core.auth.routing.passwordResetRoute
 import io.writeopia.api.core.auth.routing.workspaceRoute
 import io.writeopia.api.documents.routing.documentsRoute
@@ -28,6 +29,9 @@ fun Application.configureRouting(
             documentsRoute(writeopiaDb, useAi, debugMode, genAiService = genAiService)
 
             authRoute(writeopiaDb, debugMode)
+
+            // Web-specific auth routes using HttpOnly cookies
+            cookieAuthRoute(writeopiaDb, debugMode)
 
             workspaceRoute(adminKey, writeopiaDb, debugMode)
 
