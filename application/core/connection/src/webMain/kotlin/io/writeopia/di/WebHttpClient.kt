@@ -44,7 +44,7 @@ actual object ApiInjectorDefaults {
 
             install(Logging) {
                 logger = apiLogger
-                level = LogLevel.ALL
+                level = LogLevel.HEADERS
                 sanitizeHeader { header -> header == HttpHeaders.Authorization }
             }
         }
