@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
 import java.security.KeyFactory
+import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
 import java.security.spec.PKCS8EncodedKeySpec
@@ -15,11 +16,39 @@ object JwtConfig {
     // RSA keys for asymmetric signing
     // Private key: only needed by the service that CREATES tokens
     // Public key: shared with all services that VERIFY tokens
-    private val privateKey: RSAPrivateKey? = System.getenv("JWT_PRIVATE_KEY")?.let { loadPrivateKey(it) }
-    private val publicKey: RSAPublicKey = loadPublicKey(
-        System.getenv("JWT_PUBLIC_KEY")
-            ?: throw IllegalStateException("JWT_PUBLIC_KEY environment variable is required")
+    private val keyPair by lazy {
+        val publicKeyEnv = System.getenv("JWT_PUBLIC_KEY")
+        val privateKeyEnv = System.getenv("JWT_PRIVATE_KEY")
+
+        if (publicKeyEnv != null) {
+            // Production mode: use provided keys
+            KeyPair(
+                publicKey = loadPublicKey(publicKeyEnv),
+                privateKey = privateKeyEnv?.let { loadPrivateKey(it) }
+            )
+        } else {
+            // Test mode: generate ephemeral keys
+            generateTestKeyPair()
+        }
+    }
+
+    private val privateKey: RSAPrivateKey? get() = keyPair.privateKey
+    private val publicKey: RSAPublicKey get() = keyPair.publicKey
+
+    private data class KeyPair(
+        val publicKey: RSAPublicKey,
+        val privateKey: RSAPrivateKey?
     )
+
+    private fun generateTestKeyPair(): KeyPair {
+        val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
+        keyPairGenerator.initialize(2048)
+        val keyPair = keyPairGenerator.generateKeyPair()
+        return KeyPair(
+            publicKey = keyPair.public as RSAPublicKey,
+            privateKey = keyPair.private as RSAPrivateKey
+        )
+    }
 
     private const val ISSUER = "writeopia"
     private const val AUDIENCE = "writeopia-app"
