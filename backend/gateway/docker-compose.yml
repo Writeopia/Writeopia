@@ -10,4 +10,9 @@ services:
       - "8080:8080"
     container_name: gateway-app
     environment:
-      - JWT_SECRET="somesecret"
+      # RSA keys for JWT signing (asymmetric)
+      # Generate with: openssl genrsa -out private.pem 2048 && openssl rsa -in private.pem -pubout -out public.pem
+      # Private key: required for token signing (auth service only)
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+      # Public key: required for token verification (all services)
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}

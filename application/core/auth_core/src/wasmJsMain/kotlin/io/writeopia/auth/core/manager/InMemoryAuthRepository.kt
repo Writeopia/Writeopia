@@ -5,12 +5,15 @@ package io.writeopia.auth.core.manager
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 internal class InMemoryAuthRepository : AuthRepository {
 
     private var currentUser: WriteopiaUser = WriteopiaUser.disconnectedUser()
-    private var currentToken: String? = null
+    private var currentAccessToken: String? = null
+    private var currentRefreshToken: String? = null
+    private var accessTokenExpiresAt: Long? = null
     private var currentWorkspace: Workspace? = null
     private var userSelected: Boolean = false
 
@@ -21,10 +24,12 @@ internal class InMemoryAuthRepository : AuthRepository {
     override suspend fun getUser(): WriteopiaUser = currentUser
 
     override suspend fun isLoggedIn(): Boolean =
-        currentToken.takeIf { it?.isNotEmpty() == true } != null
+        currentAccessToken.takeIf { it?.isNotEmpty() == true } != null
 
     override suspend fun logout(): ResultData<Boolean> {
-        currentToken = null
+        currentAccessToken = null
+        currentRefreshToken = null
+        accessTokenExpiresAt = null
         currentUser = WriteopiaUser.disconnectedUser()
         currentWorkspace = null
         userSelected = false
@@ -36,10 +41,39 @@ internal class InMemoryAuthRepository : AuthRepository {
         userSelected = selected
     }
 
-    override suspend fun getAuthToken(): String? = currentToken
+    override suspend fun getAuthToken(): String? = currentAccessToken
 
-    override suspend fun saveToken(userId: String, token: String) {
-        currentToken = token
+    override suspend fun saveTokens(
+        userId: String,
+        accessToken: String,
+        refreshToken: String?,
+        expiresAt: Long?
+    ) {
+        currentAccessToken = accessToken
+        currentRefreshToken = refreshToken
+        accessTokenExpiresAt = expiresAt
+    }
+
+    override suspend fun getRefreshToken(): String? = currentRefreshToken
+
+    override suspend fun getTokenData(): TokenData? {
+        val accessToken = currentAccessToken ?: return null
+        return TokenData(
+            accessToken = accessToken,
+            refreshToken = currentRefreshToken,
+            accessTokenExpiresAt = accessTokenExpiresAt
+        )
+    }
+
+    override suspend fun isAccessTokenExpired(): Boolean {
+        val expiresAt = accessTokenExpiresAt ?: return false
+        return Clock.System.now().toEpochMilliseconds() >= expiresAt
+    }
+
+    override suspend fun clearTokens() {
+        currentAccessToken = null
+        currentRefreshToken = null
+        accessTokenExpiresAt = null
     }
 
     override suspend fun useOffline() {

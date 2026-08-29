@@ -3,12 +3,14 @@
 package io.writeopia.auth.core.repository
 
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.auth.core.manager.TokenData
 import io.writeopia.common.utils.persistence.daos.TokenCommonDao
 import io.writeopia.common.utils.persistence.daos.UserCommonDao
 import io.writeopia.common.utils.persistence.daos.WorkspaceCommonDao
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class RoomAuthRepository(
@@ -36,11 +38,43 @@ class RoomAuthRepository(
         userDao.insertUser(user, selected)
     }
 
-    override suspend fun saveToken(userId: String, token: String) {
-        tokenCommonDao.saveToken(token = token, userId = userId)
+    override suspend fun saveTokens(
+        userId: String,
+        accessToken: String,
+        refreshToken: String?,
+        expiresAt: Long?
+    ) {
+        tokenCommonDao.saveTokens(
+            userId = userId,
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            expiresAt = expiresAt
+        )
     }
 
     override suspend fun getAuthToken(): String? = tokenCommonDao.getTokenByUserId(getUser().id)
+
+    override suspend fun getRefreshToken(): String? =
+        tokenCommonDao.getTokenDetails(getUser().id)?.refreshToken
+
+    override suspend fun getTokenData(): TokenData? =
+        tokenCommonDao.getTokenDetails(getUser().id)?.let { details ->
+            TokenData(
+                accessToken = details.accessToken,
+                refreshToken = details.refreshToken,
+                accessTokenExpiresAt = details.accessTokenExpiresAt
+            )
+        }
+
+    override suspend fun isAccessTokenExpired(): Boolean {
+        val tokenData = getTokenData() ?: return true
+        val expiresAt = tokenData.accessTokenExpiresAt ?: return false
+        return Clock.System.now().toEpochMilliseconds() >= expiresAt
+    }
+
+    override suspend fun clearTokens() {
+        tokenCommonDao.deleteToken(getUser().id)
+    }
 
     override suspend fun useOffline() {
         unselectAllUsers()

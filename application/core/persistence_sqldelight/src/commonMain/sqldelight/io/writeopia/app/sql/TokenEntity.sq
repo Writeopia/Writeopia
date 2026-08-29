@@ -1,19 +1,27 @@
 CREATE TABLE token_entity (
   user_id TEXT PRIMARY KEY,
-  token TEXT NOT NULL
+  access_token TEXT NOT NULL,
+  refresh_token TEXT,
+  access_token_expires_at INTEGER
 );
 
 selectTokenByUserId:
-SELECT token
+SELECT access_token
+FROM token_entity
+WHERE user_id = ?
+LIMIT 1;
+
+selectTokensDetailsByUserId:
+SELECT access_token, refresh_token, access_token_expires_at
 FROM token_entity
 WHERE user_id = ?
 LIMIT 1;
 
 insertToken:
-INSERT INTO token_entity(user_id, token)
-VALUES (?, ?)
+INSERT INTO token_entity(user_id, access_token, refresh_token, access_token_expires_at)
+VALUES (?, ?, ?, ?)
 ON CONFLICT(user_id) DO
-UPDATE SET user_id=excluded.user_id, token=excluded.token;
+UPDATE SET access_token=excluded.access_token, refresh_token=excluded.refresh_token, access_token_expires_at=excluded.access_token_expires_at;
 
 deleteToken:
 DELETE FROM token_entity

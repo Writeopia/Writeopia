@@ -37,6 +37,7 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -510,13 +511,18 @@ class GlobalShellKmpViewModel(
 
     override fun logout(sideEffect: () -> Unit) {
         viewModelScope.launch {
-            val currentUserId = authRepository.getUser().id
+            // Revoke refresh token on backend
+            authRepository.getRefreshToken()?.let { refreshToken ->
+                authApi.logout(refreshToken)
+            }
 
             authRepository.unselectAllWorkspaces()
+            authRepository.clearTokens()
             authRepository.logout()
-            authRepository.saveToken(currentUserId, "")
 
-//            AppConnectionInjection.singleton().setJwtToken("")
+            // Clear HttpClient to invalidate cached bearer tokens
+            WriteopiaConnectionInjector.clearInstance()
+
             loginStateTrigger.value = GenerateId.generate()
             sideEffect()
         }
@@ -534,16 +540,29 @@ class GlobalShellKmpViewModel(
             val id = authRepository.getUser().id
 
             if (id != WriteopiaUser.DISCONNECTED) {
-                val result = authRepository.getAuthToken()?.let { token ->
+                // Capture tokens before any cleanup
+                val accessToken = authRepository.getAuthToken()
+                val refreshToken = authRepository.getRefreshToken()
+
+                val result = accessToken?.let { token ->
                     authApi.deleteAccount(token)
                 }
 
                 if (result is ResultData.Complete && result.data) {
+                    // Revoke refresh token on backend
+                    refreshToken?.let { authApi.logout(it) }
+
+                    // Clear local state
                     authRepository.unselectAllWorkspaces()
+                    authRepository.clearTokens()
                     authRepository.logout()
+
+                    // Clear HttpClient to invalidate cached bearer tokens
+                    WriteopiaConnectionInjector.clearInstance()
+
                     loginStateTrigger.value = GenerateId.generate()
                     dismissDeleteConfirm()
-                    logout(sideEffect = sideEffect)
+                    sideEffect()
                 }
             }
         }

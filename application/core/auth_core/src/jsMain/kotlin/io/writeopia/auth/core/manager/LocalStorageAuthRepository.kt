@@ -7,6 +7,7 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.browser.localStorage
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -34,7 +35,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
         getAuthToken().takeIf { it?.isNotEmpty() == true } != null
 
     override suspend fun logout(): ResultData<Boolean> {
-        localStorage.removeItem(KEY_TOKEN)
+        clearTokens()
         localStorage.removeItem(KEY_USER_ID)
         localStorage.removeItem(KEY_USER_EMAIL)
         localStorage.removeItem(KEY_USER_NAME)
@@ -44,6 +45,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
         localStorage.removeItem(KEY_WORKSPACE_USER_ID)
         localStorage.removeItem(KEY_WORKSPACE_NAME)
         localStorage.removeItem(KEY_WORKSPACE_LAST_SYNC)
+        localStorage.removeItem(KEY_WORKSPACE_LAST_EVENT_SYNC)
         localStorage.removeItem(KEY_WORKSPACE_SELECTED)
         localStorage.removeItem(KEY_WORKSPACE_ROLE)
         clearForgotPasswordData()
@@ -61,11 +63,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
     }
 
     override suspend fun getAuthToken(): String? =
-        localStorage.getItem(KEY_TOKEN)
-
-    override suspend fun saveToken(userId: String, token: String) {
-        localStorage.setItem(KEY_TOKEN, token)
-    }
+        localStorage.getItem(KEY_ACCESS_TOKEN)
 
     override suspend fun useOffline() {
         val user = getUser()
@@ -144,8 +142,46 @@ internal class LocalStorageAuthRepository : AuthRepository {
         forgotPasswordCode = null
     }
 
+    override suspend fun saveTokens(
+        userId: String,
+        accessToken: String,
+        refreshToken: String?,
+        expiresAt: Long?
+    ) {
+        localStorage.setItem(KEY_ACCESS_TOKEN, accessToken)
+        refreshToken?.let { localStorage.setItem(KEY_REFRESH_TOKEN, it) }
+            ?: localStorage.removeItem(KEY_REFRESH_TOKEN)
+        expiresAt?.let { localStorage.setItem(KEY_ACCESS_TOKEN_EXPIRES_AT, it.toString()) }
+            ?: localStorage.removeItem(KEY_ACCESS_TOKEN_EXPIRES_AT)
+    }
+
+    override suspend fun getRefreshToken(): String? =
+        localStorage.getItem(KEY_REFRESH_TOKEN)
+
+    override suspend fun getTokenData(): TokenData? {
+        val accessToken = localStorage.getItem(KEY_ACCESS_TOKEN) ?: return null
+        return TokenData(
+            accessToken = accessToken,
+            refreshToken = localStorage.getItem(KEY_REFRESH_TOKEN),
+            accessTokenExpiresAt = localStorage.getItem(KEY_ACCESS_TOKEN_EXPIRES_AT)?.toLongOrNull()
+        )
+    }
+
+    override suspend fun isAccessTokenExpired(): Boolean {
+        val expiresAt = localStorage.getItem(KEY_ACCESS_TOKEN_EXPIRES_AT)?.toLongOrNull() ?: return false
+        return Clock.System.now().toEpochMilliseconds() >= expiresAt
+    }
+
+    override suspend fun clearTokens() {
+        localStorage.removeItem(KEY_ACCESS_TOKEN)
+        localStorage.removeItem(KEY_REFRESH_TOKEN)
+        localStorage.removeItem(KEY_ACCESS_TOKEN_EXPIRES_AT)
+    }
+
     companion object {
-        private const val KEY_TOKEN = "writeopia_auth_token"
+        private const val KEY_ACCESS_TOKEN = "writeopia_access_token"
+        private const val KEY_REFRESH_TOKEN = "writeopia_refresh_token"
+        private const val KEY_ACCESS_TOKEN_EXPIRES_AT = "writeopia_access_token_expires_at"
         private const val KEY_USER_ID = "writeopia_user_id"
         private const val KEY_USER_EMAIL = "writeopia_user_email"
         private const val KEY_USER_NAME = "writeopia_user_name"

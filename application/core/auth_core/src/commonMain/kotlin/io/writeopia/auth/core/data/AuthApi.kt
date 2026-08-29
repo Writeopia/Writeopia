@@ -25,7 +25,9 @@ import io.writeopia.sdk.serialization.data.auth.ManageUserRequest
 import io.writeopia.sdk.serialization.data.auth.PasswordResetWithCodeRequest
 import io.writeopia.sdk.serialization.data.auth.PasswordVerifyCodeRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
+import io.writeopia.sdk.serialization.data.auth.RefreshTokenRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
+import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
 import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
@@ -214,6 +216,38 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
     } catch (e: Exception) {
         // Network error - return with exception to indicate connectivity issue
         println("getCurrentUser error: ${e.message}")
+        ResultData.Error(e)
+    }
+
+    suspend fun refreshToken(refreshToken: String): ResultData<TokenRefreshResponse> = try {
+        val response = client.post("$baseUrl/api/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshTokenRequest(refreshToken))
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<TokenRefreshResponse>())
+        } else {
+            ResultData.Error()
+        }
+    } catch (e: Exception) {
+        println("refreshToken error: ${e.message}")
+        ResultData.Error(e)
+    }
+
+    suspend fun logout(refreshToken: String): ResultData<Unit> = try {
+        val response = client.post("$baseUrl/api/auth/logout") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshTokenRequest(refreshToken))
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            ResultData.Error()
+        }
+    } catch (e: Exception) {
+        println("logout error: ${e.message}")
         ResultData.Error(e)
     }
 }
