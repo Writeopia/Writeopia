@@ -6,11 +6,22 @@ import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
+/**
+ * Web-specific AuthRepository that uses HttpOnly cookies for token storage.
+ *
+ * Token security:
+ * - Access and refresh tokens are stored in HttpOnly cookies (set by backend)
+ * - Tokens cannot be accessed by JavaScript (XSS protection)
+ * - A non-HttpOnly session metadata cookie is used for auth status checks
+ *
+ * Non-sensitive data (user info, workspace) remains in localStorage for convenience.
+ */
 internal class LocalStorageAuthRepository : AuthRepository {
 
     // Session-scoped storage for sensitive reset flow data (not persisted to localStorage)
@@ -31,11 +42,15 @@ internal class LocalStorageAuthRepository : AuthRepository {
         )
     }
 
-    override suspend fun isLoggedIn(): Boolean =
-        getAuthToken().takeIf { it?.isNotEmpty() == true } != null
+    override suspend fun isLoggedIn(): Boolean {
+        // Check the session metadata cookie (not HttpOnly, accessible by JS)
+        val sessionMeta = getCookie(COOKIE_SESSION_META)
+        return sessionMeta != null && sessionMeta.isNotEmpty()
+    }
 
     override suspend fun logout(): ResultData<Boolean> {
-        clearTokens()
+        // Note: Actual cookie clearing is done by the backend via /api/auth/logout/web
+        // We just clear local storage data here
         localStorage.removeItem(KEY_USER_ID)
         localStorage.removeItem(KEY_USER_EMAIL)
         localStorage.removeItem(KEY_USER_NAME)
@@ -62,8 +77,15 @@ internal class LocalStorageAuthRepository : AuthRepository {
         localStorage.setItem(KEY_USER_SELECTED, selected.toString())
     }
 
-    override suspend fun getAuthToken(): String? =
-        localStorage.getItem(KEY_ACCESS_TOKEN)
+    /**
+     * Returns null since tokens are stored in HttpOnly cookies.
+     * The actual token is sent automatically by the browser with requests.
+     */
+    override suspend fun getAuthToken(): String? {
+        // Tokens are in HttpOnly cookies, not accessible by JavaScript
+        // Return null - Ktor client should be configured to include credentials
+        return null
+    }
 
     override suspend fun useOffline() {
         val user = getUser()
@@ -142,46 +164,86 @@ internal class LocalStorageAuthRepository : AuthRepository {
         forgotPasswordCode = null
     }
 
+    /**
+     * Tokens are managed by HttpOnly cookies set by the backend.
+     * This method stores only non-sensitive metadata.
+     */
     override suspend fun saveTokens(
         userId: String,
         accessToken: String,
         refreshToken: String?,
         expiresAt: Long?
     ) {
-        localStorage.setItem(KEY_ACCESS_TOKEN, accessToken)
-        refreshToken?.let { localStorage.setItem(KEY_REFRESH_TOKEN, it) }
-            ?: localStorage.removeItem(KEY_REFRESH_TOKEN)
-        expiresAt?.let { localStorage.setItem(KEY_ACCESS_TOKEN_EXPIRES_AT, it.toString()) }
-            ?: localStorage.removeItem(KEY_ACCESS_TOKEN_EXPIRES_AT)
+        // Tokens are stored in HttpOnly cookies by the backend
+        // We only store the expiry locally for quick checks
+        expiresAt?.let { localStorage.setItem(KEY_TOKEN_EXPIRES_AT, it.toString()) }
+            ?: localStorage.removeItem(KEY_TOKEN_EXPIRES_AT)
     }
 
-    override suspend fun getRefreshToken(): String? =
-        localStorage.getItem(KEY_REFRESH_TOKEN)
+    /**
+     * Returns null since refresh tokens are in HttpOnly cookies.
+     */
+    override suspend fun getRefreshToken(): String? {
+        // Refresh token is in HttpOnly cookie, not accessible by JavaScript
+        return null
+    }
 
+    /**
+     * Returns token data based on available information.
+     * Actual tokens are not accessible due to HttpOnly cookies.
+     */
     override suspend fun getTokenData(): TokenData? {
-        val accessToken = localStorage.getItem(KEY_ACCESS_TOKEN) ?: return null
+        // We can't access the actual tokens, but we can check session status
+        val sessionMeta = getCookie(COOKIE_SESSION_META) ?: return null
+        val parts = sessionMeta.split(":")
+        val expiresAt = parts.getOrNull(1)?.toLongOrNull()
+
+        // Return a placeholder TokenData - actual token is in HttpOnly cookie
         return TokenData(
-            accessToken = accessToken,
-            refreshToken = localStorage.getItem(KEY_REFRESH_TOKEN),
-            accessTokenExpiresAt = localStorage.getItem(KEY_ACCESS_TOKEN_EXPIRES_AT)?.toLongOrNull()
+            accessToken = "", // Not accessible
+            refreshToken = null, // Not accessible
+            accessTokenExpiresAt = expiresAt
         )
     }
 
+    /**
+     * Checks if the access token is expired using the session metadata cookie.
+     */
     override suspend fun isAccessTokenExpired(): Boolean {
-        val expiresAt = localStorage.getItem(KEY_ACCESS_TOKEN_EXPIRES_AT)?.toLongOrNull() ?: return false
+        // Check the session metadata cookie for expiry
+        val sessionMeta = getCookie(COOKIE_SESSION_META) ?: return true
+        val parts = sessionMeta.split(":")
+        val expiresAt = parts.getOrNull(1)?.toLongOrNull() ?: return true
         return Clock.System.now().toEpochMilliseconds() >= expiresAt
     }
 
+    /**
+     * Local cleanup only - actual cookie clearing is done by backend.
+     */
     override suspend fun clearTokens() {
-        localStorage.removeItem(KEY_ACCESS_TOKEN)
-        localStorage.removeItem(KEY_REFRESH_TOKEN)
-        localStorage.removeItem(KEY_ACCESS_TOKEN_EXPIRES_AT)
+        localStorage.removeItem(KEY_TOKEN_EXPIRES_AT)
+        // HttpOnly cookies are cleared by calling /api/auth/logout/web
+    }
+
+    /**
+     * Reads a cookie value by name.
+     */
+    private fun getCookie(name: String): String? {
+        val cookies = document.cookie
+        if (cookies.isEmpty()) return null
+
+        return cookies.split(";")
+            .map { it.trim() }
+            .find { it.startsWith("$name=") }
+            ?.substringAfter("=")
     }
 
     companion object {
-        private const val KEY_ACCESS_TOKEN = "writeopia_access_token"
-        private const val KEY_REFRESH_TOKEN = "writeopia_refresh_token"
-        private const val KEY_ACCESS_TOKEN_EXPIRES_AT = "writeopia_access_token_expires_at"
+        // Session cookie name (must match backend)
+        private const val COOKIE_SESSION_META = "writeopia_session"
+
+        // Local storage keys (for non-sensitive data only)
+        private const val KEY_TOKEN_EXPIRES_AT = "writeopia_token_expires_at"
         private const val KEY_USER_ID = "writeopia_user_id"
         private const val KEY_USER_EMAIL = "writeopia_user_email"
         private const val KEY_USER_NAME = "writeopia_user_name"
