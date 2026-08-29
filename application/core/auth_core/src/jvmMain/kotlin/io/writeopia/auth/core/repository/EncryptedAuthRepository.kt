@@ -28,7 +28,6 @@ internal class EncryptedAuthRepository(
 ) : AuthRepository {
 
     private val delegate = SqlDelightAuthRepository(writeopiaDb)
-    private var migrationChecked = false
 
     override fun listenForUser(): Flow<WriteopiaUser> = delegate.listenForUser()
 
@@ -54,7 +53,6 @@ internal class EncryptedAuthRepository(
         refreshToken: String?,
         expiresAt: Long?
     ) {
-        // Save to encrypted storage only
         EncryptedTokenStorage.saveTokens(
             userId = userId,
             accessToken = accessToken,
@@ -63,20 +61,14 @@ internal class EncryptedAuthRepository(
         )
     }
 
-    override suspend fun getAuthToken(): String? {
-        migrateTokensIfNeeded()
-        return EncryptedTokenStorage.getAccessToken(getUser().id)
-    }
+    override suspend fun getAuthToken(): String? =
+        EncryptedTokenStorage.getAccessToken(getUser().id)
 
-    override suspend fun getRefreshToken(): String? {
-        migrateTokensIfNeeded()
-        return EncryptedTokenStorage.getRefreshToken(getUser().id)
-    }
+    override suspend fun getRefreshToken(): String? =
+        EncryptedTokenStorage.getRefreshToken(getUser().id)
 
-    override suspend fun getTokenData(): TokenData? {
-        migrateTokensIfNeeded()
-        return EncryptedTokenStorage.getTokenData(getUser().id)
-    }
+    override suspend fun getTokenData(): TokenData? =
+        EncryptedTokenStorage.getTokenData(getUser().id)
 
     override suspend fun isAccessTokenExpired(): Boolean {
         val tokenData = getTokenData() ?: return true
@@ -135,36 +127,5 @@ internal class EncryptedAuthRepository(
 
     override suspend fun clearForgotPasswordData() {
         delegate.clearForgotPasswordData()
-    }
-
-    /**
-     * Migrates tokens from legacy SQLDelight storage to encrypted storage.
-     * This is a one-time migration that runs on first access after upgrade.
-     */
-    private suspend fun migrateTokensIfNeeded() {
-        if (migrationChecked || EncryptedTokenStorage.isMigrationCompleted()) {
-            migrationChecked = true
-            return
-        }
-
-        val userId = getUser().id
-        // Get legacy token data from SQLDelight delegate
-        val legacyTokenData = delegate.getTokenData()
-
-        if (legacyTokenData != null && !EncryptedTokenStorage.hasTokens(userId)) {
-            // Migrate tokens from SQLDelight to encrypted storage
-            EncryptedTokenStorage.saveTokens(
-                userId = userId,
-                accessToken = legacyTokenData.accessToken,
-                refreshToken = legacyTokenData.refreshToken,
-                expiresAt = legacyTokenData.accessTokenExpiresAt
-            )
-
-            // Clear tokens from legacy SQLDelight storage
-            delegate.clearTokens()
-        }
-
-        EncryptedTokenStorage.setMigrationCompleted()
-        migrationChecked = true
     }
 }

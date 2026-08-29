@@ -24,7 +24,6 @@ internal class KeychainAuthRepository(
 ) : AuthRepository {
 
     private val delegate = SqlDelightAuthRepository(writeopiaDb)
-    private var migrationChecked = false
 
     override fun listenForUser(): Flow<WriteopiaUser> = delegate.listenForUser()
 
@@ -50,7 +49,6 @@ internal class KeychainAuthRepository(
         refreshToken: String?,
         expiresAt: Long?
     ) {
-        // Save to Keychain only
         KeychainTokenStorage.saveTokens(
             userId = userId,
             accessToken = accessToken,
@@ -59,20 +57,14 @@ internal class KeychainAuthRepository(
         )
     }
 
-    override suspend fun getAuthToken(): String? {
-        migrateTokensIfNeeded()
-        return KeychainTokenStorage.getAccessToken(getUser().id)
-    }
+    override suspend fun getAuthToken(): String? =
+        KeychainTokenStorage.getAccessToken(getUser().id)
 
-    override suspend fun getRefreshToken(): String? {
-        migrateTokensIfNeeded()
-        return KeychainTokenStorage.getRefreshToken(getUser().id)
-    }
+    override suspend fun getRefreshToken(): String? =
+        KeychainTokenStorage.getRefreshToken(getUser().id)
 
-    override suspend fun getTokenData(): TokenData? {
-        migrateTokensIfNeeded()
-        return KeychainTokenStorage.getTokenData(getUser().id)
-    }
+    override suspend fun getTokenData(): TokenData? =
+        KeychainTokenStorage.getTokenData(getUser().id)
 
     override suspend fun isAccessTokenExpired(): Boolean {
         val tokenData = getTokenData() ?: return true
@@ -131,36 +123,5 @@ internal class KeychainAuthRepository(
 
     override suspend fun clearForgotPasswordData() {
         delegate.clearForgotPasswordData()
-    }
-
-    /**
-     * Migrates tokens from legacy SQLDelight storage to secure Keychain.
-     * This is a one-time migration that runs on first access after upgrade.
-     */
-    private suspend fun migrateTokensIfNeeded() {
-        if (migrationChecked || KeychainTokenStorage.isMigrationCompleted()) {
-            migrationChecked = true
-            return
-        }
-
-        val userId = getUser().id
-        // Get legacy token data from SQLDelight delegate
-        val legacyTokenData = delegate.getTokenData()
-
-        if (legacyTokenData != null && !KeychainTokenStorage.hasTokens(userId)) {
-            // Migrate tokens from SQLDelight to Keychain
-            KeychainTokenStorage.saveTokens(
-                userId = userId,
-                accessToken = legacyTokenData.accessToken,
-                refreshToken = legacyTokenData.refreshToken,
-                expiresAt = legacyTokenData.accessTokenExpiresAt
-            )
-
-            // Clear tokens from legacy SQLDelight storage
-            delegate.clearTokens()
-        }
-
-        KeychainTokenStorage.setMigrationCompleted()
-        migrationChecked = true
     }
 }

@@ -4,7 +4,6 @@ package io.writeopia.auth.core.repository
 
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.TokenData
-import io.writeopia.common.utils.persistence.daos.TokenCommonDao
 import io.writeopia.common.utils.persistence.daos.UserCommonDao
 import io.writeopia.common.utils.persistence.daos.WorkspaceCommonDao
 import io.writeopia.sdk.models.workspace.Workspace
@@ -15,7 +14,6 @@ import kotlin.time.ExperimentalTime
 
 class RoomAuthRepository(
     private val userDao: UserCommonDao,
-    private val tokenCommonDao: TokenCommonDao,
     private val workspaceCommonDao: WorkspaceCommonDao,
     private val secureTokenStorage: SecureTokenStorage
 ) : AuthRepository {
@@ -23,7 +21,6 @@ class RoomAuthRepository(
     private var pendingConfirmationEmail: String? = null
     private var forgotPasswordEmail: String? = null
     private var forgotPasswordCode: String? = null
-    private var migrationChecked = false
 
     override suspend fun getUser(): WriteopiaUser = userDao.selectedCurrentUser()
 
@@ -48,7 +45,6 @@ class RoomAuthRepository(
         refreshToken: String?,
         expiresAt: Long?
     ) {
-        // Save to secure storage only
         secureTokenStorage.saveTokens(
             userId = userId,
             accessToken = accessToken,
@@ -57,20 +53,14 @@ class RoomAuthRepository(
         )
     }
 
-    override suspend fun getAuthToken(): String? {
-        migrateTokensIfNeeded()
-        return secureTokenStorage.getAccessToken(getUser().id)
-    }
+    override suspend fun getAuthToken(): String? =
+        secureTokenStorage.getAccessToken(getUser().id)
 
-    override suspend fun getRefreshToken(): String? {
-        migrateTokensIfNeeded()
-        return secureTokenStorage.getRefreshToken(getUser().id)
-    }
+    override suspend fun getRefreshToken(): String? =
+        secureTokenStorage.getRefreshToken(getUser().id)
 
-    override suspend fun getTokenData(): TokenData? {
-        migrateTokensIfNeeded()
-        return secureTokenStorage.getTokenData(getUser().id)
-    }
+    override suspend fun getTokenData(): TokenData? =
+        secureTokenStorage.getTokenData(getUser().id)
 
     override suspend fun isAccessTokenExpired(): Boolean {
         val tokenData = getTokenData() ?: return true
@@ -133,35 +123,5 @@ class RoomAuthRepository(
     override suspend fun clearForgotPasswordData() {
         forgotPasswordEmail = null
         forgotPasswordCode = null
-    }
-
-    /**
-     * Migrates tokens from legacy Room storage to secure EncryptedSharedPreferences.
-     * This is a one-time migration that runs on first access after upgrade.
-     */
-    private suspend fun migrateTokensIfNeeded() {
-        if (migrationChecked || secureTokenStorage.isMigrationCompleted()) {
-            migrationChecked = true
-            return
-        }
-
-        val userId = getUser().id
-        val legacyTokenDetails = tokenCommonDao.getTokenDetails(userId)
-
-        if (legacyTokenDetails != null && !secureTokenStorage.hasTokens(userId)) {
-            // Migrate tokens from Room to encrypted storage
-            secureTokenStorage.saveTokens(
-                userId = userId,
-                accessToken = legacyTokenDetails.accessToken,
-                refreshToken = legacyTokenDetails.refreshToken,
-                expiresAt = legacyTokenDetails.accessTokenExpiresAt
-            )
-
-            // Delete tokens from legacy Room storage
-            tokenCommonDao.deleteToken(userId)
-        }
-
-        secureTokenStorage.setMigrationCompleted()
-        migrationChecked = true
     }
 }

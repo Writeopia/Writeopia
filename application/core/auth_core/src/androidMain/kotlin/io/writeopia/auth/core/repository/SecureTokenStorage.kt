@@ -47,7 +47,6 @@ class SecureTokenStorage(context: Context) {
             } else {
                 remove(keyExpiresAt(userId))
             }
-            putString(KEY_CURRENT_USER_ID, userId)
             apply()
         }
     }
@@ -98,41 +97,11 @@ class SecureTokenStorage(context: Context) {
         }
     }
 
-    /**
-     * Checks if tokens exist for a given user (for migration purposes).
-     */
-    fun hasTokens(userId: String): Boolean {
-        return encryptedPrefs.contains(keyAccessToken(userId))
-    }
-
-    /**
-     * Gets the current user ID stored (for migration purposes).
-     */
-    fun getCurrentUserId(): String? {
-        return encryptedPrefs.getString(KEY_CURRENT_USER_ID, null)
-    }
-
-    /**
-     * Sets a flag indicating migration has been completed.
-     */
-    fun setMigrationCompleted() {
-        encryptedPrefs.edit().putBoolean(KEY_MIGRATION_COMPLETED, true).apply()
-    }
-
-    /**
-     * Checks if migration from legacy storage has been completed.
-     */
-    fun isMigrationCompleted(): Boolean {
-        return encryptedPrefs.getBoolean(KEY_MIGRATION_COMPLETED, false)
-    }
-
     private fun keyAccessToken(userId: String) = "access_token_$userId"
     private fun keyRefreshToken(userId: String) = "refresh_token_$userId"
     private fun keyExpiresAt(userId: String) = "expires_at_$userId"
 
     companion object {
         private const val PREFS_FILE_NAME = "writeopia_secure_tokens"
-        private const val KEY_CURRENT_USER_ID = "current_user_id"
-        private const val KEY_MIGRATION_COMPLETED = "migration_completed"
     }
 }

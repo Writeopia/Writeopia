@@ -9,7 +9,6 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.value
 import platform.CoreFoundation.CFDictionaryCreateMutable
-import platform.CoreFoundation.CFDictionaryRef
 import platform.CoreFoundation.CFDictionarySetValue
 import platform.CoreFoundation.CFTypeRefVar
 import platform.CoreFoundation.kCFAllocatorDefault
@@ -26,8 +25,6 @@ import platform.Foundation.dataUsingEncoding
 import platform.Security.SecItemAdd
 import platform.Security.SecItemCopyMatching
 import platform.Security.SecItemDelete
-import platform.Security.SecItemUpdate
-import platform.Security.errSecDuplicateItem
 import platform.Security.errSecSuccess
 import platform.Security.kSecAttrAccessible
 import platform.Security.kSecAttrAccessibleWhenUnlockedThisDeviceOnly
@@ -54,7 +51,6 @@ object KeychainTokenStorage {
     private const val KEY_ACCESS_TOKEN_PREFIX = "access_token_"
     private const val KEY_REFRESH_TOKEN_PREFIX = "refresh_token_"
     private const val KEY_EXPIRES_AT_PREFIX = "expires_at_"
-    private const val KEY_MIGRATION_COMPLETED = "migration_completed"
 
     /**
      * Saves tokens securely in the iOS Keychain.
@@ -118,27 +114,6 @@ object KeychainTokenStorage {
         deleteItem(KEY_ACCESS_TOKEN_PREFIX + userId)
         deleteItem(KEY_REFRESH_TOKEN_PREFIX + userId)
         deleteItem(KEY_EXPIRES_AT_PREFIX + userId)
-    }
-
-    /**
-     * Checks if tokens exist for a given user (for migration purposes).
-     */
-    fun hasTokens(userId: String): Boolean {
-        return getAccessToken(userId) != null
-    }
-
-    /**
-     * Sets a flag indicating migration has been completed.
-     */
-    fun setMigrationCompleted() {
-        setItem(KEY_MIGRATION_COMPLETED, "true")
-    }
-
-    /**
-     * Checks if migration from legacy storage has been completed.
-     */
-    fun isMigrationCompleted(): Boolean {
-        return getItem(KEY_MIGRATION_COMPLETED) == "true"
     }
 
     private fun setItem(key: String, value: String) {

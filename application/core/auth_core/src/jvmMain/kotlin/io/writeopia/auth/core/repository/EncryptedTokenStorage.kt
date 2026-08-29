@@ -1,7 +1,6 @@
 package io.writeopia.auth.core.repository
 
 import io.writeopia.auth.core.manager.TokenData
-import java.io.File
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.security.SecureRandom
@@ -43,7 +42,6 @@ object EncryptedTokenStorage {
     private const val PREF_ACCESS_TOKEN_PREFIX = "encrypted_access_token_"
     private const val PREF_REFRESH_TOKEN_PREFIX = "encrypted_refresh_token_"
     private const val PREF_EXPIRES_AT_PREFIX = "encrypted_expires_at_"
-    private const val PREF_MIGRATION_COMPLETED = "migration_completed"
 
     private val prefs: Preferences by lazy {
         Preferences.userNodeForPackage(EncryptedTokenStorage::class.java)
@@ -136,28 +134,6 @@ object EncryptedTokenStorage {
         prefs.remove(PREF_REFRESH_TOKEN_PREFIX + userId)
         prefs.remove(PREF_EXPIRES_AT_PREFIX + userId)
         prefs.flush()
-    }
-
-    /**
-     * Checks if tokens exist for a given user (for migration purposes).
-     */
-    fun hasTokens(userId: String): Boolean {
-        return prefs.get(PREF_ACCESS_TOKEN_PREFIX + userId, null) != null
-    }
-
-    /**
-     * Sets a flag indicating migration has been completed.
-     */
-    fun setMigrationCompleted() {
-        prefs.putBoolean(PREF_MIGRATION_COMPLETED, true)
-        prefs.flush()
-    }
-
-    /**
-     * Checks if migration from legacy storage has been completed.
-     */
-    fun isMigrationCompleted(): Boolean {
-        return prefs.getBoolean(PREF_MIGRATION_COMPLETED, false)
     }
 
     /**

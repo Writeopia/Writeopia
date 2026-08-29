@@ -25,7 +25,6 @@ actual class AuthCoreInjectionNeo(
     actual fun provideAuthRepository(): AuthRepository =
         RoomAuthRepository(
             appsDaosInjection.provideUserDao(),
-            appsDaosInjection.provideTokenDao(),
             appsDaosInjection.provideWorkspaceDao(),
             secureTokenStorage
         )
@@ -40,7 +39,7 @@ actual class AuthCoreInjectionNeo(
         private var instance: AuthCoreInjectionNeo? = null
 
         fun initialize(context: Context) {
-            instance = AuthCoreInjectionNeo(context)
+            instance = AuthCoreInjectionNeo(context.applicationContext)
         }
 
         actual fun singleton(): AuthCoreInjectionNeo =
