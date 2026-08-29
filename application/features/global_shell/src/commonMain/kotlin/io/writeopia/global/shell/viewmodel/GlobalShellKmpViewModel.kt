@@ -516,14 +516,18 @@ class GlobalShellKmpViewModel(
         viewModelScope.launch {
             _logoutInProgress.value = true
             try {
-                // Revoke refresh token on backend
-                authRepository.getRefreshToken()?.let { refreshToken ->
+                // Revoke refresh token on backend (non-web platforms)
+                val refreshToken = authRepository.getRefreshToken()
+                if (refreshToken != null) {
                     authApi.logout(refreshToken)
                 }
 
+                // Call repository logout first - for web this calls the backend
+                // to clear HttpOnly cookies before we clear local state
+                authRepository.logout()
+
                 authRepository.unselectAllWorkspaces()
                 authRepository.clearTokens()
-                authRepository.logout()
 
                 // Clear HttpClient to invalidate cached bearer tokens
                 WriteopiaConnectionInjector.clearInstance()
