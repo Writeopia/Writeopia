@@ -17,6 +17,7 @@ import io.writeopia.api.core.auth.repository.getUserRoleInWorkspace
 import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.api.core.auth.repository.searchUsersByEmail
 import io.writeopia.api.core.auth.service.WorkspaceService
+import io.writeopia.api.documents.documents.TutorialsService
 import io.writeopia.api.core.auth.utils.runIfAdmin
 import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
@@ -99,6 +100,13 @@ fun Routing.workspaceRoute(
                 userId = userId,
                 workspaceId = workspaceId,
                 role = Role.ADMIN.value,
+                writeopiaDb = writeopiaDb
+            )
+
+            // Initialize tutorial documents for the new workspace
+            TutorialsService.initializeTutorialsForUser(
+                userId = userId,
+                workspaceId = workspaceId,
                 writeopiaDb = writeopiaDb
             )
 
