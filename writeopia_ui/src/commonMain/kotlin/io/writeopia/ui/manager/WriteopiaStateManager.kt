@@ -1158,7 +1158,9 @@ class WriteopiaStateManager(
 
             if (story != null) {
                 val (targetPosition, useInsertMode) = getTitleProtectedPosition(
-                    pos, story, explicitPosition = position != null
+                    pos,
+                    story,
+                    explicitPosition = position != null
                 )
 
                 // Check if we should upload to cloud
@@ -1756,7 +1758,9 @@ class WriteopiaStateManager(
         val currentStep = _currentStory.value.stories[position]
 
         val (targetPosition, insertMode) = getTitleProtectedPosition(
-            position, currentStep, explicitPosition = false
+            position,
+            currentStep,
+            explicitPosition = false
         )
 
         backStackManager.addState(_currentStory.value)
