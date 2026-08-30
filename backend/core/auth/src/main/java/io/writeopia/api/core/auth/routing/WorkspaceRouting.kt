@@ -38,7 +38,8 @@ private val logger = LoggerFactory.getLogger("WorkspaceRouting")
 fun Routing.workspaceRoute(
     apiKey: String?,
     writeopiaDb: WriteopiaDbBackend,
-    debugMode: Boolean = false
+    debugMode: Boolean = false,
+    onWorkspaceCreated: (suspend (userId: String, workspaceId: String) -> Unit)? = null
 ) {
     get("/api/workspace") {
         val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
@@ -93,14 +94,24 @@ fun Routing.workspaceRoute(
             val userId = getUserId() ?: ""
             val (workspaceName) = request
 
+            // Create workspace and add user as admin atomically
             val workspaceId = GenerateId.generate()
-            WorkspaceService.createWorkspace(workspaceId, workspaceName, writeopiaDb)
-            WorkspaceService.addUserToWorkspaceByUserId(
-                userId = userId,
+            WorkspaceService.createWorkspaceWithOwner(
                 workspaceId = workspaceId,
-                role = Role.ADMIN.value,
+                workspaceName = workspaceName,
+                userId = userId,
                 writeopiaDb = writeopiaDb
             )
+
+            // Initialize tutorial documents for the new workspace.
+            // This is idempotent - if it fails, users can retry via
+            // POST /api/docs/workspace/{workspaceId}/tutorials/initialize
+            try {
+                onWorkspaceCreated?.invoke(userId, workspaceId)
+            } catch (e: Exception) {
+                logger.warn("Failed to initialize tutorials for workspace $workspaceId: ${e.message}")
+                // Continue - workspace is created, tutorials can be initialized later
+            }
 
             call.respond(HttpStatusCode.Created, ServerResponse("Workspace created"))
         }

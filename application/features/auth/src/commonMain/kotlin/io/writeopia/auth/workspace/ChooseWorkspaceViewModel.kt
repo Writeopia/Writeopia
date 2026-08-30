@@ -78,14 +78,9 @@ class ChooseWorkspaceViewModel(
                 val isOnlineWorkspace = workspaceId != "disconnected_user"
 
                 val tutorialsInitialized = if (isOnlineWorkspace) {
-                    // For online workspaces, create tutorials on the backend
-                    val token = authRepository.getAuthToken()
-                    if (token != null) {
-                        val result = workspaceApi.initializeTutorials(workspaceId, token)
-                        result is ResultData.Complete
-                    } else {
-                        false
-                    }
+                    // For online workspaces, tutorials are initialized on the backend
+                    // when the workspace is created
+                    true
                 } else {
                     // For offline mode, create tutorials locally
                     val now = Clock.System.now()
