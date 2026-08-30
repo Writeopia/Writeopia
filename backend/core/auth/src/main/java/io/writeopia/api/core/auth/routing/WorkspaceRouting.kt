@@ -17,7 +17,6 @@ import io.writeopia.api.core.auth.repository.getUserRoleInWorkspace
 import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.api.core.auth.repository.searchUsersByEmail
 import io.writeopia.api.core.auth.service.WorkspaceService
-import io.writeopia.api.documents.documents.TutorialsService
 import io.writeopia.api.core.auth.utils.runIfAdmin
 import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
@@ -39,7 +38,8 @@ private val logger = LoggerFactory.getLogger("WorkspaceRouting")
 fun Routing.workspaceRoute(
     apiKey: String?,
     writeopiaDb: WriteopiaDbBackend,
-    debugMode: Boolean = false
+    debugMode: Boolean = false,
+    onWorkspaceCreated: (suspend (userId: String, workspaceId: String) -> Unit)? = null
 ) {
     get("/api/workspace") {
         val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
@@ -104,11 +104,7 @@ fun Routing.workspaceRoute(
             )
 
             // Initialize tutorial documents for the new workspace
-            TutorialsService.initializeTutorialsForUser(
-                userId = userId,
-                workspaceId = workspaceId,
-                writeopiaDb = writeopiaDb
-            )
+            onWorkspaceCreated?.invoke(userId, workspaceId)
 
             call.respond(HttpStatusCode.Created, ServerResponse("Workspace created"))
         }

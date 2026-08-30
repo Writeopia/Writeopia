@@ -2,6 +2,8 @@
 
 package io.writeopia.api.documents.documents
 
+import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -40,12 +42,13 @@ object TutorialsService {
 
         val now = Clock.System.now()
 
-        // Create all tutorial documents
+        // Create all tutorial documents with unique IDs for this workspace
         Tutorials.allTutorialsDocuments()
             .map { documentAsJson ->
                 json.decodeFromString<DocumentApi>(documentAsJson)
                     .toModel()
             }
+            .map { document -> regenerateIds(document) }
             .forEach { document ->
                 val documentWithWorkspace = document.copy(
                     workspaceId = workspaceId,
@@ -71,5 +74,23 @@ object TutorialsService {
         )
 
         return true
+    }
+
+    /**
+     * Regenerates all IDs in a document to make it unique.
+     * This includes the document ID and all story step IDs in the content.
+     */
+    private fun regenerateIds(document: Document): Document {
+        val newContent = document.content.mapValues { (_, storyStep) ->
+            storyStep.copy(
+                id = GenerateId.generate(),
+                localId = GenerateId.generate()
+            )
+        }
+
+        return document.copy(
+            id = GenerateId.generate(),
+            content = newContent
+        )
     }
 }

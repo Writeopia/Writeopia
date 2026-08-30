@@ -10,6 +10,7 @@ import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.cookieAuthRoute
 import io.writeopia.api.core.auth.routing.passwordResetRoute
 import io.writeopia.api.core.auth.routing.workspaceRoute
+import io.writeopia.api.documents.documents.TutorialsService
 import io.writeopia.api.documents.routing.documentsRoute
 import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.connection.logger
@@ -33,7 +34,18 @@ fun Application.configureRouting(
             // Web-specific auth routes using HttpOnly cookies
             cookieAuthRoute(writeopiaDb, debugMode)
 
-            workspaceRoute(adminKey, writeopiaDb, debugMode)
+            workspaceRoute(
+                apiKey = adminKey,
+                writeopiaDb = writeopiaDb,
+                debugMode = debugMode,
+                onWorkspaceCreated = { userId, workspaceId ->
+                    TutorialsService.initializeTutorialsForUser(
+                        userId = userId,
+                        workspaceId = workspaceId,
+                        writeopiaDb = writeopiaDb
+                    )
+                }
+            )
 
             passwordResetRoute(writeopiaDb)
 
