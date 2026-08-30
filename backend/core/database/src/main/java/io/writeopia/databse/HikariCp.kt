@@ -13,7 +13,7 @@ private fun createPostgresConfig() = HikariConfig().apply {
     jdbcUrl = System.getenv("JDBC_URL") ?: "jdbc:postgresql://$dbHost:$dbPort/$dbName"
     username = System.getenv("DB_USER") ?: "postgres"
     password = System.getenv("DB_PASS") ?: "postgres"
-    maximumPoolSize = 10
+    maximumPoolSize = System.getenv("DB_POOL_SIZE")?.toIntOrNull() ?: 2
     isAutoCommit = true
     transactionIsolation = "TRANSACTION_REPEATABLE_READ"
 }
