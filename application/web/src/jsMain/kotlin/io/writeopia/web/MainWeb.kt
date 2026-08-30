@@ -201,7 +201,8 @@ fun CreateAppInMemory() {
 
                     authNavigation(
                         navController = navigationController,
-                        colorThemeOption = colorTheme
+                        colorThemeOption = colorTheme,
+                        isWeb = true
                     ) {
                         navigationController.navigate(Destinations.MAIN_APP.id)
                     }

@@ -9,7 +9,7 @@ class UserDaoDelegator(private val delegate: UserDao): UserCommonDao {
 
     override suspend fun getUser(userId: String): Pair<WriteopiaUser, Boolean> =
         delegate.getUserById(userId)?.toModel()
-            ?: (WriteopiaUser.disconnectedUser() to false)
+            ?: (WriteopiaUser.noUser() to false)
 
     override suspend fun insertUser(user: WriteopiaUser, selected: Boolean) {
         delegate.insertUser(user.toEntity(selected))
@@ -24,7 +24,7 @@ class UserDaoDelegator(private val delegate: UserDao): UserCommonDao {
     }
 
     override suspend fun selectedCurrentUser(): WriteopiaUser =
-        delegate.getCurrentUser()?.toModel()?.first ?: WriteopiaUser.disconnectedUser()
+        delegate.getCurrentUser()?.toModel()?.first ?: WriteopiaUser.noUser()
 
     override suspend fun unselectAllUsers() {
         delegate.unselectAllUsers()

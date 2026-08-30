@@ -32,7 +32,7 @@ internal class LocalStorageAuthRepository : AuthRepository {
     private var forgotPasswordCode: String? = null
 
     override suspend fun getUser(): WriteopiaUser {
-        val userId = localStorage.getItem(KEY_USER_ID) ?: return WriteopiaUser.disconnectedUser()
+        val userId = localStorage.getItem(KEY_USER_ID) ?: return WriteopiaUser.noUser()
         val email = localStorage.getItem(KEY_USER_EMAIL) ?: ""
         val name = localStorage.getItem(KEY_USER_NAME) ?: ""
         val tierName = localStorage.getItem(KEY_USER_TIER) ?: Tier.FREE.name

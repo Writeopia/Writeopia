@@ -10,7 +10,7 @@ import kotlin.time.ExperimentalTime
 
 internal class InMemoryAuthRepository : AuthRepository {
 
-    private var currentUser: WriteopiaUser = WriteopiaUser.disconnectedUser()
+    private var currentUser: WriteopiaUser = WriteopiaUser.noUser()
     private var currentAccessToken: String? = null
     private var currentRefreshToken: String? = null
     private var accessTokenExpiresAt: Long? = null
@@ -30,7 +30,7 @@ internal class InMemoryAuthRepository : AuthRepository {
         currentAccessToken = null
         currentRefreshToken = null
         accessTokenExpiresAt = null
-        currentUser = WriteopiaUser.disconnectedUser()
+        currentUser = WriteopiaUser.noUser()
         currentWorkspace = null
         userSelected = false
         return ResultData.Complete(true)
