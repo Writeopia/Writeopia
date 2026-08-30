@@ -72,8 +72,16 @@ class AuthMenuViewModel(
             return@flow
         }
 
-        // Check if user is in offline mode first
+        // Check user state
         val user = authRepository.getUser()
+
+        // No user record exists - show auth screen
+        if (user.id == WriteopiaUser.NO_USER) {
+            emit(LoginStatus.OFFLINE_NOT_CHOSEN)
+            return@flow
+        }
+
+        // User explicitly chose offline mode
         if (user.id == WriteopiaUser.DISCONNECTED) {
             emit(LoginStatus.OFFLINE_CHOSEN)
             return@flow

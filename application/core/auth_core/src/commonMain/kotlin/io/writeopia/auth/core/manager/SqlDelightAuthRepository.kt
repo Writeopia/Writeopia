@@ -27,7 +27,7 @@ internal class SqlDelightAuthRepository(
             ?.selectCurrentUser()
             ?.awaitAsOneOrNull()
             ?.toModel()
-            ?: WriteopiaUser.disconnectedUser()
+            ?: WriteopiaUser.noUser()
 
     override suspend fun isLoggedIn(): Boolean =
         getAuthToken().takeIf { it?.isEmpty() == false } != null

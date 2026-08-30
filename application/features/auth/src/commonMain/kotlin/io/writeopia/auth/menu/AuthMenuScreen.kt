@@ -72,6 +72,7 @@ fun AuthMenuScreen(
     navigateToRegister: () -> Unit,
     navigateToForgotPassword: () -> Unit,
     offlineUsage: () -> Unit,
+    showOfflineOption: Boolean = true,
     navigateUp: () -> Unit,
     navigateNext: () -> Unit,
 ) {
@@ -101,6 +102,7 @@ fun AuthMenuScreen(
                 navigateToRegister,
                 navigateToForgotPassword,
                 offlineUsage,
+                showOfflineOption,
                 modifier,
             )
         }
@@ -177,6 +179,7 @@ private fun AuthMenuContentScreen(
     navigateToRegister: () -> Unit,
     navigateToForgotPassword: () -> Unit,
     offlineUsage: () -> Unit,
+    showOfflineOption: Boolean,
     modifier: Modifier = Modifier
 ) {
     val email by emailState.collectAsState()
@@ -337,17 +340,19 @@ private fun AuthMenuContentScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            if (showOfflineOption) {
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = WrStrings.useOffline(),
-                color = MaterialTheme.colorScheme.onBackground,
-                textDecoration = TextDecoration.Underline,
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.large)
-                    .clickable(onClick = offlineUsage)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            )
+                Text(
+                    text = WrStrings.useOffline(),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.large)
+                        .clickable(onClick = offlineUsage)
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                )
+            }
         }
     }
 }
