@@ -14,12 +14,15 @@ actual class AuthCoreInjectionNeo(
     private val context: Context,
     private val appsDaosInjection: AppDaosInjection = AppRoomDaosInjection.singleton(),
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
-    private val connectionInjector: WriteopiaConnectionInjector =
-        WriteopiaConnectionInjector.singleton()
 ) {
 
     private val secureTokenStorage: SecureTokenStorage by lazy {
         SecureTokenStorage(context)
+    }
+
+    // Lazy to avoid accessing WriteopiaConnectionInjector before baseUrl is set
+    private val connectionInjector: WriteopiaConnectionInjector by lazy {
+        WriteopiaConnectionInjector.singleton()
     }
 
     actual fun provideAuthRepository(): AuthRepository =
