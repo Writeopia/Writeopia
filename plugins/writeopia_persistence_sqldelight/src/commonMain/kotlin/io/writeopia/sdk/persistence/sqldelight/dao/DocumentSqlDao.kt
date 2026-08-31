@@ -614,6 +614,38 @@ class DocumentSqlDao(
         storyStepQueries?.deleteByDocumentIds(ids)
     }
 
+    /**
+     * Hard delete: permanently removes documents from database.
+     * Use this after backend has confirmed the deletion.
+     */
+    suspend fun hardDeleteDocumentByIds(ids: Set<String>) {
+        documentQueries?.hardDeleteByIds(ids)
+        storyStepQueries?.deleteByDocumentIds(ids)
+    }
+
+    /**
+     * Get all soft-deleted documents for a workspace.
+     * Use this to find documents that need to be synced to backend for deletion.
+     */
+    suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document> =
+        documentQueries?.selectSoftDeletedByWorkspace(workspaceId)
+            ?.awaitAsList()
+            ?.map { entity ->
+                Document(
+                    id = entity.id,
+                    title = entity.title,
+                    createdAt = Instant.fromEpochMilliseconds(entity.created_at),
+                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                    lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
+                    workspaceId = entity.workspace_id,
+                    favorite = entity.favorite == 1L,
+                    parentId = entity.parent_document_id,
+                    icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
+                    isLocked = entity.is_locked == 1L,
+                    deleted = true
+                )
+            } ?: emptyList()
+
     suspend fun loadDocumentWithContentById(documentId: String, workspaceId: String): Document? =
         documentQueries?.selectWithContentById(documentId, workspaceId)
             ?.awaitAsList()

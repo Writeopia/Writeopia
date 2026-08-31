@@ -349,26 +349,44 @@ internal class ChooseNoteKmpViewModel(
         val selected = selectedNotes.value
 
         viewModelScope.launch(Dispatchers.Default) {
-            // Delete locally first (optimistic delete)
+            // Soft delete locally first (optimistic delete - items disappear from UI)
             notesUseCase.deleteNotes(selected)
             clearSelection()
             askToDelete.value = false
 
-            // Sync deletion to backend if logged in with premium tier
-            syncDeletionToBackend(selected.toList())
+            // Try to sync deletion to backend
+            val syncSuccess = syncDeletionToBackend(selected.toList())
+
+            // If backend sync succeeded, hard delete locally
+            // If sync failed, items remain soft-deleted and will be retried during EventSync
+            if (syncSuccess) {
+                notesUseCase.hardDeleteNotes(selected)
+            }
         }
     }
 
-    private suspend fun syncDeletionToBackend(documentIds: List<String>) {
-        if (!authRepository.isLoggedIn()) return
-        if (authRepository.getUser().tier != Tier.PREMIUM) return
+    /**
+     * Attempts to sync document deletions to backend.
+     * @return true if sync succeeded, false if it failed (offline, error, etc.)
+     */
+    private suspend fun syncDeletionToBackend(documentIds: List<String>): Boolean {
+        if (!authRepository.isLoggedIn()) return true // No backend to sync to
+        if (authRepository.getUser().tier != Tier.PREMIUM) return true // No sync for non-premium
 
-        val workspace = authRepository.getWorkspace() ?: return
+        val workspace = authRepository.getWorkspace() ?: return true
 
-        documentsApi.deleteDocuments(
-            documentIds = documentIds,
-            workspaceId = workspace.id
-        )
+        return when (
+            documentsApi.deleteDocuments(
+                documentIds = documentIds,
+                workspaceId = workspace.id
+            )
+        ) {
+            is ResultData.Complete -> true
+            is ResultData.Error -> false
+            is ResultData.Idle -> true
+            is ResultData.Loading -> false
+            is ResultData.InProgress -> false
+        }
     }
 
     private suspend fun syncDocumentsToBackend(documents: List<Document>) {

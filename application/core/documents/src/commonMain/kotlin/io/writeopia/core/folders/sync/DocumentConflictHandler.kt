@@ -38,8 +38,14 @@ class DocumentConflictHandler(
         }
 
         // Save the resolved (winning) documents to the repository.
+        // IMPORTANT: Skip documents that are soft-deleted locally to prevent resurrection
         resolvedDocuments.forEach { document ->
-            documentRepository.saveDocument(document)
+            val existingDoc = documentRepository.loadDocumentById(document.id, document.workspaceId)
+            // Only save if document doesn't exist locally OR it's not soft-deleted
+            // A soft-deleted document should never be recreated from backend data
+            if (existingDoc == null || !existingDoc.deleted) {
+                documentRepository.saveDocument(document)
+            }
         }
 
         // Return documents that need to be sent to the server (local winners or local-only docs)

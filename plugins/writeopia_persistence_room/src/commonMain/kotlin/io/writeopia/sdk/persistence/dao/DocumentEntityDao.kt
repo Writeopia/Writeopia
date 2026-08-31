@@ -49,7 +49,7 @@ interface DocumentEntityDao {
         "SELECT * " +
             "FROM $DOCUMENT_ENTITY " +
             "LEFT OUTER JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
-            "WHERE $DOCUMENT_ENTITY.parent_id = :folderId AND ($DOCUMENT_ENTITY.last_updated_at > $DOCUMENT_ENTITY.last_synced_at OR $DOCUMENT_ENTITY.last_synced_at IS NULL) " +
+            "WHERE $DOCUMENT_ENTITY.parent_id = :folderId AND is_deleted = FALSE AND ($DOCUMENT_ENTITY.last_updated_at > $DOCUMENT_ENTITY.last_synced_at OR $DOCUMENT_ENTITY.last_synced_at IS NULL) " +
             "ORDER BY $DOCUMENT_ENTITY.created_at, $STORY_UNIT_ENTITY.position"
     )
     suspend fun loadOutdatedDocumentsByFolderId(folderId: String): Map<DocumentEntity, List<StoryStepEntity>>
@@ -142,11 +142,19 @@ interface DocumentEntityDao {
         "SELECT * " +
             "FROM $DOCUMENT_ENTITY " +
             "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
-            "WHERE $DOCUMENT_ENTITY.workspace_id = :workspaceId " +
+            "WHERE $DOCUMENT_ENTITY.workspace_id = :workspaceId AND is_deleted = FALSE " +
             "ORDER BY " +
             "$STORY_UNIT_ENTITY.position"
     )
     suspend fun loadOutdatedDocumentsWithContentForWorkspace(
         workspaceId: String
     ): Map<DocumentEntity, List<StoryStepEntity>>
+
+    // Hard delete: permanently removes documents from database
+    @Query("DELETE FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.id in (:ids)")
+    suspend fun hardDeleteDocumentByIds(ids: List<String>)
+
+    // Get soft-deleted documents for a workspace (for syncing deletions to backend)
+    @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE workspace_id = :workspaceId AND is_deleted = TRUE")
+    suspend fun getSoftDeletedByWorkspace(workspaceId: String): List<DocumentEntity>
 }

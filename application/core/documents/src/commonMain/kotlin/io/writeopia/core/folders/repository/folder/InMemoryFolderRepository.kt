@@ -53,6 +53,12 @@ class InMemoryFolderRepository : FolderRepository {
         // No-op: webapp uses backend data only
     }
 
+    override suspend fun hardDeleteFolderById(folderId: String) {
+        // No-op: webapp uses backend data only
+    }
+
+    override suspend fun getSoftDeletedFolders(workspaceId: String): List<Folder> = emptyList()
+
     override suspend fun setLastUpdated(folderId: String, long: Long) {
         // No-op: webapp uses backend data only
     }

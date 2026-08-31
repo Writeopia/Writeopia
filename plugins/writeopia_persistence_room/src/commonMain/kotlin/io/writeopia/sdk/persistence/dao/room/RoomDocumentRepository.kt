@@ -161,6 +161,13 @@ class RoomDocumentRepository(
         )
     }
 
+    override suspend fun hardDeleteDocumentByIds(ids: Set<String>) {
+        documentEntityDao.hardDeleteDocumentByIds(ids.toList())
+    }
+
+    override suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document> =
+        documentEntityDao.getSoftDeletedByWorkspace(workspaceId).map { it.toModel() }
+
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
         val dbPos = storyStep.dbPosition ?: position
         storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(dbPos, documentId))

@@ -88,6 +88,13 @@ class FolderRepositorySqlDelight(
         folderDao.deleteFolderByParent(folderId)
     }
 
+    override suspend fun hardDeleteFolderById(folderId: String) {
+        folderDao.hardDeleteFolder(folderId)
+    }
+
+    override suspend fun getSoftDeletedFolders(workspaceId: String): List<Folder> =
+        folderDao.getSoftDeletedFolders(workspaceId)
+
     override suspend fun refreshFolders() {
         folderDao.refreshFolders()
     }

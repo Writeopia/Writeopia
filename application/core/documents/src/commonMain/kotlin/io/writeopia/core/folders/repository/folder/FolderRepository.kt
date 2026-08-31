@@ -23,9 +23,25 @@ interface FolderRepository {
 
     suspend fun setLastUpdated(folderId: String, long: Long)
 
+    /**
+     * Soft delete: marks folder as deleted but keeps in database.
+     * The folder will be synced to backend and then hard deleted once confirmed.
+     */
     suspend fun deleteFolderById(folderId: String)
 
     suspend fun deleteFolderByParent(folderId: String)
+
+    /**
+     * Hard delete: permanently removes folder from database.
+     * Use this after backend has confirmed the deletion.
+     */
+    suspend fun hardDeleteFolderById(folderId: String)
+
+    /**
+     * Get all soft-deleted folders for a workspace.
+     * Use this to find folders that need to be synced to backend for deletion.
+     */
+    suspend fun getSoftDeletedFolders(workspaceId: String): List<Folder>
 
     suspend fun favoriteDocumentByIds(ids: Set<String>)
 

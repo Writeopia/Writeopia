@@ -37,7 +37,14 @@ class FolderDaoDelegator(
             list.map { it.toCommonEntity().toModel(0) }
         }
 
-    override suspend fun deleteById(id: String): Int = delegate.deleteById(id)
+    override suspend fun deleteById(id: String, lastUpdatedAt: Long): Int =
+        delegate.deleteById(id, lastUpdatedAt)
 
-    override suspend fun deleteByParentId(id: String): Int = delegate.deleteByParentId(id)
+    override suspend fun deleteByParentId(id: String, lastUpdatedAt: Long): Int =
+        delegate.deleteByParentId(id, lastUpdatedAt)
+
+    override suspend fun hardDeleteById(id: String): Int = delegate.hardDeleteById(id)
+
+    override suspend fun getSoftDeletedByWorkspace(workspaceId: String): List<Folder> =
+        delegate.getSoftDeletedByWorkspace(workspaceId).map { it.toCommonEntity().toModel(0) }
 }

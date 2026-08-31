@@ -129,6 +129,14 @@ class InMemoryDocumentRepository : DocumentRepository {
         refreshDocuments()
     }
 
+    override suspend fun hardDeleteDocumentByIds(ids: Set<String>) {
+        ids.forEach(documentsMap::remove)
+        refreshDocuments()
+    }
+
+    override suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document> =
+        documentsMap.values.filter { it.deleted && it.workspaceId == workspaceId }
+
     override suspend fun deleteByWorkspace(userId: String) {
         documentsMap.clear()
         refreshDocuments()

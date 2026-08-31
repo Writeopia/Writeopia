@@ -207,6 +207,10 @@ class NotesUseCase private constructor(
         documentRepository.refreshDocuments()
     }
 
+    /**
+     * Soft delete notes: marks as deleted but keeps in database.
+     * The notes will be synced to backend and then hard deleted once confirmed.
+     */
     suspend fun deleteNotes(ids: Set<String>) {
         documentRepository.deleteDocumentByIds(ids)
         ids.forEach { id ->
@@ -214,6 +218,9 @@ class NotesUseCase private constructor(
         }
     }
 
+    /**
+     * Soft delete folder: marks folder and contents as deleted but keeps in database.
+     */
     suspend fun deleteFolderById(folderId: String) {
         val folder = folderRepository.getFolderById(folderId)
         val workspaceId = folder?.workspaceId ?: return
@@ -228,6 +235,57 @@ class NotesUseCase private constructor(
         documentRepository.deleteDocumentByFolder(folderId)
         folderRepository.deleteFolderById(folderId)
     }
+
+    /**
+     * Hard delete notes: permanently removes from database.
+     * Use this after backend has confirmed the deletion.
+     */
+    suspend fun hardDeleteNotes(ids: Set<String>) {
+        documentRepository.hardDeleteDocumentByIds(ids)
+        ids.forEach { id ->
+            hardDeleteFolderById(id)
+        }
+    }
+
+    /**
+     * Hard delete folder: permanently removes folder and contents from database.
+     * Use this after backend has confirmed the deletion.
+     */
+    suspend fun hardDeleteFolderById(folderId: String) {
+        val folder = folderRepository.getFolderById(folderId)
+        val workspaceId = folder?.workspaceId ?: return
+
+        val childFolders = folderRepository.getFolderByParentId(folderId, workspaceId)
+
+        // Recursively hard delete all child folders
+        childFolders.forEach { childFolder ->
+            hardDeleteFolderById(childFolder.id)
+        }
+
+        // Hard delete documents in this folder
+        val documentIds = documentRepository.loadDocumentsForFolder(folderId, workspaceId)
+            .map { it.id }
+            .toSet()
+        if (documentIds.isNotEmpty()) {
+            documentRepository.hardDeleteDocumentByIds(documentIds)
+        }
+
+        folderRepository.hardDeleteFolderById(folderId)
+    }
+
+    /**
+     * Get all soft-deleted documents for a workspace.
+     * Use this to find documents that need to be synced to backend for deletion.
+     */
+    suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document> =
+        documentRepository.getSoftDeletedDocuments(workspaceId)
+
+    /**
+     * Get all soft-deleted folders for a workspace.
+     * Use this to find folders that need to be synced to backend for deletion.
+     */
+    suspend fun getSoftDeletedFolders(workspaceId: String): List<Folder> =
+        folderRepository.getSoftDeletedFolders(workspaceId)
 
     suspend fun favoriteDocuments(ids: Set<String>) {
         documentRepository.favoriteDocumentByIds(ids)

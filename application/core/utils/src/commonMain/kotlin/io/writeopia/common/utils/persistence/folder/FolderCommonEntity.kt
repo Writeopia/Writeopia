@@ -10,4 +10,5 @@ data class FolderCommonEntity(
     val favorite: Boolean = false,
     val icon: String,
     val iconTint: Long,
+    val deleted: Boolean = false,
 )
