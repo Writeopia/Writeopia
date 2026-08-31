@@ -1,10 +1,10 @@
 [versions]
-coilVersion = "3.5.0"
-googleGenai = "1.67.0"
+coilVersion = "3.6.0"
+googleGenai = "1.68.0"
 media3 = "1.11.0"
 espressoCore = "3.7.0"
 firebaseAdmin = "9.10.0"
-googleCloudBom = "26.86.0"
+googleCloudBom = "26.87.0"
 junit = "1.3.0"
 kotlinxCoroutines = "1.11.0"
 kotlinxCoroutinesSwing = "1.11.0"
@@ -17,14 +17,15 @@ materialIconsCore = "1.7.3"
 platformtools = "0.7.4"
 postgresSocketFactory = "1.30.0"
 room = "2.8.4"
+securityCrypto = "1.1.0"
 agp = "9.3.2"
 kotlin = "2.4.10"
-composeTest = "1.11.4"
+composeTest = "1.12.0"
 slf4jApi = "2.0.18"
 webWorkerDriver = "2.2.1"
 mockk = "1.14.11"
 sqldelight = "2.3.2"
-compose-multiplatform = "1.11.1"
+compose-multiplatform = "1.12.0"
 ksp = "2.3.11"
 dag-command = "1.14.0"
 dokka = "2.2.0"
@@ -37,7 +38,6 @@ embedded-postgres = "2.2.2"
 publish = "0.33.0"
 lifecycleViewmodelCompose = "2.11.0"
 jna = "5.19.1"
-googleGenAiKotlin = "0.5.0"
 compileSdk = "37"
 targetSdk = "37"
 minSdk = "26"
@@ -58,7 +58,6 @@ google-cloud-bom = { module = "com.google.cloud:libraries-bom", version.ref = "g
 google-cloud-storage = { module = "com.google.cloud:google-cloud-storage" }
 google-cloud-run = { module = "com.google.cloud:google-cloud-run" }
 google-genai = { module = "com.google.genai:google-genai", version.ref = "googleGenai" }
-google-genai-kotlin = { module = "com.google.genai:google-genai-kotlin", version.ref = "googleGenAiKotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
@@ -79,6 +78,7 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 ktor-server-websocket = { module = "io.ktor:ktor-server-websockets-jvm" }
@@ -93,6 +93,7 @@ postgres-socket-factory = { module = "com.google.cloud.sql:postgres-socket-facto
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4jApi" }
 sqldelight-jvm = { group = "app.cash.sqldelight", name = "sqlite-driver", version.ref = "sqldelight" }

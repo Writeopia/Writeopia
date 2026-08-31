@@ -70,6 +70,7 @@ import writeopia.application.core.resources.generated.resources.links
 import writeopia.application.core.resources.generated.resources.local_folder
 import writeopia.application.core.resources.generated.resources.lock_document
 import writeopia.application.core.resources.generated.resources.logout
+import writeopia.application.core.resources.generated.resources.signing_out
 import writeopia.application.core.resources.generated.resources.manage_teams
 import writeopia.application.core.resources.generated.resources.markdown
 import writeopia.application.core.resources.generated.resources.move_to
@@ -472,6 +473,9 @@ object WrStrings {
 
     @Composable
     fun logout() = stringResource(Res.string.logout)
+
+    @Composable
+    fun signingOut() = stringResource(Res.string.signing_out)
 
     @Composable
     fun deleteAccount() = stringResource(Res.string.delete_account)

@@ -32,12 +32,13 @@ jobs:
       DB_USER: 'postgres'
       WRITEOPIA_FIREBASE_ID: 'id'
       WRITEOPIA_CLIENT_BASE_URL: "baseurl"
-      JWT_SECRET: "testingsecret"
+      JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY_CI }}
+      JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY_CI }}
     steps:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: adopt
           java-version: '21'
@@ -66,7 +67,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: adopt
           java-version: '21'
@@ -92,7 +93,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: adopt
           java-version: '21'

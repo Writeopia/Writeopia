@@ -43,22 +43,17 @@ class ChooseWorkspaceViewModel(
 
     fun loadWorkspaces() {
         viewModelScope.launch {
-            val token = authRepository.getAuthToken()
+            _workspacesState.value = ResultData.Loading()
+            val result = workspaceApi.getAvailableWorkspaces()
 
-            if (token != null) {
-                _workspacesState.value = ResultData.Loading()
-                val result = workspaceApi.getAvailableWorkspaces(token)
-
-                _workspacesState.value = when (result) {
-                    is ResultData.Complete -> {
-                        ResultData.Complete(result.data + Workspace.disconnectedWorkspace())
-                    }
-                    else -> result
+            _workspacesState.value = when (result) {
+                is ResultData.Complete -> {
+                    ResultData.Complete(result.data + Workspace.disconnectedWorkspace())
                 }
-            } else {
-                _workspacesState.value = ResultData.Complete(
-                    listOf(Workspace.disconnectedWorkspace())
-                )
+                else -> {
+                    // If API call fails, show only disconnected workspace
+                    ResultData.Complete(listOf(Workspace.disconnectedWorkspace()))
+                }
             }
         }
     }
@@ -71,30 +66,43 @@ class ChooseWorkspaceViewModel(
             authRepository.saveWorkspace(space)
 
             val userId = getUserId()
-            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-            val workspaceId = workspace.id
+            val currentWorkspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            val workspaceId = currentWorkspace.id
 
             if (!configRepository.hasFirstConfiguration(userId)) {
-                val now = Clock.System.now()
+                val isOnlineWorkspace = workspaceId != "disconnected_user"
 
-                Tutorials.allTutorialsDocuments()
-                    .map { documentAsJson ->
-                        json.decodeFromString<DocumentApi>(documentAsJson)
-                            .toModel()
-                    }
-                    .forEach { document ->
-                        notesUseCase.saveDocumentDb(
-                            document.copy(
-                                parentId = document.parentId,
-                                workspaceId = workspaceId,
-                                createdAt = now,
-                                lastUpdatedAt = now
+                val tutorialsInitialized = if (isOnlineWorkspace) {
+                    // For online workspaces, tutorials are initialized on the backend
+                    // when the workspace is created
+                    true
+                } else {
+                    // For offline mode, create tutorials locally
+                    val now = Clock.System.now()
+
+                    Tutorials.allTutorialsDocuments()
+                        .map { documentAsJson ->
+                            json.decodeFromString<DocumentApi>(documentAsJson)
+                                .toModel()
+                        }
+                        .forEach { document ->
+                            notesUseCase.saveDocumentDb(
+                                document.copy(
+                                    parentId = document.parentId,
+                                    workspaceId = workspaceId,
+                                    createdAt = now,
+                                    lastUpdatedAt = now
+                                )
                             )
-                        )
-                    }
+                        }
+                    true
+                }
 
                 ollamaRepository.saveOllamaUrl(userId, OllamaApi.defaultUrl())
-                configRepository.setTutorialNotes(true, userId)
+
+                if (tutorialsInitialized) {
+                    configRepository.setTutorialNotes(true, userId)
+                }
             }
 
             ollamaRepository.refreshConfiguration(userId)
@@ -105,18 +113,12 @@ class ChooseWorkspaceViewModel(
 
     fun createWorkspace(workspaceName: String) {
         viewModelScope.launch {
-            val token = authRepository.getAuthToken()
+            _createWorkspaceState.value = ResultData.Loading()
+            val result = workspaceApi.createWorkspace(workspaceName)
+            _createWorkspaceState.value = result
 
-            if (token != null) {
-                _createWorkspaceState.value = ResultData.Loading()
-                val result = workspaceApi.createWorkspace(workspaceName, token)
-                _createWorkspaceState.value = result
-
-                if (result is ResultData.Complete) {
-                    loadWorkspaces()
-                }
-            } else {
-                _createWorkspaceState.value = ResultData.Error(Exception("Not authenticated"))
+            if (result is ResultData.Complete) {
+                loadWorkspaces()
             }
         }
     }

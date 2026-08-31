@@ -1,6 +1,7 @@
 package io.writeopia.api.core.auth.routing
 
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.plugins.ContentTransformationException
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
@@ -23,6 +24,7 @@ import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
 import io.writeopia.api.core.auth.service.AuthService
 import io.writeopia.api.core.auth.service.EmailService
+import io.writeopia.api.core.auth.service.RefreshTokenService
 import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.connection.logger
@@ -31,8 +33,10 @@ import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
+import io.writeopia.sdk.serialization.data.auth.RefreshTokenRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
+import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
 
@@ -56,16 +60,28 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
                 if (isVerified) {
                     if (user.enabled || debugMode) {
-                        val token = JwtConfig.generateToken(user.id)
+                        val tokenPair = with(RefreshTokenService) {
+                            writeopiaDb.generateAndStoreTokens(user.id)
+                        }
                         call.respond(
                             HttpStatusCode.OK,
-                            AuthResponse(token, user.toApi(), enabled = true)
+                            AuthResponse(
+                                accessToken = tokenPair.accessToken,
+                                refreshToken = tokenPair.refreshToken,
+                                writeopiaUser = user.toApi(),
+                                enabled = true
+                            )
                         )
                     } else {
                         // User exists but email not confirmed
                         call.respond(
                             HttpStatusCode.OK,
-                            AuthResponse(null, user.toApi(), enabled = false)
+                            AuthResponse(
+                                accessToken = null,
+                                refreshToken = null,
+                                writeopiaUser = user.toApi(),
+                                enabled = false
+                            )
                         )
                     }
                 } else {
@@ -76,6 +92,69 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             }
         } catch (e: Exception) {
             throw e
+        }
+    }
+
+    post("/api/auth/refresh") {
+        try {
+            val request = call.receive<RefreshTokenRequest>()
+            val tokenPair = with(RefreshTokenService) {
+                writeopiaDb.validateAndRotate(request.refreshToken)
+            }
+
+            if (tokenPair != null) {
+                call.respond(
+                    HttpStatusCode.OK,
+                    TokenRefreshResponse(
+                        accessToken = tokenPair.accessToken,
+                        refreshToken = tokenPair.refreshToken
+                    )
+                )
+            } else {
+                call.respond(HttpStatusCode.Unauthorized, "Invalid or expired refresh token")
+            }
+        } catch (e: ContentTransformationException) {
+            logger.warn("Token refresh bad request: ${e.message}")
+            call.respond(HttpStatusCode.BadRequest, "Invalid request body")
+        } catch (e: Exception) {
+            logger.error("Token refresh error: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, "Token refresh failed")
+        }
+    }
+
+    post("/api/auth/logout") {
+        try {
+            val request = call.receive<RefreshTokenRequest>()
+            val revoked = with(RefreshTokenService) {
+                writeopiaDb.revokeToken(request.refreshToken)
+            }
+
+            if (revoked) {
+                call.respond(HttpStatusCode.OK, "Logged out successfully")
+            } else {
+                call.respond(HttpStatusCode.BadRequest, "Invalid token")
+            }
+        } catch (e: ContentTransformationException) {
+            logger.warn("Logout bad request: ${e.message}")
+            call.respond(HttpStatusCode.BadRequest, "Invalid request body")
+        } catch (e: Exception) {
+            logger.error("Logout error: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, "Logout failed")
+        }
+    }
+
+    authenticate("auth-jwt", optional = debugMode) {
+        post("/api/auth/logout-all") {
+            val userId = getUserId()
+
+            if (userId != null) {
+                with(RefreshTokenService) {
+                    writeopiaDb.revokeAllUserTokens(userId)
+                }
+                call.respond(HttpStatusCode.OK, "All sessions logged out")
+            } else {
+                call.respond(HttpStatusCode.Unauthorized, "Not authenticated")
+            }
         }
     }
 

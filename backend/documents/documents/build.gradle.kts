@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":writeopia"))
     implementation(project(":writeopia_models"))
     implementation(project(":plugins:writeopia_serialization"))
+    implementation(project(":tutorials"))
 
     implementation(project(":common:endpoints"))
     implementation(project(":backend:core:database"))

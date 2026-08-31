@@ -10,6 +10,7 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sql.WriteopiaDb
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -26,7 +27,7 @@ internal class SqlDelightAuthRepository(
             ?.selectCurrentUser()
             ?.awaitAsOneOrNull()
             ?.toModel()
-            ?: WriteopiaUser.disconnectedUser()
+            ?: WriteopiaUser.noUser()
 
     override suspend fun isLoggedIn(): Boolean =
         getAuthToken().takeIf { it?.isEmpty() == false } != null
@@ -64,8 +65,41 @@ internal class SqlDelightAuthRepository(
             ?.selectTokenByUserId(getUser().id)
             ?.awaitAsOneOrNull()
 
-    override suspend fun saveToken(userId: String, token: String) {
-        writeopiaDb?.tokenEntityQueries?.insertToken(userId, token)
+    override suspend fun saveTokens(
+        userId: String,
+        accessToken: String,
+        refreshToken: String?,
+        expiresAt: Long?
+    ) {
+        writeopiaDb?.tokenEntityQueries?.insertToken(userId, accessToken, refreshToken, expiresAt)
+    }
+
+    override suspend fun getRefreshToken(): String? =
+        writeopiaDb?.tokenEntityQueries
+            ?.selectTokensDetailsByUserId(getUser().id)
+            ?.awaitAsOneOrNull()
+            ?.refresh_token
+
+    override suspend fun getTokenData(): TokenData? =
+        writeopiaDb?.tokenEntityQueries
+            ?.selectTokensDetailsByUserId(getUser().id)
+            ?.awaitAsOneOrNull()
+            ?.let { entity ->
+                TokenData(
+                    accessToken = entity.access_token,
+                    refreshToken = entity.refresh_token,
+                    accessTokenExpiresAt = entity.access_token_expires_at
+                )
+            }
+
+    override suspend fun isAccessTokenExpired(): Boolean {
+        val tokenData = getTokenData() ?: return true
+        val expiresAt = tokenData.accessTokenExpiresAt ?: return false
+        return Clock.System.now().toEpochMilliseconds() >= expiresAt
+    }
+
+    override suspend fun clearTokens() {
+        writeopiaDb?.tokenEntityQueries?.deleteToken(getUser().id)
     }
 
     override suspend fun useOffline() {

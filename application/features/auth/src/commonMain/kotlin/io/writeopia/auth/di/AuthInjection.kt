@@ -36,7 +36,7 @@ class AuthInjection private constructor(
 
     fun provideWorkspaceApi() =
         WorkspaceApi(
-            appConnectionInjection.provideHttpClient(),
+            connectionInjector.httpClient(),
             connectionInjector.baseUrl()
         )
 

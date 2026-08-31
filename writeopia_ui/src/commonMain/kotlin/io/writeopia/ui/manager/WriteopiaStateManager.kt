@@ -1134,12 +1134,35 @@ class WriteopiaStateManager(
         toggleSpan(Span.LINK, link)
     }
 
+    /**
+     * Calculates the target position for inserting content, protecting the title from being replaced.
+     * Returns Pair of (targetPosition, useInsertMode).
+     */
+    private fun getTitleProtectedPosition(
+        pos: Double,
+        story: StoryStep?,
+        explicitPosition: Boolean
+    ): Pair<Double, Boolean> {
+        val isOnTitle = story?.type == StoryTypes.TITLE.type
+        return if (isOnTitle && !explicitPosition) {
+            Pair(pos + 1, true)
+        } else {
+            Pair(pos, false)
+        }
+    }
+
     fun addImage(imagePath: String, position: Double? = null) {
         if (!isEditable) return
         (position ?: currentPosition())?.let { pos ->
             val story = getStory(pos)
 
             if (story != null) {
+                val (targetPosition, useInsertMode) = getTitleProtectedPosition(
+                    pos,
+                    story,
+                    explicitPosition = position != null
+                )
+
                 // Check if we should upload to cloud
                 coroutineScope.launch(dispatcher) {
                     val shouldUpload = imageUploader?.isAuthenticated() == true
@@ -1153,7 +1176,9 @@ class WriteopiaStateManager(
                             loading = true
                         )
 
-                        if (position == null) {
+                        if (useInsertMode || position != null) {
+                            addAtPosition(loadingStep, targetPosition)
+                        } else {
                             changeStoryStateAndTrackIt(
                                 Action.StoryStateChange(
                                     story.copy(
@@ -1162,18 +1187,16 @@ class WriteopiaStateManager(
                                         ephemeral = true,
                                         loading = true
                                     ),
-                                    pos
+                                    targetPosition
                                 )
                             )
-                        } else {
-                            addAtPosition(loadingStep, pos)
                         }
 
                         // Upload in background
                         val result = imageUploader!!.uploadImage(imagePath)
 
                         // Replace with final image
-                        val currentStory = getStory(pos)
+                        val currentStory = getStory(targetPosition)
                         if (currentStory != null) {
                             val finalStep = when (result) {
                                 is io.writeopia.sdk.models.utils.ResultData.Complete -> currentStory.copy(
@@ -1191,22 +1214,22 @@ class WriteopiaStateManager(
                             }
 
                             changeStoryStateAndTrackIt(
-                                Action.StoryStateChange(finalStep, pos)
+                                Action.StoryStateChange(finalStep, targetPosition)
                             )
                         }
                     } else {
                         // No auth - use local path directly (existing behavior)
-                        if (position == null) {
+                        if (useInsertMode || position != null) {
+                            addAtPosition(
+                                StoryStep(type = StoryTypes.IMAGE.type, path = imagePath),
+                                targetPosition
+                            )
+                        } else {
                             changeStoryStateAndTrackIt(
                                 Action.StoryStateChange(
                                     story.copy(type = StoryTypes.IMAGE.type, path = imagePath),
-                                    pos
+                                    targetPosition
                                 )
-                            )
-                        } else {
-                            addAtPosition(
-                                StoryStep(type = StoryTypes.IMAGE.type, path = imagePath),
-                                pos
                             )
                         }
                     }
@@ -1734,20 +1757,18 @@ class WriteopiaStateManager(
         val position = currentPosition() ?: return
         val currentStep = _currentStory.value.stories[position]
 
-        // Don't replace the title - insert the spreadsheet after it instead
-        val isOnTitle = currentStep?.type == StoryTypes.TITLE.type
-        val targetPosition = if (isOnTitle) {
-            position + 1
-        } else {
-            position
-        }
+        val (targetPosition, insertMode) = getTitleProtectedPosition(
+            position,
+            currentStep,
+            explicitPosition = false
+        )
 
         backStackManager.addState(_currentStory.value)
         _currentStory.value = writeopiaManager.createSpreadsheet(
             _currentStory.value,
             targetPosition,
             columnCount,
-            insertMode = isOnTitle
+            insertMode = insertMode
         )
     }
 

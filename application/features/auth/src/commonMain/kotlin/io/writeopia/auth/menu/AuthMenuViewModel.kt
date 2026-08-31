@@ -72,8 +72,16 @@ class AuthMenuViewModel(
             return@flow
         }
 
-        // Check if user is in offline mode first
+        // Check user state
         val user = authRepository.getUser()
+
+        // No user record exists - show auth screen
+        if (user.id == WriteopiaUser.NO_USER) {
+            emit(LoginStatus.OFFLINE_NOT_CHOSEN)
+            return@flow
+        }
+
+        // User explicitly chose offline mode
         if (user.id == WriteopiaUser.DISCONNECTED) {
             emit(LoginStatus.OFFLINE_CHOSEN)
             return@flow
@@ -160,8 +168,17 @@ class AuthMenuViewModel(
                                 user = user.copy(tier = Tier.PREMIUM),
                                 selected = true
                             )
-                            result.data.token?.let { token ->
-                                authRepository.saveToken(user.id, token)
+                            val accessToken = result.data.accessToken
+                            val refreshToken = result.data.refreshToken
+                            if (accessToken != null) {
+                                // Calculate expiry time (14 minutes from now as buffer)
+                                val expiresAt = Clock.System.now().toEpochMilliseconds() + (14 * 60 * 1000L)
+                                authRepository.saveTokens(
+                                    userId = user.id,
+                                    accessToken = accessToken,
+                                    refreshToken = refreshToken,
+                                    expiresAt = expiresAt
+                                )
                             }
 
                             result.map { true }

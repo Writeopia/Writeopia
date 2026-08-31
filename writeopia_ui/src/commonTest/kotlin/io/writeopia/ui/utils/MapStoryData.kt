@@ -452,4 +452,36 @@ object MapStoryData {
                         "We had to buy some Syn Cards to be able to communicate in the new country. ",
                 ),
         )
+
+    /**
+     * Document with title at position 0 and text at position 1.
+     * Used for testing title protection.
+     */
+    fun documentWithTitle(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            id = GenerateId.generate(),
+            localId = "title",
+            type = StoryTypes.TITLE.type,
+            text = "My Document Title"
+        ),
+        1.0 to StoryStep(
+            id = GenerateId.generate(),
+            localId = "text1",
+            type = StoryTypes.TEXT.type,
+            text = "Some content"
+        )
+    )
+
+    /**
+     * Document with only a title at position 0.
+     * Used for testing title protection on empty documents.
+     */
+    fun documentWithOnlyTitle(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            id = GenerateId.generate(),
+            localId = "title",
+            type = StoryTypes.TITLE.type,
+            text = "Empty Document Title"
+        )
+    )
 }

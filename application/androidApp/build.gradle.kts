@@ -16,8 +16,8 @@ android {
         applicationId = "io.writeopia"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 68
-        versionName = "0.55.0"
+        versionCode = 71
+        versionName = "0.58.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -84,6 +84,7 @@ dependencies {
     implementation(project(":application:core:theme"))
     implementation(project(":application:core:models"))
     implementation(project(":application:core:documents"))
+    implementation(project(":application:core:auth_core"))
 
     implementation(project(":application:features:editor"))
     implementation(project(":application:features:note_menu"))

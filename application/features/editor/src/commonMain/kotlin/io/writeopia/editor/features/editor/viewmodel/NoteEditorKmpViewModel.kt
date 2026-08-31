@@ -6,6 +6,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.common.utils.collections.toNodeTree
@@ -101,7 +103,8 @@ class NoteEditorKmpViewModel(
     private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton(),
     private val documentLoadUseCase: DocumentLoadUseCase? = null,
     private val storyStepSyncApi: (suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse)? = null,
-    private val documentsApi: DocumentsApi? = null
+    private val documentsApi: DocumentsApi? = null,
+    private val aiTaskManager: AiTaskManager = AiTaskManager.singleton()
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -134,6 +137,11 @@ class NoteEditorKmpViewModel(
                         KeyboardEvent.CANCEL -> {
                             writeopiaManager.clearSelection()
                             hideSearch()
+                            // Cancel any running AI tasks for this document
+                            val docId = documentId.value
+                            if (docId.isNotEmpty()) {
+                                aiTaskManager.cancelTasksByPrefix("editor-$docId")
+                            }
                             aiJob?.cancel()
                         }
 
@@ -545,16 +553,14 @@ class NoteEditorKmpViewModel(
 
             // Step 3: Fetch document metadata from API if online
             if (!isDisconnected && documentsApi != null) {
-                val token = authRepository.getAuthToken() ?: return@launch
-
                 // Fetch favorite status from backend
-                val docResult = documentsApi.getDocumentById(documentId, workspace.id, token)
+                val docResult = documentsApi.getDocumentById(documentId, workspace.id)
                 if (docResult is ResultData.Complete) {
                     writeopiaManager.setFavorite(docResult.data.favorite)
                 }
 
                 // Fetch published status
-                val publishedResult = documentsApi.isDocumentPublished(documentId, workspace.id, token)
+                val publishedResult = documentsApi.isDocumentPublished(documentId, workspace.id)
                 if (publishedResult is ResultData.Complete) {
                     _isDocumentPublished.value = publishedResult.data
                 }
@@ -657,7 +663,18 @@ class NoteEditorKmpViewModel(
     }
 
     override fun onViewModelCleared() {
+        // Cancel any running AI tasks for this document
+        val docId = documentId.value
+        if (docId.isNotEmpty()) {
+            aiTaskManager.cancelTasksByPrefix("editor-$docId")
+        }
+        aiJob?.cancel()
         writeopiaManager.onClear()
+    }
+
+    override fun onCleared() {
+        onViewModelCleared()
+        super.onCleared()
     }
 
     override fun clearSelections() {
@@ -754,13 +771,21 @@ class NoteEditorKmpViewModel(
 
     override fun askAiWithMode(targetMode: AiTargetMode) {
         if (ollamaRepository != null) {
-            aiJob = viewModelScope.launch(Dispatchers.Default) {
+            val docId = documentId.value
+            val taskId = "editor-$docId-${GenerateId.generate()}"
+
+            aiTaskManager.enqueueTask(
+                id = taskId,
+                type = AiTaskType.TEXT_GENERATION,
+                description = "Generating text..."
+            ) {
                 PromptService.promptWithMode(
                     authRepository.getUser().id,
                     targetMode,
                     writeopiaManager,
                     ollamaRepository
                 )
+                Result.success(Unit)
             }
         } else if (genAiRepository != null) {
             documentPromptGenAi(targetMode, genAiRepository::streamGenerate)
@@ -804,7 +829,14 @@ class NoteEditorKmpViewModel(
 
         val sectionText = writeopiaManager.getStory(position)?.text ?: return
 
-        viewModelScope.launch(Dispatchers.Default) {
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Generating section..."
+        ) {
             val prompt =
                 """
                 Create a document section for a document.
@@ -822,6 +854,7 @@ class NoteEditorKmpViewModel(
                 ollamaRepository,
                 position + 0.001
             )
+            Result.success(Unit)
         }
     }
 
@@ -954,7 +987,14 @@ class NoteEditorKmpViewModel(
     ) {
         if (ollamaRepository == null) return
 
-        aiJob = viewModelScope.launch(Dispatchers.Default) {
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Generating text..."
+        ) {
             PromptService.documentPrompt(
                 userId = authRepository.getUser().id,
                 targetMode = targetMode,
@@ -962,6 +1002,7 @@ class NoteEditorKmpViewModel(
                 writeopiaManager = writeopiaManager,
                 ollamaRepository = ollamaRepository
             )
+            Result.success(Unit)
         }
     }
 
@@ -969,12 +1010,20 @@ class NoteEditorKmpViewModel(
         targetMode: AiTargetMode,
         promptFn: (String) -> Flow<ResultData<String>>
     ) {
-        aiJob = viewModelScope.launch(Dispatchers.Default) {
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Generating text..."
+        ) {
             PromptService.documentPromptGenAi(
                 targetMode = targetMode,
                 promptFn = promptFn,
                 writeopiaManager = writeopiaManager
             )
+            Result.success(Unit)
         }
     }
 
@@ -1059,9 +1108,8 @@ class NoteEditorKmpViewModel(
             // Fetch current publish status from server
             val docId = documentId.value
             if (docId.isNotEmpty() && documentsApi != null) {
-                val token = authRepository.getAuthToken() ?: return@launch
                 val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
-                val result = documentsApi.isDocumentPublished(docId, workspaceId, token)
+                val result = documentsApi.isDocumentPublished(docId, workspaceId)
                 if (result is ResultData.Complete) {
                     _isDocumentPublished.value = result.data
                 }
@@ -1083,9 +1131,8 @@ class NoteEditorKmpViewModel(
             try {
                 val docId = documentId.value
                 if (docId.isNotEmpty() && documentsApi != null) {
-                    val token = authRepository.getAuthToken() ?: return@launch
                     val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
-                    val result = documentsApi.publishDocument(docId, workspaceId, token)
+                    val result = documentsApi.publishDocument(docId, workspaceId)
                     if (result is ResultData.Complete) {
                         _isDocumentPublished.value = true
                     }
@@ -1102,9 +1149,8 @@ class NoteEditorKmpViewModel(
             try {
                 val docId = documentId.value
                 if (docId.isNotEmpty() && documentsApi != null) {
-                    val token = authRepository.getAuthToken() ?: return@launch
                     val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
-                    val result = documentsApi.unpublishDocument(docId, workspaceId, token)
+                    val result = documentsApi.unpublishDocument(docId, workspaceId)
                     if (result is ResultData.Complete) {
                         _isDocumentPublished.value = false
                     }

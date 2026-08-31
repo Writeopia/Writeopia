@@ -36,6 +36,7 @@ import io.writeopia.notemenu.di.NotesMenuWebInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
+import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
@@ -74,6 +75,7 @@ fun CreateSiteView(documentId: String) {
     // Use the current origin for API calls (works for both app.writeopia.io and localhost)
     val baseUrl = window.location.origin
     WriteopiaConnectionInjector.setBaseUrl(baseUrl)
+    setupBearerTokenHandler()
 
     val connectionInjector = WriteopiaConnectionInjector.singleton()
 
@@ -118,6 +120,7 @@ fun CreateAppInMemory() {
     val baseUrl = window.location.origin
     WriteopiaConnectionInjector.setBaseUrl(baseUrl)
     WriteopiaConnectionInjector.setDisableWebsocket(true)
+    setupBearerTokenHandler()
 
     // Initialize GenAI (Gemini) for the webapp
     val authRepository = AuthCoreInjectionNeo.singleton().provideAuthRepository()
@@ -201,7 +204,8 @@ fun CreateAppInMemory() {
 
                     authNavigation(
                         navController = navigationController,
-                        colorThemeOption = colorTheme
+                        colorThemeOption = colorTheme,
+                        isWeb = true
                     ) {
                         navigationController.navigate(Destinations.MAIN_APP.id)
                     }

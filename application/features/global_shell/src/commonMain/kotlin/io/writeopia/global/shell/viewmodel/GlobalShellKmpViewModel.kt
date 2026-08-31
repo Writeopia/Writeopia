@@ -37,6 +37,7 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -86,6 +87,9 @@ class GlobalShellKmpViewModel(
 
     private val _showSearchDialog = MutableStateFlow(false)
     override val showSearchDialog: StateFlow<Boolean> = _showSearchDialog.asStateFlow()
+
+    private val _logoutInProgress = MutableStateFlow(false)
+    override val logoutInProgress: StateFlow<Boolean> = _logoutInProgress.asStateFlow()
 
     override val workspaceLocalPath: StateFlow<String> = workspaceHandler.workspaceLocalPath
 
@@ -331,11 +335,10 @@ class GlobalShellKmpViewModel(
     private suspend fun loadMenuItemsFromBackend(folderId: String) {
         if (menuItemsRepository == null) return
 
-        val token = authRepository.getAuthToken() ?: return
         val workspace = authRepository.getWorkspace() ?: return
 
         // Use the shared repository to load folder contents
-        menuItemsRepository.loadFolderContents(folderId, workspace.id, token)
+        menuItemsRepository.loadFolderContents(folderId, workspace.id)
     }
 
     fun refreshFromBackend() {
@@ -508,17 +511,40 @@ class GlobalShellKmpViewModel(
         }
     }
 
-    override fun logout(sideEffect: () -> Unit) {
+    override fun logout(onSuccessSideEffect: () -> Unit) {
         viewModelScope.launch {
-            val currentUserId = authRepository.getUser().id
+            _logoutInProgress.value = true
+            try {
+                // Revoke refresh token on backend (non-web platforms)
+                val refreshToken = authRepository.getRefreshToken()
+                if (refreshToken != null) {
+                    val apiResult = authApi.logout(refreshToken)
+                    if (apiResult is ResultData.Error) {
+                        // Backend logout failed - don't clean local state
+                        return@launch
+                    }
+                }
 
-            authRepository.unselectAllWorkspaces()
-            authRepository.logout()
-            authRepository.saveToken(currentUserId, "")
+                // Call repository logout - for web this calls the backend
+                // to clear HttpOnly cookies
+                val repoResult = authRepository.logout()
+                if (repoResult is ResultData.Error) {
+                    // Backend logout failed - don't clean local state
+                    return@launch
+                }
 
-//            AppConnectionInjection.singleton().setJwtToken("")
-            loginStateTrigger.value = GenerateId.generate()
-            sideEffect()
+                // Only clean local state after successful backend logout
+                authRepository.unselectAllWorkspaces()
+                authRepository.clearTokens()
+
+                // Clear HttpClient to invalidate cached bearer tokens
+                WriteopiaConnectionInjector.clearInstance()
+
+                loginStateTrigger.value = GenerateId.generate()
+                onSuccessSideEffect()
+            } finally {
+                _logoutInProgress.value = false
+            }
         }
     }
 
@@ -534,16 +560,29 @@ class GlobalShellKmpViewModel(
             val id = authRepository.getUser().id
 
             if (id != WriteopiaUser.DISCONNECTED) {
-                val result = authRepository.getAuthToken()?.let { token ->
+                // Capture tokens before any cleanup
+                val accessToken = authRepository.getAuthToken()
+                val refreshToken = authRepository.getRefreshToken()
+
+                val result = accessToken?.let { token ->
                     authApi.deleteAccount(token)
                 }
 
                 if (result is ResultData.Complete && result.data) {
+                    // Revoke refresh token on backend
+                    refreshToken?.let { authApi.logout(it) }
+
+                    // Clear local state
                     authRepository.unselectAllWorkspaces()
+                    authRepository.clearTokens()
                     authRepository.logout()
+
+                    // Clear HttpClient to invalidate cached bearer tokens
+                    WriteopiaConnectionInjector.clearInstance()
+
                     loginStateTrigger.value = GenerateId.generate()
                     dismissDeleteConfirm()
-                    logout(sideEffect = sideEffect)
+                    sideEffect()
                 }
             }
         }

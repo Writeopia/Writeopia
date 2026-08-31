@@ -102,6 +102,7 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
+                implementation(libs.security.crypto)
             }
         }
 

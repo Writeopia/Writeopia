@@ -31,7 +31,7 @@ class KmpSearchInjection private constructor(
     )
 
     private fun provideSearchApi(): SearchApi =
-        SearchApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+        SearchApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
 
     fun provideRepository(
         folderDao: FolderSearch = provideFolderSqlDelightDao(),

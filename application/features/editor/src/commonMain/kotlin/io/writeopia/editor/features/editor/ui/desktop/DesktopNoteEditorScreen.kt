@@ -41,6 +41,8 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.ui.AiTaskIndicator
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
@@ -341,5 +343,14 @@ fun DesktopNoteEditorScreen(
         if (showPremiumDialog) {
             PremiumOnlyDialog(onDismiss = noteEditorViewModel::hidePremiumDialog)
         }
+
+        val aiTaskManager = AiTaskManager.singleton()
+
+        AiTaskIndicator(
+            tasksFlow = aiTaskManager.tasks,
+            onClearFinished = aiTaskManager::clearFinishedTasks,
+            onCancelTask = aiTaskManager::cancelTask,
+            modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 16.dp)
+        )
     }
 }

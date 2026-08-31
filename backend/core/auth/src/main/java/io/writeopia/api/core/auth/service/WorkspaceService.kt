@@ -21,6 +21,7 @@ import io.writeopia.api.core.auth.repository.removeUserFromWorkspace
 import io.writeopia.connection.logger
 import io.writeopia.models.user.PaginatedWorkspaceUsers
 import io.writeopia.models.user.WorkspaceUser
+import io.writeopia.sdk.models.workspace.Role
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.ExperimentalTime
@@ -93,6 +94,34 @@ object WorkspaceService {
                 role = ""
             )
         )
+    }
+
+    /**
+     * Creates a workspace and adds the user as admin in a single transaction.
+     * This ensures atomicity - either both operations succeed or neither does.
+     *
+     * @return the workspace ID if successful
+     */
+    fun createWorkspaceWithOwner(
+        workspaceId: String,
+        workspaceName: String,
+        userId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): String {
+        writeopiaDb.transaction {
+            writeopiaDb.insertWorkspace(
+                Workspace(
+                    id = workspaceId,
+                    userId = "",
+                    name = workspaceName,
+                    lastSync = Instant.DISTANT_PAST,
+                    selected = false,
+                    role = ""
+                )
+            )
+            writeopiaDb.insertUserInWorkspace(workspaceId, userId, Role.ADMIN.value)
+        }
+        return workspaceId
     }
 
     fun addUserToWorkspaceAdmin(

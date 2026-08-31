@@ -99,6 +99,7 @@ fun SettingsDialog(
     isAutoSyncEnabled: StateFlow<Boolean>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
     workspaceToEdit: Flow<Workspace?>,
+    logoutInProgress: StateFlow<Boolean>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
@@ -150,6 +151,7 @@ fun SettingsDialog(
                         workspaces = workspaces,
                         showDeleteConfirmation = showDeleteConfirmation,
                         exportWorkspaceState = exportWorkspaceState,
+                        logoutInProgress = logoutInProgress,
                         signIn = signIn,
                         changeWorkspace = changeWorkspace,
                         resetPassword = resetPassword,
@@ -389,6 +391,7 @@ private fun AccountScreen(
     workspaces: StateFlow<ResultData<List<Workspace>>>,
     showDeleteConfirmation: StateFlow<Boolean>,
     exportWorkspaceState: StateFlow<ResultData<Unit>>,
+    logoutInProgress: StateFlow<Boolean>,
     signIn: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
@@ -454,6 +457,12 @@ private fun AccountScreen(
                 CommonButton(text = WrStrings.logout(), modifier = Modifier.fillMaxWidth()) {
                     logout()
                 }
+            }
+
+            // Signing out dialog
+            val isLoggingOut by logoutInProgress.collectAsState()
+            if (isLoggingOut) {
+                SigningOutDialog()
             }
 
             // Export section
@@ -1555,3 +1564,28 @@ private fun transparentTextInputColors() =
         disabledIndicatorColor = Color.Transparent,
         cursorColor = MaterialTheme.colorScheme.primary
     )
+
+@Composable
+private fun SigningOutDialog() {
+    Dialog(
+        onDismissRequest = { /* Non-dismissible while signing out */ },
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+    ) {
+        Card(modifier = Modifier, shape = MaterialTheme.shapes.large) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(48.dp))
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    WrStrings.signingOut(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}

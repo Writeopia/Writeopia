@@ -58,11 +58,9 @@ class DocumentLoadUseCase(
         }
     }
 
-    private suspend fun fetchFromBackend(documentId: String, workspaceId: String): Document? {
-        val token = authRepository.getAuthToken() ?: return null
-
-        return try {
-            when (val result = documentsApi.getDocumentById(documentId, workspaceId, token)) {
+    private suspend fun fetchFromBackend(documentId: String, workspaceId: String): Document? =
+        try {
+            when (val result = documentsApi.getDocumentById(documentId, workspaceId)) {
                 is ResultData.Complete -> result.data
                 else -> null
             }
@@ -70,5 +68,4 @@ class DocumentLoadUseCase(
             // Network error, timeout, etc. - graceful degradation
             null
         }
-    }
 }

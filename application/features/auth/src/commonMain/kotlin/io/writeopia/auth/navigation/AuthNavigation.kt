@@ -93,6 +93,7 @@ fun NavGraphBuilder.authNavigation(
     navController: NavController,
     colorThemeOption: StateFlow<ColorThemeOption?>,
     authInjection: AuthInjection = AuthInjection.singleton(),
+    isWeb: Boolean = false,
     toAppNavigation: () -> Unit,
 ) {
     composable(Destinations.AUTH_RESET_PASSWORD.id) {
@@ -174,6 +175,7 @@ fun NavGraphBuilder.authNavigation(
                     offlineUsage = {
                         authMenuViewModel.useOffline(toAppNavigation)
                     },
+                    showOfflineOption = !isWeb,
                     navigateUp = navController::navigateUp,
                     navigateNext = {
                         if (emailConfirmationRequired) {

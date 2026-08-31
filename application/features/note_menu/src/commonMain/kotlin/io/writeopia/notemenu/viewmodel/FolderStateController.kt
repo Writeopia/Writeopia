@@ -76,12 +76,10 @@ class FolderStateController private constructor(
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
-        val token = authRepository.getAuthToken() ?: return
 
         documentsApi.deleteFolder(
             folderId = folderId,
-            workspaceId = workspace.id,
-            token = token
+            workspaceId = workspace.id
         )
     }
 
@@ -90,12 +88,10 @@ class FolderStateController private constructor(
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
-        val token = authRepository.getAuthToken() ?: return
 
         documentsApi.sendFolders(
             folders = listOf(folder),
-            workspaceId = workspace.id,
-            token = token
+            workspaceId = workspace.id
         )
     }
 

@@ -11,6 +11,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeViewport
 import androidx.navigation.compose.rememberNavController
+import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
@@ -44,6 +45,7 @@ fun CreateAppInMemory() {
         "https://writeopia.io"
 //                        "http://localhost:8080"
     )
+    setupBearerTokenHandler()
 
     val uiConfigurationViewModel = UiConfigurationInjector.singleton()
         .provideUiConfigurationViewModel()

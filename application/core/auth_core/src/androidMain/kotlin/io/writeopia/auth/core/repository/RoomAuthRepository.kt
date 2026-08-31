@@ -3,18 +3,19 @@
 package io.writeopia.auth.core.repository
 
 import io.writeopia.auth.core.manager.AuthRepository
-import io.writeopia.common.utils.persistence.daos.TokenCommonDao
+import io.writeopia.auth.core.manager.TokenData
 import io.writeopia.common.utils.persistence.daos.UserCommonDao
 import io.writeopia.common.utils.persistence.daos.WorkspaceCommonDao
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class RoomAuthRepository(
     private val userDao: UserCommonDao,
-    private val tokenCommonDao: TokenCommonDao,
-    private val workspaceCommonDao: WorkspaceCommonDao
+    private val workspaceCommonDao: WorkspaceCommonDao,
+    private val secureTokenStorage: SecureTokenStorage
 ) : AuthRepository {
 
     private var pendingConfirmationEmail: String? = null
@@ -26,6 +27,8 @@ class RoomAuthRepository(
     override suspend fun isLoggedIn(): Boolean = getAuthToken() != null
 
     override suspend fun logout(): ResultData<Boolean> {
+        val userId = getUser().id
+        secureTokenStorage.clearTokens(userId)
         unselectAllWorkspaces()
         unselectAllUsers()
 
@@ -36,11 +39,38 @@ class RoomAuthRepository(
         userDao.insertUser(user, selected)
     }
 
-    override suspend fun saveToken(userId: String, token: String) {
-        tokenCommonDao.saveToken(token = token, userId = userId)
+    override suspend fun saveTokens(
+        userId: String,
+        accessToken: String,
+        refreshToken: String?,
+        expiresAt: Long?
+    ) {
+        secureTokenStorage.saveTokens(
+            userId = userId,
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            expiresAt = expiresAt
+        )
     }
 
-    override suspend fun getAuthToken(): String? = tokenCommonDao.getTokenByUserId(getUser().id)
+    override suspend fun getAuthToken(): String? =
+        secureTokenStorage.getAccessToken(getUser().id)
+
+    override suspend fun getRefreshToken(): String? =
+        secureTokenStorage.getRefreshToken(getUser().id)
+
+    override suspend fun getTokenData(): TokenData? =
+        secureTokenStorage.getTokenData(getUser().id)
+
+    override suspend fun isAccessTokenExpired(): Boolean {
+        val tokenData = getTokenData() ?: return true
+        val expiresAt = tokenData.accessTokenExpiresAt ?: return false
+        return Clock.System.now().toEpochMilliseconds() >= expiresAt
+    }
+
+    override suspend fun clearTokens() {
+        secureTokenStorage.clearTokens(getUser().id)
+    }
 
     override suspend fun useOffline() {
         unselectAllUsers()

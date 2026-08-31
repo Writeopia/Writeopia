@@ -22,9 +22,11 @@ import io.writeopia.api.geteway.module
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
+import io.writeopia.sdk.serialization.data.auth.RefreshTokenRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
+import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -138,7 +140,7 @@ class AuthIntegrationTest {
 
         assertEquals(response1.status, HttpStatusCode.OK)
 
-        val token = response1.body<AuthResponse>().token!!
+        val token = response1.body<AuthResponse>().accessToken!!
 
         val response2 = client.delete("api/auth/account") {
             contentType(ContentType.Application.Json)
@@ -194,7 +196,7 @@ class AuthIntegrationTest {
 
         assertEquals(response1.status, HttpStatusCode.OK)
 
-        val token = response1.body<AuthResponse>().token!!
+        val token = response1.body<AuthResponse>().accessToken!!
 
         val response2 = client.put("api/auth/password/reset") {
             contentType(ContentType.Application.Json)
@@ -529,5 +531,210 @@ class AuthIntegrationTest {
 
         val workspaceOfUser3 = getWorkspaceResponse3.body<List<WorkspaceApi>>()
         assertEquals(1, workspaceOfUser3.size)
+    }
+
+    @Test
+    fun `login should return both access and refresh tokens`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val password = "lasjbdalsdq08w9y&"
+
+        client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = "Name",
+                    email = "email@gmail.com",
+                    password = password,
+                )
+            )
+        }
+
+        val loginResponse = client.post("api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest("email@gmail.com", password))
+        }
+
+        assertEquals(HttpStatusCode.OK, loginResponse.status)
+        val authResponse = loginResponse.body<AuthResponse>()
+        assertNotNull(authResponse.accessToken)
+        assertNotNull(authResponse.refreshToken)
+    }
+
+    @Test
+    fun `refresh token should return new token pair`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val password = "lasjbdalsdq08w9y&"
+
+        client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = "Name",
+                    email = "email@gmail.com",
+                    password = password,
+                )
+            )
+        }
+
+        val loginResponse = client.post("api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest("email@gmail.com", password))
+        }
+
+        val authResponse = loginResponse.body<AuthResponse>()
+        val refreshToken = authResponse.refreshToken!!
+
+        val refreshResponse = client.post("api/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshTokenRequest(refreshToken))
+        }
+
+        assertEquals(HttpStatusCode.OK, refreshResponse.status)
+        val tokenResponse = refreshResponse.body<TokenRefreshResponse>()
+        assertNotNull(tokenResponse.accessToken)
+        assertNotNull(tokenResponse.refreshToken)
+    }
+
+    @Test
+    fun `old refresh token should be invalid after rotation`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val password = "lasjbdalsdq08w9y&"
+
+        client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = "Name",
+                    email = "email@gmail.com",
+                    password = password,
+                )
+            )
+        }
+
+        val loginResponse = client.post("api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest("email@gmail.com", password))
+        }
+
+        val authResponse = loginResponse.body<AuthResponse>()
+        val oldRefreshToken = authResponse.refreshToken!!
+
+        // First refresh should succeed
+        val refreshResponse = client.post("api/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshTokenRequest(oldRefreshToken))
+        }
+        assertEquals(HttpStatusCode.OK, refreshResponse.status)
+
+        // Using the same old refresh token again should fail
+        val secondRefreshResponse = client.post("api/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshTokenRequest(oldRefreshToken))
+        }
+        assertEquals(HttpStatusCode.Unauthorized, secondRefreshResponse.status)
+    }
+
+    @Test
+    fun `logout should revoke refresh token`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val password = "lasjbdalsdq08w9y&"
+
+        client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = "Name",
+                    email = "email@gmail.com",
+                    password = password,
+                )
+            )
+        }
+
+        val loginResponse = client.post("api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest("email@gmail.com", password))
+        }
+
+        val authResponse = loginResponse.body<AuthResponse>()
+        val refreshToken = authResponse.refreshToken!!
+
+        // Logout
+        val logoutResponse = client.post("api/auth/logout") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshTokenRequest(refreshToken))
+        }
+        assertEquals(HttpStatusCode.OK, logoutResponse.status)
+
+        // Refresh should fail after logout
+        val refreshResponse = client.post("api/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshTokenRequest(refreshToken))
+        }
+        assertEquals(HttpStatusCode.Unauthorized, refreshResponse.status)
+    }
+
+    @Test
+    fun `new access token should work for authenticated endpoints`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val password = "lasjbdalsdq08w9y&"
+
+        client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = "Name",
+                    email = "email@gmail.com",
+                    password = password,
+                )
+            )
+        }
+
+        val loginResponse = client.post("api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest("email@gmail.com", password))
+        }
+
+        val authResponse = loginResponse.body<AuthResponse>()
+        val refreshToken = authResponse.refreshToken!!
+
+        // Refresh to get new tokens
+        val refreshResponse = client.post("api/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshTokenRequest(refreshToken))
+        }
+        val newTokens = refreshResponse.body<TokenRefreshResponse>()
+
+        // Use new access token for authenticated request
+        val userResponse = client.get("api/auth/user/current") {
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer ${newTokens.accessToken}")
+        }
+
+        assertEquals(HttpStatusCode.OK, userResponse.status)
     }
 }

@@ -364,12 +364,10 @@ internal class ChooseNoteKmpViewModel(
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
-        val token = authRepository.getAuthToken() ?: return
 
         documentsApi.deleteDocuments(
             documentIds = documentIds,
-            workspaceId = workspace.id,
-            token = token
+            workspaceId = workspace.id
         )
     }
 
@@ -378,12 +376,10 @@ internal class ChooseNoteKmpViewModel(
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
-        val token = authRepository.getAuthToken() ?: return
 
         documentsApi.sendDocuments(
             documents = documents,
-            workspaceId = workspace.id,
-            token = token
+            workspaceId = workspace.id
         )
     }
 
@@ -392,14 +388,12 @@ internal class ChooseNoteKmpViewModel(
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
-        val token = authRepository.getAuthToken() ?: return
 
         documentIds.forEach { documentId ->
             documentsApi.favoriteDocument(
                 documentId = documentId,
                 favorite = favorite,
-                workspaceId = workspace.id,
-                token = token
+                workspaceId = workspace.id
             )
         }
     }

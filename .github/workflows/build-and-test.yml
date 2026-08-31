@@ -14,12 +14,11 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       isCI: "true"
-      JWT_SECRET: "testingsecret"
     steps:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: zulu
           java-version: '21'
@@ -32,12 +31,11 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       isCI: "true"
-      JWT_SECRET: "testingsecret"
     steps:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: zulu
           java-version: '21'
@@ -56,12 +54,13 @@ jobs:
       DB_USER: 'postgres'
       WRITEOPIA_FIREBASE_ID: 'id'
       WRITEOPIA_CLIENT_BASE_URL: "baseurl"
-      JWT_SECRET: "testingsecret"
+      JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY_CI }}
+      JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY_CI }}
     steps:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: zulu
           java-version: '21'
@@ -88,7 +87,6 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: writeopia
-          JWT_SECRET: "testingsecret"
         ports:
           - 5432:5432
         options: >-
@@ -102,12 +100,13 @@ jobs:
       DB_USER: 'postgres'
       WRITEOPIA_FIREBASE_ID: 'id'
       WRITEOPIA_CLIENT_BASE_URL: "baseurl"
-      JWT_SECRET: "testingsecret"
+      JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY_CI }}
+      JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY_CI }}
     steps:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: zulu
           java-version: '21'
@@ -145,7 +144,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: zulu
           java-version: '21'
@@ -176,12 +175,13 @@ jobs:
       DB_USER: 'postgres'
       WRITEOPIA_FIREBASE_ID: 'id'
       WRITEOPIA_CLIENT_BASE_URL: "baseurl"
-      JWT_SECRET: "testingsecret"
+      JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY_CI }}
+      JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY_CI }}
     steps:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: zulu
           java-version: '21'
@@ -217,12 +217,11 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       isCI: "true"
-      JWT_SECRET: "testingsecret"
     steps:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: zulu
           java-version: '21'
