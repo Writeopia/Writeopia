@@ -94,14 +94,14 @@ selectWithContentByFolderIdOutdatedDocuments:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.parent_document_id = ? AND documentEntity.workspace_id = ? AND (documentEntity.last_synced_at IS NULL OR documentEntity.last_updated_at > documentEntity.last_synced_at)
+WHERE documentEntity.parent_document_id = ? AND documentEntity.workspace_id = ? AND deleted = 0 AND (documentEntity.last_synced_at IS NULL OR documentEntity.last_updated_at > documentEntity.last_synced_at)
 ORDER BY position;
 
 selectWithContentByWorkspaceIdOutdatedDocuments:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.workspace_id = ?
+WHERE documentEntity.workspace_id = ? AND deleted = 0
 --     AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)
 ORDER BY position;
 
@@ -131,14 +131,14 @@ UPDATE documentEntity
 SET
     deleted = 1,
     last_updated_at = ?
-WHERE id = ?;
+WHERE id = ? AND workspace_id = ?;
 
 deleteByIds:
 UPDATE documentEntity
 SET
     deleted = 1,
     last_updated_at = ?
-WHERE id IN ?;
+WHERE id IN ? AND workspace_id = ?;
 
 deleteByUserId:
 UPDATE documentEntity
@@ -152,7 +152,7 @@ UPDATE documentEntity
 SET
     deleted = 1,
     last_updated_at = ?
-WHERE parent_document_id = ?;
+WHERE parent_document_id = ? AND workspace_id = ?;
 
 favoriteById:
 UPDATE documentEntity SET favorite = 1 WHERE id = ?;
@@ -169,3 +169,13 @@ FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
 WHERE documentEntity.title = ? AND documentEntity.workspace_id = ? AND deleted = 0
 ORDER BY position;
+
+-- Hard delete: permanently removes document from database (use after backend confirms deletion)
+hardDeleteByIds:
+DELETE FROM documentEntity WHERE id IN ? AND workspace_id = ?;
+
+-- Select all soft-deleted documents for a workspace (for syncing deletions to backend)
+selectSoftDeletedByWorkspace:
+SELECT *
+FROM documentEntity
+WHERE workspace_id = ? AND deleted = 1;

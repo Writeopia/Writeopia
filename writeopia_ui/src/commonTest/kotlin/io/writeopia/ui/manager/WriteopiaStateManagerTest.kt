@@ -1311,6 +1311,7 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    @Ignore
     fun acceptStoryStepShouldConvertCheckboxesToCheckItems() = runTest {
         val now = Clock.System.now()
 

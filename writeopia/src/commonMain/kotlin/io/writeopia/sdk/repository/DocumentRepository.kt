@@ -65,11 +65,27 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
 
     suspend fun updateStoryStepUrl(url: String, id: String)
 
-    suspend fun deleteDocument(document: Document)
+    suspend fun deleteDocument(document: Document, workspaceId: String)
 
-    suspend fun deleteDocumentByIds(ids: Set<String>)
+    /**
+     * Soft delete: marks documents as deleted but keeps in database.
+     * The documents will be synced to backend and then hard deleted once confirmed.
+     */
+    suspend fun deleteDocumentByIds(ids: Set<String>, workspaceId: String)
 
-    suspend fun deleteDocumentByFolder(folderId: String)
+    suspend fun deleteDocumentByFolder(folderId: String, workspaceId: String)
+
+    /**
+     * Hard delete: permanently removes documents from database.
+     * Use this after backend has confirmed the deletion.
+     */
+    suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String)
+
+    /**
+     * Get all soft-deleted documents for a workspace.
+     * Use this to find documents that need to be synced to backend for deletion.
+     */
+    suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document>
 
     suspend fun favoriteDocumentByIds(ids: Set<String>)
 

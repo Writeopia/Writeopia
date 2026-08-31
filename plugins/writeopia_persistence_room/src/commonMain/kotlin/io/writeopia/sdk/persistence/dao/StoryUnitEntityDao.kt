@@ -47,4 +47,7 @@ interface StoryUnitEntityDao {
 
     @Query("DELETE FROM $STORY_UNIT_ENTITY WHERE $STORY_UNIT_ENTITY.id = :id")
     suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM $STORY_UNIT_ENTITY WHERE $STORY_UNIT_ENTITY.document_id IN (:documentIds)")
+    suspend fun deleteByDocumentIds(documentIds: List<String>)
 }

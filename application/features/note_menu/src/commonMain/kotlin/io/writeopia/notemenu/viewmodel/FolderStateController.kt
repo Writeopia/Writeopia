@@ -11,6 +11,7 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,24 +64,46 @@ class FolderStateController private constructor(
 
     override fun deleteFolder(id: String) {
         coroutineScope.launch(Dispatchers.Default) {
-            notesUseCase.deleteFolderById(id)
+            val workspaceId = authRepository.getWorkspace()?.id
+                ?: Workspace.disconnectedWorkspace().id
+
+            // Soft delete locally first (optimistic delete - folder disappears from UI)
+            notesUseCase.deleteFolderById(id, workspaceId)
             stopEditingFolder()
 
-            // Sync folder deletion to backend
-            syncFolderDeletionToBackend(id)
+            // Try to sync folder deletion to backend
+            val syncSuccess = syncFolderDeletionToBackend(id)
+
+            // If backend sync succeeded, hard delete locally
+            // If sync failed, folder remains soft-deleted and will be retried during EventSync
+            if (syncSuccess) {
+                notesUseCase.hardDeleteFolderById(id, workspaceId)
+            }
         }
     }
 
-    private suspend fun syncFolderDeletionToBackend(folderId: String) {
-        if (!authRepository.isLoggedIn()) return
-        if (authRepository.getUser().tier != Tier.PREMIUM) return
+    /**
+     * Attempts to sync folder deletion to backend.
+     * @return true if sync succeeded, false if it failed (offline, error, etc.)
+     */
+    private suspend fun syncFolderDeletionToBackend(folderId: String): Boolean {
+        if (!authRepository.isLoggedIn()) return true // No backend to sync to
+        if (authRepository.getUser().tier != Tier.PREMIUM) return true // No sync for non-premium
 
-        val workspace = authRepository.getWorkspace() ?: return
+        val workspace = authRepository.getWorkspace() ?: return true
 
-        documentsApi.deleteFolder(
-            folderId = folderId,
-            workspaceId = workspace.id
-        )
+        return when (
+            documentsApi.deleteFolder(
+                folderId = folderId,
+                workspaceId = workspace.id
+            )
+        ) {
+            is ResultData.Complete -> true
+            is ResultData.Error -> false
+            is ResultData.Idle -> true
+            is ResultData.Loading -> false
+            is ResultData.InProgress -> false
+        }
     }
 
     private suspend fun syncFolderToBackend(folder: Folder) {

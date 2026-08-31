@@ -84,8 +84,8 @@ suspend fun WriteopiaDbBackend.deleteDocumentById(vararg documentIds: String) {
     documentIds.forEach(dao::deleteDocumentById)
 }
 
-fun WriteopiaDbBackend.deleteFolder(folderId: String) {
-    getDocumentDaoFn().deleteFolder(folderId)
+fun WriteopiaDbBackend.deleteFolder(folderId: String, workspaceId: String) {
+    getDocumentDaoFn().deleteFolder(folderId, workspaceId)
 }
 
 fun WriteopiaDbBackend.deleteDocumentsByFolderId(folderId: String) {

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -41,13 +42,20 @@ class RoomFolderRepository(
         TODO("Not yet implemented")
     }
 
-    override suspend fun deleteFolderById(folderId: String) {
-        folderRoomDao.deleteById(folderId)
+    override suspend fun deleteFolderById(folderId: String, workspaceId: String) {
+        folderRoomDao.deleteById(folderId, workspaceId, Clock.System.now().toEpochMilliseconds())
     }
 
-    override suspend fun deleteFolderByParent(folderId: String) {
-        folderRoomDao.getFolderByParentId(folderId)
+    override suspend fun deleteFolderByParent(folderId: String, workspaceId: String) {
+        folderRoomDao.deleteByParentId(folderId, workspaceId, Clock.System.now().toEpochMilliseconds())
     }
+
+    override suspend fun hardDeleteFolderById(folderId: String, workspaceId: String) {
+        folderRoomDao.hardDeleteById(folderId, workspaceId)
+    }
+
+    override suspend fun getSoftDeletedFolders(workspaceId: String): List<Folder> =
+        folderRoomDao.getSoftDeletedByWorkspace(workspaceId)
 
     override suspend fun favoriteDocumentByIds(ids: Set<String>) {
         ids.forEach { folderId ->

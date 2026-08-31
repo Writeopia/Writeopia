@@ -889,7 +889,8 @@ class NoteEditorKmpViewModel(
 
     override fun deleteDocument() {
         viewModelScope.launch(Dispatchers.Default) {
-            documentRepository.deleteDocument(writeopiaManager.getDocument())
+            val document = writeopiaManager.getDocument()
+            documentRepository.deleteDocument(document, document.workspaceId)
         }
     }
 
@@ -1086,7 +1087,7 @@ class NoteEditorKmpViewModel(
             val document = writeopiaManager.currentDocument.stateIn(this).value
 
             if (document != null && story.value.stories.noContent()) {
-                documentRepository.deleteDocument(document)
+                documentRepository.deleteDocument(document, document.workspaceId)
             }
 
             withContext(Dispatchers.Main) {

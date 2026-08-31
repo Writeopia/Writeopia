@@ -37,7 +37,7 @@ class InMemoryFolderRepository : FolderRepository {
         workspaceId: String
     ): Flow<Map<String, List<Folder>>> = emptyStateFlow.asStateFlow()
 
-    override suspend fun deleteFolderById(folderId: String) {
+    override suspend fun deleteFolderById(folderId: String, workspaceId: String) {
         // No-op: webapp uses backend data only
     }
 
@@ -49,9 +49,15 @@ class InMemoryFolderRepository : FolderRepository {
         // No-op: webapp uses backend data only
     }
 
-    override suspend fun deleteFolderByParent(folderId: String) {
+    override suspend fun deleteFolderByParent(folderId: String, workspaceId: String) {
         // No-op: webapp uses backend data only
     }
+
+    override suspend fun hardDeleteFolderById(folderId: String, workspaceId: String) {
+        // No-op: webapp uses backend data only
+    }
+
+    override suspend fun getSoftDeletedFolders(workspaceId: String): List<Folder> = emptyList()
 
     override suspend fun setLastUpdated(folderId: String, long: Long) {
         // No-op: webapp uses backend data only

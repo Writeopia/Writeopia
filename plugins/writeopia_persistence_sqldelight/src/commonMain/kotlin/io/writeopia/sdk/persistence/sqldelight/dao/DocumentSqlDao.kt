@@ -604,15 +604,51 @@ class DocumentSqlDao(
             } ?: emptyList()
     }
 
-    suspend fun deleteDocumentById(documentId: String) {
-        documentQueries?.delete(Clock.System.now().toEpochMilliseconds(), documentId)
+    suspend fun deleteDocumentById(documentId: String, workspaceId: String) {
+        documentQueries?.delete(Clock.System.now().toEpochMilliseconds(), documentId, workspaceId)
         storyStepQueries?.deleteByDocumentId(documentId)
     }
 
-    suspend fun deleteDocumentByIds(ids: Set<String>) {
-        documentQueries?.deleteByIds(Clock.System.now().toEpochMilliseconds(), ids)
+    suspend fun deleteDocumentByIds(ids: Set<String>, workspaceId: String) {
+        documentQueries?.deleteByIds(Clock.System.now().toEpochMilliseconds(), ids, workspaceId)
         storyStepQueries?.deleteByDocumentIds(ids)
     }
+
+    /**
+     * Hard delete: permanently removes documents from database.
+     * Use this after backend has confirmed the deletion.
+     * Both document and story step deletions are performed atomically in a transaction.
+     */
+    suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
+        // Use transaction from documentQueries (both queries share the same driver)
+        documentQueries?.transaction {
+            storyStepQueries?.deleteByDocumentIds(ids)
+            documentQueries.hardDeleteByIds(ids, workspaceId)
+        }
+    }
+
+    /**
+     * Get all soft-deleted documents for a workspace.
+     * Use this to find documents that need to be synced to backend for deletion.
+     */
+    suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document> =
+        documentQueries?.selectSoftDeletedByWorkspace(workspaceId)
+            ?.awaitAsList()
+            ?.map { entity ->
+                Document(
+                    id = entity.id,
+                    title = entity.title,
+                    createdAt = Instant.fromEpochMilliseconds(entity.created_at),
+                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                    lastSyncedAt = entity.last_synced_at?.let(Instant::fromEpochMilliseconds),
+                    workspaceId = entity.workspace_id,
+                    favorite = entity.favorite == 1L,
+                    parentId = entity.parent_document_id,
+                    icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint?.toInt()) },
+                    isLocked = entity.is_locked == 1L,
+                    deleted = true
+                )
+            } ?: emptyList()
 
     suspend fun loadDocumentWithContentById(documentId: String, workspaceId: String): Document? =
         documentQueries?.selectWithContentById(documentId, workspaceId)
@@ -934,8 +970,8 @@ class DocumentSqlDao(
         documentQueries?.deleteByUserId(Clock.System.now().toEpochMilliseconds(), workspaceId)
     }
 
-    suspend fun deleteDocumentsByFolderId(folderId: String) {
-        documentQueries?.deleteByFolderId(Clock.System.now().toEpochMilliseconds(), folderId)
+    suspend fun deleteDocumentsByFolderId(folderId: String, workspaceId: String) {
+        documentQueries?.deleteByFolderId(Clock.System.now().toEpochMilliseconds(), folderId, workspaceId)
     }
 
     suspend fun favoriteById(documentId: String) {

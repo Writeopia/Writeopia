@@ -136,21 +136,32 @@ class SqlDelightDocumentRepository(
         documentSqlDao.updateStoryStepUrl(url, id)
     }
 
-    override suspend fun deleteDocument(document: Document) {
-        documentSqlDao.deleteDocumentById(document.id)
+    override suspend fun deleteDocument(document: Document, workspaceId: String) {
+        documentSqlDao.deleteDocumentById(document.id, workspaceId)
 
         refreshDocuments()
     }
 
-    override suspend fun deleteDocumentByIds(ids: Set<String>) {
-        documentSqlDao.deleteDocumentByIds(ids)
+    override suspend fun deleteDocumentByIds(ids: Set<String>, workspaceId: String) {
+        documentSqlDao.deleteDocumentByIds(ids, workspaceId)
 
         refreshDocuments()
     }
 
-    override suspend fun deleteDocumentByFolder(folderId: String) {
-        documentSqlDao.deleteDocumentsByFolderId(folderId)
+    override suspend fun deleteDocumentByFolder(folderId: String, workspaceId: String) {
+        documentSqlDao.deleteDocumentsByFolderId(folderId, workspaceId)
+
+        refreshDocuments()
     }
+
+    override suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
+        documentSqlDao.hardDeleteDocumentByIds(ids, workspaceId)
+
+        refreshDocuments()
+    }
+
+    override suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document> =
+        documentSqlDao.getSoftDeletedDocuments(workspaceId)
 
     override suspend fun deleteByWorkspace(workspaceId: String) {
         documentSqlDao.deleteDocumentsByUserId(workspaceId)

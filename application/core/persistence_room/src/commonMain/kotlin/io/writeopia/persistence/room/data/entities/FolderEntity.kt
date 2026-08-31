@@ -17,4 +17,5 @@ class FolderEntity(
     @ColumnInfo(name = "favorite") val favorite: Boolean = false,
     @ColumnInfo(name = "icon") val icon: String,
     @ColumnInfo(name = "icon_tint") val iconTint: Long,
+    @ColumnInfo(name = "deleted", defaultValue = "0") val deleted: Boolean = false,
 )

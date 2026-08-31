@@ -29,6 +29,14 @@ class FolderConflictHandler(
         externalFolders.forEach { externalFolder ->
             val localFolder = localFoldersById[externalFolder.id]
 
+            // IMPORTANT: Check if folder is soft-deleted locally before creating/updating
+            // A soft-deleted folder should never be recreated from backend data
+            val existingFolder = folderRepository.getFolderById(externalFolder.id)
+            if (existingFolder?.deleted == true) {
+                // Folder is soft-deleted locally, skip it to prevent resurrection
+                return@forEach
+            }
+
             if (localFolder == null) {
                 // Folder doesn't exist locally - create it with server's lastSyncedAt
                 folderRepository.createFolder(externalFolder)

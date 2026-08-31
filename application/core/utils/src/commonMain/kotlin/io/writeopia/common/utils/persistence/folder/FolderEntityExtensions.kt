@@ -20,6 +20,7 @@ fun FolderCommonEntity.toModel(itemCount: Long): Folder =
         // Assuming itemCount is not stored in the entity
         itemCount = itemCount,
         icon = icon.let { MenuItem.Icon(it, iconTint.toInt()) },
+        deleted = deleted,
     )
 
 fun Folder.toRoomEntity(): FolderCommonEntity =
@@ -32,5 +33,6 @@ fun Folder.toRoomEntity(): FolderCommonEntity =
         workspaceId = workspaceId,
         favorite = favorite,
         icon = icon?.label ?: "",
-        iconTint = icon?.tint?.toLong() ?: 0L
+        iconTint = icon?.tint?.toLong() ?: 0L,
+        deleted = deleted
     )

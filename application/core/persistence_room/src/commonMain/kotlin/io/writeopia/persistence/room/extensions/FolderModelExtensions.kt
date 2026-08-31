@@ -14,6 +14,7 @@ fun FolderEntity.toCommonEntity(): FolderCommonEntity {
         favorite = this.favorite,
         icon = this.icon,
         iconTint = this.iconTint,
+        deleted = this.deleted,
     )
 }
 
@@ -28,5 +29,6 @@ fun FolderCommonEntity.toEntity(): FolderEntity {
         favorite = this.favorite,
         icon = this.icon,
         iconTint = this.iconTint,
+        deleted = this.deleted,
     )
 }
