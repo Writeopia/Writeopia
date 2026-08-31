@@ -45,6 +45,17 @@ class RoomDocumentRepository(
         emptyList()
 
     override suspend fun deleteDocumentByFolder(folderId: String, workspaceId: String) {
+        val documentsToDelete = documentEntityDao.loadDocumentsByParentId(folderId)
+            .filter { it.workspaceId == workspaceId }
+            .map { doc ->
+                doc.copy(
+                    lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
+                    isDeleted = true
+                )
+            }
+        if (documentsToDelete.isNotEmpty()) {
+            documentEntityDao.updateDocument(*documentsToDelete.toTypedArray())
+        }
     }
 
     override suspend fun search(query: String, workspaceId: String): List<Document> =
