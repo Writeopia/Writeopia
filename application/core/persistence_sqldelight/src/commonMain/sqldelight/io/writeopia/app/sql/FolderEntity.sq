@@ -73,21 +73,21 @@ icon=excluded.icon, icon_tint=excluded.icon_tint, last_synced_at=excluded.last_s
 -- update:
 -- UPDATE(title, parent_id, update_at): SET title=title, parent_id=parent_id, update_at=update_at;
 
--- Soft delete: marks folder as deleted instead of removing from database
+-- Soft delete: marks folder as deleted instead of removing from database (scoped to workspace)
 deleteFolder:
-UPDATE folderEntity SET deleted = 1, last_updated_at = ? WHERE id = ?;
+UPDATE folderEntity SET deleted = 1, last_updated_at = ? WHERE id = ? AND workspace_id = ?;
 
--- Soft delete by parent: marks all child folders as deleted
+-- Soft delete by parent: marks all child folders as deleted (scoped to workspace)
 deleteFolderByParent:
-UPDATE folderEntity SET deleted = 1, last_updated_at = ? WHERE parent_id = ?;
+UPDATE folderEntity SET deleted = 1, last_updated_at = ? WHERE parent_id = ? AND workspace_id = ?;
 
 -- Hard delete: permanently removes folder from database (use after backend confirms deletion)
 hardDeleteFolder:
-DELETE FROM folderEntity WHERE id = ?;
+DELETE FROM folderEntity WHERE id = ? AND workspace_id = ?;
 
--- Hard delete by parent: permanently removes all child folders from database
+-- Hard delete by parent: permanently removes all child folders from database (scoped to workspace)
 hardDeleteFolderByParent:
-DELETE FROM folderEntity WHERE parent_id = ?;
+DELETE FROM folderEntity WHERE parent_id = ? AND workspace_id = ?;
 
 -- Select all soft-deleted folders for a workspace (for syncing deletions to backend)
 selectSoftDeletedByWorkspace:

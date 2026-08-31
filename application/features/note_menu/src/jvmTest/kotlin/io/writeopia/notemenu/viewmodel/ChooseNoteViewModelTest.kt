@@ -29,7 +29,7 @@ class ChooseNoteViewModelTest {
         Dispatchers.setMain(testDispatcher)
 
         try {
-            coEvery { notesUseCase.deleteNotes(any()) } returns Unit
+            coEvery { notesUseCase.deleteNotes(any(), any()) } returns Unit
 
             val viewModel = ChooseNoteKmpViewModel(
                 notesUseCase = notesUseCase,

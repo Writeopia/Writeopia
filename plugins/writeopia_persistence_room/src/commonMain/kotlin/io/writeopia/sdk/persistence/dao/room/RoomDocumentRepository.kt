@@ -44,7 +44,7 @@ class RoomDocumentRepository(
     ): List<Document> =
         emptyList()
 
-    override suspend fun deleteDocumentByFolder(folderId: String) {
+    override suspend fun deleteDocumentByFolder(folderId: String, workspaceId: String) {
     }
 
     override suspend fun search(query: String, workspaceId: String): List<Document> =
@@ -138,7 +138,7 @@ class RoomDocumentRepository(
         documentEntityDao.insertDocuments(document.toEntity())
     }
 
-    override suspend fun deleteDocument(document: Document) {
+    override suspend fun deleteDocument(document: Document, workspaceId: String) {
         documentEntityDao.updateDocument(
             document.toEntity()
                 .copy(
@@ -148,11 +148,11 @@ class RoomDocumentRepository(
         )
     }
 
-    override suspend fun deleteDocumentByIds(ids: Set<String>) {
-        // The user ID is not relevant in the way to delete documents
+    override suspend fun deleteDocumentByIds(ids: Set<String>, workspaceId: String) {
         documentEntityDao.updateDocument(
             *ids.mapNotNull {
                 documentEntityDao.loadDocumentById(it)
+                    ?.takeIf { doc -> doc.workspaceId == workspaceId }
                     ?.copy(
                         lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
                         isDeleted = true
@@ -161,8 +161,9 @@ class RoomDocumentRepository(
         )
     }
 
-    override suspend fun hardDeleteDocumentByIds(ids: Set<String>) {
-        documentEntityDao.hardDeleteDocumentByIds(ids.toList())
+    override suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
+        // Atomic deletion: removes both documents and their story steps in a single transaction (scoped to workspace)
+        documentEntityDao.hardDeleteDocumentsWithContentByIds(ids.toList(), workspaceId)
     }
 
     override suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document> =

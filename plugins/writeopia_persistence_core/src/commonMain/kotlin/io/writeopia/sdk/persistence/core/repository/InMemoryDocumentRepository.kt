@@ -119,17 +119,17 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun updateStoryStepUrl(url: String, id: String) {
     }
 
-    override suspend fun deleteDocument(document: Document) {
+    override suspend fun deleteDocument(document: Document, workspaceId: String) {
         documentsMap.remove(document.id)
         refreshDocuments()
     }
 
-    override suspend fun deleteDocumentByIds(ids: Set<String>) {
+    override suspend fun deleteDocumentByIds(ids: Set<String>, workspaceId: String) {
         ids.forEach(documentsMap::remove)
         refreshDocuments()
     }
 
-    override suspend fun hardDeleteDocumentByIds(ids: Set<String>) {
+    override suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
         ids.forEach(documentsMap::remove)
         refreshDocuments()
     }
@@ -171,8 +171,10 @@ class InMemoryDocumentRepository : DocumentRepository {
         refreshDocuments()
     }
 
-    override suspend fun deleteDocumentByFolder(folderId: String) {
-        val keysToRemove = documentsMap.filter { (_, doc) -> doc.parentId == folderId }.keys
+    override suspend fun deleteDocumentByFolder(folderId: String, workspaceId: String) {
+        val keysToRemove = documentsMap.filter { (_, doc) ->
+            doc.parentId == folderId && doc.workspaceId == workspaceId
+        }.keys
         keysToRemove.forEach { documentsMap.remove(it) }
         refreshDocuments()
     }

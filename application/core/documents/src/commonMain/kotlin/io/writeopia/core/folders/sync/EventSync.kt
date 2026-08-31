@@ -52,7 +52,7 @@ class EventSync(
                     val eventDiff = response.data
 
                     // Process events in order (they're sorted by createdAt ASC)
-                    processEvents(eventDiff.events)
+                    processEvents(eventDiff.events, workspaceId)
 
                     // Update lastEventSync in workspace
                     authRepository.updateLastEventSync(workspaceId, eventDiff.serverTimestamp)
@@ -90,7 +90,7 @@ class EventSync(
                 )
                 if (result is ResultData.Complete) {
                     // Backend confirmed deletion, hard delete locally
-                    documentRepository.hardDeleteDocumentByIds(setOf(document.id))
+                    documentRepository.hardDeleteDocumentByIds(setOf(document.id), workspaceId)
                 }
                 // If failed, document remains soft-deleted for retry on next sync
             }
@@ -104,7 +104,7 @@ class EventSync(
                 )
                 if (result is ResultData.Complete) {
                     // Backend confirmed deletion, hard delete locally
-                    folderRepository.hardDeleteFolderById(folder.id)
+                    folderRepository.hardDeleteFolderById(folder.id, workspaceId)
                 }
                 // If failed, folder remains soft-deleted for retry on next sync
             }
@@ -118,17 +118,17 @@ class EventSync(
      * Processes events from the server.
      * Events from the server represent confirmed deletions, so we use hard delete.
      */
-    private suspend fun processEvents(events: List<SyncEventApi>) {
+    private suspend fun processEvents(events: List<SyncEventApi>, workspaceId: String) {
         events.forEach { event ->
             try {
                 when (event.eventType) {
                     "DELETE_DOCUMENT" -> {
                         // Events from server are confirmed deletions, use hard delete
-                        documentRepository.hardDeleteDocumentByIds(setOf(event.entityId))
+                        documentRepository.hardDeleteDocumentByIds(setOf(event.entityId), workspaceId)
                     }
                     "DELETE_FOLDER" -> {
                         // Events from server are confirmed deletions, use hard delete
-                        folderRepository.hardDeleteFolderById(event.entityId)
+                        folderRepository.hardDeleteFolderById(event.entityId, workspaceId)
                     }
                     "MOVE_DOCUMENT" -> {
                         event.newParentId?.let { newParentId ->

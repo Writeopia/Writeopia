@@ -19,17 +19,17 @@ interface FolderCommonDao {
     fun listenForFolderByParentId(id: String): Flow<List<Folder>>
 
     /**
-     * Soft delete: marks folder as deleted but keeps in database.
+     * Soft delete: marks folder as deleted but keeps in database (scoped to workspace).
      */
-    suspend fun deleteById(id: String, lastUpdatedAt: Long): Int
+    suspend fun deleteById(id: String, workspaceId: String, lastUpdatedAt: Long): Int
 
-    suspend fun deleteByParentId(id: String, lastUpdatedAt: Long): Int
+    suspend fun deleteByParentId(id: String, workspaceId: String, lastUpdatedAt: Long): Int
 
     /**
-     * Hard delete: permanently removes folder from database.
+     * Hard delete: permanently removes folder from database (scoped to workspace).
      * Use this after backend has confirmed the deletion.
      */
-    suspend fun hardDeleteById(id: String): Int
+    suspend fun hardDeleteById(id: String, workspaceId: String): Int
 
     /**
      * Get all soft-deleted folders for a workspace.

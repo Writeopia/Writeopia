@@ -80,16 +80,16 @@ class FolderRepositorySqlDelight(
     override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =
         getFoldersForWorkspace(workspaceId)
 
-    override suspend fun deleteFolderById(folderId: String) {
-        folderDao.deleteFolder(folderId)
+    override suspend fun deleteFolderById(folderId: String, workspaceId: String) {
+        folderDao.deleteFolder(folderId, workspaceId)
     }
 
-    override suspend fun deleteFolderByParent(folderId: String) {
-        folderDao.deleteFolderByParent(folderId)
+    override suspend fun deleteFolderByParent(folderId: String, workspaceId: String) {
+        folderDao.deleteFolderByParent(folderId, workspaceId)
     }
 
-    override suspend fun hardDeleteFolderById(folderId: String) {
-        folderDao.hardDeleteFolder(folderId)
+    override suspend fun hardDeleteFolderById(folderId: String, workspaceId: String) {
+        folderDao.hardDeleteFolder(folderId, workspaceId)
     }
 
     override suspend fun getSoftDeletedFolders(workspaceId: String): List<Folder> =

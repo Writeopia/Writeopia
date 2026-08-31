@@ -604,23 +604,27 @@ class DocumentSqlDao(
             } ?: emptyList()
     }
 
-    suspend fun deleteDocumentById(documentId: String) {
-        documentQueries?.delete(Clock.System.now().toEpochMilliseconds(), documentId)
+    suspend fun deleteDocumentById(documentId: String, workspaceId: String) {
+        documentQueries?.delete(Clock.System.now().toEpochMilliseconds(), documentId, workspaceId)
         storyStepQueries?.deleteByDocumentId(documentId)
     }
 
-    suspend fun deleteDocumentByIds(ids: Set<String>) {
-        documentQueries?.deleteByIds(Clock.System.now().toEpochMilliseconds(), ids)
+    suspend fun deleteDocumentByIds(ids: Set<String>, workspaceId: String) {
+        documentQueries?.deleteByIds(Clock.System.now().toEpochMilliseconds(), ids, workspaceId)
         storyStepQueries?.deleteByDocumentIds(ids)
     }
 
     /**
      * Hard delete: permanently removes documents from database.
      * Use this after backend has confirmed the deletion.
+     * Both document and story step deletions are performed atomically in a transaction.
      */
-    suspend fun hardDeleteDocumentByIds(ids: Set<String>) {
-        documentQueries?.hardDeleteByIds(ids)
-        storyStepQueries?.deleteByDocumentIds(ids)
+    suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
+        // Use transaction from documentQueries (both queries share the same driver)
+        documentQueries?.transaction {
+            storyStepQueries?.deleteByDocumentIds(ids)
+            documentQueries.hardDeleteByIds(ids, workspaceId)
+        }
     }
 
     /**
@@ -966,8 +970,8 @@ class DocumentSqlDao(
         documentQueries?.deleteByUserId(Clock.System.now().toEpochMilliseconds(), workspaceId)
     }
 
-    suspend fun deleteDocumentsByFolderId(folderId: String) {
-        documentQueries?.deleteByFolderId(Clock.System.now().toEpochMilliseconds(), folderId)
+    suspend fun deleteDocumentsByFolderId(folderId: String, workspaceId: String) {
+        documentQueries?.deleteByFolderId(Clock.System.now().toEpochMilliseconds(), folderId, workspaceId)
     }
 
     suspend fun favoriteById(documentId: String) {

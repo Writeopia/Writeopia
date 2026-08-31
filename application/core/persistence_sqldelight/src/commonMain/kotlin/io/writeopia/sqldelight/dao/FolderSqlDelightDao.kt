@@ -104,37 +104,41 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
     }
 
     /**
-     * Soft delete: marks folder as deleted but keeps in database.
+     * Soft delete: marks folder as deleted but keeps in database (scoped to workspace).
      * Use this for optimistic deletion - the folder can be synced to backend
      * and then hard deleted once confirmed.
      */
-    suspend fun deleteFolder(folderId: String) {
-        folderEntityQueries?.deleteFolder(Clock.System.now().toEpochMilliseconds(), folderId)
+    suspend fun deleteFolder(folderId: String, workspaceId: String) {
+        folderEntityQueries?.deleteFolder(Clock.System.now().toEpochMilliseconds(), folderId, workspaceId)
         refreshFolders()
     }
 
     /**
-     * Soft delete by parent: marks all child folders as deleted.
+     * Soft delete by parent: marks all child folders as deleted (scoped to workspace).
      */
-    suspend fun deleteFolderByParent(folderId: String) {
-        folderEntityQueries?.deleteFolderByParent(Clock.System.now().toEpochMilliseconds(), folderId)
+    suspend fun deleteFolderByParent(folderId: String, workspaceId: String) {
+        folderEntityQueries?.deleteFolderByParent(
+            Clock.System.now().toEpochMilliseconds(),
+            folderId,
+            workspaceId
+        )
         refreshFolders()
     }
 
     /**
-     * Hard delete: permanently removes folder from database.
+     * Hard delete: permanently removes folder from database (scoped to workspace).
      * Use this after backend has confirmed the deletion.
      */
-    suspend fun hardDeleteFolder(folderId: String) {
-        folderEntityQueries?.hardDeleteFolder(folderId)
+    suspend fun hardDeleteFolder(folderId: String, workspaceId: String) {
+        folderEntityQueries?.hardDeleteFolder(folderId, workspaceId)
         refreshFolders()
     }
 
     /**
-     * Hard delete by parent: permanently removes all child folders from database.
+     * Hard delete by parent: permanently removes all child folders from database (scoped to workspace).
      */
-    suspend fun hardDeleteFolderByParent(folderId: String) {
-        folderEntityQueries?.hardDeleteFolderByParent(folderId)
+    suspend fun hardDeleteFolderByParent(folderId: String, workspaceId: String) {
+        folderEntityQueries?.hardDeleteFolderByParent(folderId, workspaceId)
         refreshFolders()
     }
 

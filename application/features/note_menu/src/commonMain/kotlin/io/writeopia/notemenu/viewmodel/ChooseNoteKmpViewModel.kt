@@ -349,44 +349,82 @@ internal class ChooseNoteKmpViewModel(
         val selected = selectedNotes.value
 
         viewModelScope.launch(Dispatchers.Default) {
+            val workspaceId = getWorkspaceId()
+
+            // Partition selected IDs into documents and folders
+            val menuItems = (menuItemsState.value as? ResultData.Complete<List<MenuItem>>)
+                ?.data
+                ?.filter { selected.contains(it.id) }
+                ?: emptyList()
+
+            val documentIds = menuItems.filterIsInstance<Document>().map { it.id }
+            val folderIds = menuItems.filterIsInstance<Folder>().map { it.id }
+
             // Soft delete locally first (optimistic delete - items disappear from UI)
-            notesUseCase.deleteNotes(selected)
+            notesUseCase.deleteNotes(selected, workspaceId)
             clearSelection()
             askToDelete.value = false
 
-            // Try to sync deletion to backend
-            val syncSuccess = syncDeletionToBackend(selected.toList())
+            // Try to sync deletion to backend (folders and documents separately)
+            val syncSuccess = syncDeletionToBackend(documentIds, folderIds)
 
             // If backend sync succeeded, hard delete locally
             // If sync failed, items remain soft-deleted and will be retried during EventSync
             if (syncSuccess) {
-                notesUseCase.hardDeleteNotes(selected)
+                notesUseCase.hardDeleteNotes(selected, workspaceId)
             }
         }
     }
 
     /**
-     * Attempts to sync document deletions to backend.
-     * @return true if sync succeeded, false if it failed (offline, error, etc.)
+     * Attempts to sync deletions to backend.
+     * Documents are sent to the document deletion endpoint, folders to the folder endpoint.
+     * @return true if all syncs succeeded, false if any failed (offline, error, etc.)
      */
-    private suspend fun syncDeletionToBackend(documentIds: List<String>): Boolean {
+    private suspend fun syncDeletionToBackend(
+        documentIds: List<String>,
+        folderIds: List<String>
+    ): Boolean {
         if (!authRepository.isLoggedIn()) return true // No backend to sync to
         if (authRepository.getUser().tier != Tier.PREMIUM) return true // No sync for non-premium
 
         val workspace = authRepository.getWorkspace() ?: return true
 
-        return when (
-            documentsApi.deleteDocuments(
-                documentIds = documentIds,
-                workspaceId = workspace.id
-            )
-        ) {
-            is ResultData.Complete -> true
-            is ResultData.Error -> false
-            is ResultData.Idle -> true
-            is ResultData.Loading -> false
-            is ResultData.InProgress -> false
+        // Sync document deletions
+        val documentsSuccess = if (documentIds.isNotEmpty()) {
+            when (
+                documentsApi.deleteDocuments(
+                    documentIds = documentIds,
+                    workspaceId = workspace.id
+                )
+            ) {
+                is ResultData.Complete -> true
+                is ResultData.Error -> false
+                is ResultData.Idle -> true
+                is ResultData.Loading -> false
+                is ResultData.InProgress -> false
+            }
+        } else {
+            true
         }
+
+        // Sync folder deletions
+        val foldersSuccess = folderIds.all { folderId ->
+            when (
+                documentsApi.deleteFolder(
+                    folderId = folderId,
+                    workspaceId = workspace.id
+                )
+            ) {
+                is ResultData.Complete -> true
+                is ResultData.Error -> false
+                is ResultData.Idle -> true
+                is ResultData.Loading -> false
+                is ResultData.InProgress -> false
+            }
+        }
+
+        return documentsSuccess && foldersSuccess
     }
 
     private suspend fun syncDocumentsToBackend(documents: List<Document>) {

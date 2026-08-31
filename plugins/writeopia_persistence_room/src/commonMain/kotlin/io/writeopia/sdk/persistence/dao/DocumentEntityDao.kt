@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import io.writeopia.sdk.models.CREATED_AT
 import io.writeopia.sdk.models.DOCUMENT_ENTITY
@@ -150,9 +151,20 @@ interface DocumentEntityDao {
         workspaceId: String
     ): Map<DocumentEntity, List<StoryStepEntity>>
 
-    // Hard delete: permanently removes documents from database
-    @Query("DELETE FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.id in (:ids)")
-    suspend fun hardDeleteDocumentByIds(ids: List<String>)
+    // Hard delete: permanently removes documents from database (scoped to workspace)
+    @Query("DELETE FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.id in (:ids) AND workspace_id = :workspaceId")
+    suspend fun hardDeleteDocumentByIds(ids: List<String>, workspaceId: String)
+
+    // Hard delete story steps by document IDs (used internally for atomic deletion)
+    @Query("DELETE FROM $STORY_UNIT_ENTITY WHERE $STORY_UNIT_ENTITY.document_id IN (:documentIds)")
+    suspend fun hardDeleteStoryStepsByDocumentIds(documentIds: List<String>)
+
+    // Atomic hard delete: removes both documents and their story steps in a single transaction (scoped to workspace)
+    @Transaction
+    suspend fun hardDeleteDocumentsWithContentByIds(ids: List<String>, workspaceId: String) {
+        hardDeleteStoryStepsByDocumentIds(ids)
+        hardDeleteDocumentByIds(ids, workspaceId)
+    }
 
     // Get soft-deleted documents for a workspace (for syncing deletions to backend)
     @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE workspace_id = :workspaceId AND is_deleted = TRUE")

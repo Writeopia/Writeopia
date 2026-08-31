@@ -64,8 +64,11 @@ class FolderStateController private constructor(
 
     override fun deleteFolder(id: String) {
         coroutineScope.launch(Dispatchers.Default) {
+            val workspaceId = authRepository.getWorkspace()?.id
+                ?: Workspace.disconnectedWorkspace().id
+
             // Soft delete locally first (optimistic delete - folder disappears from UI)
-            notesUseCase.deleteFolderById(id)
+            notesUseCase.deleteFolderById(id, workspaceId)
             stopEditingFolder()
 
             // Try to sync folder deletion to backend
@@ -74,7 +77,7 @@ class FolderStateController private constructor(
             // If backend sync succeeded, hard delete locally
             // If sync failed, folder remains soft-deleted and will be retried during EventSync
             if (syncSuccess) {
-                notesUseCase.hardDeleteFolderById(id)
+                notesUseCase.hardDeleteFolderById(id, workspaceId)
             }
         }
     }

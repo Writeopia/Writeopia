@@ -131,14 +131,14 @@ UPDATE documentEntity
 SET
     deleted = 1,
     last_updated_at = ?
-WHERE id = ?;
+WHERE id = ? AND workspace_id = ?;
 
 deleteByIds:
 UPDATE documentEntity
 SET
     deleted = 1,
     last_updated_at = ?
-WHERE id IN ?;
+WHERE id IN ? AND workspace_id = ?;
 
 deleteByUserId:
 UPDATE documentEntity
@@ -152,7 +152,7 @@ UPDATE documentEntity
 SET
     deleted = 1,
     last_updated_at = ?
-WHERE parent_document_id = ?;
+WHERE parent_document_id = ? AND workspace_id = ?;
 
 favoriteById:
 UPDATE documentEntity SET favorite = 1 WHERE id = ?;
@@ -172,7 +172,7 @@ ORDER BY position;
 
 -- Hard delete: permanently removes document from database (use after backend confirms deletion)
 hardDeleteByIds:
-DELETE FROM documentEntity WHERE id IN ?;
+DELETE FROM documentEntity WHERE id IN ? AND workspace_id = ?;
 
 -- Select all soft-deleted documents for a workspace (for syncing deletions to backend)
 selectSoftDeletedByWorkspace:

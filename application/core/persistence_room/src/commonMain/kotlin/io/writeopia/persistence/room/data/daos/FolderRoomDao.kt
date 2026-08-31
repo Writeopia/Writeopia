@@ -35,20 +35,20 @@ interface FolderRoomDao {
     @Query("SELECT * FROM $FOLDER_ENTITY WHERE parent_id = :id AND deleted = 0")
     fun listenForFolderByParentId(id: String): Flow<List<FolderEntity>>
 
-    // Soft delete: marks folder as deleted
-    @Query("UPDATE $FOLDER_ENTITY SET deleted = 1, last_updated_at = :lastUpdatedAt WHERE folder_id = :id")
-    suspend fun softDeleteById(id: String, lastUpdatedAt: Long): Int
+    // Soft delete: marks folder as deleted (scoped to workspace)
+    @Query("UPDATE $FOLDER_ENTITY SET deleted = 1, last_updated_at = :lastUpdatedAt WHERE folder_id = :id AND workspace_id = :workspaceId")
+    suspend fun softDeleteById(id: String, workspaceId: String, lastUpdatedAt: Long): Int
 
-    // Hard delete: permanently removes folder (use after backend confirms deletion)
-    @Query("DELETE FROM $FOLDER_ENTITY WHERE folder_id = :id")
-    suspend fun hardDeleteById(id: String): Int
+    // Hard delete: permanently removes folder (use after backend confirms deletion, scoped to workspace)
+    @Query("DELETE FROM $FOLDER_ENTITY WHERE folder_id = :id AND workspace_id = :workspaceId")
+    suspend fun hardDeleteById(id: String, workspaceId: String): Int
 
-    // Soft delete method
-    @Query("UPDATE $FOLDER_ENTITY SET deleted = 1, last_updated_at = :lastUpdatedAt WHERE folder_id = :id")
-    suspend fun deleteById(id: String, lastUpdatedAt: Long): Int
+    // Soft delete method (scoped to workspace)
+    @Query("UPDATE $FOLDER_ENTITY SET deleted = 1, last_updated_at = :lastUpdatedAt WHERE folder_id = :id AND workspace_id = :workspaceId")
+    suspend fun deleteById(id: String, workspaceId: String, lastUpdatedAt: Long): Int
 
-    @Query("UPDATE $FOLDER_ENTITY SET deleted = 1, last_updated_at = :lastUpdatedAt WHERE parent_id = :id")
-    suspend fun deleteByParentId(id: String, lastUpdatedAt: Long): Int
+    @Query("UPDATE $FOLDER_ENTITY SET deleted = 1, last_updated_at = :lastUpdatedAt WHERE parent_id = :id AND workspace_id = :workspaceId")
+    suspend fun deleteByParentId(id: String, workspaceId: String, lastUpdatedAt: Long): Int
 
     // Get soft-deleted folders for a workspace (for syncing deletions to backend)
     @Query("SELECT * FROM $FOLDER_ENTITY WHERE workspace_id = :workspaceId AND deleted = 1")

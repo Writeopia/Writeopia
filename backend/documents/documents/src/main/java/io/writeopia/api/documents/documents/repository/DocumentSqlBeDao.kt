@@ -938,8 +938,8 @@ class DocumentSqlBeDao(
         )
     }
 
-    fun deleteFolder(folderId: String) {
-        foldersQueries?.deleteFolder(folderId)
+    fun deleteFolder(folderId: String, workspaceId: String) {
+        foldersQueries?.deleteFolder(folderId, workspaceId)
     }
 
     fun moveFolderToFolder(folderId: String, parentId: String) {

@@ -270,7 +270,7 @@ object DocumentsService {
         )
 
         // Finally delete the folder itself
-        writeopiaDb.deleteFolder(folderId)
+        writeopiaDb.deleteFolder(folderId, workspaceId)
     }
 
     suspend fun deleteDocuments(

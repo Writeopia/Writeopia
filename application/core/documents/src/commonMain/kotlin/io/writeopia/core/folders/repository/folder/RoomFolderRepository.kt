@@ -42,16 +42,16 @@ class RoomFolderRepository(
         TODO("Not yet implemented")
     }
 
-    override suspend fun deleteFolderById(folderId: String) {
-        folderRoomDao.deleteById(folderId, Clock.System.now().toEpochMilliseconds())
+    override suspend fun deleteFolderById(folderId: String, workspaceId: String) {
+        folderRoomDao.deleteById(folderId, workspaceId, Clock.System.now().toEpochMilliseconds())
     }
 
-    override suspend fun deleteFolderByParent(folderId: String) {
-        folderRoomDao.deleteByParentId(folderId, Clock.System.now().toEpochMilliseconds())
+    override suspend fun deleteFolderByParent(folderId: String, workspaceId: String) {
+        folderRoomDao.deleteByParentId(folderId, workspaceId, Clock.System.now().toEpochMilliseconds())
     }
 
-    override suspend fun hardDeleteFolderById(folderId: String) {
-        folderRoomDao.hardDeleteById(folderId)
+    override suspend fun hardDeleteFolderById(folderId: String, workspaceId: String) {
+        folderRoomDao.hardDeleteById(folderId, workspaceId)
     }
 
     override suspend fun getSoftDeletedFolders(workspaceId: String): List<Folder> =

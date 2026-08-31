@@ -211,39 +211,36 @@ class NotesUseCase private constructor(
      * Soft delete notes: marks as deleted but keeps in database.
      * The notes will be synced to backend and then hard deleted once confirmed.
      */
-    suspend fun deleteNotes(ids: Set<String>) {
-        documentRepository.deleteDocumentByIds(ids)
+    suspend fun deleteNotes(ids: Set<String>, workspaceId: String) {
+        documentRepository.deleteDocumentByIds(ids, workspaceId)
         ids.forEach { id ->
-            deleteFolderById(id)
+            deleteFolderById(id, workspaceId)
         }
     }
 
     /**
      * Soft delete folder: marks folder and contents as deleted but keeps in database.
      */
-    suspend fun deleteFolderById(folderId: String) {
-        val folder = folderRepository.getFolderById(folderId)
-        val workspaceId = folder?.workspaceId ?: return
-
+    suspend fun deleteFolderById(folderId: String, workspaceId: String) {
         val childFolders = folderRepository.getFolderByParentId(folderId, workspaceId)
 
         // Recursively delete all child folders
         childFolders.forEach { childFolder ->
-            deleteFolderById(childFolder.id)
+            deleteFolderById(childFolder.id, workspaceId)
         }
 
-        documentRepository.deleteDocumentByFolder(folderId)
-        folderRepository.deleteFolderById(folderId)
+        documentRepository.deleteDocumentByFolder(folderId, workspaceId)
+        folderRepository.deleteFolderById(folderId, workspaceId)
     }
 
     /**
      * Hard delete notes: permanently removes from database.
      * Use this after backend has confirmed the deletion.
      */
-    suspend fun hardDeleteNotes(ids: Set<String>) {
-        documentRepository.hardDeleteDocumentByIds(ids)
+    suspend fun hardDeleteNotes(ids: Set<String>, workspaceId: String) {
+        documentRepository.hardDeleteDocumentByIds(ids, workspaceId)
         ids.forEach { id ->
-            hardDeleteFolderById(id)
+            hardDeleteFolderById(id, workspaceId)
         }
     }
 
@@ -251,15 +248,12 @@ class NotesUseCase private constructor(
      * Hard delete folder: permanently removes folder and contents from database.
      * Use this after backend has confirmed the deletion.
      */
-    suspend fun hardDeleteFolderById(folderId: String) {
-        val folder = folderRepository.getFolderById(folderId)
-        val workspaceId = folder?.workspaceId ?: return
-
+    suspend fun hardDeleteFolderById(folderId: String, workspaceId: String) {
         val childFolders = folderRepository.getFolderByParentId(folderId, workspaceId)
 
         // Recursively hard delete all child folders
         childFolders.forEach { childFolder ->
-            hardDeleteFolderById(childFolder.id)
+            hardDeleteFolderById(childFolder.id, workspaceId)
         }
 
         // Hard delete documents in this folder
@@ -267,10 +261,10 @@ class NotesUseCase private constructor(
             .map { it.id }
             .toSet()
         if (documentIds.isNotEmpty()) {
-            documentRepository.hardDeleteDocumentByIds(documentIds)
+            documentRepository.hardDeleteDocumentByIds(documentIds, workspaceId)
         }
 
-        folderRepository.hardDeleteFolderById(folderId)
+        folderRepository.hardDeleteFolderById(folderId, workspaceId)
     }
 
     /**
