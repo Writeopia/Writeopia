@@ -553,16 +553,14 @@ class NoteEditorKmpViewModel(
 
             // Step 3: Fetch document metadata from API if online
             if (!isDisconnected && documentsApi != null) {
-                val token = authRepository.getAuthToken() ?: return@launch
-
                 // Fetch favorite status from backend
-                val docResult = documentsApi.getDocumentById(documentId, workspace.id, token)
+                val docResult = documentsApi.getDocumentById(documentId, workspace.id)
                 if (docResult is ResultData.Complete) {
                     writeopiaManager.setFavorite(docResult.data.favorite)
                 }
 
                 // Fetch published status
-                val publishedResult = documentsApi.isDocumentPublished(documentId, workspace.id, token)
+                val publishedResult = documentsApi.isDocumentPublished(documentId, workspace.id)
                 if (publishedResult is ResultData.Complete) {
                     _isDocumentPublished.value = publishedResult.data
                 }
@@ -1110,9 +1108,8 @@ class NoteEditorKmpViewModel(
             // Fetch current publish status from server
             val docId = documentId.value
             if (docId.isNotEmpty() && documentsApi != null) {
-                val token = authRepository.getAuthToken() ?: return@launch
                 val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
-                val result = documentsApi.isDocumentPublished(docId, workspaceId, token)
+                val result = documentsApi.isDocumentPublished(docId, workspaceId)
                 if (result is ResultData.Complete) {
                     _isDocumentPublished.value = result.data
                 }
@@ -1134,9 +1131,8 @@ class NoteEditorKmpViewModel(
             try {
                 val docId = documentId.value
                 if (docId.isNotEmpty() && documentsApi != null) {
-                    val token = authRepository.getAuthToken() ?: return@launch
                     val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
-                    val result = documentsApi.publishDocument(docId, workspaceId, token)
+                    val result = documentsApi.publishDocument(docId, workspaceId)
                     if (result is ResultData.Complete) {
                         _isDocumentPublished.value = true
                     }
@@ -1153,9 +1149,8 @@ class NoteEditorKmpViewModel(
             try {
                 val docId = documentId.value
                 if (docId.isNotEmpty() && documentsApi != null) {
-                    val token = authRepository.getAuthToken() ?: return@launch
                     val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
-                    val result = documentsApi.unpublishDocument(docId, workspaceId, token)
+                    val result = documentsApi.unpublishDocument(docId, workspaceId)
                     if (result is ResultData.Complete) {
                         _isDocumentPublished.value = false
                     }

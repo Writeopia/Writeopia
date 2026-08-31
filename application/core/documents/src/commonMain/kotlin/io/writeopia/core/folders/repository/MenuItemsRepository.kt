@@ -21,10 +21,9 @@ class MenuItemsRepository(
 
     suspend fun loadFolderContents(
         folderId: String,
-        workspaceId: String,
-        token: String
+        workspaceId: String
     ): ResultData<List<MenuItem>> {
-        val result = documentsApi.getFolderContents(folderId, workspaceId, token)
+        val result = documentsApi.getFolderContents(folderId, workspaceId)
 
         return if (result is ResultData.Complete) {
             val contents = result.data

@@ -65,6 +65,13 @@ class WriteopiaConnectionInjector private constructor(
             this.baseUrl = baseUrl
         }
 
+        /**
+         * Gets the base URL without creating the singleton instance.
+         * Use this when you need the URL before the singleton is fully configured.
+         */
+        fun getBaseUrl(): String =
+            baseUrl ?: throw IllegalStateException("Base url was not set!")
+
         fun setDisableWebsocket(disable: Boolean) {
             this.disableWebsocket = disable
         }
@@ -83,13 +90,17 @@ class WriteopiaConnectionInjector private constructor(
         }
 
         fun singleton(): WriteopiaConnectionInjector {
+            instance?.let {
+                return it
+            }
+
             val thisBaseUrl = baseUrl ?: throw IllegalStateException("Base url was not set!")
 
             return WriteopiaConnectionInjector(
                 baseUrl = thisBaseUrl,
                 bearerTokenHandler = bearerTokenHandler,
                 disableWebsocket = disableWebsocket
-            )
+            ).also { instance = it }
         }
     }
 }
