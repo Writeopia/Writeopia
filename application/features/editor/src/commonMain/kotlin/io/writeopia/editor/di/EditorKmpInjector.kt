@@ -180,8 +180,14 @@ class EditorKmpInjector private constructor(
                 document?.content?.entries?.find { it.value.id == storyStepId }?.key
                     ?: (document?.content?.size ?: 0).toDouble()
             } else {
-                // For new drawings, add at the end
-                (document?.content?.size ?: 0).toDouble()
+                // For new drawings, add at the end with title protection
+                val endPosition = (document?.content?.size ?: 0).toDouble()
+                val storyAtEnd = document?.content?.get(endPosition)
+                if (storyAtEnd?.type == StoryTypes.TITLE.type) {
+                    endPosition + 1
+                } else {
+                    endPosition
+                }
             }
 
             // Save to database

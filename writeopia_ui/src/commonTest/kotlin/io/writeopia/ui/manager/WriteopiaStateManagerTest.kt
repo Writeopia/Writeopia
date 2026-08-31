@@ -1624,4 +1624,309 @@ class WriteopiaStateManagerTest {
             "Third story should have LINK span"
         )
     }
+
+    // ==================== Title Protection Tests ====================
+
+    @Test
+    fun addImageOnTitleShouldInsertAfterTitleNotReplace() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        // Set focus to the title (position 0)
+        storyManager.onFocusChange(0.0, true)
+        advanceUntilIdle()
+
+        // Add image without explicit position (cursor is on title)
+        storyManager.addImage("/path/to/image.png")
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Title should still be at position 0
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should not be replaced"
+        )
+        assertEquals(
+            "My Document Title",
+            sortedStories[0].value.text,
+            "Title text should be preserved"
+        )
+
+        // Image should be inserted after the title
+        val hasImageAfterTitle = sortedStories.any { it.value.type == StoryTypes.IMAGE.type }
+        assertTrue(hasImageAfterTitle, "Image should be added to the document")
+    }
+
+    @Test
+    fun addImageOnRegularTextShouldReplaceIt() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        // Set focus to the text content (position 1)
+        storyManager.onFocusChange(1.0, true)
+        advanceUntilIdle()
+
+        // Add image without explicit position (cursor is on text)
+        storyManager.addImage("/path/to/image.png")
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Title should still be at position 0
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should remain unchanged"
+        )
+
+        // The text at position 1 should now be an image (replaced)
+        assertEquals(
+            StoryTypes.IMAGE.type,
+            sortedStories[1].value.type,
+            "Text should be replaced with image"
+        )
+    }
+
+    @Test
+    fun addImageWithExplicitPositionShouldInsertAtThatPosition() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        val initialSize = storyManager.currentStory.value.stories.size
+
+        // Add image with explicit position at an existing story location
+        // This should insert at position 1.0 (where text is)
+        storyManager.addImage("/path/to/image.png", position = 1.0)
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Should have one more story (inserted, not replaced)
+        assertEquals(
+            initialSize + 1,
+            newStories.size,
+            "Image should be inserted at explicit position"
+        )
+
+        // Title should remain unchanged
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should not be affected"
+        )
+
+        // Image should be present
+        val hasImage = sortedStories.any { it.value.type == StoryTypes.IMAGE.type }
+        assertTrue(hasImage, "Image should be in the document")
+    }
+
+    @Test
+    fun addSpreadsheetOnTitleShouldInsertAfterTitleNotReplace() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        // Set focus to the title (position 0)
+        storyManager.onFocusChange(0.0, true)
+        advanceUntilIdle()
+
+        val initialSize = storyManager.currentStory.value.stories.size
+
+        // Add spreadsheet while cursor is on title
+        storyManager.addSpreadsheet(columnCount = 3)
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Title should still be at position 0
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should not be replaced by spreadsheet"
+        )
+        assertEquals(
+            "My Document Title",
+            sortedStories[0].value.text,
+            "Title text should be preserved"
+        )
+
+        // Spreadsheet should be inserted after the title (size increased)
+        assertEquals(
+            initialSize + 1,
+            newStories.size,
+            "Spreadsheet should be inserted, not replace title"
+        )
+
+        // Verify spreadsheet exists
+        val hasSpreadsheet = sortedStories.any { it.value.type == StoryTypes.SPREADSHEET.type }
+        assertTrue(hasSpreadsheet, "Spreadsheet should be added to the document")
+    }
+
+    @Test
+    fun addSpreadsheetOnRegularTextShouldReplaceIt() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        // Set focus to the text content (position 1)
+        storyManager.onFocusChange(1.0, true)
+        advanceUntilIdle()
+
+        val initialSize = storyManager.currentStory.value.stories.size
+
+        // Add spreadsheet while cursor is on text
+        storyManager.addSpreadsheet(columnCount = 3)
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Title should remain unchanged
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should remain unchanged"
+        )
+
+        // The text at position 1 should now be a spreadsheet (replaced)
+        assertEquals(
+            StoryTypes.SPREADSHEET.type,
+            sortedStories[1].value.type,
+            "Text should be replaced with spreadsheet"
+        )
+    }
+
+    @Test
+    fun addImageOnEmptyDocumentWithOnlyTitleShouldInsertAfterTitle() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithOnlyTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        // Set focus to the title (only position available)
+        storyManager.onFocusChange(0.0, true)
+        advanceUntilIdle()
+
+        // Add image
+        storyManager.addImage("/path/to/image.png")
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Should have 2 stories now (title + image)
+        assertEquals(2, newStories.size, "Should have title and image")
+
+        // Title should still be first
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should remain first"
+        )
+
+        // Image should be second
+        assertEquals(
+            StoryTypes.IMAGE.type,
+            sortedStories[1].value.type,
+            "Image should be after title"
+        )
+    }
 }
