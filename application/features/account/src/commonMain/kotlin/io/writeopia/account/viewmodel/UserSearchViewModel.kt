@@ -64,8 +64,6 @@ class UserSearchViewModel(
     }
 
     private suspend fun searchUsers(query: String) {
-        val token = authRepository.getAuthToken() ?: return
-
         _searchResults.value = ResultData.Loading()
         currentPage = 1
         loadedUsers.clear()
@@ -74,8 +72,7 @@ class UserSearchViewModel(
             workspaceId = workspaceId,
             emailQuery = query,
             page = currentPage,
-            pageSize = pageSize,
-            token = token
+            pageSize = pageSize
         )
 
         when (result) {
@@ -97,8 +94,6 @@ class UserSearchViewModel(
         if (query.length < 2) return
 
         viewModelScope.launch {
-            val token = authRepository.getAuthToken() ?: return@launch
-
             _isLoadingMore.value = true
             currentPage++
 
@@ -106,8 +101,7 @@ class UserSearchViewModel(
                 workspaceId = workspaceId,
                 emailQuery = query,
                 page = currentPage,
-                pageSize = pageSize,
-                token = token
+                pageSize = pageSize
             )
 
             when (result) {

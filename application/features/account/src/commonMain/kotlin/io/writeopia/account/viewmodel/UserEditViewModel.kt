@@ -51,15 +51,12 @@ class UserEditViewModel(
         }
 
         viewModelScope.launch {
-            val token = authRepository.getAuthToken() ?: return@launch
-
             _updateUserState.value = ResultData.Loading()
 
             val result = workspaceApi.changeUserRole(
                 workspaceId = workspaceId,
                 userId = userId,
-                newRole = _selectedRole.value,
-                token = token
+                newRole = _selectedRole.value
             )
 
             _updateUserState.value = result

@@ -32,7 +32,7 @@ class WorkspaceInjection private constructor(
 ) {
 
     fun provideWorkspaceApi() =
-        WorkspaceApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+        WorkspaceApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
 
     private var configFileWatcher: ConfigFileWatcher? = null
 
@@ -65,7 +65,7 @@ class WorkspaceInjection private constructor(
                 folderRepository = folderRepo
             ),
             imageSync = ImageSync(
-                appConnectionInjection.provideHttpClient(),
+                connectionInjector.httpClient(),
                 connectionInjector.baseUrl(),
                 repositoryInjection.provideDocumentRepository()
             )
@@ -73,12 +73,12 @@ class WorkspaceInjection private constructor(
     }
 
     fun provideDocumentsApi(): DocumentsApi = DocumentsApi(
-        appConnectionInjection.provideHttpClient(),
+        connectionInjector.httpClient(),
         connectionInjector.baseUrl()
     )
 
     fun provideMediaApi(): MediaApi = MediaApi(
-        appConnectionInjection.provideHttpClient(),
+        connectionInjector.httpClient(),
         connectionInjector.baseUrl()
     )
 

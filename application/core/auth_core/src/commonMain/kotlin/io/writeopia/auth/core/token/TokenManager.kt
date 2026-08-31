@@ -19,12 +19,14 @@ class TokenManager(
 
     private val refreshMutex = Mutex()
 
-    override suspend fun getIdToken(): String? = authRepository.getAccessToken()
+    override suspend fun getIdToken(): String? =
+        authRepository.getAccessToken()
 
-    override suspend fun getRefreshToken(): String? = authRepository.getRefreshToken()
+    override suspend fun getRefreshToken(): String? =
+        authRepository.getRefreshToken()
 
-    override suspend fun refreshTokens(): TokenRefreshResult {
-        return refreshMutex.withLock {
+    override suspend fun refreshTokens(): TokenRefreshResult =
+        refreshMutex.withLock {
             val refreshToken = authRepository.getRefreshToken()
                 ?: return@withLock TokenRefreshResult.NoRefreshToken
 
@@ -52,5 +54,4 @@ class TokenManager(
                 else -> TokenRefreshResult.Failure
             }
         }
-    }
 }

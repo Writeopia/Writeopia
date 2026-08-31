@@ -43,22 +43,17 @@ class ChooseWorkspaceViewModel(
 
     fun loadWorkspaces() {
         viewModelScope.launch {
-            val token = authRepository.getAuthToken()
+            _workspacesState.value = ResultData.Loading()
+            val result = workspaceApi.getAvailableWorkspaces()
 
-            if (token != null) {
-                _workspacesState.value = ResultData.Loading()
-                val result = workspaceApi.getAvailableWorkspaces(token)
-
-                _workspacesState.value = when (result) {
-                    is ResultData.Complete -> {
-                        ResultData.Complete(result.data + Workspace.disconnectedWorkspace())
-                    }
-                    else -> result
+            _workspacesState.value = when (result) {
+                is ResultData.Complete -> {
+                    ResultData.Complete(result.data + Workspace.disconnectedWorkspace())
                 }
-            } else {
-                _workspacesState.value = ResultData.Complete(
-                    listOf(Workspace.disconnectedWorkspace())
-                )
+                else -> {
+                    // If API call fails, show only disconnected workspace
+                    ResultData.Complete(listOf(Workspace.disconnectedWorkspace()))
+                }
             }
         }
     }
@@ -118,18 +113,12 @@ class ChooseWorkspaceViewModel(
 
     fun createWorkspace(workspaceName: String) {
         viewModelScope.launch {
-            val token = authRepository.getAuthToken()
+            _createWorkspaceState.value = ResultData.Loading()
+            val result = workspaceApi.createWorkspace(workspaceName)
+            _createWorkspaceState.value = result
 
-            if (token != null) {
-                _createWorkspaceState.value = ResultData.Loading()
-                val result = workspaceApi.createWorkspace(workspaceName, token)
-                _createWorkspaceState.value = result
-
-                if (result is ResultData.Complete) {
-                    loadWorkspaces()
-                }
-            } else {
-                _createWorkspaceState.value = ResultData.Error(Exception("Not authenticated"))
+            if (result is ResultData.Complete) {
+                loadWorkspaces()
             }
         }
     }

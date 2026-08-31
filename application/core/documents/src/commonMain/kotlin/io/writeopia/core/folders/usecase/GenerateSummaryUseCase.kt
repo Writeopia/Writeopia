@@ -56,8 +56,6 @@ class GenerateSummaryUseCase(
         summaryTitle: String? = null,
         model: String? = null
     ): GenerateSummaryResult {
-        val token = tokenProvider() ?: return GenerateSummaryResult.Error("Not authenticated")
-
         // Load documents to get their lastSyncedAt values
         val documents = documentIds.mapNotNull { documentId ->
             documentRepository.loadDocumentById(documentId, workspaceId)
@@ -82,8 +80,7 @@ class GenerateSummaryUseCase(
             targetFolderId = targetFolderId,
             workspaceId = workspaceId,
             summaryTitle = summaryTitle,
-            model = model,
-            token = token
+            model = model
         )
 
         return when (result) {
