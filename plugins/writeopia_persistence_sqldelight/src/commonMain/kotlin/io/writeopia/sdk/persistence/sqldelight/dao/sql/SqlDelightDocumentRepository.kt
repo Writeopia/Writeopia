@@ -150,6 +150,8 @@ class SqlDelightDocumentRepository(
 
     override suspend fun deleteDocumentByFolder(folderId: String, workspaceId: String) {
         documentSqlDao.deleteDocumentsByFolderId(folderId, workspaceId)
+
+        refreshDocuments()
     }
 
     override suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
