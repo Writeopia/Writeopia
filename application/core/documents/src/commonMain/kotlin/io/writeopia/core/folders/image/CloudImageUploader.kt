@@ -14,12 +14,8 @@ class CloudImageUploader(
     private val authRepository: AuthRepository
 ) : ImageUploader {
 
-    override suspend fun uploadImage(localPath: String): ResultData<String> {
-        val token = authRepository.getAuthToken()
-            ?: return ResultData.Error(IllegalStateException("Not authenticated"))
-
-        return mediaApi.uploadImage(localPath, token)
-    }
+    override suspend fun uploadImage(localPath: String): ResultData<String> =
+        mediaApi.uploadImage(localPath)
 
     override suspend fun isAuthenticated(): Boolean =
         authRepository.getAuthToken() != null

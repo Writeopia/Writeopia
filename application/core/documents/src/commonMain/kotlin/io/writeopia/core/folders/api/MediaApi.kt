@@ -4,7 +4,6 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
-import io.ktor.client.request.header
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
@@ -23,6 +22,7 @@ data class MediaUploadResponse(val imageUrl: String)
 /**
  * API client for the media microservice.
  * Handles image uploads to cloud storage.
+ * Authentication is handled automatically by the HTTP client's bearer auth plugin.
  */
 class MediaApi(
     private val client: HttpClient,
@@ -32,10 +32,9 @@ class MediaApi(
     /**
      * Uploads an image to the media service.
      * @param imagePath Local file path of the image to upload.
-     * @param token JWT authentication token.
      * @return ResultData containing the cloud URL on success, or an error.
      */
-    suspend fun uploadImage(imagePath: String, token: String): ResultData<String> =
+    suspend fun uploadImage(imagePath: String): ResultData<String> =
         try {
             val contentType = detectContentType(imagePath)
 
@@ -54,9 +53,7 @@ class MediaApi(
                         }
                     )
                 }
-            ) {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
+            )
 
             if (response.status == HttpStatusCode.Created) {
                 val mediaResponse = response.body<MediaUploadResponse>()

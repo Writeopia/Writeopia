@@ -37,13 +37,11 @@ class WorkspaceSync(
                 return ResultData.Idle()
             }
 
-            val authToken = authRepository.getAuthToken() ?: return ResultData.Error(null)
             val workspace = authRepository.getWorkspace() ?: return ResultData.Idle()
 
             val response = documentsApi.getWorkspaceNewData(
                 workspaceId,
-                workspace.lastSync,
-                authToken
+                workspace.lastSync
             )
             val (newDocuments, newFolders) = if (response is ResultData.Complete) {
                 response.data
@@ -66,9 +64,9 @@ class WorkspaceSync(
             )
 
             val resultSendDocuments =
-                documentsApi.sendDocuments(documentsNotSent, workspaceId, authToken)
+                documentsApi.sendDocuments(documentsNotSent, workspaceId)
 
-            val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId, authToken)
+            val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId)
 
             if (
                 resultSendDocuments is ResultData.Complete &&
@@ -95,7 +93,7 @@ class WorkspaceSync(
 
                 lastSuccessfulSync = syncTime
 
-                imageSync.syncAllImages(workspaceId = workspaceId, token = authToken)
+                imageSync.syncAllImages(workspaceId = workspaceId)
 
                 return ResultData.Complete(Unit)
             } else {

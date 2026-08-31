@@ -41,15 +41,12 @@ class UserAddViewModel(
 
     fun addUser(onSuccess: () -> Unit) {
         viewModelScope.launch {
-            val token = authRepository.getAuthToken() ?: return@launch
-
             _addUserState.value = ResultData.Loading()
 
             val result = workspaceApi.addUserToWorkspaceWithRole(
                 workspaceId = workspaceId,
                 userEmail = userEmail,
-                role = _selectedRole.value,
-                token = token
+                role = _selectedRole.value
             )
 
             _addUserState.value = result

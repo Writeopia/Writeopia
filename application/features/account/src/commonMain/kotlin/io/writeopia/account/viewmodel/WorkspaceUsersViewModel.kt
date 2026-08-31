@@ -37,8 +37,6 @@ class WorkspaceUsersViewModel(
 
     fun loadUsers() {
         viewModelScope.launch {
-            val token = authRepository.getAuthToken() ?: return@launch
-
             _users.value = ResultData.Loading()
             currentPage = 1
             loadedUsers.clear()
@@ -46,8 +44,7 @@ class WorkspaceUsersViewModel(
             val result = workspaceApi.getUsersOfWorkspacePaginated(
                 workspaceId = workspaceId,
                 page = currentPage,
-                pageSize = pageSize,
-                token = token
+                pageSize = pageSize
             )
 
             when (result) {
@@ -68,16 +65,13 @@ class WorkspaceUsersViewModel(
         if (_isLoadingMore.value || !_hasMorePages.value) return
 
         viewModelScope.launch {
-            val token = authRepository.getAuthToken() ?: return@launch
-
             _isLoadingMore.value = true
             currentPage++
 
             val result = workspaceApi.getUsersOfWorkspacePaginated(
                 workspaceId = workspaceId,
                 page = currentPage,
-                pageSize = pageSize,
-                token = token
+                pageSize = pageSize
             )
 
             when (result) {
@@ -98,14 +92,11 @@ class WorkspaceUsersViewModel(
 
     fun addUser(email: String) {
         viewModelScope.launch {
-            val token = authRepository.getAuthToken() ?: return@launch
-
             _addUserState.value = ResultData.Loading()
 
             val result = workspaceApi.addUserToWorkspace(
                 workspaceId = workspaceId,
-                userEmail = email,
-                token = token
+                userEmail = email
             )
 
             _addUserState.value = result

@@ -193,13 +193,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             _menuItemsState.value = ResultData.Loading()
 
-            val token = authRepository.getAuthToken()
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-
-            if (token == null) {
-                _menuItemsState.value = ResultData.Error()
-                return@launch
-            }
 
             val folderId = when (notesNavigation) {
                 is NotesNavigation.Folder -> notesNavigation.id
@@ -207,7 +201,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
             }
 
             // Use the shared repository to load folder contents
-            val result = menuItemsRepository.loadFolderContents(folderId, workspace.id, token)
+            val result = menuItemsRepository.loadFolderContents(folderId, workspace.id)
 
             if (result is ResultData.Complete) {
                 val allItems = result.data
@@ -299,13 +293,12 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun copySelectedNotes() {
         viewModelScope.launch(Dispatchers.Default) {
-            val token = authRepository.getAuthToken() ?: return@launch
             val workspace = authRepository.getWorkspace() ?: return@launch
             val selectedIds = _selectedNotes.value.toList()
 
             if (selectedIds.isEmpty()) return@launch
 
-            val result = documentsApi.cloneDocuments(selectedIds, workspace.id, token)
+            val result = documentsApi.cloneDocuments(selectedIds, workspace.id)
 
             if (result is ResultData.Complete) {
                 clearSelection()
@@ -316,7 +309,6 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun deleteSelectedNotes() {
         viewModelScope.launch(Dispatchers.Default) {
-            val token = authRepository.getAuthToken() ?: return@launch
             val workspace = authRepository.getWorkspace() ?: return@launch
             val selectedIds = _selectedNotes.value
 
@@ -335,12 +327,12 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
             // Delete folders via API (recursive deletion on backend)
             folderIds.forEach { folderId ->
-                documentsApi.deleteFolder(folderId, workspace.id, token)
+                documentsApi.deleteFolder(folderId, workspace.id)
             }
 
             // Delete documents via API
             if (documentIds.isNotEmpty()) {
-                documentsApi.deleteDocuments(documentIds, workspace.id, token)
+                documentsApi.deleteDocuments(documentIds, workspace.id)
             }
 
             clearSelection()
@@ -353,7 +345,6 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun favoriteSelectedNotes() {
         viewModelScope.launch(Dispatchers.Default) {
-            val token = authRepository.getAuthToken() ?: return@launch
             val workspace = authRepository.getWorkspace() ?: return@launch
             val selectedIds = _selectedNotes.value
 
@@ -367,7 +358,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
             val newFavoriteState = !allFavorites
 
             selectedIds.forEach { id ->
-                documentsApi.favoriteDocument(id, newFavoriteState, workspace.id, token)
+                documentsApi.favoriteDocument(id, newFavoriteState, workspace.id)
             }
 
             clearSelection()
@@ -384,7 +375,6 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         clearSelection()
 
         viewModelScope.launch(Dispatchers.Default) {
-            val token = authRepository.getAuthToken() ?: return@launch
             val workspace = authRepository.getWorkspace() ?: return@launch
             val taskId = GenerateId.generate()
 
@@ -408,7 +398,6 @@ internal class OnlyBackendChooseNoteKmpViewModel(
                     workspaceId = workspace.id,
                     summaryTitle = null,
                     model = null,
-                    token = token,
                     ignoreSyncCheck = true
                 )
 
@@ -469,8 +458,6 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun createFolderWithDetails(name: String, icon: MenuItem.Icon?) {
         viewModelScope.launch(Dispatchers.Default) {
-            val token = authRepository.getAuthToken() ?: return@launch
-
             val workspace = authRepository.getWorkspace() ?: return@launch
 
             val parentId = when (notesNavigation.navigationType) {
@@ -484,13 +471,12 @@ internal class OnlyBackendChooseNoteKmpViewModel(
                 parentFolderId = parentId,
                 title = name,
                 workspaceId = workspace.id,
-                icon = iconApi,
-                token = token
+                icon = iconApi
             )
 
             if (result is ResultData.Complete) {
                 // Fetch the contents of the newly created folder
-                documentsApi.getFolderContents(result.data.id, workspace.id, token)
+                documentsApi.getFolderContents(result.data.id, workspace.id)
                 // Refresh the parent folder contents
                 loadFolderContents()
             }
@@ -500,18 +486,16 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     // FolderController implementation
     override fun addFolder(parentId: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            val token = authRepository.getAuthToken() ?: return@launch
             val workspace = authRepository.getWorkspace() ?: return@launch
 
             val result = documentsApi.createFolder(
                 parentFolderId = parentId,
                 title = "Untitled",
-                workspaceId = workspace.id,
-                token = token
+                workspaceId = workspace.id
             )
 
             if (result is ResultData.Complete) {
-                documentsApi.getFolderContents(result.data.id, workspace.id, token)
+                documentsApi.getFolderContents(result.data.id, workspace.id)
                 loadFolderContents()
             }
         }
@@ -523,7 +507,6 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun updateFolder(folderEdit: Folder) {
         viewModelScope.launch(Dispatchers.Default) {
-            val token = authRepository.getAuthToken() ?: return@launch
             val workspace = authRepository.getWorkspace() ?: return@launch
 
             val iconApi = folderEdit.icon?.let { icon ->
@@ -535,8 +518,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
                 workspaceId = workspace.id,
                 title = folderEdit.title,
                 icon = iconApi,
-                favorite = folderEdit.favorite,
-                token = token
+                favorite = folderEdit.favorite
             )
 
             if (result is ResultData.Complete) {
@@ -548,10 +530,9 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun deleteFolder(id: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            val token = authRepository.getAuthToken() ?: return@launch
             val workspace = authRepository.getWorkspace() ?: return@launch
 
-            documentsApi.deleteFolder(id, workspace.id, token)
+            documentsApi.deleteFolder(id, workspace.id)
             stopEditingFolder()
             loadFolderContents()
         }
@@ -565,12 +546,11 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         if (menuItemUi.documentId == parentId) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val token = authRepository.getAuthToken() ?: return@launch
             val workspace = authRepository.getWorkspace() ?: return@launch
 
             when (menuItemUi) {
                 is MenuItemUi.FolderUi -> {
-                    documentsApi.moveFolder(menuItemUi.documentId, parentId, workspace.id, token)
+                    documentsApi.moveFolder(menuItemUi.documentId, parentId, workspace.id)
                 }
                 is MenuItemUi.DocumentUi -> {
                     // Would need a move document API endpoint
@@ -583,7 +563,6 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun changeIcons(menuItemId: String, icon: String, tint: Int, iconChange: IconChange) {
         viewModelScope.launch(Dispatchers.Default) {
-            val token = authRepository.getAuthToken() ?: return@launch
             val workspace = authRepository.getWorkspace() ?: return@launch
 
             when (iconChange) {
@@ -592,8 +571,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
                     val result = documentsApi.updateFolder(
                         folderId = menuItemId,
                         workspaceId = workspace.id,
-                        icon = iconApi,
-                        token = token
+                        icon = iconApi
                     )
 
                     if (result is ResultData.Complete) {

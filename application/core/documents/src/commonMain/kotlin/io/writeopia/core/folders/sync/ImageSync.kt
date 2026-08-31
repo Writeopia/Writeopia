@@ -23,7 +23,7 @@ class ImageSync(
     private val documentRepository: DocumentRepository
 ) {
 
-    suspend fun syncAllImages(workspaceId: String, token: String) {
+    suspend fun syncAllImages(workspaceId: String) {
         val storySteps = documentRepository.queryUnsyncedImagesSteps()
 
         storySteps
@@ -31,8 +31,7 @@ class ImageSync(
             .forEach { step ->
                 val result = sendImageFromPath(
                     imagePath = step.path!!,
-                    workspaceId = workspaceId,
-                    token = token
+                    workspaceId = workspaceId
                 )
 
                 if (result is ResultData.Complete) {
@@ -47,8 +46,7 @@ class ImageSync(
 
     private suspend fun sendImageFromPath(
         imagePath: String,
-        workspaceId: String,
-        token: String
+        workspaceId: String
     ): ResultData<ImageUploadRequest> =
         try {
             val contentType = detectContentType(imagePath)
@@ -65,7 +63,6 @@ class ImageSync(
                                 HttpHeaders.ContentDisposition,
                                 "filename=\"${imagePath.substringAfterLast("/")}\""
                             )
-                            append(HttpHeaders.Authorization, "Bearer $token")
                         }
                     )
                 }

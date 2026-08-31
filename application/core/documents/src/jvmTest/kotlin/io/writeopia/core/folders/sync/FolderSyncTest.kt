@@ -26,7 +26,6 @@ class FolderSyncTest {
 
     private val workspaceId = "testWorkspace"
     private val folderId = "testFolder"
-    private val authToken = "testToken"
 
     @Test
     fun `syncFolder should fetch and sync both documents and subfolders`() = runBlocking {
@@ -64,10 +63,9 @@ class FolderSyncTest {
         )
 
         // Mock API to return both documents and subfolders
-        coEvery { authRepository.getAuthToken() } returns authToken
         coEvery { folderRepository.getFolderById(folderId) } returns existingFolder
         coEvery {
-            documentsApi.getFolderNewData(folderId, workspaceId, any(), authToken, any())
+            documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
         } returns ResultData.Complete(folderContentResponse)
 
         coEvery { documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId) } returns emptyList()
@@ -76,8 +74,8 @@ class FolderSyncTest {
         coEvery { documentConflictHandler.handleConflict(any(), any()) } returns emptyList()
         coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
 
-        coEvery { documentsApi.sendDocuments(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
-        coEvery { documentsApi.sendFolders(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
 
         val folderSync = FolderSync(
             documentRepository = documentRepository,
@@ -93,15 +91,15 @@ class FolderSyncTest {
         folderSync.syncFolder(folderId, workspaceId, force = true)
 
         // Verify that getFolderNewData was called (now returns both docs and folders)
-        coVerify { documentsApi.getFolderNewData(folderId, workspaceId, any(), authToken, any()) }
+        coVerify { documentsApi.getFolderNewData(folderId, workspaceId, any(), any()) }
 
         // Verify that conflict handlers were called for both documents and folders
         coVerify { documentConflictHandler.handleConflict(any(), match { it.size == 1 && it.first().id == newDocument.id }) }
         coVerify { folderConflictHandler.handleConflict(any(), match { it.size == 1 && it.first().id == newSubfolder.id }) }
 
         // Verify that both sendDocuments and sendFolders were called
-        coVerify { documentsApi.sendDocuments(any(), workspaceId, authToken) }
-        coVerify { documentsApi.sendFolders(any(), workspaceId, authToken) }
+        coVerify { documentsApi.sendDocuments(any(), workspaceId) }
+        coVerify { documentsApi.sendFolders(any(), workspaceId) }
     }
 
     @Test
@@ -125,10 +123,9 @@ class FolderSyncTest {
         )
 
         // Mock API to return empty (no new data from backend)
-        coEvery { authRepository.getAuthToken() } returns authToken
         coEvery { folderRepository.getFolderById(folderId) } returns existingFolder
         coEvery {
-            documentsApi.getFolderNewData(folderId, workspaceId, any(), authToken, any())
+            documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
         } returns ResultData.Complete(FolderContentResponse())
 
         coEvery { documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId) } returns emptyList()
@@ -142,8 +139,8 @@ class FolderSyncTest {
             folderConflictHandler.handleConflict(capture(foldersNotSentSlot), any())
         } returns listOf(localSubfolder)
 
-        coEvery { documentsApi.sendDocuments(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
-        coEvery { documentsApi.sendFolders(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
 
         val folderSync = FolderSync(
             documentRepository = documentRepository,
@@ -162,20 +159,17 @@ class FolderSyncTest {
         assertEquals(listOf(localSubfolder), foldersNotSentSlot.captured)
 
         // Verify sendFolders was called with the local subfolder
-        coVerify { documentsApi.sendFolders(listOf(localSubfolder), workspaceId, authToken) }
+        coVerify { documentsApi.sendFolders(listOf(localSubfolder), workspaceId) }
     }
 
     @Test
-    fun `syncFolder should not sync when not authenticated`() = runBlocking {
+    fun `syncFolder should not sync for disconnected workspace`() = runBlocking {
         val documentRepository = mockk<DocumentRepository>(relaxed = true)
         val documentsApi = mockk<DocumentsApi>()
         val documentConflictHandler = mockk<DocumentConflictHandler>()
         val folderConflictHandler = mockk<FolderConflictHandler>()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
         val authRepository = mockk<AuthRepository>()
-
-        // No auth token
-        coEvery { authRepository.getAuthToken() } returns null
 
         val folderSync = FolderSync(
             documentRepository = documentRepository,
@@ -187,12 +181,12 @@ class FolderSyncTest {
             minSyncInternal = 0.milliseconds
         )
 
-        // Execute
-        folderSync.syncFolder(folderId, workspaceId, force = true)
+        // Execute with disconnected workspace ID
+        folderSync.syncFolder(folderId, "disconnected_user", force = true)
 
         // Verify no API calls were made
-        coVerify(exactly = 0) { documentsApi.getFolderNewData(any(), any(), any(), any(), any()) }
-        coVerify(exactly = 0) { documentsApi.sendFolders(any(), any(), any()) }
+        coVerify(exactly = 0) { documentsApi.getFolderNewData(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { documentsApi.sendFolders(any(), any()) }
     }
 
     @Test
@@ -219,10 +213,9 @@ class FolderSyncTest {
             parentId = folderId
         )
 
-        coEvery { authRepository.getAuthToken() } returns authToken
         coEvery { folderRepository.getFolderById(folderId) } returns existingFolder
         coEvery {
-            documentsApi.getFolderNewData(folderId, workspaceId, any(), authToken, any())
+            documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
         } returns ResultData.Complete(FolderContentResponse())
 
         coEvery { documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId) } returns emptyList()
@@ -231,8 +224,8 @@ class FolderSyncTest {
         coEvery { documentConflictHandler.handleConflict(any(), any()) } returns listOf(documentToSend)
         coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
 
-        coEvery { documentsApi.sendDocuments(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
-        coEvery { documentsApi.sendFolders(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
 
         val folderSync = FolderSync(
             documentRepository = documentRepository,
@@ -248,7 +241,7 @@ class FolderSyncTest {
         folderSync.syncFolder(folderId, workspaceId, force = true)
 
         // Verify documents were sent to the backend
-        coVerify { documentsApi.sendDocuments(listOf(documentToSend), workspaceId, authToken) }
+        coVerify { documentsApi.sendDocuments(listOf(documentToSend), workspaceId) }
 
         // Verify NO local timestamp updates - lastSyncedAt must come from server
         coVerify(exactly = 0) { documentRepository.saveDocumentMetadata(any()) }
@@ -273,10 +266,9 @@ class FolderSyncTest {
             lastSyncedAt = Instant.DISTANT_PAST
         )
 
-        coEvery { authRepository.getAuthToken() } returns authToken
         coEvery { folderRepository.getFolderById(folderId) } returns existingFolder
         coEvery {
-            documentsApi.getFolderNewData(folderId, workspaceId, any(), authToken, any())
+            documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
         } returns ResultData.Complete(FolderContentResponse())
 
         coEvery { documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId) } returns emptyList()
@@ -285,9 +277,9 @@ class FolderSyncTest {
         coEvery { documentConflictHandler.handleConflict(any(), any()) } returns emptyList()
         coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
 
-        coEvery { documentsApi.sendDocuments(any(), workspaceId, authToken) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
         // sendFolders fails
-        coEvery { documentsApi.sendFolders(any(), workspaceId, authToken) } returns ResultData.Error()
+        coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Error()
 
         val folderSync = FolderSync(
             documentRepository = documentRepository,
