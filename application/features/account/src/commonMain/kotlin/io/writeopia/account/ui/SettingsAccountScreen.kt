@@ -34,20 +34,26 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.toBoolean
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun SettingsAccountScreen(
     isLoggedInState: StateFlow<ResultData<Boolean>>,
+    workspacesState: StateFlow<ResultData<List<Workspace>>>,
+    exportWorkspaceState: StateFlow<ResultData<Unit>>,
     goToRegister: () -> Unit,
     changeAccount: () -> Unit,
     changeWorkspace: () -> Unit,
+    exportWorkspace: (String) -> Unit,
+    resetExportState: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -84,6 +90,14 @@ fun SettingsAccountScreen(
                 title = WrStrings.changeWorkspace(),
                 icon = WrIcons.group,
                 onClick = changeWorkspace
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            AccountMenuItem(
+                title = WrStrings.exportWorkspace(),
+                icon = WrIcons.download,
+                onClick = { showExportDialog = true }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -130,6 +144,18 @@ fun SettingsAccountScreen(
                 TextButton(onClick = { showLogoutDialog = false }) {
                     Text(text = WrStrings.cancel())
                 }
+            }
+        )
+    }
+
+    if (showExportDialog) {
+        ExportWorkspaceDialog(
+            workspacesState = workspacesState,
+            exportState = exportWorkspaceState,
+            onExport = exportWorkspace,
+            onDismiss = {
+                showExportDialog = false
+                resetExportState()
             }
         )
     }

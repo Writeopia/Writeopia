@@ -109,6 +109,14 @@ CREATE TABLE sync_event (
   user_id TEXT NOT NULL
 );
 
+CREATE TABLE workspace_tutorial_status (
+  workspace_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  tutorials_created INTEGER NOT NULL DEFAULT 0,
+  created_at BIGINT NOT NULL,
+  PRIMARY KEY(workspace_id, user_id)
+);
+
 -- Indexes for common query patterns
 CREATE INDEX idx_document_workspace_id ON document_entity(workspace_id);
 CREATE INDEX idx_document_parent_id ON document_entity(parent_document_id);

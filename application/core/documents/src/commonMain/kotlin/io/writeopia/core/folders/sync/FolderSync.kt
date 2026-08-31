@@ -45,8 +45,6 @@ class FolderSync(
             val now = Clock.System.now()
             if (!force && now - lastSuccessfulSync < minSyncInternal) return
 
-            val authToken = authRepository.getAuthToken() ?: return
-
             val existingFolder = folderRepository.getFolderById(folderId)
 
             // Use the existing folder's lastSyncedAt, or DISTANT_PAST if folder doesn't exist
@@ -58,7 +56,6 @@ class FolderSync(
                 folderId,
                 workspaceId,
                 lastSync ?: Instant.DISTANT_PAST,
-                authToken,
                 orderBy
             )
 
@@ -97,10 +94,10 @@ class FolderSync(
             folderRepository.refreshFolders()
 
             // Send documents to backend
-            val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent, workspaceId, authToken)
+            val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent, workspaceId)
 
             // Send subfolders to backend
-            val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId, authToken)
+            val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId)
 
             if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
                 // Documents and folders were sent successfully.

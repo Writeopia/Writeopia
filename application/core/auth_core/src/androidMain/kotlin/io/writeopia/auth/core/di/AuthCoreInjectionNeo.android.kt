@@ -5,6 +5,7 @@ import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.repository.RoomAuthRepository
 import io.writeopia.auth.core.repository.SecureTokenStorage
+import io.writeopia.auth.core.token.TokenManager
 import io.writeopia.common.utils.persistence.di.AppDaosInjection
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.persistence.room.injection.AppRoomDaosInjection
@@ -14,26 +15,37 @@ actual class AuthCoreInjectionNeo(
     private val context: Context,
     private val appsDaosInjection: AppDaosInjection = AppRoomDaosInjection.singleton(),
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
-    private val connectionInjector: WriteopiaConnectionInjector =
-        WriteopiaConnectionInjector.singleton()
 ) {
 
     private val secureTokenStorage: SecureTokenStorage by lazy {
         SecureTokenStorage(context)
     }
 
-    actual fun provideAuthRepository(): AuthRepository =
+    private val authRepository: AuthRepository by lazy {
         RoomAuthRepository(
             appsDaosInjection.provideUserDao(),
             appsDaosInjection.provideWorkspaceDao(),
             secureTokenStorage
         )
+    }
 
-    actual fun provideAuthApi(): AuthApi =
+    // Use getBaseUrl() to avoid triggering singleton creation before bearer handler is set
+    private val authApi: AuthApi by lazy {
         AuthApi(
             client = appConnectionInjection.provideHttpClient(),
-            baseUrl = connectionInjector.baseUrl()
+            baseUrl = WriteopiaConnectionInjector.getBaseUrl()
         )
+    }
+
+    private val tokenManager: TokenManager by lazy {
+        TokenManager(authRepository, authApi)
+    }
+
+    actual fun provideAuthRepository(): AuthRepository = authRepository
+
+    actual fun provideAuthApi(): AuthApi = authApi
+
+    actual fun provideTokenManager(): TokenManager = tokenManager
 
     actual companion object {
         private var instance: AuthCoreInjectionNeo? = null

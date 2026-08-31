@@ -15,6 +15,7 @@ import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.routing.getUserId
 import io.writeopia.api.core.auth.utils.runIfMember
 import io.writeopia.api.documents.documents.DocumentsService
+import io.writeopia.api.documents.documents.TutorialsService
 import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
@@ -1073,6 +1074,40 @@ fun Routing.documentsRoute(
                         call.respond(
                             status = HttpStatusCode.BadRequest,
                             message = "Failed to move document"
+                        )
+                    }
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = "${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    authenticate("auth-jwt", optional = debug) {
+        post("/api/docs/workspace/{workspaceId}/tutorials/initialize") {
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                try {
+                    val created = TutorialsService.initializeTutorialsForUser(
+                        userId = userId,
+                        workspaceId = workspaceId,
+                        writeopiaDb = writeopiaDb,
+                    )
+
+                    if (created) {
+                        call.respond(
+                            status = HttpStatusCode.Created,
+                            message = "Tutorials created successfully"
+                        )
+                    } else {
+                        call.respond(
+                            status = HttpStatusCode.OK,
+                            message = "Tutorials already exist"
                         )
                     }
                 } catch (e: Exception) {

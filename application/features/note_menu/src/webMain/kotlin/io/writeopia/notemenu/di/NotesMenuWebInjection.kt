@@ -22,7 +22,7 @@ class NotesMenuWebInjection private constructor(
 ) : NotesMenuInjection {
 
     fun provideDocumentsApi() =
-        DocumentsApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+        DocumentsApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
 
     fun provideMenuItemsRepository(): MenuItemsRepository =
         MenuItemsRepository.singleton(provideDocumentsApi())

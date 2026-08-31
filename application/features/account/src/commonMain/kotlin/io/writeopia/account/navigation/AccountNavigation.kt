@@ -614,6 +614,8 @@ fun NavGraphBuilder.accountMenuNavigation(
                 modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
                     .padding(paddingValues),
                 isLoggedInState = accountMenuViewModel.isLoggedIn,
+                workspacesState = accountMenuViewModel.availableWorkspaces,
+                exportWorkspaceState = accountMenuViewModel.exportWorkspaceState,
                 goToRegister = navigateToAuthMenu,
                 changeAccount = navigateToAuthMenu,
                 changeWorkspace = {
@@ -621,6 +623,10 @@ fun NavGraphBuilder.accountMenuNavigation(
                         navigateToChooseWorkspace()
                     }
                 },
+                exportWorkspace = { workspaceId ->
+                    accountMenuViewModel.exportWorkspace(workspaceId)
+                },
+                resetExportState = accountMenuViewModel::resetExportState,
                 resetPassword = resetPassword,
                 logout = {
                     accountMenuViewModel.logout {

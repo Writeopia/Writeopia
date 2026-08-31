@@ -8,12 +8,10 @@ import io.writeopia.auth.core.exceptions.UserAlreadyInWorkspaceException
 import io.writeopia.auth.core.exceptions.UserNotFoundException
 import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -32,14 +30,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.time.ExperimentalTime
 
+/**
+ * API for workspace operations. Authentication is handled automatically by the HTTP client's
+ * bearer auth plugin - no manual token passing required.
+ */
 class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) {
 
     private val workspaceUsersCache = MutableStateFlow<ResultData<List<String>>>(ResultData.Idle())
 
     suspend fun addUserToWorkspace(
         workspaceId: String,
-        userEmail: String,
-        token: String
+        userEmail: String
     ): ResultData<Unit> {
         val cache = workspaceUsersCache.value
         workspaceUsersCache.value = ResultData.Loading()
@@ -47,8 +48,6 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         val response = client.post("$baseUrl/api/workspace/user") {
             contentType(ContentType.Application.Json)
             setBody(AddUserToWorkspaceRequest(userEmail, workspaceId, Role.EDITOR.value))
-
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         workspaceUsersCache.value = cache
@@ -63,10 +62,9 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         }
     }
 
-    suspend fun getAvailableWorkspaces(token: String): ResultData<List<Workspace>> = try {
-        val workspaces = client.get("$baseUrl/api/workspace/user") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-        }.body<List<WorkspaceApi>>()
+    suspend fun getAvailableWorkspaces(): ResultData<List<Workspace>> = try {
+        val workspaces = client.get("$baseUrl/api/workspace/user")
+            .body<List<WorkspaceApi>>()
 
         // Use default lastSync (DISTANT_PAST) so new workspaces will fetch all data on first sync.
         // The actual lastSync should be updated from server timestamps after successful syncs.
@@ -78,11 +76,10 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         ResultData.Error(e)
     }
 
-    suspend fun createWorkspace(workspaceName: String, token: String): ResultData<Unit> = try {
+    suspend fun createWorkspace(workspaceName: String): ResultData<Unit> = try {
         val response = client.post("$baseUrl/api/workspace/create") {
             contentType(ContentType.Application.Json)
             setBody(CreateWorkspaceRequest(workspaceName))
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (response.status.isSuccess()) {
@@ -97,7 +94,6 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
 
     suspend fun getUsersOfWorkspace(
         workspaceId: String,
-        token: String,
         forceRefresh: Boolean = false
     ): StateFlow<ResultData<List<String>>> {
         val cache = workspaceUsersCache.value
@@ -109,9 +105,7 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         try {
             workspaceUsersCache.value = ResultData.Loading()
 
-            val response = client.get("$baseUrl/api/workspaces/$workspaceId/users") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
+            val response = client.get("$baseUrl/api/workspaces/$workspaceId/users")
 
             val users = response.body<List<WorkspaceUserApi>>().map { it.name }
 
@@ -125,15 +119,13 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         return workspaceUsersCache
     }
 
-    suspend fun refreshUsersInWorkspace(workspaceId: String, token: String) {
+    suspend fun refreshUsersInWorkspace(workspaceId: String) {
         val cache = workspaceUsersCache.value
 
         try {
             workspaceUsersCache.value = ResultData.Loading()
 
-            val response = client.get("$baseUrl/api/user/workspaces/$workspaceId") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
+            val response = client.get("$baseUrl/api/user/workspaces/$workspaceId")
 
             val users = response.body<List<WorkspaceUserApi>>().map { it.name }
 
@@ -148,15 +140,13 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
     suspend fun getUsersOfWorkspacePaginated(
         workspaceId: String,
         page: Int,
-        pageSize: Int,
-        token: String
+        pageSize: Int
     ): ResultData<PaginatedWorkspaceUsersResponse> = try {
         val response = client.get("$baseUrl/api/workspace/$workspaceId/users/paginated") {
             url {
                 parameters.append("page", page.toString())
                 parameters.append("pageSize", pageSize.toString())
             }
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (response.status.isSuccess()) {
@@ -173,8 +163,7 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         workspaceId: String,
         emailQuery: String,
         page: Int,
-        pageSize: Int,
-        token: String
+        pageSize: Int
     ): ResultData<PaginatedUserSearchResponse> = try {
         val response = client.get("$baseUrl/api/workspace/$workspaceId/users/search") {
             url {
@@ -182,7 +171,6 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
                 parameters.append("page", page.toString())
                 parameters.append("pageSize", pageSize.toString())
             }
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (response.status.isSuccess()) {
@@ -198,8 +186,7 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
     suspend fun addUserToWorkspaceWithRole(
         workspaceId: String,
         userEmail: String,
-        role: Role,
-        token: String
+        role: Role
     ): ResultData<Unit> {
         val cache = workspaceUsersCache.value
         workspaceUsersCache.value = ResultData.Loading()
@@ -207,8 +194,6 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         val response = client.post("$baseUrl/api/workspace/user") {
             contentType(ContentType.Application.Json)
             setBody(AddUserToWorkspaceRequest(userEmail, workspaceId, role.value))
-
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         workspaceUsersCache.value = cache
@@ -226,13 +211,11 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
     suspend fun changeUserRole(
         workspaceId: String,
         userId: String,
-        newRole: Role,
-        token: String
+        newRole: Role
     ): ResultData<Unit> = try {
         val response = client.put("$baseUrl/api/workspace/role") {
             contentType(ContentType.Application.Json)
             setBody(WorkspaceRoleChangeRequest(workspaceId, userId, newRole.value))
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         when {
@@ -246,12 +229,9 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
     }
 
     suspend fun exportWorkspace(
-        workspaceId: String,
-        token: String
+        workspaceId: String
     ): ResultData<Unit> = try {
-        val response = client.post("$baseUrl/api/workspace/$workspaceId/export") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-        }
+        val response = client.post("$baseUrl/api/workspace/$workspaceId/export")
 
         if (response.status.isSuccess()) {
             ResultData.Complete(Unit)

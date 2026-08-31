@@ -66,7 +66,7 @@ class NotesMenuKmpInjection private constructor(
         )
 
     private fun provideDocumentsApi() =
-        DocumentsApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+        DocumentsApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
 
     private fun provideDocumentSync(): FolderSync {
         val documentRepository = repositoryInjection.provideDocumentRepository()
