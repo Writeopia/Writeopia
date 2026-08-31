@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.KmpSearchInjection
@@ -48,6 +49,7 @@ fun MainViewController() = ComposeUIViewController {
                 "https://writeopia.io"
 //                        "http://localhost:8080"
             )
+            setupBearerTokenHandler()
 
             val searchInjection = remember { KmpSearchInjection.singleton() }
 

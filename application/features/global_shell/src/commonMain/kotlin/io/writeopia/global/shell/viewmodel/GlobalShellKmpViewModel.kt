@@ -335,11 +335,10 @@ class GlobalShellKmpViewModel(
     private suspend fun loadMenuItemsFromBackend(folderId: String) {
         if (menuItemsRepository == null) return
 
-        val token = authRepository.getAuthToken() ?: return
         val workspace = authRepository.getWorkspace() ?: return
 
         // Use the shared repository to load folder contents
-        menuItemsRepository.loadFolderContents(folderId, workspace.id, token)
+        menuItemsRepository.loadFolderContents(folderId, workspace.id)
     }
 
     fun refreshFromBackend() {

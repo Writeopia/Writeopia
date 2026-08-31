@@ -53,7 +53,7 @@ class SideMenuKmpInjector(
         )
 
     private fun provideDocumentsApi(): DocumentsApi =
-        DocumentsApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+        DocumentsApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
 
     @Composable
     override fun provideSideMenuViewModel(keyboardEventFlow: Flow<KeyboardEvent>?): GlobalShellViewModel =

@@ -70,10 +70,8 @@ class WorkspaceHandlerImpl(
             val workspaceId = workspace?.id
 
             flow {
-                val token = authRepository.getAuthToken()
-
-                if (token != null && workspaceId != null) {
-                    workspaceApi.getUsersOfWorkspace(workspaceId, token, forceRefresh = false)
+                if (workspaceId != null) {
+                    workspaceApi.getUsersOfWorkspace(workspaceId, forceRefresh = false)
                         .collect { emit(it) }
                 } else {
                     emit(ResultData.Error())
@@ -98,13 +96,8 @@ class WorkspaceHandlerImpl(
 
     override fun loadAvailableWorkspaces() {
         coroutineScope.launch {
-            val result = authRepository.getAuthToken()?.let { token ->
-                workspaceApi.getAvailableWorkspaces(token)
-            }
-
-            if (result != null) {
-                _availableWorkspaces.value = result
-            }
+            val result = workspaceApi.getAvailableWorkspaces()
+            _availableWorkspaces.value = result
         }
     }
 
@@ -144,12 +137,10 @@ class WorkspaceHandlerImpl(
             val workspaceId = _selectedWorkspaceId.value
 
             if (workspaceId != null) {
-                authRepository.getAuthToken()?.let { token ->
-                    val result = workspaceApi.addUserToWorkspace(workspaceId, userEmail, token)
+                val result = workspaceApi.addUserToWorkspace(workspaceId, userEmail)
 
-                    if (result is ResultData.Complete) {
-                        workspaceApi.refreshUsersInWorkspace(workspaceId, token)
-                    }
+                if (result is ResultData.Complete) {
+                    workspaceApi.refreshUsersInWorkspace(workspaceId)
                 }
             }
         }
@@ -203,14 +194,8 @@ class WorkspaceHandlerImpl(
     override fun exportWorkspace(workspaceId: String) {
         coroutineScope.launch {
             _exportWorkspaceState.value = ResultData.Loading()
-
-            val token = authRepository.getAuthToken()
-            if (token != null) {
-                val result = workspaceApi.exportWorkspace(workspaceId, token)
-                _exportWorkspaceState.value = result
-            } else {
-                _exportWorkspaceState.value = ResultData.Error(Exception("Not authenticated"))
-            }
+            val result = workspaceApi.exportWorkspace(workspaceId)
+            _exportWorkspaceState.value = result
         }
     }
 

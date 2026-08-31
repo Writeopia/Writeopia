@@ -34,13 +34,10 @@ class EventSync(
 
             val workspace = authRepository.getWorkspace()
                 ?: return ResultData.Idle()
-            val token = authRepository.getAuthToken()
-                ?: return ResultData.Error(null)
 
             val response = documentsApi.getEventsDiff(
                 workspaceId = workspaceId,
-                lastEventSync = workspace.lastEventSync,
-                token = token
+                lastEventSync = workspace.lastEventSync
             )
 
             return when (response) {
