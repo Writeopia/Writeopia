@@ -1,0 +1,53 @@
+name: Publish Android to Play Store
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_and_publish:
+    name: Build and Publish Android App
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: zulu
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > upload-keystore.jks
+
+      - name: Build Release AAB
+        run: ./gradlew :application:androidApp:bundleRelease
+        env:
+          WR_ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.WR_ANDROID_SIGNING_STORE_PASSWORD }}
+          WR_ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.WR_ANDROID_SIGNING_KEY_ALIAS }}
+          WR_ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.WR_ANDROID_SIGNING_KEY_PASSWORD }}
+
+      - name: Upload AAB as artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-release-aab
+          path: application/androidApp/build/outputs/bundle/release/*.aab
+          retention-days: 30
+
+      - name: Upload to Google Play Store
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: io.writeopia
+          releaseFiles: application/androidApp/build/outputs/bundle/release/androidApp-release.aab
+          track: internal
+          status: completed
+
+      - name: Cleanup keystore
+        if: always()
+        run: rm -f upload-keystore.jks

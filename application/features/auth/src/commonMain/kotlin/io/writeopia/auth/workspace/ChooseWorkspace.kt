@@ -35,6 +35,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.writeopia.auth.utils.arrowPadding
+import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.icons.PlatformIcons
 import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.resources.WrStrings
@@ -65,17 +67,19 @@ fun BoxScope.ChooseWorkspace(
             }
         )
     }
-    Icon(
-        modifier = Modifier
-            .align(Alignment.TopStart)
-            .arrowPadding()
-            .clip(CircleShape)
-            .clickable { onBackClick() }
-            .padding(6.dp),
-        imageVector = PlatformIcons.backArrowMobile,
-        contentDescription = "Arrow back",
-        tint = MaterialTheme.colorScheme.onBackground
-    )
+    if (LocalPlatform.current != PlatformType.WEB) {
+        Icon(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .arrowPadding()
+                .clip(CircleShape)
+                .clickable { onBackClick() }
+                .padding(6.dp),
+            imageVector = PlatformIcons.backArrowMobile,
+            contentDescription = "Arrow back",
+            tint = MaterialTheme.colorScheme.onBackground
+        )
+    }
 
     Column(
         modifier = Modifier.align(Alignment.Center).padding(horizontal = 12.dp),
@@ -143,9 +147,7 @@ fun BoxScope.ChooseWorkspace(
                 CommonButton(text = "Try again", clickListener = retry)
             }
 
-            is ResultData.Idle -> { }
-
-            is ResultData.InProgress, is ResultData.Loading -> {
+            is ResultData.Idle, is ResultData.InProgress, is ResultData.Loading -> {
                 CircularProgressIndicator()
             }
         }

@@ -4,6 +4,7 @@ package io.writeopia.ui.manager
 
 import io.writeopia.sdk.manager.DocumentTracker
 import io.writeopia.sdk.manager.InTextMarkdownHandler
+import io.writeopia.sdk.manager.StoryStepSyncTracker
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.manager.fixMove
 import io.writeopia.sdk.model.action.Action
@@ -32,6 +33,7 @@ import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.repository.UserRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
+import io.writeopia.sdk.utils.collections.toSortedMutableMap
 import io.writeopia.sdk.utils.NextPositionCalculator
 import io.writeopia.sdk.utils.extensions.toEditState
 import io.writeopia.ui.backstack.BackstackHandler
@@ -42,6 +44,7 @@ import io.writeopia.ui.extensions.toSelectionMetadata
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.model.DrawState
 import io.writeopia.ui.model.DrawStory
+import io.writeopia.ui.image.ImageUploader
 import io.writeopia.ui.model.SelectionInfo
 import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.ui.model.TextInput
@@ -93,7 +96,10 @@ class WriteopiaStateManager(
         StoryTypes.CHECK_ITEM.type.number,
         StoryTypes.UNORDERED_LIST_ITEM.type.number,
     ),
-    private val inTextMarkdownHandler: InTextMarkdownHandler? = InTextMarkdownHandler
+    private val inTextMarkdownHandler: InTextMarkdownHandler? = InTextMarkdownHandler,
+    private val imageUploader: ImageUploader? = null,
+    private val textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false),
+    private val bulkStyleParseHandler: BulkStyleParseHandler = BulkStyleParseHandler()
 ) : BackstackHandler, BackstackInform by backStackManager {
 
     private val selectionBuffer: EventBuffer<Pair<Boolean, Double>> = EventBuffer(coroutineScope)
@@ -244,8 +250,21 @@ class WriteopiaStateManager(
             parseDocument(info, state)
         }.stateIn(coroutineScope, SharingStarted.Lazily, null)
 
-    private val documentEditionState: Flow<Pair<StoryState, DocumentInfo>> =
+    /**
+     * Flow that emits the current document edition state, combining story state and document info.
+     * This can be used by external sync managers to track document changes.
+     */
+    val documentEditionState: Flow<Pair<StoryState, DocumentInfo>> =
         combine(currentStory, _documentInfo, ::Pair)
+
+    /**
+     * Flow that emits the current workspace ID.
+     * This can be used by external sync managers along with [documentEditionState].
+     */
+    val workspaceIdFlow: Flow<String> =
+        userRepository?.listenForWorkspace()?.map { workspace ->
+            workspace.id
+        } ?: MutableStateFlow(Workspace.disconnectedWorkspace().id)
 
     val toDraw: Flow<DrawState> =
         combine(
@@ -265,8 +284,7 @@ class WriteopiaStateManager(
                     )
                 }
                 .values
-                // Todo: Consider changing insertion order instead of sorting
-                .sortedBy { drawStory -> drawStory.position }
+                .toList() // Already sorted by position - map maintains sorted key order
                 .let { drawStories -> drawStateModify(drawStories, dragPosition).drop(1) }
 
             DrawState(toDrawStories, focus)
@@ -351,6 +369,22 @@ class WriteopiaStateManager(
         }
     }
 
+    /**
+     * Syncs StorySteps with the backend using the provided [StoryStepSyncTracker].
+     * This method starts a coroutine that listens to document changes and syncs
+     * them with the backend using a buffered approach.
+     *
+     * @param syncTracker The tracker responsible for syncing StorySteps with the backend.
+     */
+    fun syncStoryStepsWithBackend(syncTracker: StoryStepSyncTracker) {
+        coroutineScope.launch(dispatcher) {
+            syncTracker.syncStorySteps(
+                documentEditionFlow = documentEditionState,
+                workspaceIdFlow = workspaceIdFlow
+            )
+        }
+    }
+
     fun getDocument(): Document =
         parseDocument(_documentInfo.value, _currentStory.value)
 
@@ -418,6 +452,22 @@ class WriteopiaStateManager(
 
         _currentStory.value = StoryState(withNextPositions, LastEdit.Nothing)
         _documentInfo.value = document.info()
+    }
+
+    /**
+     * Updates a document that was already loaded. This should be used when the document
+     * content has been updated (e.g., from a backend sync) and needs to be refreshed in the UI.
+     *
+     * @param document [Document] the updated document
+     */
+    fun updateDocument(document: Document) {
+        val stories = document.content
+        val normalized = stepsNormalizer(stories.toEditState())
+        val withNextPositions = NextPositionCalculator.calculate(normalized)
+
+        _currentStory.value = StoryState(withNextPositions, LastEdit.Nothing)
+        _documentInfo.value = document.info()
+        backStackManager.addState(_currentStory.value)
     }
 
     /**
@@ -591,7 +641,7 @@ class WriteopiaStateManager(
                 storyText
             }
 
-            val mutable = currentStory.value.stories.toMutableMap()
+            val mutable = currentStory.value.stories.toSortedMutableMap()
             mutable[position] = story.copy(text = newText)
             mutable
         } else {
@@ -694,8 +744,10 @@ class WriteopiaStateManager(
      * of the same, if possible, or the next line will be a Message.
      *
      * @param lineBreak [Action.LineBreak]
+     * @param processCommands If true, processes markdown commands (like ###, -, etc.) on each
+     *                        new line after splitting. Useful when accepting AI responses.
      */
-    fun onLineBreak(lineBreak: Action.LineBreak) {
+    fun onLineBreak(lineBreak: Action.LineBreak, processCommands: Boolean = false) {
         if (!isEditable) return
         val lastBreak = lastLineBreak
 
@@ -732,7 +784,28 @@ class WriteopiaStateManager(
             writeopiaManager.onLineBreak(lineBreak, expanded).let { (_, newState) ->
                 // Todo: Fix this when the inner position are completed
                 //  backStackManager.addAction(BackstackAction.Add(newStory, newPosition))
+
+                // First apply the line break state
                 _currentStory.value = newState.copy(selection = Selection.start())
+
+                // Process markdown commands on each newly created line
+                if (processCommands) {
+                    val parseResult = bulkStyleParseHandler.processMarkdown(
+                        lastEdit = newState.lastEdit,
+                        currentStories = { _currentStory.value.stories },
+                        onCommandProcess = { pos, step, text ->
+                            commandHandler.handleCommand(text, step, pos)
+                        }
+                    )
+
+                    parseResult?.let { result ->
+                        _currentStory.value = _currentStory.value.copy(
+                            stories = result.stories,
+                            lastEdit = result.lastEdit ?: _currentStory.value.lastEdit
+                        )
+                    }
+                }
+
                 _scrollToPosition.value = -1
             }
         }
@@ -744,7 +817,12 @@ class WriteopiaStateManager(
 
         // Don't preserve lastEdit on focus change - it would cause the save to be
         // cancelled and re-triggered, potentially interrupting in-progress saves
-        _currentStory.value = story.copy(focus = position, lastEdit = LastEdit.Nothing)
+        // Also update selection position so the manager knows which line is active
+        _currentStory.value = story.copy(
+            focus = position,
+            lastEdit = LastEdit.Nothing,
+            selection = story.selection.copy(position = position)
+        )
     }
 
     fun scrollToPosition(position: Int) {
@@ -810,7 +888,7 @@ class WriteopiaStateManager(
         val lastContentStory = stories[lastPosition]
 
         val newState = if (lastContentStory?.type == StoryTypes.TEXT.type) {
-            val newStoriesState = stories.toMutableMap().apply {
+            val newStoriesState = stories.toSortedMutableMap().apply {
                 this[lastPosition] = lastContentStory.copyNewLocalId()
             }
             val cursor = lastContentStory.text?.length ?: 0
@@ -831,7 +909,7 @@ class WriteopiaStateManager(
             )
 
             // Update the last content story to point to the new story
-            val updatedStories = stories.toMutableMap().apply {
+            val updatedStories = stories.toSortedMutableMap().apply {
                 lastContentStory?.let { lastStory ->
                     this[lastPosition] = lastStory.copy(nextPosition = newPosition)
                 }
@@ -1025,6 +1103,13 @@ class WriteopiaStateManager(
         _currentStory.value = currentStory.value.copy(lastEdit = LastEdit.Metadata)
     }
 
+    fun setFavorite(isFavorite: Boolean) {
+        val info = _documentInfo.value
+        if (info.isFavorite != isFavorite) {
+            _documentInfo.value = info.copy(isFavorite = isFavorite)
+        }
+    }
+
     fun toggleSpan(span: Span, extra: String? = null) {
         if (isEditable) {
             val onEdit = _onEditPositions.value
@@ -1049,21 +1134,105 @@ class WriteopiaStateManager(
         toggleSpan(Span.LINK, link)
     }
 
+    /**
+     * Calculates the target position for inserting content, protecting the title from being replaced.
+     * Returns Pair of (targetPosition, useInsertMode).
+     */
+    private fun getTitleProtectedPosition(
+        pos: Double,
+        story: StoryStep?,
+        explicitPosition: Boolean
+    ): Pair<Double, Boolean> {
+        val isOnTitle = story?.type == StoryTypes.TITLE.type
+        return if (isOnTitle && !explicitPosition) {
+            Pair(pos + 1, true)
+        } else {
+            Pair(pos, false)
+        }
+    }
+
     fun addImage(imagePath: String, position: Double? = null) {
         if (!isEditable) return
         (position ?: currentPosition())?.let { pos ->
             val story = getStory(pos)
 
             if (story != null) {
-                if (position == null) {
-                    val stateChange = Action.StoryStateChange(
-                        story.copy(type = StoryTypes.IMAGE.type, path = imagePath),
-                        pos
-                    )
+                val (targetPosition, useInsertMode) = getTitleProtectedPosition(
+                    pos,
+                    story,
+                    explicitPosition = position != null
+                )
 
-                    changeStoryStateAndTrackIt(stateChange)
-                } else {
-                    addAtPosition(StoryStep(type = StoryTypes.IMAGE.type, path = imagePath), pos)
+                // Check if we should upload to cloud
+                coroutineScope.launch(dispatcher) {
+                    val shouldUpload = imageUploader?.isAuthenticated() == true
+
+                    if (shouldUpload) {
+                        // Insert image with loading state immediately
+                        val loadingStep = StoryStep(
+                            type = StoryTypes.IMAGE.type,
+                            path = imagePath,
+                            ephemeral = true,
+                            loading = true
+                        )
+
+                        if (useInsertMode || position != null) {
+                            addAtPosition(loadingStep, targetPosition)
+                        } else {
+                            changeStoryStateAndTrackIt(
+                                Action.StoryStateChange(
+                                    story.copy(
+                                        type = StoryTypes.IMAGE.type,
+                                        path = imagePath,
+                                        ephemeral = true,
+                                        loading = true
+                                    ),
+                                    targetPosition
+                                )
+                            )
+                        }
+
+                        // Upload in background
+                        val result = imageUploader!!.uploadImage(imagePath)
+
+                        // Replace with final image
+                        val currentStory = getStory(targetPosition)
+                        if (currentStory != null) {
+                            val finalStep = when (result) {
+                                is io.writeopia.sdk.models.utils.ResultData.Complete -> currentStory.copy(
+                                    url = result.data,
+                                    path = null,
+                                    ephemeral = false,
+                                    loading = false
+                                )
+                                else -> currentStory.copy(
+                                    url = null,
+                                    path = imagePath,
+                                    ephemeral = false,
+                                    loading = false
+                                )
+                            }
+
+                            changeStoryStateAndTrackIt(
+                                Action.StoryStateChange(finalStep, targetPosition)
+                            )
+                        }
+                    } else {
+                        // No auth - use local path directly (existing behavior)
+                        if (useInsertMode || position != null) {
+                            addAtPosition(
+                                StoryStep(type = StoryTypes.IMAGE.type, path = imagePath),
+                                targetPosition
+                            )
+                        } else {
+                            changeStoryStateAndTrackIt(
+                                Action.StoryStateChange(
+                                    story.copy(type = StoryTypes.IMAGE.type, path = imagePath),
+                                    targetPosition
+                                )
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -1102,15 +1271,20 @@ class WriteopiaStateManager(
         input: TextInput,
         position: Double,
         lineBreakByContent: Boolean,
-        trackIt: Boolean = true
+        trackIt: Boolean = true,
+        processCommands: Boolean = false
     ) {
         if (!isEditable) return
+
+        // Track when text is being selected (start != end) for disabling drag selection
+        textSelectionActiveState.value = input.start != input.end
+
         val text = input.text
         val step = _currentStory.value.stories[position] ?: return
 
         if (lineBreakByContent && text.contains("\n")) {
             val newStep = step.copy(text = text)
-            onLineBreak(Action.LineBreak(newStep, position))
+            onLineBreak(Action.LineBreak(newStep, position), processCommands = processCommands)
         } else {
             val newText = text.replace("\n", "")
             val newStep = step.copy(text = newText, spans = input.spans)
@@ -1343,7 +1517,8 @@ class WriteopiaStateManager(
                 TextInput(text ?: ""),
                 position,
                 lineBreakByContent = true,
-                trackIt = false
+                trackIt = false,
+                processCommands = true
             )
             trackState()
         }
@@ -1427,7 +1602,7 @@ class WriteopiaStateManager(
             writeopiaManager.previousTextStory(getStories(), position)
                 ?.let { (step, newPosition) ->
                     val storyState = _currentStory.value
-                    val mutable = storyState.stories.toMutableMap()
+                    val mutable = storyState.stories.toSortedMutableMap()
 
                     mutable[newPosition] = step
 
@@ -1570,6 +1745,177 @@ class WriteopiaStateManager(
 
     fun getStory(position: Double): StoryStep? = _currentStory.value.stories[position]
 
+    /**
+     * Creates a new spreadsheet with one initial row containing the specified number of empty cells.
+     * If the cursor is on the title, the spreadsheet is added after the title instead of replacing it.
+     *
+     * @param columnCount The number of columns in the spreadsheet
+     */
+    fun addSpreadsheet(columnCount: Int) {
+        if (!isEditable) return
+
+        val position = currentPosition() ?: return
+        val currentStep = _currentStory.value.stories[position]
+
+        val (targetPosition, insertMode) = getTitleProtectedPosition(
+            position,
+            currentStep,
+            explicitPosition = false
+        )
+
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.createSpreadsheet(
+            _currentStory.value,
+            targetPosition,
+            columnCount,
+            insertMode = insertMode
+        )
+    }
+
+    /**
+     * Updates the text of a specific cell within a spreadsheet.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @param rowIndex The index of the row (0-based)
+     * @param cellIndex The index of the cell within the row (0-based)
+     * @param newText The new text for the cell
+     */
+    fun updateSpreadsheetCell(spreadsheetId: String, rowIndex: Int, cellIndex: Int, newText: String) {
+        if (!isEditable) return
+
+        _currentStory.value = writeopiaManager.updateSpreadsheetCell(
+            _currentStory.value,
+            spreadsheetId,
+            rowIndex,
+            cellIndex,
+            newText
+        )
+    }
+
+    /**
+     * Adds a new row to a spreadsheet with the same number of columns as existing rows.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     */
+    fun addSpreadsheetRow(spreadsheetId: String) {
+        if (!isEditable) return
+
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetRow(
+            _currentStory.value,
+            spreadsheetId
+        )
+    }
+
+    /**
+     * Adds a new column to a spreadsheet by adding a cell to each row.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     */
+    fun addSpreadsheetColumn(spreadsheetId: String) {
+        if (!isEditable) return
+
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetColumn(
+            _currentStory.value,
+            spreadsheetId
+        )
+    }
+
+    /**
+     * Updates the width of a specific column in a spreadsheet.
+     *
+     * @param spreadsheetId The ID of the spreadsheet StoryStep
+     * @param columnIndex The index of the column to update (0-based)
+     * @param newWidth The new width for the column in dp
+     */
+    fun updateSpreadsheetColumnWidth(spreadsheetId: String, columnIndex: Int, newWidth: Int) {
+        if (!isEditable) return
+
+        _currentStory.value = writeopiaManager.updateSpreadsheetColumnWidth(
+            _currentStory.value,
+            spreadsheetId,
+            columnIndex,
+            newWidth
+        )
+    }
+
+    fun deleteSpreadsheetRow(spreadsheetId: String, rowIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.deleteSpreadsheetRow(
+            _currentStory.value,
+            spreadsheetId,
+            rowIndex
+        )
+    }
+
+    fun deleteSpreadsheetColumn(spreadsheetId: String, columnIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.deleteSpreadsheetColumn(
+            _currentStory.value,
+            spreadsheetId,
+            columnIndex
+        )
+    }
+
+    fun addSpreadsheetRowAt(spreadsheetId: String, rowIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetRowAt(
+            _currentStory.value,
+            spreadsheetId,
+            rowIndex
+        )
+    }
+
+    fun addSpreadsheetColumnAt(spreadsheetId: String, columnIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.addSpreadsheetColumnAt(
+            _currentStory.value,
+            spreadsheetId,
+            columnIndex
+        )
+    }
+
+    fun moveSpreadsheetRow(spreadsheetId: String, fromIndex: Int, toIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.moveSpreadsheetRow(
+            _currentStory.value,
+            spreadsheetId,
+            fromIndex,
+            toIndex
+        )
+    }
+
+    fun moveSpreadsheetColumn(spreadsheetId: String, fromIndex: Int, toIndex: Int) {
+        if (!isEditable) return
+        backStackManager.addState(_currentStory.value)
+        _currentStory.value = writeopiaManager.moveSpreadsheetColumn(
+            _currentStory.value,
+            spreadsheetId,
+            fromIndex,
+            toIndex
+        )
+    }
+
+    /**
+     * Disables drag selection box (e.g., during column resizing in spreadsheet).
+     */
+    fun disableDragSelection() {
+        textSelectionActiveState.value = true
+    }
+
+    /**
+     * Re-enables drag selection box.
+     */
+    fun enableDragSelection() {
+        textSelectionActiveState.value = false
+    }
+
     private fun getStories() = _currentStory.value.stories
 
     private fun currentPosition(): Double? =
@@ -1619,6 +1965,8 @@ class WriteopiaStateManager(
             coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext),
             backStackManager: SnapshotBackstackManager = SnapshotBackstackManager(),
             userRepository: UserRepository? = null,
+            imageUploader: ImageUploader? = null,
+            textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false)
         ) = WriteopiaStateManager(
             stepsNormalizer,
             dispatcher,
@@ -1630,7 +1978,9 @@ class WriteopiaStateManager(
             keyboardEventFlow.filterNotNull(),
             documentRepository,
             setOf("jpg", "jpeg", "png"),
-            StepsModifier::modify
+            StepsModifier::modify,
+            imageUploader = imageUploader,
+            textSelectionActiveState = textSelectionActiveState
         )
     }
 }

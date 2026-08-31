@@ -4,10 +4,12 @@ package io.writeopia.ui.manager
 
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.model.action.Action
+import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.StoriesRepository
@@ -1201,5 +1203,730 @@ class WriteopiaStateManagerTest {
         val stories = storyManager.currentStory.value.stories
 
         assertEquals(stories[0.0]!!.spans.first().span, Span.BOLD)
+    }
+
+    // Tests for acceptStoryStep with markdown processing
+
+    @Test
+    fun acceptStoryStepShouldConvertH3MarkdownToHeading() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithH3(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // Verify initial state is AI_ANSWER
+        val initialStories = storyManager.currentStory.value.stories
+        assertEquals(
+            StoryTypes.AI_ANSWER.type,
+            initialStories[0.0]!!.type,
+            "Initial type should be AI_ANSWER"
+        )
+
+        // Accept the AI answer
+        storyManager.acceptStoryStep(0.0)
+
+        // Wait for coroutine to complete
+        advanceUntilIdle()
+
+        // Verify the stories were processed
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // First line should be H3 heading
+        val firstStory = sortedStories[0].value
+        assertEquals(
+            StoryTypes.TEXT.type,
+            firstStory.type,
+            "First story should be TEXT type"
+        )
+        assertTrue(
+            firstStory.tags.any { it.tag == Tag.H3 },
+            "First story should have H3 tag"
+        )
+        // Note: The command handler strips "###" but leaves the space after it
+        assertEquals(
+            " This is a heading",
+            firstStory.text,
+            "H3 text should have ### removed (space remains)"
+        )
+    }
+
+    @Test
+    fun acceptStoryStepShouldConvertListItemsToUnorderedList() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithListItems(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // Accept the AI answer
+        storyManager.acceptStoryStep(0.0)
+
+        // Wait for coroutine to complete
+        advanceUntilIdle()
+
+        // Verify the stories were processed
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // All items should be UNORDERED_LIST_ITEM
+        sortedStories.forEach { (_, story) ->
+            assertEquals(
+                StoryTypes.UNORDERED_LIST_ITEM.type,
+                story.type,
+                "Story '${story.text}' should be UNORDERED_LIST_ITEM type"
+            )
+        }
+
+        assertEquals(3, sortedStories.size, "Should have 3 list items")
+        // Note: The command handler strips "-" but leaves the space after it
+        assertEquals(" First item", sortedStories[0].value.text)
+        assertEquals(" Second item", sortedStories[1].value.text)
+        assertEquals(" Third item", sortedStories[2].value.text)
+    }
+
+    @Test
+    fun acceptStoryStepShouldConvertCheckboxesToCheckItems() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithCheckItems(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // Accept the AI answer
+        storyManager.acceptStoryStep(0.0)
+
+        // Wait for coroutine to complete
+        advanceUntilIdle()
+
+        // Verify the stories were processed
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // All items should be CHECK_ITEM
+        sortedStories.forEach { (_, story) ->
+            assertEquals(
+                StoryTypes.CHECK_ITEM.type,
+                story.type,
+                "Story '${story.text}' should be CHECK_ITEM type"
+            )
+        }
+
+        assertEquals(2, sortedStories.size, "Should have 2 check items")
+        // Note: The command handler strips "[]" but leaves the space after it
+        assertEquals(" Task one", sortedStories[0].value.text)
+        assertEquals(" Task two", sortedStories[1].value.text)
+    }
+
+    @Test
+    fun acceptStoryStepShouldConvertDividerMarkdown() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithDivider(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // Accept the AI answer
+        storyManager.acceptStoryStep(0.0)
+
+        // Wait for coroutine to complete
+        advanceUntilIdle()
+
+        // Verify the stories were processed
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        assertEquals(3, sortedStories.size, "Should have 3 stories (text, divider, text)")
+
+        // First should be text
+        assertEquals(StoryTypes.TEXT.type, sortedStories[0].value.type)
+        assertEquals("Content above", sortedStories[0].value.text)
+
+        // Second should be divider (exact match command "---" is now supported)
+        assertEquals(
+            StoryTypes.DIVIDER.type,
+            sortedStories[1].value.type,
+            "Middle story should be DIVIDER type"
+        )
+
+        // Third should be text
+        assertEquals(StoryTypes.TEXT.type, sortedStories[2].value.type)
+        assertEquals("Content below", sortedStories[2].value.text)
+    }
+
+    @Test
+    fun acceptStoryStepShouldConvertAllHeadingLevels() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithAllHeadings(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // Accept the AI answer
+        storyManager.acceptStoryStep(0.0)
+
+        // Wait for coroutine to complete
+        advanceUntilIdle()
+
+        // Verify the stories were processed
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        assertEquals(4, sortedStories.size, "Should have 4 heading stories")
+
+        // Check H1 - Note: The command handler strips "#" but leaves the space after it
+        assertTrue(
+            sortedStories[0].value.tags.any { it.tag == Tag.H1 },
+            "First story should have H1 tag"
+        )
+        assertEquals(" Heading 1", sortedStories[0].value.text)
+
+        // Check H2
+        assertTrue(
+            sortedStories[1].value.tags.any { it.tag == Tag.H2 },
+            "Second story should have H2 tag"
+        )
+        assertEquals(" Heading 2", sortedStories[1].value.text)
+
+        // Check H3
+        assertTrue(
+            sortedStories[2].value.tags.any { it.tag == Tag.H3 },
+            "Third story should have H3 tag"
+        )
+        assertEquals(" Heading 3", sortedStories[2].value.text)
+
+        // Check H4
+        assertTrue(
+            sortedStories[3].value.tags.any { it.tag == Tag.H4 },
+            "Fourth story should have H4 tag"
+        )
+        assertEquals(" Heading 4", sortedStories[3].value.text)
+    }
+
+    @Test
+    fun acceptStoryStepShouldHandleMixedMarkdown() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithMultipleMarkdown(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // Accept the AI answer
+        storyManager.acceptStoryStep(0.0)
+
+        // Wait for coroutine to complete
+        advanceUntilIdle()
+
+        // Verify the stories were processed
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        assertEquals(5, sortedStories.size, "Should have 5 stories")
+
+        // First should be H3 heading - Note: command handler leaves space after command
+        assertTrue(
+            sortedStories[0].value.tags.any { it.tag == Tag.H3 },
+            "First story should have H3 tag"
+        )
+        assertEquals(" Heading", sortedStories[0].value.text)
+
+        // Second and third should be list items
+        assertEquals(StoryTypes.UNORDERED_LIST_ITEM.type, sortedStories[1].value.type)
+        assertEquals(" List item 1", sortedStories[1].value.text)
+
+        assertEquals(StoryTypes.UNORDERED_LIST_ITEM.type, sortedStories[2].value.type)
+        assertEquals(" List item 2", sortedStories[2].value.text)
+
+        // Fourth should be check item
+        assertEquals(StoryTypes.CHECK_ITEM.type, sortedStories[3].value.type)
+        assertEquals(" Task item", sortedStories[3].value.text)
+
+        // Fifth should be regular text (no command, no leading space)
+        assertEquals(StoryTypes.TEXT.type, sortedStories[4].value.type)
+        assertEquals("Regular text", sortedStories[4].value.text)
+    }
+
+    @Test
+    fun acceptStoryStepShouldPreserveLastEditForSaveAndSync() = runTest {
+        // This test verifies that after accepting a multiline AI response,
+        // the LastEdit contains all modified steps for proper save/sync
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithListItems(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // Accept the AI answer (3 list items)
+        storyManager.acceptStoryStep(0.0)
+
+        // Wait for coroutine to complete
+        advanceUntilIdle()
+
+        // Verify the lastEdit is a BulkEdition containing all modified steps
+        val lastEdit = storyManager.currentStory.value.lastEdit
+        require(lastEdit is LastEdit.BulkEdition) {
+            "LastEdit should be BulkEdition to preserve all modified steps, but was ${lastEdit::class.simpleName}"
+        }
+        assertEquals(
+            3,
+            lastEdit.steps.size,
+            "BulkEdition should contain all 3 modified list items"
+        )
+
+        // Verify each step in the BulkEdition has the correct type
+        lastEdit.steps.forEach { (_, step) ->
+            assertEquals(
+                StoryTypes.UNORDERED_LIST_ITEM.type,
+                step.type,
+                "Each step in BulkEdition should be UNORDERED_LIST_ITEM"
+            )
+        }
+    }
+
+    @Test
+    fun acceptStoryStepShouldParseInlineMarkdown() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithInlineMarkdown(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // Accept the AI answer
+        storyManager.acceptStoryStep(0.0)
+
+        // Wait for coroutine to complete
+        advanceUntilIdle()
+
+        // Verify the stories were processed
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        assertEquals(3, sortedStories.size, "Should have 3 stories")
+
+        // First line: **For The Cake** should have bold span and ** removed
+        val firstStory = sortedStories[0].value
+        assertEquals("For The Cake", firstStory.text, "Bold markers should be removed")
+        assertTrue(
+            firstStory.spans.any { it.span == Span.BOLD },
+            "First story should have BOLD span"
+        )
+
+        // Second line: This is *italic* text should have italic span and * removed
+        val secondStory = sortedStories[1].value
+        assertEquals("This is italic text", secondStory.text, "Italic markers should be removed")
+        assertTrue(
+            secondStory.spans.any { it.span == Span.ITALIC },
+            "Second story should have ITALIC span"
+        )
+
+        // Third line: URL should have link span
+        val thirdStory = sortedStories[2].value
+        assertEquals("Visit https://example.com", thirdStory.text, "URL text should remain")
+        assertTrue(
+            thirdStory.spans.any { it.span == Span.LINK },
+            "Third story should have LINK span"
+        )
+    }
+
+    // ==================== Title Protection Tests ====================
+
+    @Test
+    fun addImageOnTitleShouldInsertAfterTitleNotReplace() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        // Set focus to the title (position 0)
+        storyManager.onFocusChange(0.0, true)
+        advanceUntilIdle()
+
+        // Add image without explicit position (cursor is on title)
+        storyManager.addImage("/path/to/image.png")
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Title should still be at position 0
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should not be replaced"
+        )
+        assertEquals(
+            "My Document Title",
+            sortedStories[0].value.text,
+            "Title text should be preserved"
+        )
+
+        // Image should be inserted after the title
+        val hasImageAfterTitle = sortedStories.any { it.value.type == StoryTypes.IMAGE.type }
+        assertTrue(hasImageAfterTitle, "Image should be added to the document")
+    }
+
+    @Test
+    fun addImageOnRegularTextShouldReplaceIt() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        // Set focus to the text content (position 1)
+        storyManager.onFocusChange(1.0, true)
+        advanceUntilIdle()
+
+        // Add image without explicit position (cursor is on text)
+        storyManager.addImage("/path/to/image.png")
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Title should still be at position 0
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should remain unchanged"
+        )
+
+        // The text at position 1 should now be an image (replaced)
+        assertEquals(
+            StoryTypes.IMAGE.type,
+            sortedStories[1].value.type,
+            "Text should be replaced with image"
+        )
+    }
+
+    @Test
+    fun addImageWithExplicitPositionShouldInsertAtThatPosition() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        val initialSize = storyManager.currentStory.value.stories.size
+
+        // Add image with explicit position at an existing story location
+        // This should insert at position 1.0 (where text is)
+        storyManager.addImage("/path/to/image.png", position = 1.0)
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Should have one more story (inserted, not replaced)
+        assertEquals(
+            initialSize + 1,
+            newStories.size,
+            "Image should be inserted at explicit position"
+        )
+
+        // Title should remain unchanged
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should not be affected"
+        )
+
+        // Image should be present
+        val hasImage = sortedStories.any { it.value.type == StoryTypes.IMAGE.type }
+        assertTrue(hasImage, "Image should be in the document")
+    }
+
+    @Test
+    fun addSpreadsheetOnTitleShouldInsertAfterTitleNotReplace() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        // Set focus to the title (position 0)
+        storyManager.onFocusChange(0.0, true)
+        advanceUntilIdle()
+
+        val initialSize = storyManager.currentStory.value.stories.size
+
+        // Add spreadsheet while cursor is on title
+        storyManager.addSpreadsheet(columnCount = 3)
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Title should still be at position 0
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should not be replaced by spreadsheet"
+        )
+        assertEquals(
+            "My Document Title",
+            sortedStories[0].value.text,
+            "Title text should be preserved"
+        )
+
+        // Spreadsheet should be inserted after the title (size increased)
+        assertEquals(
+            initialSize + 1,
+            newStories.size,
+            "Spreadsheet should be inserted, not replace title"
+        )
+
+        // Verify spreadsheet exists
+        val hasSpreadsheet = sortedStories.any { it.value.type == StoryTypes.SPREADSHEET.type }
+        assertTrue(hasSpreadsheet, "Spreadsheet should be added to the document")
+    }
+
+    @Test
+    fun addSpreadsheetOnRegularTextShouldReplaceIt() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        // Set focus to the text content (position 1)
+        storyManager.onFocusChange(1.0, true)
+        advanceUntilIdle()
+
+        val initialSize = storyManager.currentStory.value.stories.size
+
+        // Add spreadsheet while cursor is on text
+        storyManager.addSpreadsheet(columnCount = 3)
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Title should remain unchanged
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should remain unchanged"
+        )
+
+        // The text at position 1 should now be a spreadsheet (replaced)
+        assertEquals(
+            StoryTypes.SPREADSHEET.type,
+            sortedStories[1].value.type,
+            "Text should be replaced with spreadsheet"
+        )
+    }
+
+    @Test
+    fun addImageOnEmptyDocumentWithOnlyTitleShouldInsertAfterTitle() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        ).apply {
+            loadDocument(
+                Document(
+                    content = MapStoryData.documentWithOnlyTitle(),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+
+        // Set focus to the title (only position available)
+        storyManager.onFocusChange(0.0, true)
+        advanceUntilIdle()
+
+        // Add image
+        storyManager.addImage("/path/to/image.png")
+        advanceUntilIdle()
+
+        val newStories = storyManager.currentStory.value.stories
+        val sortedStories = newStories.entries.sortedBy { it.key }
+
+        // Should have 2 stories now (title + image)
+        assertEquals(2, newStories.size, "Should have title and image")
+
+        // Title should still be first
+        assertEquals(
+            StoryTypes.TITLE.type,
+            sortedStories[0].value.type,
+            "Title should remain first"
+        )
+
+        // Image should be second
+        assertEquals(
+            StoryTypes.IMAGE.type,
+            sortedStories[1].value.type,
+            "Image should be after title"
+        )
     }
 }

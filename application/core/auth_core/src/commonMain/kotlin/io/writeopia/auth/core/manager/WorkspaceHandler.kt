@@ -16,6 +16,8 @@ interface WorkspaceHandler {
     val localSyncRequired: Flow<Unit>
     val availableWorkspaces: StateFlow<ResultData<List<Workspace>>>
 
+    val exportWorkspaceState: StateFlow<ResultData<Unit>>
+
     val selectedWorkspace: Flow<Workspace?>
 
     val usersOfSelectedWorkspace: Flow<ResultData<List<String>>>
@@ -41,4 +43,8 @@ interface WorkspaceHandler {
     fun startAutoSync()
 
     fun stopAutoSync()
+
+    fun exportWorkspace(workspaceId: String)
+
+    fun resetExportState()
 }

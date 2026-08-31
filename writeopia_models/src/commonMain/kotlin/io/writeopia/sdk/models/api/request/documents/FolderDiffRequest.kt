@@ -6,5 +6,6 @@ import kotlinx.serialization.Serializable
 data class FolderDiffRequest(
     val folderId: String,
     val workspaceId: String,
-    val lastFolderSync: Long
+    val lastFolderSync: Long,
+    val orderBy: String = "last_updated_at"
 )

@@ -42,6 +42,10 @@ interface ChooseNoteViewModel : FolderController {
 
     val editFolderState: StateFlow<Folder?>
 
+    val showAiOptionsState: StateFlow<Boolean>
+
+    val showCreateFolderDialogState: StateFlow<Boolean>
+
     //    fun requestDocuments(force: Boolean)
     fun handleMenuItemTap(id: String): Boolean
 
@@ -87,6 +91,10 @@ interface ChooseNoteViewModel : FolderController {
 
     fun summarizeDocuments()
 
+    fun showAiOptions()
+
+    fun hideAiOptions()
+
     fun hideConfigSyncMenu()
 
     fun pathSelected(path: String)
@@ -108,6 +116,12 @@ interface ChooseNoteViewModel : FolderController {
     fun syncFolderWithCloud()
 
     fun newFolder()
+
+    fun showCreateFolderDialog()
+
+    fun hideCreateFolderDialog()
+
+    fun createFolderWithDetails(name: String, icon: MenuItem.Icon?)
 }
 
 sealed interface UserState<T> {

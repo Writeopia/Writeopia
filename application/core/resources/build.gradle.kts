@@ -21,6 +21,9 @@ kotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_21)
         }
+
+        // Required for AGP 9.x to properly package compose resources
+        experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
     }
 
     js {

@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.auth.email
 
 import androidx.lifecycle.ViewModel
@@ -5,10 +7,13 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.serialization.data.toModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 internal class EmailConfirmationViewModel(
     private val authRepository: AuthRepository,
@@ -60,13 +65,30 @@ internal class EmailConfirmationViewModel(
 
                 _confirmState.value = when (result) {
                     is ResultData.Complete -> {
+                        // Save the tokens and user from the response
+                        val authResponse = result.data
+                        val user = authResponse.writeopiaUser.toModel()
+                        authRepository.saveUser(user = user, selected = true)
+                        val accessToken = authResponse.accessToken
+                        val refreshToken = authResponse.refreshToken
+                        if (accessToken != null) {
+                            // Calculate expiry time (14 minutes from now as buffer)
+                            val expiresAt = Clock.System.now().toEpochMilliseconds() + (14 * 60 * 1000L)
+                            authRepository.saveTokens(
+                                userId = user.id,
+                                accessToken = accessToken,
+                                refreshToken = refreshToken,
+                                expiresAt = expiresAt
+                            )
+                        }
+
                         authRepository.clearPendingConfirmationEmail()
                         onSuccess()
-                        result
+                        ResultData.Complete(true)
                     }
                     is ResultData.Error -> {
                         delay(300)
-                        result
+                        ResultData.Error(result.exception)
                     }
                     else -> {
                         delay(300)

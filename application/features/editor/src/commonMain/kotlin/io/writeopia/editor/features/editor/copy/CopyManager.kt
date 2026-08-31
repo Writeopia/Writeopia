@@ -8,4 +8,8 @@ class CopyManager(private val clipboardManager: ClipboardManager) {
     fun copy(text: AnnotatedString) {
         clipboardManager.setText(text)
     }
+
+    fun copyText(text: String) {
+        clipboardManager.setText(AnnotatedString(text))
+    }
 }

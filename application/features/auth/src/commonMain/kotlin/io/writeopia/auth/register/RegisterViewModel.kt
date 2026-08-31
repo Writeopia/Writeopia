@@ -4,13 +4,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.data.AuthApi
+import io.writeopia.auth.utils.PasswordStrength
+import io.writeopia.auth.utils.PasswordValidationResult
+import io.writeopia.auth.utils.PasswordValidator
 import io.writeopia.common.utils.env.EnvUtils
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.serialization.data.toModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 // The NavigationActivity won't leak because it is the single activity of the whole project
@@ -33,6 +41,30 @@ internal class RegisterViewModel(
 
     private val _register = MutableStateFlow<ResultData<Boolean>>(ResultData.Idle())
     val register = _register.asStateFlow()
+
+    val passwordValidation: StateFlow<PasswordValidationResult> = _password
+        .map { PasswordValidator.validate(it) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PasswordValidator.validate("")
+        )
+
+    val canRegister: StateFlow<Boolean> = combine(
+        _name,
+        _email,
+        _workspace,
+        passwordValidation
+    ) { name, email, workspace, validation ->
+        name.isNotBlank() &&
+            email.isNotBlank() &&
+            workspace.isNotBlank() &&
+            validation.strength == PasswordStrength.STRONG
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
 
     fun nameChanged(name: String) {
         _name.value = name
@@ -69,15 +101,18 @@ internal class RegisterViewModel(
                         authRepository.saveUser(user = user, selected = true)
 
                         // Check if email confirmation is required
-                        if (!result.data.enabled) {
-                            // Save pending confirmation email for the confirmation screen
-                            authRepository.savePendingConfirmationEmail(_email.value)
-                            result.map { true }
-                        } else {
+                        if (result.data.emailConfirmationRequired) {
+                            // If we have an admin key, enable the user directly
                             EnvUtils.getAdminKey()?.let { adminKey ->
                                 authApi.enableUser(_email.value, adminKey)
-                                    .map { true }
-                            } ?: result.map { true }
+                                ResultData.Complete(true)
+                            } ?: run {
+                                // Save pending confirmation email for the confirmation screen
+                                authRepository.savePendingConfirmationEmail(_email.value)
+                                ResultData.Complete(true)
+                            }
+                        } else {
+                            ResultData.Complete(true)
                         }
                     }
 

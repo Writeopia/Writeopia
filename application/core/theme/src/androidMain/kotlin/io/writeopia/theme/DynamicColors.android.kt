@@ -7,18 +7,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 @Composable
-actual fun getDynamicAccentColors(): DynamicAccentColors? {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val context = LocalContext.current
-        val lightScheme = dynamicLightColorScheme(context)
-        val darkScheme = dynamicDarkColorScheme(context)
-        DynamicAccentColors(
-            lightPrimary = lightScheme.primary,
-            lightSecondary = lightScheme.secondary,
-            darkPrimary = darkScheme.primary,
-            darkSecondary = darkScheme.secondary
-        )
-    } else {
-        null
-    }
+actual fun getDynamicAccentColors(): DynamicAccentColors? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    val context = LocalContext.current
+    val lightScheme = dynamicLightColorScheme(context)
+    val darkScheme = dynamicDarkColorScheme(context)
+    DynamicAccentColors(
+        lightPrimary = lightScheme.primary,
+        lightSecondary = lightScheme.secondary,
+        darkPrimary = darkScheme.primary,
+        darkSecondary = darkScheme.secondary
+    )
+} else {
+    null
 }

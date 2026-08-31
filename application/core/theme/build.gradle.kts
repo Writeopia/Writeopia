@@ -53,8 +53,10 @@ kotlin {
             dependencies {
                 implementation(project(":application:core:persistence_sqldelight"))
                 implementation(project(":application:core:utils"))
+                implementation(project(":application:core:resources"))
 
                 implementation(compose.material3)
+                implementation(compose.components.resources)
                 implementation(libs.lifecycle.viewmodel.compose)
                 implementation(libs.platformtools.darkmodedetector)
             }

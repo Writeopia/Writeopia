@@ -5,8 +5,14 @@ import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.api.MediaApi
+import io.writeopia.core.folders.image.CloudImageUploader
+import io.writeopia.core.folders.repository.folder.DocumentLoadUseCase
+import io.writeopia.ui.image.ImageUploader
 import io.writeopia.core.folders.sync.ConfigFileWatcher
 import io.writeopia.core.folders.sync.DocumentConflictHandler
+import io.writeopia.core.folders.sync.DocumentMerger
+import io.writeopia.core.folders.sync.FolderConflictHandler
 import io.writeopia.core.folders.sync.ImageSync
 import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.core.folders.sync.createConfigFileWatcher
@@ -25,8 +31,8 @@ class WorkspaceInjection private constructor(
         AppConfigurationInjector.singleton(),
 ) {
 
-    private fun provideWorkspaceApi() =
-        WorkspaceApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+    fun provideWorkspaceApi() =
+        WorkspaceApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
 
     private var configFileWatcher: ConfigFileWatcher? = null
 
@@ -46,26 +52,49 @@ class WorkspaceInjection private constructor(
 
     fun provideWorkspaceSync(): WorkspaceSync {
         val documentRepo = repositoryInjection.provideDocumentRepository()
+        val folderRepo = FoldersInjector.singleton().provideFoldersRepository()
         return WorkspaceSync(
-            folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
+            folderRepository = folderRepo,
             documentRepository = documentRepo,
             authRepository = authCoreInjection.provideAuthRepository(),
-            documentsApi = DocumentsApi(
-                appConnectionInjection.provideHttpClient(),
-                connectionInjector.baseUrl()
-            ),
+            documentsApi = provideDocumentsApi(),
             documentConflictHandler = DocumentConflictHandler(
-                documentRepository = documentRepo,
-                folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
-                authCoreInjection.provideAuthRepository()
+                documentRepository = documentRepo
+            ),
+            folderConflictHandler = FolderConflictHandler(
+                folderRepository = folderRepo
             ),
             imageSync = ImageSync(
-                appConnectionInjection.provideHttpClient(),
+                connectionInjector.httpClient(),
                 connectionInjector.baseUrl(),
                 repositoryInjection.provideDocumentRepository()
             )
         )
     }
+
+    fun provideDocumentsApi(): DocumentsApi = DocumentsApi(
+        connectionInjector.httpClient(),
+        connectionInjector.baseUrl()
+    )
+
+    fun provideMediaApi(): MediaApi = MediaApi(
+        connectionInjector.httpClient(),
+        connectionInjector.baseUrl()
+    )
+
+    fun provideImageUploader(): ImageUploader = CloudImageUploader(
+        mediaApi = provideMediaApi(),
+        authRepository = authCoreInjection.provideAuthRepository()
+    )
+
+    private fun provideDocumentMerger(): DocumentMerger = DocumentMerger()
+
+    fun provideDocumentLoadUseCase(): DocumentLoadUseCase = DocumentLoadUseCase(
+        documentRepository = repositoryInjection.provideDocumentRepository(),
+        documentsApi = provideDocumentsApi(),
+        documentMerger = provideDocumentMerger(),
+        authRepository = authCoreInjection.provideAuthRepository()
+    )
 
     companion object {
         private var instance: WorkspaceInjection? = null

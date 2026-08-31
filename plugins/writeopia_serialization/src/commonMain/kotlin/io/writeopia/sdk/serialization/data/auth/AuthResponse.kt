@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class AuthResponse(
-    val token: String?,
+    val accessToken: String?,
+    val refreshToken: String? = null,
     val writeopiaUser: WriteopiaUserApi,
     val enabled: Boolean = true
 )

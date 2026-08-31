@@ -92,4 +92,21 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
     suspend fun refreshDocuments()
 
     suspend fun queryUnsyncedImagesSteps(): List<StoryStep>
+
+    /**
+     * Sets the published status of a document.
+     * This is an optional server-side operation.
+     */
+    suspend fun setPublished(documentId: String, published: Boolean) {
+        // Default implementation does nothing - requires server connectivity
+    }
+
+    /**
+     * Checks if a document is published.
+     * This is an optional server-side operation.
+     */
+    suspend fun isPublished(documentId: String): Boolean {
+        // Default implementation returns false - requires server connectivity
+        return false
+    }
 }

@@ -10,8 +10,10 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -32,11 +34,17 @@ internal class AccountMenuKmpViewModel(
     override val usersOfSelectedWorkspace: Flow<ResultData<List<String>>> =
         workspaceHandler.usersOfSelectedWorkspace
 
+    override val exportWorkspaceState: StateFlow<ResultData<Unit>> =
+        workspaceHandler.exportWorkspaceState
+
     override val isLoggedIn: StateFlow<ResultData<Boolean>> by lazy {
         authRepository.listenForUser().map {
             ResultData.Complete(it.id != WriteopiaUser.DISCONNECTED)
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Loading())
     }
+
+    private val _logoutInProgress = MutableStateFlow(false)
+    override val logoutInProgress: StateFlow<Boolean> = _logoutInProgress.asStateFlow()
 
     init {
         workspaceHandler.initScope(viewModelScope)
@@ -45,13 +53,28 @@ internal class AccountMenuKmpViewModel(
 
     override fun logout(onLogOutSuccess: () -> Unit) {
         viewModelScope.launch(Dispatchers.Default) {
-            authRepository.unselectAllWorkspaces()
-            val result = authRepository.logout()
+            _logoutInProgress.value = true
+            try {
+                authRepository.unselectAllWorkspaces()
+                val result = authRepository.logout()
 
-            if (result.toBoolean()) {
-                withContext(Dispatchers.Main) {
-                    onLogOutSuccess()
+                if (result.toBoolean()) {
+                    withContext(Dispatchers.Main) {
+                        onLogOutSuccess()
+                    }
                 }
+            } finally {
+                _logoutInProgress.value = false
+            }
+        }
+    }
+
+    override fun changeWorkspace(onChangeSuccess: () -> Unit) {
+        viewModelScope.launch(Dispatchers.Default) {
+            authRepository.unselectAllWorkspaces()
+
+            withContext(Dispatchers.Main) {
+                onChangeSuccess()
             }
         }
     }
@@ -66,5 +89,13 @@ internal class AccountMenuKmpViewModel(
 
     override fun addUserToWorkspace(userEmail: String) {
         workspaceHandler.addUserToWorkspace(userEmail)
+    }
+
+    override fun exportWorkspace(workspaceId: String) {
+        workspaceHandler.exportWorkspace(workspaceId)
+    }
+
+    override fun resetExportState() {
+        workspaceHandler.resetExportState()
     }
 }

@@ -62,6 +62,14 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val sideMenuTabState: StateFlow<SideMenuTab>
 
+    val showPublishDialog: StateFlow<Boolean>
+
+    val isDocumentPublished: StateFlow<Boolean>
+
+    val publishLoading: StateFlow<Boolean>
+
+    val showPremiumDialog: StateFlow<Boolean>
+
     fun changeSideMenu(tab: SideMenuTab)
 
     fun showSearch()
@@ -126,15 +134,15 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun moveToRootFolder()
 
-    fun askAiBySelection()
+    fun askAiWithMode(targetMode: AiTargetMode)
 
-    fun aiSummary()
+    fun aiSummary(targetMode: AiTargetMode)
 
-    fun aiActionPoints()
+    fun aiActionPoints(targetMode: AiTargetMode)
 
-    fun aiFaq()
+    fun aiFaq(targetMode: AiTargetMode)
 
-    fun aiTags()
+    fun aiTags(targetMode: AiTargetMode)
 
     fun aiSection(position: Double)
 
@@ -155,6 +163,20 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun selectModel(model: String)
 
     fun titleClick(tag: Tag)
+
+    fun showPublishDialog()
+
+    fun hidePublishDialog()
+
+    fun hidePremiumDialog()
+
+    fun publishDocument()
+
+    fun unpublishDocument()
+
+    fun copyPublishLink()
+
+    fun onAddSpreadsheetClick(columnCount: Int)
 }
 
 data class ShareDocument(val content: String, val title: String, val type: String)
@@ -166,4 +188,10 @@ public enum class SideMenuTab {
     EXPORT,
     AI,
     DRAWING
+}
+
+public enum class AiTargetMode {
+    DOCUMENT,
+    SELECTED_LINES,
+    CURSOR
 }

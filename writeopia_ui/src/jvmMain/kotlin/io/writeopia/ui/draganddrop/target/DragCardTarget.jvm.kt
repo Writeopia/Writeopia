@@ -9,8 +9,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DragIndicator
+import io.writeopia.ui.icons.WrSdkIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -122,7 +121,7 @@ actual fun DragCardTarget(
                             })
                         }
                         .align(Alignment.TopEnd),
-                    imageVector = Icons.Default.DragIndicator,
+                    imageVector = WrSdkIcons.dragIndicator,
                     contentDescription = "Drag icon",
                     tint = tintColor
                 )

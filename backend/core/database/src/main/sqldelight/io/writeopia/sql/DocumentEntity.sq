@@ -11,7 +11,8 @@ CREATE TABLE document_entity (
   icon_tint INTEGER,
   is_locked BOOLEAN NOT NULL,
   company_id TEXT NULL,
-  deleted BOOLEAN NOT NULL
+  deleted BOOLEAN NOT NULL,
+  published BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 selectAll:
@@ -112,13 +113,13 @@ FROM document_entity
 WHERE document_entity.parent_document_id = ? AND deleted = FALSE;
 
 insert:
-INSERT INTO document_entity(id, title, created_at, last_updated_at, last_synced, workspace_id, favorite, parent_document_id, icon, icon_tint, is_locked, company_id, deleted)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO document_entity(id, title, created_at, last_updated_at, last_synced, workspace_id, favorite, parent_document_id, icon, icon_tint, is_locked, company_id, deleted, published)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, title=excluded.title, created_at=excluded.created_at, last_updated_at=excluded.last_updated_at,
 last_synced=excluded.last_synced, workspace_id=excluded.workspace_id, favorite=excluded.favorite,
 parent_document_id=excluded.parent_document_id, icon=excluded.icon, icon_tint=excluded.icon_tint,
-is_locked=excluded.is_locked, company_id=excluded.company_id, deleted=excluded.deleted;
+is_locked=excluded.is_locked, company_id=excluded.company_id, deleted=excluded.deleted, published=excluded.published;
 
 delete:
 UPDATE document_entity
@@ -166,4 +167,25 @@ ORDER BY position;
 
 countByWorkspaceId:
 SELECT COUNT(*) FROM document_entity
+WHERE workspace_id = ? AND deleted = FALSE;
+
+setPublished:
+UPDATE document_entity SET published = ?, last_updated_at = ? WHERE id = ?;
+
+updateTitle:
+UPDATE document_entity SET title = ?, last_updated_at = ?, last_synced = ? WHERE id = ?;
+
+selectPublishedWithContentById:
+SELECT *
+FROM document_entity
+LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
+WHERE document_entity.id = ? AND document_entity.published = TRUE AND deleted = FALSE
+ORDER BY position;
+
+isPublished:
+SELECT published FROM document_entity WHERE id = ? AND deleted = FALSE;
+
+selectIdsByWorkspaceId:
+SELECT id
+FROM document_entity
 WHERE workspace_id = ? AND deleted = FALSE;

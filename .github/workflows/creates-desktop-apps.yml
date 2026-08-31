@@ -11,10 +11,12 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: adopt
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Generate windows app
         run: ./gradlew packageReleaseMsi
       - name: upload unsigned artifact
@@ -25,7 +27,7 @@ jobs:
           path: application/composeApp/build/compose/binaries/main-release/msi
       - id: optional_step_id
         name: Sign Windows app
-        uses: signpath/github-action-submit-signing-request@v2.2
+        uses: signpath/github-action-submit-signing-request@v2.3
         with:
           api-token: '${{ secrets.SIGN_PATH_API_TOKEN }}'
           organization-id: '${{ secrets.SIGN_PATH_ORG_ID }}'
@@ -41,10 +43,12 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: adopt
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Generate linux app
         run: ./gradlew packageReleaseDeb
       - name: Upload App
@@ -59,17 +63,19 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: adopt
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: import certs
         uses: apple-actions/import-codesign-certs@v7
         with:
           p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
           p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
       - name: Generate signed mac app
-        run: ./gradlew packageReleaseDmg --no-daemon
+        run: ./gradlew packageReleaseDmg
         env:
           SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
       - name: Notarize
@@ -90,18 +96,20 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: '17'
           architecture: 'x64'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: import certs
         uses: apple-actions/import-codesign-certs@v7
         with:
           p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
           p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
       - name: Generate signed mac app
-        run: ./gradlew packageReleaseDmg -Pcompose.desktop.macos.arch=x64 --no-daemon
+        run: ./gradlew packageReleaseDmg -Pcompose.desktop.macos.arch=x64
         env:
           SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
       - name: Notarize

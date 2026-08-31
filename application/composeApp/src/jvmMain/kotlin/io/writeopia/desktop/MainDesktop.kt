@@ -24,7 +24,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
+import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.auth.navigation.authNavigation
+import io.writeopia.auth.navigation.startScreen
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
@@ -32,7 +34,6 @@ import io.writeopia.common.utils.ui.GlobalToastBox
 import io.writeopia.model.AccentColor
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.ScreenLoading
-import io.writeopia.navigation.startScreen
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.resources.CommonImages
@@ -228,6 +229,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     "https://writeopia.io"
 //                        "http://localhost:8080"
                 )
+                setupBearerTokenHandler()
 
                 val uiConfigurationInjector = UiConfigurationInjector.singleton()
 
@@ -281,6 +283,13 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                         navigationController.navigate(
                                             Destinations.AUTH_RESET_PASSWORD.id
                                         )
+                                    },
+                                    navigateToChooseWorkspace = {
+                                        navigationController.navigate(Destinations.START_APP.id) {
+                                            popUpTo(navigationController.graph.startDestinationId) {
+                                                inclusive = true
+                                            }
+                                        }
                                     }
                                 )
                             }

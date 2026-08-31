@@ -7,6 +7,12 @@ import io.writeopia.sdk.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
+data class TokenData(
+    val accessToken: String,
+    val refreshToken: String?,
+    val accessTokenExpiresAt: Long?
+)
+
 interface AuthRepository : UserRepository {
 
     override fun listenForUser(): Flow<WriteopiaUser> = flow { emit(getUser()) }
@@ -23,15 +29,32 @@ interface AuthRepository : UserRepository {
 
     suspend fun saveUser(user: WriteopiaUser, selected: Boolean)
 
-    suspend fun saveToken(userId: String, token: String)
+    suspend fun saveTokens(
+        userId: String,
+        accessToken: String,
+        refreshToken: String?,
+        expiresAt: Long?
+    )
 
     suspend fun getAuthToken(): String?
+
+    suspend fun getAccessToken(): String? = getAuthToken()
+
+    suspend fun getRefreshToken(): String?
+
+    suspend fun getTokenData(): TokenData?
+
+    suspend fun isAccessTokenExpired(): Boolean
+
+    suspend fun clearTokens()
 
     suspend fun useOffline()
 
     override suspend fun getWorkspace(): Workspace?
 
     suspend fun saveWorkspace(workspace: Workspace)
+
+    suspend fun updateLastEventSync(workspaceId: String, lastEventSync: Long)
 
     suspend fun unselectAllWorkspaces()
 

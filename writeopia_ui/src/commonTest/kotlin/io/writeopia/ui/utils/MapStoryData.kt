@@ -322,6 +322,62 @@ object MapStoryData {
         )
     )
 
+    fun aiAnswerWithH3(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            localId = "0",
+            type = StoryTypes.AI_ANSWER.type,
+            text = "### This is a heading\nSome content here",
+        )
+    )
+
+    fun aiAnswerWithMultipleMarkdown(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            localId = "0",
+            type = StoryTypes.AI_ANSWER.type,
+            text = "### Heading\n- List item 1\n- List item 2\n[] Task item\nRegular text",
+        )
+    )
+
+    fun aiAnswerWithListItems(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            localId = "0",
+            type = StoryTypes.AI_ANSWER.type,
+            text = "- First item\n- Second item\n- Third item",
+        )
+    )
+
+    fun aiAnswerWithCheckItems(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            localId = "0",
+            type = StoryTypes.AI_ANSWER.type,
+            text = "[] Task one\n[] Task two",
+        )
+    )
+
+    fun aiAnswerWithDivider(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            localId = "0",
+            type = StoryTypes.AI_ANSWER.type,
+            text = "Content above\n---\nContent below",
+        )
+    )
+
+    fun aiAnswerWithAllHeadings(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            localId = "0",
+            type = StoryTypes.AI_ANSWER.type,
+            text = "# Heading 1\n## Heading 2\n### Heading 3\n#### Heading 4",
+        )
+    )
+
+    fun aiAnswerWithInlineMarkdown(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            localId = "0",
+            type = StoryTypes.AI_ANSWER.type,
+            text = "**For The Cake**\nThis is *italic* text\nVisit https://example.com",
+        )
+    )
+
     fun syncHistory(): Map<Double, StoryStep> =
         mapOf(
             0.0 to
@@ -377,7 +433,9 @@ object MapStoryData {
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.TEXT_BOX.type,
-                    text = "And it was super awesome!! \n\nUt enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur?",
+                    text = "And it was super awesome!! \n\nUt enim ad minima veniam, " +
+                        "quis nostrum exercitationem ullam corporis suscipit laboriosam, " +
+                        "nisi ut aliquid ex ea commodi consequatur?",
                 ),
             9.0 to
                 StoryStep(
@@ -394,4 +452,36 @@ object MapStoryData {
                         "We had to buy some Syn Cards to be able to communicate in the new country. ",
                 ),
         )
+
+    /**
+     * Document with title at position 0 and text at position 1.
+     * Used for testing title protection.
+     */
+    fun documentWithTitle(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            id = GenerateId.generate(),
+            localId = "title",
+            type = StoryTypes.TITLE.type,
+            text = "My Document Title"
+        ),
+        1.0 to StoryStep(
+            id = GenerateId.generate(),
+            localId = "text1",
+            type = StoryTypes.TEXT.type,
+            text = "Some content"
+        )
+    )
+
+    /**
+     * Document with only a title at position 0.
+     * Used for testing title protection on empty documents.
+     */
+    fun documentWithOnlyTitle(): Map<Double, StoryStep> = mapOf(
+        0.0 to StoryStep(
+            id = GenerateId.generate(),
+            localId = "title",
+            type = StoryTypes.TITLE.type,
+            text = "Empty Document Title"
+        )
+    )
 }

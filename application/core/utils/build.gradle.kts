@@ -41,7 +41,7 @@ kotlin {
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "WriteopiaUtils"
+            baseName = "WriteopiaCoreUtils"
             isStatic = true
         }
     }
@@ -54,7 +54,6 @@ kotlin {
 
                 implementation(compose.foundation)
                 implementation(compose.material3)
-                implementation(compose.materialIconsExtended)
 
                 implementation(libs.kotlinx.coroutines.core)
                 //

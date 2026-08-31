@@ -38,6 +38,11 @@ data class StoryStep(
     val spans: Set<SpanInfo> = emptySet(),
     val decoration: Decoration = Decoration(),
     val ephemeral: Boolean = false,
+    /**
+     * Indicates whether the content of this StoryStep is currently being loaded or processed.
+     * When true, a loading indicator should be displayed (e.g., for image uploads).
+     */
+    val loading: Boolean = false,
     val documentLink: DocumentLink? = null,
     /**
      * The position of this StoryStep in the database. This is a Double to support intermediate
@@ -56,7 +61,12 @@ data class StoryStep(
      * intermediate positions when inserting new content. It starts as null and is populated
      * when the document is loaded or created.
      */
-    val previousPosition: Double? = null
+    val previousPosition: Double? = null,
+    /**
+     * The timestamp when this StoryStep was last updated. Used for conflict resolution during
+     * backend sync. This is in epoch milliseconds.
+     */
+    val lastUpdatedAt: Long? = null
 ) {
 
     val key: Int = localId.hashCode()

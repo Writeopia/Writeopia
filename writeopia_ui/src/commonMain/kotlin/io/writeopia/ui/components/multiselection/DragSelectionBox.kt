@@ -24,7 +24,11 @@ import androidx.compose.ui.unit.dp
 val LocalDragSelectionInfo = compositionLocalOf { DragSelectionInfo() }
 
 @Composable
-fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScope.() -> Unit) {
+fun DragSelectionBox(
+    modifier: Modifier = Modifier,
+    isTextSelected: Boolean = false,
+    context: @Composable BoxScope.() -> Unit
+) {
     var initialPosition by remember { mutableStateOf(Offset.Zero) }
     var finalPosition by remember { mutableStateOf(Offset.Zero) }
     var state by remember { mutableStateOf(DragSelectionInfo(isDragging = false)) }
@@ -32,27 +36,29 @@ fun DragSelectionBox(modifier: Modifier = Modifier, context: @Composable BoxScop
 
     CompositionLocalProvider(LocalDragSelectionInfo provides state) {
         Box(
-            modifier = modifier.pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        initialPosition = offset
-                        state = DragSelectionInfo(
-                            isDragging = true,
-                            selectionBox = SelectionBox(x = offset.x, y = offset.y)
-                        )
-                    },
-                    onDrag = { pointerChange, dragAmount ->
-                        finalPosition = pointerChange.position
-                    },
-                    onDragEnd = {
-                        state = state.copy(isDragging = false)
-                        finalPosition = Offset.Zero
-                    },
-                    onDragCancel = {
-                        state = state.copy(isDragging = false)
-                        finalPosition = Offset.Zero
-                    },
-                )
+            modifier = modifier.pointerInput(isTextSelected) {
+                if (!isTextSelected) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            initialPosition = offset
+                            state = DragSelectionInfo(
+                                isDragging = true,
+                                selectionBox = SelectionBox(x = offset.x, y = offset.y)
+                            )
+                        },
+                        onDrag = { pointerChange, dragAmount ->
+                            finalPosition = pointerChange.position
+                        },
+                        onDragEnd = {
+                            state = state.copy(isDragging = false)
+                            finalPosition = Offset.Zero
+                        },
+                        onDragCancel = {
+                            state = state.copy(isDragging = false)
+                            finalPosition = Offset.Zero
+                        },
+                    )
+                }
             }
         ) {
             context()

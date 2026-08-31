@@ -30,7 +30,8 @@ fun StoryStep.toApi(position: Double): StoryStepApi =
         spans = this.spans.mapTo(mutableSetOf()) { it.toApi() },
         decoration = this.decoration.toApi(),
         position = this.dbPosition ?: position,
-        documentLink = this.documentLink?.toApi()
+        documentLink = this.documentLink?.toApi(),
+        lastUpdatedAt = this.lastUpdatedAt
     )
 
 fun StoryStepApi.toModel(): StoryStep =
@@ -48,7 +49,8 @@ fun StoryStepApi.toModel(): StoryStep =
         steps = steps.map { it.toModel() },
         decoration = decoration.toModel(),
         documentLink = this.documentLink?.toModel(),
-        dbPosition = position
+        dbPosition = position,
+        lastUpdatedAt = lastUpdatedAt
     )
 
 fun StoryType.toApi(): StoryTypeApi =
@@ -85,7 +87,8 @@ fun Document.toApi(): DocumentApi =
         isLocked = isLocked,
         icon = icon?.toApi(),
         isFavorite = this.favorite,
-        deleted = deleted
+        deleted = deleted,
+        published = published
     )
 
 fun DocumentApi.toModel(): Document =
@@ -97,13 +100,14 @@ fun DocumentApi.toModel(): Document =
             .associate { story -> story.position to story.toModel() },
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
-        lastSyncedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
+        lastSyncedAt = lastSyncedAt?.let { Instant.fromEpochMilliseconds(it) },
         workspaceId = workspaceId,
         parentId = parentId ?: "",
         isLocked = isLocked,
         icon = icon?.toModel(),
         favorite = isFavorite,
-        deleted = deleted
+        deleted = deleted,
+        published = published
     )
 
 fun FolderApi.toModel(): Folder = Folder(

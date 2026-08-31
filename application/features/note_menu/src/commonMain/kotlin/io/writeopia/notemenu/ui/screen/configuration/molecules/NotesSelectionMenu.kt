@@ -22,7 +22,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SlideInBox
 import io.writeopia.ui.icons.WrSdkIcons
@@ -35,7 +34,7 @@ internal fun NotesSelectionMenu(
     onDelete: () -> Unit,
     onCopy: () -> Unit,
     onFavorite: () -> Unit,
-    onSummary: () -> Unit,
+    onSummary: (() -> Unit)? = null,
     onClose: () -> Unit,
     shape: Shape = RoundedCornerShape(
         CornerSize(16.dp),
@@ -96,9 +95,7 @@ internal fun NotesSelectionMenu(
                     tint = tintColor
                 )
 
-                val currentPlatform = LocalPlatform.current
-
-                if (currentPlatform.isDesktop()) {
+                if (onSummary != null) {
                     Icon(
                         modifier = Modifier
                             .clickable(onClick = onSummary)

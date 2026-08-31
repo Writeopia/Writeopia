@@ -16,4 +16,17 @@ object EndPoints {
     fun proxyUserNotes(userId: String = "{userId}") = "proxy/document/user/$userId"
 
     fun userNotes(userId: String = "{userId}") = "document/user/$userId"
+
+    // Vertex AI endpoints
+    fun aiGenerate() = "api/ai/generate"
+
+    fun aiSummary() = "api/ai/summary"
+
+    fun aiActionPoints() = "api/ai/action-points"
+
+    fun aiFaq() = "api/ai/faq"
+
+    fun aiTags() = "api/ai/tags"
+
+    fun aiStatus() = "api/ai/status"
 }

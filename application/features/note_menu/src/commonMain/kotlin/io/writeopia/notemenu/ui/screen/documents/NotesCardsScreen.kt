@@ -84,6 +84,8 @@ import io.writeopia.ui.drawer.preview.TextPreviewDrawer
 import io.writeopia.ui.drawer.preview.UnOrderedListItemPreviewDrawer
 import io.writeopia.ui.drawer.preview.VideoPreviewDrawer
 import io.writeopia.ui.model.DrawInfo
+import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -835,6 +837,8 @@ private fun SharedTransitionScope.TapToStartButton(
     newNote: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isWeb = LocalPlatform.current == PlatformType.WEB
+
     Box(
         modifier
             .sharedBounds(
@@ -847,10 +851,14 @@ private fun SharedTransitionScope.TapToStartButton(
                 if (isEmpty) {
                     modifierLet.fillMaxHeight().padding(bottom = 30.dp)
                 } else {
-                    modifierLet.height(400.dp)
+                    if (isWeb) {
+                        modifierLet.height(260.dp)
+                    } else {
+                        modifierLet.height(400.dp)
+                    }
                 }
             }
-            .padding(top = 10.dp, start = 6.dp, end = 6.dp)
+            .padding(top = if (isWeb) 0.dp else 10.dp, start = 6.dp, end = 6.dp)
             .background(
                 WriteopiaTheme.colorScheme.cardBg,
                 MaterialTheme.shapes.large

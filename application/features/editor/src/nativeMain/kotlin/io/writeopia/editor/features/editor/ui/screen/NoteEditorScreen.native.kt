@@ -23,9 +23,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +52,7 @@ import io.writeopia.editor.features.editor.ui.TextEditor
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
 import io.writeopia.editor.input.InputScreen
+import io.writeopia.editor.input.rememberImagePickerLauncher
 import io.writeopia.editor.model.EditState
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
@@ -79,6 +77,7 @@ internal fun NoteEditorScreen(
     navigateBack: () -> Unit,
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit = {},
+    onNewImageClick: () -> Unit = {},
     onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
@@ -92,6 +91,10 @@ internal fun NoteEditorScreen(
             "Untitled",
 //            stringResource(R.string.untitled)
         )
+    }
+
+    val launchImagePicker = rememberImagePickerLauncher { imagePath ->
+        noteEditorViewModel.addImage(imagePath)
     }
 
     Scaffold(
@@ -167,6 +170,7 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::addPage,
                     noteEditorViewModel::titleClick,
                     onDrawingClick = onNewDrawingClick,
+                    onImageClick = launchImagePicker,
                     onBoxClick = noteEditorViewModel::toggleHighLightBlock,
                     onCardClick = noteEditorViewModel::toggleCardBlock
                 )
@@ -245,7 +249,7 @@ private fun TopBar(
 
                 if (!isEditable) {
                     Icon(
-                        imageVector = Icons.Outlined.Lock,
+                        imageVector = WrIcons.lock,
                         contentDescription = "Lock",
                         tint = MaterialTheme.colorScheme.onBackground
                     )
@@ -278,7 +282,7 @@ private fun TopBar(
                     .clip(CircleShape)
                     .clickable(onClick = shareDocument)
                     .padding(9.dp),
-                imageVector = Icons.Default.MoreVert,
+                imageVector = WrIcons.moreVert,
                 contentDescription = "",
                 tint = MaterialTheme.colorScheme.onBackground
             )
@@ -318,6 +322,7 @@ private fun BottomScreen(
     onAddPage: () -> Unit = {},
     titleClick: (Tag) -> Unit,
     onDrawingClick: () -> Unit = {},
+    onImageClick: () -> Unit = {},
     onBoxClick: () -> Unit = {},
     onCardClick: () -> Unit = {}
 ) {
@@ -353,7 +358,8 @@ private fun BottomScreen(
                     onForwardPress = reDo,
                     canUndoState = canUndo,
                     canRedoState = canRedo,
-                    onDrawingClick = onDrawingClick
+                    onDrawingClick = onDrawingClick,
+                    onImageClick = onImageClick
                 )
             }
 

@@ -5,10 +5,10 @@ package io.writeopia.core.folders.sync
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.FolderRepository
-import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.serialization.extensions.toModel
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.time.Duration
@@ -19,6 +19,7 @@ class FolderSync(
     private val documentRepository: DocumentRepository,
     private val documentsApi: DocumentsApi,
     private val documentConflictHandler: DocumentConflictHandler,
+    private val folderConflictHandler: FolderConflictHandler,
     private val folderRepository: FolderRepository,
     private val authRepository: AuthRepository,
     private val minSyncInternal: Duration = 2.seconds
@@ -32,89 +33,96 @@ class FolderSync(
      * This logic is atomic. If it fails, the whole process must be tried again in a future time.
      * The sync time of the folder will only be updated with everything works correctly.
      */
-    suspend fun syncFolder(folderId: String, workspaceId: String, force: Boolean = false) {
+    suspend fun syncFolder(
+        folderId: String,
+        workspaceId: String,
+        force: Boolean = false,
+        orderBy: String = "last_updated_at"
+    ) {
         try {
             if (workspaceId == Workspace.disconnectedWorkspace().id) return
 
             val now = Clock.System.now()
-            if (!force && now - lastSuccessfulSync < minSyncInternal) {
-                println("Skipping sync for $workspaceId. Last sync was less than $minSyncInternal ago.")
-            }
+            if (!force && now - lastSuccessfulSync < minSyncInternal) return
 
-            val authToken = authRepository.getAuthToken() ?: return
+            val existingFolder = folderRepository.getFolderById(folderId)
 
-            println("syncFolder folderId: $folderId")
-            val folder: Folder = folderRepository.getFolderById(folderId) ?: run {
-                val folder = Folder(
-                    id = "root",
-                    parentId = "null",
-                    title = "root",
-                    createdAt = Instant.DISTANT_PAST,
-                    lastUpdatedAt = Instant.DISTANT_PAST,
-                    itemCount = 0,
-                    workspaceId = workspaceId,
-                )
+            // Use the existing folder's lastSyncedAt, or DISTANT_PAST if folder doesn't exist
+            // We don't create a fallback folder to avoid creating unwanted "root" folders
+            val lastSync = existingFolder?.lastSyncedAt
 
-                folderRepository.createFolder(folder)
-                folder
-            }
-
-            val lastSync = folder.lastSyncedAt
-            println("Sync. lastSync: $lastSync")
-
-            // First, receive the documents for the backend.
-            val response = documentsApi.getFolderNewDocuments(
+            // First, receive the documents and subfolders from the backend.
+            val response = documentsApi.getFolderNewData(
                 folderId,
                 workspaceId,
                 lastSync ?: Instant.DISTANT_PAST,
-                authToken
+                orderBy
             )
 
-            val newDocuments = if (response is ResultData.Complete) {
+            val folderContent = if (response is ResultData.Complete) {
                 response.data
             } else {
-                println("newDocuments failed.")
                 return
             }
-            println("Sync. received ${newDocuments.size} new documents")
-//        println("Documents: ${newDocuments.joinToString(separator = "\n\n")}")
+
+            val newDocuments = folderContent.documents.map { it.toModel() }
+            val newFolders = folderContent.folders.map { it.toModel() }
 
             // Then, load the outdated documents.
             // These documents were updated locally, but were not sent to the backend yet
             val localOutdatedDocs = documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId)
-            println("Sync. loaded ${localOutdatedDocs.size} outdated documents")
+
+            // Load local outdated subfolders (where lastSyncedAt is null or lastUpdatedAt > lastSyncedAt)
+            val allLocalFolders = folderRepository.getFolderByParentId(folderId, workspaceId)
+            val localOutdatedFolders = allLocalFolders.filter { folder ->
+                val syncedAt = folder.lastSyncedAt
+                syncedAt == null || folder.lastUpdatedAt > syncedAt
+            }
 
             // Resolve conflicts of documents that were updated both locally and in the backend.
             // Documents will be saved locally by documentConflictHandler.handleConflict
             val documentsNotSent =
                 documentConflictHandler.handleConflict(localOutdatedDocs, newDocuments)
-            documentRepository.refreshDocuments()
 
-//        println("Sync. sending ${documentsNotSent.size} documents")
-//        println("Documents sent: ${documentsNotSent.joinToString(separator = "\n\n")}")
+            // Resolve conflicts for subfolders
+            val foldersNotSent = folderConflictHandler.handleConflict(
+                localFolders = localOutdatedFolders,
+                externalFolders = newFolders
+            )
+
+            documentRepository.refreshDocuments()
+            folderRepository.refreshFolders()
 
             // Send documents to backend
-            val resultSend = documentsApi.sendDocuments(documentsNotSent, workspaceId, authToken)
+            val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent, workspaceId)
 
-            if (resultSend is ResultData.Complete) {
-                println("documents sent")
-                val now = Clock.System.now()
-                // If everything ran accordingly, update the sync time of the folder.
-                documentsNotSent.forEach { document ->
-                    val newDocument = document.copy(lastSyncedAt = now)
-                    documentRepository.saveDocumentMetadata(newDocument)
+            // Send subfolders to backend
+            val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId)
+
+            if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
+                // Documents and folders were sent successfully.
+                // Update lastSyncedAt for sent items to prevent re-sending them.
+                val syncTime = Clock.System.now()
+
+                // Update lastSyncedAt for documents that were sent
+                documentsNotSent.forEach { doc ->
+                    val updatedDoc = doc.copy(lastSyncedAt = syncTime)
+                    documentRepository.saveDocument(updatedDoc)
+                }
+
+                // Update lastSyncedAt for folders that were sent
+                foldersNotSent.forEach { folder ->
+                    val updatedFolder = folder.copy(lastSyncedAt = syncTime)
+                    folderRepository.updateFolder(updatedFolder)
                 }
 
                 documentRepository.refreshDocuments()
-                folderRepository.updateFolder(folder.copy(lastSyncedAt = now))
+                folderRepository.refreshFolders()
 
-                println("folders sync OK")
-
-                lastSuccessfulSync = now
+                lastSuccessfulSync = syncTime
             }
         } catch (e: Exception) {
-//            e.printStackTrace()
-            println("Error in folder sync: ${e.message}")
+            // Sync failed, will retry on next sync
         }
     }
 }

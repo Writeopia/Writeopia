@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
+import io.writeopia.ui.icons.WrSdkIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -68,9 +66,9 @@ fun VideoPlayerControls(
         ) {
             Icon(
                 imageVector = if (playerState.isPlaying) {
-                    Icons.Filled.Pause
+                    WrSdkIcons.pause
                 } else {
-                    Icons.Filled.PlayArrow
+                    WrSdkIcons.play
                 },
                 contentDescription = if (playerState.isPlaying) "Pause" else "Play",
                 tint = Color.White,

@@ -3,7 +3,11 @@ package io.writeopia.editor.features.editor.ui.screen
 // import androidx.compose.ui.tooling.preview.Preview
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -29,9 +33,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +62,8 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
+import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
+import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
 import io.writeopia.editor.input.InputScreen
@@ -88,6 +91,7 @@ internal fun NoteEditorScreen(
     navigateBack: () -> Unit,
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit = {},
+    onNewImageClick: () -> Unit = {},
     onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
@@ -97,6 +101,24 @@ internal fun NoteEditorScreen(
         noteEditorViewModel.handleBackAction(navigateBack = {
             navigateBack()
         })
+    }
+
+    val context = LocalContext.current
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        uri?.let {
+            // Copy the image to app storage for persistence
+            val fileName = "image_${System.currentTimeMillis()}.jpg"
+            val destinationFile = java.io.File(context.filesDir, fileName)
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                destinationFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            noteEditorViewModel.addImage(destinationFile.absolutePath)
+        }
     }
 
     if (documentId != null) {
@@ -109,7 +131,6 @@ internal fun NoteEditorScreen(
         )
     }
 
-    val context = LocalContext.current
     val document = noteEditorViewModel.documentToShareInfo.collectAsState().value
 
     if (document != null) {
@@ -129,6 +150,7 @@ internal fun NoteEditorScreen(
                 TopBar(
                     titleState = noteEditorViewModel.currentTitle,
                     editableState = noteEditorViewModel.isEditable,
+                    publishedState = noteEditorViewModel.isDocumentPublished,
                     navigationClick = {
                         noteEditorViewModel.handleBackAction(navigateBack = navigateBack)
                     },
@@ -193,6 +215,12 @@ internal fun NoteEditorScreen(
                     noteEditorViewModel::addPage,
                     noteEditorViewModel::titleClick,
                     onDrawingClick = onNewDrawingClick,
+                    onImageClick = {
+                        imagePickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    onSpreadsheetClick = { noteEditorViewModel.onAddSpreadsheetClick(3) },
                     onBoxClick = noteEditorViewModel::toggleHighLightBlock,
                     onCardClick = noteEditorViewModel::toggleCardBlock
                 )
@@ -233,8 +261,30 @@ internal fun NoteEditorScreen(
                     onShareJson = { noteEditorViewModel.shareDocumentInJson() },
                     onShareMd = { noteEditorViewModel.shareDocumentInMarkdown() },
                     changeFontFamily = noteEditorViewModel::changeFontFamily,
-                    selectedState = noteEditorViewModel.fontFamily
+                    selectedState = noteEditorViewModel.fontFamily,
+                    onPublishClick = noteEditorViewModel::showPublishDialog
                 )
+            }
+
+            val showPublishDialog by noteEditorViewModel.showPublishDialog.collectAsState()
+            val isDocumentPublished by noteEditorViewModel.isDocumentPublished.collectAsState()
+            val publishLoading by noteEditorViewModel.publishLoading.collectAsState()
+
+            if (showPublishDialog && documentId != null) {
+                PublishDialog(
+                    documentId = documentId,
+                    isPublished = isDocumentPublished,
+                    isLoading = publishLoading,
+                    onDismiss = noteEditorViewModel::hidePublishDialog,
+                    onPublishAndView = noteEditorViewModel::publishDocument,
+                    onUnpublish = noteEditorViewModel::unpublishDocument,
+                    onCopyLink = noteEditorViewModel::copyPublishLink
+                )
+            }
+
+            val showPremiumDialog by noteEditorViewModel.showPremiumDialog.collectAsState()
+            if (showPremiumDialog) {
+                PremiumOnlyDialog(onDismiss = noteEditorViewModel::hidePremiumDialog)
             }
         }
     }
@@ -245,12 +295,14 @@ internal fun NoteEditorScreen(
 private fun TopBar(
     titleState: StateFlow<String>,
     editableState: StateFlow<Boolean>,
+    publishedState: StateFlow<Boolean>,
     modifier: Modifier = Modifier,
     navigationClick: () -> Unit = {},
     shareDocument: () -> Unit
 ) {
     val title by titleState.collectAsState()
     val isEditable by editableState.collectAsState()
+    val isPublished by publishedState.collectAsState()
 
     TopAppBar(
         modifier = modifier.height(110.dp),
@@ -271,12 +323,26 @@ private fun TopBar(
                     style = MaterialTheme.typography.titleSmall.copy(textAlign = TextAlign.Center)
                 )
 
-                if (!isEditable) {
+                if (!isEditable || isPublished) {
                     Spacer(modifier.width(4.dp))
+                }
 
+                if (!isEditable) {
                     Icon(
-                        imageVector = Icons.Outlined.Lock,
-                        contentDescription = "Lock",
+                        imageVector = WrIcons.lock,
+                        contentDescription = "Locked",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+
+                if (isPublished) {
+                    if (!isEditable) {
+                        Spacer(modifier.width(4.dp))
+                    }
+                    Icon(
+                        imageVector = WrIcons.published,
+                        contentDescription = "Published",
                         tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(14.dp)
                     )
@@ -307,7 +373,7 @@ private fun TopBar(
                     .clip(CircleShape)
                     .clickable(onClick = shareDocument)
                     .padding(9.dp),
-                imageVector = Icons.Default.MoreVert,
+                imageVector = WrIcons.moreVert,
                 contentDescription = "",
                 tint = MaterialTheme.colorScheme.onBackground
             )
@@ -361,6 +427,8 @@ private fun BottomScreen(
     onAddPage: () -> Unit = {},
     titleClick: (Tag) -> Unit,
     onDrawingClick: () -> Unit = {},
+    onImageClick: () -> Unit = {},
+    onSpreadsheetClick: () -> Unit = {},
     onBoxClick: () -> Unit = {},
     onCardClick: () -> Unit = {}
 ) {
@@ -396,7 +464,9 @@ private fun BottomScreen(
                     onForwardPress = reDo,
                     canUndoState = canUndo,
                     canRedoState = canRedo,
-                    onDrawingClick = onDrawingClick
+                    onDrawingClick = onDrawingClick,
+                    onImageClick = onImageClick,
+                    onSpreadsheetClick = onSpreadsheetClick
                 )
             }
 

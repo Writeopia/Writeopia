@@ -8,13 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccessTime
-import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.CheckBox
-import androidx.compose.material.icons.outlined.CropSquare
-import androidx.compose.material.icons.outlined.FormatListBulleted
-import androidx.compose.material.icons.outlined.HighlightAlt
+import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.sdk.models.command.CommandFactory
 import io.writeopia.sdk.models.command.CommandInfo
 import io.writeopia.sdk.models.command.CommandTrigger
@@ -60,14 +54,14 @@ val defaultSlashCommands = listOf(
     SlashCommand(
         name = "Today",
         description = "Insert today's date",
-        icon = Icons.Outlined.CalendarToday,
+        icon = WrSdkIcons.calendar,
         commandText = "/today",
         action = { getCurrentDateFormatted() }
     ),
     SlashCommand(
         name = "Now",
         description = "Insert current date and time",
-        icon = Icons.Outlined.AccessTime,
+        icon = WrSdkIcons.clock,
         commandText = "/now",
         action = { getCurrentDateTimeFormatted() }
     )
@@ -87,7 +81,7 @@ fun createTypeCommands(
     SlashCommand(
         name = "Checkbox",
         description = "Change line to a checkbox",
-        icon = Icons.Outlined.CheckBox,
+        icon = WrSdkIcons.checkbox,
         commandText = "/checkbox",
         action = { position ->
             onTypeChange(
@@ -101,7 +95,7 @@ fun createTypeCommands(
     SlashCommand(
         name = "List",
         description = "Change line to a bullet list",
-        icon = Icons.Outlined.FormatListBulleted,
+        icon = WrSdkIcons.list,
         commandText = "/list",
         action = { position ->
             onTypeChange(
@@ -115,7 +109,7 @@ fun createTypeCommands(
     SlashCommand(
         name = "Box",
         description = "Change line to a highlight box",
-        icon = Icons.Outlined.HighlightAlt,
+        icon = WrSdkIcons.highlightBox,
         commandText = "/box",
         action = { position ->
             onTagToggle(
@@ -129,7 +123,7 @@ fun createTypeCommands(
     SlashCommand(
         name = "Card",
         description = "Change line to a card with borders",
-        icon = Icons.Outlined.CropSquare,
+        icon = WrSdkIcons.square,
         commandText = "/card",
         action = { position ->
             onTagToggle(

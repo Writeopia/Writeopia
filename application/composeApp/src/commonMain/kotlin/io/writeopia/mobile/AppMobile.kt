@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import io.writeopia.auth.navigation.authNavigation
+import io.writeopia.auth.navigation.startScreen
 import io.writeopia.common.utils.ALLOW_BACKEND
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
@@ -26,7 +27,6 @@ import io.writeopia.features.search.di.SearchInjection
 import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.navigation.MobileNavigationViewModel
-import io.writeopia.navigation.startScreen
 import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notes.desktop.components.DesktopApp
@@ -201,6 +201,11 @@ fun AppMobile(
                         navController.navigate(
                             Destinations.AUTH_RESET_PASSWORD.id
                         )
+                    },
+                    navigateToChooseWorkspace = {
+                        navController.navigate(Destinations.START_APP.id) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
                     }
                 )
             }

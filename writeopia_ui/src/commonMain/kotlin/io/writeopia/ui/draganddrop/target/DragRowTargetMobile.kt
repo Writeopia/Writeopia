@@ -12,8 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DragIndicator
+import io.writeopia.ui.icons.WrSdkIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -147,7 +146,7 @@ fun DragRowTargetMobile(
                         .width(dragIconWidth)
                         .pointerHoverIcon(PointerIcon.Hand)
                         .pointerInput(Unit, block = detectDrag),
-                    imageVector = Icons.Default.DragIndicator,
+                    imageVector = WrSdkIcons.dragIndicator,
                     contentDescription = "Drag icon",
                     tint = iconTintOnHover
                 )

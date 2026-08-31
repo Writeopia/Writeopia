@@ -2,6 +2,7 @@ package io.writeopia.sdk.manager
 
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.utils.collections.toSortedMutableMap
 import io.writeopia.sdk.utils.extensions.toEditState
 
 /**
@@ -42,7 +43,7 @@ class MovementHandler {
     }
 
     fun move(stories: Map<Double, StoryStep>, move: Action.Move): Map<Double, StoryStep> {
-//        val mutable = stories.toMutableMap()
+//        val mutable = stories.toSortedMutableMap()
 //
 //        val movedStories = mutable[move.positionFrom]?.let { moveStory ->
 //            if (move.storyStep.parentId == null) {
@@ -77,7 +78,7 @@ class MovementHandler {
     )
 
     private fun moveStories(stories: Map<Double, StoryStep>, from: Set<Double>, to: Double): Map<Double, StoryStep> {
-        val mutable = stories.toMutableMap()
+        val mutable = stories.toSortedMutableMap()
 
         // Collect stories to move before removal
         val storiesToMove = from.sorted().mapNotNull { position ->

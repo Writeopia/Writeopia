@@ -33,6 +33,9 @@ import io.writeopia.account.ui.SettingsDialog
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
+import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
+import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.drawing.di.DrawingInjection
 import io.writeopia.editor.di.EditorKmpInjector
@@ -48,6 +51,7 @@ import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNoteMobile
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
+import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
 import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
@@ -76,25 +80,37 @@ fun DesktopApp(
     toggleMaxScreen: () -> Unit,
     navigateToRegister: () -> Unit,
     navigateToResetPassword: () -> Unit,
+    navigateToChooseWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
     startDestination: String = startDestination(),
+    notesMenuInjection: NotesMenuInjection? = null,
+    sideMenuInjector: SideMenuKmpInjector? = null,
 ) {
-    val editorInjector = remember {
-        EditorKmpInjector.desktop(
-            selectionState = selectionState,
-            keyboardEventFlow = keyboardEventFlow,
-        )
+    val platform = LocalPlatform.current
+    val editorInjector = remember(platform) {
+        when (platform) {
+            PlatformType.WEB -> EditorKmpInjector.web(
+                selectionState = selectionState,
+                keyboardEventFlow = keyboardEventFlow,
+                imageUploader = WorkspaceInjection.singleton().provideImageUploader(),
+            )
+            else -> EditorKmpInjector.desktop(
+                selectionState = selectionState,
+                keyboardEventFlow = keyboardEventFlow,
+                imageUploader = WorkspaceInjection.singleton().provideImageUploader(),
+            )
+        }
     }
 
-    val notesMenuInjection = remember {
+    val actualNotesMenuInjection = notesMenuInjection ?: remember {
         NotesMenuKmpInjection.desktop(
             selectionState = selectionState,
             keyboardEventFlow = keyboardEventFlow,
         )
     }
 
-    val sideMenuInjector = remember {
+    val actualSideMenuInjector = sideMenuInjector ?: remember {
         SideMenuKmpInjector()
     }
 
@@ -104,7 +120,7 @@ fun DesktopApp(
         DocumentsGraphInjection(repositoryInjection = RepositoryInjector.singleton())
 
     val globalShellViewModel: GlobalShellViewModel =
-        sideMenuInjector.provideSideMenuViewModel(keyboardEventFlow)
+        actualSideMenuInjector.provideSideMenuViewModel(keyboardEventFlow)
     val colorTheme by colorThemeOption.collectAsState()
     val accentColor by accentColorOption.collectAsState()
     val navigationController: NavHostController = rememberNavController()
@@ -133,7 +149,8 @@ fun DesktopApp(
     ) {
         val density = LocalDensity.current
         val globalBackground = WriteopiaTheme.colorScheme.globalBackground
-        DragSelectionBox(modifier = modifier) {
+        val isTextSelected by editorInjector.textSelectionActiveState.collectAsState()
+        DragSelectionBox(modifier = modifier, isTextSelected = isTextSelected) {
             DraggableScreen {
                 Row(Modifier.background(globalBackground)) {
                     val sideMenuWidth by globalShellViewModel.showSideMenuState.collectAsState()
@@ -198,8 +215,8 @@ fun DesktopApp(
                             Navigation(
                                 isDarkTheme = colorTheme.isDarkTheme(),
                                 startDestination = startDestination,
-                                notesMenuInjection = notesMenuInjection,
-                                sideMenuKmpInjector = sideMenuInjector,
+                                notesMenuInjection = actualNotesMenuInjection,
+                                sideMenuKmpInjector = actualSideMenuInjector,
                                 documentsGraphInjection = documentsGraphInjection,
                                 editorInjector = editorInjector,
                                 drawingInjection = drawingInjection,
@@ -248,6 +265,7 @@ fun DesktopApp(
                                     syncWorkspaceState = globalShellViewModel.lastWorkspaceSync,
                                     isAutoSyncEnabled = globalShellViewModel.isAutoSyncEnabled,
                                     workspaceToEdit = globalShellViewModel.workspaceToEdit,
+                                    logoutInProgress = globalShellViewModel.logoutInProgress,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
                                     selectAccentColor = selectAccentColor,
@@ -259,9 +277,12 @@ fun DesktopApp(
                                     downloadModel = globalShellViewModel::modelToDownload,
                                     deleteModel = globalShellViewModel::deleteModel,
                                     signIn = navigateToRegister,
+                                    changeWorkspace = {
+                                        globalShellViewModel.changeWorkspace(sideEffect = navigateToChooseWorkspace)
+                                    },
                                     resetPassword = navigateToResetPassword,
                                     logout = {
-                                        globalShellViewModel.logout(sideEffect = navigateToRegister)
+                                        globalShellViewModel.logout(onSuccessSideEffect = navigateToRegister)
                                     },
                                     showDeleteConfirm = globalShellViewModel::showDeleteConfirm,
                                     dismissDeleteConfirm = globalShellViewModel::dismissDeleteConfirm,
@@ -276,6 +297,9 @@ fun DesktopApp(
                                     selectWorkspaceToManage =
                                         globalShellViewModel::selectWorkspaceToManage,
                                     usersInSelectedWorkspace = globalShellViewModel.usersOfWorkspaceToEdit,
+                                    exportWorkspaceState = globalShellViewModel.exportWorkspaceState,
+                                    onExportWorkspace = globalShellViewModel::exportWorkspace,
+                                    onResetExportState = globalShellViewModel::resetExportState,
                                 )
                             }
 

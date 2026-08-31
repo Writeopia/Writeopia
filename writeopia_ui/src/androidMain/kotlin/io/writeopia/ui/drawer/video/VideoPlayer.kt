@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
+import io.writeopia.ui.icons.WrSdkIcons
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -111,7 +109,7 @@ fun VideoPlayer(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Refresh,
+                            imageVector = WrSdkIcons.refresh,
                             contentDescription = "Retry",
                             tint = Color.Black,
                             modifier = Modifier.size(32.dp)
@@ -149,7 +147,7 @@ fun VideoPlayer(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.PlayArrow,
+                        imageVector = WrSdkIcons.play,
                         contentDescription = "Play",
                         tint = Color.White,
                         modifier = Modifier.size(48.dp)

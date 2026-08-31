@@ -54,5 +54,38 @@ kotlin {
                 implementation(project(":plugins:writeopia_network"))
             }
         }
+
+        val webMain by creating {
+            dependsOn(commonMain)
+        }
+
+        val jsMain by getting {
+            dependsOn(webMain)
+            dependencies {
+                implementation(libs.ktor.client.js)
+            }
+        }
+
+        val wasmJsMain by getting {
+            dependsOn(webMain)
+            dependencies {
+                implementation(libs.ktor.client.js)
+            }
+        }
+
+        val nativeMain by creating {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.ktor.client.darwin)
+            }
+        }
+
+        val iosArm64Main by getting {
+            dependsOn(nativeMain)
+        }
+
+        val iosSimulatorArm64Main by getting {
+            dependsOn(nativeMain)
+        }
     }
 }

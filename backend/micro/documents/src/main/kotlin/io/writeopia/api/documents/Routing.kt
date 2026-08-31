@@ -6,12 +6,14 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.writeopia.api.documents.routing.documentsRoute
+import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.sql.WriteopiaDbBackend
 
 fun Application.configureRouting(
     writeopiaDb: WriteopiaDbBackend?,
     useAi: Boolean,
-    debugMode: Boolean = false
+    debugMode: Boolean = false,
+    genAiService: GenAiService? = null
 ) {
     routing {
         // Health check for Cloud Run
@@ -20,12 +22,12 @@ fun Application.configureRouting(
         }
 
         // Health check accessible via load balancer
-        get("/api/documents/health") {
+        get("/api/docs/health") {
             call.respondText("OK", status = HttpStatusCode.OK)
         }
 
         if (writeopiaDb != null) {
-            documentsRoute(writeopiaDb, useAi, debugMode)
+            documentsRoute(writeopiaDb, useAi, debugMode, genAiService = genAiService)
         }
 
         get {

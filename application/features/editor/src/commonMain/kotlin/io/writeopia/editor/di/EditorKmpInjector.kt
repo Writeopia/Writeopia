@@ -8,12 +8,15 @@ import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.di.InDocumentSearchInjection
+import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.di.OllamaInjection
+import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorKmpViewModel
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.presentation.viewmodel.PresentationKmpViewModel
 import io.writeopia.editor.features.presentation.viewmodel.PresentationViewModel
+import io.writeopia.editor.features.site.viewmodel.SiteViewModel
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.sdk.models.id.GenerateId
@@ -23,6 +26,7 @@ import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
+import io.writeopia.ui.image.ImageUploader
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.CoroutineScope
@@ -56,8 +60,13 @@ class EditorKmpInjector private constructor(
     private val appConfigurationInjector: AppConfigurationInjector =
         AppConfigurationInjector.singleton(),
     private val ollamaInjection: OllamaInjection? = null,
+    private val genAiInjection: GenAiInjection? = null,
     private val inDocumentSearchInjection: InDocumentSearchInjection =
         InDocumentSearchInjection.singleton(),
+    private val workspaceInjection: WorkspaceInjection =
+        WorkspaceInjection.singleton(),
+    private val imageUploader: ImageUploader? = null,
+    val textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false),
 ) : TextEditorInjector {
 
     // SharedFlow for drawing save events - ViewModel subscribes to this
@@ -80,7 +89,9 @@ class EditorKmpInjector private constructor(
         selectionState = selectionState,
         keyboardEventFlow = keyboardEventFlow,
         documentRepository = repositoryInjection.provideDocumentRepository(),
-        userRepository = authRepository
+        userRepository = authRepository,
+        imageUploader = imageUploader,
+        textSelectionActiveState = textSelectionActiveState
     )
 
     private fun provideNoteEditorViewModel(
@@ -99,12 +110,18 @@ class EditorKmpInjector private constructor(
                 .provideUiConfigurationRepository(),
             folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
             ollamaRepository = ollamaInjection?.provideRepository(),
+            genAiRepository = genAiInjection?.provideRepository(),
             keyboardEventFlow = keyboardEventFlow,
             copyManager = copyManager,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             authRepository = authCoreInjection.provideAuthRepository(),
             inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo(),
-            drawingSaveEvents = drawingSaveEvents
+            drawingSaveEvents = drawingSaveEvents,
+            documentLoadUseCase = workspaceInjection.provideDocumentLoadUseCase(),
+            storyStepSyncApi = { request, token ->
+                connectionInjection.storyStepSyncApi().syncStorySteps(request, token)
+            },
+            documentsApi = workspaceInjection.provideDocumentsApi()
         )
 
     @Composable
@@ -120,6 +137,11 @@ class EditorKmpInjector private constructor(
         viewModel {
             provideNoteEditorViewModel(parentFolder = parentFolder, copyManager = copyManager)
         }
+
+    @Composable
+    override fun provideSiteViewModel(): SiteViewModel = throw UnsupportedOperationException(
+        "SiteViewModel should be created directly where needed with the appropriate DocumentsApi"
+    )
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -158,8 +180,14 @@ class EditorKmpInjector private constructor(
                 document?.content?.entries?.find { it.value.id == storyStepId }?.key
                     ?: (document?.content?.size ?: 0).toDouble()
             } else {
-                // For new drawings, add at the end
-                (document?.content?.size ?: 0).toDouble()
+                // For new drawings, add at the end with title protection
+                val endPosition = (document?.content?.size ?: 0).toDouble()
+                val storyAtEnd = document?.content?.get(endPosition)
+                if (storyAtEnd?.type == StoryTypes.TITLE.type) {
+                    endPosition + 1
+                } else {
+                    endPosition
+                }
             }
 
             // Save to database
@@ -175,12 +203,14 @@ class EditorKmpInjector private constructor(
             connectionInjector: WriteopiaConnectionInjector =
                 WriteopiaConnectionInjector.singleton(),
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
+            imageUploader: ImageUploader? = null,
         ) = EditorKmpInjector(
             authCoreInjection,
             RepositoryInjector.singleton(),
             connectionInjector,
             MutableStateFlow(false),
             MutableStateFlow(KeyboardEvent.IDLE),
+            imageUploader = imageUploader,
         )
 
         fun desktop(
@@ -191,6 +221,7 @@ class EditorKmpInjector private constructor(
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
             ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
+            imageUploader: ImageUploader? = null,
         ) = EditorKmpInjector(
             authCoreInjection,
             repositoryInjection,
@@ -198,6 +229,27 @@ class EditorKmpInjector private constructor(
             selectionState,
             keyboardEventFlow,
             ollamaInjection = ollamaInjection,
+            imageUploader = imageUploader,
+        )
+
+        fun web(
+            authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
+            repositoryInjection: RepositoryInjector = RepositoryInjector.singleton(),
+            connectionInjection: WriteopiaConnectionInjector =
+                WriteopiaConnectionInjector.singleton(),
+            selectionState: StateFlow<Boolean>,
+            keyboardEventFlow: Flow<KeyboardEvent>,
+            genAiInjection: GenAiInjection? = GenAiInjection.singleton(),
+            imageUploader: ImageUploader? = null,
+        ) = EditorKmpInjector(
+            authCoreInjection,
+            repositoryInjection,
+            connectionInjection,
+            selectionState,
+            keyboardEventFlow,
+            ollamaInjection = null,
+            genAiInjection = genAiInjection,
+            imageUploader = imageUploader,
         )
     }
 }

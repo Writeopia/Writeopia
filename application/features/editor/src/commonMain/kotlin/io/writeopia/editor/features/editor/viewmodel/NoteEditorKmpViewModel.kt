@@ -6,11 +6,16 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.common.utils.collections.toNodeTree
+import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
+import io.writeopia.core.folders.repository.folder.DocumentLoadUseCase
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toFolderUi
 import io.writeopia.core.folders.repository.InDocumentSearchRepository
@@ -34,10 +39,14 @@ import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.persistence.core.sync.DocumentSyncManager
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
+import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.serialization.request.wrapInRequest
@@ -84,12 +93,18 @@ class NoteEditorKmpViewModel(
     private val documentToJson: DocumentToJson = DocumentToJson(),
     private val folderRepository: FolderRepository,
     private val ollamaRepository: OllamaRepository? = null,
+    private val genAiRepository: GenAiRepository? = null,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val copyManager: CopyManager,
     private val authRepository: AuthRepository,
     private val inDocumentSearchRepository: InDocumentSearchRepository,
-    private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null
+    private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
+    private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton(),
+    private val documentLoadUseCase: DocumentLoadUseCase? = null,
+    private val storyStepSyncApi: (suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse)? = null,
+    private val documentsApi: DocumentsApi? = null,
+    private val aiTaskManager: AiTaskManager = AiTaskManager.singleton()
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -115,12 +130,18 @@ class NoteEditorKmpViewModel(
                         }
 
                         KeyboardEvent.AI_QUESTION -> {
-                            askAiBySelection()
+                            // Keyboard shortcut uses CURSOR mode by default
+                            askAiWithMode(AiTargetMode.CURSOR)
                         }
 
                         KeyboardEvent.CANCEL -> {
                             writeopiaManager.clearSelection()
                             hideSearch()
+                            // Cancel any running AI tasks for this document
+                            val docId = documentId.value
+                            if (docId.isNotEmpty()) {
+                                aiTaskManager.cancelTasksByPrefix("editor-$docId")
+                            }
                             aiJob?.cancel()
                         }
 
@@ -296,6 +317,18 @@ class NoteEditorKmpViewModel(
     private val _sideMenuTabState = MutableStateFlow(SideMenuTab.NONE)
     override val sideMenuTabState: StateFlow<SideMenuTab> = _sideMenuTabState.asStateFlow()
 
+    private val _showPublishDialog = MutableStateFlow(false)
+    override val showPublishDialog: StateFlow<Boolean> = _showPublishDialog.asStateFlow()
+
+    private val _isDocumentPublished = MutableStateFlow(false)
+    override val isDocumentPublished: StateFlow<Boolean> = _isDocumentPublished.asStateFlow()
+
+    private val _publishLoading = MutableStateFlow(false)
+    override val publishLoading: StateFlow<Boolean> = _publishLoading.asStateFlow()
+
+    private val _showPremiumDialog = MutableStateFlow(false)
+    override val showPremiumDialog: StateFlow<Boolean> = _showPremiumDialog.asStateFlow()
+
     /**
      * This property defines if the document is favorite
      */
@@ -459,7 +492,26 @@ class NoteEditorKmpViewModel(
         }
 
         writeopiaManager.newDocument(documentId, title, parentFolder = parentFolderId)
-        writeopiaManager.saveOnStoryChanges(OnUpdateDocumentTracker(documentRepository))
+
+        // Use global sync manager for syncing - continues even after ViewModel is cleared
+        documentSyncManager.registerForSync(
+            documentId = documentId,
+            documentEditionFlow = writeopiaManager.documentEditionState,
+            workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+            documentTracker = OnUpdateDocumentTracker(documentRepository)
+        )
+
+        // Also register for backend sync if the API is available
+        storyStepSyncApi?.let { syncApi ->
+            documentSyncManager.registerForBackendSync(
+                documentId = documentId,
+                documentEditionFlow = writeopiaManager.documentEditionState,
+                workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                syncApi = syncApi,
+                tokenProvider = { authRepository.getAuthToken() }
+            )
+        }
+
         writeopiaManager.liveSync(sharedEditionManager)
     }
 
@@ -468,31 +520,87 @@ class NoteEditorKmpViewModel(
 
         viewModelScope.launch(Dispatchers.Default) {
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            val isDisconnected = workspace.id == Workspace.disconnectedWorkspace().id
 
-            val document =
-                documentRepository.loadDocumentById(documentId, workspace.id)
+            // Step 1: Load from local database immediately (fast path)
+            val localDocument = documentRepository.loadDocumentById(documentId, workspace.id)
 
-            if (document != null) {
-                writeopiaManager.loadDocument(document)
-                writeopiaManager.saveOnStoryChanges(
-                    OnUpdateDocumentTracker(
-                        documentRepository,
-                        onStoryStepUpdate = { storyStep, position ->
-                            inDocumentSearchRepository.insertForFts(storyStep, documentId, position.toDouble())
-                        },
-                        onDocumentUpdate = { document ->
-                            document.content
-                                .forEach { (position, storyStep) ->
-                                    inDocumentSearchRepository.insertForFts(
-                                        storyStep,
-                                        documentId,
-                                        position.toDouble()
-                                    )
-                                }
+            if (localDocument != null) {
+                writeopiaManager.loadDocument(localDocument)
+                registerForSync(documentId)
+                // Set initial published state from local document
+                _isDocumentPublished.value = localDocument.published
+            }
+
+            // Step 2: If online, fetch from backend in background and merge
+            if (!isDisconnected && documentLoadUseCase != null) {
+                documentLoadUseCase.fetchAndMergeFromBackend(
+                    documentId = documentId,
+                    workspaceId = workspace.id,
+                    onMergeComplete = { mergedDocument ->
+                        // Update the document in the manager with merged content
+                        writeopiaManager.updateDocument(mergedDocument)
+                        // Update published state from merged document
+                        _isDocumentPublished.value = mergedDocument.published
+
+                        // Register for sync if this is the first load (backend-only document)
+                        if (localDocument == null) {
+                            registerForSync(documentId)
                         }
-                    )
+                    }
                 )
             }
+
+            // Step 3: Fetch document metadata from API if online
+            if (!isDisconnected && documentsApi != null) {
+                // Fetch favorite status from backend
+                val docResult = documentsApi.getDocumentById(documentId, workspace.id)
+                if (docResult is ResultData.Complete) {
+                    writeopiaManager.setFavorite(docResult.data.favorite)
+                }
+
+                // Fetch published status
+                val publishedResult = documentsApi.isDocumentPublished(documentId, workspace.id)
+                if (publishedResult is ResultData.Complete) {
+                    _isDocumentPublished.value = publishedResult.data
+                }
+            }
+        }
+    }
+
+    private fun registerForSync(documentId: String) {
+        // Use global sync manager for syncing - continues even after ViewModel is cleared
+        documentSyncManager.registerForSync(
+            documentId = documentId,
+            documentEditionFlow = writeopiaManager.documentEditionState,
+            workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+            documentTracker = OnUpdateDocumentTracker(
+                documentRepository,
+                onStoryStepUpdate = { storyStep, position ->
+                    inDocumentSearchRepository.insertForFts(storyStep, documentId, position)
+                },
+                onDocumentUpdate = { doc ->
+                    doc.content
+                        .forEach { (position, storyStep) ->
+                            inDocumentSearchRepository.insertForFts(
+                                storyStep,
+                                documentId,
+                                position
+                            )
+                        }
+                }
+            )
+        )
+
+        // Also register for backend sync if the API is available
+        storyStepSyncApi?.let { syncApi ->
+            documentSyncManager.registerForBackendSync(
+                documentId = documentId,
+                documentEditionFlow = writeopiaManager.documentEditionState,
+                workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                syncApi = syncApi,
+                tokenProvider = { authRepository.getAuthToken() }
+            )
         }
     }
 
@@ -555,7 +663,18 @@ class NoteEditorKmpViewModel(
     }
 
     override fun onViewModelCleared() {
+        // Cancel any running AI tasks for this document
+        val docId = documentId.value
+        if (docId.isNotEmpty()) {
+            aiTaskManager.cancelTasksByPrefix("editor-$docId")
+        }
+        aiJob?.cancel()
         writeopiaManager.onClear()
+    }
+
+    override fun onCleared() {
+        onViewModelCleared()
+        super.onCleared()
     }
 
     override fun clearSelections() {
@@ -650,40 +769,59 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun askAiBySelection() {
-        if (ollamaRepository == null) return
+    override fun askAiWithMode(targetMode: AiTargetMode) {
+        if (ollamaRepository != null) {
+            val docId = documentId.value
+            val taskId = "editor-$docId-${GenerateId.generate()}"
 
-        aiJob = viewModelScope.launch(Dispatchers.Default) {
-            PromptService.promptBySelection(
-                authRepository.getUser().id,
-                writeopiaManager,
-                ollamaRepository
-            )
+            aiTaskManager.enqueueTask(
+                id = taskId,
+                type = AiTaskType.TEXT_GENERATION,
+                description = "Generating text..."
+            ) {
+                PromptService.promptWithMode(
+                    authRepository.getUser().id,
+                    targetMode,
+                    writeopiaManager,
+                    ollamaRepository
+                )
+                Result.success(Unit)
+            }
+        } else if (genAiRepository != null) {
+            documentPromptGenAi(targetMode, genAiRepository::streamGenerate)
         }
     }
 
-    override fun aiSummary() {
-        if (ollamaRepository == null) return
-
-        documentPrompt(ollamaRepository::streamSummary)
+    override fun aiSummary(targetMode: AiTargetMode) {
+        if (ollamaRepository != null) {
+            documentPrompt(targetMode, ollamaRepository::streamSummary)
+        } else if (genAiRepository != null) {
+            documentPromptGenAi(targetMode, genAiRepository::streamSummary)
+        }
     }
 
-    override fun aiActionPoints() {
-        if (ollamaRepository == null) return
-
-        documentPrompt(ollamaRepository::streamActionsPoints)
+    override fun aiActionPoints(targetMode: AiTargetMode) {
+        if (ollamaRepository != null) {
+            documentPrompt(targetMode, ollamaRepository::streamActionsPoints)
+        } else if (genAiRepository != null) {
+            documentPromptGenAi(targetMode, genAiRepository::streamActionPoints)
+        }
     }
 
-    override fun aiFaq() {
-        if (ollamaRepository == null) return
-
-        documentPrompt(ollamaRepository::streamFaq)
+    override fun aiFaq(targetMode: AiTargetMode) {
+        if (ollamaRepository != null) {
+            documentPrompt(targetMode, ollamaRepository::streamFaq)
+        } else if (genAiRepository != null) {
+            documentPromptGenAi(targetMode, genAiRepository::streamFaq)
+        }
     }
 
-    override fun aiTags() {
-        if (ollamaRepository == null) return
-
-        documentPrompt(ollamaRepository::streamTags)
+    override fun aiTags(targetMode: AiTargetMode) {
+        if (ollamaRepository != null) {
+            documentPrompt(targetMode, ollamaRepository::streamTags)
+        } else if (genAiRepository != null) {
+            documentPromptGenAi(targetMode, genAiRepository::streamTags)
+        }
     }
 
     override fun aiSection(position: Double) {
@@ -691,7 +829,14 @@ class NoteEditorKmpViewModel(
 
         val sectionText = writeopiaManager.getStory(position)?.text ?: return
 
-        viewModelScope.launch(Dispatchers.Default) {
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Generating section..."
+        ) {
             val prompt =
                 """
                 Create a document section for a document.
@@ -709,6 +854,7 @@ class NoteEditorKmpViewModel(
                 ollamaRepository,
                 position + 0.001
             )
+            Result.success(Unit)
         }
     }
 
@@ -835,16 +981,49 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    private fun documentPrompt(promptFn: (String, String, String) -> Flow<ResultData<String>>) {
+    private fun documentPrompt(
+        targetMode: AiTargetMode,
+        promptFn: (String, String, String) -> Flow<ResultData<String>>
+    ) {
         if (ollamaRepository == null) return
 
-        aiJob = viewModelScope.launch(Dispatchers.Default) {
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Generating text..."
+        ) {
             PromptService.documentPrompt(
                 userId = authRepository.getUser().id,
-                promptFn,
-                writeopiaManager,
-                ollamaRepository
+                targetMode = targetMode,
+                promptFn = promptFn,
+                writeopiaManager = writeopiaManager,
+                ollamaRepository = ollamaRepository
             )
+            Result.success(Unit)
+        }
+    }
+
+    private fun documentPromptGenAi(
+        targetMode: AiTargetMode,
+        promptFn: (String) -> Flow<ResultData<String>>
+    ) {
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Generating text..."
+        ) {
+            PromptService.documentPromptGenAi(
+                targetMode = targetMode,
+                promptFn = promptFn,
+                writeopiaManager = writeopiaManager
+            )
+            Result.success(Unit)
         }
     }
 
@@ -914,5 +1093,84 @@ class NoteEditorKmpViewModel(
                 onComplete()
             }
         }
+    }
+
+    override fun showPublishDialog() {
+        viewModelScope.launch(Dispatchers.Default) {
+            // Check if user is on free tier
+            val user = authRepository.getUser()
+            if (user.tier != Tier.PREMIUM) {
+                _showPremiumDialog.value = true
+                return@launch
+            }
+
+            _showPublishDialog.value = true
+            // Fetch current publish status from server
+            val docId = documentId.value
+            if (docId.isNotEmpty() && documentsApi != null) {
+                val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
+                val result = documentsApi.isDocumentPublished(docId, workspaceId)
+                if (result is ResultData.Complete) {
+                    _isDocumentPublished.value = result.data
+                }
+            }
+        }
+    }
+
+    override fun hidePublishDialog() {
+        _showPublishDialog.value = false
+    }
+
+    override fun hidePremiumDialog() {
+        _showPremiumDialog.value = false
+    }
+
+    override fun publishDocument() {
+        viewModelScope.launch(Dispatchers.Default) {
+            _publishLoading.value = true
+            try {
+                val docId = documentId.value
+                if (docId.isNotEmpty() && documentsApi != null) {
+                    val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
+                    val result = documentsApi.publishDocument(docId, workspaceId)
+                    if (result is ResultData.Complete) {
+                        _isDocumentPublished.value = true
+                    }
+                }
+            } finally {
+                _publishLoading.value = false
+            }
+        }
+    }
+
+    override fun unpublishDocument() {
+        viewModelScope.launch(Dispatchers.Default) {
+            _publishLoading.value = true
+            try {
+                val docId = documentId.value
+                if (docId.isNotEmpty() && documentsApi != null) {
+                    val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
+                    val result = documentsApi.unpublishDocument(docId, workspaceId)
+                    if (result is ResultData.Complete) {
+                        _isDocumentPublished.value = false
+                    }
+                }
+            } finally {
+                _publishLoading.value = false
+            }
+        }
+    }
+
+    override fun copyPublishLink() {
+        val docId = documentId.value
+        if (docId.isNotEmpty()) {
+            val url = "https://app.writeopia.io/site/$docId"
+            copyManager.copyText(url)
+        }
+    }
+
+    override fun onAddSpreadsheetClick(columnCount: Int) {
+        if (!isEditable.value) return
+        writeopiaManager.addSpreadsheet(columnCount)
     }
 }

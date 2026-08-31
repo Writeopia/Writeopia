@@ -8,7 +8,7 @@ import io.mockk.mockk
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.sdk.models.utils.ResultData
-import io.writeopia.sdk.serialization.data.auth.AuthResponse
+import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -41,25 +41,21 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun `onRegister should call enableUser when registration succeeds and admin key is available`() = runTest {
+    fun `onRegister should save pending email when email confirmation is required and no admin key`() = runTest {
         // Given
         val testUser = WriteopiaUserApi(
             id = "user-123",
             name = "Test User",
             email = "test@example.com"
         )
-        val authResponse = AuthResponse(
+        val registerResponse = RegisterResponse(
             writeopiaUser = testUser,
-            token = "jwt-token"
+            emailConfirmationRequired = true
         )
 
-        coEvery { authApi.register(any(), any(), any(), any()) } returns ResultData.Complete(authResponse)
+        coEvery { authApi.register(any(), any(), any(), any()) } returns ResultData.Complete(registerResponse)
         coEvery { authRepository.saveUser(any(), any()) } just Runs
-        coEvery { authApi.enableUser(any(), any()) } returns ResultData.Complete(Unit)
-
-        // Note: In a real test, we'd need to mock EnvUtils.getAdminKey()
-        // For this test, we verify that enableUser can be called correctly
-        // The actual env var behavior is tested separately
+        coEvery { authRepository.savePendingConfirmationEmail(any()) } just Runs
 
         val viewModel = RegisterViewModel(authRepository, authApi)
         viewModel.emailChanged("test@example.com")
@@ -71,9 +67,10 @@ class RegisterViewModelTest {
         viewModel.onRegister()
         advanceUntilIdle()
 
-        // Then - verify register was called
+        // Then - verify register was called and pending email saved (no admin key available)
         coVerify { authApi.register("Test User", "test@example.com", "My Workspace", "password123") }
         coVerify { authRepository.saveUser(any(), selected = true) }
+        coVerify { authRepository.savePendingConfirmationEmail("test@example.com") }
     }
 
     @Test

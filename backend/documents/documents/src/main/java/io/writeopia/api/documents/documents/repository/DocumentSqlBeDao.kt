@@ -96,7 +96,8 @@ class DocumentSqlBeDao(
             icon_tint = document.icon?.tint,
             is_locked = document.isLocked,
             company_id = "",
-            deleted = document.deleted
+            deleted = document.deleted,
+            published = document.published
         )
     }
 
@@ -118,9 +119,63 @@ class DocumentSqlBeDao(
                 background_color = decoration.backgroundColor,
                 tags = tags.joinToString(separator = ",") { it.tag.label },
                 spans = spans.joinToString(separator = ",") { it.toText() },
-                link_to_document = documentLink?.id
+                link_to_document = documentLink?.id,
+                last_updated_at = lastUpdatedAt?.toInt()
             )
+
+            // Recursively save nested steps with parent_id set to this step's id
+            steps.forEachIndexed { index, childStep ->
+                val childWithParent = childStep.copy(parentId = id)
+                insertStoryStep(childWithParent, index.toDouble(), documentId)
+            }
         }
+    }
+
+    /**
+     * Recursively loads child steps for a given parent step ID.
+     */
+    private fun loadChildSteps(parentId: String): List<StoryStep> {
+        return storyStepQueries?.selectByParentId(parentId)
+            ?.executeAsList()
+            ?.map { entity ->
+                val childSteps = if (entity.has_inner_steps) {
+                    loadChildSteps(entity.id)
+                } else {
+                    emptyList()
+                }
+
+                StoryStep(
+                    id = entity.id,
+                    localId = entity.local_id,
+                    type = StoryTypes.fromNumber(entity.type).type,
+                    parentId = entity.parent_id,
+                    url = entity.url,
+                    path = entity.path,
+                    text = entity.text,
+                    checked = entity.checked,
+                    steps = childSteps,
+                    decoration = Decoration(
+                        backgroundColor = entity.background_color,
+                    ),
+                    tags = entity.tags
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .mapNotNull(TagInfo.Companion::fromString)
+                        .toSet(),
+                    spans = entity.spans
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .map(SpanInfo::fromString)
+                        .toSet(),
+                    documentLink = entity.link_to_document?.let { docId ->
+                        val title = documentQueries?.selectTitleByDocumentId(docId)
+                            ?.executeAsOneOrNull()
+                        DocumentLink(docId, title)
+                    },
+                    dbPosition = entity.position.toDouble(),
+                    lastUpdatedAt = entity.last_updated_at?.toLong()
+                )
+            } ?: emptyList()
     }
 
     fun insertFolder(folder: Folder) {
@@ -174,8 +229,16 @@ class DocumentSqlBeDao(
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
                     val innerContent = content.filter { innerContent ->
-                        !innerContent.id_.isNullOrEmpty()
+                        // Only include top-level steps (no parent_id)
+                        !innerContent.id_.isNullOrEmpty() && innerContent.parent_id == null
                     }.associate { innerContent ->
+                        // Load child steps if this step has nested content
+                        val childSteps = if (innerContent.has_inner_steps == true) {
+                            loadChildSteps(innerContent.id_!!)
+                        } else {
+                            emptyList()
+                        }
+
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
@@ -185,6 +248,7 @@ class DocumentSqlBeDao(
                             path = innerContent.path,
                             text = innerContent.text,
                             checked = innerContent.checked ?: false,
+                            steps = childSteps,
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color,
                             ),
@@ -235,8 +299,16 @@ class DocumentSqlBeDao(
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
                     val innerContent = content.filter { innerContent ->
-                        !innerContent.id_.isNullOrEmpty()
+                        // Only include top-level steps (no parent_id)
+                        !innerContent.id_.isNullOrEmpty() && innerContent.parent_id == null
                     }.associate { innerContent ->
+                        // Load child steps if this step has nested content
+                        val childSteps = if (innerContent.has_inner_steps == true) {
+                            loadChildSteps(innerContent.id_!!)
+                        } else {
+                            emptyList()
+                        }
+
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
@@ -246,6 +318,7 @@ class DocumentSqlBeDao(
                             path = innerContent.path,
                             text = innerContent.text,
                             checked = innerContent.checked ?: false,
+                            steps = childSteps,
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color,
                             ),
@@ -299,8 +372,16 @@ class DocumentSqlBeDao(
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
                     val innerContent = content.filter { innerContent ->
-                        !innerContent.id_.isNullOrEmpty()
+                        // Only include top-level steps (no parent_id)
+                        !innerContent.id_.isNullOrEmpty() && innerContent.parent_id == null
                     }.associate { innerContent ->
+                        // Load child steps if this step has nested content
+                        val childSteps = if (innerContent.has_inner_steps == true) {
+                            loadChildSteps(innerContent.id_!!)
+                        } else {
+                            emptyList()
+                        }
+
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
@@ -310,6 +391,7 @@ class DocumentSqlBeDao(
                             path = innerContent.path,
                             text = innerContent.text,
                             checked = innerContent.checked ?: false,
+                            steps = childSteps,
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color,
                             ),
@@ -363,8 +445,16 @@ class DocumentSqlBeDao(
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
                     val innerContent = content.filter { innerContent ->
-                        !innerContent.id_.isNullOrEmpty()
+                        // Only include top-level steps (no parent_id)
+                        !innerContent.id_.isNullOrEmpty() && innerContent.parent_id == null
                     }.associate { innerContent ->
+                        // Load child steps if this step has nested content
+                        val childSteps = if (innerContent.has_inner_steps == true) {
+                            loadChildSteps(innerContent.id_!!)
+                        } else {
+                            emptyList()
+                        }
+
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
@@ -374,6 +464,7 @@ class DocumentSqlBeDao(
                             path = innerContent.path,
                             text = innerContent.text,
                             checked = innerContent.checked ?: false,
+                            steps = childSteps,
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color,
                             ),
@@ -425,8 +516,16 @@ class DocumentSqlBeDao(
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
                     val innerContent = content.filter { innerContent ->
-                        !innerContent.id_.isNullOrEmpty()
+                        // Only include top-level steps (no parent_id)
+                        !innerContent.id_.isNullOrEmpty() && innerContent.parent_id == null
                     }.associate { innerContent ->
+                        // Load child steps if this step has nested content
+                        val childSteps = if (innerContent.has_inner_steps == true) {
+                            loadChildSteps(innerContent.id_!!)
+                        } else {
+                            emptyList()
+                        }
+
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
@@ -436,6 +535,7 @@ class DocumentSqlBeDao(
                             path = innerContent.path,
                             text = innerContent.text,
                             checked = innerContent.checked ?: false,
+                            steps = childSteps,
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color,
                             ),
@@ -487,8 +587,16 @@ class DocumentSqlBeDao(
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
                     val innerContent = content.filter { innerContent ->
-                        !innerContent.id_.isNullOrEmpty()
+                        // Only include top-level steps (no parent_id)
+                        !innerContent.id_.isNullOrEmpty() && innerContent.parent_id == null
                     }.associate { innerContent ->
+                        // Load child steps if this step has nested content
+                        val childSteps = if (innerContent.has_inner_steps == true) {
+                            loadChildSteps(innerContent.id_!!)
+                        } else {
+                            emptyList()
+                        }
+
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
@@ -498,6 +606,7 @@ class DocumentSqlBeDao(
                             path = innerContent.path,
                             text = innerContent.text,
                             checked = innerContent.checked ?: false,
+                            steps = childSteps,
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color,
                             ),
@@ -549,8 +658,16 @@ class DocumentSqlBeDao(
             ?.mapNotNull { (docId, content) ->
                 content.firstOrNull()?.let { document ->
                     val innerContent = content.filter { innerContent ->
-                        !innerContent.id_.isNullOrEmpty()
+                        // Only include top-level steps (no parent_id)
+                        !innerContent.id_.isNullOrEmpty() && innerContent.parent_id == null
                     }.associate { innerContent ->
+                        // Load child steps if this step has nested content
+                        val childSteps = if (innerContent.has_inner_steps == true) {
+                            loadChildSteps(innerContent.id_!!)
+                        } else {
+                            emptyList()
+                        }
+
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
@@ -560,6 +677,7 @@ class DocumentSqlBeDao(
                             path = innerContent.path,
                             text = innerContent.text,
                             checked = innerContent.checked ?: false,
+                            steps = childSteps,
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color,
                             ),
@@ -611,8 +729,16 @@ class DocumentSqlBeDao(
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
                     val innerContent = content.filter { innerContent ->
-                        innerContent.id_?.isNotEmpty() == true
+                        // Only include top-level steps (no parent_id)
+                        innerContent.id_?.isNotEmpty() == true && innerContent.parent_id == null
                     }.associate { innerContent ->
+                        // Load child steps if this step has nested content
+                        val childSteps = if (innerContent.has_inner_steps == true) {
+                            loadChildSteps(innerContent.id_!!)
+                        } else {
+                            emptyList()
+                        }
+
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
@@ -622,6 +748,7 @@ class DocumentSqlBeDao(
                             path = innerContent.path,
                             text = innerContent.text,
                             checked = innerContent.checked ?: false,
+                            steps = childSteps,
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color,
                             ),
@@ -673,8 +800,16 @@ class DocumentSqlBeDao(
             ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
                     val innerContent = content.filter { innerContent ->
-                        !innerContent.id_.isNullOrEmpty()
+                        // Only include top-level steps (no parent_id)
+                        !innerContent.id_.isNullOrEmpty() && innerContent.parent_id == null
                     }.associate { innerContent ->
+                        // Load child steps if this step has nested content
+                        val childSteps = if (innerContent.has_inner_steps == true) {
+                            loadChildSteps(innerContent.id_!!)
+                        } else {
+                            emptyList()
+                        }
+
                         val storyStep = StoryStep(
                             id = innerContent.id_!!,
                             localId = innerContent.local_id!!,
@@ -684,6 +819,7 @@ class DocumentSqlBeDao(
                             path = innerContent.path,
                             text = innerContent.text,
                             checked = innerContent.checked,
+                            steps = childSteps,
                             decoration = Decoration(
                                 backgroundColor = innerContent.background_color?.toInt(),
                             ),
@@ -813,6 +949,233 @@ class DocumentSqlBeDao(
             folderId
         )
     }
+
+    /**
+     * Inserts or updates a StoryStep with a specific timestamp.
+     */
+    fun upsertStoryStep(storyStep: StoryStep, position: Double, documentId: String, lastUpdatedAt: Long) {
+        storyStep.run {
+            storyStepQueries?.insert(
+                id = id,
+                local_id = localId,
+                type = type.number,
+                parent_id = parentId,
+                url = url,
+                path = path,
+                text = text,
+                checked = checked ?: false,
+                position = BigDecimal.valueOf(position),
+                document_id = documentId,
+                is_group = isGroup,
+                has_inner_steps = steps.isNotEmpty(),
+                background_color = decoration.backgroundColor,
+                tags = tags.joinToString(separator = ",") { it.tag.label },
+                spans = spans.joinToString(separator = ",") { it.toText() },
+                link_to_document = documentLink?.id,
+                last_updated_at = lastUpdatedAt.toInt()
+            )
+        }
+    }
+
+    /**
+     * Gets story steps for a document that were updated after the given timestamp.
+     */
+    fun getStoryStepsAfterTime(documentId: String, afterTime: Long): List<Pair<Double, StoryStep>> {
+        return storyStepQueries?.selectByDocumentIdAfterTime(documentId, afterTime.toInt())
+            ?.executeAsList()
+            ?.map { entity ->
+                val storyStep = StoryStep(
+                    id = entity.id,
+                    localId = entity.local_id,
+                    type = StoryTypes.fromNumber(entity.type).type,
+                    parentId = entity.parent_id,
+                    url = entity.url,
+                    path = entity.path,
+                    text = entity.text,
+                    checked = entity.checked,
+                    decoration = Decoration(
+                        backgroundColor = entity.background_color
+                    ),
+                    tags = entity.tags
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .mapNotNull(TagInfo.Companion::fromString)
+                        .toSet(),
+                    spans = entity.spans
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .map(SpanInfo::fromString)
+                        .toSet(),
+                    documentLink = entity.link_to_document?.let { docId ->
+                        val title = documentQueries?.selectTitleByDocumentId(docId)
+                            ?.executeAsOneOrNull()
+                        DocumentLink(docId, title)
+                    },
+                    lastUpdatedAt = entity.last_updated_at?.toLong()
+                )
+                entity.position.toDouble() to storyStep
+            } ?: emptyList()
+    }
+
+    /**
+     * Gets a single StoryStep by ID.
+     */
+    fun getStoryStepById(storyStepId: String): Pair<Double, StoryStep>? {
+        return storyStepQueries?.selectById(storyStepId)
+            ?.executeAsOneOrNull()
+            ?.let { entity ->
+                val storyStep = StoryStep(
+                    id = entity.id,
+                    localId = entity.local_id,
+                    type = StoryTypes.fromNumber(entity.type).type,
+                    parentId = entity.parent_id,
+                    url = entity.url,
+                    path = entity.path,
+                    text = entity.text,
+                    checked = entity.checked,
+                    decoration = Decoration(
+                        backgroundColor = entity.background_color
+                    ),
+                    tags = entity.tags
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .mapNotNull(TagInfo.Companion::fromString)
+                        .toSet(),
+                    spans = entity.spans
+                        .split(",")
+                        .filter { it.isNotEmpty() }
+                        .map(SpanInfo::fromString)
+                        .toSet(),
+                    documentLink = entity.link_to_document?.let { docId ->
+                        val title = documentQueries?.selectTitleByDocumentId(docId)
+                            ?.executeAsOneOrNull()
+                        DocumentLink(docId, title)
+                    },
+                    lastUpdatedAt = entity.last_updated_at?.toLong()
+                )
+                entity.position.toDouble() to storyStep
+            }
+    }
+
+    /**
+     * Deletes a StoryStep by ID.
+     */
+    fun deleteStoryStepById(storyStepId: String) {
+        storyStepQueries?.deleteById(storyStepId)
+    }
+
+    /**
+     * Deletes multiple StorySteps by their IDs.
+     */
+    fun deleteStoryStepsByIds(storyStepIds: List<String>) {
+        storyStepQueries?.deleteByIds(storyStepIds)
+    }
+
+    /**
+     * Gets a published document by ID with its content.
+     * Returns null if the document doesn't exist or is not published.
+     */
+    fun loadPublishedDocumentWithContentById(documentId: String): Document? =
+        documentQueries?.selectPublishedWithContentById(documentId)
+            ?.executeAsList()
+            ?.groupBy { it.id }
+            ?.mapNotNull { (docId, content) ->
+                content.firstOrNull()?.let { document ->
+                    val innerContent = content.filter { innerContent ->
+                        // Only include top-level steps (no parent_id)
+                        !innerContent.id_.isNullOrEmpty() && innerContent.parent_id == null
+                    }.associate { innerContent ->
+                        // Load child steps if this step has nested content
+                        val childSteps = if (innerContent.has_inner_steps == true) {
+                            loadChildSteps(innerContent.id_!!)
+                        } else {
+                            emptyList()
+                        }
+
+                        val storyStep = StoryStep(
+                            id = innerContent.id_!!,
+                            localId = innerContent.local_id!!,
+                            type = StoryTypes.fromNumber(innerContent.type!!).type,
+                            parentId = innerContent.parent_id,
+                            url = innerContent.url,
+                            path = innerContent.path,
+                            text = innerContent.text,
+                            checked = innerContent.checked ?: false,
+                            steps = childSteps,
+                            decoration = Decoration(
+                                backgroundColor = innerContent.background_color,
+                            ),
+                            tags = innerContent.tags
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.mapNotNull(TagInfo.Companion::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            spans = innerContent.spans
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() }
+                                ?.map(SpanInfo::fromString)
+                                ?.toSet()
+                                ?: emptySet(),
+                            documentLink = innerContent.link_to_document?.let { linkDocId ->
+                                val title = documentQueries.selectTitleByDocumentId(linkDocId)
+                                    .executeAsOneOrNull()
+                                DocumentLink(linkDocId, title)
+                            }
+                        )
+
+                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                    }
+
+                    Document(
+                        id = docId,
+                        title = document.title,
+                        content = innerContent,
+                        createdAt = Instant.fromEpochMilliseconds(document.created_at),
+                        lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
+                        lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
+                        workspaceId = document.workspace_id,
+                        favorite = document.favorite,
+                        parentId = document.parent_document_id,
+                        icon = document.icon?.let {
+                            MenuItem.Icon(it, document.icon_tint)
+                        },
+                        isLocked = document.is_locked,
+                        published = document.published
+                    )
+                }
+            }
+            ?.firstOrNull()
+
+    /**
+     * Sets the published status of a document.
+     */
+    fun setDocumentPublished(documentId: String, published: Boolean) {
+        documentQueries?.setPublished(published, Clock.System.now().toEpochMilliseconds(), documentId)
+    }
+
+    /**
+     * Updates only the document title without affecting story steps.
+     */
+    fun updateDocumentTitle(documentId: String, title: String) {
+        val now = Clock.System.now().toEpochMilliseconds()
+        documentQueries?.updateTitle(title, now, now, documentId)
+    }
+
+    /**
+     * Checks if a document is published.
+     */
+    fun isDocumentPublished(documentId: String): Boolean {
+        return documentQueries?.isPublished(documentId)?.executeAsOneOrNull() ?: false
+    }
+
+    /**
+     * Loads all document IDs in a workspace (lightweight query for memory-efficient processing).
+     */
+    fun loadDocumentIdsByWorkspaceId(workspaceId: String): List<String> =
+        documentQueries?.selectIdsByWorkspaceId(workspaceId)
+            ?.executeAsList()
+            ?: emptyList()
 }
 
 fun Folder_entity.toModel(count: Long) =

@@ -72,20 +72,34 @@ class AuthMenuViewModel(
             return@flow
         }
 
+        // Check user state
         val user = authRepository.getUser()
-        val workspace = authRepository.getWorkspace()
-        val loggedId = authRepository.isLoggedIn() || user.id != WriteopiaUser.DISCONNECTED
 
-        val status = when {
-            loggedId && workspace != null -> LoginStatus.ONLINE
-
-            loggedId && workspace == null -> LoginStatus.CHOOSE_WORKSPACE
-
-            !loggedId && workspace != null -> LoginStatus.OFFLINE_CHOSEN
-
-            else -> LoginStatus.OFFLINE_NOT_CHOSEN
+        // No user record exists - show auth screen
+        if (user.id == WriteopiaUser.NO_USER) {
+            emit(LoginStatus.OFFLINE_NOT_CHOSEN)
+            return@flow
         }
 
+        // User explicitly chose offline mode
+        if (user.id == WriteopiaUser.DISCONNECTED) {
+            emit(LoginStatus.OFFLINE_CHOSEN)
+            return@flow
+        }
+
+        // Online mode - check if token is available
+        val token = authRepository.getAuthToken()
+        if (token.isNullOrEmpty()) {
+            emit(LoginStatus.OFFLINE_NOT_CHOSEN)
+            return@flow
+        }
+
+        // Token exists - check workspace
+        val workspace = authRepository.getWorkspace()
+        val status = when {
+            workspace != null -> LoginStatus.ONLINE
+            else -> LoginStatus.CHOOSE_WORKSPACE
+        }
         emit(status)
     }
 
@@ -154,8 +168,17 @@ class AuthMenuViewModel(
                                 user = user.copy(tier = Tier.PREMIUM),
                                 selected = true
                             )
-                            result.data.token?.let { token ->
-                                authRepository.saveToken(user.id, token)
+                            val accessToken = result.data.accessToken
+                            val refreshToken = result.data.refreshToken
+                            if (accessToken != null) {
+                                // Calculate expiry time (14 minutes from now as buffer)
+                                val expiresAt = Clock.System.now().toEpochMilliseconds() + (14 * 60 * 1000L)
+                                authRepository.saveTokens(
+                                    userId = user.id,
+                                    accessToken = accessToken,
+                                    refreshToken = refreshToken,
+                                    expiresAt = expiresAt
+                                )
                             }
 
                             result.map { true }

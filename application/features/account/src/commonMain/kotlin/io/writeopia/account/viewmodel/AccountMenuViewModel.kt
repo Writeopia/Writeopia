@@ -17,11 +17,21 @@ interface AccountMenuViewModel {
 
     val lastWorkspaceSync: StateFlow<ResultData<String>>
 
+    val exportWorkspaceState: StateFlow<ResultData<Unit>>
+
+    val logoutInProgress: StateFlow<Boolean>
+
     fun logout(onLogOutSuccess: () -> Unit)
+
+    fun changeWorkspace(onChangeSuccess: () -> Unit)
 
     fun syncWorkspace()
 
     fun selectWorkspace(workspaceId: String)
 
     fun addUserToWorkspace(userEmail: String)
+
+    fun exportWorkspace(workspaceId: String)
+
+    fun resetExportState()
 }

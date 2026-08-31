@@ -99,6 +99,7 @@ fun SettingsDialog(
     isAutoSyncEnabled: StateFlow<Boolean>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
     workspaceToEdit: Flow<Workspace?>,
+    logoutInProgress: StateFlow<Boolean>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
@@ -109,6 +110,7 @@ fun SettingsDialog(
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     signIn: () -> Unit,
+    changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
     showDeleteConfirm: () -> Unit,
@@ -118,7 +120,10 @@ fun SettingsDialog(
     onAutoSyncToggle: (Boolean) -> Unit,
     addUserToTeam: (String) -> Unit,
     selectWorkspaceToManage: (String) -> Unit,
-    usersInSelectedWorkspace: Flow<ResultData<List<String>>>
+    usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
+    exportWorkspaceState: StateFlow<ResultData<Unit>>,
+    onExportWorkspace: (String) -> Unit,
+    onResetExportState: () -> Unit,
 ) {
     val ollamaUrl by ollamaUrlState.collectAsState()
 
@@ -142,15 +147,20 @@ fun SettingsDialog(
                 modifier = Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
                 accountScreen = {
                     AccountScreen(
-                        userOnlineState,
-                        workspaces,
-                        showDeleteConfirmation,
-                        signIn,
-                        resetPassword,
-                        logout,
-                        dismissDeleteConfirm,
-                        showDeleteConfirm,
-                        deleteAccount
+                        userOnlineState = userOnlineState,
+                        workspaces = workspaces,
+                        showDeleteConfirmation = showDeleteConfirmation,
+                        exportWorkspaceState = exportWorkspaceState,
+                        logoutInProgress = logoutInProgress,
+                        signIn = signIn,
+                        changeWorkspace = changeWorkspace,
+                        resetPassword = resetPassword,
+                        logout = logout,
+                        dismissDeleteConfirm = dismissDeleteConfirm,
+                        showDeleteConfirm = showDeleteConfirm,
+                        deleteAccount = deleteAccount,
+                        onExportWorkspace = onExportWorkspace,
+                        onResetExportState = onResetExportState,
                     )
                 },
                 appearanceScreen = {
@@ -238,6 +248,7 @@ fun SettingsScreen(
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     goToRegister: () -> Unit,
     changeAccount: () -> Unit,
+    changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
 ) {
@@ -265,7 +276,7 @@ fun SettingsScreen(
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    Connect(isLoggedInState, goToRegister, changeAccount, resetPassword, logout)
+    Connect(isLoggedInState, goToRegister, changeAccount, changeWorkspace, resetPassword, logout)
 
     val isLoggedIn = isLoggedInState.collectAsState().value.toBoolean()
 
@@ -306,6 +317,7 @@ private fun Connect(
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     goToRegister: () -> Unit,
     changeAccount: () -> Unit,
+    changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
 ) {
@@ -346,6 +358,15 @@ private fun Connect(
             Spacer(modifier = Modifier.height(4.dp))
 
             CommonButton(
+                text = WrStrings.changeWorkspace(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                changeWorkspace()
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            CommonButton(
                 text = WrStrings.resetPassword(),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -369,12 +390,17 @@ private fun AccountScreen(
     userOnlineState: StateFlow<WriteopiaUser>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
     showDeleteConfirmation: StateFlow<Boolean>,
+    exportWorkspaceState: StateFlow<ResultData<Unit>>,
+    logoutInProgress: StateFlow<Boolean>,
     signIn: () -> Unit,
+    changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
     dismissDeleteConfirm: () -> Unit,
     showDeleteConfirm: () -> Unit,
     deleteAccount: () -> Unit,
+    onExportWorkspace: (String) -> Unit,
+    onResetExportState: () -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -411,6 +437,15 @@ private fun AccountScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 CommonButton(
+                    text = WrStrings.changeWorkspace(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    changeWorkspace()
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                CommonButton(
                     text = WrStrings.resetPassword(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -422,14 +457,60 @@ private fun AccountScreen(
                 CommonButton(text = WrStrings.logout(), modifier = Modifier.fillMaxWidth()) {
                     logout()
                 }
+            }
 
-                Spacer(modifier = Modifier.height(4.dp))
+            // Signing out dialog
+            val isLoggingOut by logoutInProgress.collectAsState()
+            if (isLoggingOut) {
+                SigningOutDialog()
+            }
 
+            // Export section
+            var showExportDialog by remember { mutableStateOf(false) }
+
+            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+            Text(WrStrings.export(), style = titleStyle, color = titleColor)
+
+            Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
+
+            Text(
+                WrStrings.exportWorkspaceDescription(),
+                style = MaterialTheme.typography.bodySmall,
+                color = titleColor
+            )
+
+            Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
+
+            Column(modifier = Modifier.width(IntrinsicSize.Max)) {
+                CommonButton(
+                    text = WrStrings.exportWorkspace(),
+                    modifier = Modifier.fillMaxWidth(),
+                    clickListener = { showExportDialog = true }
+                )
+            }
+
+            if (showExportDialog) {
+                ExportWorkspaceDialog(
+                    workspacesState = workspaces,
+                    exportState = exportWorkspaceState,
+                    onExport = onExportWorkspace,
+                    onDismiss = {
+                        showExportDialog = false
+                        onResetExportState()
+                    }
+                )
+            }
+
+            // Danger zone section
+            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+            Text("Danger zone", style = titleStyle, color = titleColor)
+
+            Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
+
+            Column(modifier = Modifier.width(IntrinsicSize.Max)) {
                 val showDelete by showDeleteConfirmation.collectAsState()
-
-                Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-
-                Text("Danger zone", style = titleStyle, color = titleColor)
 
                 Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
 
@@ -1329,12 +1410,16 @@ private fun AccentColorOptions(
                 onClick = { selectAccentColor(AccentColor.ORANGE) }
             )
 
-            Spacer(modifier = Modifier.width(spaceWidth))
+            // Only show Dynamic color option on mobile (not on web)
+            val currentPlatform = LocalPlatform.current
+            if (currentPlatform.isMobile()) {
+                Spacer(modifier = Modifier.width(spaceWidth))
 
-            DynamicColorOption(
-                isSelected = selectedColor == AccentColor.DYNAMIC,
-                onClick = { selectAccentColor(AccentColor.DYNAMIC) }
-            )
+                DynamicColorOption(
+                    isSelected = selectedColor == AccentColor.DYNAMIC,
+                    onClick = { selectAccentColor(AccentColor.DYNAMIC) }
+                )
+            }
         }
     }
 }
@@ -1479,3 +1564,28 @@ private fun transparentTextInputColors() =
         disabledIndicatorColor = Color.Transparent,
         cursorColor = MaterialTheme.colorScheme.primary
     )
+
+@Composable
+private fun SigningOutDialog() {
+    Dialog(
+        onDismissRequest = { /* Non-dismissible while signing out */ },
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+    ) {
+        Card(modifier = Modifier, shape = MaterialTheme.shapes.large) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(48.dp))
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    WrStrings.signingOut(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}

@@ -102,5 +102,22 @@ kotlin {
             dependencies {
             }
         }
+
+        val wasmJsMain by getting {
+            dependencies {
+            }
+        }
+
+        val nativeMain by creating {
+            dependsOn(commonMain)
+        }
+
+        val iosArm64Main by getting {
+            dependsOn(nativeMain)
+        }
+
+        val iosSimulatorArm64Main by getting {
+            dependsOn(nativeMain)
+        }
     }
 }

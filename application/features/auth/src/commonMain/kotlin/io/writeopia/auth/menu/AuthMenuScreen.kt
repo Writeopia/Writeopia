@@ -50,6 +50,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import io.writeopia.auth.utils.arrowPadding
+import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.icons.PlatformIcons
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
@@ -70,6 +72,7 @@ fun AuthMenuScreen(
     navigateToRegister: () -> Unit,
     navigateToForgotPassword: () -> Unit,
     offlineUsage: () -> Unit,
+    showOfflineOption: Boolean = true,
     navigateUp: () -> Unit,
     navigateNext: () -> Unit,
 ) {
@@ -78,7 +81,6 @@ fun AuthMenuScreen(
     val loginStateValue by loginState.collectAsState()
 
     LaunchedEffect(loginStateValue) {
-        println("showing snackbar")
         if (loginStateValue is ResultData.Error) {
             snackbarHostState.showSnackbar(loginErrorMessage)
         }
@@ -100,6 +102,7 @@ fun AuthMenuScreen(
                 navigateToRegister,
                 navigateToForgotPassword,
                 offlineUsage,
+                showOfflineOption,
                 modifier,
             )
         }
@@ -130,19 +133,21 @@ fun AuthMenuScreen(
             }
         }
 
-        Icon(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .arrowPadding()
-                .clip(CircleShape)
-                .clickable {
-                    navigateUp()
-                }
-                .padding(6.dp),
-            imageVector = PlatformIcons.backArrowMobile,
-            contentDescription = "Arrow back",
-            tint = MaterialTheme.colorScheme.onBackground
-        )
+        if (LocalPlatform.current != PlatformType.WEB) {
+            Icon(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .arrowPadding()
+                    .clip(CircleShape)
+                    .clickable {
+                        navigateUp()
+                    }
+                    .padding(6.dp),
+                imageVector = PlatformIcons.backArrowMobile,
+                contentDescription = "Arrow back",
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
 
         SnackbarHost(
             hostState = snackbarHostState,
@@ -174,6 +179,7 @@ private fun AuthMenuContentScreen(
     navigateToRegister: () -> Unit,
     navigateToForgotPassword: () -> Unit,
     offlineUsage: () -> Unit,
+    showOfflineOption: Boolean,
     modifier: Modifier = Modifier
 ) {
     val email by emailState.collectAsState()
@@ -334,17 +340,19 @@ private fun AuthMenuContentScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            if (showOfflineOption) {
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = WrStrings.useOffline(),
-                color = MaterialTheme.colorScheme.onBackground,
-                textDecoration = TextDecoration.Underline,
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.large)
-                    .clickable(onClick = offlineUsage)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            )
+                Text(
+                    text = WrStrings.useOffline(),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.large)
+                        .clickable(onClick = offlineUsage)
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                )
+            }
         }
     }
 }

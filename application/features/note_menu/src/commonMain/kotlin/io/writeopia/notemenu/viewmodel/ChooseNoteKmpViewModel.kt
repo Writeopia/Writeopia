@@ -5,6 +5,8 @@ package io.writeopia.notemenu.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.OllamaRepository
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.common.utils.NotesNavigation
@@ -14,7 +16,9 @@ import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
+import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.NotesUseCase
+import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
@@ -42,7 +46,6 @@ import io.writeopia.sdk.preview.PreviewParser
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,14 +66,17 @@ internal class ChooseNoteKmpViewModel(
     private val notesUseCase: NotesUseCase,
     private val notesConfig: ConfigurationRepository,
     private val authRepository: AuthRepository,
+    private val documentsApi: DocumentsApi,
     private val ollamaRepository: OllamaRepository? = null,
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val folderSync: FolderSync,
+    private val eventSync: EventSync? = null,
     private val folderController: FolderStateController = FolderStateController.singleton(
         notesUseCase,
-        authRepository
+        authRepository,
+        documentsApi
     ),
     private val notesNavigation: NotesNavigation = NotesNavigation.Root,
     private val previewParser: PreviewParser = PreviewParser(),
@@ -214,6 +220,12 @@ internal class ChooseNoteKmpViewModel(
     private val _showAddMenuState = MutableStateFlow(false)
     override val showAddMenuState: StateFlow<Boolean> = _showAddMenuState
 
+    private val _showAiOptionsState = MutableStateFlow(false)
+    override val showAiOptionsState: StateFlow<Boolean> = _showAiOptionsState.asStateFlow()
+
+    private val _showCreateFolderDialogState = MutableStateFlow(false)
+    override val showCreateFolderDialogState: StateFlow<Boolean> = _showCreateFolderDialogState.asStateFlow()
+
     override val editFolderState: StateFlow<Folder?> by lazy {
         combine(
             folderController.editingFolderState,
@@ -230,12 +242,14 @@ internal class ChooseNoteKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, null)
     }
 
-    private var aiJob: Job? = null
-
     init {
         folderController.initCoroutine(viewModelScope)
 
         viewModelScope.launch(Dispatchers.Default) {
+            // Sync delete/move events from server before loading documents
+            // This ensures local state reflects any deletions/moves from other devices
+            syncEventsOnStartup()
+
             val onboarded = notesConfig.isOnboarded()
 
             _showOnboardingState.value = if (onboarded) {
@@ -321,11 +335,13 @@ internal class ChooseNoteKmpViewModel(
 
     override fun copySelectedNotes() {
         viewModelScope.launch(Dispatchers.Default) {
-            notesUseCase.duplicateDocuments(
+            val duplicatedDocuments = notesUseCase.duplicateDocuments(
                 selectedNotes.value.toList(),
                 getUserId(),
                 getWorkspaceId()
             )
+
+            syncDocumentsToBackend(duplicatedDocuments)
         }
     }
 
@@ -333,9 +349,52 @@ internal class ChooseNoteKmpViewModel(
         val selected = selectedNotes.value
 
         viewModelScope.launch(Dispatchers.Default) {
+            // Delete locally first (optimistic delete)
             notesUseCase.deleteNotes(selected)
             clearSelection()
             askToDelete.value = false
+
+            // Sync deletion to backend if logged in with premium tier
+            syncDeletionToBackend(selected.toList())
+        }
+    }
+
+    private suspend fun syncDeletionToBackend(documentIds: List<String>) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+
+        documentsApi.deleteDocuments(
+            documentIds = documentIds,
+            workspaceId = workspace.id
+        )
+    }
+
+    private suspend fun syncDocumentsToBackend(documents: List<Document>) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+
+        documentsApi.sendDocuments(
+            documents = documents,
+            workspaceId = workspace.id
+        )
+    }
+
+    private suspend fun syncFavoriteToBackend(documentIds: Set<String>, favorite: Boolean) {
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+
+        documentIds.forEach { documentId ->
+            documentsApi.favoriteDocument(
+                documentId = documentId,
+                favorite = favorite,
+                workspaceId = workspace.id
+            )
         }
     }
 
@@ -351,8 +410,10 @@ internal class ChooseNoteKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             if (allFavorites) {
                 notesUseCase.unFavoriteDocuments(selectedIds)
+                syncFavoriteToBackend(selectedIds, favorite = false)
             } else {
                 notesUseCase.favoriteDocuments(selectedIds)
+                syncFavoriteToBackend(selectedIds, favorite = true)
             }
         }
     }
@@ -361,11 +422,16 @@ internal class ChooseNoteKmpViewModel(
         if (!hasSelectedNotes.value) return
         if (ollamaRepository == null) return
 
-        aiJob?.cancel()
+        val selectedIds = selectedNotes.value.toList()
+        val documentCount = selectedIds.size
         cancelEditMenu()
 
         viewModelScope.launch {
-            val documents = notesUseCase.loadDocumentsByIds(selectedNotes.value, getWorkspaceId())
+            val workspaceId = getWorkspaceId()
+            val userId = getUserId()
+            val taskId = GenerateId.generate()
+
+            val documents = notesUseCase.loadDocumentsByIds(selectedIds, workspaceId)
             val prompt = buildString {
                 documents.forEach { doc ->
                     val documentMd = documentToMarkdown.parse(doc.content)
@@ -377,27 +443,45 @@ internal class ChooseNoteKmpViewModel(
                 }
             }
 
-            aiJob = viewModelScope.launch(Dispatchers.Default) {
-                val userId = getUserId()
-                val workspaceId = getWorkspaceId()
-
+            AiTaskManager.singleton().enqueueTask(
+                id = taskId,
+                type = AiTaskType.SUMMARIZATION,
+                description = "Summarizing $documentCount document${if (documentCount > 1) "s" else ""}"
+            ) {
                 val aiPromptResultMd = PromptService.prompt(
                     userId = userId,
                     prompt = prompt,
                     ollamaRepository = ollamaRepository,
                     markdownResult = true
-                ) ?: return@launch
+                )
 
-                val document =
-                    MarkdownToDocument.readMarkdown(
+                if (aiPromptResultMd == null) {
+                    Result.failure(Exception("AI response was empty"))
+                } else {
+                    val document = MarkdownToDocument.readMarkdown(
                         markdownText = aiPromptResultMd,
                         parentId = notesNavigation.id,
                         workspaceId = workspaceId,
-                    ) ?: return@launch
+                    )
 
-                notesUseCase.saveDocumentDb(document)
+                    if (document == null) {
+                        Result.failure(Exception("Failed to parse AI response"))
+                    } else {
+                        notesUseCase.saveDocumentDb(document)
+                        syncDocumentsToBackend(listOf(document))
+                        Result.success(Unit)
+                    }
+                }
             }
         }
+    }
+
+    override fun showAiOptions() {
+        _showAiOptionsState.value = true
+    }
+
+    override fun hideAiOptions() {
+        _showAiOptionsState.value = false
     }
 
     override fun showSortMenu() {
@@ -479,7 +563,9 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun requestPermissionToDeleteSelection() {
-        askToDelete.value = true
+        if (selectedNotes.value.isNotEmpty()) {
+            askToDelete.value = true
+        }
     }
 
     override fun cancelDeletion() {
@@ -526,22 +612,51 @@ internal class ChooseNoteKmpViewModel(
                 workspace != null
             ) {
                 folderSync.syncFolder(
-                    notesNavigation.id,
-                    workspace.id,
+                    folderId = notesNavigation.id,
+                    workspaceId = workspace.id,
+                    orderBy = orderByState.value.type
                 )
             }
         }
     }
 
+    private suspend fun syncEventsOnStartup() {
+        if (eventSync == null) return
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+
+        try {
+            eventSync.syncEvents(workspace.id)
+        } catch (e: Exception) {
+            // Log but don't fail app startup
+            println("Error syncing events on startup: ${e.message}")
+        }
+    }
+
     override fun newFolder() {
+        showCreateFolderDialog()
+    }
+
+    override fun showCreateFolderDialog() {
+        _showCreateFolderDialogState.value = true
+    }
+
+    override fun hideCreateFolderDialog() {
+        _showCreateFolderDialogState.value = false
+    }
+
+    override fun createFolderWithDetails(name: String, icon: MenuItem.Icon?) {
         viewModelScope.launch(Dispatchers.Default) {
             val parentId = if (notesNavigation.navigationType == NotesNavigationType.FOLDER) {
                 notesNavigation.id
             } else {
                 Folder.ROOT_PATH
             }
-
-            folderController.addFolder(parentId = parentId)
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            notesUseCase.createFolder(name, workspace.id, parentId, icon)
+            hideCreateFolderDialog()
         }
     }
 

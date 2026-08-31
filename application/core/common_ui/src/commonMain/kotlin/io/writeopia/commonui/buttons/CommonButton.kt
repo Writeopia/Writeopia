@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,10 +59,11 @@ fun AccentButton(
 
 @Composable
 fun CommonButton(
+    text: String,
     modifier: Modifier = Modifier,
+    horizontalPadding: Dp = 10.dp,
     icon: ImageVector? = null,
     iconDescription: String? = null,
-    text: String,
     defaultColor: Color = WriteopiaTheme.colorScheme.defaultButton,
     hoverColor: Color = WriteopiaTheme.colorScheme.highlight,
     selectedColor: Color = WriteopiaTheme.colorScheme.highlight,
@@ -91,7 +93,7 @@ fun CommonButton(
             .hoverable(interactionSource)
             .background(buttonColor, shape)
             .clickable(onClick = clickListener)
-            .padding(horizontal = 10.dp, vertical = verticalPaddingCommonButton().dp)
+            .padding(horizontal = horizontalPadding, vertical = verticalPaddingCommonButton().dp)
     ) {
         if (icon != null) {
             Icon(

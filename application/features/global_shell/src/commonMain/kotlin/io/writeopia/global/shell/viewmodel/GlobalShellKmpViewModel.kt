@@ -19,6 +19,8 @@ import io.writeopia.common.utils.toList
 import io.writeopia.commonui.buttons.sideMenuDefaultWidth
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
+import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.UiConfiguration
@@ -35,6 +37,7 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -63,12 +66,15 @@ class GlobalShellKmpViewModel(
     private val authRepository: AuthRepository,
     private val authApi: AuthApi,
     private val notesNavigationUseCase: NotesNavigationUseCase,
+    private val documentsApi: DocumentsApi,
     private val folderStateController: FolderStateController =
-        FolderStateController.singleton(notesUseCase, authRepository),
+        FolderStateController.singleton(notesUseCase, authRepository, documentsApi),
     private val ollamaRepository: OllamaRepository,
     private val workspaceHandler: WorkspaceHandler,
     private val keyboardEventFlow: Flow<KeyboardEvent>?,
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
+    private val useBackendOnly: Boolean = false,
+    private val menuItemsRepository: MenuItemsRepository? = null,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     private var localUserId: String? = null
@@ -81,6 +87,9 @@ class GlobalShellKmpViewModel(
 
     private val _showSearchDialog = MutableStateFlow(false)
     override val showSearchDialog: StateFlow<Boolean> = _showSearchDialog.asStateFlow()
+
+    private val _logoutInProgress = MutableStateFlow(false)
+    override val logoutInProgress: StateFlow<Boolean> = _logoutInProgress.asStateFlow()
 
     override val workspaceLocalPath: StateFlow<String> = workspaceHandler.workspaceLocalPath
 
@@ -199,15 +208,21 @@ class GlobalShellKmpViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
-        combine(
-            authRepository.listenForUser(),
-            authRepository.listenForWorkspace(),
-            notesNavigationUseCase.navigationState
-        ) { user, workspace, notesNavigation ->
-            Triple(user, notesNavigation, workspace)
-        }.flatMapLatest { (user, notesNavigation, workspace) ->
-            notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id, workspace.id)
-        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
+        if (useBackendOnly && menuItemsRepository != null) {
+            // For web/backend-only mode, use the shared repository
+            menuItemsRepository.menuItemsPerFolderId
+        } else {
+            // For desktop/local mode, use local storage
+            combine(
+                authRepository.listenForUser(),
+                authRepository.listenForWorkspace(),
+                notesNavigationUseCase.navigationState
+            ) { user, workspace, notesNavigation ->
+                Triple(user, notesNavigation, workspace)
+            }.flatMapLatest { (user, notesNavigation, workspace) ->
+                notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id, workspace.id)
+            }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
+        }
     }
 
     override val sideMenuItems: StateFlow<List<MenuItemUi>> by lazy {
@@ -265,6 +280,9 @@ class GlobalShellKmpViewModel(
     override val usersOfWorkspaceToEdit: Flow<ResultData<List<String>>> =
         workspaceHandler.usersOfSelectedWorkspace
 
+    override val exportWorkspaceState: StateFlow<ResultData<Unit>> =
+        workspaceHandler.exportWorkspaceState
+
     init {
         folderStateController.initCoroutine(viewModelScope)
         workspaceHandler.initScope(viewModelScope)
@@ -290,6 +308,16 @@ class GlobalShellKmpViewModel(
             }
         }
 
+        // For backend-only mode, load menu items from the backend
+        if (useBackendOnly) {
+            viewModelScope.launch(Dispatchers.Default) {
+                // Listen for navigation changes and reload from backend
+                notesNavigationUseCase.navigationState.collect { navigation ->
+                    loadMenuItemsFromBackend(navigation.id)
+                }
+            }
+        }
+
         workspaceHandler.loadAvailableWorkspaces()
     }
 
@@ -302,6 +330,24 @@ class GlobalShellKmpViewModel(
 
         writeopiaJsonParser.readAllDocuments(path)
             .collect(notesUseCase::saveDocumentDb)
+    }
+
+    private suspend fun loadMenuItemsFromBackend(folderId: String) {
+        if (menuItemsRepository == null) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+
+        // Use the shared repository to load folder contents
+        menuItemsRepository.loadFolderContents(folderId, workspace.id)
+    }
+
+    fun refreshFromBackend() {
+        if (useBackendOnly && menuItemsRepository != null) {
+            viewModelScope.launch(Dispatchers.Default) {
+                val navigation = notesNavigationUseCase.navigationState.value
+                loadMenuItemsFromBackend(navigation.id)
+            }
+        }
     }
 
     override fun init() {
@@ -465,16 +511,46 @@ class GlobalShellKmpViewModel(
         }
     }
 
-    override fun logout(sideEffect: () -> Unit) {
+    override fun logout(onSuccessSideEffect: () -> Unit) {
         viewModelScope.launch {
-            val currentUserId = authRepository.getUser().id
+            _logoutInProgress.value = true
+            try {
+                // Revoke refresh token on backend (non-web platforms)
+                val refreshToken = authRepository.getRefreshToken()
+                if (refreshToken != null) {
+                    val apiResult = authApi.logout(refreshToken)
+                    if (apiResult is ResultData.Error) {
+                        // Backend logout failed - don't clean local state
+                        return@launch
+                    }
+                }
 
+                // Call repository logout - for web this calls the backend
+                // to clear HttpOnly cookies
+                val repoResult = authRepository.logout()
+                if (repoResult is ResultData.Error) {
+                    // Backend logout failed - don't clean local state
+                    return@launch
+                }
+
+                // Only clean local state after successful backend logout
+                authRepository.unselectAllWorkspaces()
+                authRepository.clearTokens()
+
+                // Clear HttpClient to invalidate cached bearer tokens
+                WriteopiaConnectionInjector.clearInstance()
+
+                loginStateTrigger.value = GenerateId.generate()
+                onSuccessSideEffect()
+            } finally {
+                _logoutInProgress.value = false
+            }
+        }
+    }
+
+    override fun changeWorkspace(sideEffect: () -> Unit) {
+        viewModelScope.launch {
             authRepository.unselectAllWorkspaces()
-            authRepository.logout()
-            authRepository.saveToken(currentUserId, "")
-
-//            AppConnectionInjection.singleton().setJwtToken("")
-            loginStateTrigger.value = GenerateId.generate()
             sideEffect()
         }
     }
@@ -484,16 +560,29 @@ class GlobalShellKmpViewModel(
             val id = authRepository.getUser().id
 
             if (id != WriteopiaUser.DISCONNECTED) {
-                val result = authRepository.getAuthToken()?.let { token ->
+                // Capture tokens before any cleanup
+                val accessToken = authRepository.getAuthToken()
+                val refreshToken = authRepository.getRefreshToken()
+
+                val result = accessToken?.let { token ->
                     authApi.deleteAccount(token)
                 }
 
                 if (result is ResultData.Complete && result.data) {
+                    // Revoke refresh token on backend
+                    refreshToken?.let { authApi.logout(it) }
+
+                    // Clear local state
                     authRepository.unselectAllWorkspaces()
+                    authRepository.clearTokens()
                     authRepository.logout()
+
+                    // Clear HttpClient to invalidate cached bearer tokens
+                    WriteopiaConnectionInjector.clearInstance()
+
                     loginStateTrigger.value = GenerateId.generate()
                     dismissDeleteConfirm()
-                    logout(sideEffect = sideEffect)
+                    sideEffect()
                 }
             }
         }
@@ -525,6 +614,14 @@ class GlobalShellKmpViewModel(
 
     override fun selectWorkspaceToManage(workspaceId: String) {
         workspaceHandler.selectWorkspaceToManage(workspaceId)
+    }
+
+    override fun exportWorkspace(workspaceId: String) {
+        workspaceHandler.exportWorkspace(workspaceId)
+    }
+
+    override fun resetExportState() {
+        workspaceHandler.resetExportState()
     }
 
     private suspend fun getUserId(): String =

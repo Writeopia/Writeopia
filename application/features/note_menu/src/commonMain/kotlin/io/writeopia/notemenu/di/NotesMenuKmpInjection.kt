@@ -12,6 +12,8 @@ import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.DocumentConflictHandler
+import io.writeopia.core.folders.sync.EventSync
+import io.writeopia.core.folders.sync.FolderConflictHandler
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.di.OllamaInjection
@@ -59,27 +61,38 @@ class NotesMenuKmpInjection private constructor(
     private fun provideFolderStateController(): FolderStateController =
         FolderStateController.singleton(
             provideNotesUseCase(),
-            authCoreInjection.provideAuthRepository()
+            authCoreInjection.provideAuthRepository(),
+            provideDocumentsApi()
         )
 
     private fun provideDocumentsApi() =
-        DocumentsApi(appConnectionInjection.provideHttpClient(), connectionInjector.baseUrl())
+        DocumentsApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
 
     private fun provideDocumentSync(): FolderSync {
         val documentRepository = repositoryInjection.provideDocumentRepository()
+        val folderRepository = provideFolderRepository()
 
         return FolderSync(
             documentRepository = documentRepository,
             documentsApi = provideDocumentsApi(),
             documentConflictHandler = DocumentConflictHandler(
-                documentRepository = documentRepository,
-                folderRepository = provideFolderRepository(),
-                authCoreInjection.provideAuthRepository()
+                documentRepository = documentRepository
             ),
-            folderRepository = provideFolderRepository(),
+            folderConflictHandler = FolderConflictHandler(
+                folderRepository = folderRepository
+            ),
+            folderRepository = folderRepository,
             authRepository = authCoreInjection.provideAuthRepository()
         )
     }
+
+    private fun provideEventSync(): EventSync =
+        EventSync(
+            documentRepository = repositoryInjection.provideDocumentRepository(),
+            folderRepository = provideFolderRepository(),
+            authRepository = authCoreInjection.provideAuthRepository(),
+            documentsApi = provideDocumentsApi()
+        )
 
     private fun provideChooseKmpNoteViewModel(
         notesNavigation: NotesNavigation,
@@ -92,6 +105,7 @@ class NotesMenuKmpInjection private constructor(
             notesUseCase = notesUseCase,
             notesConfig = notesConfig,
             authRepository = authCoreInjection.provideAuthRepository(),
+            documentsApi = provideDocumentsApi(),
             ollamaRepository = ollamaRepository,
             selectionState = selectionState,
             notesNavigation = notesNavigation,
@@ -99,6 +113,7 @@ class NotesMenuKmpInjection private constructor(
             keyboardEventFlow = keyboardEventFlow,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             folderSync = provideDocumentSync(),
+            eventSync = provideEventSync(),
         )
 
     @Composable

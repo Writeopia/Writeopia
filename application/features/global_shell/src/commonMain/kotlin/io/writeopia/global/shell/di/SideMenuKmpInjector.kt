@@ -7,9 +7,13 @@ import io.writeopia.controller.OllamaConfigController
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.configuration.repository.ConfigurationRepository
+import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.core.folders.repository.folder.FolderRepository
+import io.writeopia.di.AppConnectionInjection
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.di.OllamaConfigInjector
 import io.writeopia.di.OllamaInjection
@@ -28,6 +32,10 @@ class SideMenuKmpInjector(
     private val repositoryInjection: RepositoryInjector = RepositoryInjector.singleton(),
     private val ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
     private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
+    private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
+    private val connectionInjector: WriteopiaConnectionInjector = WriteopiaConnectionInjector.singleton(),
+    private val useBackendOnly: Boolean = false,
+    private val menuItemsRepository: MenuItemsRepository? = null,
 ) : SideMenuInjector, OllamaConfigInjector {
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
@@ -44,6 +52,9 @@ class SideMenuKmpInjector(
             folderRepository,
         )
 
+    private fun provideDocumentsApi(): DocumentsApi =
+        DocumentsApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
+
     @Composable
     override fun provideSideMenuViewModel(keyboardEventFlow: Flow<KeyboardEvent>?): GlobalShellViewModel =
         viewModel {
@@ -53,10 +64,13 @@ class SideMenuKmpInjector(
                     .provideUiConfigurationRepository(),
                 authRepository = authCoreInjection.provideAuthRepository(),
                 notesNavigationUseCase = NotesNavigationUseCase.singleton(),
+                documentsApi = provideDocumentsApi(),
                 ollamaRepository = ollamaInjection.provideRepository(),
                 authApi = authCoreInjection.provideAuthApi(),
                 workspaceHandler = workspaceInjection.provideWorkspaceHandler(),
-                keyboardEventFlow = keyboardEventFlow
+                keyboardEventFlow = keyboardEventFlow,
+                useBackendOnly = useBackendOnly,
+                menuItemsRepository = menuItemsRepository,
             )
         }
 

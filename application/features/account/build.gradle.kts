@@ -51,6 +51,7 @@ kotlin {
                 implementation(project(":writeopia"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:auth_core"))
+                implementation(project(":common:endpoints"))
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:common_ui"))
                 implementation(project(":application:core:ollama"))
