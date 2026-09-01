@@ -105,7 +105,7 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         try {
             workspaceUsersCache.value = ResultData.Loading()
 
-            val response = client.get("$baseUrl/api/workspaces/$workspaceId/users")
+            val response = client.get("$baseUrl/api/workspace/$workspaceId/users")
 
             val users = response.body<List<WorkspaceUserApi>>().map { it.name }
 
@@ -125,7 +125,7 @@ class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) 
         try {
             workspaceUsersCache.value = ResultData.Loading()
 
-            val response = client.get("$baseUrl/api/user/workspaces/$workspaceId")
+            val response = client.get("$baseUrl/api/workspace/$workspaceId/users")
 
             val users = response.body<List<WorkspaceUserApi>>().map { it.name }
 
