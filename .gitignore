@@ -9,8 +9,8 @@
 .externalNativeBuild
 .cxx
 local.properties
-
-application/androidApp/google-services.json
+google-services.json
+application/androidApp/
 
 /terraform/**/*
 
