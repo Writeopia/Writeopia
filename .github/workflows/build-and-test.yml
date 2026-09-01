@@ -232,7 +232,7 @@ jobs:
           ./gradlew kotlinUpgradeYarnLock
           ./gradlew jsBrowserDevelopmentWebpack
   android_espresso_tests:
-    name: Android Espresso Tests
+    name: Android Espresso Tests (Firebase Test Lab)
     runs-on: ubuntu-22.04
     env:
       isCI: "true"
@@ -252,34 +252,29 @@ jobs:
       - name: Decode google-services.json
         run: |
           echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > application/androidApp/google-services.json
-      - name: Enable KVM
+      - name: Build debug APK and test APK
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - name: Run Espresso tests
-        uses: reactivecircus/android-emulator-runner@v2
+          ./gradlew :application:composeApp:assembleDebug
+          ./gradlew :application:composeApp:assembleDebugAndroidTest
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          api-level: 33
-          arch: x86_64
-          profile: pixel_6
-          heap-size: 512M
-          ram-size: 4096M
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
-          script: ./gradlew :application:composeApp:connectedDebugAndroidTest
+          credentials_json: ${{ secrets.FIREBASE_TEST_LAB_SERVICE_ACCOUNT }}
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Run tests on Firebase Test Lab
+        run: |
+          gcloud firebase test android run \
+            --type instrumentation \
+            --app application/composeApp/build/outputs/apk/debug/composeApp-debug.apk \
+            --test application/composeApp/build/outputs/apk/androidTest/debug/composeApp-debug-androidTest.apk \
+            --device model=oriole,version=33,locale=en,orientation=portrait \
+            --timeout 15m \
+            --results-bucket=${{ secrets.FIREBASE_TEST_LAB_RESULTS_BUCKET }} \
+            --results-dir=espresso-results-${{ github.run_id }}
       - name: Cleanup google-services.json
         if: always()
         run: rm -f application/androidApp/google-services.json
-      - name: Upload test reports
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: espresso-test-results
-          path: |
-            **/build/reports/androidTests/
-            **/build/outputs/androidTest-results/
-          retention-days: 7
   test_docusaurus:
     name: Test docusaurus
     runs-on: ubuntu-latest
