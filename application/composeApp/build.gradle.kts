@@ -22,10 +22,6 @@ kotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_21)
         }
-
-        withDeviceTestBuilder {
-            sourceSetTreeName = "test"
-        }
     }
 
     listOf(
@@ -91,18 +87,6 @@ kotlin {
                 implementation(project(":application:core:models"))
                 implementation(project(":plugins:writeopia_presentation"))
                 implementation(compose.desktop.currentOs)
-            }
-        }
-
-        val androidDeviceTest by getting {
-            dependencies {
-                implementation(project(":application:core:common_ui_tests"))
-                implementation(project(":application:core:theme"))
-
-                implementation(libs.kotlin.test)
-                implementation(libs.androidx.espresso.core)
-
-                implementation(libs.androidx.compose.test)
             }
         }
 
