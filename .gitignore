@@ -10,7 +10,6 @@
 .cxx
 local.properties
 google-services.json
-application/androidApp/
 
 /terraform/**/*
 
