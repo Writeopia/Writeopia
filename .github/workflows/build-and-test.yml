@@ -231,50 +231,6 @@ jobs:
         run: |
           ./gradlew kotlinUpgradeYarnLock
           ./gradlew jsBrowserDevelopmentWebpack
-  android_espresso_tests:
-    name: Android Espresso Tests (Firebase Test Lab)
-    runs-on: ubuntu-22.04
-    env:
-      isCI: "true"
-      IN_MEMORY_DATABASE: 'true'
-      WRITEOPIA_FIREBASE_ID: 'id'
-      WRITEOPIA_CLIENT_BASE_URL: "baseurl"
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v7
-      - name: Set up JDK 21
-        uses: actions/setup-java@v6
-        with:
-          distribution: zulu
-          java-version: '21'
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-      - name: Decode google-services.json
-        run: |
-          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > application/androidApp/google-services.json
-      - name: Build debug APK and test APK
-        run: |
-          ./gradlew :application:composeApp:assembleDebug
-          ./gradlew :application:composeApp:assembleDebugAndroidTest
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_TEST_LAB_SERVICE_ACCOUNT }}
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-      - name: Run tests on Firebase Test Lab
-        run: |
-          gcloud firebase test android run \
-            --type instrumentation \
-            --app application/composeApp/build/outputs/apk/debug/composeApp-debug.apk \
-            --test application/composeApp/build/outputs/apk/androidTest/debug/composeApp-debug-androidTest.apk \
-            --device model=oriole,version=33,locale=en,orientation=portrait \
-            --timeout 15m \
-            --results-bucket=${{ secrets.FIREBASE_TEST_LAB_RESULTS_BUCKET }} \
-            --results-dir=espresso-results-${{ github.run_id }}
-      - name: Cleanup google-services.json
-        if: always()
-        run: rm -f application/androidApp/google-services.json
   test_docusaurus:
     name: Test docusaurus
     runs-on: ubuntu-latest

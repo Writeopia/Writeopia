@@ -9,8 +9,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  android_build_and_test:
-    name: Android - Build and Test
+  android_build_test_and_distribute:
+    name: Android - Build, Test and Distribute
     runs-on: ubuntu-22.04
     services:
       postgres:
@@ -56,8 +56,24 @@ jobs:
           psql -h localhost -U postgres -d writeopia -f ./docker/postgres/init.sql
         env:
           PGPASSWORD: postgres
-      - name: Main test
-        run: ./gradlew assembleDebug test
+      - name: Decode google-services.json
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > application/androidApp/google-services.json
+      - name: Build and test
+        run: ./gradlew :application:androidApp:assembleDebug test
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_APP_DISTRIBUTION_SERVICE_ACCOUNT }}
+          groups: testers
+          file: application/androidApp/build/outputs/apk/debug/androidApp-debug.apk
+          releaseNotes: |
+            Automated build from commit ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+      - name: Cleanup google-services.json
+        if: always()
+        run: rm -f application/androidApp/google-services.json
   desktop_build_and_test:
     name: Desktop - Build, Test and Publish
     runs-on: macos-14
