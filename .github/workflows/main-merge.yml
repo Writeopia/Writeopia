@@ -61,19 +61,51 @@ jobs:
           echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > application/androidApp/google-services.json
       - name: Build and test
         run: ./gradlew :application:androidApp:assembleDebug test
+      - name: Cleanup google-services.json
+        if: always()
+        run: rm -f application/androidApp/google-services.json
+  android_distribute:
+    name: Android - Firebase App Distribution
+    runs-on: ubuntu-22.04
+    env:
+      isCI: "true"
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: zulu
+          java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+      - name: Decode google-services.json
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > application/androidApp/google-services.json
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > upload-keystore.jks
+      - name: Build release APK
+        run: ./gradlew :application:androidApp:assembleRelease
+        env:
+          WR_ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.WR_ANDROID_SIGNING_STORE_PASSWORD }}
+          WR_ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.WR_ANDROID_SIGNING_KEY_ALIAS }}
+          WR_ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.WR_ANDROID_SIGNING_KEY_PASSWORD }}
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_APP_DISTRIBUTION_SERVICE_ACCOUNT }}
           groups: testers
-          file: application/androidApp/build/outputs/apk/debug/androidApp-debug.apk
+          file: application/androidApp/build/outputs/apk/release/androidApp-release.apk
           releaseNotes: |
             Automated build from commit ${{ github.sha }}
             Branch: ${{ github.ref_name }}
-      - name: Cleanup google-services.json
+      - name: Cleanup sensitive files
         if: always()
-        run: rm -f application/androidApp/google-services.json
+        run: |
+          rm -f application/androidApp/google-services.json
+          rm -f upload-keystore.jks
   desktop_build_and_test:
     name: Desktop - Build, Test and Publish
     runs-on: macos-14
