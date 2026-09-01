@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  android_build_test_and_distribute:
+  android_build_test:
     name: Android - Build, Test and Distribute
     runs-on: ubuntu-22.04
     services:
@@ -30,7 +30,6 @@ jobs:
       isCI: "true"
       IN_MEMORY_DATABASE: 'true'
       DB_USER: 'postgres'
-      WRITEOPIA_FIREBASE_ID: 'id'
       WRITEOPIA_CLIENT_BASE_URL: "baseurl"
       JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY_CI }}
       JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY_CI }}
