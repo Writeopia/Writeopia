@@ -13,7 +13,7 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v6
         with:
-          distribution: adopt
+          distribution: zulu
           java-version: '21'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -45,7 +45,7 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v6
         with:
-          distribution: adopt
+          distribution: zulu
           java-version: '21'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -65,7 +65,7 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v6
         with:
-          distribution: adopt
+          distribution: zulu
           java-version: '21'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
