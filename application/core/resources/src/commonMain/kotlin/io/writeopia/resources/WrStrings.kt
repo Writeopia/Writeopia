@@ -44,6 +44,7 @@ import writeopia.application.core.resources.generated.resources.download_models
 import writeopia.application.core.resources.generated.resources.download_ollama
 import writeopia.application.core.resources.generated.resources.email
 import writeopia.application.core.resources.generated.resources.error_loading_teams
+import writeopia.application.core.resources.generated.resources.error_loading_workspaces
 import writeopia.application.core.resources.generated.resources.error_model_download
 import writeopia.application.core.resources.generated.resources.error_requesting_models
 import writeopia.application.core.resources.generated.resources.export
@@ -527,6 +528,9 @@ object WrStrings {
 
     @Composable
     fun errorLoadingTeams() = stringResource(Res.string.error_loading_teams)
+
+    @Composable
+    fun errorLoadingWorkspaces() = stringResource(Res.string.error_loading_workspaces)
 
     @Composable
     fun addToTeam() = stringResource(Res.string.add_to_team)

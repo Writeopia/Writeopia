@@ -24,15 +24,15 @@ import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 class WorkspaceInjection private constructor(
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
-    private val connectionInjector: WriteopiaConnectionInjector =
-        WriteopiaConnectionInjector.singleton(),
     private val repositoryInjection: RepositoryInjector = RepositoryInjector.singleton(),
     private val appConfigurationInjector: AppConfigurationInjector =
         AppConfigurationInjector.singleton(),
 ) {
+    // Always get fresh connection to handle logout/login scenarios
+    private fun connectionInjector() = WriteopiaConnectionInjector.singleton()
 
     fun provideWorkspaceApi() =
-        WorkspaceApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
+        WorkspaceApi(connectionInjector().httpClient(), connectionInjector().baseUrl())
 
     private var configFileWatcher: ConfigFileWatcher? = null
 
@@ -65,21 +65,21 @@ class WorkspaceInjection private constructor(
                 folderRepository = folderRepo
             ),
             imageSync = ImageSync(
-                connectionInjector.httpClient(),
-                connectionInjector.baseUrl(),
+                connectionInjector().httpClient(),
+                connectionInjector().baseUrl(),
                 repositoryInjection.provideDocumentRepository()
             )
         )
     }
 
     fun provideDocumentsApi(): DocumentsApi = DocumentsApi(
-        connectionInjector.httpClient(),
-        connectionInjector.baseUrl()
+        connectionInjector().httpClient(),
+        connectionInjector().baseUrl()
     )
 
     fun provideMediaApi(): MediaApi = MediaApi(
-        connectionInjector.httpClient(),
-        connectionInjector.baseUrl()
+        connectionInjector().httpClient(),
+        connectionInjector().baseUrl()
     )
 
     fun provideImageUploader(): ImageUploader = CloudImageUploader(

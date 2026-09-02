@@ -136,6 +136,7 @@
   <string name="dont_show_again">Don't show again</string>
   <string name="manage_teams">Manage teams</string>
   <string name="error_loading_teams">Error loading teams</string>
+  <string name="error_loading_workspaces">Error loading workspaces</string>
   <string name="add_to_team">Add users to team: </string>
   <string name="add">Add</string>
   <string name="user_email">User email</string>

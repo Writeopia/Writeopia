@@ -90,9 +90,7 @@ class WriteopiaConnectionInjector private constructor(
         }
 
         fun singleton(): WriteopiaConnectionInjector {
-            instance?.let {
-                return it
-            }
+            instance?.let { return it }
 
             val thisBaseUrl = baseUrl ?: throw IllegalStateException("Base url was not set!")
 
@@ -137,7 +135,8 @@ private object ApiInjectorDefaults {
                             is TokenRefreshResult.Success -> {
                                 BearerTokens(result.accessToken, result.refreshToken)
                             }
-                            else -> null
+                            is TokenRefreshResult.NoRefreshToken -> null
+                            is TokenRefreshResult.Failure -> null
                         }
                     }
                 }

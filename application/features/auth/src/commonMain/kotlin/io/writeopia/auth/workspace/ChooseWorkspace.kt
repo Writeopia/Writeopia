@@ -135,7 +135,7 @@ fun BoxScope.ChooseWorkspace(
 
             is ResultData.Error -> {
                 BasicText(
-                    text = "Error loading workspaces",
+                    text = WrStrings.errorLoadingWorkspaces(),
                     style = MaterialTheme.typography.bodyLarge.copy(
                         MaterialTheme.colorScheme.onBackground
                     ),
@@ -144,7 +144,7 @@ fun BoxScope.ChooseWorkspace(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                CommonButton(text = "Try again", clickListener = retry)
+                CommonButton(text = WrStrings.retry(), clickListener = retry)
             }
 
             is ResultData.Idle, is ResultData.InProgress, is ResultData.Loading -> {
