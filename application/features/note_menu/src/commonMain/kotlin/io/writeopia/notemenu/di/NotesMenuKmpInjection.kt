@@ -36,10 +36,10 @@ class NotesMenuKmpInjection private constructor(
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
-    private val connectionInjector: WriteopiaConnectionInjector =
-        WriteopiaConnectionInjector.singleton(),
     private val ollamaInjection: OllamaInjection? = null
 ) : NotesMenuInjection {
+    // Always get fresh connection to handle logout/login scenarios
+    private fun connectionInjector() = WriteopiaConnectionInjector.singleton()
 
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
@@ -66,7 +66,7 @@ class NotesMenuKmpInjection private constructor(
         )
 
     private fun provideDocumentsApi() =
-        DocumentsApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
+        DocumentsApi(connectionInjector().httpClient(), connectionInjector().baseUrl())
 
     private fun provideDocumentSync(): FolderSync {
         val documentRepository = repositoryInjection.provideDocumentRepository()

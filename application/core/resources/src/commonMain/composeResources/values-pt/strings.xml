@@ -130,6 +130,7 @@
   <string name="dont_show_again">Não mostrar novamente</string>
   <string name="manage_teams">Gerenciar times</string>
   <string name="error_loading_teams">Error ao carregar times</string>
+  <string name="error_loading_workspaces">Erro ao carregar workspaces</string>
   <string name="add_to_team">Adicionar usuário ao time: </string>
   <string name="add">Adicionar</string>
   <string name="user_email">Email de usuário</string>

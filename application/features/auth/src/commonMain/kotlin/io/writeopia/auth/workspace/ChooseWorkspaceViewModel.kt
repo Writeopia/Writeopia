@@ -16,6 +16,7 @@ import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.tutorials.Tutorials
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,16 +45,23 @@ class ChooseWorkspaceViewModel(
     fun loadWorkspaces() {
         viewModelScope.launch {
             _workspacesState.value = ResultData.Loading()
-            val result = workspaceApi.getAvailableWorkspaces()
 
-            _workspacesState.value = when (result) {
-                is ResultData.Complete -> {
-                    ResultData.Complete(result.data + Workspace.disconnectedWorkspace())
+            try {
+                val result = workspaceApi.getAvailableWorkspaces()
+
+                _workspacesState.value = when (result) {
+                    is ResultData.Complete -> {
+                        ResultData.Complete(result.data)
+                    }
+                    is ResultData.Error -> {
+                        ResultData.Error(result.exception)
+                    }
+                    else -> {
+                        ResultData.Error()
+                    }
                 }
-                else -> {
-                    // If API call fails, show only disconnected workspace
-                    ResultData.Complete(listOf(Workspace.disconnectedWorkspace()))
-                }
+            } catch (e: Exception) {
+                _workspacesState.value = ResultData.Error(e)
             }
         }
     }

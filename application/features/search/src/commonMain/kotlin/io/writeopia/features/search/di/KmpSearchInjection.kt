@@ -16,9 +16,9 @@ import io.writeopia.sqldelight.di.WriteopiaDbInjector
 class KmpSearchInjection private constructor(
     private val writeopiaDb: WriteopiaDb? = null,
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
-    private val connectionInjector: WriteopiaConnectionInjector =
-        WriteopiaConnectionInjector.singleton()
 ) : SearchInjection {
+    // Always get fresh connection to handle logout/login scenarios
+    private fun connectionInjector() = WriteopiaConnectionInjector.singleton()
 
     private var folderDao: FolderSearch? = null
     private var documentDao: DocumentSearch? = null
@@ -31,7 +31,7 @@ class KmpSearchInjection private constructor(
     )
 
     private fun provideSearchApi(): SearchApi =
-        SearchApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
+        SearchApi(connectionInjector().httpClient(), connectionInjector().baseUrl())
 
     fun provideRepository(
         folderDao: FolderSearch = provideFolderSqlDelightDao(),

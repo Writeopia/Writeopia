@@ -33,10 +33,12 @@ class SideMenuKmpInjector(
     private val ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
     private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
-    private val connectionInjector: WriteopiaConnectionInjector = WriteopiaConnectionInjector.singleton(),
     private val useBackendOnly: Boolean = false,
     private val menuItemsRepository: MenuItemsRepository? = null,
 ) : SideMenuInjector, OllamaConfigInjector {
+    // Always get fresh connection to handle logout/login scenarios
+    private fun connectionInjector() = WriteopiaConnectionInjector.singleton()
+
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
 
@@ -53,7 +55,7 @@ class SideMenuKmpInjector(
         )
 
     private fun provideDocumentsApi(): DocumentsApi =
-        DocumentsApi(connectionInjector.httpClient(), connectionInjector.baseUrl())
+        DocumentsApi(connectionInjector().httpClient(), connectionInjector().baseUrl())
 
     @Composable
     override fun provideSideMenuViewModel(keyboardEventFlow: Flow<KeyboardEvent>?): GlobalShellViewModel =
