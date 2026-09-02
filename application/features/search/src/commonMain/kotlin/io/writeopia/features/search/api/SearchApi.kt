@@ -12,9 +12,11 @@ import io.writeopia.sdk.serialization.extensions.toModel
 
 class SearchApi(private val client: HttpClient, private val baseUrl: String) {
 
-    suspend fun searchApi(query: String): List<Document> = try {
-        val url = "$baseUrl/api/document/search?q=\"$query\""
-        val request = client.get(url) {
+    suspend fun searchApi(query: String, workspaceId: String): List<Document> = try {
+        val request = client.get("$baseUrl/api/docs/workspace/$workspaceId/document/search") {
+            url {
+                parameters.append("q", query)
+            }
             contentType(ContentType.Application.Json)
         }
 

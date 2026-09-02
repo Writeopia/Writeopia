@@ -28,7 +28,9 @@ object SearchDocument {
     }
 
     private suspend fun semanticSearch(query: String, workspaceId: String): ResultData<List<String>> {
-        val request = wrWebClient.get("${Urls.AI_HUB}/documents/search/?q=${query}") {
+        val aiHubUrl = Urls.AI_HUB ?: return ResultData.Complete(emptyList())
+
+        val request = wrWebClient.get("$aiHubUrl/documents/search/?q=${query}") {
             contentType(ContentType.Application.Json)
         }
 

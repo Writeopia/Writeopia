@@ -51,11 +51,17 @@ class SearchRepository(
         }
     }
 
-    fun searchNotesAndFoldersRemotely(query: String): Flow<List<SearchItem>> = flow {
-//            println("triggering documentsApiFlow")
-//            emit(emptyList())
-//            println("calling api")
-        emit(searchApi.searchApi(query).toSearchItems())
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun searchNotesAndFoldersRemotely(query: String): Flow<List<SearchItem>> {
+        if (query.isEmpty()) {
+            return flow { emit(emptyList()) }
+        }
+
+        return authRepository.listenForWorkspace().flatMapLatest { workspace ->
+            flow {
+                emit(searchApi.searchApi(query, workspace.id).toSearchItems())
+            }
+        }
     }
 
     private suspend fun getNotesAndFolders(workspaceId: String): List<SearchItem> {
