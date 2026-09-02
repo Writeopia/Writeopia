@@ -91,6 +91,8 @@ class FolderStateController private constructor(
         if (authRepository.getUser().tier != Tier.PREMIUM) return true // No sync for non-premium
 
         val workspace = authRepository.getWorkspace() ?: return true
+        // Skip sync for offline/disconnected workspace
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return true
 
         return when (
             documentsApi.deleteFolder(
@@ -111,6 +113,8 @@ class FolderStateController private constructor(
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
+        // Skip sync for offline/disconnected workspace
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return
 
         documentsApi.sendFolders(
             folders = listOf(folder),
@@ -218,7 +222,14 @@ class FolderStateController private constructor(
                 }
 
         fun clearInstance() {
+            instance?.clearSessionState()
             instance = null
         }
+    }
+
+    private fun clearSessionState() {
+        _selectedNotes.value = emptySet()
+        editingFolderMutable.value = null
+        localUserId = null
     }
 }
