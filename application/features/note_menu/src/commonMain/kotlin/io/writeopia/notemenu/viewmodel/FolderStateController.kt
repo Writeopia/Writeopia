@@ -205,7 +205,7 @@ class FolderStateController private constructor(
     }
 
     companion object {
-        var instance: FolderStateController? = null
+        private var instance: FolderStateController? = null
 
         fun singleton(
             notesUseCase: NotesUseCase,
@@ -216,5 +216,9 @@ class FolderStateController private constructor(
                 .also {
                     instance = it
                 }
+
+        fun clearInstance() {
+            instance = null
+        }
     }
 }

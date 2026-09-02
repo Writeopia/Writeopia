@@ -537,8 +537,9 @@ class GlobalShellKmpViewModel(
                 authRepository.unselectAllWorkspaces()
                 authRepository.clearTokens()
 
-                // Clear HttpClient to invalidate cached bearer tokens
+                // Clear singletons that cache API instances with old HttpClient
                 WriteopiaConnectionInjector.clearInstance()
+                FolderStateController.clearInstance()
 
                 loginStateTrigger.value = GenerateId.generate()
                 onSuccessSideEffect()
