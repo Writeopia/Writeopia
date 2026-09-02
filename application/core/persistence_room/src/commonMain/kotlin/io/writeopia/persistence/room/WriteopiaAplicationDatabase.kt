@@ -40,7 +40,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         TokenEntity::class,
         WorkspaceEntity::class
     ],
-    version = 28,
+    version = 29,
     exportSchema = false
 )
 @TypeConverters(IdListConverter::class)

@@ -75,13 +75,20 @@ fun NavigationGraph(
     val uiConfigInjection = UiConfigurationInjector.singleton()
 
     val appDaosInjection = AppRoomDaosInjection.singleton()
-    WriteopiaConnectionInjector.setBaseUrl(BuildConfig.BASE_URL)
-    setupBearerTokenHandler()
+
+    // Initialize connection only once - remember ensures this doesn't re-run on recomposition
+    remember {
+        WriteopiaConnectionInjector.setBaseUrl(BuildConfig.BASE_URL)
+        setupBearerTokenHandler()
+    }
+
     val uiConfigViewModel = uiConfigInjection.provideUiConfigurationViewModel()
-    val editorInjector = EditorKmpInjector.mobile(
-        imageUploader = WorkspaceInjection.singleton().provideImageUploader()
-    )
-    val notesMenuInjection = NotesMenuKmpInjection.mobile()
+    val editorInjector = remember {
+        EditorKmpInjector.mobile(
+            imageUploader = WorkspaceInjection.singleton().provideImageUploader()
+        )
+    }
+    val notesMenuInjection = remember { NotesMenuKmpInjection.mobile() }
 
     val searchInjector = remember {
         MobileSearchInjection(
