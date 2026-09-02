@@ -467,12 +467,14 @@ object DocumentsService {
             .map { ensureTitleInSync(it) }
     }
 
-    private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String) =
-        wrWebClient.post("${Urls.AI_HUB}/documents/") {
+    private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String): Boolean {
+        val aiHubUrl = Urls.AI_HUB ?: return true
+
+        return wrWebClient.post("$aiHubUrl/documents/") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(documents.map { it.toApi() }, workspaceId))
-        }.status
-            .isSuccess()
+        }.status.isSuccess()
+    }
 
     fun countDocumentsByWorkspaceId(workspaceId: String, writeopiaDb: WriteopiaDbBackend): Long {
         return writeopiaDb.documentEntityQueries.countByWorkspaceId(workspaceId).executeAsOne()
