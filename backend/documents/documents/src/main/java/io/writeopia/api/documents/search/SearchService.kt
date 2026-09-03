@@ -12,7 +12,9 @@ import io.writeopia.connection.logger
 import io.writeopia.connection.mapSuspend
 import io.writeopia.connection.wrWebClient
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sql.WriteopiaDbBackend
+import kotlinx.datetime.Instant
 
 object SearchDocument {
 
@@ -21,11 +23,43 @@ object SearchDocument {
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
     ): ResultData<List<Document>> {
-        return semanticSearch(query, workspaceId).mapSuspend { idList ->
-            idList.mapNotNull { id ->
-                writeopiaDb.getDocumentById(id, workspaceId)
+        // If AI Hub is configured, use semantic search
+        if (Urls.AI_HUB != null) {
+            return semanticSearch(query, workspaceId).mapSuspend { idList ->
+                idList.mapNotNull { id ->
+                    writeopiaDb.getDocumentById(id, workspaceId)
+                }
             }
         }
+
+        // Fallback to database title search
+        logger.info("Using database title search for query: '$query'")
+        return databaseSearch(query, workspaceId, writeopiaDb)
+    }
+
+    private fun databaseSearch(
+        query: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): ResultData<List<Document>> {
+        val documents = writeopiaDb.documentEntityQueries.query(query, workspaceId)
+            .executeAsList()
+            .map { entity ->
+                Document(
+                    id = entity.id,
+                    title = entity.title,
+                    createdAt = Instant.fromEpochMilliseconds(entity.created_at),
+                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                    lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
+                    workspaceId = entity.workspace_id,
+                    favorite = entity.favorite,
+                    parentId = entity.parent_document_id,
+                    icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
+                    isLocked = entity.is_locked,
+                )
+            }
+        logger.info("Database search returned ${documents.size} documents")
+        return ResultData.Complete(documents)
     }
 
     private suspend fun semanticSearch(query: String, workspaceId: String): ResultData<List<String>> {
