@@ -36,7 +36,6 @@ import io.writeopia.notemenu.di.NotesMenuWebInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
-import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
@@ -75,7 +74,7 @@ fun CreateSiteView(documentId: String) {
     // Use the current origin for API calls (works for both app.writeopia.io and localhost)
     val baseUrl = window.location.origin
     WriteopiaConnectionInjector.setBaseUrl(baseUrl)
-    setupBearerTokenHandler()
+    // Don't call setupBearerTokenHandler() - webapp uses HttpOnly cookies for auth
 
     val connectionInjector = WriteopiaConnectionInjector.singleton()
 
@@ -120,7 +119,9 @@ fun CreateAppInMemory() {
     val baseUrl = window.location.origin
     WriteopiaConnectionInjector.setBaseUrl(baseUrl)
     WriteopiaConnectionInjector.setDisableWebsocket(true)
-    setupBearerTokenHandler()
+    // Don't call setupBearerTokenHandler() - webapp uses HttpOnly cookies for auth,
+    // not Bearer tokens. The Bearer plugin would add an empty Authorization header
+    // that prevents the server from falling back to cookie-based authentication.
 
     // Initialize GenAI (Gemini) for the webapp
     val authRepository = AuthCoreInjectionNeo.singleton().provideAuthRepository()
