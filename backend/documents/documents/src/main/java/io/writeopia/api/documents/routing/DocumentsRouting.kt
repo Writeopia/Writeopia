@@ -180,8 +180,11 @@ fun Routing.documentsRoute(
             val query = call.queryParameters["q"]
             val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
+            logger.info("Search request - query: '$query', userId: $userId, workspaceId: $workspaceId")
+
             runIfMember(userId, workspaceId, writeopiaDb, debug) {
                 if (query == null) {
+                    logger.info("Search failed - query is null")
                     call.respond(HttpStatusCode.BadRequest)
                 } else {
                     val result =
@@ -190,8 +193,10 @@ fun Routing.documentsRoute(
                         }
 
                     if (result is ResultData.Complete) {
+                        logger.info("Search completed - returning ${result.data.size} documents")
                         call.respond(status = HttpStatusCode.OK, message = result.data)
                     } else {
+                        logger.error("Search failed - internal error")
                         call.respond(HttpStatusCode.InternalServerError)
                     }
                 }
