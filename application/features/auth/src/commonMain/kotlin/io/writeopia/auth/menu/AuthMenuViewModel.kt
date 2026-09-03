@@ -145,7 +145,11 @@ class AuthMenuViewModel(
 
         viewModelScope.launch {
             try {
-                val result = authApi.login(_email.value, _password.value)
+                val result = if (authRepository.useWebLogin) {
+                    authApi.loginWeb(_email.value, _password.value)
+                } else {
+                    authApi.login(_email.value, _password.value)
+                }
 
                 _loginState.value = when (result) {
                     is ResultData.Complete -> {

@@ -21,6 +21,13 @@ interface AuthRepository : UserRepository {
         emit(getWorkspace() ?: Workspace.disconnectedWorkspace())
     }
 
+    /**
+     * Returns true if the platform should use web-specific login (with HttpOnly cookies).
+     * Default implementation returns false for non-web platforms.
+     */
+    val useWebLogin: Boolean
+        get() = false
+
     override suspend fun getUser(): WriteopiaUser
 
     suspend fun isLoggedIn(): Boolean

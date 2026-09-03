@@ -27,6 +27,9 @@ import kotlin.time.Instant
  */
 internal class LocalStorageAuthRepository : AuthRepository {
 
+    // Web platform uses HttpOnly cookie-based authentication
+    override val useWebLogin: Boolean = true
+
     // Session-scoped storage for sensitive reset flow data (not persisted to localStorage)
     private var forgotPasswordEmail: String? = null
     private var forgotPasswordCode: String? = null

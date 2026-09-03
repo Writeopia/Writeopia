@@ -45,6 +45,23 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         ResultData.Error(e)
     }
 
+    /**
+     * Web-specific login that uses HttpOnly cookies for token storage.
+     * The backend sets the tokens in HttpOnly cookies instead of returning them in the response body.
+     */
+    suspend fun loginWeb(email: String, password: String): ResultData<AuthResponse> = try {
+        val response = client.post("$baseUrl/api/auth/login/web") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest(email, password))
+        }.body<AuthResponse>()
+
+        ResultData.Complete(response)
+    } catch (e: Exception) {
+        println("loginWeb error: ${e.message}")
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
     suspend fun register(
         name: String,
         email: String,
