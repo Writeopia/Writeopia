@@ -8,9 +8,8 @@ private val debugMode: Boolean
 
 fun configurePersistence(): WriteopiaDbBackend {
     val driver = HikariCp.driver(debugMode)
-    if (debugMode && !HikariCp.isSchemaCreated()) {
-        WriteopiaDbBackend.Schema.create(driver)
-        HikariCp.markSchemaCreated()
+    if (debugMode) {
+        HikariCp.initializeSchemaIfNeeded { WriteopiaDbBackend.Schema.create(it) }
     }
     return WriteopiaDbBackend(driver)
 }

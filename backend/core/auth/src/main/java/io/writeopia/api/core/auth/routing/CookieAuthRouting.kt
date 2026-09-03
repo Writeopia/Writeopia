@@ -13,6 +13,7 @@ import io.writeopia.api.core.auth.hash.HashUtils
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.service.RefreshTokenService
+import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.connection.logger
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
@@ -161,21 +162,36 @@ fun Routing.cookieAuthRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean 
 
     get("/api/auth/session/status") {
         val accessToken = call.request.cookies[COOKIE_ACCESS_TOKEN]
-        val sessionMeta = call.request.cookies[COOKIE_SESSION_META]
 
-        if (accessToken != null && sessionMeta != null) {
-            val parts = sessionMeta.split(":")
-            val userId = parts.getOrNull(0)
-            val expiresAt = parts.getOrNull(1)?.toLongOrNull()
+        if (accessToken != null) {
+            // Validate the JWT and extract userId from verified claims
+            // This prevents forged cookies from being accepted
+            val userId = JwtConfig.extractUserId(accessToken)
 
-            call.respond(
-                HttpStatusCode.OK,
-                SessionStatusResponse(
-                    authenticated = true,
-                    userId = userId,
-                    expiresAt = expiresAt
+            if (userId != null) {
+                // Token is valid - extract expiry from the verified JWT
+                val expiresAt = try {
+                    val jwt = JwtConfig.accessVerifier.verify(accessToken)
+                    jwt.expiresAt?.time
+                } catch (e: Exception) {
+                    null
+                }
+
+                call.respond(
+                    HttpStatusCode.OK,
+                    SessionStatusResponse(
+                        authenticated = true,
+                        userId = userId,
+                        expiresAt = expiresAt
+                    )
                 )
-            )
+            } else {
+                // Token exists but is invalid (expired, forged, etc.)
+                call.respond(
+                    HttpStatusCode.OK,
+                    SessionStatusResponse(authenticated = false)
+                )
+            }
         } else {
             call.respond(
                 HttpStatusCode.OK,

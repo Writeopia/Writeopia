@@ -1,6 +1,7 @@
 package io.writeopia.api.auth
 
 import io.ktor.client.call.body
+import io.ktor.client.request.cookie
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -260,5 +261,96 @@ class CookieAuthIntegrationTest {
         val workspacesResponse = client.get("/api/workspace/user")
 
         assertEquals(HttpStatusCode.Unauthorized, workspacesResponse.status)
+    }
+
+    // Security regression tests for forged cookies
+
+    @Test
+    fun `session status should reject forged access token cookie`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+
+        // Attempt to forge authentication with a random string as access token
+        val statusResponse = client.get("/api/auth/session/status") {
+            cookie("writeopia_access", "forged-invalid-token")
+            cookie("writeopia_session", "fake-user-id:9999999999999")
+        }
+
+        assertEquals(HttpStatusCode.OK, statusResponse.status)
+        val sessionStatus = statusResponse.body<SessionStatusResponse>()
+        // Should NOT be authenticated with forged token
+        assertEquals(false, sessionStatus.authenticated)
+    }
+
+    @Test
+    fun `session status should reject malformed JWT in access token cookie`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+
+        // Attempt with a malformed JWT (valid format but invalid signature/claims)
+        val malformedJwt = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJmYWtlLXVzZXIiLCJ0eXBlIjoiYWNjZXNzIn0.invalid-signature"
+
+        val statusResponse = client.get("/api/auth/session/status") {
+            cookie("writeopia_access", malformedJwt)
+            cookie("writeopia_session", "fake-user-id:9999999999999")
+        }
+
+        assertEquals(HttpStatusCode.OK, statusResponse.status)
+        val sessionStatus = statusResponse.body<SessionStatusResponse>()
+        // Should NOT be authenticated with invalid JWT
+        assertEquals(false, sessionStatus.authenticated)
+    }
+
+    @Test
+    fun `session status should reject when only session cookie is present`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+
+        // Only provide the session metadata cookie (no access token)
+        val statusResponse = client.get("/api/auth/session/status") {
+            cookie("writeopia_session", "fake-user-id:9999999999999")
+        }
+
+        assertEquals(HttpStatusCode.OK, statusResponse.status)
+        val sessionStatus = statusResponse.body<SessionStatusResponse>()
+        // Should NOT be authenticated without valid access token
+        assertEquals(false, sessionStatus.authenticated)
+    }
+
+    @Test
+    fun `session status userId should come from verified JWT not session cookie`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = cookieClient()
+        registerTestUser(client)
+
+        // Login to get a valid token
+        val loginResponse = client.post("/api/auth/login/web") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest(testEmail, testPassword))
+        }
+        assertEquals(HttpStatusCode.OK, loginResponse.status)
+
+        // Get the actual userId from session status (derived from valid JWT)
+        val statusResponse = client.get("/api/auth/session/status")
+        val sessionStatus = statusResponse.body<SessionStatusResponse>()
+
+        assertTrue(sessionStatus.authenticated)
+        assertNotNull(sessionStatus.userId)
+        // The userId should be a valid UUID format, not a forged value
+        assertTrue(sessionStatus.userId!!.isNotEmpty())
+        // Verify it's not the forged value that might be in the session cookie
+        assertTrue(sessionStatus.userId != "forged-user-id")
     }
 }

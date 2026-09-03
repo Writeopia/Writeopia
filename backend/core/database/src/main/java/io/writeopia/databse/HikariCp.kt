@@ -47,6 +47,20 @@ object HikariCp {
         schemaCreated = true
     }
 
+    /**
+     * Atomically initializes the schema if not already created.
+     * Thread-safe: uses synchronized block to prevent race conditions.
+     *
+     * @param schemaCreator Lambda that creates the schema using the provided driver
+     */
+    @Synchronized
+    fun initializeSchemaIfNeeded(schemaCreator: (SqlDriver) -> Unit) {
+        if (!schemaCreated && driver != null) {
+            schemaCreator(driver!!)
+            schemaCreated = true
+        }
+    }
+
     fun close() {
         dataSource?.close()
         embeddedPostgres?.close()

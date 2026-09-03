@@ -8,9 +8,6 @@ import io.writeopia.sql.WriteopiaDbBackend
  */
 fun configureTestPersistence(): WriteopiaDbBackend {
     val driver = HikariCp.driver(debugMode = true)
-    if (!HikariCp.isSchemaCreated()) {
-        WriteopiaDbBackend.Schema.create(driver)
-        HikariCp.markSchemaCreated()
-    }
+    HikariCp.initializeSchemaIfNeeded { WriteopiaDbBackend.Schema.create(it) }
     return WriteopiaDbBackend(driver)
 }
