@@ -7,6 +7,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
+import io.writeopia.api.core.auth.routing.cookieAuthRoute
 import io.writeopia.api.core.auth.routing.emailRoute
 import io.writeopia.api.core.auth.routing.passwordResetRoute
 import io.writeopia.api.core.auth.routing.workspaceRoute
@@ -32,6 +33,9 @@ fun Application.configureRouting(
         if (writeopiaDb != null) {
             // Auth routes: login, register, password reset, account deletion, current user
             authRoute(writeopiaDb, debugMode)
+
+            // Web-specific auth routes using HttpOnly cookies
+            cookieAuthRoute(writeopiaDb, debugMode)
 
             // Workspace routes: workspace CRUD operations
             workspaceRoute(adminKey, writeopiaDb, debugMode)

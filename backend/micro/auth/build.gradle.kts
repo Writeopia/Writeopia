@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":backend:core:auth"))
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
+    implementation(project(":plugins:writeopia_serialization"))
 
     // Ktor
     implementation(libs.ktor.server.cors)
@@ -44,5 +45,6 @@ dependencies {
 
     // Testing
     testImplementation(libs.ktor.server.tests)
+    testImplementation(libs.ktor.client.content.negotiation)
     testImplementation(libs.kotlin.test)
 }
