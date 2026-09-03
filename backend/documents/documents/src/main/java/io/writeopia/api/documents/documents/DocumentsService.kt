@@ -86,10 +86,10 @@ object DocumentsService {
 
     suspend fun search(
         query: String,
-        userId: String,
+        workspaceId: String,
         writeopiaDb: WriteopiaDbBackend
     ): ResultData<List<Document>> =
-        SearchDocument.search(query, userId, writeopiaDb)
+        SearchDocument.search(query, workspaceId, writeopiaDb)
 
     suspend fun getDocumentById(
         id: String,

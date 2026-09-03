@@ -1439,4 +1439,322 @@ class DocumentationIntegrationTests {
         }
         assertEquals(HttpStatusCode.BadRequest, cloneResponse.status)
     }
+
+    @Test
+    fun `it should be possible to search documents by title`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        // Create documents with different titles
+        val document1 = DocumentApi(
+            id = "searchDoc1_${Random.nextInt()}",
+            title = "Meeting Notes for Project Alpha",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val document2 = DocumentApi(
+            id = "searchDoc2_${Random.nextInt()}",
+            title = "Project Alpha Requirements",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val document3 = DocumentApi(
+            id = "searchDoc3_${Random.nextInt()}",
+            title = "Unrelated Document",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        // Save documents
+        val createResponse = client.post("/api/docs/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document1, document2, document3), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        // Search for "Alpha" - should return document1 and document2
+        val searchResponse = client.get("/api/docs/workspace/$workspaceId/document/search?q=Alpha")
+        assertEquals(HttpStatusCode.OK, searchResponse.status)
+
+        val searchResults = searchResponse.body<List<DocumentApi>>()
+        assertEquals(2, searchResults.size)
+        assertTrue(searchResults.any { it.id == document1.id })
+        assertTrue(searchResults.any { it.id == document2.id })
+        assertFalse(searchResults.any { it.id == document3.id })
+
+        // Clean up
+        db.deleteDocumentById(document1.id)
+        db.deleteDocumentById(document2.id)
+        db.deleteDocumentById(document3.id)
+    }
+
+    @Test
+    fun `search should return empty list when no documents match`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        // Create a document
+        val document = DocumentApi(
+            id = "searchNoMatch_${Random.nextInt()}",
+            title = "Some Document Title",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val createResponse = client.post("/api/docs/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        // Search for something that doesn't exist
+        val searchResponse = client.get("/api/docs/workspace/$workspaceId/document/search?q=NonExistentTerm")
+        assertEquals(HttpStatusCode.OK, searchResponse.status)
+
+        val searchResults = searchResponse.body<List<DocumentApi>>()
+        assertEquals(0, searchResults.size)
+
+        // Clean up
+        db.deleteDocumentById(document.id)
+    }
+
+    @Test
+    fun `search should return bad request when query parameter is missing`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        // Search without query parameter
+        val searchResponse = client.get("/api/docs/workspace/$workspaceId/document/search")
+        assertEquals(HttpStatusCode.BadRequest, searchResponse.status)
+    }
+
+    @Test
+    fun `search should be case insensitive`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        val document = DocumentApi(
+            id = "searchCaseDoc_${Random.nextInt()}",
+            title = "Important Meeting Notes",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val createResponse = client.post("/api/docs/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        // Search with lowercase
+        val searchLower = client.get("/api/docs/workspace/$workspaceId/document/search?q=meeting")
+        assertEquals(HttpStatusCode.OK, searchLower.status)
+        val resultsLower = searchLower.body<List<DocumentApi>>()
+        assertTrue(resultsLower.any { it.id == document.id })
+
+        // Search with uppercase
+        val searchUpper = client.get("/api/docs/workspace/$workspaceId/document/search?q=MEETING")
+        assertEquals(HttpStatusCode.OK, searchUpper.status)
+        val resultsUpper = searchUpper.body<List<DocumentApi>>()
+        assertTrue(resultsUpper.any { it.id == document.id })
+
+        // Clean up
+        db.deleteDocumentById(document.id)
+    }
+
+    @Test
+    fun `search should only return documents from the specified workspace`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId1 = "workspace1_${Random.nextInt()}"
+        val workspaceId2 = "workspace2_${Random.nextInt()}"
+
+        // Create document in workspace 1
+        val document1 = DocumentApi(
+            id = "searchWs1Doc_${Random.nextInt()}",
+            title = "Shared Project Notes",
+            workspaceId = workspaceId1,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        // Create document in workspace 2 with similar title
+        val document2 = DocumentApi(
+            id = "searchWs2Doc_${Random.nextInt()}",
+            title = "Shared Project Updates",
+            workspaceId = workspaceId2,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        // Save documents
+        val createResponse1 = client.post("/api/docs/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document1), workspaceId1))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse1.status)
+
+        val createResponse2 = client.post("/api/docs/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document2), workspaceId2))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse2.status)
+
+        // Search in workspace 1 - should only return document1
+        val searchResponse1 = client.get("/api/docs/workspace/$workspaceId1/document/search?q=Shared")
+        assertEquals(HttpStatusCode.OK, searchResponse1.status)
+        val results1 = searchResponse1.body<List<DocumentApi>>()
+        assertEquals(1, results1.size)
+        assertEquals(document1.id, results1.first().id)
+
+        // Search in workspace 2 - should only return document2
+        val searchResponse2 = client.get("/api/docs/workspace/$workspaceId2/document/search?q=Shared")
+        assertEquals(HttpStatusCode.OK, searchResponse2.status)
+        val results2 = searchResponse2.body<List<DocumentApi>>()
+        assertEquals(1, results2.size)
+        assertEquals(document2.id, results2.first().id)
+
+        // Clean up
+        db.deleteDocumentById(document1.id)
+        db.deleteDocumentById(document2.id)
+    }
+
+    @Test
+    fun `search should not return deleted documents`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        val document = DocumentApi(
+            id = "searchDeletedDoc_${Random.nextInt()}",
+            title = "Document To Be Deleted",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        // Save document
+        val createResponse = client.post("/api/docs/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        // Verify document is searchable
+        val searchBefore = client.get("/api/docs/workspace/$workspaceId/document/search?q=Deleted")
+        assertEquals(HttpStatusCode.OK, searchBefore.status)
+        val resultsBefore = searchBefore.body<List<DocumentApi>>()
+        assertEquals(1, resultsBefore.size)
+
+        // Delete the document
+        val deleteResponse = client.post("/api/docs/workspace/$workspaceId/document/delete") {
+            contentType(ContentType.Application.Json)
+            setBody(DeleteDocumentsRequest(documentIds = listOf(document.id)))
+        }
+        assertEquals(HttpStatusCode.OK, deleteResponse.status)
+
+        // Verify document is no longer searchable
+        val searchAfter = client.get("/api/docs/workspace/$workspaceId/document/search?q=Deleted")
+        assertEquals(HttpStatusCode.OK, searchAfter.status)
+        val resultsAfter = searchAfter.body<List<DocumentApi>>()
+        assertEquals(0, resultsAfter.size)
+    }
+
+    @Test
+    fun `search should find documents with partial title match`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        val document = DocumentApi(
+            id = "searchPartialDoc_${Random.nextInt()}",
+            title = "Quarterly Business Review 2024",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L
+        )
+
+        val createResponse = client.post("/api/docs/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        // Search with partial match at beginning
+        val searchBegin = client.get("/api/docs/workspace/$workspaceId/document/search?q=Quarterly")
+        assertEquals(HttpStatusCode.OK, searchBegin.status)
+        assertTrue(searchBegin.body<List<DocumentApi>>().any { it.id == document.id })
+
+        // Search with partial match in middle
+        val searchMiddle = client.get("/api/docs/workspace/$workspaceId/document/search?q=Business")
+        assertEquals(HttpStatusCode.OK, searchMiddle.status)
+        assertTrue(searchMiddle.body<List<DocumentApi>>().any { it.id == document.id })
+
+        // Search with partial match at end
+        val searchEnd = client.get("/api/docs/workspace/$workspaceId/document/search?q=2024")
+        assertEquals(HttpStatusCode.OK, searchEnd.status)
+        assertTrue(searchEnd.body<List<DocumentApi>>().any { it.id == document.id })
+
+        // Clean up
+        db.deleteDocumentById(document.id)
+    }
 }

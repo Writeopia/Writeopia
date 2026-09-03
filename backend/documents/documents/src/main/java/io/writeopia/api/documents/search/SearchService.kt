@@ -14,7 +14,7 @@ import io.writeopia.connection.wrWebClient
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sql.WriteopiaDbBackend
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 object SearchDocument {
 

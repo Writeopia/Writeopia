@@ -35,7 +35,7 @@ WHERE id = ? AND deleted = FALSE;
 query:
 SELECT *
 FROM document_entity
-WHERE title LIKE '%' || ? || '%' AND deleted = FALSE AND workspace_id = ?
+WHERE title ILIKE '%' || ? || '%' AND deleted = FALSE AND workspace_id = ?
 ORDER BY last_synced;
 
 selectById:

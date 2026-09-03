@@ -188,7 +188,7 @@ fun Routing.documentsRoute(
                     call.respond(HttpStatusCode.BadRequest)
                 } else {
                     val result =
-                        DocumentsService.search(query, userId, writeopiaDb).map { resultData ->
+                        DocumentsService.search(query, workspaceId, writeopiaDb).map { resultData ->
                             resultData.map { document -> document.toApi() }
                         }
 
