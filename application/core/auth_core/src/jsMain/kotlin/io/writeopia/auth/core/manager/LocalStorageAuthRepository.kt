@@ -10,7 +10,6 @@ import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.coroutines.await
-import org.w3c.fetch.RequestInit
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -58,12 +57,12 @@ internal class LocalStorageAuthRepository : AuthRepository {
         // Call backend to revoke session and clear HttpOnly cookies
         try {
             val baseUrl = WriteopiaConnectionInjector.singleton().baseUrl()
+            // Use js() to create a plain JS object to avoid "not a valid enum value" errors
+            // (Kotlin's RequestInit sets null for unspecified properties like 'cache')
+            val options = js("({method: 'POST', credentials: 'include'})")
             val response = kotlinx.browser.window.fetch(
                 "$baseUrl/api/auth/logout/web",
-                RequestInit(
-                    method = "POST",
-                    credentials = "include".asDynamic()
-                )
+                options
             ).await()
 
             if (!response.ok) {
