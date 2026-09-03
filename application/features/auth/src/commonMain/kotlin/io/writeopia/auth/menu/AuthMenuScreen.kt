@@ -241,7 +241,9 @@ private fun AuthMenuContentScreen(
                 modifier = Modifier.fillMaxWidth()
                     .padding(horizontal = 24.dp)
                     .onKeyEvent { keyEvent ->
-                        if (keyEvent.key.isEnterKey() && keyEvent.type == KeyEventType.KeyUp) {
+                        if (keyEvent.key.isEnterKey() && keyEvent.type == KeyEventType.KeyUp &&
+                            email.isNotBlank() && password.isNotBlank()
+                        ) {
                             onLoginRequest()
                             true
                         } else {
@@ -256,7 +258,11 @@ private fun AuthMenuContentScreen(
                     imeAction = ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(
-                    onDone = { onLoginRequest() }
+                    onDone = {
+                        if (email.isNotBlank() && password.isNotBlank()) {
+                            onLoginRequest()
+                        }
+                    }
                 ),
                 visualTransformation = if (showPassword) {
                     VisualTransformation.None

@@ -223,7 +223,11 @@ private fun BoxScope.ForgotPasswordNewPasswordContent(
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
-                onDone = { onResetPassword() }
+                onDone = {
+                    if (password.isNotBlank() && password == repeatPassword) {
+                        onResetPassword()
+                    }
+                }
             ),
             visualTransformation = if (showRepeatPassword) {
                 VisualTransformation.None

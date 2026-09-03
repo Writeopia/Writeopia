@@ -208,7 +208,7 @@ private fun BoxScope.ForgotPasswordCodeContent(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .onKeyEvent { keyEvent ->
-                    if (keyEvent.key.isEnterKey() && keyEvent.type == KeyEventType.KeyUp) {
+                    if (keyEvent.key.isEnterKey() && keyEvent.type == KeyEventType.KeyUp && code.length == 6) {
                         onVerifyCode()
                         true
                     } else {
@@ -224,7 +224,7 @@ private fun BoxScope.ForgotPasswordCodeContent(
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
-                onDone = { onVerifyCode() }
+                onDone = { if (code.length == 6) onVerifyCode() }
             ),
             textStyle = MaterialTheme.typography.headlineSmall.copy(
                 textAlign = TextAlign.Center,

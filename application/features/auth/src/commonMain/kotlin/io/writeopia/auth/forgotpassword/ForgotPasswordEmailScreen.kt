@@ -167,7 +167,7 @@ private fun ForgotPasswordEmailContent(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .onKeyEvent { keyEvent ->
-                    if (keyEvent.key.isEnterKey() && keyEvent.type == KeyEventType.KeyUp) {
+                    if (keyEvent.key.isEnterKey() && keyEvent.type == KeyEventType.KeyUp && email.isNotBlank()) {
                         onSendCode()
                         true
                     } else {
@@ -183,7 +183,7 @@ private fun ForgotPasswordEmailContent(
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
-                onDone = { onSendCode() }
+                onDone = { if (email.isNotBlank()) onSendCode() }
             )
         )
 

@@ -264,7 +264,7 @@ private fun BoxScope.RegisterContent(
             modifier = Modifier.fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .onKeyEvent { keyEvent ->
-                    if (keyEvent.key.isEnterKey() && keyEvent.type == KeyEventType.KeyUp) {
+                    if (keyEvent.key.isEnterKey() && keyEvent.type == KeyEventType.KeyUp && canRegister) {
                         onRegisterRequest()
                         true
                     } else {
@@ -279,7 +279,7 @@ private fun BoxScope.RegisterContent(
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
-                onDone = { onRegisterRequest() }
+                onDone = { if (canRegister) onRegisterRequest() }
             ),
             visualTransformation = if (showPassword) {
                 VisualTransformation.None
