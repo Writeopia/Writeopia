@@ -87,14 +87,21 @@ class AuthMenuViewModel(
             return@flow
         }
 
-        // Online mode - check if token is available
-        val token = authRepository.getAuthToken()
-        if (token.isNullOrEmpty()) {
+        // Online mode - check if authenticated
+        // For web: uses session cookie check (tokens are in HttpOnly cookies)
+        // For other platforms: checks if token is available in storage
+        val isAuthenticated = if (authRepository.useWebLogin) {
+            authRepository.isLoggedIn()
+        } else {
+            !authRepository.getAuthToken().isNullOrEmpty()
+        }
+
+        if (!isAuthenticated) {
             emit(LoginStatus.OFFLINE_NOT_CHOSEN)
             return@flow
         }
 
-        // Token exists - check workspace
+        // Authenticated - check workspace
         val workspace = authRepository.getWorkspace()
         val status = when {
             workspace != null -> LoginStatus.ONLINE
