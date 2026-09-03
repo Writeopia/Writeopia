@@ -241,8 +241,10 @@ private fun AuthMenuContentScreen(
                 modifier = Modifier.fillMaxWidth()
                     .padding(horizontal = 24.dp)
                     .onKeyEvent { keyEvent ->
-                        if (keyEvent.key.isEnterKey() && keyEvent.type == KeyEventType.KeyUp &&
-                            email.isNotBlank() && password.isNotBlank()
+                        if (keyEvent.key.isEnterKey() &&
+                            keyEvent.type == KeyEventType.KeyUp &&
+                            email.isNotBlank() &&
+                            password.isNotBlank()
                         ) {
                             onLoginRequest()
                             true
