@@ -30,8 +30,9 @@ class SearchKmpViewModel(
             .debounce(500)
             .flatMapLatest(searchRepository::searchNotesAndFoldersRemotely)
 
-        combine(localFlow, remoteFlow) { local, remote -> local + remote }
-            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        combine(localFlow, remoteFlow) { local, remote ->
+            (local + remote).distinctBy { it.id }
+        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
 
     override fun init() {}

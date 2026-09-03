@@ -82,7 +82,9 @@ private fun List<MenuItem>.toSearchItems(): List<SearchItem> =
     }.take(12)
 
 sealed interface SearchItem {
-    data class FolderInfo(val id: String, val label: String) : SearchItem
+    val id: String
 
-    data class DocumentInfo(val id: String, val label: String) : SearchItem
+    data class FolderInfo(override val id: String, val label: String) : SearchItem
+
+    data class DocumentInfo(override val id: String, val label: String) : SearchItem
 }
