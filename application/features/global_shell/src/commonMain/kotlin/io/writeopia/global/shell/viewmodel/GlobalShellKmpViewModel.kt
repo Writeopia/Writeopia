@@ -27,9 +27,9 @@ import io.writeopia.model.UiConfiguration
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.notemenu.viewmodel.FolderStateController
-import io.writeopia.sdk.`import`.json.WriteopiaJsonParser
 import io.writeopia.repository.UiConfigurationRepository
 import io.writeopia.responses.DownloadModelResponse
+import io.writeopia.sdk.import.json.WriteopiaJsonParser
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
@@ -52,12 +52,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlin.time.Clock
 import kotlin.random.Random
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class GlobalShellKmpViewModel(
