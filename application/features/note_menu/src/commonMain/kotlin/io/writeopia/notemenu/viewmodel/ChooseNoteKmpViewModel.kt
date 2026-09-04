@@ -711,7 +711,8 @@ internal class ChooseNoteKmpViewModel(
                 Folder.ROOT_PATH
             }
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-            notesUseCase.createFolder(name, workspace.id, parentId, icon)
+            val folder = notesUseCase.createFolder(name, workspace.id, parentId, icon)
+            syncFolder(folder)
             hideCreateFolderDialog()
         }
     }
