@@ -236,6 +236,13 @@ class OllamaApi(
 
     companion object {
         fun defaultUrl() = "http://localhost:11434"
+
+        /**
+         * Base URL of llmman (https://github.com/llmmanorg/llmman), a local model runner
+         * that serves the Ollama API on port 17434. Everything in this class works
+         * unchanged against it; only the port differs.
+         */
+        fun llmmanUrl() = "http://localhost:17434"
     }
 }
 
