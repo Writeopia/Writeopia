@@ -617,7 +617,6 @@ fun NavGraphBuilder.accountMenuNavigation(
                 workspacesState = accountMenuViewModel.availableWorkspaces,
                 exportWorkspaceState = accountMenuViewModel.exportWorkspaceState,
                 goToRegister = navigateToAuthMenu,
-                changeAccount = navigateToAuthMenu,
                 changeWorkspace = {
                     accountMenuViewModel.changeWorkspace {
                         navigateToChooseWorkspace()
