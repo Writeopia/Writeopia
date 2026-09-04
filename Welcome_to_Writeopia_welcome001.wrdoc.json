@@ -1,0 +1,354 @@
+{
+    "id": "welcome001",
+    "title": "Welcome to Writeopia",
+    "workspaceId": "disconnected_user",
+    "content": [
+        {
+            "id": "t1",
+            "type": { "name": "title", "number": 11 },
+            "text": "Welcome to Writeopia",
+            "decoration": { "backgroundColor": -16776961 }
+        },
+        {
+            "id": "intro1",
+            "type": { "name": "message", "number": 0 },
+            "text": "Your powerful, cross-platform writing companion designed for simplicity and productivity.",
+            "spans": [
+                { "start": 5, "end": 13, "span": "BOLD" },
+                { "start": 15, "end": 29, "span": "ITALIC" }
+            ],
+            "position": 1
+        },
+        {
+            "id": "space1",
+            "type": { "name": "message", "number": 0 },
+            "text": "",
+            "position": 2
+        },
+        {
+            "id": "h1",
+            "type": { "name": "message", "number": 0 },
+            "text": "Why Writeopia?",
+            "tags": [{ "tag": "H1", "position": 0 }],
+            "position": 3
+        },
+        {
+            "id": "why1",
+            "type": { "name": "message", "number": 0 },
+            "text": "Writeopia is a modern text editor that works seamlessly across all your devices. Whether you're on Android, iOS, Desktop, or Web, your documents stay in sync and always accessible.",
+            "spans": [
+                { "start": 0, "end": 9, "span": "BOLD" }
+            ],
+            "position": 4
+        },
+        {
+            "id": "space2",
+            "type": { "name": "message", "number": 0 },
+            "text": "",
+            "position": 5
+        },
+        {
+            "id": "h2",
+            "type": { "name": "message", "number": 0 },
+            "text": "Key Features",
+            "tags": [{ "tag": "H1", "position": 0 }],
+            "position": 6
+        },
+        {
+            "id": "h3",
+            "type": { "name": "message", "number": 0 },
+            "text": "Cross-Platform Support",
+            "tags": [{ "tag": "H2", "position": 0 }],
+            "position": 7
+        },
+        {
+            "id": "f1",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Android - Native mobile experience",
+            "spans": [{ "start": 0, "end": 7, "span": "BOLD" }],
+            "position": 8
+        },
+        {
+            "id": "f2",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "iOS - Seamless Apple ecosystem integration",
+            "spans": [{ "start": 0, "end": 3, "span": "BOLD" }],
+            "position": 9
+        },
+        {
+            "id": "f3",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Desktop - macOS, Windows, and Linux support",
+            "spans": [{ "start": 0, "end": 7, "span": "BOLD" }],
+            "position": 10
+        },
+        {
+            "id": "f4",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Web - Access from any browser, anywhere",
+            "spans": [{ "start": 0, "end": 3, "span": "BOLD" }],
+            "position": 11
+        },
+        {
+            "id": "space3",
+            "type": { "name": "message", "number": 0 },
+            "text": "",
+            "position": 12
+        },
+        {
+            "id": "h4",
+            "type": { "name": "message", "number": 0 },
+            "text": "Rich Text Editing",
+            "tags": [{ "tag": "H2", "position": 0 }],
+            "position": 13
+        },
+        {
+            "id": "r1",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Headers (H1, H2, H3, H4) for document structure",
+            "spans": [{ "start": 0, "end": 7, "span": "BOLD" }],
+            "position": 14
+        },
+        {
+            "id": "r2",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Bold, Italic, and Underline text formatting",
+            "spans": [
+                { "start": 0, "end": 4, "span": "BOLD" },
+                { "start": 6, "end": 12, "span": "ITALIC" },
+                { "start": 18, "end": 27, "span": "UNDERLINE" }
+            ],
+            "position": 15
+        },
+        {
+            "id": "r3",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Highlighting in multiple colors for emphasis",
+            "spans": [{ "start": 0, "end": 12, "span": "HIGHLIGHT" }],
+            "position": 16
+        },
+        {
+            "id": "r4",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Bullet points and numbered lists",
+            "position": 17
+        },
+        {
+            "id": "r5",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Code blocks for technical documentation",
+            "position": 18
+        },
+        {
+            "id": "space4",
+            "type": { "name": "message", "number": 0 },
+            "text": "",
+            "position": 19
+        },
+        {
+            "id": "h5",
+            "type": { "name": "message", "number": 0 },
+            "text": "Organization & Productivity",
+            "tags": [{ "tag": "H2", "position": 0 }],
+            "position": 20
+        },
+        {
+            "id": "o1",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Folders and subfolders to organize your work",
+            "spans": [{ "start": 0, "end": 7, "span": "BOLD" }],
+            "position": 21
+        },
+        {
+            "id": "o2",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Document linking to connect related notes",
+            "spans": [{ "start": 0, "end": 16, "span": "BOLD" }],
+            "position": 22
+        },
+        {
+            "id": "o3",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Favorites to quickly access important documents",
+            "spans": [{ "start": 0, "end": 9, "span": "BOLD" }],
+            "position": 23
+        },
+        {
+            "id": "o4",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Custom icons and colors for visual organization",
+            "spans": [{ "start": 0, "end": 12, "span": "BOLD" }],
+            "position": 24
+        },
+        {
+            "id": "space5",
+            "type": { "name": "message", "number": 0 },
+            "text": "",
+            "position": 25
+        },
+        {
+            "id": "h6",
+            "type": { "name": "message", "number": 0 },
+            "text": "Try It Out!",
+            "tags": [{ "tag": "H1", "position": 0 }],
+            "position": 26
+        },
+        {
+            "id": "try1",
+            "type": { "name": "message", "number": 0 },
+            "text": "Here's a sample checklist to get you started:",
+            "position": 27
+        },
+        {
+            "id": "c1",
+            "type": { "name": "check_item", "number": 10 },
+            "text": "Create your first document",
+            "checked": true,
+            "position": 28
+        },
+        {
+            "id": "c2",
+            "type": { "name": "check_item", "number": 10 },
+            "text": "Try formatting text with bold and italic",
+            "checked": false,
+            "position": 29
+        },
+        {
+            "id": "c3",
+            "type": { "name": "check_item", "number": 10 },
+            "text": "Organize notes into folders",
+            "checked": false,
+            "position": 30
+        },
+        {
+            "id": "c4",
+            "type": { "name": "check_item", "number": 10 },
+            "text": "Add a custom icon to a document",
+            "checked": false,
+            "position": 31
+        },
+        {
+            "id": "c5",
+            "type": { "name": "check_item", "number": 10 },
+            "text": "Link documents together",
+            "checked": false,
+            "position": 32
+        },
+        {
+            "id": "c6",
+            "type": { "name": "check_item", "number": 10 },
+            "text": "Sync across devices",
+            "checked": false,
+            "position": 33
+        },
+        {
+            "id": "space6",
+            "type": { "name": "message", "number": 0 },
+            "text": "",
+            "position": 34
+        },
+        {
+            "id": "div1",
+            "type": { "name": "divider", "number": 21 },
+            "position": 35
+        },
+        {
+            "id": "space7",
+            "type": { "name": "message", "number": 0 },
+            "text": "",
+            "position": 36
+        },
+        {
+            "id": "h7",
+            "type": { "name": "message", "number": 0 },
+            "text": "AI-Powered Features",
+            "tags": [{ "tag": "H2", "position": 0 }],
+            "position": 37
+        },
+        {
+            "id": "ai1",
+            "type": { "name": "message", "number": 0 },
+            "text": "Writeopia integrates with AI to supercharge your writing:",
+            "spans": [{ "start": 27, "end": 29, "span": "BOLD" }],
+            "position": 38
+        },
+        {
+            "id": "ai2",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Generate content suggestions",
+            "position": 39
+        },
+        {
+            "id": "ai3",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Summarize long documents",
+            "position": 40
+        },
+        {
+            "id": "ai4",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Improve writing style and clarity",
+            "position": 41
+        },
+        {
+            "id": "ai5",
+            "type": { "name": "unordered_list_item", "number": 16 },
+            "text": "Local AI support with Ollama integration",
+            "position": 42
+        },
+        {
+            "id": "space8",
+            "type": { "name": "message", "number": 0 },
+            "text": "",
+            "position": 43
+        },
+        {
+            "id": "h8",
+            "type": { "name": "message", "number": 0 },
+            "text": "Privacy First",
+            "tags": [{ "tag": "H2", "position": 0 }],
+            "decoration": { "backgroundColor": -16711936 },
+            "position": 44
+        },
+        {
+            "id": "priv1",
+            "type": { "name": "message", "number": 0 },
+            "text": "Your data belongs to you. Writeopia supports offline-first workflows and gives you full control over your documents.",
+            "spans": [
+                { "start": 0, "end": 25, "span": "ITALIC" },
+                { "start": 51, "end": 64, "span": "BOLD" }
+            ],
+            "position": 45
+        },
+        {
+            "id": "space9",
+            "type": { "name": "message", "number": 0 },
+            "text": "",
+            "position": 46
+        },
+        {
+            "id": "footer",
+            "type": { "name": "message", "number": 0 },
+            "text": "Start writing your story today with Writeopia!",
+            "tags": [{ "tag": "HIGH_LIGHT_BLOCK", "position": 0 }],
+            "spans": [{ "start": 36, "end": 45, "span": "BOLD" }],
+            "position": 47
+        },
+        {
+            "id": "end1",
+            "type": { "name": "message", "number": 0 },
+            "text": "",
+            "position": 48
+        }
+    ],
+    "createdAt": 1776609896651,
+    "lastUpdatedAt": 1776609896651,
+    "parentId": "root",
+    "isLocked": false,
+    "isFavorite": true,
+    "deleted": false,
+    "icon": {
+        "label": "zap",
+        "tint": -16776961
+    }
+}

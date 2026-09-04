@@ -1,6 +1,6 @@
 package io.writeopia.editor.features.editor.viewmodel
 
-import io.writeopia.OllamaRepository
+import io.writeopia.LocalAiRepository
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -18,26 +18,26 @@ object PromptService {
         targetMode: AiTargetMode,
         promptFn: (String, String, String) -> Flow<ResultData<String>>,
         writeopiaManager: WriteopiaStateManager,
-        ollamaRepository: OllamaRepository
+        localAiRepository: LocalAiRepository
     ) {
         val (text, position) = getTextAndPosition(targetMode, writeopiaManager)
 
         if (text == null) return
 
-        val url = ollamaRepository.getConfiguredUrl(userId)?.trim()
+        val url = localAiRepository.getConfiguredUrl(userId)?.trim()
 
         if (url == null) {
             writeopiaManager.changeStoryState(
                 Action.StoryStateChange(
                     storyStep = StoryStep(
                         type = StoryTypes.AI_ANSWER.type,
-                        text = "Ollama is not configured or not running."
+                        text = "Local AI is not configured or not running."
                     ),
                     position = position,
                 )
             )
         } else {
-            val model = ollamaRepository.getSelectedModel(userId)
+            val model = localAiRepository.getSelectedModel(userId)
                 ?: return
 
             promptFn(model, text, url).handleStream(writeopiaManager, position)
@@ -48,10 +48,10 @@ object PromptService {
         userId: String,
         targetMode: AiTargetMode,
         writeopiaManager: WriteopiaStateManager,
-        ollamaRepository: OllamaRepository
+        localAiRepository: LocalAiRepository
     ) {
         val (text, position) = getTextAndPosition(targetMode, writeopiaManager)
-        prompt(userId, text, writeopiaManager, ollamaRepository, position)
+        prompt(userId, text, writeopiaManager, localAiRepository, position)
     }
 
     private fun getTextAndPosition(
@@ -87,28 +87,28 @@ object PromptService {
         userId: String,
         prompt: String?,
         writeopiaManager: WriteopiaStateManager,
-        ollamaRepository: OllamaRepository,
+        localAiRepository: LocalAiRepository,
         promptPosition: Double? = null
     ) {
         val position = promptPosition ?: writeopiaManager.getNextPosition()
 
         if (prompt != null && position != null) {
-            val url = ollamaRepository.getConfiguredUrl(userId)?.trim()
+            val url = localAiRepository.getConfiguredUrl(userId)?.trim()
 
             if (url == null) {
                 writeopiaManager.changeStoryState(
                     Action.StoryStateChange(
                         storyStep = StoryStep(
                             type = StoryTypes.AI_ANSWER.type,
-                            text = "Ollama is not configured or not running."
+                            text = "Local AI is not configured or not running."
                         ),
                         position = position,
                     )
                 )
             } else {
-                val model = ollamaRepository.getSelectedModel(userId) ?: return
+                val model = localAiRepository.getSelectedModel(userId) ?: return
 
-                ollamaRepository.streamReply(model, prompt, url)
+                localAiRepository.streamReply(model, prompt, url)
                     .handleStream(writeopiaManager, position)
             }
         }

@@ -20,7 +20,7 @@ import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import io.writeopia.commonui.dtos.MenuItemUi
-import io.writeopia.controller.OllamaConfigController
+import io.writeopia.controller.LocalAiConfigController
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.ui.screen.DesktopNotesMenu
@@ -36,7 +36,7 @@ actual fun NotesMenuScreen(
     isDarkTheme: Boolean,
     folderId: String,
     chooseNoteViewModel: ChooseNoteViewModel,
-    ollamaConfigController: OllamaConfigController?,
+    localAiConfigController: LocalAiConfigController?,
     navigationController: NavController,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -73,7 +73,7 @@ actual fun NotesMenuScreen(
         isDarkTheme = isDarkTheme,
         folderId = folderId,
         chooseNoteViewModel = chooseNoteViewModel,
-        ollamaConfigController = ollamaConfigController,
+        localAiConfigController = localAiConfigController,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
         onNewNoteClick = onNewNoteClick,

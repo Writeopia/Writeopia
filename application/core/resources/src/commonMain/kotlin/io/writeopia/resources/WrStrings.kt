@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.accent_color
-import writeopia.application.core.resources.generated.resources.access_ollama_site
+import writeopia.application.core.resources.generated.resources.access_local_ai_site
 import writeopia.application.core.resources.generated.resources.account
 import writeopia.application.core.resources.generated.resources.action_points
 import writeopia.application.core.resources.generated.resources.actions
@@ -41,7 +41,7 @@ import writeopia.application.core.resources.generated.resources.document
 import writeopia.application.core.resources.generated.resources.dont_show_again
 import writeopia.application.core.resources.generated.resources.download_model
 import writeopia.application.core.resources.generated.resources.download_models
-import writeopia.application.core.resources.generated.resources.download_ollama
+import writeopia.application.core.resources.generated.resources.download_local_ai
 import writeopia.application.core.resources.generated.resources.email
 import writeopia.application.core.resources.generated.resources.error_loading_teams
 import writeopia.application.core.resources.generated.resources.error_loading_workspaces
@@ -81,8 +81,8 @@ import writeopia.application.core.resources.generated.resources.new_password
 import writeopia.application.core.resources.generated.resources.no_models
 import writeopia.application.core.resources.generated.resources.notes_will_be_deleted
 import writeopia.application.core.resources.generated.resources.ok
-import writeopia.application.core.resources.generated.resources.ollama
-import writeopia.application.core.resources.generated.resources.ollama_configuration_complete
+import writeopia.application.core.resources.generated.resources.local_ai
+import writeopia.application.core.resources.generated.resources.local_ai_configuration_complete
 import writeopia.application.core.resources.generated.resources.onboarding_explain1
 import writeopia.application.core.resources.generated.resources.onboarding_hello
 import writeopia.application.core.resources.generated.resources.onboarding_select_ai
@@ -218,7 +218,7 @@ object WrStrings {
     fun localFolder() = stringResource(Res.string.local_folder)
 
     @Composable
-    fun ollama() = stringResource(Res.string.ollama)
+    fun localAi() = stringResource(Res.string.local_ai)
 
     @Composable
     fun url() = stringResource(Res.string.url)
@@ -374,13 +374,13 @@ object WrStrings {
     fun close() = stringResource(Res.string.close)
 
     @Composable
-    fun downloadOllama() = stringResource(Res.string.download_ollama)
+    fun downloadLocalAi() = stringResource(Res.string.download_local_ai)
 
     @Composable
-    fun accessOllamaSite() = stringResource(Res.string.access_ollama_site)
+    fun accessLocalAiSite() = stringResource(Res.string.access_local_ai_site)
 
     @Composable
-    fun ollamaConfigComplete() = stringResource(Res.string.ollama_configuration_complete)
+    fun localAiConfigComplete() = stringResource(Res.string.local_ai_configuration_complete)
 
     @Composable
     fun privateAiEnabled() = stringResource(Res.string.private_ai_enabled)

@@ -5,7 +5,7 @@ package io.writeopia.global.shell.viewmodel
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.writeopia.OllamaRepository
+import io.writeopia.LocalAiRepository
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.WorkspaceHandler
@@ -69,7 +69,7 @@ class GlobalShellKmpViewModel(
     private val documentsApi: DocumentsApi,
     private val folderStateController: FolderStateController =
         FolderStateController.singleton(notesUseCase, authRepository, documentsApi),
-    private val ollamaRepository: OllamaRepository,
+    private val localAiRepository: LocalAiRepository,
     private val workspaceHandler: WorkspaceHandler,
     private val keyboardEventFlow: Flow<KeyboardEvent>?,
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
@@ -102,8 +102,8 @@ class GlobalShellKmpViewModel(
     override val isAutoSyncEnabled: StateFlow<Boolean> = workspaceHandler.isAutoSyncEnabled
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val ollamaConfigState = authRepository.listenForUser().flatMapLatest { user ->
-        ollamaRepository.listenForConfiguration(user.id)
+    private val localAiConfigState = authRepository.listenForUser().flatMapLatest { user ->
+        localAiRepository.listenForConfiguration(user.id)
     }
 
     override val userState: StateFlow<WriteopiaUser> = loginStateTrigger.map {
@@ -138,12 +138,14 @@ class GlobalShellKmpViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Idle())
 
-    override val ollamaUrl: StateFlow<String> =
-        ollamaConfigState.map { config ->
-            config?.url.takeIf { it?.isNotEmpty() == true } ?: ""
-        }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    override val localAiUrl: StateFlow<String> =
+        localAiConfigState.map { config ->
+            LocalAiRepository.getLocalAiUrlOverride()
+                ?: config?.url.takeIf { it?.isNotEmpty() == true }
+                ?: ""
+        }.stateIn(viewModelScope, SharingStarted.Lazily, LocalAiRepository.getLocalAiUrlOverride() ?: "")
 
-    override val ollamaSelectedModelState = ollamaConfigState
+    override val localAiSelectedModelState = localAiConfigState
         .map { config -> config?.selectedModel ?: "" }
         .stateIn(viewModelScope, SharingStarted.Lazily, "")
 
@@ -155,10 +157,10 @@ class GlobalShellKmpViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val modelsForUrl: StateFlow<ResultData<List<String>>> =
-        combine(ollamaUrl, retryModels) { url, _ ->
+        combine(localAiUrl, retryModels) { url, _ ->
             url
         }.flatMapLatest { url ->
-            ollamaRepository.listenToModels(url)
+            localAiRepository.listenToModels(url)
         }.map { result ->
             result.map { modelResponse ->
                 val models = modelResponse.models
@@ -170,7 +172,7 @@ class GlobalShellKmpViewModel(
             }
         }.onEach { modelsResult ->
             if (modelsResult is ResultData.Complete && modelsResult.data.size == 1) {
-                selectOllamaModel(modelsResult.data.first())
+                selectLocalAiModel(modelsResult.data.first())
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Idle())
 
@@ -446,17 +448,17 @@ class GlobalShellKmpViewModel(
         workspaceHandler.changeWorkspaceLocalPath(path)
     }
 
-    override fun changeOllamaUrl(url: String) {
+    override fun changeLocalAiUrl(url: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            ollamaRepository.saveOllamaUrl(getUserId(), url)
+            localAiRepository.saveLocalAiUrl(getUserId(), url)
         }
     }
 
-    override fun selectOllamaModel(model: String) {
+    override fun selectLocalAiModel(model: String) {
         viewModelScope.launch(Dispatchers.Default) {
             val userId = getUserId()
-            ollamaRepository.saveOllamaSelectedModel(userId, model)
-            ollamaRepository.refreshConfiguration(userId)
+            localAiRepository.saveLocalAiSelectedModel(userId, model)
+            localAiRepository.refreshConfiguration(userId)
         }
     }
 
@@ -468,10 +470,10 @@ class GlobalShellKmpViewModel(
         if (model.isEmpty()) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val url = ollamaRepository.getConfiguredUrl(getUserId())?.trim()
+            val url = localAiRepository.getConfiguredUrl(getUserId())?.trim()
 
             if (url != null) {
-                ollamaRepository.downloadModel(model, url)
+                localAiRepository.downloadModel(model, url)
                     .onCompletion {
                         retryModels()
                         onComplete()
@@ -479,7 +481,7 @@ class GlobalShellKmpViewModel(
                     .collectLatest { result ->
                         _downloadModelState.value = result
 
-                        val modelsResult = ollamaRepository.getModels(url)
+                        val modelsResult = localAiRepository.getModels(url)
 
                         if (
                             modelsResult is ResultData.Complete &&
@@ -487,11 +489,11 @@ class GlobalShellKmpViewModel(
                         ) {
                             val userId = authRepository.getUser().id
 
-                            ollamaRepository.saveOllamaSelectedModel(
+                            localAiRepository.saveLocalAiSelectedModel(
                                 userId,
                                 modelsResult.data.models.first().model
                             )
-                            ollamaRepository.refreshConfiguration(userId)
+                            localAiRepository.refreshConfiguration(userId)
                         }
                     }
             }
@@ -500,11 +502,11 @@ class GlobalShellKmpViewModel(
 
     override fun deleteModel(model: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            val url = ollamaRepository.getConfiguredUrl(getUserId())?.trim()
+            val url = localAiRepository.getConfiguredUrl(getUserId())?.trim()
             println("deleteModel. url: $url")
 
             if (url != null) {
-                ollamaRepository.deleteModel(model, url)
+                localAiRepository.deleteModel(model, url)
 
                 retryModels()
             }

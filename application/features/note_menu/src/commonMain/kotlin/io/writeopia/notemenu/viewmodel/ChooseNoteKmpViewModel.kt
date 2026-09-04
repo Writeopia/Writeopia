@@ -4,7 +4,7 @@ package io.writeopia.notemenu.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.writeopia.OllamaRepository
+import io.writeopia.LocalAiRepository
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
@@ -67,7 +67,7 @@ internal class ChooseNoteKmpViewModel(
     private val notesConfig: ConfigurationRepository,
     private val authRepository: AuthRepository,
     private val documentsApi: DocumentsApi,
-    private val ollamaRepository: OllamaRepository? = null,
+    private val localAiRepository: LocalAiRepository? = null,
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
@@ -476,7 +476,7 @@ internal class ChooseNoteKmpViewModel(
 
     override fun summarizeDocuments() {
         if (!hasSelectedNotes.value) return
-        if (ollamaRepository == null) return
+        if (localAiRepository == null) return
 
         val selectedIds = selectedNotes.value.toList()
         val documentCount = selectedIds.size
@@ -507,7 +507,7 @@ internal class ChooseNoteKmpViewModel(
                 val aiPromptResultMd = PromptService.prompt(
                     userId = userId,
                     prompt = prompt,
-                    ollamaRepository = ollamaRepository,
+                    localAiRepository = localAiRepository,
                     markdownResult = true
                 )
 

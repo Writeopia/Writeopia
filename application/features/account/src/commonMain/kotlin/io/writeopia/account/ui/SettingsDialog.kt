@@ -89,9 +89,9 @@ fun SettingsDialog(
     workplacePathState: StateFlow<String>,
     selectedColorTheme: StateFlow<ColorThemeOption?>,
     selectedAccentColor: StateFlow<AccentColor?>,
-    ollamaUrlState: StateFlow<String>,
-    ollamaAvailableModels: Flow<ResultData<List<String>>>,
-    ollamaSelectedModel: StateFlow<String>,
+    localAiUrlState: StateFlow<String>,
+    localAiAvailableModels: Flow<ResultData<List<String>>>,
+    localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
@@ -104,9 +104,9 @@ fun SettingsDialog(
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
     selectWorkplacePath: (String) -> Unit,
-    ollamaUrlChange: (String) -> Unit,
-    ollamaModelChange: (String) -> Unit,
-    ollamaModelsRetry: () -> Unit,
+    localAiUrlChange: (String) -> Unit,
+    localAiModelChange: (String) -> Unit,
+    localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     signIn: () -> Unit,
@@ -125,7 +125,7 @@ fun SettingsDialog(
     onExportWorkspace: (String) -> Unit,
     onResetExportState: () -> Unit,
 ) {
-    val ollamaUrl by ollamaUrlState.collectAsState()
+    val localAiUrl by localAiUrlState.collectAsState()
 
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -192,13 +192,13 @@ fun SettingsDialog(
                 },
                 aiScreen = {
                     AiSection(
-                        ollamaUrl,
-                        ollamaAvailableModels,
-                        ollamaSelectedModel,
+                        localAiUrl,
+                        localAiAvailableModels,
+                        localAiSelectedModel,
                         downloadModelState,
-                        ollamaUrlChange,
-                        ollamaModelChange,
-                        ollamaModelsRetry,
+                        localAiUrlChange,
+                        localAiModelChange,
+                        localAiModelsRetry,
                         downloadModel,
                         deleteModel
                     )
@@ -220,22 +220,22 @@ fun SettingsDialog(
 @Composable
 fun SettingsScreen(
     showPath: Boolean = true,
-    showOllamaConfig: Boolean,
+    showLocalAiConfig: Boolean,
     selectedColorTheme: StateFlow<ColorThemeOption?>,
     selectedAccentColor: StateFlow<AccentColor?>,
     workplacePathState: StateFlow<String>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
     isAutoSyncEnabled: StateFlow<Boolean>,
-    ollamaUrl: String,
-    ollamaAvailableModels: Flow<ResultData<List<String>>>,
-    ollamaSelectedModel: StateFlow<String>,
+    localAiUrl: String,
+    localAiAvailableModels: Flow<ResultData<List<String>>>,
+    localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
     selectWorkplacePath: (String) -> Unit,
-    ollamaUrlChange: (String) -> Unit,
-    ollamaModelChange: (String) -> Unit,
-    ollamaModelsRetry: () -> Unit,
+    localAiUrlChange: (String) -> Unit,
+    localAiModelChange: (String) -> Unit,
+    localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     syncWorkspace: () -> Unit,
@@ -295,15 +295,15 @@ fun SettingsScreen(
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    if (showOllamaConfig) {
+    if (showLocalAiConfig) {
         AiSection(
-            ollamaUrl = ollamaUrl,
-            ollamaAvailableModels,
-            ollamaSelectedModel,
+            localAiUrl = localAiUrl,
+            localAiAvailableModels,
+            localAiSelectedModel,
             downloadModelState,
-            ollamaUrlChange,
-            ollamaModelChange,
-            ollamaModelsRetry,
+            localAiUrlChange,
+            localAiModelChange,
+            localAiModelsRetry,
             downloadModel,
             deleteModel
         )
@@ -782,13 +782,13 @@ private fun WorkspaceSection(
 
 @Composable
 private fun AiSection(
-    ollamaUrl: String,
-    ollamaAvailableModels: Flow<ResultData<List<String>>>,
-    ollamaSelectedModel: StateFlow<String>,
+    localAiUrl: String,
+    localAiAvailableModels: Flow<ResultData<List<String>>>,
+    localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
-    ollamaUrlChange: (String) -> Unit,
-    ollamaModelChange: (String) -> Unit,
-    ollamaModelsRetry: () -> Unit,
+    localAiUrlChange: (String) -> Unit,
+    localAiModelChange: (String) -> Unit,
+    localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
 ) {
@@ -796,7 +796,7 @@ private fun AiSection(
         val titleStyle = MaterialTheme.typography.titleLarge
         val titleColor = MaterialTheme.colorScheme.onBackground
 
-        Text(WrStrings.ollama(), style = titleStyle, color = titleColor)
+        Text(WrStrings.localAi(), style = titleStyle, color = titleColor)
 
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
@@ -811,8 +811,8 @@ private fun AiSection(
                 MaterialTheme.shapes.medium
             ).padding(10.dp)
                 .fillMaxWidth(),
-            value = ollamaUrl,
-            onValueChange = ollamaUrlChange,
+            value = localAiUrl,
+            onValueChange = localAiUrlChange,
             textStyle = MaterialTheme.typography.bodySmall.copy(
                 color = MaterialTheme.colorScheme.onBackground
             ),
@@ -828,10 +828,10 @@ private fun AiSection(
         )
 
         SelectModels(
-            ollamaAvailableModels,
-            ollamaSelectedModel,
-            ollamaModelChange,
-            ollamaModelsRetry,
+            localAiAvailableModels,
+            localAiSelectedModel,
+            localAiModelChange,
+            localAiModelsRetry,
             deleteModel
         )
 
@@ -849,14 +849,14 @@ private fun AiSection(
 
 @Composable
 private fun SelectModels(
-    ollamaAvailableModels: Flow<ResultData<List<String>>>,
-    ollamaSelectedModel: StateFlow<String>,
-    ollamaModelChange: (String) -> Unit,
-    ollamaModelsRetry: () -> Unit,
+    localAiAvailableModels: Flow<ResultData<List<String>>>,
+    localAiSelectedModel: StateFlow<String>,
+    localAiModelChange: (String) -> Unit,
+    localAiModelsRetry: () -> Unit,
     deleteModel: (String) -> Unit,
 ) {
-    val modelsResult = ollamaAvailableModels.collectAsState(ResultData.Idle()).value
-    val ollamaSelected by ollamaSelectedModel.collectAsState()
+    val modelsResult = localAiAvailableModels.collectAsState(ResultData.Idle()).value
+    val localAiSelected by localAiSelectedModel.collectAsState()
 
     Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
 
@@ -868,10 +868,10 @@ private fun SelectModels(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.clip(MaterialTheme.shapes.large)
                         .clickable {
-                            ollamaModelChange(model)
+                            localAiModelChange(model)
                         }
                         .let { modifierLet ->
-                            if (model == ollamaSelected) {
+                            if (model == localAiSelected) {
                                 modifierLet.background(WriteopiaTheme.colorScheme.highlight)
                             } else {
                                 modifierLet
@@ -933,7 +933,7 @@ private fun SelectModels(
                 Text(
                     modifier = Modifier
                         .clip(MaterialTheme.shapes.medium)
-                        .clickable(onClick = ollamaModelsRetry)
+                        .clickable(onClick = localAiModelsRetry)
                         .background(
                             WriteopiaTheme.colorScheme.highlight,
                             MaterialTheme.shapes.medium

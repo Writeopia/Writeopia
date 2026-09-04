@@ -5,7 +5,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
-import io.writeopia.OllamaRepository
+import io.writeopia.LocalAiRepository
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.configuration.repository.ConfigurationRepository
@@ -32,7 +32,7 @@ class AuthMenuViewModelTest {
     private lateinit var authApi: AuthApi
     private lateinit var configRepository: ConfigurationRepository
     private lateinit var notesUseCase: NotesUseCase
-    private lateinit var ollamaRepository: OllamaRepository
+    private lateinit var localAiRepository: LocalAiRepository
 
     @BeforeTest
     fun setUp() {
@@ -41,7 +41,7 @@ class AuthMenuViewModelTest {
         authApi = mockk(relaxed = true)
         configRepository = mockk(relaxed = true)
         notesUseCase = mockk(relaxed = true)
-        ollamaRepository = mockk(relaxed = true)
+        localAiRepository = mockk(relaxed = true)
     }
 
     @AfterTest
@@ -74,7 +74,7 @@ class AuthMenuViewModelTest {
             authApi = authApi,
             configRepository = configRepository,
             notesUseCase = notesUseCase,
-            ollamaRepository = ollamaRepository
+            localAiRepository = localAiRepository
         )
         viewModel.emailChanged("test@example.com")
         viewModel.passwordChanged("password123")
@@ -100,7 +100,7 @@ class AuthMenuViewModelTest {
             authApi = authApi,
             configRepository = configRepository,
             notesUseCase = notesUseCase,
-            ollamaRepository = ollamaRepository
+            localAiRepository = localAiRepository
         )
         viewModel.emailChanged("test@example.com")
         viewModel.passwordChanged("wrong-password")
@@ -123,7 +123,7 @@ class AuthMenuViewModelTest {
             authApi = authApi,
             configRepository = configRepository,
             notesUseCase = notesUseCase,
-            ollamaRepository = ollamaRepository
+            localAiRepository = localAiRepository
         )
         viewModel.emailChanged("test@example.com")
         viewModel.passwordChanged("password123")
@@ -157,7 +157,7 @@ class AuthMenuViewModelTest {
             authApi = authApi,
             configRepository = configRepository,
             notesUseCase = notesUseCase,
-            ollamaRepository = ollamaRepository
+            localAiRepository = localAiRepository
         )
         viewModel.emailChanged("another@example.com")
         viewModel.passwordChanged("secure-pass")
@@ -193,7 +193,7 @@ class AuthMenuViewModelTest {
             authApi = authApi,
             configRepository = configRepository,
             notesUseCase = notesUseCase,
-            ollamaRepository = ollamaRepository
+            localAiRepository = localAiRepository
         )
         viewModel.emailChanged("notoken@example.com")
         viewModel.passwordChanged("password")
