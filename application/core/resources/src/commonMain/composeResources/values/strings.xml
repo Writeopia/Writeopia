@@ -47,11 +47,11 @@
   <string name="color_theme">Color Theme</string>
   <string name="accent_color">Accent Color</string>
   <string name="local_folder">Local Folder</string>
-  <string name="ollama">Ollama</string>
+  <string name="local_ai">Local AI</string>
   <string name="url">Url</string>
   <string name="available_models">Available Models</string>
   <string name="no_models">No models</string>
-  <string name="error_requesting_models">Error when requesting models. Did you start Ollama? \n</string>
+  <string name="error_requesting_models">Error when requesting models. Did you start Local AI? \n</string>
   <string name="retry">Retry</string>
   <string name="download_models">Download Model</string>
   <string name="suggestions">Suggestions:</string>
@@ -89,9 +89,9 @@
   <string name="onboarding_explain1">Follow the tutorial to use AI privately.</string>
   <string name="onboarding_select_ai">Select one AI that you would like to use.</string>
   <string name="close">Close</string>
-  <string name="download_ollama">To use AI, download Ollama</string>
-  <string name="access_ollama_site">Access ollama.com</string>
-  <string name="ollama_configuration_complete">Configuration completed!</string>
+  <string name="download_local_ai">To use AI, download Ollama</string>
+  <string name="access_local_ai_site">Access ollama.com</string>
+  <string name="local_ai_configuration_complete">Configuration completed!</string>
   <string name="private_ai_enabled">You can write now using private AI</string>
   <string name="small_robot">Small robot</string>
   <string name="document">Document</string>

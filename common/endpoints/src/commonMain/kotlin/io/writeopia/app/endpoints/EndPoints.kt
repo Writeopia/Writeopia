@@ -1,9 +1,9 @@
 package io.writeopia.app.endpoints
 
 object EndPoints {
-    fun ollamaGenerate() = "generate"
+    fun localAiGenerate() = "generate"
 
-    fun ollamaModels() = "api/tags"
+    fun localAiModels() = "api/tags"
 
     fun introNotes() = "document/intro"
 

@@ -9,7 +9,7 @@ import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.di.InDocumentSearchInjection
 import io.writeopia.core.folders.di.WorkspaceInjection
-import io.writeopia.di.OllamaInjection
+import io.writeopia.di.LocalAiInjection
 import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorKmpViewModel
@@ -59,7 +59,7 @@ class EditorKmpInjector private constructor(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val appConfigurationInjector: AppConfigurationInjector =
         AppConfigurationInjector.singleton(),
-    private val ollamaInjection: OllamaInjection? = null,
+    private val localAiInjection: LocalAiInjection? = null,
     private val genAiInjection: GenAiInjection? = null,
     private val inDocumentSearchInjection: InDocumentSearchInjection =
         InDocumentSearchInjection.singleton(),
@@ -77,7 +77,7 @@ class EditorKmpInjector private constructor(
         repositoryInjection.provideDocumentRepository()
 
     private fun provideWriteopiaManager(): WriteopiaManager = WriteopiaManager(
-        aiClient = ollamaInjection?.provideRepository()
+        aiClient = localAiInjection?.provideRepository()
     )
 
     private fun provideWriteopiaStateManager(
@@ -109,7 +109,7 @@ class EditorKmpInjector private constructor(
             uiConfigurationRepository = UiConfigurationCoreInjector.singleton()
                 .provideUiConfigurationRepository(),
             folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
-            ollamaRepository = ollamaInjection?.provideRepository(),
+            localAiRepository = localAiInjection?.provideRepository(),
             genAiRepository = genAiInjection?.provideRepository(),
             keyboardEventFlow = keyboardEventFlow,
             copyManager = copyManager,
@@ -220,7 +220,7 @@ class EditorKmpInjector private constructor(
                 WriteopiaConnectionInjector.singleton(),
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
-            ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
+            localAiInjection: LocalAiInjection = LocalAiInjection.singleton(),
             imageUploader: ImageUploader? = null,
         ) = EditorKmpInjector(
             authCoreInjection,
@@ -228,7 +228,7 @@ class EditorKmpInjector private constructor(
             connectionInjection,
             selectionState,
             keyboardEventFlow,
-            ollamaInjection = ollamaInjection,
+            localAiInjection = localAiInjection,
             imageUploader = imageUploader,
         )
 
@@ -247,7 +247,7 @@ class EditorKmpInjector private constructor(
             connectionInjection,
             selectionState,
             keyboardEventFlow,
-            ollamaInjection = null,
+            localAiInjection = null,
             genAiInjection = genAiInjection,
             imageUploader = imageUploader,
         )

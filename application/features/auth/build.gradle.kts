@@ -66,7 +66,7 @@ kotlin {
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:common_ui"))
                 implementation(project(":application:core:documents"))
-                implementation(project(":application:core:ollama"))
+                implementation(project(":application:core:local_ai"))
 
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_serialization"))

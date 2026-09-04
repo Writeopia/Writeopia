@@ -18,7 +18,7 @@ import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.di.AppConnectionInjection
-import io.writeopia.di.OllamaInjection
+import io.writeopia.di.LocalAiInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
@@ -28,7 +28,7 @@ class AuthInjection private constructor(
         AppConfigurationInjector.singleton(),
     private val repositoryInjection: RepositoryInjector = RepositoryInjector.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
-    private val ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
+    private val localAiInjection: LocalAiInjection = LocalAiInjection.singleton(),
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val connectionInjector: WriteopiaConnectionInjector =
         WriteopiaConnectionInjector.singleton(),
@@ -73,7 +73,7 @@ class AuthInjection private constructor(
             authApi = authApi,
             configRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
             notesUseCase = provideNotesUseCase(),
-            ollamaRepository = ollamaInjection.provideRepository(),
+            localAiRepository = localAiInjection.provideRepository(),
         )
     }
 
@@ -84,7 +84,7 @@ class AuthInjection private constructor(
             workspaceApi = provideWorkspaceApi(),
             configRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
             notesUseCase = provideNotesUseCase(),
-            ollamaRepository = ollamaInjection.provideRepository(),
+            localAiRepository = localAiInjection.provideRepository(),
         )
     }
 

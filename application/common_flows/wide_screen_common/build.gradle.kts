@@ -53,7 +53,7 @@ kotlin {
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:documents"))
                 implementation(project(":application:core:common_ui"))
-                implementation(project(":application:core:ollama"))
+                implementation(project(":application:core:local_ai"))
                 implementation(project(":application:core:genai"))
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:configuration"))

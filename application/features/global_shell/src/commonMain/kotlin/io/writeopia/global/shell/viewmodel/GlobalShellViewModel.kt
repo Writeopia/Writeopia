@@ -2,7 +2,7 @@ package io.writeopia.global.shell.viewmodel
 
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.commonui.dtos.MenuItemUi
-import io.writeopia.controller.OllamaConfigController
+import io.writeopia.controller.LocalAiConfigController
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.sdk.models.document.MenuItem
@@ -12,7 +12,7 @@ import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
-interface GlobalShellViewModel : FolderController, OllamaConfigController {
+interface GlobalShellViewModel : FolderController, LocalAiConfigController {
     val sideMenuItems: StateFlow<List<MenuItemUi>>
 
     val showSideMenuState: StateFlow<Float>
@@ -49,9 +49,9 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     val logoutInProgress: StateFlow<Boolean>
 
-    override val ollamaSelectedModelState: StateFlow<String>
+    override val localAiSelectedModelState: StateFlow<String>
 
-    override val ollamaUrl: StateFlow<String>
+    override val localAiUrl: StateFlow<String>
 
     override val modelsForUrl: StateFlow<ResultData<List<String>>>
 
@@ -99,9 +99,9 @@ interface GlobalShellViewModel : FolderController, OllamaConfigController {
 
     fun resetExportState()
 
-    override fun changeOllamaUrl(url: String)
+    override fun changeLocalAiUrl(url: String)
 
-    override fun selectOllamaModel(model: String)
+    override fun selectLocalAiModel(model: String)
 
     override fun retryModels()
 

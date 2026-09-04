@@ -13,7 +13,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import io.writeopia.common.utils.Destinations
-import io.writeopia.di.OllamaConfigInjector
+import io.writeopia.di.LocalAiConfigInjector
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
@@ -32,7 +32,7 @@ object NoteMenuDestiny {
 fun NavGraphBuilder.notesMenuNavigation(
     isDarkTheme: Boolean,
     notesMenuInjection: NotesMenuInjection,
-    ollamaConfigInjector: OllamaConfigInjector? = null,
+    localAiConfigInjector: LocalAiConfigInjector? = null,
     navigationController: NavController,
     sharedTransitionScope: SharedTransitionScope,
     selectColorTheme: (ColorThemeOption) -> Unit,
@@ -71,13 +71,13 @@ fun NavGraphBuilder.notesMenuNavigation(
 
         val chooseNoteViewModel: ChooseNoteViewModel =
             notesMenuInjection.provideChooseNoteViewModel(notesNavigation = notesNavigation)
-        val ollamaConfigController = ollamaConfigInjector?.provideOllamaConfigController()
+        val localAiConfigController = localAiConfigInjector?.provideLocalAiConfigController()
 
         NotesMenuScreen(
             isDarkTheme = isDarkTheme,
             folderId = notesNavigation.id,
             chooseNoteViewModel = chooseNoteViewModel,
-            ollamaConfigController = ollamaConfigController,
+            localAiConfigController = localAiConfigController,
             navigationController = navigationController,
             animatedVisibilityScope = this@composable,
             sharedTransitionScope = sharedTransitionScope,
@@ -101,13 +101,13 @@ fun NavGraphBuilder.notesMenuNavigation(
 
         val chooseNoteViewModel: ChooseNoteViewModel =
             notesMenuInjection.provideChooseNoteViewModel(notesNavigation = notesNavigation)
-        val ollamaConfigController = ollamaConfigInjector?.provideOllamaConfigController()
+        val localAiConfigController = localAiConfigInjector?.provideLocalAiConfigController()
 
         NotesMenuScreen(
             isDarkTheme = isDarkTheme,
             folderId = notesNavigation.id,
             chooseNoteViewModel = chooseNoteViewModel,
-            ollamaConfigController = ollamaConfigController,
+            localAiConfigController = localAiConfigController,
             navigationController = navigationController,
             animatedVisibilityScope = this@composable,
             sharedTransitionScope = sharedTransitionScope,

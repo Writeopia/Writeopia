@@ -3,7 +3,7 @@ package io.writeopia.global.shell.di
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
-import io.writeopia.controller.OllamaConfigController
+import io.writeopia.controller.LocalAiConfigController
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.configuration.repository.ConfigurationRepository
@@ -15,8 +15,8 @@ import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.core.folders.repository.folder.NotesUseCase
-import io.writeopia.di.OllamaConfigInjector
-import io.writeopia.di.OllamaInjection
+import io.writeopia.di.LocalAiConfigInjector
+import io.writeopia.di.LocalAiInjection
 import io.writeopia.global.shell.viewmodel.GlobalShellKmpViewModel
 import io.writeopia.global.shell.viewmodel.GlobalShellViewModel
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
@@ -30,12 +30,12 @@ class SideMenuKmpInjector(
         AppConfigurationInjector.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
     private val repositoryInjection: RepositoryInjector = RepositoryInjector.singleton(),
-    private val ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
+    private val localAiInjection: LocalAiInjection = LocalAiInjection.singleton(),
     private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val useBackendOnly: Boolean = false,
     private val menuItemsRepository: MenuItemsRepository? = null,
-) : SideMenuInjector, OllamaConfigInjector {
+) : SideMenuInjector, LocalAiConfigInjector {
     // Always get fresh connection to handle logout/login scenarios
     private fun connectionInjector() = WriteopiaConnectionInjector.singleton()
 
@@ -67,7 +67,7 @@ class SideMenuKmpInjector(
                 authRepository = authCoreInjection.provideAuthRepository(),
                 notesNavigationUseCase = NotesNavigationUseCase.singleton(),
                 documentsApi = provideDocumentsApi(),
-                ollamaRepository = ollamaInjection.provideRepository(),
+                localAiRepository = localAiInjection.provideRepository(),
                 authApi = authCoreInjection.provideAuthApi(),
                 workspaceHandler = workspaceInjection.provideWorkspaceHandler(),
                 keyboardEventFlow = keyboardEventFlow,
@@ -77,6 +77,6 @@ class SideMenuKmpInjector(
         }
 
     @Composable
-    override fun provideOllamaConfigController(): OllamaConfigController =
+    override fun provideLocalAiConfigController(): LocalAiConfigController =
         provideSideMenuViewModel()
 }

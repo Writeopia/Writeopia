@@ -4,8 +4,8 @@ package io.writeopia.auth.workspace
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.writeopia.OllamaRepository
-import io.writeopia.api.OllamaApi
+import io.writeopia.LocalAiRepository
+import io.writeopia.api.LocalAiApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.core.configuration.repository.ConfigurationRepository
@@ -31,7 +31,7 @@ class ChooseWorkspaceViewModel(
     private val workspaceApi: WorkspaceApi,
     private val configRepository: ConfigurationRepository,
     private val notesUseCase: NotesUseCase,
-    private val ollamaRepository: OllamaRepository,
+    private val localAiRepository: LocalAiRepository,
     private val json: Json = writeopiaJson,
 ) : ViewModel() {
 
@@ -105,14 +105,14 @@ class ChooseWorkspaceViewModel(
                     true
                 }
 
-                ollamaRepository.saveOllamaUrl(userId, OllamaApi.defaultUrl())
+                localAiRepository.saveLocalAiUrl(userId, LocalAiApi.defaultUrl())
 
                 if (tutorialsInitialized) {
                     configRepository.setTutorialNotes(true, userId)
                 }
             }
 
-            ollamaRepository.refreshConfiguration(userId)
+            localAiRepository.refreshConfiguration(userId)
 
             sideEffect()
         }

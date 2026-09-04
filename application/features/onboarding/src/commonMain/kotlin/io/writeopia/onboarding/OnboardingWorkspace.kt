@@ -119,7 +119,7 @@ private fun Configuration(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        DownloadOllamaStep()
+        DownloadLocalAiStep()
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -165,14 +165,14 @@ private fun Configuration(
 }
 
 @Composable
-private fun DownloadOllamaStep() {
+private fun DownloadLocalAiStep() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1F)) {
             Text(
-                text = WrStrings.downloadOllama(),
+                text = WrStrings.downloadLocalAi(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 14.sp,
@@ -184,7 +184,7 @@ private fun DownloadOllamaStep() {
             val uriHandler = LocalUriHandler.current
 
             Text(
-                text = WrStrings.accessOllamaSite(),
+                text = WrStrings.accessLocalAiSite(),
                 style = MaterialTheme.typography.bodySmall,
                 color = WriteopiaTheme.colorScheme.textLight,
                 fontSize = 12.sp,
@@ -227,7 +227,7 @@ private fun BoxScope.ConfigurationComplete(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = WrStrings.ollamaConfigComplete(),
+            text = WrStrings.localAiConfigComplete(),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )

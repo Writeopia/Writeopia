@@ -2,7 +2,7 @@ package io.writeopia.notemenu.di
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
-import io.writeopia.OllamaRepository
+import io.writeopia.LocalAiRepository
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.core.configuration.di.AppConfigurationInjector
@@ -16,7 +16,7 @@ import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderConflictHandler
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.di.AppConnectionInjection
-import io.writeopia.di.OllamaInjection
+import io.writeopia.di.LocalAiInjection
 import io.writeopia.notemenu.viewmodel.ChooseNoteKmpViewModel
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.FolderStateController
@@ -36,7 +36,7 @@ class NotesMenuKmpInjection private constructor(
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
-    private val ollamaInjection: OllamaInjection? = null
+    private val localAiInjection: LocalAiInjection? = null
 ) : NotesMenuInjection {
     // Always get fresh connection to handle logout/login scenarios
     private fun connectionInjector() = WriteopiaConnectionInjector.singleton()
@@ -99,14 +99,14 @@ class NotesMenuKmpInjection private constructor(
         notesUseCase: NotesUseCase = provideNotesUseCase(),
         notesConfig: ConfigurationRepository =
             appConfigurationInjector.provideNotesConfigurationRepository(),
-        ollamaRepository: OllamaRepository? = ollamaInjection?.provideRepository()
+        localAiRepository: LocalAiRepository? = localAiInjection?.provideRepository()
     ): ChooseNoteKmpViewModel =
         ChooseNoteKmpViewModel(
             notesUseCase = notesUseCase,
             notesConfig = notesConfig,
             authRepository = authCoreInjection.provideAuthRepository(),
             documentsApi = provideDocumentsApi(),
-            ollamaRepository = ollamaRepository,
+            localAiRepository = localAiRepository,
             selectionState = selectionState,
             notesNavigation = notesNavigation,
             folderController = provideFolderStateController(),
@@ -138,11 +138,11 @@ class NotesMenuKmpInjection private constructor(
         fun desktop(
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
-            ollamaInjection: OllamaInjection = OllamaInjection.singleton(),
+            localAiInjection: LocalAiInjection = LocalAiInjection.singleton(),
         ) = instanceDesktop ?: NotesMenuKmpInjection(
             selectionState = selectionState,
             keyboardEventFlow = keyboardEventFlow,
-            ollamaInjection = ollamaInjection,
+            localAiInjection = localAiInjection,
         ).also {
             instanceDesktop = it
         }
