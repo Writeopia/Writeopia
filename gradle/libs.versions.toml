@@ -1,5 +1,5 @@
 [versions]
-coilVersion = "3.5.0"
+coilVersion = "3.6.1"
 googleGenai = "1.68.0"
 media3 = "1.11.0"
 espressoCore = "3.7.0"
