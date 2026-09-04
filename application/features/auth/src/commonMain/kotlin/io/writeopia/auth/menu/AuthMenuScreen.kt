@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,6 +44,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -226,7 +228,10 @@ private fun AuthMenuContentScreen(
                 placeholder = {
                     Text(WrStrings.email())
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -236,7 +241,11 @@ private fun AuthMenuContentScreen(
                 modifier = Modifier.fillMaxWidth()
                     .padding(horizontal = 24.dp)
                     .onKeyEvent { keyEvent ->
-                        if (keyEvent.key.isEnterKey() && keyEvent.type == KeyEventType.KeyUp) {
+                        if (keyEvent.key.isEnterKey() &&
+                            keyEvent.type == KeyEventType.KeyUp &&
+                            email.isNotBlank() &&
+                            password.isNotBlank()
+                        ) {
                             onLoginRequest()
                             true
                         } else {
@@ -246,7 +255,17 @@ private fun AuthMenuContentScreen(
                 onValueChange = passwordChanged,
                 shape = shape,
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (email.isNotBlank() && password.isNotBlank()) {
+                            onLoginRequest()
+                        }
+                    }
+                ),
                 visualTransformation = if (showPassword) {
                     VisualTransformation.None
                 } else {
