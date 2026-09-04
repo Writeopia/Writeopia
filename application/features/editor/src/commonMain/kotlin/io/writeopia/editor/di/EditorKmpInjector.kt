@@ -118,8 +118,8 @@ class EditorKmpInjector private constructor(
             inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo(),
             drawingSaveEvents = drawingSaveEvents,
             documentLoadUseCase = workspaceInjection.provideDocumentLoadUseCase(),
-            storyStepSyncApi = { request, token ->
-                connectionInjection.storyStepSyncApi().syncStorySteps(request, token)
+            storyStepSyncApi = { request ->
+                connectionInjection.storyStepSyncApi().syncStorySteps(request)
             },
             documentsApi = workspaceInjection.provideDocumentsApi()
         )

@@ -32,8 +32,7 @@ sealed class GenerateSummaryResult {
  */
 class GenerateSummaryUseCase(
     private val documentsApi: DocumentsApi,
-    private val documentRepository: DocumentRepository,
-    private val tokenProvider: suspend () -> String?
+    private val documentRepository: DocumentRepository
 ) {
 
     /**
@@ -195,12 +194,10 @@ class GenerateSummaryUseCase(
     companion object {
         fun create(
             documentsApi: DocumentsApi,
-            documentRepository: DocumentRepository,
-            tokenProvider: suspend () -> String?
+            documentRepository: DocumentRepository
         ): GenerateSummaryUseCase = GenerateSummaryUseCase(
             documentsApi = documentsApi,
-            documentRepository = documentRepository,
-            tokenProvider = tokenProvider
+            documentRepository = documentRepository
         )
 
         /**
@@ -209,24 +206,20 @@ class GenerateSummaryUseCase(
          * @param documentsApi API for document operations
          * @param documentRepository Repository for local document operations
          * @param syncApi API for syncing story steps with the backend
-         * @param tokenProvider Function to provide authentication token
          * @return Pair of (GenerateSummaryUseCase, DocumentSyncService) for use together
          */
         fun createWithSyncService(
             documentsApi: DocumentsApi,
             documentRepository: DocumentRepository,
-            syncApi: suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse,
-            tokenProvider: suspend () -> String?
+            syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse
         ): Pair<GenerateSummaryUseCase, DocumentSyncService> {
             val useCase = GenerateSummaryUseCase(
                 documentsApi = documentsApi,
-                documentRepository = documentRepository,
-                tokenProvider = tokenProvider
+                documentRepository = documentRepository
             )
             val syncService = DocumentSyncService.create(
                 documentRepository = documentRepository,
-                syncApi = syncApi,
-                tokenProvider = tokenProvider
+                syncApi = syncApi
             )
             return useCase to syncService
         }

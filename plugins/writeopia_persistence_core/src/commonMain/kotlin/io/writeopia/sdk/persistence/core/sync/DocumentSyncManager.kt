@@ -76,16 +76,14 @@ class DocumentSyncManager(
      * @param documentId The unique identifier of the document to sync
      * @param documentEditionFlow Flow emitting the document state and info on each change
      * @param workspaceIdFlow Flow emitting the current workspace ID
-     * @param syncApi Function that performs the actual sync with the backend (request, token) -> response
-     * @param tokenProvider Function that provides the current authentication token
+     * @param syncApi Function that performs the actual sync with the backend
      * @param onServerUpdate Callback invoked when server updates should be applied locally
      */
     fun registerForBackendSync(
         documentId: String,
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
-        syncApi: suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse,
-        tokenProvider: suspend () -> String?,
+        syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse,
         onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> }
     ) {
         // Cancel any existing backend sync for this document
@@ -93,7 +91,6 @@ class DocumentSyncManager(
 
         val storyStepSyncTracker: StoryStepSyncTracker = OnUpdateStoryStepSyncTracker(
             syncApi = syncApi,
-            tokenProvider = tokenProvider,
             onServerUpdate = onServerUpdate
         )
 

@@ -35,7 +35,6 @@ import io.writeopia.global.shell.di.SideMenuKmpInjector
 import io.writeopia.notemenu.di.NotesMenuWebInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
-import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
@@ -124,10 +123,8 @@ fun CreateAppInMemory() {
     // that prevents the server from falling back to cookie-based authentication.
 
     // Initialize GenAI (Gemini) for the webapp
-    val authRepository = AuthCoreInjectionNeo.singleton().provideAuthRepository()
     GenAiInjection.initialize(
-        baseUrl = baseUrl,
-        getAuthToken = authRepository::getAuthToken
+        baseUrl = baseUrl
     )
 
     val uiConfigurationViewModel = UiConfigurationInjector.singleton()

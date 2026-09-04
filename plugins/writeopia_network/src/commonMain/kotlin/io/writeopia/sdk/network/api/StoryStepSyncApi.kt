@@ -12,8 +12,7 @@ interface StoryStepSyncApi {
      * Syncs StorySteps with the backend.
      *
      * @param request The sync request containing changes, deletions, and timestamps.
-     * @param token The authorization token for authentication.
      * @return The sync response containing server updates and new timestamp.
      */
-    suspend fun syncStorySteps(request: StoryStepSyncRequest, token: String): StoryStepSyncResponse
+    suspend fun syncStorySteps(request: StoryStepSyncRequest): StoryStepSyncResponse
 }

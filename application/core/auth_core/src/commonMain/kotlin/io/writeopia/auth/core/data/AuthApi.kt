@@ -9,7 +9,6 @@ import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.models.utils.ResultData
@@ -79,11 +78,10 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         ResultData.Error(e)
     }
 
-    suspend fun resetPassword(newPassword: String, token: String): ResultData<Unit> = try {
+    suspend fun resetPassword(newPassword: String): ResultData<Unit> = try {
         val response = client.put("$baseUrl/api/auth/password/reset") {
             contentType(ContentType.Application.Json)
             setBody(ResetPasswordRequest(newPassword))
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (response.status.isSuccess()) {
@@ -96,10 +94,9 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         ResultData.Error(e)
     }
 
-    suspend fun deleteAccount(token: String): ResultData<Boolean> = try {
-        val response = client.delete("$baseUrl/api/auth/account") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-        }.body<DeleteAccountResponse>()
+    suspend fun deleteAccount(): ResultData<Boolean> = try {
+        val response = client.delete("$baseUrl/api/auth/account")
+            .body<DeleteAccountResponse>()
 
         ResultData.Complete(response.deleted)
     } catch (e: Exception) {
@@ -212,21 +209,19 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
     }
 
     /**
-     * Verifies the current user's token against the backend.
+     * Verifies the current user's session against the backend.
      * Returns:
-     * - ResultData.Complete with user data if token is valid
-     * - ResultData.Error with null exception if token is invalid (401/403)
+     * - ResultData.Complete with user data if session is valid
+     * - ResultData.Error with null exception if session is invalid (401/403)
      * - ResultData.Error with exception if network error occurred
      */
-    suspend fun getCurrentUser(token: String): ResultData<WriteopiaUserApi> = try {
-        val response = client.get("$baseUrl/api/auth/user/current") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-        }
+    suspend fun getCurrentUser(): ResultData<WriteopiaUserApi> = try {
+        val response = client.get("$baseUrl/api/auth/user/current")
 
         if (response.status.isSuccess()) {
             ResultData.Complete(response.body<WriteopiaUserApi>())
         } else {
-            // HTTP error (401, 403, etc.) - token is invalid
+            // HTTP error (401, 403, etc.) - session is invalid
             // Return Error with null exception to distinguish from network errors
             ResultData.Error()
         }
