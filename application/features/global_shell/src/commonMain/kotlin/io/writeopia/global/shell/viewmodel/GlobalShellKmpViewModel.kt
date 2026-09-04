@@ -77,7 +77,6 @@ class GlobalShellKmpViewModel(
     private val menuItemsRepository: MenuItemsRepository? = null,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
-    private var localUserId: String? = null
     private var sideMenuWidthState = MutableStateFlow<Float?>(null)
 
     private val _showSettingsState = MutableStateFlow(false)
@@ -474,26 +473,27 @@ class GlobalShellKmpViewModel(
 
             if (url != null) {
                 localAiRepository.downloadModel(model, url)
-                    .onCompletion {
-                        retryModels()
-                        onComplete()
-                    }
                     .collectLatest { result ->
                         _downloadModelState.value = result
 
-                        val modelsResult = localAiRepository.getModels(url)
+                        if (result is ResultData.Complete) {
+                            retryModels()
+                            onComplete()
 
-                        if (
-                            modelsResult is ResultData.Complete &&
-                            modelsResult.data.models.size == 1
-                        ) {
-                            val userId = authRepository.getUser().id
+                            val modelsResult = localAiRepository.getModels(url)
 
-                            localAiRepository.saveLocalAiSelectedModel(
-                                userId,
-                                modelsResult.data.models.first().model
-                            )
-                            localAiRepository.refreshConfiguration(userId)
+                            if (
+                                modelsResult is ResultData.Complete &&
+                                modelsResult.data.models.size == 1
+                            ) {
+                                val userId = getUserId()
+
+                                localAiRepository.saveLocalAiSelectedModel(
+                                    userId,
+                                    modelsResult.data.models.first().model
+                                )
+                                localAiRepository.refreshConfiguration(userId)
+                            }
                         }
                     }
             }
@@ -625,8 +625,5 @@ class GlobalShellKmpViewModel(
         workspaceHandler.resetExportState()
     }
 
-    private suspend fun getUserId(): String =
-        localUserId ?: authRepository.getUser().id.also { id ->
-            localUserId = id
-        }
+    private suspend fun getUserId(): String = authRepository.getUser().id
 }
