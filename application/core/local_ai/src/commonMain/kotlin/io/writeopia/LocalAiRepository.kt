@@ -1,6 +1,7 @@
 package io.writeopia
 
 import io.writeopia.api.LocalAiApi
+import io.writeopia.common.utils.env.EnvUtils
 import io.writeopia.model.LocalAiConfig
 import io.writeopia.persistence.LocalAiDao
 import io.writeopia.requests.ModelsResponse
@@ -125,11 +126,7 @@ class LocalAiRepository(
 
     companion object {
         private val _localAiUrlOverride: String? by lazy {
-            try {
-                System.getenv("LOCAL_AI_URL")?.takeIf { it.isNotBlank() }
-            } catch (e: Exception) {
-                null
-            }
+            EnvUtils.getLocalAiUrl()
         }
 
         fun getLocalAiUrlOverride(): String? = _localAiUrlOverride
