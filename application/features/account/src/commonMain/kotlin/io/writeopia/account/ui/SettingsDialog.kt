@@ -247,7 +247,6 @@ fun SettingsScreen(
     usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     goToRegister: () -> Unit,
-    changeAccount: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
@@ -276,7 +275,7 @@ fun SettingsScreen(
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    Connect(isLoggedInState, goToRegister, changeAccount, changeWorkspace, resetPassword, logout)
+    Connect(isLoggedInState, goToRegister, changeWorkspace, resetPassword, logout)
 
     val isLoggedIn = isLoggedInState.collectAsState().value.toBoolean()
 
@@ -316,7 +315,6 @@ fun SettingsScreen(
 private fun Connect(
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     goToRegister: () -> Unit,
-    changeAccount: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
@@ -348,15 +346,6 @@ private fun Connect(
         Spacer(modifier = Modifier.height(4.dp))
 
         Column(modifier = Modifier.width(IntrinsicSize.Max)) {
-            CommonButton(
-                text = WrStrings.changeAccount(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                changeAccount()
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
             CommonButton(
                 text = WrStrings.changeWorkspace(),
                 modifier = Modifier.fillMaxWidth()
@@ -427,15 +416,6 @@ private fun AccountScreen(
             Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
 
             Column(modifier = Modifier.width(IntrinsicSize.Max)) {
-                CommonButton(
-                    text = WrStrings.changeAccount(),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    signIn()
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
                 CommonButton(
                     text = WrStrings.changeWorkspace(),
                     modifier = Modifier.fillMaxWidth()

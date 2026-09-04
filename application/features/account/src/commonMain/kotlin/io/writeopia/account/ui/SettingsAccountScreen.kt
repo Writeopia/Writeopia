@@ -44,7 +44,6 @@ fun SettingsAccountScreen(
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
     exportWorkspaceState: StateFlow<ResultData<Unit>>,
     goToRegister: () -> Unit,
-    changeAccount: () -> Unit,
     changeWorkspace: () -> Unit,
     exportWorkspace: (String) -> Unit,
     resetExportState: () -> Unit,
@@ -78,13 +77,6 @@ fun SettingsAccountScreen(
                 onClick = goToRegister
             )
         } else {
-            AccountMenuItem(
-                title = WrStrings.changeAccount(),
-                icon = WrIcons.person,
-                onClick = changeAccount
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             AccountMenuItem(
                 title = WrStrings.changeWorkspace(),
