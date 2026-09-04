@@ -77,7 +77,6 @@ fun SettingsAccountScreen(
                 onClick = goToRegister
             )
         } else {
-
             AccountMenuItem(
                 title = WrStrings.changeWorkspace(),
                 icon = WrIcons.group,
