@@ -68,6 +68,8 @@ class FolderSync(
             val newDocuments = folderContent.documents.map { it.toModel() }
             val newFolders = folderContent.folders.map { it.toModel() }
 
+            println("[FolderSync] received ${newFolders.size} new folders")
+
             // Then, load the outdated documents.
             // These documents were updated locally, but were not sent to the backend yet
             val localOutdatedDocs = documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId)
@@ -77,6 +79,11 @@ class FolderSync(
             val localOutdatedFolders = allLocalFolders.filter { folder ->
                 val syncedAt = folder.lastSyncedAt
                 syncedAt == null || folder.lastUpdatedAt > syncedAt
+            }
+
+            println("[FolderSync] Found ${localOutdatedFolders.size} outdated folders to sync in folderId=$folderId")
+            localOutdatedFolders.forEach { folder ->
+                println("[FolderSync] Outdated folder: id=${folder.id}, title=${folder.title}, lastSyncedAt=${folder.lastSyncedAt}, lastUpdatedAt=${folder.lastUpdatedAt}")
             }
 
             // Resolve conflicts of documents that were updated both locally and in the backend.
@@ -97,7 +104,9 @@ class FolderSync(
             val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent, workspaceId)
 
             // Send subfolders to backend
+            println("[FolderSync] Sending ${foldersNotSent.size} folders to backend")
             val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId)
+            println("[FolderSync] Send folders result: $resultSendFolders")
 
             if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
                 // Documents and folders were sent successfully.
@@ -112,6 +121,7 @@ class FolderSync(
 
                 // Update lastSyncedAt for folders that were sent
                 foldersNotSent.forEach { folder ->
+                    println("[FolderSync] Updating lastSyncedAt for folder: id=${folder.id}, title=${folder.title}")
                     val updatedFolder = folder.copy(lastSyncedAt = syncTime)
                     folderRepository.updateFolder(updatedFolder)
                 }
@@ -123,6 +133,7 @@ class FolderSync(
             }
         } catch (e: Exception) {
             // Sync failed, will retry on next sync
+            println("[FolderSync] Sync failed with exception: ${e.message}")
         }
     }
 }
