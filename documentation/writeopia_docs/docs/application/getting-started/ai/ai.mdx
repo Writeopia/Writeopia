@@ -35,6 +35,15 @@ You can follow this video to install it:
     width="100%"       
     height="600px" />
 
+### Using llmman instead of Ollama
+[llmman](https://github.com/llmmanorg/llmman) is a local model runner that serves the Ollama API (alongside OpenAI- and Anthropic-compatible ones) on port 17434, so Writeopia can use it in place of Ollama.
+
+- Install it: `curl -fsSL https://raw.githubusercontent.com/llmmanorg/llmman/main/install.sh | sh` (Linux/macOS) or `irm https://raw.githubusercontent.com/llmmanorg/llmman/main/install.ps1 | iex` (Windows).
+- Start the server with `llmman serve`, and pull a model with `llmman pull gemma4`.
+- In Writeopia, open Settings and change the AI URL from `http://localhost:11434` to `http://localhost:17434`.
+
+Models can be pulled from any OCI registry or straight from Hugging Face (for example `hf.co/unsloth/Qwen3.5-0.8B-GGUF`), and downloading, listing and deleting models from Writeopia's settings work the same way as with Ollama.
+
 ### Selecting an AI Agent
 If you download more models. You will be able to select different models are use them as you prefer. 
 
