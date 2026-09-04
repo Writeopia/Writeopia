@@ -1,8 +1,9 @@
 package io.writeopia
 
-import io.writeopia.api.OllamaApi
-import io.writeopia.model.OllamaConfig
-import io.writeopia.persistence.OllamaDao
+import io.writeopia.api.LocalAiApi
+import io.writeopia.common.utils.env.EnvUtils
+import io.writeopia.model.LocalAiConfig
+import io.writeopia.persistence.LocalAiDao
 import io.writeopia.requests.ModelsResponse
 import io.writeopia.responses.DownloadModelResponse
 import io.writeopia.sdk.ai.AiClient
@@ -17,9 +18,9 @@ private const val SUGGESTION_PROMPT =
         Generate a list of options. Start each options with a line break and "-". Generate at most 5 items. Use this context to generate the list:
     """
 
-class OllamaRepository(
-    private val ollamaApi: OllamaApi,
-    private val ollamaDao: OllamaDao?
+class LocalAiRepository(
+    private val localAiApi: LocalAiApi,
+    private val localAiDao: LocalAiDao?
 ) : AiClient {
 
     private val generateListItemsMutex = Mutex()
@@ -35,7 +36,7 @@ class OllamaRepository(
         }
 
         return try {
-            val result = ollamaApi.generateReply(model, "$SUGGESTION_PROMPT $context", url)
+            val result = localAiApi.generateReply(model, "$SUGGESTION_PROMPT $context", url)
 
             if (result.done == true && result.response?.isNotEmpty() == true) {
                 result.response
@@ -57,45 +58,45 @@ class OllamaRepository(
     }
 
     suspend fun generateReply(model: String, prompt: String, url: String): String =
-        ollamaApi.generateReply(model, prompt, url).response ?: ""
+        localAiApi.generateReply(model, prompt, url).response ?: ""
 
     suspend fun generateCompleteSummary(
         model: String,
         prompt: String,
         url: String,
         markdownResult: Boolean = false
-    ): String = ollamaApi.generateCompleteSummary(model, prompt, url, markdownResult)
+    ): String = localAiApi.generateCompleteSummary(model, prompt, url, markdownResult)
 
     fun streamReply(model: String, prompt: String, url: String): Flow<ResultData<String>> =
-        ollamaApi.streamReply(model, prompt, url)
+        localAiApi.streamReply(model, prompt, url)
 
     fun streamSummary(model: String, prompt: String, url: String): Flow<ResultData<String>> =
-        ollamaApi.streamSummary(model, prompt, url)
+        localAiApi.streamSummary(model, prompt, url)
 
     fun streamActionsPoints(model: String, prompt: String, url: String): Flow<ResultData<String>> =
-        ollamaApi.streamActionsPoints(model, prompt, url)
+        localAiApi.streamActionsPoints(model, prompt, url)
 
     fun streamFaq(model: String, prompt: String, url: String): Flow<ResultData<String>> =
-        ollamaApi.streamFaq(model, prompt, url)
+        localAiApi.streamFaq(model, prompt, url)
 
     fun streamTags(model: String, prompt: String, url: String): Flow<ResultData<String>> =
-        ollamaApi.streamTags(model, prompt, url)
+        localAiApi.streamTags(model, prompt, url)
 
     fun listenToModels(url: String): Flow<ResultData<ModelsResponse>> =
-        ollamaApi.getModelsAsFlow(url)
+        localAiApi.getModelsAsFlow(url)
 
-    suspend fun getModels(url: String): ResultData<ModelsResponse> = ollamaApi.getModels(url)
+    suspend fun getModels(url: String): ResultData<ModelsResponse> = localAiApi.getModels(url)
 
-    suspend fun saveOllamaUrl(id: String, url: String) {
-        ollamaDao?.updateConfiguration(id) {
+    suspend fun saveLocalAiUrl(id: String, url: String) {
+        localAiDao?.updateConfiguration(id) {
             this.copy(url = url)
         }
 
         refreshConfiguration(id)
     }
 
-    suspend fun saveOllamaSelectedModel(id: String, model: String) {
-        ollamaDao?.updateConfiguration(id) {
+    suspend fun saveLocalAiSelectedModel(id: String, model: String) {
+        localAiDao?.updateConfiguration(id) {
             this.copy(selectedModel = model)
         }
 
@@ -103,21 +104,31 @@ class OllamaRepository(
     }
 
     override suspend fun getSelectedModel(userId: String): String? =
-        ollamaDao?.getConfiguration(userId)?.selectedModel
+        localAiDao?.getConfiguration(userId)?.selectedModel
 
-    fun listenForConfiguration(id: String): StateFlow<OllamaConfig?> =
-        ollamaDao?.listenForConfiguration(id) ?: MutableStateFlow(null)
+    fun listenForConfiguration(id: String): StateFlow<LocalAiConfig?> =
+        localAiDao?.listenForConfiguration(id) ?: MutableStateFlow(null)
 
     suspend fun refreshConfiguration(id: String) {
-        ollamaDao?.refreshStateOfId(id)
+        localAiDao?.refreshStateOfId(id)
     }
 
     override suspend fun getConfiguredUrl(id: String): String? =
-        ollamaDao?.getConfiguration(id)?.url ?: OllamaApi.defaultUrl()
+        getLocalAiUrlOverride()
+            ?: localAiDao?.getConfiguration(id)?.url
+            ?: LocalAiApi.defaultUrl()
 
     suspend fun deleteModel(model: String, url: String): ResultData<Boolean> =
-        ollamaApi.removeModel(model, url)
+        localAiApi.removeModel(model, url)
 
     fun downloadModel(model: String, url: String): Flow<ResultData<DownloadModelResponse>> =
-        ollamaApi.downloadModel(model, url)
+        localAiApi.downloadModel(model, url)
+
+    companion object {
+        private val _localAiUrlOverride: String? by lazy {
+            EnvUtils.getLocalAiUrl()
+        }
+
+        fun getLocalAiUrlOverride(): String? = _localAiUrlOverride
+    }
 }

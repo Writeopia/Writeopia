@@ -17,9 +17,9 @@ import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.requests.DeleteModelRequest
 import io.writeopia.requests.DownloadModelRequest
 import io.writeopia.requests.ModelsResponse
-import io.writeopia.requests.OllamaGenerateRequest
+import io.writeopia.requests.LocalAiGenerateRequest
 import io.writeopia.responses.DownloadModelResponse
-import io.writeopia.responses.OllamaResponse
+import io.writeopia.responses.LocalAiResponse
 import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.currentCoroutineContext
@@ -48,9 +48,9 @@ private const val MARKDOWN_RESULT =
     "Your return should be in valid Markdown format."
 
 /**
- * API for calling Ollama
+ * API for calling LocalAi
  */
-class OllamaApi(
+class LocalAiApi(
     private val client: HttpClient,
     private val json: Json
 ) {
@@ -61,11 +61,11 @@ class OllamaApi(
         model: String,
         prompt: String,
         url: String
-    ): OllamaResponse = generateReplyMutex.withLock {
-        client.post("$url/api/${EndPoints.ollamaGenerate()}") {
+    ): LocalAiResponse = generateReplyMutex.withLock {
+        client.post("$url/api/${EndPoints.localAiGenerate()}") {
             contentType(ContentType.Application.Json)
-            setBody(OllamaGenerateRequest(model, prompt, false))
-        }.body<OllamaResponse>()
+            setBody(LocalAiGenerateRequest(model, prompt, false))
+        }.body<LocalAiResponse>()
     }
 
     fun downloadModel(
@@ -89,7 +89,7 @@ class OllamaApi(
                         .copy(modelName = model)
 
                 if (parsed.error?.isNotEmpty() == true) {
-                    throw OllamaException("Error - ${parsed.error}")
+                    throw LocalAiException("Error - ${parsed.error}")
                 }
 
                 emit(ResultData.InProgress(parsed))
@@ -124,7 +124,7 @@ class OllamaApi(
     }
 
     /**
-     * Streams reply from Ollama, delivering results incrementally as they arrive.
+     * Streams reply from LocalAi, delivering results incrementally as they arrive.
      * Uses callbackFlow to safely emit from within the HTTP execute callback,
      * preserving real-time streaming behavior for callers.
      */
@@ -135,9 +135,9 @@ class OllamaApi(
     ): Flow<ResultData<String>> = callbackFlow {
         try {
             client.preparePost {
-                url("$url/api/${EndPoints.ollamaGenerate()}")
+                url("$url/api/${EndPoints.localAiGenerate()}")
                 contentType(ContentType.Application.Json)
-                setBody(OllamaGenerateRequest(model, prompt, true))
+                setBody(LocalAiGenerateRequest(model, prompt, true))
             }.execute { response ->
                 val stringBuilder = StringBuilder()
                 val channel = response.body<ByteReadChannel>()
@@ -145,10 +145,10 @@ class OllamaApi(
                 while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
                     val line = channel.readUTF8Line()?.takeUnless { it.isEmpty() } ?: continue
 
-                    val value: OllamaResponse = json.decodeFromString(line)
+                    val value: LocalAiResponse = json.decodeFromString(line)
 
                     if (value.error?.isNotEmpty() == true) {
-                        throw OllamaException(value.error)
+                        throw LocalAiException(value.error)
                     }
 
                     stringBuilder.append(value.response)
@@ -213,7 +213,7 @@ class OllamaApi(
     fun getModelsAsFlow(url: String): Flow<ResultData<ModelsResponse>> = flow<ResultData<ModelsResponse>> {
         emit(ResultData.Loading())
 
-        val request = client.get("${url.trim()}/${EndPoints.ollamaModels()}") {
+        val request = client.get("${url.trim()}/${EndPoints.localAiModels()}") {
             contentType(ContentType.Application.Json)
         }
 
@@ -225,7 +225,7 @@ class OllamaApi(
 
     suspend fun getModels(url: String): ResultData<ModelsResponse> =
         try {
-            val request = client.get("${url.trim()}/${EndPoints.ollamaModels()}") {
+            val request = client.get("${url.trim()}/${EndPoints.localAiModels()}") {
                 contentType(ContentType.Application.Json)
             }
 
@@ -247,9 +247,9 @@ class OllamaApi(
 }
 
 /**
- * Exception for Ollama API errors returned in the response body.
+ * Exception for LocalAi API errors returned in the response body.
  */
-class OllamaException(message: String) : Exception(message)
+class LocalAiException(message: String) : Exception(message)
 
 /**
  * Converts a Throwable to an Exception for use with ResultData.Error.

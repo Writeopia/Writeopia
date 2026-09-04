@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.navigation.NavController
 import io.writeopia.commonui.dtos.MenuItemUi
-import io.writeopia.controller.OllamaConfigController
+import io.writeopia.controller.LocalAiConfigController
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.notemenu.ui.screen.DesktopNotesMenu
@@ -20,7 +20,7 @@ actual fun NotesMenuScreen(
     isDarkTheme: Boolean,
     folderId: String,
     chooseNoteViewModel: ChooseNoteViewModel,
-    ollamaConfigController: OllamaConfigController?,
+    localAiConfigController: LocalAiConfigController?,
     navigationController: NavController,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,

@@ -3,7 +3,7 @@ package io.writeopia.responses
 import kotlinx.serialization.Serializable
 
 @Serializable
-class OllamaResponse(
+class LocalAiResponse(
     val model: String? = null,
 //    val created_at: Long? = null,
     val response: String? = null,

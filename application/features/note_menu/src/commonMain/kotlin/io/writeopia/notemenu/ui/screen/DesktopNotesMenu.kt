@@ -38,7 +38,7 @@ import io.writeopia.notemenu.ui.screen.actions.DesktopNoteActionsMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesConfigurationMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu
 import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
-import io.writeopia.controller.OllamaConfigController
+import io.writeopia.controller.LocalAiConfigController
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.ui.AiOptionsDialog
 import io.writeopia.ai.task.ui.AiTaskIndicator
@@ -59,7 +59,7 @@ fun DesktopNotesMenu(
     isDarkTheme: Boolean,
     folderId: String,
     chooseNoteViewModel: ChooseNoteViewModel,
-    ollamaConfigController: OllamaConfigController? = null,
+    localAiConfigController: LocalAiConfigController? = null,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     onNewNoteClick: () -> Unit,
@@ -185,7 +185,7 @@ fun DesktopNotesMenu(
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
 
-                    if (ollamaConfigController != null) {
+                    if (localAiConfigController != null) {
                         DropdownMenu(
                             expanded = showOnboard.shouldShow(),
                             onDismissRequest = chooseNoteViewModel::hideOnboarding,
@@ -198,9 +198,9 @@ fun DesktopNotesMenu(
                         ) {
                             OnboardingWorkspace(
                                 showOnboard = showOnboard,
-                                downloadModelState = ollamaConfigController.downloadModelState,
+                                downloadModelState = localAiConfigController.downloadModelState,
                                 downloadModel = { model ->
-                                    ollamaConfigController.modelToDownload(
+                                    localAiConfigController.modelToDownload(
                                         model,
                                         onComplete = { chooseNoteViewModel.completeOnboarding() }
                                     )
@@ -228,8 +228,8 @@ fun DesktopNotesMenu(
             val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
             val currentPlatform = LocalPlatform.current
 
-            // Enable AI summary for desktop (with Ollama) or web (with GenAI backend)
-            val showAiSummary = ollamaConfigController != null || currentPlatform == PlatformType.WEB
+            // Enable AI summary for desktop (with Local AI) or web (with GenAI backend)
+            val showAiSummary = localAiConfigController != null || currentPlatform == PlatformType.WEB
 
             NotesSelectionMenu(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp)

@@ -19,7 +19,7 @@ import kotlinx.coroutines.sync.withLock
  * A global AI task manager that queues and executes AI tasks sequentially.
  *
  * This manager uses a Mutex to ensure only one AI task runs at a time,
- * preventing overload on AI services like Ollama.
+ * preventing overload on AI services like LocalAi.
  *
  * Usage:
  * 1. Call [enqueueTask] to add a task to the queue

@@ -5,7 +5,7 @@ package io.writeopia.editor.features.editor.viewmodel
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.writeopia.OllamaRepository
+import io.writeopia.LocalAiRepository
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
@@ -92,7 +92,7 @@ class NoteEditorKmpViewModel(
     private val documentToMarkdown: DocumentToMarkdown = DocumentToMarkdown,
     private val documentToJson: DocumentToJson = DocumentToJson(),
     private val folderRepository: FolderRepository,
-    private val ollamaRepository: OllamaRepository? = null,
+    private val localAiRepository: LocalAiRepository? = null,
     private val genAiRepository: GenAiRepository? = null,
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
@@ -167,7 +167,7 @@ class NoteEditorKmpViewModel(
         }
 
         viewModelScope.launch {
-            ollamaRepository?.refreshConfiguration(authRepository.getUser().id)
+            localAiRepository?.refreshConfiguration(authRepository.getUser().id)
         }
 
         // Subscribe to drawing save events to update in-memory state
@@ -252,7 +252,7 @@ class NoteEditorKmpViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     private val aiConfigState = authRepository.listenForUser()
         .flatMapConcat { user ->
-            ollamaRepository?.listenForConfiguration(user.id) ?: MutableStateFlow(null)
+            localAiRepository?.listenForConfiguration(user.id) ?: MutableStateFlow(null)
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -264,7 +264,7 @@ class NoteEditorKmpViewModel(
     override val models: StateFlow<List<String>> = aiConfigState
         .filterNotNull()
         .flatMapLatest { config ->
-            ollamaRepository?.listenToModels(config.url)
+            localAiRepository?.listenToModels(config.url)
                 ?: MutableStateFlow(ResultData.Complete(ModelsResponse(emptyList())))
         }.map {
             when (it) {
@@ -768,7 +768,7 @@ class NoteEditorKmpViewModel(
     }
 
     override fun askAiWithMode(targetMode: AiTargetMode) {
-        if (ollamaRepository != null) {
+        if (localAiRepository != null) {
             val docId = documentId.value
             val taskId = "editor-$docId-${GenerateId.generate()}"
 
@@ -781,7 +781,7 @@ class NoteEditorKmpViewModel(
                     authRepository.getUser().id,
                     targetMode,
                     writeopiaManager,
-                    ollamaRepository
+                    localAiRepository
                 )
                 Result.success(Unit)
             }
@@ -791,39 +791,39 @@ class NoteEditorKmpViewModel(
     }
 
     override fun aiSummary(targetMode: AiTargetMode) {
-        if (ollamaRepository != null) {
-            documentPrompt(targetMode, ollamaRepository::streamSummary)
+        if (localAiRepository != null) {
+            documentPrompt(targetMode, localAiRepository::streamSummary)
         } else if (genAiRepository != null) {
             documentPromptGenAi(targetMode, genAiRepository::streamSummary)
         }
     }
 
     override fun aiActionPoints(targetMode: AiTargetMode) {
-        if (ollamaRepository != null) {
-            documentPrompt(targetMode, ollamaRepository::streamActionsPoints)
+        if (localAiRepository != null) {
+            documentPrompt(targetMode, localAiRepository::streamActionsPoints)
         } else if (genAiRepository != null) {
             documentPromptGenAi(targetMode, genAiRepository::streamActionPoints)
         }
     }
 
     override fun aiFaq(targetMode: AiTargetMode) {
-        if (ollamaRepository != null) {
-            documentPrompt(targetMode, ollamaRepository::streamFaq)
+        if (localAiRepository != null) {
+            documentPrompt(targetMode, localAiRepository::streamFaq)
         } else if (genAiRepository != null) {
             documentPromptGenAi(targetMode, genAiRepository::streamFaq)
         }
     }
 
     override fun aiTags(targetMode: AiTargetMode) {
-        if (ollamaRepository != null) {
-            documentPrompt(targetMode, ollamaRepository::streamTags)
+        if (localAiRepository != null) {
+            documentPrompt(targetMode, localAiRepository::streamTags)
         } else if (genAiRepository != null) {
             documentPromptGenAi(targetMode, genAiRepository::streamTags)
         }
     }
 
     override fun aiSection(position: Double) {
-        if (ollamaRepository == null) return
+        if (localAiRepository == null) return
 
         val sectionText = writeopiaManager.getStory(position)?.text ?: return
 
@@ -849,7 +849,7 @@ class NoteEditorKmpViewModel(
                 userId = authRepository.getUser().id,
                 prompt = prompt,
                 writeopiaManager,
-                ollamaRepository,
+                localAiRepository,
                 position + 0.001
             )
             Result.success(Unit)
@@ -913,12 +913,12 @@ class NoteEditorKmpViewModel(
     }
 
     override fun selectModel(model: String) {
-        if (ollamaRepository != null) {
+        if (localAiRepository != null) {
             viewModelScope.launch {
                 val userId = authRepository.getUser().id
 
-                ollamaRepository.saveOllamaSelectedModel(userId, model)
-                ollamaRepository.refreshConfiguration(userId)
+                localAiRepository.saveLocalAiSelectedModel(userId, model)
+                localAiRepository.refreshConfiguration(userId)
             }
         }
     }
@@ -984,7 +984,7 @@ class NoteEditorKmpViewModel(
         targetMode: AiTargetMode,
         promptFn: (String, String, String) -> Flow<ResultData<String>>
     ) {
-        if (ollamaRepository == null) return
+        if (localAiRepository == null) return
 
         val docId = documentId.value
         val taskId = "editor-$docId-${GenerateId.generate()}"
@@ -999,7 +999,7 @@ class NoteEditorKmpViewModel(
                 targetMode = targetMode,
                 promptFn = promptFn,
                 writeopiaManager = writeopiaManager,
-                ollamaRepository = ollamaRepository
+                localAiRepository = localAiRepository
             )
             Result.success(Unit)
         }

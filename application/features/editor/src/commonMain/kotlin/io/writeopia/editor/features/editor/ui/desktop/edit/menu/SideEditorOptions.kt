@@ -197,7 +197,7 @@ fun SideEditorOptions(
 
                         SideMenuTab.AI -> {
                             val platform = LocalPlatform.current
-                            // Desktop uses Ollama (local AI) with model selection
+                            // Desktop uses Local AI with model selection
                             // Web uses GenAI (Gemini) without model selection
                             val showModelSelection = platform != PlatformType.WEB
 
@@ -1179,7 +1179,7 @@ private fun AiOptions(
             onClick = { aiTags(selectedTargetMode) }
         )
 
-        // Model selection is only shown for desktop (Ollama)
+        // Model selection is only shown for desktop (Local AI)
         // Web uses GenAI with server-side model configuration
         if (showModelSelection) {
             Spacer(modifier = Modifier.height(8.dp))

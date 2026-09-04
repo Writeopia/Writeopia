@@ -69,7 +69,7 @@ fun Navigation(
             notesMenuNavigation(
                 isDarkTheme = isDarkTheme,
                 notesMenuInjection = notesMenuInjection,
-                ollamaConfigInjector = sideMenuKmpInjector,
+                localAiConfigInjector = sideMenuKmpInjector,
                 navigationController = navController,
                 sharedTransitionScope = this@SharedTransitionLayout,
                 selectColorTheme = selectColorTheme,

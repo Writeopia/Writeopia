@@ -4,8 +4,8 @@ package io.writeopia.auth.menu
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.writeopia.OllamaRepository
-import io.writeopia.api.OllamaApi
+import io.writeopia.LocalAiRepository
+import io.writeopia.api.LocalAiApi
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.LoginStatus
@@ -39,7 +39,7 @@ class AuthMenuViewModel(
     private val authApi: AuthApi,
     private val configRepository: ConfigurationRepository,
     private val notesUseCase: NotesUseCase,
-    private val ollamaRepository: OllamaRepository,
+    private val localAiRepository: LocalAiRepository,
     private val json: Json = writeopiaJson,
 ) : ViewModel() {
 
@@ -137,11 +137,11 @@ class AuthMenuViewModel(
                         )
                     }
 
-                ollamaRepository.saveOllamaUrl(userId, OllamaApi.defaultUrl())
+                localAiRepository.saveLocalAiUrl(userId, LocalAiApi.defaultUrl())
                 configRepository.setTutorialNotes(true, userId)
             }
 
-            ollamaRepository.refreshConfiguration(userId)
+            localAiRepository.refreshConfiguration(userId)
 
             sideEffect()
         }
