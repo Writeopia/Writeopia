@@ -46,9 +46,18 @@ import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.browser.window
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.configureWebResources
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalResourceApi::class)
 fun main() {
+    // Configure web resources to use absolute paths from the domain root.
+    // This is required for client-side routing (e.g., /site/{documentId}) where
+    // relative paths would incorrectly resolve based on the current URL path.
+    configureWebResources {
+        resourcePathMapping { path -> "/$path" }
+    }
+
     ComposeViewport {
         ImageLoadConfig.configImageLoad()
 
