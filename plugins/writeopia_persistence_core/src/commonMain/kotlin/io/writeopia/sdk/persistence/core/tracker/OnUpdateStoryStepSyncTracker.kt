@@ -28,16 +28,14 @@ import kotlin.time.ExperimentalTime
  * using a buffered approach to avoid excessive network requests.
  *
  * @param syncBuffer The buffer for collecting and batching changes.
- * @param syncApi A function that performs the actual sync with the backend (request, token) -> response.
- * @param tokenProvider A function that provides the current authentication token.
+ * @param syncApi A function that performs the actual sync with the backend.
  * @param onServerUpdate Callback invoked when server updates should be applied locally.
  * @param maxRetries Maximum number of consecutive sync failures before discarding changes.
  */
 @OptIn(FlowPreview::class)
 class OnUpdateStoryStepSyncTracker(
     private val syncBuffer: StoryStepSyncBuffer = StoryStepSyncBuffer(),
-    private val syncApi: suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse,
-    private val tokenProvider: suspend () -> String?,
+    private val syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse,
     private val onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> },
     private val maxRetries: Int = 3
 ) : StoryStepSyncTracker {
@@ -258,18 +256,7 @@ class OnUpdateStoryStepSyncTracker(
         )
 
         try {
-            val token = tokenProvider()
-            if (token == null) {
-                batch.changes.forEach { change ->
-                    syncBuffer.addChange(change.storyStep, change.position, change.documentId)
-                }
-                batch.deletions.forEach { id ->
-                    syncBuffer.addDeletion(id)
-                }
-                return
-            }
-
-            val response = syncApi(request, token)
+            val response = syncApi(request)
 
             // Update last sync timestamp
             lastSyncTimestamp = response.serverTimestamp

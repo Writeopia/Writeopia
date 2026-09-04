@@ -7,7 +7,6 @@ import io.writeopia.genai.repository.GenAiRepository
 class GenAiInjection private constructor(
     private val appConnectionInjection: AppConnectionInjection,
     private val baseUrl: String,
-    private val getAuthToken: suspend () -> String?,
     private val defaultModel: String? = null
 ) {
     private var apiInstance: GenAiApi? = null
@@ -16,8 +15,7 @@ class GenAiInjection private constructor(
     private fun provideApi(): GenAiApi = apiInstance ?: GenAiApi(
         client = appConnectionInjection.provideHttpClient(),
         json = appConnectionInjection.provideJson(),
-        baseUrl = baseUrl,
-        getAuthToken = getAuthToken
+        baseUrl = baseUrl
     ).also {
         apiInstance = it
     }
@@ -35,12 +33,10 @@ class GenAiInjection private constructor(
         fun initialize(
             appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
             baseUrl: String,
-            getAuthToken: suspend () -> String?,
             defaultModel: String? = null
         ): GenAiInjection = GenAiInjection(
             appConnectionInjection = appConnectionInjection,
             baseUrl = baseUrl,
-            getAuthToken = getAuthToken,
             defaultModel = defaultModel
         ).also {
             instance = it

@@ -21,8 +21,7 @@ import kotlin.time.Instant
  */
 class DocumentSyncService(
     private val documentRepository: DocumentRepository,
-    private val syncApi: suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse,
-    private val tokenProvider: suspend () -> String?
+    private val syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse
 ) {
 
     /**
@@ -45,8 +44,6 @@ class DocumentSyncService(
             return false
         }
 
-        val token = tokenProvider() ?: return false
-
         // Load the document with its content
         val document = documentRepository.loadDocumentById(documentId, workspaceId) ?: return false
 
@@ -68,8 +65,7 @@ class DocumentSyncService(
             document = document,
             outdatedSteps = outdatedSteps,
             workspaceId = workspaceId,
-            lastSyncTimestamp = lastSyncTimestamp,
-            token = token
+            lastSyncTimestamp = lastSyncTimestamp
         )
     }
 
@@ -83,15 +79,13 @@ class DocumentSyncService(
      * @param outdatedSteps All steps that need syncing
      * @param workspaceId The workspace ID
      * @param lastSyncTimestamp The document's last sync timestamp
-     * @param token The auth token
      * @return true if all batches synced successfully
      */
     private suspend fun syncStepsInBatches(
         document: Document,
         outdatedSteps: List<Pair<Double, StoryStep>>,
         workspaceId: String,
-        lastSyncTimestamp: Long,
-        token: String
+        lastSyncTimestamp: Long
     ): Boolean {
         val batches = outdatedSteps.chunked(MAX_STEPS_PER_BATCH)
         var currentSyncTimestamp = lastSyncTimestamp
@@ -115,7 +109,7 @@ class DocumentSyncService(
             )
 
             try {
-                val response = syncApi(request, token)
+                val response = syncApi(request)
 
                 // Apply server updates locally (only on first batch to avoid duplicates)
                 if (batchIndex == 0) {
@@ -204,12 +198,10 @@ class DocumentSyncService(
 
         fun create(
             documentRepository: DocumentRepository,
-            syncApi: suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse,
-            tokenProvider: suspend () -> String?
+            syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse
         ): DocumentSyncService = DocumentSyncService(
             documentRepository = documentRepository,
-            syncApi = syncApi,
-            tokenProvider = tokenProvider
+            syncApi = syncApi
         )
     }
 }

@@ -102,7 +102,7 @@ class NoteEditorKmpViewModel(
     private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
     private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton(),
     private val documentLoadUseCase: DocumentLoadUseCase? = null,
-    private val storyStepSyncApi: (suspend (StoryStepSyncRequest, String) -> StoryStepSyncResponse)? = null,
+    private val storyStepSyncApi: (suspend (StoryStepSyncRequest) -> StoryStepSyncResponse)? = null,
     private val documentsApi: DocumentsApi? = null,
     private val aiTaskManager: AiTaskManager = AiTaskManager.singleton()
 ) : NoteEditorViewModel,
@@ -507,8 +507,7 @@ class NoteEditorKmpViewModel(
                 documentId = documentId,
                 documentEditionFlow = writeopiaManager.documentEditionState,
                 workspaceIdFlow = writeopiaManager.workspaceIdFlow,
-                syncApi = syncApi,
-                tokenProvider = { authRepository.getAuthToken() }
+                syncApi = syncApi
             )
         }
 
@@ -598,8 +597,7 @@ class NoteEditorKmpViewModel(
                 documentId = documentId,
                 documentEditionFlow = writeopiaManager.documentEditionState,
                 workspaceIdFlow = writeopiaManager.workspaceIdFlow,
-                syncApi = syncApi,
-                tokenProvider = { authRepository.getAuthToken() }
+                syncApi = syncApi
             )
         }
     }

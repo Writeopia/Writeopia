@@ -3,7 +3,6 @@ package io.writeopia.auth.register
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.data.AuthApi
-import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import kotlinx.coroutines.delay
@@ -13,7 +12,6 @@ import kotlinx.coroutines.launch
 
 internal class ResetPasswordViewModel(
     private val authApi: AuthApi,
-    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _password = MutableStateFlow("")
@@ -43,8 +41,7 @@ internal class ResetPasswordViewModel(
 
         viewModelScope.launch {
             try {
-                val token = authRepository.getAuthToken()
-                val result = authApi.resetPassword(_password.value, token ?: "")
+                val result = authApi.resetPassword(_password.value)
 
                 _resetPassword.value = when (result) {
                     is ResultData.Complete -> {
