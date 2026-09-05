@@ -542,6 +542,10 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         _editFolderState.value = null
     }
 
+    override fun syncFolder(folder: Folder) {
+        // No-op: this ViewModel directly uses the backend API, folders are already synced on creation
+    }
+
     override fun moveToFolder(menuItemUi: MenuItemUi, parentId: String) {
         if (menuItemUi.documentId == parentId) return
 

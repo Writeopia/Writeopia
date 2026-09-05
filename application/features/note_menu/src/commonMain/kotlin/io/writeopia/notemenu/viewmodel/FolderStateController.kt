@@ -113,13 +113,24 @@ class FolderStateController private constructor(
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
-        // Skip sync for offline/disconnected workspace
         if (workspace.id == Workspace.disconnectedWorkspace().id) return
+        if (folder.workspaceId != workspace.id) return
 
-        documentsApi.sendFolders(
+        val result = documentsApi.sendFolders(
             folders = listOf(folder),
             workspaceId = workspace.id
         )
+
+        if (result is ResultData.Complete) {
+            val syncedFolder = folder.copy(lastSyncedAt = Clock.System.now())
+            notesUseCase.updateFolder(syncedFolder)
+        }
+    }
+
+    override fun syncFolder(folder: Folder) {
+        coroutineScope.launch(Dispatchers.Default) {
+            syncFolderToBackend(folder)
+        }
     }
 
     override fun stopEditingFolder() {

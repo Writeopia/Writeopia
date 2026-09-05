@@ -9,15 +9,20 @@ import io.writeopia.sqldelight.di.WriteopiaDbInjector
 actual class FoldersInjector private constructor(
     private val writeopiaDb: WriteopiaDb?
 ) {
-    private fun provideFolderSqlDelightDao() = FolderSqlDelightDao(writeopiaDb)
+    private val lazyFolderDao = lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        FolderSqlDelightDao(writeopiaDb)
+    }
+
+    private fun provideFolderSqlDelightDao() = lazyFolderDao.value
 
     actual fun provideFoldersRepository(): FolderRepository =
         FolderRepositorySqlDelight(provideFolderSqlDelightDao())
 
     actual companion object {
-        private var instance: FoldersInjector? = null
+        private val lazyInstance = lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+            FoldersInjector(WriteopiaDbInjector.singleton()?.database)
+        }
 
-        actual fun singleton(): FoldersInjector =
-            instance ?: FoldersInjector(WriteopiaDbInjector.singleton()?.database)
+        actual fun singleton(): FoldersInjector = lazyInstance.value
     }
 }

@@ -22,6 +22,8 @@ interface FolderController {
 
     fun changeIcons(menuItemId: String, icon: String, tint: Int, iconChange: IconChange)
 
+    fun syncFolder(folder: Folder)
+
     fun toggleSelection(id: String)
 
     fun onDocumentSelected(id: String, selected: Boolean)
