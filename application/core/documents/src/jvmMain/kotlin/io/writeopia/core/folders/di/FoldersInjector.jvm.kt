@@ -23,6 +23,8 @@ actual class FoldersInjector private constructor(
         private var instance: FoldersInjector? = null
 
         actual fun singleton(): FoldersInjector =
-            instance ?: FoldersInjector(WriteopiaDbInjector.singleton()?.database)
+            instance ?: FoldersInjector(WriteopiaDbInjector.singleton()?.database).also {
+                instance = it
+            }
     }
 }

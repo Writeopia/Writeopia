@@ -37,6 +37,7 @@ class NotesUseCase private constructor(
     ): Folder {
         val folder = Folder.fromName(name, workspaceId).copy(parentId = parentId, icon = icon)
         folderRepository.createFolder(folder)
+        folderRepository.refreshFolders()
         return folder
     }
 
