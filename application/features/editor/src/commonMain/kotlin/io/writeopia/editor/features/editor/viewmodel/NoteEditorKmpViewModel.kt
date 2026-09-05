@@ -511,7 +511,7 @@ class NoteEditorKmpViewModel(
             )
         }
 
-        writeopiaManager.liveSync(sharedEditionManager)
+//        writeopiaManager.liveSync(sharedEditionManager)
     }
 
     override fun loadDocument(documentId: String) {
