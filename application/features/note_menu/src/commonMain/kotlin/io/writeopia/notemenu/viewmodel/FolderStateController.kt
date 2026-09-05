@@ -114,6 +114,7 @@ class FolderStateController private constructor(
 
         val workspace = authRepository.getWorkspace() ?: return
         if (workspace.id == Workspace.disconnectedWorkspace().id) return
+        if (folder.workspaceId != workspace.id) return
 
         val result = documentsApi.sendFolders(
             folders = listOf(folder),
