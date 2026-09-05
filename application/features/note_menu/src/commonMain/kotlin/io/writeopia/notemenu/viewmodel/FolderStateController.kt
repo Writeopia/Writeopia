@@ -115,10 +115,15 @@ class FolderStateController private constructor(
         val workspace = authRepository.getWorkspace() ?: return
         if (workspace.id == Workspace.disconnectedWorkspace().id) return
 
-        documentsApi.sendFolders(
+        val result = documentsApi.sendFolders(
             folders = listOf(folder),
             workspaceId = workspace.id
         )
+
+        if (result is ResultData.Complete) {
+            val syncedFolder = folder.copy(lastSyncedAt = Clock.System.now())
+            notesUseCase.updateFolder(syncedFolder)
+        }
     }
 
     override fun syncFolder(folder: Folder) {
