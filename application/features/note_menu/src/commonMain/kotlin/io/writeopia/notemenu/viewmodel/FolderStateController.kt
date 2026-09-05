@@ -109,36 +109,19 @@ class FolderStateController private constructor(
     }
 
     private suspend fun syncFolderToBackend(folder: Folder) {
-        println("[FolderSync] syncFolderToBackend called for folder: id=${folder.id}, title=${folder.title}")
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
 
-        if (!authRepository.isLoggedIn()) {
-            println("[FolderSync] Skipping sync: user not logged in")
-            return
-        }
-        if (authRepository.getUser().tier != Tier.PREMIUM) {
-            println("[FolderSync] Skipping sync: user is not premium")
-            return
-        }
+        val workspace = authRepository.getWorkspace() ?: return
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return
 
-        val workspace = authRepository.getWorkspace() ?: run {
-            println("[FolderSync] Skipping sync: no workspace")
-            return
-        }
-        if (workspace.id == Workspace.disconnectedWorkspace().id) {
-            println("[FolderSync] Skipping sync: disconnected workspace")
-            return
-        }
-
-        println("[FolderSync] Sending folder to backend: id=${folder.id}, title=${folder.title}, workspaceId=${workspace.id}")
-        val result = documentsApi.sendFolders(
+        documentsApi.sendFolders(
             folders = listOf(folder),
             workspaceId = workspace.id
         )
-        println("[FolderSync] Folder sync result: $result")
     }
 
     override fun syncFolder(folder: Folder) {
-        println("[FolderSync] syncFolder called for folder: id=${folder.id}, title=${folder.title}")
         coroutineScope.launch(Dispatchers.Default) {
             syncFolderToBackend(folder)
         }
