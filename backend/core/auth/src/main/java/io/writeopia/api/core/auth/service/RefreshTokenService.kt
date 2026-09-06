@@ -87,10 +87,9 @@ object RefreshTokenService {
         }
         logger.debug("Token refresh - expires in ${storedToken.expires_at - currentTime}ms")
 
-        // If already revoked, this is a replay attack
+        // If already revoked, the token was already used (possible race condition or replay)
         if (storedToken.revoked) {
-            logger.warn("Token refresh FAILED: Token was revoked - revoking all user tokens (possible replay attack)")
-            refreshTokenEntityQueries.revokeAllUserRefreshTokens(userId)
+            logger.warn("Token refresh FAILED: Token was already revoked (tokenId: $tokenId, userId: $userId). This may be a race condition from concurrent refresh attempts.")
             return null
         }
 
