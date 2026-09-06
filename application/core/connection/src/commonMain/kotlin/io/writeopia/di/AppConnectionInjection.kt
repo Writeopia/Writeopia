@@ -16,13 +16,6 @@ class AppConnectionInjection private constructor(
 ) {
     private var httpClient: HttpClient? = null
 
-//    private var _tokenJwt: String? = null
-//    private fun token() = _tokenJwt
-//
-//    fun setJwtToken(token: String) {
-//        _tokenJwt = token
-//    }
-
     fun provideJson() = json
 
     fun provideHttpClient(): HttpClient = httpClient ?:
