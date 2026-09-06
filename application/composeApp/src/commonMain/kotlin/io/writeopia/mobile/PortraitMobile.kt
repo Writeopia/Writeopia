@@ -12,6 +12,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.rememberScrollAwareState
 import io.writeopia.drawing.di.DrawingInjection
@@ -42,7 +44,10 @@ import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.navigation.notes.navigateToNoteMenu
 import io.writeopia.navigation.notifications.navigateToNotifications
 import io.writeopia.navigation.search.navigateToSearch
+import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuInjection
+import io.writeopia.notemenu.navigation.NAVIGATION_PATH
+import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.viewmodel.UiConfigurationViewModel
 
@@ -65,6 +70,19 @@ fun PortraitMobile(
     val accentColorState = uiConfigViewModel.listenForAccentColor { "disconnected_user" }
     val accentColor by accentColorState.collectAsState()
     val scrollAwareState = rememberScrollAwareState()
+
+    LaunchedEffect(navController) {
+        navController.currentBackStackEntryFlow.collect { navEntry ->
+            val navigationType = navEntry.savedStateHandle.get<String?>(NAVIGATION_TYPE)
+            val navigationPath = navEntry.savedStateHandle.get<String?>(NAVIGATION_PATH)
+            if (navigationType != null && navigationPath != null) {
+                NotesNavigation.fromType(
+                    NotesNavigationType.fromType(navigationType),
+                    navigationPath
+                ).let(NotesNavigationUseCase.singleton()::setNoteNavigation)
+            }
+        }
+    }
 
     WriteopiaTheme(
         darkTheme = colorTheme.isDarkTheme(),
