@@ -234,6 +234,7 @@ fun SettingsScreen(
     localAiAvailableModels: Flow<ResultData<List<String>>>,
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
+    cloudAiUsageState: StateFlow<CloudAiUsageState>,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
     selectWorkplacePath: (String) -> Unit,
@@ -242,6 +243,7 @@ fun SettingsScreen(
     localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    loadCloudAiUsage: () -> Unit,
     syncWorkspace: () -> Unit,
     onAutoSyncToggle: (Boolean) -> Unit,
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
@@ -301,14 +303,16 @@ fun SettingsScreen(
     if (showLocalAiConfig) {
         AiSection(
             localAiUrl = localAiUrl,
-            localAiAvailableModels,
-            localAiSelectedModel,
-            downloadModelState,
-            localAiUrlChange,
-            localAiModelChange,
-            localAiModelsRetry,
-            downloadModel,
-            deleteModel
+            localAiAvailableModels = localAiAvailableModels,
+            localAiSelectedModel = localAiSelectedModel,
+            downloadModelState = downloadModelState,
+            cloudAiUsageState = cloudAiUsageState,
+            localAiUrlChange = localAiUrlChange,
+            localAiModelChange = localAiModelChange,
+            localAiModelsRetry = localAiModelsRetry,
+            downloadModel = downloadModel,
+            deleteModel = deleteModel,
+            loadCloudAiUsage = loadCloudAiUsage
         )
     }
 
