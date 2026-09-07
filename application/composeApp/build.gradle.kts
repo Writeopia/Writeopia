@@ -85,6 +85,7 @@ kotlin {
             dependencies {
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":application:core:models"))
+                implementation(project(":application:core:genai"))
                 implementation(project(":plugins:writeopia_presentation"))
                 implementation(compose.desktop.currentOs)
             }

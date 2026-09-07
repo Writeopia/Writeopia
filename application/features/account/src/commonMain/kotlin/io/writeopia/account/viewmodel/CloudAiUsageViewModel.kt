@@ -37,7 +37,7 @@ class CloudAiUsageViewModel(
                 }
                 is ResultData.Error -> {
                     _usageState.value = CloudAiUsageState.Error(
-                        result.exception?.message ?: "Unknown error"
+                        "Error loading usage data"
                     )
                 }
                 is ResultData.Loading, is ResultData.Idle, is ResultData.InProgress -> {
