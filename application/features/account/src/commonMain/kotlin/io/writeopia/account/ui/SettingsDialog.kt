@@ -982,8 +982,8 @@ private fun formatNumber(value: Long): String {
 
 private fun formatPeriodLabel(startMillis: Long): String {
     return try {
-        val startInstant = kotlinx.datetime.Instant.fromEpochMilliseconds(startMillis)
-        val localDateTime = startInstant.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+        val startInstant = Instant.fromEpochMilliseconds(startMillis)
+        val localDateTime = startInstant.toLocalDateTime(TimeZone.currentSystemDefault())
         val monthName = localDateTime.month.name.lowercase().replaceFirstChar { it.uppercase() }
         "$monthName ${localDateTime.year}"
     } catch (e: Exception) {
