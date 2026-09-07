@@ -12,7 +12,7 @@ class GenAiInjection private constructor(
     private var apiInstance: GenAiApi? = null
     private var repositoryInstance: GenAiRepository? = null
 
-    private fun provideApi(): GenAiApi = apiInstance ?: GenAiApi(
+    fun provideGenAiApi(): GenAiApi = apiInstance ?: GenAiApi(
         client = appConnectionInjection.provideHttpClient(),
         json = appConnectionInjection.provideJson(),
         baseUrl = baseUrl
@@ -21,7 +21,7 @@ class GenAiInjection private constructor(
     }
 
     fun provideRepository(): GenAiRepository = repositoryInstance ?: GenAiRepository(
-        genAiApi = provideApi(),
+        genAiApi = provideGenAiApi(),
         defaultModel = defaultModel
     ).also {
         repositoryInstance = it

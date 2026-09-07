@@ -18,6 +18,8 @@ enum class Destinations(val id: String, val root: String) {
     SETTINGS_USER_EDIT("settings_user_edit", "Home"),
     SETTINGS_APPEARANCE("settings_appearance", "Home"),
     SETTINGS_ACCOUNT("settings_account", "Home"),
+    SETTINGS_AI("settings_ai", "Home"),
+    SETTINGS_CLOUD_AI("settings_cloud_ai", "Home"),
 
     AUTH_MENU_INNER_NAVIGATION("auth_menu_inner_navigation", "Home"),
     AUTH_REGISTER("auth_register", "Home"),

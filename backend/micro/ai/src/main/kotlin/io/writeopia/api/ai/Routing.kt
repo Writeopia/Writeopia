@@ -7,9 +7,11 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.writeopia.api.ai.routing.aiRoute
 import io.writeopia.connection.logger
+import io.writeopia.sql.WriteopiaDbBackend
 
 fun Application.configureRouting(
-    debugMode: Boolean = false
+    debugMode: Boolean = false,
+    writeopiaDb: WriteopiaDbBackend? = null
 ) {
     routing {
         // Health check endpoint for Cloud Run
@@ -24,7 +26,7 @@ fun Application.configureRouting(
 
         // AI routes
         logger.info("Configuring AI routes...")
-        aiRoute(debugMode)
+        aiRoute(debugMode, writeopiaDb)
 
         // Root endpoint
         get {

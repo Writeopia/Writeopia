@@ -93,6 +93,7 @@ fun SettingsDialog(
     localAiAvailableModels: Flow<ResultData<List<String>>>,
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
+    cloudAiUsageState: StateFlow<CloudAiUsageState>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
@@ -109,6 +110,7 @@ fun SettingsDialog(
     localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    loadCloudAiUsage: () -> Unit,
     signIn: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
@@ -196,11 +198,13 @@ fun SettingsDialog(
                         localAiAvailableModels,
                         localAiSelectedModel,
                         downloadModelState,
+                        cloudAiUsageState,
                         localAiUrlChange,
                         localAiModelChange,
                         localAiModelsRetry,
                         downloadModel,
-                        deleteModel
+                        deleteModel,
+                        loadCloudAiUsage
                     )
                 },
                 teamsScreen = {
@@ -766,16 +770,28 @@ private fun AiSection(
     localAiAvailableModels: Flow<ResultData<List<String>>>,
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
+    cloudAiUsageState: StateFlow<CloudAiUsageState>,
     localAiUrlChange: (String) -> Unit,
     localAiModelChange: (String) -> Unit,
     localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    loadCloudAiUsage: () -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
         val titleColor = MaterialTheme.colorScheme.onBackground
 
+        // Cloud AI Section
+        Text(WrStrings.cloudAi(), style = titleStyle, color = titleColor)
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        CloudAiUsageSection(cloudAiUsageState, loadCloudAiUsage)
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Local AI Section
         Text(WrStrings.localAi(), style = titleStyle, color = titleColor)
 
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
@@ -824,6 +840,147 @@ private fun AiSection(
         )
 
         DownloadModels(downloadModelState, downloadModel)
+    }
+}
+
+@Composable
+private fun CloudAiUsageSection(
+    cloudAiUsageState: StateFlow<CloudAiUsageState>,
+    loadCloudAiUsage: () -> Unit
+) {
+    val usageState by cloudAiUsageState.collectAsState()
+
+    // Load usage when the section is first displayed
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        loadCloudAiUsage()
+    }
+
+    when (val state = usageState) {
+        is CloudAiUsageState.Loading -> {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    WrStrings.loadingUsage(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                )
+            }
+        }
+
+        is CloudAiUsageState.Error -> {
+            Text(
+                state.message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        is CloudAiUsageState.Success -> {
+            val usage = state.usage
+            Column {
+                // Period label
+                val periodLabel = formatPeriodLabel(usage.periodStart)
+                Text(
+                    periodLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Usage stats in a row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    UsageStatItem(
+                        label = WrStrings.totalTokens(),
+                        value = formatNumber(usage.totalTokens),
+                        modifier = Modifier.weight(1f)
+                    )
+                    UsageStatItem(
+                        label = WrStrings.requests(),
+                        value = usage.requestCount.toString(),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    UsageStatItem(
+                        label = WrStrings.inputTokens(),
+                        value = formatNumber(usage.totalInputTokens),
+                        modifier = Modifier.weight(1f)
+                    )
+                    UsageStatItem(
+                        label = WrStrings.outputTokens(),
+                        value = formatNumber(usage.totalOutputTokens),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                if (usage.requestCount == 0L) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        WrStrings.noUsageData(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UsageStatItem(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.small)
+            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .padding(12.dp)
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onBackground
+        )
+    }
+}
+
+private fun formatNumber(value: Long): String {
+    return when {
+        value >= 1_000_000 -> String.format("%.1fM", value / 1_000_000.0)
+        value >= 1_000 -> String.format("%.1fK", value / 1_000.0)
+        else -> value.toString()
+    }
+}
+
+private fun formatPeriodLabel(startMillis: Long): String {
+    return try {
+        val startInstant = kotlinx.datetime.Instant.fromEpochMilliseconds(startMillis)
+        val localDateTime = startInstant.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+        val monthName = localDateTime.month.name.lowercase().replaceFirstChar { it.uppercase() }
+        "$monthName ${localDateTime.year}"
+    } catch (e: Exception) {
+        "Current Period"
     }
 }
 

@@ -13,6 +13,7 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readUTF8Line
 import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.genai.model.AiUsageResponse
 import io.writeopia.genai.model.GenAiRequest
 import io.writeopia.genai.model.GenAiResponse
 import kotlinx.coroutines.currentCoroutineContext
@@ -38,6 +39,15 @@ class GenAiApi(
         }
         val body = response.body<Map<String, Boolean>>()
         ResultData.Complete(body["available"] == true)
+    } catch (e: Exception) {
+        ResultData.Error(e)
+    }
+
+    suspend fun getUsage(): ResultData<AiUsageResponse> = try {
+        val response = client.get("$baseUrl/${EndPoints.aiUsage()}") {
+            contentType(ContentType.Application.Json)
+        }
+        ResultData.Complete(response.body())
     } catch (e: Exception) {
         ResultData.Error(e)
     }

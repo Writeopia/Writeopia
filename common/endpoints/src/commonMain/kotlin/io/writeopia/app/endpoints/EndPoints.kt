@@ -29,4 +29,6 @@ object EndPoints {
     fun aiTags() = "api/ai/tags"
 
     fun aiStatus() = "api/ai/status"
+
+    fun aiUsage() = "api/ai/usage"
 }

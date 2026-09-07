@@ -27,11 +27,9 @@ import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 
 @Composable
-fun AccountMenuScreen(
-    navigateToAppearance: () -> Unit,
-    navigateToTeams: () -> Unit,
-    navigateToAccount: () -> Unit,
-    navigateToAi: () -> Unit,
+fun SettingsAiScreen(
+    navigateToLocalAi: () -> Unit,
+    navigateToCloudAi: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -41,50 +39,28 @@ fun AccountMenuScreen(
     ) {
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Menu sections
-        SettingsMenuItem(
-            title = WrStrings.appearance(),
-            icon = WrIcons.colorModeLight,
-            onClick = navigateToAppearance
+        AiMenuItem(
+            title = WrStrings.localAi(),
+            description = "Configure local AI models",
+            icon = WrIcons.download,
+            onClick = navigateToLocalAi
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        SettingsMenuItem(
-            title = WrStrings.teams(),
-            icon = WrIcons.group,
-            onClick = navigateToTeams
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        SettingsMenuItem(
-            title = WrStrings.ai(),
-            icon = WrIcons.ai,
-            onClick = navigateToAi
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        SettingsMenuItem(
-            title = WrStrings.account(),
-            icon = WrIcons.person,
-            onClick = navigateToAccount
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = WrStrings.version(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+        AiMenuItem(
+            title = WrStrings.cloudAi(),
+            description = "View cloud AI usage",
+            icon = WrIcons.cloudSync,
+            onClick = navigateToCloudAi
         )
     }
 }
 
 @Composable
-private fun SettingsMenuItem(
+private fun AiMenuItem(
     title: String,
+    description: String,
     icon: ImageVector,
     onClick: () -> Unit
 ) {
@@ -106,12 +82,18 @@ private fun SettingsMenuItem(
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.weight(1f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+            )
+        }
 
         Icon(
             imageVector = WrIcons.arrowRight,

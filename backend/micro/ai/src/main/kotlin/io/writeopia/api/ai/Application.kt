@@ -8,6 +8,7 @@ import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
 import io.writeopia.connection.logger
+import io.writeopia.sql.WriteopiaDbBackend
 
 fun main() {
     embeddedServer(
@@ -19,12 +20,13 @@ fun main() {
 }
 
 fun Application.module(
-    debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false
+    debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false,
+    writeopiaDb: WriteopiaDbBackend? = configurePersistence()
 ) {
     logger.info("AI microservice starting - debug: $debugMode")
     installCORS()
     installAuth()
-    configureRouting(debugMode = debugMode)
+    configureRouting(debugMode = debugMode, writeopiaDb = writeopiaDb)
     configureSerialization()
 }
 

@@ -6,8 +6,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
+import io.writeopia.account.ui.CloudAiUsageState
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.genai.api.GenAiApi
 import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.collections.toNodeTree
@@ -74,6 +76,7 @@ class GlobalShellKmpViewModel(
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
     private val useBackendOnly: Boolean = false,
     private val menuItemsRepository: MenuItemsRepository? = null,
+    private val genAiApi: GenAiApi? = null,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     private var sideMenuWidthState = MutableStateFlow<Float?>(null)
@@ -135,6 +138,9 @@ class GlobalShellKmpViewModel(
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Idle())
+
+    private val _cloudAiUsageState = MutableStateFlow<CloudAiUsageState>(CloudAiUsageState.Loading)
+    override val cloudAiUsageState: StateFlow<CloudAiUsageState> = _cloudAiUsageState.asStateFlow()
 
     override val localAiUrl: StateFlow<String> =
         localAiConfigState.map { config ->
@@ -352,6 +358,31 @@ class GlobalShellKmpViewModel(
 
     override fun init() {
         workspaceHandler.initWorkspacePath()
+    }
+
+    override fun loadCloudAiUsage() {
+        val api = genAiApi ?: run {
+            _cloudAiUsageState.value = CloudAiUsageState.Error("Cloud AI not configured")
+            return
+        }
+
+        viewModelScope.launch {
+            _cloudAiUsageState.value = CloudAiUsageState.Loading
+
+            when (val result = api.getUsage()) {
+                is ResultData.Complete -> {
+                    _cloudAiUsageState.value = CloudAiUsageState.Success(result.data)
+                }
+                is ResultData.Error -> {
+                    _cloudAiUsageState.value = CloudAiUsageState.Error(
+                        result.exception?.message ?: "Unknown error"
+                    )
+                }
+                is ResultData.Loading, is ResultData.Idle, is ResultData.InProgress -> {
+                    // Keep loading state
+                }
+            }
+        }
     }
 
     override fun expandFolder(id: String) {

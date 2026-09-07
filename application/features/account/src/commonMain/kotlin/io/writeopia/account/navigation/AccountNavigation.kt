@@ -27,7 +27,9 @@ import androidx.navigation.navArgument
 import io.writeopia.account.di.AccountMenuKmpInjector
 import io.writeopia.account.ui.AccountMenuScreen
 import io.writeopia.account.ui.SettingsAccountScreen
+import io.writeopia.account.ui.SettingsAiScreen
 import io.writeopia.account.ui.SettingsAppearanceScreen
+import io.writeopia.account.ui.SettingsCloudAiScreen
 import io.writeopia.account.ui.SettingsTeamsScreen
 import io.writeopia.account.ui.UserAddScreen
 import io.writeopia.account.ui.UserEditScreen
@@ -51,6 +53,14 @@ fun NavController.navigateToSettingsAppearance() {
 
 fun NavController.navigateToSettingsAccount() {
     navigate(Destinations.SETTINGS_ACCOUNT.id)
+}
+
+fun NavController.navigateToSettingsAi() {
+    navigate(Destinations.SETTINGS_AI.id)
+}
+
+fun NavController.navigateToSettingsCloudAi() {
+    navigate(Destinations.SETTINGS_CLOUD_AI.id)
 }
 
 fun NavController.navigateToWorkspaceUsers(workspaceId: String, workspaceName: String) {
@@ -100,6 +110,9 @@ fun NavGraphBuilder.accountMenuNavigation(
     navigateToSettingsTeams: () -> Unit,
     navigateToSettingsAppearance: () -> Unit,
     navigateToSettingsAccount: () -> Unit,
+    navigateToSettingsAi: () -> Unit,
+    navigateToSettingsCloudAi: () -> Unit,
+    navigateToLocalAi: () -> Unit,
     navigateToWorkspaceUsers: (String, String) -> Unit,
     navigateToUserSearch: (String, String) -> Unit,
     navigateToUserAdd: (String, String, String, String, String) -> Unit,
@@ -157,6 +170,7 @@ fun NavGraphBuilder.accountMenuNavigation(
                 navigateToAppearance = navigateToSettingsAppearance,
                 navigateToTeams = navigateToSettingsTeams,
                 navigateToAccount = navigateToSettingsAccount,
+                navigateToAi = navigateToSettingsAi,
             )
         }
     }
@@ -632,6 +646,109 @@ fun NavGraphBuilder.accountMenuNavigation(
                         navigateToAuthMenu()
                     }
                 }
+            )
+        }
+    }
+
+    // AI Section
+    composable(
+        Destinations.SETTINGS_AI.id,
+        enterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { intSize -> intSize }
+            )
+        },
+        exitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { intSize -> intSize }
+            )
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            WrStrings.ai(),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    navigationIcon = {
+                        Row(
+                            modifier = Modifier.fillMaxHeight(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable(onClick = navigationClick)
+                                    .padding(10.dp),
+                                imageVector = WrIcons.backArrowMobile,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            SettingsAiScreen(
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                    .padding(paddingValues),
+                navigateToLocalAi = navigateToLocalAi,
+                navigateToCloudAi = navigateToSettingsCloudAi
+            )
+        }
+    }
+
+    // Cloud AI Section
+    composable(
+        Destinations.SETTINGS_CLOUD_AI.id,
+        enterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { intSize -> intSize }
+            )
+        },
+        exitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { intSize -> intSize }
+            )
+        }
+    ) {
+        val cloudAiViewModel = AccountMenuKmpInjector.singleton().provideCloudAiUsageViewModel()
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            WrStrings.cloudAi(),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    navigationIcon = {
+                        Row(
+                            modifier = Modifier.fillMaxHeight(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable(onClick = navigationClick)
+                                    .padding(10.dp),
+                                imageVector = WrIcons.backArrowMobile,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            SettingsCloudAiScreen(
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                    .padding(paddingValues),
+                usageState = cloudAiViewModel.usageState
             )
         }
     }

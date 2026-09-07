@@ -57,6 +57,9 @@ kotlin {
                 implementation(project(":application:core:local_ai"))
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:documents"))
+                implementation(project(":application:core:genai"))
+
+                implementation(libs.kotlinx.datetime)
 
                 //
 

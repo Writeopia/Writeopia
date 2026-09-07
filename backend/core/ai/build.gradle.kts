@@ -23,6 +23,7 @@ dependencies {
     implementation(project(":common:endpoints"))
 
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.datetime)
 
     implementation(libs.ktor.server.auth)
     implementation(libs.ktor.server.auth.jwt)

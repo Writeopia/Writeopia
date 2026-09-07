@@ -260,6 +260,7 @@ fun DesktopApp(
                                     localAiAvailableModels = globalShellViewModel.modelsForUrl,
                                     localAiSelectedModel = globalShellViewModel.localAiSelectedModelState,
                                     downloadModelState = globalShellViewModel.downloadModelState,
+                                    cloudAiUsageState = globalShellViewModel.cloudAiUsageState,
                                     userOnlineState = globalShellViewModel.userState,
                                     showDeleteConfirmation = globalShellViewModel.showDeleteConfirmation,
                                     syncWorkspaceState = globalShellViewModel.lastWorkspaceSync,
@@ -276,6 +277,7 @@ fun DesktopApp(
                                     localAiModelsRetry = globalShellViewModel::retryModels,
                                     downloadModel = globalShellViewModel::modelToDownload,
                                     deleteModel = globalShellViewModel::deleteModel,
+                                    loadCloudAiUsage = globalShellViewModel::loadCloudAiUsage,
                                     signIn = navigateToRegister,
                                     changeWorkspace = {
                                         globalShellViewModel.changeWorkspace(sideEffect = navigateToChooseWorkspace)
