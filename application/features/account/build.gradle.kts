@@ -59,8 +59,6 @@ kotlin {
                 implementation(project(":application:core:documents"))
                 implementation(project(":application:core:genai"))
 
-                implementation(libs.kotlinx.datetime)
-
                 //
 
                 implementation(compose.runtime)

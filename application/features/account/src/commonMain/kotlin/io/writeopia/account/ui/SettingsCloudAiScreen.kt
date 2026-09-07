@@ -25,14 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.writeopia.common.utils.date.formatCompactNumber
+import io.writeopia.common.utils.date.formatMonthYear
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.genai.model.AiUsageResponse
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 
 sealed class CloudAiUsageState {
     data object Loading : CloudAiUsageState()
@@ -103,7 +102,7 @@ fun SettingsCloudAiScreen(
 
 @Composable
 private fun UsageContent(usage: AiUsageResponse) {
-    val periodLabel = formatPeriodLabel(usage.periodStart, usage.periodEnd)
+    val periodLabel = formatMonthYear(usage.periodStart)
 
     Column {
         // Period header
@@ -118,7 +117,7 @@ private fun UsageContent(usage: AiUsageResponse) {
         // Total tokens card (highlighted)
         UsageCard(
             title = WrStrings.totalTokens(),
-            value = formatNumber(usage.totalTokens),
+            value = formatCompactNumber(usage.totalTokens),
             icon = WrIcons.zap,
             isHighlighted = true
         )
@@ -132,14 +131,14 @@ private fun UsageContent(usage: AiUsageResponse) {
         ) {
             UsageCard(
                 title = WrStrings.inputTokens(),
-                value = formatNumber(usage.totalInputTokens),
+                value = formatCompactNumber(usage.totalInputTokens),
                 icon = WrIcons.file,
                 modifier = Modifier.weight(1f)
             )
 
             UsageCard(
                 title = WrStrings.outputTokens(),
-                value = formatNumber(usage.totalOutputTokens),
+                value = formatCompactNumber(usage.totalOutputTokens),
                 icon = WrIcons.exportFile,
                 modifier = Modifier.weight(1f)
             )
@@ -150,7 +149,7 @@ private fun UsageContent(usage: AiUsageResponse) {
         // Request count
         UsageCard(
             title = WrStrings.requests(),
-            value = formatNumber(usage.requestCount),
+            value = formatCompactNumber(usage.requestCount),
             icon = WrIcons.ai
         )
 
@@ -214,24 +213,5 @@ private fun UsageCard(
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
             color = contentColor
         )
-    }
-}
-
-private fun formatNumber(value: Long): String {
-    return when {
-        value >= 1_000_000 -> String.format("%.1fM", value / 1_000_000.0)
-        value >= 1_000 -> String.format("%.1fK", value / 1_000.0)
-        else -> value.toString()
-    }
-}
-
-private fun formatPeriodLabel(startMillis: Long, endMillis: Long): String {
-    return try {
-        val startInstant = Instant.fromEpochMilliseconds(startMillis)
-        val localDateTime = startInstant.toLocalDateTime(TimeZone.currentSystemDefault())
-        val monthName = localDateTime.month.name.lowercase().replaceFirstChar { it.uppercase() }
-        "$monthName ${localDateTime.year}"
-    } catch (e: Exception) {
-        "Current Period"
     }
 }

@@ -65,6 +65,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.date.formatCompactNumber
+import io.writeopia.common.utils.date.formatMonthYear
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SettingsPanel
@@ -80,9 +82,6 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 
 private const val SPACE_AFTER_TITLE = 12
 private const val SPACE_AFTER_SUB_TITLE = 6
@@ -890,7 +889,7 @@ private fun CloudAiUsageSection(
             val usage = state.usage
             Column {
                 // Period label
-                val periodLabel = formatPeriodLabel(usage.periodStart)
+                val periodLabel = formatMonthYear(usage.periodStart)
                 Text(
                     periodLabel,
                     style = MaterialTheme.typography.bodySmall,
@@ -906,7 +905,7 @@ private fun CloudAiUsageSection(
                 ) {
                     UsageStatItem(
                         label = WrStrings.totalTokens(),
-                        value = formatNumber(usage.totalTokens),
+                        value = formatCompactNumber(usage.totalTokens),
                         modifier = Modifier.weight(1f)
                     )
                     UsageStatItem(
@@ -924,12 +923,12 @@ private fun CloudAiUsageSection(
                 ) {
                     UsageStatItem(
                         label = WrStrings.inputTokens(),
-                        value = formatNumber(usage.totalInputTokens),
+                        value = formatCompactNumber(usage.totalInputTokens),
                         modifier = Modifier.weight(1f)
                     )
                     UsageStatItem(
                         label = WrStrings.outputTokens(),
-                        value = formatNumber(usage.totalOutputTokens),
+                        value = formatCompactNumber(usage.totalOutputTokens),
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -972,24 +971,6 @@ private fun UsageStatItem(
     }
 }
 
-private fun formatNumber(value: Long): String {
-    return when {
-        value >= 1_000_000 -> String.format("%.1fM", value / 1_000_000.0)
-        value >= 1_000 -> String.format("%.1fK", value / 1_000.0)
-        else -> value.toString()
-    }
-}
-
-private fun formatPeriodLabel(startMillis: Long): String {
-    return try {
-        val startInstant = Instant.fromEpochMilliseconds(startMillis)
-        val localDateTime = startInstant.toLocalDateTime(TimeZone.currentSystemDefault())
-        val monthName = localDateTime.month.name.lowercase().replaceFirstChar { it.uppercase() }
-        "$monthName ${localDateTime.year}"
-    } catch (e: Exception) {
-        "Current Period"
-    }
-}
 
 @Composable
 private fun SelectModels(
