@@ -959,7 +959,6 @@ private fun CloudAiUsageSection(
     }
 }
 
-
 @Composable
 private fun SelectModels(
     localAiAvailableModels: Flow<ResultData<List<String>>>,

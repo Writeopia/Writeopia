@@ -27,26 +27,34 @@ class GenAiApiTest {
         encodeDefaults = true
     }
 
+    private val usageResponseJson = """
+        |{"totalInputTokens":0,"totalOutputTokens":0,"totalTokens":0,
+        |"requestCount":0,"periodStart":0,"periodEnd":0,"quota":100000}
+    """.trimMargin().replace("\n", "")
+
+    private val usageResponseWithDataJson = """
+        |{"totalInputTokens":100,"totalOutputTokens":200,"totalTokens":300,
+        |"requestCount":5,"periodStart":1000,"periodEnd":2000,"quota":100000}
+    """.trimMargin().replace("\n", "")
+
     private fun createMockClient(
         delayMs: Long = 0,
         responseBody: String = """{"available": true}"""
-    ): HttpClient {
-        return HttpClient(MockEngine) {
-            engine {
-                addHandler {
-                    if (delayMs > 0) {
-                        delay(delayMs)
-                    }
-                    respond(
-                        content = responseBody,
-                        status = HttpStatusCode.OK,
-                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                    )
+    ): HttpClient = HttpClient(MockEngine) {
+        engine {
+            addHandler {
+                if (delayMs > 0) {
+                    delay(delayMs)
                 }
+                respond(
+                    content = responseBody,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
             }
-            install(ContentNegotiation) {
-                json(json)
-            }
+        }
+        install(ContentNegotiation) {
+            json(json)
         }
     }
 
@@ -54,7 +62,7 @@ class GenAiApiTest {
     fun `getUsage should propagate CancellationException when cancelled`() = runTest {
         val client = createMockClient(
             delayMs = 10_000, // Long delay so we can cancel
-            responseBody = """{"totalInputTokens":0,"totalOutputTokens":0,"totalTokens":0,"requestCount":0,"periodStart":0,"periodEnd":0,"quota":100000}"""
+            responseBody = usageResponseJson
         )
         val api = GenAiApi(client, json, "http://localhost")
 
@@ -109,7 +117,7 @@ class GenAiApiTest {
     @Test
     fun `getUsage should return Complete when request succeeds`() = runTest {
         val client = createMockClient(
-            responseBody = """{"totalInputTokens":100,"totalOutputTokens":200,"totalTokens":300,"requestCount":5,"periodStart":1000,"periodEnd":2000,"quota":100000}"""
+            responseBody = usageResponseWithDataJson
         )
         val api = GenAiApi(client, json, "http://localhost")
 

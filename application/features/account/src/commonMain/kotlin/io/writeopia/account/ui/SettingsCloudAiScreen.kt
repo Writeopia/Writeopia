@@ -34,7 +34,9 @@ import kotlinx.coroutines.flow.StateFlow
 
 sealed class CloudAiUsageState {
     data object Loading : CloudAiUsageState()
+
     data class Success(val usage: AiUsageResponse) : CloudAiUsageState()
+
     data class Error(val message: String) : CloudAiUsageState()
 }
 
