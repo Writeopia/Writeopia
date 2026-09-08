@@ -6,6 +6,7 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.writeopia.api.ai.routing.aiRoute
+import io.writeopia.api.ai.routing.localAiConfigRoute
 import io.writeopia.connection.logger
 
 fun Application.configureRouting(
@@ -21,6 +22,9 @@ fun Application.configureRouting(
         get("/api/ai/health") {
             call.respondText("OK", status = HttpStatusCode.OK)
         }
+
+        // Public, CDN-cacheable Local AI auto-configuration
+        localAiConfigRoute()
 
         // AI routes
         logger.info("Configuring AI routes...")

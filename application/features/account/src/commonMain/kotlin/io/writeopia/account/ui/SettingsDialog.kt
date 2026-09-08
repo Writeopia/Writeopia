@@ -93,6 +93,7 @@ fun SettingsDialog(
     localAiAvailableModels: Flow<ResultData<List<String>>>,
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
+    autoConfigureState: StateFlow<ResultData<Unit>>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
@@ -109,6 +110,7 @@ fun SettingsDialog(
     localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    autoConfigureLocalAi: () -> Unit,
     signIn: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
@@ -196,11 +198,13 @@ fun SettingsDialog(
                         localAiAvailableModels,
                         localAiSelectedModel,
                         downloadModelState,
+                        autoConfigureState,
                         localAiUrlChange,
                         localAiModelChange,
                         localAiModelsRetry,
                         downloadModel,
-                        deleteModel
+                        deleteModel,
+                        autoConfigureLocalAi
                     )
                 },
                 teamsScreen = {
@@ -230,6 +234,7 @@ fun SettingsScreen(
     localAiAvailableModels: Flow<ResultData<List<String>>>,
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
+    autoConfigureState: StateFlow<ResultData<Unit>>,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
     selectWorkplacePath: (String) -> Unit,
@@ -238,6 +243,7 @@ fun SettingsScreen(
     localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    autoConfigureLocalAi: () -> Unit,
     syncWorkspace: () -> Unit,
     onAutoSyncToggle: (Boolean) -> Unit,
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
@@ -300,11 +306,13 @@ fun SettingsScreen(
             localAiAvailableModels,
             localAiSelectedModel,
             downloadModelState,
+            autoConfigureState,
             localAiUrlChange,
             localAiModelChange,
             localAiModelsRetry,
             downloadModel,
-            deleteModel
+            deleteModel,
+            autoConfigureLocalAi
         )
     }
 
@@ -766,11 +774,13 @@ private fun AiSection(
     localAiAvailableModels: Flow<ResultData<List<String>>>,
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
+    autoConfigureState: StateFlow<ResultData<Unit>>,
     localAiUrlChange: (String) -> Unit,
     localAiModelChange: (String) -> Unit,
     localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    autoConfigureLocalAi: () -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -779,6 +789,10 @@ private fun AiSection(
         Text(WrStrings.localAi(), style = titleStyle, color = titleColor)
 
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        AutoConfigureLocalAi(autoConfigureState, autoConfigureLocalAi)
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         Text(WrStrings.url(), style = MaterialTheme.typography.bodyMedium, color = titleColor)
 
@@ -824,6 +838,52 @@ private fun AiSection(
         )
 
         DownloadModels(downloadModelState, downloadModel)
+    }
+}
+
+@Composable
+private fun AutoConfigureLocalAi(
+    autoConfigureState: StateFlow<ResultData<Unit>>,
+    autoConfigureLocalAi: () -> Unit,
+) {
+    val state by autoConfigureState.collectAsState()
+    val titleColor = MaterialTheme.colorScheme.onBackground
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        CommonButton(
+            text = WrStrings.autoConfigureLocalAi(),
+            clickListener = autoConfigureLocalAi
+        )
+
+        if (state is ResultData.Loading) {
+            Spacer(modifier = Modifier.width(8.dp))
+
+            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+        }
+    }
+
+    when (val currentState = state) {
+        is ResultData.Complete -> {
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                WrStrings.autoConfigureLocalAiSuccess(),
+                style = MaterialTheme.typography.bodySmall,
+                color = titleColor
+            )
+        }
+
+        is ResultData.Error -> {
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                currentState.exception?.message ?: WrStrings.autoConfigureLocalAiError(),
+                style = MaterialTheme.typography.bodySmall,
+                color = titleColor
+            )
+        }
+
+        else -> {}
     }
 }
 

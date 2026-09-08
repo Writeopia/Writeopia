@@ -220,6 +220,15 @@ object WrStrings {
     fun localAi() = stringResource(Res.string.local_ai)
 
     @Composable
+    fun autoConfigureLocalAi() = stringResource(Res.string.auto_configure_local_ai)
+
+    @Composable
+    fun autoConfigureLocalAiSuccess() = stringResource(Res.string.auto_configure_local_ai_success)
+
+    @Composable
+    fun autoConfigureLocalAiError() = stringResource(Res.string.auto_configure_local_ai_error)
+
+    @Composable
     fun url() = stringResource(Res.string.url)
 
     @Composable

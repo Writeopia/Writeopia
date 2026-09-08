@@ -5,6 +5,7 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.writeopia.api.ai.routing.aiRoute
+import io.writeopia.api.ai.routing.localAiConfigRoute
 import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.cookieAuthRoute
@@ -63,6 +64,9 @@ fun Application.configureRouting(
         } else {
             logger.info("Cloud AI routes are disabled. Set WRITEOPIA_USE_CLOUD_AI=true to enable.")
         }
+
+        // Public, CDN-cacheable Local AI auto-configuration. Independent of Cloud AI.
+        localAiConfigRoute()
 
         get {
             call.respondText("Hi")

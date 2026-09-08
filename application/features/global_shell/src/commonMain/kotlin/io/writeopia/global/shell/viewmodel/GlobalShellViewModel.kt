@@ -57,6 +57,8 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     override val downloadModelState: StateFlow<ResultData<DownloadState>>
 
+    override val autoConfigureState: StateFlow<ResultData<Unit>>
+
     fun init()
 
     fun expandFolder(id: String)
@@ -108,4 +110,6 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
     override fun modelToDownload(model: String, onComplete: () -> Unit)
 
     override fun deleteModel(model: String)
+
+    override fun autoConfigure()
 }

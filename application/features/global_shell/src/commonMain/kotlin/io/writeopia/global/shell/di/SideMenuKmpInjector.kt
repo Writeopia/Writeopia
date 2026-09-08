@@ -2,6 +2,7 @@ package io.writeopia.global.shell.di
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.writeopia.api.LocalAiAutoConfigApi
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.controller.LocalAiConfigController
 import io.writeopia.core.configuration.di.AppConfigurationInjector
@@ -57,6 +58,9 @@ class SideMenuKmpInjector(
     private fun provideDocumentsApi(): DocumentsApi =
         DocumentsApi(connectionInjector().httpClient(), connectionInjector().baseUrl())
 
+    private fun provideLocalAiAutoConfigApi(): LocalAiAutoConfigApi =
+        LocalAiAutoConfigApi(connectionInjector().httpClient(), connectionInjector().baseUrl())
+
     @Composable
     override fun provideSideMenuViewModel(keyboardEventFlow: Flow<KeyboardEvent>?): GlobalShellViewModel =
         viewModel {
@@ -68,6 +72,7 @@ class SideMenuKmpInjector(
                 notesNavigationUseCase = NotesNavigationUseCase.singleton(),
                 documentsApi = provideDocumentsApi(),
                 localAiRepository = localAiInjection.provideRepository(),
+                localAiAutoConfigApi = provideLocalAiAutoConfigApi(),
                 authApi = authCoreInjection.provideAuthApi(),
                 workspaceHandler = workspaceInjection.provideWorkspaceHandler(),
                 keyboardEventFlow = keyboardEventFlow,
