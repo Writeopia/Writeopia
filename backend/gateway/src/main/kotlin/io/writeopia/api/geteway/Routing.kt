@@ -59,7 +59,7 @@ fun Application.configureRouting(
 
         if (useCloudAi) {
             logger.info("Cloud AI routes are enabled.")
-            aiRoute(debugMode)
+            aiRoute(debugMode, writeopiaDb)
         } else {
             logger.info("Cloud AI routes are disabled. Set WRITEOPIA_USE_CLOUD_AI=true to enable.")
         }

@@ -22,5 +22,8 @@
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
 -dontwarn java.util.List
--dontwarn okhttp3.internal.graal.**
+-dontwarn okhttp3.**
+-dontwarn kotlinx.io.**
+-dontwarn kotlinx.datetime.**
+-dontwarn com.jetbrains.**
 

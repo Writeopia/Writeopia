@@ -13,7 +13,6 @@ import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -26,11 +25,6 @@ class GenAiApiTest {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
-
-    private val usageResponseJson = """
-        |{"totalInputTokens":0,"totalOutputTokens":0,"totalTokens":0,
-        |"requestCount":0,"periodStart":0,"periodEnd":0,"quota":100000}
-    """.trimMargin().replace("\n", "")
 
     private val usageResponseWithDataJson = """
         |{"totalInputTokens":100,"totalOutputTokens":200,"totalTokens":300,
@@ -58,60 +52,60 @@ class GenAiApiTest {
         }
     }
 
+    private fun createCancellingMockClient(): HttpClient = HttpClient(MockEngine) {
+        engine {
+            addHandler {
+                throw CancellationException("Simulated cancellation")
+            }
+        }
+        install(ContentNegotiation) {
+            json(json)
+        }
+    }
+
     @Test
-    fun `getUsage should propagate CancellationException when cancelled`() = runTest {
-        val client = createMockClient(
-            delayMs = 10_000, // Long delay so we can cancel
-            responseBody = usageResponseJson
-        )
+    fun `getUsage should propagate CancellationException when thrown by engine`() = runTest {
+        val client = createCancellingMockClient()
         val api = GenAiApi(client, json, "http://localhost")
 
-        val job = launch {
+        val deferred = async {
             api.getUsage()
         }
 
-        // Give the coroutine a moment to start the request
-        delay(50)
-
-        // Cancel the job
-        job.cancel()
-
-        // The job should be cancelled
-        job.join()
-        assertTrue(job.isCancelled)
+        // Await without cancelling - CancellationException should propagate from the engine
+        assertFailsWith<CancellationException> {
+            deferred.await()
+        }
     }
 
     @Test
-    fun `checkStatus should propagate CancellationException when cancelled`() = runTest {
-        val client = createMockClient(delayMs = 10_000)
+    fun `checkStatus should propagate CancellationException when thrown by engine`() = runTest {
+        val client = createCancellingMockClient()
         val api = GenAiApi(client, json, "http://localhost")
 
-        val job = launch {
+        val deferred = async {
             api.checkStatus()
         }
 
-        delay(50)
-        job.cancel()
-        job.join()
-        assertTrue(job.isCancelled)
+        // Await without cancelling - CancellationException should propagate from the engine
+        assertFailsWith<CancellationException> {
+            deferred.await()
+        }
     }
 
     @Test
-    fun `generate should propagate CancellationException when cancelled`() = runTest {
-        val client = createMockClient(
-            delayMs = 10_000,
-            responseBody = """{"response":"test","done":true}"""
-        )
+    fun `generate should propagate CancellationException when thrown by engine`() = runTest {
+        val client = createCancellingMockClient()
         val api = GenAiApi(client, json, "http://localhost")
 
-        val job = launch {
+        val deferred = async {
             api.generate("test prompt")
         }
 
-        delay(50)
-        job.cancel()
-        job.join()
-        assertTrue(job.isCancelled)
+        // Await without cancelling - CancellationException should propagate from the engine
+        assertFailsWith<CancellationException> {
+            deferred.await()
+        }
     }
 
     @Test
@@ -140,24 +134,5 @@ class GenAiApiTest {
 
         assertTrue(result is ResultData.Complete)
         assertTrue(result.data)
-    }
-
-    @Test
-    fun `CancellationException thrown from getUsage should not be wrapped in ResultData Error`() = runTest {
-        val client = createMockClient(delayMs = 10_000)
-        val api = GenAiApi(client, json, "http://localhost")
-
-        val deferred = async {
-            api.getUsage()
-        }
-
-        delay(50)
-        deferred.cancel()
-
-        // If CancellationException is properly rethrown, the deferred will be cancelled
-        // If it was wrapped in ResultData.Error, awaiting would return that error instead
-        assertFailsWith<CancellationException> {
-            deferred.await()
-        }
     }
 }

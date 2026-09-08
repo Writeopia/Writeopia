@@ -59,6 +59,14 @@ private const val MONTHLY_TOKEN_QUOTA = 100_000L
 private const val MAX_TOKENS_PER_REQUEST = 10_000
 
 fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend? = null) {
+    // In production mode, database is required for premium/quota enforcement
+    if (!debugMode && writeopiaDb == null) {
+        throw IllegalStateException(
+            "WriteopiaDbBackend is required for AI routes in production mode. " +
+                "Premium and quota checks cannot be enforced without a database."
+        )
+    }
+
     val genAiService = GenAiService()
     val json = Json { encodeDefaults = true }
 
