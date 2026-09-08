@@ -7,7 +7,8 @@ CREATE TABLE user_entity (
   salt TEXT NOT NULL,
   enabled BOOLEAN NOT NULL,
   confirmation_code TEXT,
-  confirmation_code_expiry BIGINT
+  confirmation_code_expiry BIGINT,
+  account_type TEXT NOT NULL DEFAULT 'FREE'
 );
 
 selectUserByEmail:
@@ -29,10 +30,10 @@ WHERE id = ?
 LIMIT 1;
 
 insertUser:
-INSERT INTO user_entity(id, name, created_at, email, password, salt, enabled, confirmation_code, confirmation_code_expiry)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO user_entity(id, name, created_at, email, password, salt, enabled, confirmation_code, confirmation_code_expiry, account_type)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
-UPDATE SET id=excluded.id, name=excluded.name, created_at=excluded.created_at, email=excluded.email, password=excluded.password, salt=excluded.salt, enabled=excluded.enabled, confirmation_code=excluded.confirmation_code, confirmation_code_expiry=excluded.confirmation_code_expiry;
+UPDATE SET id=excluded.id, name=excluded.name, created_at=excluded.created_at, email=excluded.email, password=excluded.password, salt=excluded.salt, enabled=excluded.enabled, confirmation_code=excluded.confirmation_code, confirmation_code_expiry=excluded.confirmation_code_expiry, account_type=excluded.account_type;
 
 deleteUser:
 DELETE
@@ -77,4 +78,15 @@ WHERE email ILIKE '%' || ? || '%' AND enabled = TRUE
 ORDER BY email ASC
 LIMIT ?
 OFFSET ?;
+
+selectAccountTypeById:
+SELECT account_type
+FROM user_entity
+WHERE id = ?
+LIMIT 1;
+
+updateAccountType:
+UPDATE user_entity
+SET account_type = ?
+WHERE id = ?;
 

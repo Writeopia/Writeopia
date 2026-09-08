@@ -44,7 +44,8 @@ CREATE TABLE user_entity (
   salt TEXT NOT NULL,
   enabled BOOLEAN NOT NULL,
   confirmation_code TEXT,
-  confirmation_code_expiry BIGINT
+  confirmation_code_expiry BIGINT,
+  account_type TEXT NOT NULL DEFAULT 'FREE'
 );
 
 CREATE TABLE refresh_token_entity (

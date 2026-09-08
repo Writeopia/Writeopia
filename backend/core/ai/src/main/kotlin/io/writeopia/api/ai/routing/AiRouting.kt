@@ -44,6 +44,12 @@ data class AiUsageResponse(
     val periodEnd: Long
 )
 
+// Account types
+private const val ACCOUNT_TYPE_PREMIUM = "PREMIUM"
+
+// Monthly token quota for premium users (100K tokens)
+private const val MONTHLY_TOKEN_QUOTA = 100_000L
+
 fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend? = null) {
     val genAiService = GenAiService()
     val json = Json { encodeDefaults = true }
@@ -63,7 +69,10 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
             val userId = call.principal<JWTPrincipal>()?.payload?.getClaim("userId")?.asString()
 
             if (userId == null && !debugMode) {
-                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "User not authenticated"))
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    mapOf("error" to "User not authenticated")
+                )
                 return@get
             }
 
@@ -84,8 +93,10 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
             val startOfMonth = startOfMonthLocal.toInstant(TimeZone.UTC).toEpochMilliseconds()
 
             if (writeopiaDb != null) {
-                logger.info("AI usage query - user: {}, from: {}, to: {}",
-                    effectiveUserId, startOfMonth, now.toEpochMilliseconds())
+                logger.info(
+                    "AI usage query - user: {}, from: {}, to: {}",
+                    effectiveUserId, startOfMonth, now.toEpochMilliseconds()
+                )
 
                 val summary = writeopiaDb.getAiUsageSummary(
                     effectiveUserId,
@@ -93,8 +104,10 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
                     now.toEpochMilliseconds()
                 )
 
-                logger.info("AI usage result - user: {}, totalTokens: {}, requests: {}",
-                    effectiveUserId, summary.totalTokens, summary.requestCount)
+                logger.info(
+                    "AI usage result - user: {}, totalTokens: {}, requests: {}",
+                    effectiveUserId, summary.totalTokens, summary.requestCount
+                )
 
                 call.respond(
                     HttpStatusCode.OK,
@@ -133,7 +146,13 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
                 userId = userId,
                 writeopiaDb = writeopiaDb,
                 debugMode = debugMode,
-                streamGenerator = { prompt, model, onUsage -> genAiService.streamGenerateBaseWithUsage(prompt, model, onUsage) },
+                streamGenerator = { prompt, model, onUsage ->
+                    genAiService.streamGenerateBaseWithUsage(
+                        prompt,
+                        model,
+                        onUsage
+                    )
+                },
                 syncGenerator = { prompt, model -> genAiService.generateWithUsage(prompt, model) }
             )
         }
@@ -148,8 +167,13 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
                 userId = userId,
                 writeopiaDb = writeopiaDb,
                 debugMode = debugMode,
-                streamGenerator = { prompt, model, onUsage -> genAiService.streamSummaryWithUsage(prompt, model, onUsage) },
-                syncGenerator = { prompt, model -> genAiService.generateSummaryWithUsage(prompt, model) }
+                streamGenerator =  genAiService::streamSummaryWithUsage,
+                syncGenerator = { prompt, model ->
+                    genAiService.generateSummaryWithUsage(
+                        prompt,
+                        model
+                    )
+                }
             )
         }
     }
@@ -163,8 +187,8 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
                 userId = userId,
                 writeopiaDb = writeopiaDb,
                 debugMode = debugMode,
-                streamGenerator = { prompt, model, onUsage -> genAiService.streamActionPointsWithUsage(prompt, model, onUsage) },
-                syncGenerator = { prompt, model -> genAiService.generateActionPointsWithUsage(prompt, model) }
+                streamGenerator = genAiService::streamActionPointsWithUsage,
+                syncGenerator = genAiService::generateActionPointsWithUsage
             )
         }
     }
@@ -178,8 +202,19 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
                 userId = userId,
                 writeopiaDb = writeopiaDb,
                 debugMode = debugMode,
-                streamGenerator = { prompt, model, onUsage -> genAiService.streamFaqWithUsage(prompt, model, onUsage) },
-                syncGenerator = { prompt, model -> genAiService.generateFaqWithUsage(prompt, model) }
+                streamGenerator = { prompt, model, onUsage ->
+                    genAiService.streamFaqWithUsage(
+                        prompt,
+                        model,
+                        onUsage
+                    )
+                },
+                syncGenerator = { prompt, model ->
+                    genAiService.generateFaqWithUsage(
+                        prompt,
+                        model
+                    )
+                }
             )
         }
     }
@@ -193,8 +228,19 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
                 userId = userId,
                 writeopiaDb = writeopiaDb,
                 debugMode = debugMode,
-                streamGenerator = { prompt, model, onUsage -> genAiService.streamTagsWithUsage(prompt, model, onUsage) },
-                syncGenerator = { prompt, model -> genAiService.generateTagsWithUsage(prompt, model) }
+                streamGenerator = { prompt, model, onUsage ->
+                    genAiService.streamTagsWithUsage(
+                        prompt,
+                        model,
+                        onUsage
+                    )
+                },
+                syncGenerator = { prompt, model ->
+                    genAiService.generateTagsWithUsage(
+                        prompt,
+                        model
+                    )
+                }
             )
         }
     }
@@ -237,10 +283,59 @@ private suspend fun RoutingContext.handleAiRequestWithUsage(
     val effectiveUserId = userId ?: if (debugMode) "debug-user" else null
     val modelName = request.model ?: "gemini-2.0-flash"
 
+    // Authorization checks (skip in debug mode)
+    if (!debugMode && effectiveUserId != null && writeopiaDb != null) {
+        // Check if user has premium account
+        val accountType = writeopiaDb.userEntityQueries
+            .selectAccountTypeById(effectiveUserId)
+            .executeAsOneOrNull()
+
+        if (accountType != ACCOUNT_TYPE_PREMIUM) {
+            logger.info("AI {} request denied - user {} is not premium (type: {})",
+                endpointName, effectiveUserId, accountType)
+            call.respond(
+                HttpStatusCode.Forbidden,
+                AiGenerateResponse(error = "Cloud AI requires a premium subscription")
+            )
+            return
+        }
+
+        // Check quota
+        val now = Clock.System.now()
+        val localDateTime = now.toLocalDateTime(TimeZone.UTC)
+        val startOfMonthLocal = LocalDateTime(
+            localDateTime.year,
+            localDateTime.month,
+            1, 0, 0, 0, 0
+        )
+        val startOfMonth = startOfMonthLocal.toInstant(TimeZone.UTC).toEpochMilliseconds()
+
+        val currentUsage = writeopiaDb.getAiUsageSummary(
+            effectiveUserId,
+            startOfMonth,
+            now.toEpochMilliseconds()
+        )
+
+        if (currentUsage.totalTokens >= MONTHLY_TOKEN_QUOTA) {
+            logger.info("AI {} request denied - user {} exceeded quota ({}/{})",
+                endpointName, effectiveUserId, currentUsage.totalTokens, MONTHLY_TOKEN_QUOTA)
+            call.respond(
+                HttpStatusCode.TooManyRequests,
+                AiGenerateResponse(error = "Monthly token quota exceeded")
+            )
+            return
+        }
+
+        logger.info("AI {} authorization passed - user: {}, accountType: {}, usage: {}/{}",
+            endpointName, effectiveUserId, accountType, currentUsage.totalTokens, MONTHLY_TOKEN_QUOTA)
+    }
+
     // Process request
     try {
-        logger.info("AI {} request - user: {}, stream: {}, db available: {}",
-            endpointName, effectiveUserId, request.stream, writeopiaDb != null)
+        logger.info(
+            "AI {} request - user: {}, stream: {}, db available: {}",
+            endpointName, effectiveUserId, request.stream, writeopiaDb != null
+        )
 
         if (request.stream) {
             // Track usage from streaming response
@@ -248,8 +343,10 @@ private suspend fun RoutingContext.handleAiRequestWithUsage(
 
             call.respondTextWriter(contentType = ContentType.Text.EventStream) {
                 streamGenerator(request.prompt, request.model) { usage ->
-                    logger.info("AI {} streaming usage callback - input: {}, output: {}, total: {}",
-                        endpointName, usage.inputTokens, usage.outputTokens, usage.totalTokens)
+                    logger.info(
+                        "AI {} streaming usage callback - input: {}, output: {}, total: {}",
+                        endpointName, usage.inputTokens, usage.outputTokens, usage.totalTokens
+                    )
                     streamTokenUsage = usage
                 }
                     .onEach { response ->
@@ -260,10 +357,16 @@ private suspend fun RoutingContext.handleAiRequestWithUsage(
             }
 
             // Save streaming usage to database after stream completes
-            logger.info("AI {} stream complete - captured usage: {}", endpointName, streamTokenUsage)
+            logger.info(
+                "AI {} stream complete - captured usage: {}",
+                endpointName,
+                streamTokenUsage
+            )
             streamTokenUsage?.let { tokenUsage ->
-                logger.info("AI {} saving streaming usage - user: {}, tokens: {}, db: {}",
-                    endpointName, effectiveUserId, tokenUsage.totalTokens, writeopiaDb != null)
+                logger.info(
+                    "AI {} saving streaming usage - user: {}, tokens: {}, db: {}",
+                    endpointName, effectiveUserId, tokenUsage.totalTokens, writeopiaDb != null
+                )
                 if (effectiveUserId != null && writeopiaDb != null && tokenUsage.totalTokens > 0) {
                     try {
                         writeopiaDb.insertAiUsage(
@@ -275,16 +378,30 @@ private suspend fun RoutingContext.handleAiRequestWithUsage(
                             totalTokens = tokenUsage.totalTokens,
                             model = modelName
                         )
-                        logger.info("AI {} usage saved successfully for user {}", endpointName, effectiveUserId)
+                        logger.info(
+                            "AI {} usage saved successfully for user {}",
+                            endpointName,
+                            effectiveUserId
+                        )
                     } catch (e: Exception) {
-                        logger.error("Failed to save streaming AI usage for user {}: {}", effectiveUserId, e.message)
+                        logger.error(
+                            "Failed to save streaming AI usage for user {}: {}",
+                            effectiveUserId,
+                            e.message
+                        )
                     }
                 }
             }
         } else {
             val (response, tokenUsage) = syncGenerator(request.prompt, request.model)
-            logger.info("AI {} sync response - input: {}, output: {}, total: {}, error: {}",
-                endpointName, tokenUsage.inputTokens, tokenUsage.outputTokens, tokenUsage.totalTokens, response.error)
+            logger.info(
+                "AI {} sync response - input: {}, output: {}, total: {}, error: {}",
+                endpointName,
+                tokenUsage.inputTokens,
+                tokenUsage.outputTokens,
+                tokenUsage.totalTokens,
+                response.error
+            )
 
             // Save usage to database if successful
             if (response.error == null && effectiveUserId != null && writeopiaDb != null) {
@@ -298,9 +415,17 @@ private suspend fun RoutingContext.handleAiRequestWithUsage(
                         totalTokens = tokenUsage.totalTokens,
                         model = modelName
                     )
-                    logger.info("AI {} usage saved successfully for user {}", endpointName, effectiveUserId)
+                    logger.info(
+                        "AI {} usage saved successfully for user {}",
+                        endpointName,
+                        effectiveUserId
+                    )
                 } catch (e: Exception) {
-                    logger.error("Failed to save AI usage for user {}: {}", effectiveUserId, e.message)
+                    logger.error(
+                        "Failed to save AI usage for user {}: {}",
+                        effectiveUserId,
+                        e.message
+                    )
                 }
             }
 
