@@ -54,7 +54,7 @@ class GenAiApiTest {
     fun `getUsage should propagate CancellationException when cancelled`() = runTest {
         val client = createMockClient(
             delayMs = 10_000, // Long delay so we can cancel
-            responseBody = """{"totalInputTokens":0,"totalOutputTokens":0,"totalTokens":0,"requestCount":0,"periodStart":0,"periodEnd":0}"""
+            responseBody = """{"totalInputTokens":0,"totalOutputTokens":0,"totalTokens":0,"requestCount":0,"periodStart":0,"periodEnd":0,"quota":100000}"""
         )
         val api = GenAiApi(client, json, "http://localhost")
 
@@ -109,7 +109,7 @@ class GenAiApiTest {
     @Test
     fun `getUsage should return Complete when request succeeds`() = runTest {
         val client = createMockClient(
-            responseBody = """{"totalInputTokens":100,"totalOutputTokens":200,"totalTokens":300,"requestCount":5,"periodStart":1000,"periodEnd":2000}"""
+            responseBody = """{"totalInputTokens":100,"totalOutputTokens":200,"totalTokens":300,"requestCount":5,"periodStart":1000,"periodEnd":2000,"quota":100000}"""
         )
         val api = GenAiApi(client, json, "http://localhost")
 

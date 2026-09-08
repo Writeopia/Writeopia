@@ -9,5 +9,6 @@ data class AiUsageResponse(
     val totalTokens: Long,
     val requestCount: Long,
     val periodStart: Long,
-    val periodEnd: Long
+    val periodEnd: Long,
+    val quota: Long
 )

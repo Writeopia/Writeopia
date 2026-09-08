@@ -849,9 +849,6 @@ private fun AiSection(
     }
 }
 
-// Monthly token quota (must match backend MONTHLY_TOKEN_QUOTA)
-private const val MONTHLY_TOKEN_QUOTA = 100_000L
-
 @Composable
 private fun CloudAiUsageSection(
     cloudAiUsageState: StateFlow<CloudAiUsageState>,
@@ -891,8 +888,12 @@ private fun CloudAiUsageSection(
         is CloudAiUsageState.Success -> {
             val usage = state.usage
             val usedTokens = usage.totalTokens
-            val quotaTokens = MONTHLY_TOKEN_QUOTA
-            val usageProgress = (usedTokens.toFloat() / quotaTokens.toFloat()).coerceIn(0f, 1f)
+            val quotaTokens = usage.quota
+            val usageProgress = if (quotaTokens > 0) {
+                (usedTokens.toFloat() / quotaTokens.toFloat()).coerceIn(0f, 1f)
+            } else {
+                0f
+            }
 
             Column {
                 // Period label

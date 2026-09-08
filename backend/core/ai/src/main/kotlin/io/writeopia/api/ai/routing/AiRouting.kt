@@ -15,6 +15,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.writeopia.api.ai.repository.createTokenReservation
 import io.writeopia.api.ai.repository.getAiUsageSummary
+import io.writeopia.api.ai.repository.insertAiUsage
 import io.writeopia.api.ai.repository.releaseTokenReservation
 import io.writeopia.api.ai.repository.settleTokenReservation
 import io.writeopia.api.genai.model.AiGenerateRequest
@@ -43,7 +44,8 @@ data class AiUsageResponse(
     val totalTokens: Long,
     val requestCount: Long,
     val periodStart: Long,
-    val periodEnd: Long
+    val periodEnd: Long,
+    val quota: Long
 )
 
 // Account types
@@ -123,7 +125,8 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
                         totalTokens = summary.totalTokens,
                         requestCount = summary.requestCount,
                         periodStart = startOfMonth,
-                        periodEnd = now.toEpochMilliseconds()
+                        periodEnd = now.toEpochMilliseconds(),
+                        quota = MONTHLY_TOKEN_QUOTA
                     )
                 )
             } else {
@@ -136,7 +139,8 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
                         totalTokens = 0,
                         requestCount = 0,
                         periodStart = startOfMonth,
-                        periodEnd = now.toEpochMilliseconds()
+                        periodEnd = now.toEpochMilliseconds(),
+                        quota = MONTHLY_TOKEN_QUOTA
                     )
                 )
             }
