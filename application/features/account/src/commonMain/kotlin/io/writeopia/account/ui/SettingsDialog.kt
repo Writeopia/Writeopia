@@ -849,6 +849,9 @@ private fun AiSection(
     }
 }
 
+// Monthly token quota (must match backend MONTHLY_TOKEN_QUOTA)
+private const val MONTHLY_TOKEN_QUOTA = 100_000L
+
 @Composable
 private fun CloudAiUsageSection(
     cloudAiUsageState: StateFlow<CloudAiUsageState>,
@@ -887,6 +890,10 @@ private fun CloudAiUsageSection(
 
         is CloudAiUsageState.Success -> {
             val usage = state.usage
+            val usedTokens = usage.totalTokens
+            val quotaTokens = MONTHLY_TOKEN_QUOTA
+            val usageProgress = (usedTokens.toFloat() / quotaTokens.toFloat()).coerceIn(0f, 1f)
+
             Column {
                 // Period label
                 val periodLabel = formatMonthYear(usage.periodStart)
@@ -896,42 +903,47 @@ private fun CloudAiUsageSection(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Usage stats in a row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    UsageStatItem(
-                        label = WrStrings.totalTokens(),
-                        value = formatCompactNumber(usage.totalTokens),
-                        modifier = Modifier.weight(1f)
-                    )
-                    UsageStatItem(
-                        label = WrStrings.requests(),
-                        value = usage.requestCount.toString(),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                // Token count
+                Text(
+                    "${formatCompactNumber(usedTokens)} / ${formatCompactNumber(quotaTokens)}",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    UsageStatItem(
-                        label = WrStrings.inputTokens(),
-                        value = formatCompactNumber(usage.totalInputTokens),
-                        modifier = Modifier.weight(1f)
-                    )
-                    UsageStatItem(
-                        label = WrStrings.outputTokens(),
-                        value = formatCompactNumber(usage.totalOutputTokens),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                Text(
+                    WrStrings.tokensUsed(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Progress bar
+                LinearProgressIndicator(
+                    progress = { usageProgress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = if (usageProgress > 0.9f) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    "${(usageProgress * 100).toInt()}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                )
 
                 if (usage.requestCount == 0L) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -943,31 +955,6 @@ private fun CloudAiUsageSection(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun UsageStatItem(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.small)
-            .background(WriteopiaTheme.colorScheme.optionsSelector)
-            .padding(12.dp)
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground
-        )
     }
 }
 
