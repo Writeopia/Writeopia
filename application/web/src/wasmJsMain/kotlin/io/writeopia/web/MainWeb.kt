@@ -5,12 +5,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeViewport
 import androidx.navigation.compose.rememberNavController
+import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.configuration.LocalPlatform
@@ -38,6 +40,10 @@ fun main() {
 fun CreateAppInMemory() {
     val coroutineScope = rememberCoroutineScope()
     val selectionState = MutableStateFlow(false)
+
+    LaunchedEffect(Unit) {
+        AnalyticsInjection.singleton().provideAnalyticsManager().track("app_opened")
+    }
 
 //    WriteopiaDbInjector.initialize(null)
     RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())

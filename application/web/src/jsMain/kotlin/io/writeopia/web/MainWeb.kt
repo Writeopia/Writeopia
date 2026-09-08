@@ -20,6 +20,7 @@ import androidx.navigation.bindToBrowserNavigation
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.auth.navigation.startScreen
 import io.writeopia.common.utils.ALLOW_BACKEND
@@ -122,6 +123,10 @@ fun CreateAppInMemory() {
     val coroutineScope = rememberCoroutineScope()
     val selectionState = MutableStateFlow(false)
     val keyboardEventFlow = MutableStateFlow<KeyboardEvent?>(null)
+
+    LaunchedEffect(Unit) {
+        AnalyticsInjection.singleton().provideAnalyticsManager().track("app_opened")
+    }
 
     RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
     val baseUrl = window.location.origin

@@ -2,6 +2,7 @@ package io.writeopia
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -10,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.editor.di.EditorKmpInjector
@@ -32,6 +34,10 @@ fun MainViewController() = ComposeUIViewController {
     ImageLoadConfig.configImageLoad()
 
     val coroutine = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        AnalyticsInjection.singleton().provideAnalyticsManager().track("app_opened")
+    }
 
     val databaseStateFlow = DatabaseFactory.createDatabaseAsState(
         DriverFactory(),
