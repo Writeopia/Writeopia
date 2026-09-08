@@ -1,20 +1,20 @@
 package io.writeopia.account.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,11 +27,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.date.formatCompactNumber
 import io.writeopia.common.utils.date.formatMonthYear
-import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.genai.model.AiUsageResponse
 import io.writeopia.resources.WrStrings
-import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
+
+// Monthly token quota (must match backend MONTHLY_TOKEN_QUOTA)
+private const val MONTHLY_TOKEN_QUOTA = 100_000L
 
 sealed class CloudAiUsageState {
     data object Loading : CloudAiUsageState()
@@ -103,6 +104,14 @@ fun SettingsCloudAiScreen(
 @Composable
 private fun UsageContent(usage: AiUsageResponse) {
     val periodLabel = formatMonthYear(usage.periodStart)
+    val usedTokens = usage.totalTokens
+    val quotaTokens = MONTHLY_TOKEN_QUOTA
+    val usageProgress = (usedTokens.toFloat() / quotaTokens.toFloat()).coerceIn(0f, 1f)
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = usageProgress,
+        animationSpec = tween(durationMillis = 800)
+    )
 
     Column {
         // Period header
@@ -112,46 +121,57 @@ private fun UsageContent(usage: AiUsageResponse) {
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Total tokens card (highlighted)
-        UsageCard(
-            title = WrStrings.totalTokens(),
-            value = formatCompactNumber(usage.totalTokens),
-            icon = WrIcons.zap,
-            isHighlighted = true
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Breakdown row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        // Usage card with progress bar
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .padding(20.dp)
         ) {
-            UsageCard(
-                title = WrStrings.inputTokens(),
-                value = formatCompactNumber(usage.totalInputTokens),
-                icon = WrIcons.file,
-                modifier = Modifier.weight(1f)
+            // Token count: "X / Y tokens used"
+            Text(
+                text = "${formatCompactNumber(usedTokens)} / ${formatCompactNumber(quotaTokens)}",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
 
-            UsageCard(
-                title = WrStrings.outputTokens(),
-                value = formatCompactNumber(usage.totalOutputTokens),
-                icon = WrIcons.exportFile,
-                modifier = Modifier.weight(1f)
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = WrStrings.tokensUsed(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Progress bar
+            LinearProgressIndicator(
+                progress = { animatedProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = if (usageProgress > 0.9f) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+                trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Percentage
+            Text(
+                text = "${(usageProgress * 100).toInt()}%",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
             )
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Request count
-        UsageCard(
-            title = WrStrings.requests(),
-            value = formatCompactNumber(usage.requestCount),
-            icon = WrIcons.ai
-        )
 
         if (usage.requestCount == 0L) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -161,57 +181,5 @@ private fun UsageContent(usage: AiUsageResponse) {
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
             )
         }
-    }
-}
-
-@Composable
-private fun UsageCard(
-    title: String,
-    value: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    isHighlighted: Boolean = false,
-    modifier: Modifier = Modifier
-) {
-    val backgroundColor = if (isHighlighted) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        WriteopiaTheme.colorScheme.optionsSelector
-    }
-
-    val contentColor = if (isHighlighted) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onBackground
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(backgroundColor)
-            .padding(16.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = contentColor.copy(alpha = 0.7f),
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.padding(4.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                color = contentColor.copy(alpha = 0.7f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-            color = contentColor
-        )
     }
 }

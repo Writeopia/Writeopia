@@ -19,9 +19,11 @@ import writeopia.application.core.resources.generated.resources.current_month_us
 import writeopia.application.core.resources.generated.resources.error_loading_usage
 import writeopia.application.core.resources.generated.resources.input_tokens
 import writeopia.application.core.resources.generated.resources.loading_usage
+import writeopia.application.core.resources.generated.resources.monthly_quota
 import writeopia.application.core.resources.generated.resources.no_usage_data
 import writeopia.application.core.resources.generated.resources.output_tokens
 import writeopia.application.core.resources.generated.resources.requests
+import writeopia.application.core.resources.generated.resources.tokens_used
 import writeopia.application.core.resources.generated.resources.total_tokens
 import writeopia.application.core.resources.generated.resources.are_you_sure
 import writeopia.application.core.resources.generated.resources.arrangement
@@ -775,4 +777,10 @@ object WrStrings {
 
     @Composable
     fun noUsageData() = stringResource(Res.string.no_usage_data)
+
+    @Composable
+    fun tokensUsed() = stringResource(Res.string.tokens_used)
+
+    @Composable
+    fun monthlyQuota() = stringResource(Res.string.monthly_quota)
 }
