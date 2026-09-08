@@ -101,7 +101,15 @@ class GenAiService(
         }
     }
 
-    fun streamGenerate(prompt: String, modelName: String? = null): Flow<AiGenerateResponse> = flow {
+    /**
+     * Streams content generation with a callback for token usage when complete.
+     * The onUsage callback is invoked with the final token usage after streaming completes.
+     */
+    fun streamGenerateWithUsage(
+        prompt: String,
+        modelName: String? = null,
+        onUsage: (TokenUsage) -> Unit = {}
+    ): Flow<AiGenerateResponse> = flow {
         try {
             if (!isAvailable()) {
                 emit(
@@ -122,11 +130,21 @@ class GenAiService(
             )
 
             val accumulatedText = StringBuilder()
+            var finalUsage = TokenUsage(0, 0, 0)
 
             // ResponseStream is iterable
             responseStream.use { stream ->
                 for (response in stream) {
                     val chunk = response.text()
+
+                    // Capture usage metadata from each response (last one has the total)
+                    response.usageMetadata().ifPresent { usage ->
+                        finalUsage = TokenUsage(
+                            inputTokens = usage.promptTokenCount().orElse(0),
+                            outputTokens = usage.candidatesTokenCount().orElse(0),
+                            totalTokens = usage.totalTokenCount().orElse(0)
+                        )
+                    }
 
                     if (chunk != null) {
                         accumulatedText.append(chunk)
@@ -139,6 +157,9 @@ class GenAiService(
                     }
                 }
             }
+
+            // Report final usage
+            onUsage(finalUsage)
 
             emit(
                 AiGenerateResponse(
@@ -156,6 +177,9 @@ class GenAiService(
         }
     }.flowOn(Dispatchers.IO)
 
+    fun streamGenerate(prompt: String, modelName: String? = null): Flow<AiGenerateResponse> =
+        streamGenerateWithUsage(prompt, modelName)
+
     suspend fun generateSummary(text: String, modelName: String? = null): AiGenerateResponse {
         return generate("$SUMMARY_PROMPT:\n```\n$text\n```", modelName)
     }
@@ -166,6 +190,10 @@ class GenAiService(
 
     fun streamSummary(text: String, modelName: String? = null): Flow<AiGenerateResponse> {
         return streamGenerate("$SUMMARY_PROMPT:\n```\n$text\n```", modelName)
+    }
+
+    fun streamSummaryWithUsage(text: String, modelName: String? = null, onUsage: (TokenUsage) -> Unit): Flow<AiGenerateResponse> {
+        return streamGenerateWithUsage("$SUMMARY_PROMPT:\n```\n$text\n```", modelName, onUsage)
     }
 
     suspend fun generateActionPoints(text: String, modelName: String? = null): AiGenerateResponse {
@@ -180,6 +208,10 @@ class GenAiService(
         return streamGenerate("$ACTIONS_POINTS_PROMPT:\n```\n$text\n```", modelName)
     }
 
+    fun streamActionPointsWithUsage(text: String, modelName: String? = null, onUsage: (TokenUsage) -> Unit): Flow<AiGenerateResponse> {
+        return streamGenerateWithUsage("$ACTIONS_POINTS_PROMPT:\n```\n$text\n```", modelName, onUsage)
+    }
+
     suspend fun generateFaq(text: String, modelName: String? = null): AiGenerateResponse {
         return generate("$FAQ_PROMPT:\n```\n$text\n```", modelName)
     }
@@ -192,6 +224,10 @@ class GenAiService(
         return streamGenerate("$FAQ_PROMPT:\n```\n$text\n```", modelName)
     }
 
+    fun streamFaqWithUsage(text: String, modelName: String? = null, onUsage: (TokenUsage) -> Unit): Flow<AiGenerateResponse> {
+        return streamGenerateWithUsage("$FAQ_PROMPT:\n```\n$text\n```", modelName, onUsage)
+    }
+
     suspend fun generateTags(text: String, modelName: String? = null): AiGenerateResponse {
         return generate("$TAGS_PROMPT:\n```\n$text\n```", modelName)
     }
@@ -202,5 +238,13 @@ class GenAiService(
 
     fun streamTags(text: String, modelName: String? = null): Flow<AiGenerateResponse> {
         return streamGenerate("$TAGS_PROMPT:\n```\n$text\n```", modelName)
+    }
+
+    fun streamTagsWithUsage(text: String, modelName: String? = null, onUsage: (TokenUsage) -> Unit): Flow<AiGenerateResponse> {
+        return streamGenerateWithUsage("$TAGS_PROMPT:\n```\n$text\n```", modelName, onUsage)
+    }
+
+    fun streamGenerateBaseWithUsage(prompt: String, modelName: String? = null, onUsage: (TokenUsage) -> Unit): Flow<AiGenerateResponse> {
+        return streamGenerateWithUsage(prompt, modelName, onUsage)
     }
 }
