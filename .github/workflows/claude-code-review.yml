@@ -18,7 +18,7 @@ jobs:
     #   github.event.pull_request.user.login == 'new-developer' ||
     #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
 
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
@@ -30,6 +30,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      - name: Create Claude Code install directory
+        run: mkdir -p ~/.local/bin
 
       - name: Run Claude Code Review
         id: claude-review
