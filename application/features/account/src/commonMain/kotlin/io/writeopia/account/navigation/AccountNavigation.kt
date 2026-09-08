@@ -112,7 +112,6 @@ fun NavGraphBuilder.accountMenuNavigation(
     navigateToSettingsAccount: () -> Unit,
     navigateToSettingsAi: () -> Unit,
     navigateToSettingsCloudAi: () -> Unit,
-    navigateToLocalAi: () -> Unit,
     navigateToWorkspaceUsers: (String, String) -> Unit,
     navigateToUserSearch: (String, String) -> Unit,
     navigateToUserAdd: (String, String, String, String, String) -> Unit,
@@ -695,7 +694,6 @@ fun NavGraphBuilder.accountMenuNavigation(
             SettingsAiScreen(
                 modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
                     .padding(paddingValues),
-                navigateToLocalAi = navigateToLocalAi,
                 navigateToCloudAi = navigateToSettingsCloudAi
             )
         }

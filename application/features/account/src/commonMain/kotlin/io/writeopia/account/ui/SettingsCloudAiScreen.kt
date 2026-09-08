@@ -29,6 +29,7 @@ import io.writeopia.common.utils.date.formatCompactNumber
 import io.writeopia.common.utils.date.formatMonthYear
 import io.writeopia.genai.model.AiUsageResponse
 import io.writeopia.resources.WrStrings
+import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 
 // Monthly token quota (must match backend MONTHLY_TOKEN_QUOTA)
@@ -128,14 +129,14 @@ private fun UsageContent(usage: AiUsageResponse) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.primaryContainer)
+                .background(WriteopiaTheme.colorScheme.optionsSelector)
                 .padding(20.dp)
         ) {
             // Token count: "X / Y tokens used"
             Text(
                 text = "${formatCompactNumber(usedTokens)} / ${formatCompactNumber(quotaTokens)}",
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -143,7 +144,7 @@ private fun UsageContent(usage: AiUsageResponse) {
             Text(
                 text = WrStrings.tokensUsed(),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -160,7 +161,7 @@ private fun UsageContent(usage: AiUsageResponse) {
                 } else {
                     MaterialTheme.colorScheme.primary
                 },
-                trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -169,7 +170,7 @@ private fun UsageContent(usage: AiUsageResponse) {
             Text(
                 text = "${(usageProgress * 100).toInt()}%",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
             )
         }
 

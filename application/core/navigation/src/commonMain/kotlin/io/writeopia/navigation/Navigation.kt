@@ -141,7 +141,6 @@ fun Navigation(
                 navigateToSettingsAccount = navController::navigateToSettingsAccount,
                 navigateToSettingsAi = navController::navigateToSettingsAi,
                 navigateToSettingsCloudAi = navController::navigateToSettingsCloudAi,
-                navigateToLocalAi = { /* Local AI settings are handled inline in the AI section */ },
                 navigateToWorkspaceUsers = navController::navigateToWorkspaceUsers,
                 navigateToUserSearch = navController::navigateToUserSearch,
                 navigateToUserAdd = navController::navigateToUserAdd,

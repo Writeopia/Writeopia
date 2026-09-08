@@ -28,7 +28,6 @@ import io.writeopia.theme.WriteopiaTheme
 
 @Composable
 fun SettingsAiScreen(
-    navigateToLocalAi: () -> Unit,
     navigateToCloudAi: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -37,15 +36,6 @@ fun SettingsAiScreen(
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
-
-        AiMenuItem(
-            title = WrStrings.localAi(),
-            description = "Configure local AI models",
-            icon = WrIcons.download,
-            onClick = navigateToLocalAi
-        )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         AiMenuItem(
