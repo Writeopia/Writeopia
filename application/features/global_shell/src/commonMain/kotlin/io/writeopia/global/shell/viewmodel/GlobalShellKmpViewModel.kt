@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
 import io.writeopia.account.ui.CloudAiUsageState
+import io.writeopia.api.LocalAiAutoConfigApi
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.api.GenAiApi
@@ -71,6 +72,7 @@ class GlobalShellKmpViewModel(
     private val folderStateController: FolderStateController =
         FolderStateController.singleton(notesUseCase, authRepository, documentsApi),
     private val localAiRepository: LocalAiRepository,
+    private val localAiAutoConfigApi: LocalAiAutoConfigApi,
     private val workspaceHandler: WorkspaceHandler,
     private val keyboardEventFlow: Flow<KeyboardEvent>?,
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
@@ -113,6 +115,9 @@ class GlobalShellKmpViewModel(
 
     private val _downloadModelState =
         MutableStateFlow<ResultData<DownloadModelResponse>>(ResultData.Idle())
+
+    private val _autoConfigureState = MutableStateFlow<ResultData<Unit>>(ResultData.Idle())
+    override val autoConfigureState: StateFlow<ResultData<Unit>> = _autoConfigureState.asStateFlow()
 
     override val downloadModelState: StateFlow<ResultData<DownloadState>> =
         _downloadModelState.map { resultData ->
@@ -539,6 +544,64 @@ class GlobalShellKmpViewModel(
                 localAiRepository.deleteModel(model, url)
 
                 retryModels()
+            }
+        }
+    }
+
+    override fun autoConfigure() {
+        viewModelScope.launch(Dispatchers.Default) {
+            _autoConfigureState.value = ResultData.Loading()
+
+            when (val configResult = localAiAutoConfigApi.getAutoConfig()) {
+                is ResultData.Complete -> {
+                    val config = configResult.data
+                    var workingUrl: String? = null
+                    for (candidateUrl in listOf(config.ollamaUrl, config.llmmanUrl)) {
+                        if (localAiRepository.getModels(candidateUrl) is ResultData.Complete) {
+                            workingUrl = candidateUrl
+                            break
+                        }
+                    }
+
+                    if (workingUrl == null) {
+                        _autoConfigureState.value = ResultData.Error(
+                            Exception(
+                                "Local AI was not found running on this machine. " +
+                                    "Please, install and start Ollama or llmman and try again."
+                            )
+                        )
+                        return@launch
+                    }
+
+                    val userId = getUserId()
+                    localAiRepository.saveLocalAiUrl(userId, workingUrl)
+
+                    localAiRepository.downloadModel(config.defaultModel, workingUrl)
+                        .collectLatest { result ->
+                            _downloadModelState.value = result
+
+                            when (result) {
+                                is ResultData.Complete -> {
+                                    localAiRepository.saveLocalAiSelectedModel(userId, config.defaultModel)
+                                    localAiRepository.refreshConfiguration(userId)
+                                    retryModels()
+                                    _autoConfigureState.value = ResultData.Complete(Unit)
+                                }
+
+                                is ResultData.Error -> {
+                                    _autoConfigureState.value = ResultData.Error(result.exception)
+                                }
+
+                                else -> {}
+                            }
+                        }
+                }
+
+                is ResultData.Error -> {
+                    _autoConfigureState.value = ResultData.Error(configResult.exception)
+                }
+
+                else -> {}
             }
         }
     }

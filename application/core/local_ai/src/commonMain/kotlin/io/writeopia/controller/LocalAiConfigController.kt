@@ -14,6 +14,8 @@ interface LocalAiConfigController {
 
     val downloadModelState: StateFlow<ResultData<DownloadState>>
 
+    val autoConfigureState: StateFlow<ResultData<Unit>>
+
     fun changeLocalAiUrl(url: String)
 
     fun selectLocalAiModel(model: String)
@@ -23,4 +25,10 @@ interface LocalAiConfigController {
     fun modelToDownload(model: String, onComplete: () -> Unit = {})
 
     fun deleteModel(model: String)
+
+    /**
+     * Fetches the Local AI configuration from the backend, detects whether Ollama or llmman is
+     * running locally, configures the matching URL and downloads and selects the default model.
+     */
+    fun autoConfigure()
 }

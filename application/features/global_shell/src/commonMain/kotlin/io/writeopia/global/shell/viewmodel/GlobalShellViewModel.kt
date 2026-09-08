@@ -60,6 +60,8 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     val cloudAiUsageState: StateFlow<CloudAiUsageState>
 
+    override val autoConfigureState: StateFlow<ResultData<Unit>>
+
     fun init()
 
     fun loadCloudAiUsage()
@@ -113,4 +115,6 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
     override fun modelToDownload(model: String, onComplete: () -> Unit)
 
     override fun deleteModel(model: String)
+
+    override fun autoConfigure()
 }
