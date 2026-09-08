@@ -55,3 +55,51 @@ fun WriteopiaDbBackend.getAiUsageSummary(
         requestCount = result.request_count
     )
 }
+
+/**
+ * Creates a token reservation by inserting a usage record with the reserved budget.
+ * This ensures the reservation is counted in quota checks immediately.
+ * Returns the reservation ID for later settlement or release.
+ */
+fun WriteopiaDbBackend.createTokenReservation(
+    id: String,
+    userId: String,
+    operationType: String,
+    reservedTokens: Int,
+    model: String
+) {
+    aiUsageEntityQueries.insert(
+        id = id,
+        user_id = userId,
+        operation_type = operationType,
+        input_tokens = 0,
+        output_tokens = 0,
+        total_tokens = reservedTokens,
+        model = model,
+        created_at = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+    )
+}
+
+/**
+ * Settles a reservation by updating it with the actual token usage.
+ */
+fun WriteopiaDbBackend.settleTokenReservation(
+    reservationId: String,
+    inputTokens: Int,
+    outputTokens: Int,
+    totalTokens: Int
+) {
+    aiUsageEntityQueries.updateUsage(
+        input_tokens = inputTokens,
+        output_tokens = outputTokens,
+        total_tokens = totalTokens,
+        id = reservationId
+    )
+}
+
+/**
+ * Releases (deletes) a reservation, typically when the AI request fails.
+ */
+fun WriteopiaDbBackend.releaseTokenReservation(reservationId: String) {
+    aiUsageEntityQueries.deleteById(reservationId)
+}

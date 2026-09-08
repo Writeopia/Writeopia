@@ -13,8 +13,10 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
-import io.writeopia.api.ai.repository.insertAiUsage
+import io.writeopia.api.ai.repository.createTokenReservation
 import io.writeopia.api.ai.repository.getAiUsageSummary
+import io.writeopia.api.ai.repository.releaseTokenReservation
+import io.writeopia.api.ai.repository.settleTokenReservation
 import io.writeopia.api.genai.model.AiGenerateRequest
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.TokenUsage
@@ -49,6 +51,10 @@ private const val ACCOUNT_TYPE_PREMIUM = "PREMIUM"
 
 // Monthly token quota for premium users (100K tokens)
 private const val MONTHLY_TOKEN_QUOTA = 100_000L
+
+// Maximum token budget reserved per request (used for atomic quota enforcement)
+// This is the upper bound of tokens we expect a single request to consume
+private const val MAX_TOKENS_PER_REQUEST = 10_000
 
 fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend? = null) {
     val genAiService = GenAiService()

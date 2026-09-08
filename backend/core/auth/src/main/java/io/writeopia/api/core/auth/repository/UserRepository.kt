@@ -99,6 +99,10 @@ fun WriteopiaDbBackend.insertUser(
     )
 }
 
+fun WriteopiaDbBackend.updatePassword(id: String, password: String, salt: String) {
+    this.userEntityQueries.updatePassword(password, salt, id)
+}
+
 fun WriteopiaDbBackend.deleteUserById(id: String) {
     this.userEntityQueries.deleteUser(id)
 }

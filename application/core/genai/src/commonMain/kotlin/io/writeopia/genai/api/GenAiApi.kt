@@ -39,6 +39,8 @@ class GenAiApi(
         }
         val body = response.body<Map<String, Boolean>>()
         ResultData.Complete(body["available"] == true)
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         ResultData.Error(e)
     }
@@ -48,6 +50,8 @@ class GenAiApi(
             contentType(ContentType.Application.Json)
         }
         ResultData.Complete(response.body())
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         ResultData.Error(e)
     }
@@ -60,6 +64,8 @@ class GenAiApi(
                     setBody(GenAiRequest(prompt, model, stream = false))
                 }
                 ResultData.Complete(response.body())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 ResultData.Error(e)
             }
@@ -76,6 +82,8 @@ class GenAiApi(
                     setBody(GenAiRequest(prompt, model, stream = false))
                 }
                 ResultData.Complete(response.body())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 ResultData.Error(e)
             }
@@ -92,6 +100,8 @@ class GenAiApi(
                     setBody(GenAiRequest(prompt, model, stream = false))
                 }
                 ResultData.Complete(response.body())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 ResultData.Error(e)
             }
@@ -108,6 +118,8 @@ class GenAiApi(
                     setBody(GenAiRequest(prompt, model, stream = false))
                 }
                 ResultData.Complete(response.body())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 ResultData.Error(e)
             }
@@ -124,6 +136,8 @@ class GenAiApi(
                     setBody(GenAiRequest(prompt, model, stream = false))
                 }
                 ResultData.Complete(response.body())
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 ResultData.Error(e)
             }

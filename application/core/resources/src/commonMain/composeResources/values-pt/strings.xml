@@ -177,6 +177,11 @@
   <string name="ai">IA</string>
   <string name="cloud_ai">IA na Nuvem</string>
   <string name="cloud_ai_usage">Uso de IA na Nuvem</string>
+  <string name="current_month_usage">Uso do Mês Atual</string>
+  <string name="total_tokens">Total de Tokens</string>
+  <string name="input_tokens">Tokens de Entrada</string>
+  <string name="output_tokens">Tokens de Saída</string>
+  <string name="requests">Requisições</string>
   <string name="loading_usage">Carregando dados de uso...</string>
   <string name="error_loading_usage">Erro ao carregar dados de uso</string>
   <string name="no_usage_data">Nenhum dado de uso disponível</string>

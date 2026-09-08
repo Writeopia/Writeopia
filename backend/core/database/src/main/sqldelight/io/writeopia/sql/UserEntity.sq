@@ -90,3 +90,8 @@ UPDATE user_entity
 SET account_type = ?
 WHERE id = ?;
 
+updatePassword:
+UPDATE user_entity
+SET password = ?, salt = ?
+WHERE id = ?;
+

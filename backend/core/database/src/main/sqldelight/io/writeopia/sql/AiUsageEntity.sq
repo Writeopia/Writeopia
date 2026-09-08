@@ -36,3 +36,13 @@ WHERE user_id = ? AND created_at >= ? AND created_at <= ?;
 -- Delete old records (for cleanup)
 deleteOldRecords:
 DELETE FROM ai_usage WHERE created_at < ?;
+
+-- Update usage record (for settling reservations)
+updateUsage:
+UPDATE ai_usage
+SET input_tokens = ?, output_tokens = ?, total_tokens = ?
+WHERE id = ?;
+
+-- Delete a specific usage record (for releasing failed reservations)
+deleteById:
+DELETE FROM ai_usage WHERE id = ?;
