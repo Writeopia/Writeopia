@@ -68,6 +68,7 @@ fun WriteopiaDbBackend.insertUser(
     enabled: Boolean,
     confirmationCode: String? = null,
     confirmationCodeExpiry: Long? = null,
+    accountType: String = "FREE",
 ) {
     this.userEntityQueries.insertUser(
         id = id,
@@ -79,6 +80,7 @@ fun WriteopiaDbBackend.insertUser(
         enabled = enabled,
         confirmation_code = confirmationCode,
         confirmation_code_expiry = confirmationCodeExpiry,
+        account_type = accountType,
     )
 }
 
