@@ -28,6 +28,9 @@ import writeopia.application.core.resources.generated.resources.total_tokens
 import writeopia.application.core.resources.generated.resources.are_you_sure
 import writeopia.application.core.resources.generated.resources.arrangement
 import writeopia.application.core.resources.generated.resources.ask_ai
+import writeopia.application.core.resources.generated.resources.auto_configure_local_ai
+import writeopia.application.core.resources.generated.resources.auto_configure_local_ai_error
+import writeopia.application.core.resources.generated.resources.auto_configure_local_ai_success
 import writeopia.application.core.resources.generated.resources.available_models
 import writeopia.application.core.resources.generated.resources.box
 import writeopia.application.core.resources.generated.resources.card
