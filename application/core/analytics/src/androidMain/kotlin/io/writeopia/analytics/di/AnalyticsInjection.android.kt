@@ -26,14 +26,18 @@ actual class AnalyticsInjection private constructor() {
 private object PostHogAndroidAnalytics : AnalyticsManager {
 
     override suspend fun track(event: String, properties: Map<String, Any?>) {
-        PostHog.capture(event, properties = properties)
+        PostHog.capture(event, properties = properties.withoutNulls())
     }
 
     override suspend fun identify(distinctId: String, properties: Map<String, Any?>) {
-        PostHog.identify(distinctId, userProperties = properties)
+        PostHog.identify(distinctId, userProperties = properties.withoutNulls())
     }
 
     override fun reset() {
         PostHog.reset()
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+private fun Map<String, Any?>.withoutNulls(): Map<String, Any> =
+    filterValues { it != null } as Map<String, Any>
