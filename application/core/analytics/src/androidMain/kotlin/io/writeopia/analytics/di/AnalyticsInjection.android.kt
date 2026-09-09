@@ -1,9 +1,9 @@
 package io.writeopia.analytics.di
 
 import android.content.Context
-import com.posthog.PostHogAndroidConfig
-import com.posthog.android.PostHog
+import com.posthog.PostHog
 import com.posthog.android.PostHogAndroid
+import com.posthog.android.PostHogAndroidConfig
 import io.writeopia.analytics.AnalyticsManager
 import io.writeopia.analytics.PostHogConfig
 
