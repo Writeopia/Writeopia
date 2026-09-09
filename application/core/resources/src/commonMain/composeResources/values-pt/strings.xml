@@ -185,6 +185,6 @@
   <string name="loading_usage">Carregando dados de uso...</string>
   <string name="error_loading_usage">Erro ao carregar dados de uso</string>
   <string name="no_usage_data">Nenhum dado de uso disponível</string>
-  <string name="tokens_used">tokens usados</string>
+  <string name="tokens_used">tokens usados (renova todo mês)</string>
   <string name="monthly_quota">Cota mensal</string>
 </resources>

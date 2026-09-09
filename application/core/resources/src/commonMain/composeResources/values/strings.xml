@@ -215,6 +215,6 @@
   <string name="loading_usage">Loading usage data...</string>
   <string name="error_loading_usage">Error loading usage data</string>
   <string name="no_usage_data">No usage data available</string>
-  <string name="tokens_used">tokens used</string>
+  <string name="tokens_used">tokens used (renews every month)</string>
   <string name="monthly_quota">Monthly quota</string>
 </resources>

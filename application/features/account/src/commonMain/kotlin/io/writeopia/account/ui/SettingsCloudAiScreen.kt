@@ -26,7 +26,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.date.formatCompactNumber
-import io.writeopia.common.utils.date.formatMonthYear
 import io.writeopia.sdk.serialization.response.AiUsageResponse
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
@@ -103,7 +102,6 @@ fun SettingsCloudAiScreen(
 
 @Composable
 private fun UsageContent(usage: AiUsageResponse) {
-    val periodLabel = formatMonthYear(usage.periodStart)
     val usedTokens = usage.totalTokens
     val quotaTokens = usage.quota
     val usageProgress = if (quotaTokens > 0) {
@@ -118,14 +116,6 @@ private fun UsageContent(usage: AiUsageResponse) {
     )
 
     Column {
-        // Period header
-        Text(
-            text = periodLabel,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
 
         // Usage card with progress bar
         Column(

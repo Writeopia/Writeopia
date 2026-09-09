@@ -66,7 +66,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.date.formatCompactNumber
-import io.writeopia.common.utils.date.formatMonthYear
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SettingsPanel
@@ -896,16 +895,6 @@ private fun CloudAiUsageSection(
             }
 
             Column {
-                // Period label
-                val periodLabel = formatMonthYear(usage.periodStart)
-                Text(
-                    periodLabel,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
                 // Token count
                 Text(
                     "${formatCompactNumber(usedTokens)} / ${formatCompactNumber(quotaTokens)}",
