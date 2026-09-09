@@ -1,4 +1,4 @@
-package io.writeopia.genai.model
+package io.writeopia.sdk.serialization.response
 
 import kotlinx.serialization.Serializable
 

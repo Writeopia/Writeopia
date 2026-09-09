@@ -13,7 +13,7 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readUTF8Line
 import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.models.utils.ResultData
-import io.writeopia.genai.model.AiUsageResponse
+import io.writeopia.sdk.serialization.response.AiUsageResponse
 import io.writeopia.genai.model.GenAiRequest
 import io.writeopia.genai.model.GenAiResponse
 import kotlinx.coroutines.currentCoroutineContext

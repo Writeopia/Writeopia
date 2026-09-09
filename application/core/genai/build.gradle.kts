@@ -40,6 +40,7 @@ kotlin {
                 implementation(project(":writeopia_models"))
                 implementation(project(":writeopia"))
                 implementation(project(":plugins:writeopia_network"))
+                implementation(project(":plugins:writeopia_serialization"))
 
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:utils"))

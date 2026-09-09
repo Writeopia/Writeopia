@@ -24,6 +24,7 @@ import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.connection.logger
 import io.writeopia.connection.startOfMonth
 import io.writeopia.connection.toEpochMillisUtc
+import io.writeopia.sdk.serialization.response.AiUsageResponse
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
@@ -32,18 +33,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class AiUsageResponse(
-    val totalInputTokens: Long,
-    val totalOutputTokens: Long,
-    val totalTokens: Long,
-    val requestCount: Long,
-    val periodStart: Long,
-    val periodEnd: Long,
-    val quota: Long
-)
 
 fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend? = null) {
     // In production mode, database is required for premium/quota enforcement

@@ -49,6 +49,7 @@ kotlin {
             dependencies {
                 implementation(project(":writeopia_models"))
                 implementation(project(":writeopia"))
+                implementation(project(":plugins:writeopia_serialization"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:auth_core"))
                 implementation(project(":common:endpoints"))
