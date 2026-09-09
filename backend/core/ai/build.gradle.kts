@@ -1,7 +1,6 @@
 plugins {
     id("java-library")
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
-    alias(libs.plugins.ktor.framework)
     alias(libs.plugins.kotlinSerialization)
 }
 
@@ -23,6 +22,7 @@ dependencies {
     implementation(project(":common:endpoints"))
 
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.datetime)
 
     implementation(libs.ktor.server.auth)
     implementation(libs.ktor.server.auth.jwt)
@@ -36,4 +36,7 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.database.embedded.postgres)
+    testImplementation(libs.database.hikaricp)
+    testImplementation(libs.database.postgresql)
 }

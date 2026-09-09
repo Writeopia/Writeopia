@@ -204,4 +204,17 @@
   <string name="password_strong">Strong password</string>
   <string name="password_req_min_length">At least 8 characters</string>
   <string name="password_req_special_char">One special character (!@#$%^&amp;*)</string>
+  <string name="ai">AI</string>
+  <string name="cloud_ai">Cloud AI</string>
+  <string name="cloud_ai_usage">Cloud AI Usage</string>
+  <string name="current_month_usage">Current Month Usage</string>
+  <string name="total_tokens">Total Tokens</string>
+  <string name="input_tokens">Input Tokens</string>
+  <string name="output_tokens">Output Tokens</string>
+  <string name="requests">Requests</string>
+  <string name="loading_usage">Loading usage data...</string>
+  <string name="error_loading_usage">Error loading usage data</string>
+  <string name="no_usage_data">No usage data available</string>
+  <string name="tokens_used">tokens used (renews every month)</string>
+  <string name="monthly_quota">Monthly quota</string>
 </resources>

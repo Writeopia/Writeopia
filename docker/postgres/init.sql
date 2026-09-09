@@ -44,7 +44,8 @@ CREATE TABLE user_entity (
   salt TEXT NOT NULL,
   enabled BOOLEAN NOT NULL,
   confirmation_code TEXT,
-  confirmation_code_expiry BIGINT
+  confirmation_code_expiry BIGINT,
+  account_type TEXT NOT NULL DEFAULT 'FREE'
 );
 
 CREATE TABLE refresh_token_entity (
@@ -117,6 +118,17 @@ CREATE TABLE workspace_tutorial_status (
   PRIMARY KEY(workspace_id, user_id)
 );
 
+CREATE TABLE ai_usage (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  operation_type TEXT NOT NULL,
+  input_tokens INTEGER NOT NULL,
+  output_tokens INTEGER NOT NULL,
+  total_tokens INTEGER NOT NULL,
+  model TEXT NOT NULL,
+  created_at BIGINT NOT NULL
+);
+
 -- Indexes for common query patterns
 CREATE INDEX idx_document_workspace_id ON document_entity(workspace_id);
 CREATE INDEX idx_document_parent_id ON document_entity(parent_document_id);
@@ -125,3 +137,5 @@ CREATE INDEX idx_folder_parent_id ON folder_entity(parent_id);
 CREATE INDEX idx_story_step_document_id ON story_step_entity(document_id);
 CREATE INDEX idx_workspace_to_user_user_id ON workspace_to_user(user_id);
 CREATE INDEX idx_sync_event_workspace_id ON sync_event(workspace_id);
+CREATE INDEX idx_ai_usage_user_id ON ai_usage(user_id);
+CREATE INDEX idx_ai_usage_created_at ON ai_usage(created_at);

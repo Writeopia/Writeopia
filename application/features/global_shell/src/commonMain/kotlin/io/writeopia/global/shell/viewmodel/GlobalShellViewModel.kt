@@ -1,5 +1,6 @@
 package io.writeopia.global.shell.viewmodel
 
+import io.writeopia.account.ui.CloudAiUsageState
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.controller.LocalAiConfigController
@@ -57,7 +58,11 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     override val downloadModelState: StateFlow<ResultData<DownloadState>>
 
+    val cloudAiUsageState: StateFlow<CloudAiUsageState>
+
     fun init()
+
+    fun loadCloudAiUsage()
 
     fun expandFolder(id: String)
 

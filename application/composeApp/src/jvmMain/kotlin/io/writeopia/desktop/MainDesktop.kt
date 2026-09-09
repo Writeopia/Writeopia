@@ -50,6 +50,7 @@ import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
+import io.writeopia.genai.di.GenAiInjection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -230,6 +231,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 //                        "http://localhost:8080"
                 )
                 setupBearerTokenHandler()
+
+                // Initialize GenAI (Cloud AI) for the desktop app
+                GenAiInjection.initialize(
+                    baseUrl = "https://writeopia.io"
+                )
 
                 val uiConfigurationInjector = UiConfigurationInjector.singleton()
 

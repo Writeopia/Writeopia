@@ -6,6 +6,7 @@ import io.writeopia.api.core.auth.models.WriteopiaBeUser
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertUser
 import io.writeopia.api.core.auth.repository.insertUserInWorkspace
+import io.writeopia.api.core.auth.repository.updatePassword
 import io.writeopia.api.core.auth.repository.insertWorkspace
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
@@ -51,6 +52,6 @@ object AuthService {
         val salt = HashUtils.generateSalt()
         val hash = HashUtils.hashPassword(newPassword, salt).toBase64()
 
-        writeopiaDb.insertUser(user.copy(password = hash, salt = salt.toBase64()))
+        writeopiaDb.updatePassword(user.id, hash, salt.toBase64())
     }
 }

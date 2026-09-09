@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.date.formatCompactNumber
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SettingsPanel
@@ -93,6 +94,7 @@ fun SettingsDialog(
     localAiAvailableModels: Flow<ResultData<List<String>>>,
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
+    cloudAiUsageState: StateFlow<CloudAiUsageState>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
@@ -109,6 +111,7 @@ fun SettingsDialog(
     localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    loadCloudAiUsage: () -> Unit,
     signIn: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
@@ -196,11 +199,13 @@ fun SettingsDialog(
                         localAiAvailableModels,
                         localAiSelectedModel,
                         downloadModelState,
+                        cloudAiUsageState,
                         localAiUrlChange,
                         localAiModelChange,
                         localAiModelsRetry,
                         downloadModel,
-                        deleteModel
+                        deleteModel,
+                        loadCloudAiUsage
                     )
                 },
                 teamsScreen = {
@@ -230,6 +235,7 @@ fun SettingsScreen(
     localAiAvailableModels: Flow<ResultData<List<String>>>,
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
+    cloudAiUsageState: StateFlow<CloudAiUsageState>,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
     selectWorkplacePath: (String) -> Unit,
@@ -238,6 +244,7 @@ fun SettingsScreen(
     localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    loadCloudAiUsage: () -> Unit,
     syncWorkspace: () -> Unit,
     onAutoSyncToggle: (Boolean) -> Unit,
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
@@ -297,14 +304,16 @@ fun SettingsScreen(
     if (showLocalAiConfig) {
         AiSection(
             localAiUrl = localAiUrl,
-            localAiAvailableModels,
-            localAiSelectedModel,
-            downloadModelState,
-            localAiUrlChange,
-            localAiModelChange,
-            localAiModelsRetry,
-            downloadModel,
-            deleteModel
+            localAiAvailableModels = localAiAvailableModels,
+            localAiSelectedModel = localAiSelectedModel,
+            downloadModelState = downloadModelState,
+            cloudAiUsageState = cloudAiUsageState,
+            localAiUrlChange = localAiUrlChange,
+            localAiModelChange = localAiModelChange,
+            localAiModelsRetry = localAiModelsRetry,
+            downloadModel = downloadModel,
+            deleteModel = deleteModel,
+            loadCloudAiUsage = loadCloudAiUsage
         )
     }
 
@@ -766,16 +775,28 @@ private fun AiSection(
     localAiAvailableModels: Flow<ResultData<List<String>>>,
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
+    cloudAiUsageState: StateFlow<CloudAiUsageState>,
     localAiUrlChange: (String) -> Unit,
     localAiModelChange: (String) -> Unit,
     localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
+    loadCloudAiUsage: () -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
         val titleColor = MaterialTheme.colorScheme.onBackground
 
+        // Cloud AI Section
+        Text(WrStrings.cloudAi(), style = titleStyle, color = titleColor)
+
+        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+        CloudAiUsageSection(cloudAiUsageState, loadCloudAiUsage)
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Local AI Section
         Text(WrStrings.localAi(), style = titleStyle, color = titleColor)
 
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
@@ -824,6 +845,106 @@ private fun AiSection(
         )
 
         DownloadModels(downloadModelState, downloadModel)
+    }
+}
+
+@Composable
+private fun CloudAiUsageSection(
+    cloudAiUsageState: StateFlow<CloudAiUsageState>,
+    loadCloudAiUsage: () -> Unit
+) {
+    val usageState by cloudAiUsageState.collectAsState()
+
+    // Load usage when the section is first displayed
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        loadCloudAiUsage()
+    }
+
+    when (val state = usageState) {
+        is CloudAiUsageState.Loading -> {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    WrStrings.loadingUsage(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                )
+            }
+        }
+
+        is CloudAiUsageState.Error -> {
+            Text(
+                state.message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        is CloudAiUsageState.Success -> {
+            val usage = state.usage
+            val usedTokens = usage.totalTokens
+            val quotaTokens = usage.quota
+            val usageProgress = if (quotaTokens > 0) {
+                (usedTokens.toFloat() / quotaTokens.toFloat()).coerceIn(0f, 1f)
+            } else {
+                0f
+            }
+
+            Column {
+                // Token count
+                Text(
+                    "${formatCompactNumber(usedTokens)} / ${formatCompactNumber(quotaTokens)}",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    WrStrings.tokensUsed(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Progress bar
+                LinearProgressIndicator(
+                    progress = { usageProgress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = if (usageProgress > 0.9f) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    "${(usageProgress * 100).toInt()}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                )
+
+                if (usage.requestCount == 0L) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        WrStrings.noUsageData(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                    )
+                }
+            }
+        }
     }
 }
 

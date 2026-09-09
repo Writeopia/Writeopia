@@ -3,6 +3,7 @@ package io.writeopia.genai.di
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.genai.api.GenAiApi
 import io.writeopia.genai.repository.GenAiRepository
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 
 class GenAiInjection private constructor(
     private val appConnectionInjection: AppConnectionInjection,
@@ -12,8 +13,9 @@ class GenAiInjection private constructor(
     private var apiInstance: GenAiApi? = null
     private var repositoryInstance: GenAiRepository? = null
 
-    private fun provideApi(): GenAiApi = apiInstance ?: GenAiApi(
-        client = appConnectionInjection.provideHttpClient(),
+    fun provideGenAiApi(): GenAiApi = apiInstance ?: GenAiApi(
+        // Use WriteopiaConnectionInjector's httpClient which has bearer token authentication
+        client = WriteopiaConnectionInjector.singleton().httpClient(),
         json = appConnectionInjection.provideJson(),
         baseUrl = baseUrl
     ).also {
@@ -21,7 +23,7 @@ class GenAiInjection private constructor(
     }
 
     fun provideRepository(): GenAiRepository = repositoryInstance ?: GenAiRepository(
-        genAiApi = provideApi(),
+        genAiApi = provideGenAiApi(),
         defaultModel = defaultModel
     ).also {
         repositoryInstance = it

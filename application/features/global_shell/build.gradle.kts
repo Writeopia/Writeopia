@@ -69,6 +69,8 @@ kotlin {
                 implementation(project(":application:core:connection"))
 
                 implementation(project(":application:features:note_menu"))
+                implementation(project(":application:features:account"))
+                implementation(project(":application:core:genai"))
 
                 implementation(libs.kotlinx.serialization.json)
                 //

@@ -49,6 +49,7 @@ kotlin {
             dependencies {
                 implementation(project(":writeopia_models"))
                 implementation(project(":writeopia"))
+                implementation(project(":plugins:writeopia_serialization"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:auth_core"))
                 implementation(project(":common:endpoints"))
@@ -57,6 +58,7 @@ kotlin {
                 implementation(project(":application:core:local_ai"))
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:documents"))
+                implementation(project(":application:core:genai"))
 
                 //
 

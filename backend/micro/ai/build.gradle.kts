@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":backend:core:ai"))
     implementation(project(":backend:core:auth"))
     implementation(project(":backend:core:connection"))
+    implementation(project(":backend:core:database"))
 
     // Ktor
     implementation(libs.ktor.server.cors)

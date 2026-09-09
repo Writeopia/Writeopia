@@ -1,0 +1,48 @@
+CREATE TABLE ai_usage (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  operation_type TEXT NOT NULL,
+  input_tokens INTEGER NOT NULL,
+  output_tokens INTEGER NOT NULL,
+  total_tokens INTEGER NOT NULL,
+  model TEXT NOT NULL,
+  created_at BIGINT NOT NULL
+);
+
+CREATE INDEX idx_ai_usage_user_id ON ai_usage(user_id);
+CREATE INDEX idx_ai_usage_created_at ON ai_usage(created_at);
+
+-- Insert usage record
+insert:
+INSERT INTO ai_usage(id, user_id, operation_type, input_tokens, output_tokens, total_tokens, model, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Get usage for a user within date range
+selectByUserIdAndDateRange:
+SELECT * FROM ai_usage
+WHERE user_id = ? AND created_at >= ? AND created_at <= ?
+ORDER BY created_at DESC;
+
+-- Get total usage for a user within date range
+sumByUserIdAndDateRange:
+SELECT
+  COALESCE(SUM(input_tokens), 0) AS total_input_tokens,
+  COALESCE(SUM(output_tokens), 0) AS total_output_tokens,
+  COALESCE(SUM(total_tokens), 0) AS total_tokens,
+  COUNT(*) AS request_count
+FROM ai_usage
+WHERE user_id = ? AND created_at >= ? AND created_at <= ?;
+
+-- Delete old records (for cleanup)
+deleteOldRecords:
+DELETE FROM ai_usage WHERE created_at < ?;
+
+-- Update usage record (for settling reservations)
+updateUsage:
+UPDATE ai_usage
+SET input_tokens = ?, output_tokens = ?, total_tokens = ?
+WHERE id = ?;
+
+-- Delete a specific usage record (for releasing failed reservations)
+deleteById:
+DELETE FROM ai_usage WHERE id = ?;

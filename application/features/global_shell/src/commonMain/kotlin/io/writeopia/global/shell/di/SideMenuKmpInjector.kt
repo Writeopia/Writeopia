@@ -17,6 +17,7 @@ import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.di.LocalAiConfigInjector
 import io.writeopia.di.LocalAiInjection
+import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.global.shell.viewmodel.GlobalShellKmpViewModel
 import io.writeopia.global.shell.viewmodel.GlobalShellViewModel
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
@@ -33,6 +34,7 @@ class SideMenuKmpInjector(
     private val localAiInjection: LocalAiInjection = LocalAiInjection.singleton(),
     private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
+    private val genAiInjection: GenAiInjection? = GenAiInjection.singleton(),
     private val useBackendOnly: Boolean = false,
     private val menuItemsRepository: MenuItemsRepository? = null,
 ) : SideMenuInjector, LocalAiConfigInjector {
@@ -73,6 +75,7 @@ class SideMenuKmpInjector(
                 keyboardEventFlow = keyboardEventFlow,
                 useBackendOnly = useBackendOnly,
                 menuItemsRepository = menuItemsRepository,
+                genAiApi = genAiInjection?.provideGenAiApi(),
             )
         }
 

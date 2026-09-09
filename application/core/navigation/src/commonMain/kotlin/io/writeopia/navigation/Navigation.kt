@@ -10,7 +10,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.account.navigation.accountMenuNavigation
 import io.writeopia.account.navigation.navigateToSettingsAccount
+import io.writeopia.account.navigation.navigateToSettingsAi
 import io.writeopia.account.navigation.navigateToSettingsAppearance
+import io.writeopia.account.navigation.navigateToSettingsCloudAi
 import io.writeopia.account.navigation.navigateToSettingsTeams
 import io.writeopia.account.navigation.navigateToUserAdd
 import io.writeopia.account.navigation.navigateToUserEdit
@@ -137,6 +139,8 @@ fun Navigation(
                 navigateToSettingsTeams = navController::navigateToSettingsTeams,
                 navigateToSettingsAppearance = navController::navigateToSettingsAppearance,
                 navigateToSettingsAccount = navController::navigateToSettingsAccount,
+                navigateToSettingsAi = navController::navigateToSettingsAi,
+                navigateToSettingsCloudAi = navController::navigateToSettingsCloudAi,
                 navigateToWorkspaceUsers = navController::navigateToWorkspaceUsers,
                 navigateToUserSearch = navController::navigateToUserSearch,
                 navigateToUserAdd = navController::navigateToUserAdd,

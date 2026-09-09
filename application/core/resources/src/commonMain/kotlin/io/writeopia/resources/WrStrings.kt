@@ -10,8 +10,21 @@ import writeopia.application.core.resources.generated.resources.action_points
 import writeopia.application.core.resources.generated.resources.actions
 import writeopia.application.core.resources.generated.resources.add
 import writeopia.application.core.resources.generated.resources.add_to_team
+import writeopia.application.core.resources.generated.resources.ai
 import writeopia.application.core.resources.generated.resources.ai_explanation
 import writeopia.application.core.resources.generated.resources.ai_model
+import writeopia.application.core.resources.generated.resources.cloud_ai
+import writeopia.application.core.resources.generated.resources.cloud_ai_usage
+import writeopia.application.core.resources.generated.resources.current_month_usage
+import writeopia.application.core.resources.generated.resources.error_loading_usage
+import writeopia.application.core.resources.generated.resources.input_tokens
+import writeopia.application.core.resources.generated.resources.loading_usage
+import writeopia.application.core.resources.generated.resources.monthly_quota
+import writeopia.application.core.resources.generated.resources.no_usage_data
+import writeopia.application.core.resources.generated.resources.output_tokens
+import writeopia.application.core.resources.generated.resources.requests
+import writeopia.application.core.resources.generated.resources.tokens_used
+import writeopia.application.core.resources.generated.resources.total_tokens
 import writeopia.application.core.resources.generated.resources.are_you_sure
 import writeopia.application.core.resources.generated.resources.arrangement
 import writeopia.application.core.resources.generated.resources.ask_ai
@@ -731,4 +744,43 @@ object WrStrings {
 
     @Composable
     fun passwordReqSpecialChar() = stringResource(Res.string.password_req_special_char)
+
+    @Composable
+    fun ai() = stringResource(Res.string.ai)
+
+    @Composable
+    fun cloudAi() = stringResource(Res.string.cloud_ai)
+
+    @Composable
+    fun cloudAiUsage() = stringResource(Res.string.cloud_ai_usage)
+
+    @Composable
+    fun currentMonthUsage() = stringResource(Res.string.current_month_usage)
+
+    @Composable
+    fun totalTokens() = stringResource(Res.string.total_tokens)
+
+    @Composable
+    fun inputTokens() = stringResource(Res.string.input_tokens)
+
+    @Composable
+    fun outputTokens() = stringResource(Res.string.output_tokens)
+
+    @Composable
+    fun requests() = stringResource(Res.string.requests)
+
+    @Composable
+    fun loadingUsage() = stringResource(Res.string.loading_usage)
+
+    @Composable
+    fun errorLoadingUsage() = stringResource(Res.string.error_loading_usage)
+
+    @Composable
+    fun noUsageData() = stringResource(Res.string.no_usage_data)
+
+    @Composable
+    fun tokensUsed() = stringResource(Res.string.tokens_used)
+
+    @Composable
+    fun monthlyQuota() = stringResource(Res.string.monthly_quota)
 }

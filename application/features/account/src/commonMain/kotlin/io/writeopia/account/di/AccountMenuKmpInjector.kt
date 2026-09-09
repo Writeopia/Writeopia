@@ -4,16 +4,19 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.account.viewmodel.AccountMenuKmpViewModel
 import io.writeopia.account.viewmodel.AccountMenuViewModel
+import io.writeopia.account.viewmodel.CloudAiUsageViewModel
 import io.writeopia.account.viewmodel.UserAddViewModel
 import io.writeopia.account.viewmodel.UserEditViewModel
 import io.writeopia.account.viewmodel.UserSearchViewModel
 import io.writeopia.account.viewmodel.WorkspaceUsersViewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.core.folders.di.WorkspaceInjection
+import io.writeopia.genai.di.GenAiInjection
 
 class AccountMenuKmpInjector private constructor(
     private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
+    private val genAiInjection: GenAiInjection? = GenAiInjection.singleton(),
 ) {
 
     @Composable
@@ -92,6 +95,14 @@ class AccountMenuKmpInjector private constructor(
                 currentRole = currentRole,
                 workspaceApi = workspaceInjection.provideWorkspaceApi(),
                 authRepository = authCoreInjection.provideAuthRepository()
+            )
+        }
+
+    @Composable
+    fun provideCloudAiUsageViewModel(): CloudAiUsageViewModel =
+        viewModel {
+            CloudAiUsageViewModel(
+                genAiApi = genAiInjection?.provideGenAiApi()
             )
         }
 
