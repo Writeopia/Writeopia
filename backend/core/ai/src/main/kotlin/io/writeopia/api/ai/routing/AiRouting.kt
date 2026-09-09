@@ -13,6 +13,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.writeopia.api.ai.config.AiConfig
 import io.writeopia.api.ai.model.AiRequestResult
 import io.writeopia.api.ai.repository.getAiUsageSummary
 import io.writeopia.api.ai.service.AiService
@@ -21,15 +22,15 @@ import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.TokenUsage
 import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.connection.logger
+import io.writeopia.connection.startOfMonth
+import io.writeopia.connection.toEpochMillisUtc
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
 
@@ -43,9 +44,6 @@ data class AiUsageResponse(
     val periodEnd: Long,
     val quota: Long
 )
-
-// Monthly token quota for premium users (100K tokens)
-private const val MONTHLY_TOKEN_QUOTA = 100_000L
 
 fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend? = null) {
     // In production mode, database is required for premium/quota enforcement
@@ -84,17 +82,9 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
 
             // Get usage for current month
             val now = Clock.System.now()
-            val localDateTime = now.toLocalDateTime(TimeZone.UTC)
-            val startOfMonthLocal = LocalDateTime(
-                localDateTime.year,
-                localDateTime.month,
-                1,
-                0,
-                0,
-                0,
-                0
-            )
-            val startOfMonth = startOfMonthLocal.toInstant(TimeZone.UTC).toEpochMilliseconds()
+            val startOfMonth = now.toLocalDateTime(TimeZone.UTC)
+                .startOfMonth()
+                .toEpochMillisUtc()
 
             if (writeopiaDb != null) {
                 logger.info(
@@ -122,7 +112,7 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
                         requestCount = summary.requestCount,
                         periodStart = startOfMonth,
                         periodEnd = now.toEpochMilliseconds(),
-                        quota = MONTHLY_TOKEN_QUOTA
+                        quota = AiConfig.monthlyTokenQuota()
                     )
                 )
             } else {
@@ -136,7 +126,7 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
                         requestCount = 0,
                         periodStart = startOfMonth,
                         periodEnd = now.toEpochMilliseconds(),
-                        quota = MONTHLY_TOKEN_QUOTA
+                        quota = AiConfig.monthlyTokenQuota()
                     )
                 )
             }

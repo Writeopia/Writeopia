@@ -1,5 +1,6 @@
 package io.writeopia.api.ai.service
 
+import io.writeopia.api.ai.config.AiConfig
 import io.writeopia.api.ai.model.AiRequestResult
 import io.writeopia.api.ai.repository.getAiUsageSummary
 import io.writeopia.api.ai.repository.insertAiUsage
@@ -7,21 +8,18 @@ import io.writeopia.api.genai.model.AiGenerateRequest
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.TokenUsage
 import io.writeopia.connection.logger
+import io.writeopia.connection.startOfMonth
+import io.writeopia.connection.toEpochMillisUtc
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
 object AiService {
-    private const val ACCOUNT_TYPE_PREMIUM = "PREMIUM"
-    private const val MONTHLY_TOKEN_QUOTA = 100_000L
     private val json = Json { encodeDefaults = true }
 
     suspend fun processAiRequest(
@@ -93,7 +91,7 @@ object AiService {
             .selectAccountTypeById(userId)
             .executeAsOneOrNull()
 
-        if (accountType != ACCOUNT_TYPE_PREMIUM) {
+        if (accountType != AiConfig.ACCOUNT_TYPE_PREMIUM) {
             logger.info(
                 "AI {} request denied - user {} is not premium (type: {})",
                 endpointName, userId, accountType
@@ -104,9 +102,8 @@ object AiService {
         // Check quota
         val now = Clock.System.now()
         val startOfMonth = now.toLocalDateTime(TimeZone.UTC)
-            .startOfMonthLocal()
-            .toInstant(TimeZone.UTC)
-            .toEpochMilliseconds()
+            .startOfMonth()
+            .toEpochMillisUtc()
 
         val currentUsage = writeopiaDb.getAiUsageSummary(
             userId,
@@ -114,17 +111,18 @@ object AiService {
             now.toEpochMilliseconds()
         )
 
-        if (currentUsage.totalTokens >= MONTHLY_TOKEN_QUOTA) {
+        val monthlyQuota = AiConfig.monthlyTokenQuota()
+        if (currentUsage.totalTokens >= monthlyQuota) {
             logger.info(
                 "AI {} request denied - user {} exceeded quota ({}/{})",
-                endpointName, userId, currentUsage.totalTokens, MONTHLY_TOKEN_QUOTA
+                endpointName, userId, currentUsage.totalTokens, monthlyQuota
             )
             return AiRequestResult.QuotaExceeded("Monthly token quota exceeded")
         }
 
         logger.info(
             "AI {} authorization passed - user: {}, accountType: {}, usage: {}/{}",
-            endpointName, userId, accountType, currentUsage.totalTokens, MONTHLY_TOKEN_QUOTA
+            endpointName, userId, accountType, currentUsage.totalTokens, monthlyQuota
         )
 
         return null
@@ -232,7 +230,4 @@ object AiService {
             }
         }
     }
-
-    private fun LocalDateTime.startOfMonthLocal() =
-        LocalDateTime(year, month, 1, 0, 0, 0, 0)
 }
