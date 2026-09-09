@@ -1,5 +1,9 @@
 package io.writeopia.common.utils.date
 
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+
 /**
  * Formats a number with K/M suffixes for readability.
  * Examples: 1500 -> "1.5K", 2500000 -> "2.5M"
@@ -14,6 +18,16 @@ fun formatCompactNumber(value: Long): String = when {
         "${formatOneDecimal(scaled)}K"
     }
     else -> value.toString()
+}
+
+/**
+ * Formats an epoch milliseconds timestamp as "MM/YYYY" (e.g., "01/2024").
+ */
+fun formatMonthYear(epochMillis: Long): String {
+    val instant = Instant.fromEpochMilliseconds(epochMillis)
+    val dateTime = instant.toLocalDateTime(TimeZone.UTC)
+    val month = dateTime.monthNumber.toString().padStart(2, '0')
+    return "$month/${dateTime.year}"
 }
 
 private fun formatOneDecimal(value: Double): String {

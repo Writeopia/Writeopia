@@ -1,7 +1,7 @@
 package io.writeopia.api.ai.routing
 
 import io.writeopia.api.ai.configureTestPersistence
-import io.writeopia.api.ai.repository.AiUsageSummary
+import io.writeopia.api.ai.model.AiUsageSummary
 import io.writeopia.api.ai.repository.getAiUsageSummary
 import io.writeopia.api.ai.repository.insertAiUsage
 import io.writeopia.sql.WriteopiaDbBackend
