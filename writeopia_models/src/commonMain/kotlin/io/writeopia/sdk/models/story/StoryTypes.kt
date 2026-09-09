@@ -59,6 +59,7 @@ enum class StoryTypes(val type: StoryType) {
     SPREADSHEET(StoryType("spreadsheet", 101)),
     SPREADSHEET_ROW(StoryType("spreadsheet_row", 102)),
     SPREADSHEET_CELL(StoryType("spreadsheet_cell", 103)),
+    PDF(StoryType("pdf", 104)),
     ;
 
     companion object {

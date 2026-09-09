@@ -90,6 +90,7 @@ class WriteopiaStateManager(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val documentRepository: DocumentRepository? = null,
     val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
+    val supportedPdfFiles: Set<String> = setOf("pdf"),
     private val drawStateModify: (List<DrawStory>, Double) -> (List<DrawStory>) = StepsModifier::modify,
     private val permanentTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number),
     private val listTypes: Set<Int> = setOf(
@@ -1238,6 +1239,35 @@ class WriteopiaStateManager(
         }
     }
 
+    fun addPdf(pdfPath: String, position: Double? = null) {
+        if (!isEditable) return
+        (position ?: currentPosition())?.let { pos ->
+            val story = getStory(pos)
+
+            if (story != null) {
+                val (targetPosition, useInsertMode) = getTitleProtectedPosition(
+                    pos,
+                    story,
+                    explicitPosition = position != null
+                )
+
+                if (useInsertMode || position != null) {
+                    addAtPosition(
+                        StoryStep(type = StoryTypes.PDF.type, path = pdfPath),
+                        targetPosition
+                    )
+                } else {
+                    changeStoryStateAndTrackIt(
+                        Action.StoryStateChange(
+                            story.copy(type = StoryTypes.PDF.type, path = pdfPath),
+                            targetPosition
+                        )
+                    )
+                }
+            }
+        }
+    }
+
     /**
      * Adds a story in a position.
      */
@@ -1386,11 +1416,12 @@ class WriteopiaStateManager(
     }
 
     fun receiveExternalFiles(files: List<ExternalFile>, position: Double) {
-        files
-            .filter { file -> supportedImageFiles.contains(file.extension) }
-            .forEach { (filePath, _) ->
-                addImage(filePath, position)
+        files.forEach { (filePath, extension) ->
+            when {
+                supportedImageFiles.contains(extension) -> addImage(filePath, position)
+                supportedPdfFiles.contains(extension) -> addPdf(filePath, position)
             }
+        }
     }
 
     fun getDocumentText() = currentStory.value
@@ -1978,6 +2009,7 @@ class WriteopiaStateManager(
             keyboardEventFlow.filterNotNull(),
             documentRepository,
             setOf("jpg", "jpeg", "png"),
+            setOf("pdf"),
             StepsModifier::modify,
             imageUploader = imageUploader,
             textSelectionActiveState = textSelectionActiveState

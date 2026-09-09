@@ -898,12 +898,22 @@ class NoteEditorKmpViewModel(
                 .loadWorkspacePath(authRepository.getUser().id)
                 ?.let { workspace ->
                     files.map { file ->
-                        if (writeopiaManager.supportedImageFiles.contains(file.extension)) {
-                            val newPath = SaveImage.saveLocally(file.fullPath, "$workspace/images")
+                        when {
+                            writeopiaManager.supportedImageFiles.contains(file.extension) -> {
+                                val newPath =
+                                    SaveImage.saveLocally(file.fullPath, "$workspace/images")
 
-                            file.copy(fullPath = newPath)
-                        } else {
-                            file
+                                file.copy(fullPath = newPath)
+                            }
+
+                            writeopiaManager.supportedPdfFiles.contains(file.extension) -> {
+                                val newPath =
+                                    SaveImage.saveLocally(file.fullPath, "$workspace/files")
+
+                                file.copy(fullPath = newPath)
+                            }
+
+                            else -> file
                         }
                     }
                 } ?: files
