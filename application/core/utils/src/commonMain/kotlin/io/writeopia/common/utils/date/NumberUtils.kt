@@ -1,8 +1,8 @@
 package io.writeopia.common.utils.date
 
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 
 /**
  * Formats a number with K/M suffixes for readability.
@@ -26,7 +26,7 @@ fun formatCompactNumber(value: Long): String = when {
 fun formatMonthYear(epochMillis: Long): String {
     val instant = Instant.fromEpochMilliseconds(epochMillis)
     val dateTime = instant.toLocalDateTime(TimeZone.UTC)
-    val month = dateTime.monthNumber.toString().padStart(2, '0')
+    val month = dateTime.month.ordinal + 1
     return "$month/${dateTime.year}"
 }
 

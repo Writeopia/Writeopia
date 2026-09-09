@@ -13,11 +13,11 @@ import io.writeopia.connection.toEpochMillisUtc
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import java.util.UUID
+import kotlin.time.Clock
 
 object AiService {
     private val json = Json { encodeDefaults = true }

@@ -2,7 +2,7 @@ package io.writeopia.api.ai.repository
 
 import io.writeopia.api.ai.model.AiUsageSummary
 import io.writeopia.sql.WriteopiaDbBackend
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 fun WriteopiaDbBackend.insertAiUsage(
     id: String,
