@@ -2,6 +2,8 @@ package io.writeopia.auth.di
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.writeopia.analytics.AnalyticsManager
+import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.AuthRepository
@@ -32,6 +34,8 @@ class AuthInjection private constructor(
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val connectionInjector: WriteopiaConnectionInjector =
         WriteopiaConnectionInjector.singleton(),
+    private val analyticsManager: AnalyticsManager =
+        AnalyticsInjection.singleton().provideAnalyticsManager(),
 ) {
 
     fun provideWorkspaceApi() =
@@ -44,7 +48,7 @@ class AuthInjection private constructor(
     internal fun provideRegisterViewModel(
         authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
         authApi: AuthApi = authCoreInjection.provideAuthApi()
-    ): RegisterViewModel = viewModel { RegisterViewModel(authRepository, authApi) }
+    ): RegisterViewModel = viewModel { RegisterViewModel(authRepository, authApi, analyticsManager) }
 
     @Composable
     internal fun provideEmailConfirmationViewModel(
@@ -74,6 +78,7 @@ class AuthInjection private constructor(
             configRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
             notesUseCase = provideNotesUseCase(),
             localAiRepository = localAiInjection.provideRepository(),
+            analyticsManager = analyticsManager,
         )
     }
 

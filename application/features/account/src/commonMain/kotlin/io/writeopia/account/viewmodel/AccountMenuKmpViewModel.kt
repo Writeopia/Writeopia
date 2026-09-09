@@ -2,6 +2,8 @@ package io.writeopia.account.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.writeopia.analytics.AnalyticsManager
+import io.writeopia.analytics.WriteopiaEvents
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.sdk.models.utils.toBoolean
@@ -22,6 +24,7 @@ import kotlinx.coroutines.withContext
 internal class AccountMenuKmpViewModel(
     private val authRepository: AuthRepository,
     private val workspaceHandler: WorkspaceHandler,
+    private val analyticsManager: AnalyticsManager,
 ) : AccountMenuViewModel, ViewModel() {
 
     override val lastWorkspaceSync: StateFlow<ResultData<String>> = workspaceHandler.lastWorkspaceSync
@@ -59,6 +62,8 @@ internal class AccountMenuKmpViewModel(
                 val result = authRepository.logout()
 
                 if (result.toBoolean()) {
+                    analyticsManager.track(WriteopiaEvents.USER_LOGGED_OUT)
+
                     withContext(Dispatchers.Main) {
                         onLogOutSuccess()
                     }

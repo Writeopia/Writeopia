@@ -6,6 +6,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
+import io.writeopia.analytics.AnalyticsManager
+import io.writeopia.analytics.WriteopiaEvents
+import io.writeopia.analytics.WriteopiaProperties
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.WorkspaceHandler
@@ -74,6 +77,7 @@ class GlobalShellKmpViewModel(
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
     private val useBackendOnly: Boolean = false,
     private val menuItemsRepository: MenuItemsRepository? = null,
+    private val analyticsManager: AnalyticsManager,
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     private var sideMenuWidthState = MutableStateFlow<Float?>(null)
@@ -371,15 +375,28 @@ class GlobalShellKmpViewModel(
                 )
 
                 expandedFolders.value = expanded + id
+
+                analyticsManager.track(
+                    WriteopiaEvents.FOLDER_EXPANDED,
+                    mapOf(WriteopiaProperties.FOLDER_ID to id)
+                )
             }
         }
     }
 
     override fun toggleSideMenu() {
         val width = showSideMenuState.value
+        val isExpanding = width.dp < 5.dp
 
-        sideMenuWidthState.value = if (width.dp < 5.dp) sideMenuDefaultWidth() else 0F
+        sideMenuWidthState.value = if (isExpanding) sideMenuDefaultWidth() else 0F
         saveMenuWidth()
+
+        viewModelScope.launch {
+            analyticsManager.track(
+                WriteopiaEvents.SIDEBAR_TOGGLED,
+                mapOf(WriteopiaProperties.EXPANDED to isExpanding)
+            )
+        }
     }
 
     override fun saveMenuWidth() {
@@ -411,6 +428,9 @@ class GlobalShellKmpViewModel(
 
     override fun showSearch() {
         _showSearchDialog.value = true
+        viewModelScope.launch {
+            analyticsManager.track(WriteopiaEvents.SEARCH_OPENED)
+        }
     }
 
     override fun hideSearch() {
@@ -541,6 +561,8 @@ class GlobalShellKmpViewModel(
                 // Clear singletons that cache API instances with old HttpClient
                 WriteopiaConnectionInjector.clearInstance()
                 FolderStateController.clearInstance()
+
+                analyticsManager.track(WriteopiaEvents.USER_LOGGED_OUT)
 
                 loginStateTrigger.value = GenerateId.generate()
                 onSuccessSideEffect()

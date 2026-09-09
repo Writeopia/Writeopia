@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
 import io.writeopia.api.LocalAiApi
 import io.writeopia.auth.core.data.AuthApi
+import io.writeopia.analytics.AnalyticsManager
+import io.writeopia.analytics.WriteopiaEvents
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.LoginStatus
 import io.writeopia.common.utils.env.EnvUtils
@@ -40,6 +42,7 @@ class AuthMenuViewModel(
     private val configRepository: ConfigurationRepository,
     private val notesUseCase: NotesUseCase,
     private val localAiRepository: LocalAiRepository,
+    private val analyticsManager: AnalyticsManager,
     private val json: Json = writeopiaJson,
 ) : ViewModel() {
 
@@ -179,6 +182,7 @@ class AuthMenuViewModel(
                                 user = user.copy(tier = Tier.PREMIUM),
                                 selected = true
                             )
+                            analyticsManager.track(WriteopiaEvents.USER_LOGGED_IN)
                             val accessToken = result.data.accessToken
                             val refreshToken = result.data.refreshToken
                             if (accessToken != null) {

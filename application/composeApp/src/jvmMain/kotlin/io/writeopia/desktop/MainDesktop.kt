@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
+import io.writeopia.analytics.WriteopiaEvents
 import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.auth.navigation.authNavigation
@@ -72,7 +73,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        AnalyticsInjection.singleton().provideAnalyticsManager().track("app_opened")
+        AnalyticsInjection.singleton().provideAnalyticsManager().track(WriteopiaEvents.APP_OPENED)
     }
 
     val homeDirectory: String = System.getProperty("user.home")

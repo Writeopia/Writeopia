@@ -5,6 +5,10 @@ package io.writeopia.notemenu.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
+import io.writeopia.analytics.AnalyticsManager
+import io.writeopia.analytics.WriteopiaEvents
+import io.writeopia.analytics.WriteopiaProperties
+import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
@@ -85,6 +89,8 @@ internal class ChooseNoteKmpViewModel(
     private val documentToJson: DocumentToJson = DocumentToJson(),
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
     private val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
+    private val analyticsManager: AnalyticsManager =
+        AnalyticsInjection.singleton().provideAnalyticsManager(),
 ) : ChooseNoteViewModel, ViewModel(), FolderController by folderController {
 
     private val _showOnboardingState =
@@ -364,6 +370,13 @@ internal class ChooseNoteKmpViewModel(
             notesUseCase.deleteNotes(selected, workspaceId)
             clearSelection()
             askToDelete.value = false
+
+            documentIds.forEach { documentId ->
+                analyticsManager.track(
+                    WriteopiaEvents.NOTE_DELETED,
+                    mapOf(WriteopiaProperties.DOCUMENT_ID to documentId)
+                )
+            }
 
             // Try to sync deletion to backend (folders and documents separately)
             val syncSuccess = syncDeletionToBackend(documentIds, folderIds)

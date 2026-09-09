@@ -12,6 +12,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeViewport
 import androidx.navigation.compose.rememberNavController
+import io.writeopia.analytics.WriteopiaEvents
 import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.common.utils.Destinations
@@ -42,7 +43,7 @@ fun CreateAppInMemory() {
     val selectionState = MutableStateFlow(false)
 
     LaunchedEffect(Unit) {
-        AnalyticsInjection.singleton().provideAnalyticsManager().track("app_opened")
+        AnalyticsInjection.singleton().provideAnalyticsManager().track(WriteopiaEvents.APP_OPENED)
     }
 
 //    WriteopiaDbInjector.initialize(null)

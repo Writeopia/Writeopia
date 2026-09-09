@@ -69,6 +69,7 @@ kotlin {
                 implementation(project(":application:core:genai"))
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:connection"))
+                implementation(project(":application:core:analytics"))
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:features:drawing"))
 

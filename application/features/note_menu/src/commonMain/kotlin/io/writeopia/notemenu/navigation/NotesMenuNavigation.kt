@@ -12,6 +12,10 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import io.writeopia.analytics.WriteopiaEvents
+import io.writeopia.analytics.WriteopiaProperties
+import io.writeopia.analytics.di.AnalyticsInjection
+import io.writeopia.analytics.trackAsync
 import io.writeopia.common.utils.Destinations
 import io.writeopia.di.LocalAiConfigInjector
 import io.writeopia.model.ColorThemeOption
@@ -139,4 +143,9 @@ fun NavController.navigateToNotes(navigation: NotesNavigation) {
             "${Destinations.CHOOSE_NOTE.id}/${navigation.navigationType.type}/path",
         )
     }
+
+    AnalyticsInjection.singleton().provideAnalyticsManager().trackAsync(
+        WriteopiaEvents.FOLDER_OPENED,
+        mapOf(WriteopiaProperties.FOLDER_ID to (navigation as? NotesNavigation.Folder)?.id)
+    )
 }

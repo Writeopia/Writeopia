@@ -2,6 +2,8 @@ package io.writeopia.account.di
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.writeopia.analytics.AnalyticsManager
+import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.account.viewmodel.AccountMenuKmpViewModel
 import io.writeopia.account.viewmodel.AccountMenuViewModel
 import io.writeopia.account.viewmodel.UserAddViewModel
@@ -14,6 +16,8 @@ import io.writeopia.core.folders.di.WorkspaceInjection
 class AccountMenuKmpInjector private constructor(
     private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
+    private val analyticsManager: AnalyticsManager =
+        AnalyticsInjection.singleton().provideAnalyticsManager(),
 ) {
 
     @Composable
@@ -21,7 +25,8 @@ class AccountMenuKmpInjector private constructor(
         viewModel {
             AccountMenuKmpViewModel(
                 authRepository = authCoreInjection.provideAuthRepository(),
-                workspaceHandler = workspaceInjection.provideWorkspaceHandler()
+                workspaceHandler = workspaceInjection.provideWorkspaceHandler(),
+                analyticsManager = analyticsManager,
             )
         }
 

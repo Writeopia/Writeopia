@@ -6,6 +6,10 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
+import io.writeopia.analytics.AnalyticsManager
+import io.writeopia.analytics.WriteopiaEvents
+import io.writeopia.analytics.WriteopiaProperties
+import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
@@ -104,7 +108,9 @@ class NoteEditorKmpViewModel(
     private val documentLoadUseCase: DocumentLoadUseCase? = null,
     private val storyStepSyncApi: (suspend (StoryStepSyncRequest) -> StoryStepSyncResponse)? = null,
     private val documentsApi: DocumentsApi? = null,
-    private val aiTaskManager: AiTaskManager = AiTaskManager.singleton()
+    private val aiTaskManager: AiTaskManager = AiTaskManager.singleton(),
+    private val analyticsManager: AnalyticsManager =
+        AnalyticsInjection.singleton().provideAnalyticsManager(),
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -493,6 +499,13 @@ class NoteEditorKmpViewModel(
 
         writeopiaManager.newDocument(documentId, title, parentFolder = parentFolderId)
 
+        viewModelScope.launch {
+            analyticsManager.track(
+                WriteopiaEvents.NOTE_CREATED,
+                mapOf(WriteopiaProperties.DOCUMENT_ID to documentId)
+            )
+        }
+
         // Use global sync manager for syncing - continues even after ViewModel is cleared
         documentSyncManager.registerForSync(
             documentId = documentId,
@@ -622,21 +635,34 @@ class NoteEditorKmpViewModel(
     override fun onAddCheckListClick() {
         if (!isEditable.value) return
         writeopiaManager.onCheckItemClicked()
+        trackTextFormatted("check_list")
     }
 
     override fun onAddListItemClick() {
         if (!isEditable.value) return
         writeopiaManager.addListItem()
+        trackTextFormatted("list")
     }
 
     override fun onAddCodeBlockClick() {
         if (!isEditable.value) return
         writeopiaManager.onCodeBlockClicked()
+        trackTextFormatted("code_block")
     }
 
     override fun toggleHighLightBlock() {
         if (!isEditable.value) return
         writeopiaManager.toggleHighLightBlock()
+        trackTextFormatted("highlight_block")
+    }
+
+    private fun trackTextFormatted(formatType: String) {
+        viewModelScope.launch {
+            analyticsManager.track(
+                WriteopiaEvents.TEXT_FORMATTED,
+                mapOf(WriteopiaProperties.FORMAT_TYPE to formatType)
+            )
+        }
     }
 
     override fun toggleCardBlock() {
@@ -691,6 +717,10 @@ class NoteEditorKmpViewModel(
     override fun onAddSpanClick(span: Span) {
         viewModelScope.launch(Dispatchers.Default) {
             writeopiaManager.toggleSpan(span)
+            analyticsManager.track(
+                WriteopiaEvents.TEXT_FORMATTED,
+                mapOf(WriteopiaProperties.FORMAT_TYPE to span.name)
+            )
         }
     }
 
@@ -889,6 +919,10 @@ class NoteEditorKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             val document = writeopiaManager.getDocument()
             documentRepository.deleteDocument(document, document.workspaceId)
+            analyticsManager.track(
+                WriteopiaEvents.NOTE_DELETED,
+                mapOf(WriteopiaProperties.DOCUMENT_ID to document.id)
+            )
         }
     }
 

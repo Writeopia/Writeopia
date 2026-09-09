@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import io.writeopia.analytics.WriteopiaEvents
 import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.core.folders.di.WorkspaceInjection
@@ -36,7 +37,7 @@ fun MainViewController() = ComposeUIViewController {
     val coroutine = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        AnalyticsInjection.singleton().provideAnalyticsManager().track("app_opened")
+        AnalyticsInjection.singleton().provideAnalyticsManager().track(WriteopiaEvents.APP_OPENED)
     }
 
     val databaseStateFlow = DatabaseFactory.createDatabaseAsState(

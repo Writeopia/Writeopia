@@ -59,6 +59,7 @@ kotlin {
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:navigation"))
                 implementation(project(":application:core:connection"))
+                implementation(project(":application:core:analytics"))
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:core:auth_core"))
                 implementation(project(":application:core:persistence_bridge"))

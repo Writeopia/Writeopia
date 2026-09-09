@@ -72,6 +72,7 @@ kotlin {
                 implementation(project(":application:core:local_ai"))
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:core:connection"))
+                implementation(project(":application:core:analytics"))
                 implementation(project(":application:core:forcegraph"))
 
                 implementation(project(":application:features:account"))

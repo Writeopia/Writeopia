@@ -2,6 +2,8 @@ package io.writeopia.global.shell.di
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.writeopia.analytics.AnalyticsManager
+import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.controller.LocalAiConfigController
 import io.writeopia.core.configuration.di.AppConfigurationInjector
@@ -35,6 +37,8 @@ class SideMenuKmpInjector(
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val useBackendOnly: Boolean = false,
     private val menuItemsRepository: MenuItemsRepository? = null,
+    private val analyticsManager: AnalyticsManager =
+        AnalyticsInjection.singleton().provideAnalyticsManager(),
 ) : SideMenuInjector, LocalAiConfigInjector {
     // Always get fresh connection to handle logout/login scenarios
     private fun connectionInjector() = WriteopiaConnectionInjector.singleton()
@@ -73,6 +77,7 @@ class SideMenuKmpInjector(
                 keyboardEventFlow = keyboardEventFlow,
                 useBackendOnly = useBackendOnly,
                 menuItemsRepository = menuItemsRepository,
+                analyticsManager = analyticsManager,
             )
         }
 

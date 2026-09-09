@@ -1,5 +1,7 @@
 package io.writeopia.features.search.di
 
+import io.writeopia.analytics.AnalyticsManager
+import io.writeopia.analytics.di.AnalyticsInjection
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.features.search.api.SearchApi
@@ -16,6 +18,8 @@ import io.writeopia.sqldelight.di.WriteopiaDbInjector
 class KmpSearchInjection private constructor(
     private val writeopiaDb: WriteopiaDb? = null,
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
+    private val analyticsManager: AnalyticsManager =
+        AnalyticsInjection.singleton().provideAnalyticsManager(),
 ) : SearchInjection {
     // Always get fresh connection to handle logout/login scenarios
     private fun connectionInjector() = WriteopiaConnectionInjector.singleton()
@@ -44,7 +48,7 @@ class KmpSearchInjection private constructor(
     )
 
     override fun provideViewModel(): SearchKmpViewModel =
-        SearchKmpViewModel(searchRepository = provideRepository())
+        SearchKmpViewModel(searchRepository = provideRepository(), analyticsManager = analyticsManager)
 
     companion object {
         private var instance: KmpSearchInjection? = null

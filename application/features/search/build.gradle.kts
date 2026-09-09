@@ -62,6 +62,7 @@ kotlin {
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:connection"))
+                implementation(project(":application:core:analytics"))
                 implementation(project(":application:features:note_menu"))
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_persistence_sqldelight"))

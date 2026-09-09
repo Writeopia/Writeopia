@@ -63,6 +63,7 @@ kotlin {
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:local_ai"))
+                implementation(project(":application:core:analytics"))
             }
         }
     }
