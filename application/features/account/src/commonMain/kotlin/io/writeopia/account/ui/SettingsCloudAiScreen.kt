@@ -116,7 +116,6 @@ private fun UsageContent(usage: AiUsageResponse) {
     )
 
     Column {
-
         // Usage card with progress bar
         Column(
             modifier = Modifier
