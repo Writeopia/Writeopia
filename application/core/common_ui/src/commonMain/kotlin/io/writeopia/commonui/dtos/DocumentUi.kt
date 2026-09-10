@@ -39,6 +39,29 @@ sealed interface MenuItemUi : Node, Traversable {
         override fun getNodes(): List<Node> = emptyList()
     }
 
+    data class PdfUi(
+        override val documentId: String,
+        override val title: String,
+        override val selected: Boolean,
+        override val isFavorite: Boolean,
+        override val parentId: String,
+        override var depth: Int = 0,
+        override val highlighted: Boolean,
+        override val icon: MenuItem.Icon? = null,
+        val isSynced: Boolean
+    ) : MenuItemUi {
+
+        override val id: String = documentId
+
+        override fun addNotes(nodes: List<Node>) {
+            throw IllegalStateException(
+                "A PdfUi should not contain other documents. Use FolderUI"
+            )
+        }
+
+        override fun getNodes(): List<Node> = emptyList()
+    }
+
     data class FolderUi(
         override val documentId: String,
         override val title: String,

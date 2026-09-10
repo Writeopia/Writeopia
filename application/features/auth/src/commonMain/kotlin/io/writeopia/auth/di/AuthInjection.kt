@@ -22,6 +22,7 @@ import io.writeopia.di.LocalAiInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.repository.PdfDocumentRepository
 
 class AuthInjection private constructor(
     private val appConfigurationInjector: AppConfigurationInjector =
@@ -90,18 +91,23 @@ class AuthInjection private constructor(
 
     private fun provideNotesUseCase(
         documentRepository: DocumentRepository = provideDocumentRepository(),
+        pdfDocumentRepository: PdfDocumentRepository? = providePdfDocumentRepository(),
         configurationRepository: ConfigurationRepository =
             appConfigurationInjector.provideNotesConfigurationRepository(),
         folderRepository: FolderRepository = FoldersInjector.singleton().provideFoldersRepository(),
     ): NotesUseCase =
         NotesUseCase.singleton(
             documentRepository,
+            pdfDocumentRepository,
             configurationRepository,
             folderRepository,
         )
 
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
+
+    private fun providePdfDocumentRepository(): PdfDocumentRepository? =
+        repositoryInjection.providePdfDocumentRepository()
 
     companion object {
         private var instance: AuthInjection? = null

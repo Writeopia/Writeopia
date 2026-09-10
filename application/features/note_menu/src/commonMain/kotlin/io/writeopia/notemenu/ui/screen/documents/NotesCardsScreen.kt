@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -326,6 +327,19 @@ private fun LazyStaggeredGridNotes(
                         )
                     }
 
+                    is MenuItemUi.PdfUi -> {
+                        PdfItem(
+                            menuItem,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            onDocumentClick,
+                            selectionListener,
+                            position = i,
+                            { onDragIconClick(menuItem.documentId) },
+                            modifier = itemModifier,
+                        )
+                    }
+
                     is MenuItemUi.FolderUi -> {
                         FolderItem(
                             menuItem,
@@ -407,6 +421,19 @@ private fun LazyGridNotes(
                         )
                     }
 
+                    is MenuItemUi.PdfUi -> {
+                        PdfItem(
+                            menuItem,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            onDocumentClick,
+                            selectionListener,
+                            position = i,
+                            { onDragIconClick(menuItem.documentId) },
+                            modifier = Modifier.animateItem()
+                        )
+                    }
+
                     is MenuItemUi.FolderUi -> {
                         FolderItem(
                             menuItem,
@@ -476,6 +503,19 @@ private fun LazyColumnNotes(
                             onDocumentClick,
                             selectionListener,
                             previewDrawers(isDarkTheme),
+                            position = i,
+                            onDragIconClick = { onDragIconClick(menuItem.documentId) },
+                            modifier = Modifier.animateItem()
+                        )
+                    }
+
+                    is MenuItemUi.PdfUi -> {
+                        PdfItem(
+                            menuItem,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            onDocumentClick,
+                            selectionListener,
                             position = i,
                             onDragIconClick = { onDragIconClick(menuItem.documentId) },
                             modifier = Modifier.animateItem()
@@ -660,6 +700,119 @@ private fun FolderItem(
         }
     }
 //    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+private fun PdfItem(
+    pdfUi: MenuItemUi.PdfUi,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    documentClick: (String, String) -> Unit,
+    selectionListener: (String, Boolean) -> Unit,
+    position: Int,
+    onDragIconClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val titleFallback = "untitled"
+
+    val backgroundColor = if (pdfUi.selected) {
+        WriteopiaTheme.colorScheme.selectedBg
+    } else {
+        Color.Transparent
+    }
+
+    sharedTransitionScope.run {
+        SelectableByDrag(
+            shadowModifier().sharedBounds(
+                rememberSharedContentState(key = "pdfInit${pdfUi.documentId}"),
+                animatedVisibilityScope = animatedVisibilityScope,
+                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
+            )
+        ) { isInsideDrag ->
+            if (isInsideDrag != null) {
+                LaunchedEffect(isInsideDrag) {
+                    selectionListener(pdfUi.documentId, isInsideDrag)
+                }
+            }
+
+            SwipeBox(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.large)
+                    .clickable {
+                        documentClick(
+                            pdfUi.documentId,
+                            pdfUi.title.takeIf { it.isNotEmpty() } ?: titleFallback
+                        )
+                    },
+                isOnEditState = pdfUi.selected,
+                swipeListener = { state ->
+                    selectionListener(pdfUi.documentId, state)
+                },
+                cornersShape = MaterialTheme.shapes.large,
+                defaultColor = Color.Transparent,
+                activeColor = backgroundColor
+            ) {
+                DragCardTarget(
+                    position = position.toDouble(),
+                    dataToDrop = DropInfo(pdfUi, position.toDouble()),
+                    iconTintOnHover = MaterialTheme.colorScheme.onBackground,
+                    onIconClick = onDragIconClick
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // PDF preview box with fixed height
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(140.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(WriteopiaTheme.colorScheme.cardPlaceHolderBackground),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "PDF",
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = WriteopiaTheme.colorScheme.textLight.copy(alpha = 0.5f)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Title below
+                        Text(
+                            text = pdfUi.title,
+                            modifier = Modifier.fillMaxWidth(),
+                            color = WriteopiaTheme.colorScheme.textLight,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
+                            maxLines = 2
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    Row(modifier = Modifier.align(Alignment.TopEnd).height(40.dp).padding(12.dp)) {
+                        if (pdfUi.isFavorite) {
+                            Icon(
+                                imageVector = WrIcons.favorites,
+                                contentDescription = "Favorite",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)

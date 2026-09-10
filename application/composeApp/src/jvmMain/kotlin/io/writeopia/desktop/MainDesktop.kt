@@ -59,7 +59,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 private const val APP_DIRECTORY = ".writeopia"
-private const val DB_VERSION = 1
+private const val DB_VERSION = 2  // Incremented for PDF document support
 
 fun main() = application {
     App()

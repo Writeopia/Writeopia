@@ -24,6 +24,7 @@ import io.writeopia.global.shell.viewmodel.GlobalShellViewModel
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.repository.PdfDocumentRepository
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.flow.Flow
 
@@ -45,14 +46,19 @@ class SideMenuKmpInjector(
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
 
+    private fun providePdfDocumentRepository(): PdfDocumentRepository? =
+        repositoryInjection.providePdfDocumentRepository()
+
     private fun provideNotesUseCase(
         documentRepository: DocumentRepository = provideDocumentRepository(),
+        pdfDocumentRepository: PdfDocumentRepository? = providePdfDocumentRepository(),
         configurationRepository: ConfigurationRepository =
             appConfigurationInjector.provideNotesConfigurationRepository(),
         folderRepository: FolderRepository = FoldersInjector.singleton().provideFoldersRepository(),
     ): NotesUseCase =
         NotesUseCase.singleton(
             documentRepository,
+            pdfDocumentRepository,
             configurationRepository,
             folderRepository,
         )

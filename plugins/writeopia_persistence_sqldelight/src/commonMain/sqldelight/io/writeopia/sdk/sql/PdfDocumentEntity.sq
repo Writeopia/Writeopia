@@ -1,0 +1,69 @@
+CREATE TABLE pdfDocumentEntity (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  last_updated_at INTEGER NOT NULL,
+  last_synced_at INTEGER,
+  workspace_id TEXT NOT NULL,
+  favorite INTEGER NOT NULL,
+  parent_document_id TEXT NOT NULL,
+  icon TEXT,
+  deleted INTEGER NOT NULL
+);
+
+selectById:
+SELECT *
+FROM pdfDocumentEntity
+WHERE id = ?
+LIMIT 1;
+
+selectByIds:
+SELECT *
+FROM pdfDocumentEntity
+WHERE id IN ? AND workspace_id = ? AND deleted = 0;
+
+selectByParentId:
+SELECT *
+FROM pdfDocumentEntity
+WHERE parent_document_id = ? AND workspace_id = ? AND deleted = 0
+ORDER BY last_updated_at DESC;
+
+insert:
+INSERT INTO pdfDocumentEntity(id, title, file_path, created_at, last_updated_at, last_synced_at, workspace_id, favorite, parent_document_id, icon, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET id=excluded.id, title=excluded.title, file_path=excluded.file_path, created_at=excluded.created_at,
+last_updated_at=excluded.last_updated_at, last_synced_at=excluded.last_synced_at, workspace_id=excluded.workspace_id,
+favorite=excluded.favorite, parent_document_id=excluded.parent_document_id, icon=excluded.icon, deleted=excluded.deleted;
+
+delete:
+UPDATE pdfDocumentEntity
+SET
+    deleted = 1,
+    last_updated_at = ?
+WHERE id = ? AND workspace_id = ?;
+
+deleteByIds:
+UPDATE pdfDocumentEntity
+SET
+    deleted = 1,
+    last_updated_at = ?
+WHERE id IN ? AND workspace_id = ?;
+
+favoriteById:
+UPDATE pdfDocumentEntity SET favorite = 1 WHERE id = ?;
+
+unFavoriteById:
+UPDATE pdfDocumentEntity SET favorite = 0 WHERE id = ?;
+
+moveToFolder:
+UPDATE pdfDocumentEntity SET parent_document_id = ?, last_updated_at = ? WHERE id = ?;
+
+hardDeleteByIds:
+DELETE FROM pdfDocumentEntity WHERE id IN ? AND workspace_id = ?;
+
+selectSoftDeletedByWorkspace:
+SELECT *
+FROM pdfDocumentEntity
+WHERE workspace_id = ? AND deleted = 1;

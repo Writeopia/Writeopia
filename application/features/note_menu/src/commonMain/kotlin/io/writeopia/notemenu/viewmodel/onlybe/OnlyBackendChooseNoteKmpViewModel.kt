@@ -559,6 +559,9 @@ internal class OnlyBackendChooseNoteKmpViewModel(
                 is MenuItemUi.DocumentUi -> {
                     // Would need a move document API endpoint
                 }
+                is MenuItemUi.PdfUi -> {
+                    // TODO: Would need a move PDF document API endpoint
+                }
             }
 
             loadFolderContents()

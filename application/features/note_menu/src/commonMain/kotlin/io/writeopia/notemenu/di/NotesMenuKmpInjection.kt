@@ -23,6 +23,7 @@ import io.writeopia.notemenu.viewmodel.FolderStateController
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.repository.PdfDocumentRepository
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,16 +45,21 @@ class NotesMenuKmpInjection private constructor(
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
 
+    private fun providePdfDocumentRepository(): PdfDocumentRepository? =
+        repositoryInjection.providePdfDocumentRepository()
+
     private fun provideFolderRepository() = FoldersInjector.singleton().provideFoldersRepository()
 
     fun provideNotesUseCase(
         documentRepository: DocumentRepository = provideDocumentRepository(),
+        pdfDocumentRepository: PdfDocumentRepository? = providePdfDocumentRepository(),
         configurationRepository: ConfigurationRepository =
             appConfigurationInjector.provideNotesConfigurationRepository(),
         folderRepository: FolderRepository = provideFolderRepository()
     ): NotesUseCase =
         NotesUseCase.singleton(
             documentRepository,
+            pdfDocumentRepository,
             configurationRepository,
             folderRepository,
         )

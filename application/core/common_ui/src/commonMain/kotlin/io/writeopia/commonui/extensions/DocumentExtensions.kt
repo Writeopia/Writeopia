@@ -6,6 +6,7 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.document.PdfDocument
 import io.writeopia.sdk.preview.PreviewParser
 import kotlin.time.ExperimentalTime
 
@@ -36,6 +37,20 @@ fun MenuItem.toUiCard(
     when (this) {
         is Folder -> this.toFolderUi(selected, expanded, highlighted)
 
+        is PdfDocument -> {
+            println("[DOCUMENT EXTENSIONS] Converting PdfDocument to UI: $title")
+            MenuItemUi.PdfUi(
+                documentId = id,
+                title = title,
+                selected = selected,
+                parentId = parentId,
+                isFavorite = favorite,
+                highlighted = highlighted,
+                icon = icon,
+                isSynced = lastSyncedAt?.let { synced -> lastUpdatedAt <= synced } ?: false
+            )
+        }
+
         is Document -> MenuItemUi.DocumentUi(
             documentId = id,
             title = title,
@@ -49,5 +64,5 @@ fun MenuItem.toUiCard(
             isSynced = lastSyncedAt?.let { synced -> lastUpdatedAt <= synced } ?: false
         )
 
-        else -> throw IllegalArgumentException("MenuItemUi could not me created")
+        else -> throw IllegalArgumentException("MenuItemUi could not be created for ${this::class.simpleName}")
     }

@@ -1240,8 +1240,13 @@ class WriteopiaStateManager(
     }
 
     fun addPdf(pdfPath: String, position: Double? = null) {
-        if (!isEditable) return
+        println("[WRITEOPIA] addPdf called: path=$pdfPath, position=$position, isEditable=$isEditable")
+        if (!isEditable) {
+            println("[WRITEOPIA] addPdf aborted - document not editable")
+            return
+        }
         (position ?: currentPosition())?.let { pos ->
+            println("[WRITEOPIA] addPdf using position: $pos")
             val story = getStory(pos)
 
             if (story != null) {
@@ -1251,12 +1256,16 @@ class WriteopiaStateManager(
                     explicitPosition = position != null
                 )
 
+                println("[WRITEOPIA] addPdf targetPosition=$targetPosition, useInsertMode=$useInsertMode")
+
                 if (useInsertMode || position != null) {
+                    println("[WRITEOPIA] addPdf - adding at position")
                     addAtPosition(
                         StoryStep(type = StoryTypes.PDF.type, path = pdfPath),
                         targetPosition
                     )
                 } else {
+                    println("[WRITEOPIA] addPdf - changing story state")
                     changeStoryStateAndTrackIt(
                         Action.StoryStateChange(
                             story.copy(type = StoryTypes.PDF.type, path = pdfPath),
@@ -1264,8 +1273,11 @@ class WriteopiaStateManager(
                         )
                     )
                 }
+                println("[WRITEOPIA] addPdf completed successfully")
+            } else {
+                println("[WRITEOPIA] addPdf - story is null at position $pos")
             }
-        }
+        } ?: println("[WRITEOPIA] addPdf - no position available")
     }
 
     /**
@@ -1416,10 +1428,26 @@ class WriteopiaStateManager(
     }
 
     fun receiveExternalFiles(files: List<ExternalFile>, position: Double) {
+        println("[WRITEOPIA] receiveExternalFiles called with ${files.size} files at position $position")
         files.forEach { (filePath, extension) ->
+            val lowerExt = extension.lowercase()
+            println("[WRITEOPIA] Processing file: $filePath")
+            println("[WRITEOPIA]   Original extension: '$extension', Lowercase: '$lowerExt'")
+            println("[WRITEOPIA]   Supported images: $supportedImageFiles")
+            println("[WRITEOPIA]   Supported PDFs: $supportedPdfFiles")
+
             when {
-                supportedImageFiles.contains(extension) -> addImage(filePath, position)
-                supportedPdfFiles.contains(extension) -> addPdf(filePath, position)
+                supportedImageFiles.contains(lowerExt) -> {
+                    println("[WRITEOPIA]   ✓ Matched as IMAGE")
+                    addImage(filePath, position)
+                }
+                supportedPdfFiles.contains(lowerExt) -> {
+                    println("[WRITEOPIA]   ✓ Matched as PDF")
+                    addPdf(filePath, position)
+                }
+                else -> {
+                    println("[WRITEOPIA]   ✗ No match - file ignored")
+                }
             }
         }
     }

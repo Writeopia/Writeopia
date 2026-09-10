@@ -39,6 +39,7 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.IconsPicker
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.sdk.model.draganddrop.DropInfo
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.draganddrop.target.DragRowTarget
 import io.writeopia.ui.draganddrop.target.DropTarget
@@ -63,6 +64,31 @@ fun LazyListScope.documentList(
             is MenuItemUi.DocumentUi -> {
                 DocumentItem(
                     item,
+                    position = i.toDouble(),
+                    selectedDocument,
+                    changeIcon = { id, icon, tint ->
+                        changeIcon(id, icon, tint, IconChange.DOCUMENT)
+                    },
+                    modifier = itemModifier
+                )
+            }
+
+            is MenuItemUi.PdfUi -> {
+                // Render PDFs the same as documents in the side menu
+                DocumentItem(
+                    MenuItemUi.DocumentUi(
+                        documentId = item.documentId,
+                        title = item.title,
+                        lastEdit = "",
+                        preview = emptyList(),
+                        selected = item.selected,
+                        parentId = item.parentId,
+                        isFavorite = item.isFavorite,
+                        highlighted = item.highlighted,
+                        icon = item.icon ?: MenuItem.Icon(label = "📄", tint = null),
+                        isSynced = item.isSynced,
+                        depth = item.depth
+                    ),
                     position = i.toDouble(),
                     selectedDocument,
                     changeIcon = { id, icon, tint ->

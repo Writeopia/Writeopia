@@ -3,8 +3,10 @@
 package io.writeopia.sdk.persistence.parse
 
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.PdfDocument
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
+import io.writeopia.sdk.persistence.entity.document.PdfDocumentEntity
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -32,5 +34,31 @@ fun Document.toEntity() = DocumentEntity(
     favorite = favorite,
     parentId = parentId,
     isLocked = isLocked,
+    isDeleted = deleted
+)
+
+fun PdfDocumentEntity.toModel() = PdfDocument(
+    id = id,
+    title = title,
+    filePath = filePath,
+    createdAt = Instant.fromEpochMilliseconds(createdAt),
+    lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
+    workspaceId = workspaceId,
+    favorite = favorite,
+    parentId = parentId,
+    lastSyncedAt = lastSyncedAt?.let(Instant::fromEpochMilliseconds),
+    deleted = isDeleted
+)
+
+fun PdfDocument.toEntity() = PdfDocumentEntity(
+    id = id,
+    title = title,
+    filePath = filePath,
+    createdAt = createdAt.toEpochMilliseconds(),
+    lastUpdatedAt = lastUpdatedAt.toEpochMilliseconds(),
+    lastSyncedAt = lastSyncedAt?.toEpochMilliseconds(),
+    workspaceId = workspaceId,
+    favorite = favorite,
+    parentId = parentId,
     isDeleted = deleted
 )
