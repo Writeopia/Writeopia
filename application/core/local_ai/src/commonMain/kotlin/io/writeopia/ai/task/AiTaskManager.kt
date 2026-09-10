@@ -86,16 +86,11 @@ class AiTaskManager(
                         updateTaskStatus(id, AiTaskStatus.COMPLETED)
                     } else {
                         val exception = result.exceptionOrNull()
-                        val errorType = when (exception) {
-                            is CancellationException -> AiTaskErrorType.CANCELLED
-                            else -> AiTaskErrorType.UNKNOWN
-                        }
-                        val customMessage = if (exception !is CancellationException) {
-                            exception?.message
+                        if (exception is CancellationException) {
+                            updateTaskStatus(id, AiTaskStatus.CANCELLED, AiTaskErrorType.CANCELLED, null)
                         } else {
-                            null
+                            updateTaskStatus(id, AiTaskStatus.FAILED, AiTaskErrorType.UNKNOWN, exception?.message)
                         }
-                        updateTaskStatus(id, AiTaskStatus.FAILED, errorType, customMessage)
                     }
 
                     delay(autoRemoveDelayMs)

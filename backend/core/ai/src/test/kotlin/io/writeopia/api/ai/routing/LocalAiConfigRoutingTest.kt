@@ -56,7 +56,7 @@ class LocalAiConfigRoutingTest {
             "Cache-Control header should be present"
         }
         assertTrue(cacheControl.contains("public"), "Cache-Control should be public so it can be cached by the CDN")
-        assertTrue(cacheControl.contains("max-age"), "Cache-Control should define a max-age")
+        assertTrue(cacheControl.contains("max-age=86400"), "Cache-Control should define max-age=86400 (24 hours)")
     }
 
     @Test
