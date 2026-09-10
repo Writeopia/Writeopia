@@ -2,7 +2,8 @@ package io.writeopia.ai.task
 
 enum class AiTaskType {
     SUMMARIZATION,
-    TEXT_GENERATION
+    TEXT_GENERATION,
+    MODEL_DOWNLOAD
 }
 
 enum class AiTaskStatus {
@@ -18,5 +19,6 @@ data class AiTask(
     val type: AiTaskType,
     val description: String,
     val status: AiTaskStatus,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val progress: Float? = null // Progress percentage (0.0 to 1.0) for tasks that support it
 )

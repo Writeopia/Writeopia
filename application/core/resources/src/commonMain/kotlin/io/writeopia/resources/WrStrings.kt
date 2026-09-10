@@ -205,13 +205,9 @@ import writeopia.application.core.resources.generated.resources.configure_local_
 import writeopia.application.core.resources.generated.resources.select_provider
 import writeopia.application.core.resources.generated.resources.select_model_tier
 import writeopia.application.core.resources.generated.resources.download_and_configure
-import writeopia.application.core.resources.generated.resources.downloading_model
-import writeopia.application.core.resources.generated.resources.local_ai_configured
 import writeopia.application.core.resources.generated.resources.configuration_failed
 import writeopia.application.core.resources.generated.resources.provider_available
 import writeopia.application.core.resources.generated.resources.provider_not_detected
-import writeopia.application.core.resources.generated.resources.recommended
-import writeopia.application.core.resources.generated.resources.done
 import writeopia.application.core.resources.generated.resources.error_no_provider_detected
 import writeopia.application.core.resources.generated.resources.error_fetch_config
 import writeopia.application.core.resources.generated.resources.error_download_model
@@ -831,12 +827,6 @@ object WrStrings {
     fun downloadAndConfigure() = stringResource(Res.string.download_and_configure)
 
     @Composable
-    fun downloadingModel() = stringResource(Res.string.downloading_model)
-
-    @Composable
-    fun localAiConfigured() = stringResource(Res.string.local_ai_configured)
-
-    @Composable
     fun configurationFailed() = stringResource(Res.string.configuration_failed)
 
     @Composable
@@ -844,12 +834,6 @@ object WrStrings {
 
     @Composable
     fun providerNotDetected() = stringResource(Res.string.provider_not_detected)
-
-    @Composable
-    fun recommended() = stringResource(Res.string.recommended)
-
-    @Composable
-    fun done() = stringResource(Res.string.done)
 
     @Composable
     fun errorNoProviderDetected() = stringResource(Res.string.error_no_provider_detected)

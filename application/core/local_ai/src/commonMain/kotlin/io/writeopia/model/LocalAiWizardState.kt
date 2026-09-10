@@ -9,8 +9,6 @@ sealed class LocalAiWizardState {
         val config: LocalAiAutoConfigResponse,
         val availableProviders: List<ProviderInfo>
     ) : LocalAiWizardState()
-    data class Downloading(val providerUrl: String, val modelName: String) : LocalAiWizardState()
-    data object Success : LocalAiWizardState()
     data class Error(val errorType: WizardErrorType, val customMessage: String? = null) : LocalAiWizardState()
 }
 

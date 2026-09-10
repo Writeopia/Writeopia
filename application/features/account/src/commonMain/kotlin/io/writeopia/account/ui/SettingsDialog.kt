@@ -231,6 +231,13 @@ fun SettingsDialog(
             )
         }
     }
+
+    // Wizard Dialog
+    LocalAiWizardDialog(
+        wizardState = wizardState,
+        onClose = closeWizard,
+        onSelectProviderAndModel = selectProviderAndModel
+    )
 }
 
 @Composable
@@ -258,10 +265,6 @@ fun SettingsScreen(
     deleteModel: (String) -> Unit,
     loadCloudAiUsage: () -> Unit,
     autoConfigureLocalAi: () -> Unit,
-    wizardState: StateFlow<LocalAiWizardState>,
-    openWizard: () -> Unit,
-    closeWizard: () -> Unit,
-    selectProviderAndModel: (String, String) -> Unit,
     syncWorkspace: () -> Unit,
     onAutoSyncToggle: (Boolean) -> Unit,
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
@@ -333,18 +336,11 @@ fun SettingsScreen(
             deleteModel,
             loadCloudAiUsage,
             autoConfigureLocalAi,
-            openWizard
+            openWizard = {} // SettingsScreen is not used, but keeping it for consistency
         )
     }
 
     Spacer(modifier = Modifier.height(30.dp))
-
-    // Wizard Dialog
-    LocalAiWizardDialog(
-        wizardState = wizardState,
-        onClose = closeWizard,
-        onSelectProviderAndModel = selectProviderAndModel
-    )
 }
 
 @Composable

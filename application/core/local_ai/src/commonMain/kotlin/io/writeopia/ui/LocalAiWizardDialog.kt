@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -51,7 +50,7 @@ fun LocalAiWizardDialog(
     val state by wizardState.collectAsState()
 
     if (state !is LocalAiWizardState.Closed) {
-        Dialog(onDismissRequest = { if (state !is LocalAiWizardState.Downloading) onClose() }) {
+        Dialog(onDismissRequest = onClose) {
             Card(modifier = modifier, shape = MaterialTheme.shapes.large) {
                 Column(
                     modifier = Modifier
@@ -70,14 +69,6 @@ fun LocalAiWizardDialog(
                                 onSelectProviderAndModel = onSelectProviderAndModel,
                                 onCancel = onClose
                             )
-                        }
-                        is LocalAiWizardState.Downloading -> {
-                            DownloadingContent(
-                                modelName = currentState.modelName
-                            )
-                        }
-                        is LocalAiWizardState.Success -> {
-                            SuccessContent(onClose = onClose)
                         }
                         is LocalAiWizardState.Error -> {
                             ErrorContent(
@@ -174,7 +165,6 @@ private fun SelectingConfigurationContent(
                 ModelTierItem(
                     tier = tier,
                     isSelected = selectedTierIndex == index,
-                    isRecommended = index == config.defaultTierIndex,
                     onSelect = { selectedTierIndex = index }
                 )
             }
@@ -274,7 +264,6 @@ private fun ProviderItem(
 private fun ModelTierItem(
     tier: ModelTier,
     isSelected: Boolean,
-    isRecommended: Boolean,
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -294,22 +283,12 @@ private fun ModelTierItem(
         Spacer(modifier = Modifier.width(8.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    tier.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Medium
-                )
-                if (isRecommended) {
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        "(${WrStrings.recommended()})",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+            Text(
+                tier.name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Medium
+            )
             Text(
                 tier.description,
                 style = MaterialTheme.typography.bodySmall,
@@ -321,77 +300,6 @@ private fun ModelTierItem(
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
             )
         }
-    }
-}
-
-@Composable
-private fun DownloadingContent(
-    modelName: String
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(vertical = 20.dp)
-    ) {
-        Text(
-            WrStrings.downloadingModel(),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            modelName,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        LinearProgressIndicator(
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
-
-@Composable
-private fun SuccessContent(
-    onClose: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(vertical = 20.dp)
-    ) {
-        Icon(
-            imageVector = WrIcons.check,
-            contentDescription = "Success",
-            tint = Color(0xFF4CAF50),
-            modifier = Modifier.size(48.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            WrStrings.localAiConfigured(),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            WrStrings.done(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.medium)
-                .clickable(onClick = onClose)
-                .padding(6.dp)
-        )
     }
 }
 

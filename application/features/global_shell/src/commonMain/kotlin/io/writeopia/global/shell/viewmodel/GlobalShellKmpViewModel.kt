@@ -29,6 +29,8 @@ import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.LocalAiWizardState
 import io.writeopia.model.ProviderInfo
 import io.writeopia.model.WizardErrorType
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.model.UiConfiguration
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.viewmodel.FolderController
@@ -668,33 +670,58 @@ class GlobalShellKmpViewModel(
 
     override fun selectProviderAndModel(providerUrl: String, modelName: String) {
         viewModelScope.launch(Dispatchers.Default) {
-            _wizardState.value = LocalAiWizardState.Downloading(providerUrl, modelName)
+            // Close the wizard immediately
+            _wizardState.value = LocalAiWizardState.Closed
 
             val userId = getUserId()
             localAiRepository.saveLocalAiUrl(userId, providerUrl)
 
-            localAiRepository.downloadModel(modelName, providerUrl)
-                .collectLatest { result ->
-                    _downloadModelState.value = result
+            val taskId = "download-model-$modelName-${System.currentTimeMillis()}"
+            val taskManager = AiTaskManager.singleton()
 
-                    when (result) {
-                        is ResultData.Complete -> {
-                            localAiRepository.saveLocalAiSelectedModel(userId, modelName)
-                            localAiRepository.refreshConfiguration(userId)
-                            retryModels()
-                            _wizardState.value = LocalAiWizardState.Success
+            // Enqueue download task in the AI task manager
+            taskManager.enqueueTask(
+                id = taskId,
+                type = AiTaskType.MODEL_DOWNLOAD,
+                description = "Downloading $modelName"
+            ) {
+                var lastResult: ResultData<*>? = null
+                localAiRepository.downloadModel(modelName, providerUrl)
+                    .collect { result ->
+                        _downloadModelState.value = result
+                        lastResult = result
+
+                        when (result) {
+                            is ResultData.Complete -> {
+                                // Update progress to 100% before completing
+                                taskManager.updateTaskProgress(taskId, 1.0f)
+                                localAiRepository.saveLocalAiSelectedModel(userId, modelName)
+                                localAiRepository.refreshConfiguration(userId)
+                                retryModels()
+                            }
+                            is ResultData.InProgress -> {
+                                // Update progress from download response
+                                val downloadResponse = result.data
+                                val total = downloadResponse.total
+                                val completed = downloadResponse.completed
+                                if (total != null && completed != null && total > 0) {
+                                    val percentage = completed.toFloat() / total.toFloat()
+                                    taskManager.updateTaskProgress(taskId, percentage)
+                                }
+                            }
+                            else -> {}
                         }
-
-                        is ResultData.Error -> {
-                            _wizardState.value = LocalAiWizardState.Error(
-                                WizardErrorType.DOWNLOAD_FAILED,
-                                result.exception?.message
-                            )
-                        }
-
-                        else -> {}
                     }
+
+                // Return result for task manager
+                when (lastResult) {
+                    is ResultData.Complete -> Result.success(Unit)
+                    is ResultData.Error -> Result.failure(
+                        (lastResult as ResultData.Error).exception ?: Exception("Download failed")
+                    )
+                    else -> Result.failure(Exception("Download did not complete"))
                 }
+            }
         }
     }
 

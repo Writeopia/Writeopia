@@ -158,6 +158,25 @@ class AiTaskManager(
     }
 
     /**
+     * Updates the progress of a task by its ID.
+     * Progress should be a value between 0.0 and 1.0.
+     */
+    fun updateTaskProgress(
+        taskId: String,
+        progress: Float
+    ) {
+        _tasks.update { currentTasks ->
+            currentTasks.map { task ->
+                if (task.id == taskId) {
+                    task.copy(progress = progress.coerceIn(0f, 1f))
+                } else {
+                    task
+                }
+            }
+        }
+    }
+
+    /**
      * Removes a task from the list by its ID.
      */
     private fun removeTask(taskId: String) {

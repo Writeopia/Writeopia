@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.writeopia.ai.task.AiTask
 import io.writeopia.ai.task.AiTaskStatus
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.ui.icons.WrSdkIcons
 import kotlinx.coroutines.flow.StateFlow
@@ -193,7 +195,11 @@ private fun TaskItem(
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TaskStatusIcon(status = task.status)
+        TaskStatusIcon(
+            status = task.status,
+            taskType = task.type,
+            progress = task.progress
+        )
 
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -214,6 +220,24 @@ private fun TaskItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+
+            // Show progress bar for download tasks
+            if (task.type == AiTaskType.MODEL_DOWNLOAD && task.progress != null && task.status == AiTaskStatus.RUNNING) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    LinearProgressIndicator(
+                        progress = { task.progress },
+                        modifier = Modifier.weight(1f).height(4.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "${(task.progress * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 
@@ -236,6 +260,8 @@ private fun TaskItem(
 @Composable
 private fun TaskStatusIcon(
     status: AiTaskStatus,
+    taskType: AiTaskType = AiTaskType.TEXT_GENERATION,
+    progress: Float? = null,
     modifier: Modifier = Modifier
 ) {
     when (status) {
@@ -259,11 +285,22 @@ private fun TaskStatusIcon(
             )
         }
         AiTaskStatus.RUNNING -> {
-            CircularProgressIndicator(
-                modifier = modifier.size(14.dp),
-                strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.primary
-            )
+            if (taskType == AiTaskType.MODEL_DOWNLOAD && progress != null) {
+                // Show progress indicator for downloads
+                CircularProgressIndicator(
+                    progress = { progress },
+                    modifier = modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                // Show indeterminate progress for other tasks
+                CircularProgressIndicator(
+                    modifier = modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
         AiTaskStatus.COMPLETED -> {
             Icon(
