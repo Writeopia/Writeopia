@@ -687,7 +687,7 @@ class GlobalShellKmpViewModel(
             localAiRepository.saveLocalAiSelectedModel(userId, modelName)
             localAiRepository.refreshConfiguration(userId)
 
-            val taskId = "download-model-$modelName-${System.currentTimeMillis()}"
+            val taskId = "download-model-$modelName-${Clock.System.now()}"
             val taskManager = AiTaskManager.singleton()
 
             // Enqueue download task in the AI task manager
