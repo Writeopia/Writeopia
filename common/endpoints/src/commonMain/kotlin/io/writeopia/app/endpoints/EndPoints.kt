@@ -31,4 +31,7 @@ object EndPoints {
     fun aiStatus() = "api/ai/status"
 
     fun aiUsage() = "api/ai/usage"
+
+    // Public, CDN-cacheable configuration for auto-configuring Local AI (Ollama / llmman)
+    fun aiLocalConfig() = "api/ai/local-config"
 }

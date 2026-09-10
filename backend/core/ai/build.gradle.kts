@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":backend:core:genai_service"))
 
     testImplementation(libs.ktor.server.tests)
+    testImplementation(libs.ktor.server.content.negotiation)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
