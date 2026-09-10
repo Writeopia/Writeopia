@@ -83,7 +83,7 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
-                implementation("com.google.mlkit:digital-ink-recognition:18.1.0")
+                implementation("com.google.mlkit:digital-ink-recognition:19.0.0")
             }
         }
 
