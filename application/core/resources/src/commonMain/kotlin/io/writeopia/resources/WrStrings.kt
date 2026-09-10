@@ -215,6 +215,12 @@ import writeopia.application.core.resources.generated.resources.ai_configured
 import writeopia.application.core.resources.generated.resources.ai_not_configured
 import writeopia.application.core.resources.generated.resources.task_cancelled
 import writeopia.application.core.resources.generated.resources.unknown_error
+import writeopia.application.core.resources.generated.resources.model_tier_light
+import writeopia.application.core.resources.generated.resources.model_tier_light_description
+import writeopia.application.core.resources.generated.resources.model_tier_medium
+import writeopia.application.core.resources.generated.resources.model_tier_medium_description
+import writeopia.application.core.resources.generated.resources.model_tier_heavy
+import writeopia.application.core.resources.generated.resources.model_tier_heavy_description
 
 object WrStrings {
 
@@ -859,4 +865,22 @@ object WrStrings {
 
     @Composable
     fun unknownError() = stringResource(Res.string.unknown_error)
+
+    @Composable
+    fun modelTierLight() = stringResource(Res.string.model_tier_light)
+
+    @Composable
+    fun modelTierLightDescription() = stringResource(Res.string.model_tier_light_description)
+
+    @Composable
+    fun modelTierMedium() = stringResource(Res.string.model_tier_medium)
+
+    @Composable
+    fun modelTierMediumDescription() = stringResource(Res.string.model_tier_medium_description)
+
+    @Composable
+    fun modelTierHeavy() = stringResource(Res.string.model_tier_heavy)
+
+    @Composable
+    fun modelTierHeavyDescription() = stringResource(Res.string.model_tier_heavy_description)
 }

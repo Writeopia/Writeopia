@@ -38,6 +38,7 @@ import io.writeopia.model.WizardErrorType
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.serialization.response.LocalAiAutoConfigResponse
 import io.writeopia.sdk.serialization.response.ModelTier
+import io.writeopia.sdk.serialization.response.ModelTierType
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
@@ -267,6 +268,18 @@ private fun ModelTierItem(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val tierName = when (tier.type) {
+        ModelTierType.LIGHT -> WrStrings.modelTierLight()
+        ModelTierType.MEDIUM -> WrStrings.modelTierMedium()
+        ModelTierType.HEAVY -> WrStrings.modelTierHeavy()
+    }
+
+    val tierDescription = when (tier.type) {
+        ModelTierType.LIGHT -> WrStrings.modelTierLightDescription()
+        ModelTierType.MEDIUM -> WrStrings.modelTierMediumDescription()
+        ModelTierType.HEAVY -> WrStrings.modelTierHeavyDescription()
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -284,13 +297,13 @@ private fun ModelTierItem(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                tier.name,
+                tierName,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Medium
             )
             Text(
-                tier.description,
+                tierDescription,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )

@@ -189,4 +189,10 @@
   <string name="monthly_quota">Cota mensal</string>
   <string name="task_cancelled">Tarefa Cancelada</string>
   <string name="unknown_error">Erro desconhecido</string>
+  <string name="model_tier_light">Leve</string>
+  <string name="model_tier_light_description">Rápido e eficiente para tarefas básicas</string>
+  <string name="model_tier_medium">Médio</string>
+  <string name="model_tier_medium_description">Desempenho equilibrado para a maioria dos casos</string>
+  <string name="model_tier_heavy">Pesado</string>
+  <string name="model_tier_heavy_description">Máxima qualidade para tarefas complexas</string>
 </resources>
