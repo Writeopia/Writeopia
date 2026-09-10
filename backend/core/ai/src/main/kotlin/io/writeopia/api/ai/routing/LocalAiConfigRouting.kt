@@ -6,7 +6,7 @@ import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
-import io.writeopia.api.ai.model.LocalAiAutoConfigResponse
+import io.writeopia.sdk.serialization.response.LocalAiAutoConfigResponse
 import io.writeopia.app.endpoints.EndPoints
 
 private const val CACHE_MAX_AGE_SECONDS = 60 * 60 * 24

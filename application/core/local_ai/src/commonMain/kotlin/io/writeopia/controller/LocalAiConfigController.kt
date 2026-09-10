@@ -1,6 +1,7 @@
 package io.writeopia.controller
 
 import io.writeopia.common.utils.download.DownloadState
+import io.writeopia.model.LocalAiWizardState
 import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.flow.StateFlow
 
@@ -15,6 +16,8 @@ interface LocalAiConfigController {
     val downloadModelState: StateFlow<ResultData<DownloadState>>
 
     val autoConfigureState: StateFlow<ResultData<Unit>>
+
+    val wizardState: StateFlow<LocalAiWizardState>
 
     fun changeLocalAiUrl(url: String)
 
@@ -31,4 +34,20 @@ interface LocalAiConfigController {
      * running locally, configures the matching URL and downloads and selects the default model.
      */
     fun autoConfigure()
+
+    /**
+     * Opens the wizard dialog to guide users through provider detection, selection,
+     * and model tier configuration.
+     */
+    fun openWizard()
+
+    /**
+     * Closes the wizard dialog and resets the wizard state.
+     */
+    fun closeWizard()
+
+    /**
+     * Saves the selected provider URL and model, then initiates the download process.
+     */
+    fun selectProviderAndModel(providerUrl: String, modelName: String)
 }

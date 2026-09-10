@@ -280,6 +280,10 @@ fun DesktopApp(
                                     deleteModel = globalShellViewModel::deleteModel,
                                     loadCloudAiUsage = globalShellViewModel::loadCloudAiUsage,
                                     autoConfigureLocalAi = globalShellViewModel::autoConfigure,
+                                    wizardState = globalShellViewModel.wizardState,
+                                    openWizard = globalShellViewModel::openWizard,
+                                    closeWizard = globalShellViewModel::closeWizard,
+                                    selectProviderAndModel = globalShellViewModel::selectProviderAndModel,
                                     signIn = navigateToRegister,
                                     changeWorkspace = {
                                         globalShellViewModel.changeWorkspace(sideEffect = navigateToChooseWorkspace)

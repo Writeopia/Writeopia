@@ -220,4 +220,20 @@
   <string name="no_usage_data">No usage data available</string>
   <string name="tokens_used">tokens used (renews every month)</string>
   <string name="monthly_quota">Monthly quota</string>
+  <string name="manual_configuration">Manual Configuration</string>
+  <string name="detecting_local_ai">Detecting Local AI</string>
+  <string name="configure_local_ai">Configure Local AI</string>
+  <string name="select_provider">Select Provider</string>
+  <string name="select_model_tier">Select Model Tier</string>
+  <string name="download_and_configure">Download &amp; Configure</string>
+  <string name="downloading_model">Downloading Model</string>
+  <string name="local_ai_configured">Local AI Configured Successfully!</string>
+  <string name="configuration_failed">Configuration Failed</string>
+  <string name="provider_available">Available</string>
+  <string name="provider_not_detected">Not Detected</string>
+  <string name="recommended">Recommended</string>
+  <string name="done">Done</string>
+  <string name="error_no_provider_detected">Local AI was not found running on this machine. Please, install and start Ollama or llmman and try again.</string>
+  <string name="error_fetch_config">Failed to fetch configuration</string>
+  <string name="error_download_model">Failed to download model</string>
 </resources>

@@ -4,7 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.writeopia.app.endpoints.EndPoints
-import io.writeopia.responses.LocalAiAutoConfigResponse
+import io.writeopia.sdk.serialization.response.LocalAiAutoConfigResponse
 import io.writeopia.sdk.models.utils.ResultData
 
 /**

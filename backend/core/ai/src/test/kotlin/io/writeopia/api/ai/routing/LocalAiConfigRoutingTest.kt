@@ -10,7 +10,7 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
-import io.writeopia.api.ai.model.LocalAiAutoConfigResponse
+import io.writeopia.sdk.serialization.response.LocalAiAutoConfigResponse
 import io.writeopia.app.endpoints.EndPoints
 import kotlinx.serialization.json.Json
 import kotlin.test.Test

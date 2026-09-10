@@ -26,6 +26,9 @@ import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.model.ColorThemeOption
+import io.writeopia.model.LocalAiWizardState
+import io.writeopia.model.ProviderInfo
+import io.writeopia.model.WizardErrorType
 import io.writeopia.model.UiConfiguration
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.viewmodel.FolderController
@@ -118,6 +121,9 @@ class GlobalShellKmpViewModel(
 
     private val _autoConfigureState = MutableStateFlow<ResultData<Unit>>(ResultData.Idle())
     override val autoConfigureState: StateFlow<ResultData<Unit>> = _autoConfigureState.asStateFlow()
+
+    private val _wizardState = MutableStateFlow<LocalAiWizardState>(LocalAiWizardState.Closed)
+    override val wizardState: StateFlow<LocalAiWizardState> = _wizardState.asStateFlow()
 
     override val downloadModelState: StateFlow<ResultData<DownloadState>> =
         _downloadModelState.map { resultData ->
@@ -576,13 +582,14 @@ class GlobalShellKmpViewModel(
                     val userId = getUserId()
                     localAiRepository.saveLocalAiUrl(userId, workingUrl)
 
-                    localAiRepository.downloadModel(config.defaultModel, workingUrl)
+                    val defaultModel = config.modelTiers[config.defaultTierIndex].modelName
+                    localAiRepository.downloadModel(defaultModel, workingUrl)
                         .collectLatest { result ->
                             _downloadModelState.value = result
 
                             when (result) {
                                 is ResultData.Complete -> {
-                                    localAiRepository.saveLocalAiSelectedModel(userId, config.defaultModel)
+                                    localAiRepository.saveLocalAiSelectedModel(userId, defaultModel)
                                     localAiRepository.refreshConfiguration(userId)
                                     retryModels()
                                     _autoConfigureState.value = ResultData.Complete(Unit)
@@ -604,6 +611,95 @@ class GlobalShellKmpViewModel(
                 else -> {}
             }
         }
+    }
+
+    override fun openWizard() {
+        viewModelScope.launch(Dispatchers.Default) {
+            _wizardState.value = LocalAiWizardState.DetectingProviders
+
+            when (val configResult = localAiAutoConfigApi.getAutoConfig()) {
+                is ResultData.Complete -> {
+                    val config = configResult.data
+                    val providers = mutableListOf<ProviderInfo>()
+
+                    // Check Ollama availability
+                    val ollamaAvailable = localAiRepository.getModels(config.ollamaUrl) is ResultData.Complete
+                    providers.add(
+                        ProviderInfo(
+                            name = "Ollama",
+                            url = config.ollamaUrl,
+                            isAvailable = ollamaAvailable
+                        )
+                    )
+
+                    // Check llmman availability
+                    val llmmanAvailable = localAiRepository.getModels(config.llmmanUrl) is ResultData.Complete
+                    providers.add(
+                        ProviderInfo(
+                            name = "llmman",
+                            url = config.llmmanUrl,
+                            isAvailable = llmmanAvailable
+                        )
+                    )
+
+                    if (!ollamaAvailable && !llmmanAvailable) {
+                        _wizardState.value = LocalAiWizardState.Error(
+                            WizardErrorType.NO_PROVIDER_DETECTED
+                        )
+                    } else {
+                        _wizardState.value = LocalAiWizardState.SelectingConfiguration(
+                            config = config,
+                            availableProviders = providers
+                        )
+                    }
+                }
+
+                is ResultData.Error -> {
+                    _wizardState.value = LocalAiWizardState.Error(
+                        WizardErrorType.FETCH_CONFIG_FAILED,
+                        configResult.exception?.message
+                    )
+                }
+
+                else -> {}
+            }
+        }
+    }
+
+    override fun selectProviderAndModel(providerUrl: String, modelName: String) {
+        viewModelScope.launch(Dispatchers.Default) {
+            _wizardState.value = LocalAiWizardState.Downloading(providerUrl, modelName)
+
+            val userId = getUserId()
+            localAiRepository.saveLocalAiUrl(userId, providerUrl)
+
+            localAiRepository.downloadModel(modelName, providerUrl)
+                .collectLatest { result ->
+                    _downloadModelState.value = result
+
+                    when (result) {
+                        is ResultData.Complete -> {
+                            localAiRepository.saveLocalAiSelectedModel(userId, modelName)
+                            localAiRepository.refreshConfiguration(userId)
+                            retryModels()
+                            _wizardState.value = LocalAiWizardState.Success
+                        }
+
+                        is ResultData.Error -> {
+                            _wizardState.value = LocalAiWizardState.Error(
+                                WizardErrorType.DOWNLOAD_FAILED,
+                                result.exception?.message
+                            )
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    override fun closeWizard() {
+        _wizardState.value = LocalAiWizardState.Closed
     }
 
     override fun logout(onSuccessSideEffect: () -> Unit) {

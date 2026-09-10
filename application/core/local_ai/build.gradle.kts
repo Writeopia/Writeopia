@@ -45,9 +45,11 @@ kotlin {
 
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:utils"))
+                implementation(project(":application:core:resources"))
                 implementation(project(":application:core:persistence_sqldelight"))
 
                 implementation(project(":plugins:writeopia_persistence_sqldelight"))
+                implementation(project(":plugins:writeopia_serialization"))
 
                 implementation(libs.kotlinx.coroutines.core)
                 //
