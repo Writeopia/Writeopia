@@ -164,11 +164,9 @@ class NotesUseCase private constructor(
     ): Flow<Map<String, List<MenuItem>>> {
         return pdfDocumentRepository?.listenForPdfDocumentsByParentId(parentId, workspaceId)
             ?.map { pdfDocuments ->
-                println("[NOTES USE CASE] listenForPdfDocumentsByParentId: Got ${pdfDocuments.size} PDF documents for parent $parentId")
-                mapOf(parentId to pdfDocuments as List<MenuItem>)
-            } ?: kotlinx.coroutines.flow.flowOf<Map<String, List<MenuItem>>>(emptyMap()).also {
-                println("[NOTES USE CASE] listenForPdfDocumentsByParentId: pdfDocumentRepository is null, returning empty")
-            }
+                val key = "$parentId:$workspaceId"
+                mapOf(key to pdfDocuments as List<MenuItem>)
+            } ?: kotlinx.coroutines.flow.flowOf(emptyMap())
     }
 
     /**
@@ -188,10 +186,6 @@ class NotesUseCase private constructor(
             listenForPdfDocumentsByParentId(parentId, workspaceId),
             notesConfig.listenOrderPreference(userId)
         ) { folders, documents, pdfDocuments, orderPreference ->
-            println("[NOTES USE CASE] listenForMenuItemsByParentId: Combining items for parent $parentId")
-            println("[NOTES USE CASE]   Folders: ${folders.values.sumOf { it.size }}")
-            println("[NOTES USE CASE]   Documents: ${documents.values.sumOf { it.size }}")
-            println("[NOTES USE CASE]   PDF Documents: ${pdfDocuments.values.sumOf { it.size }}")
 
             val order =
                 orderPreference.takeIf { it.isNotEmpty() }?.let(OrderBy.Companion::fromString)
@@ -200,9 +194,7 @@ class NotesUseCase private constructor(
             val combined = folders.merge(documents).merge(pdfDocuments)
 
             combined.mapValues { (_, menuItems) ->
-                val sorted = menuItems.sortedWithOrderBy(order)
-                println("[NOTES USE CASE]   Total items after sort: ${sorted.size}")
-                sorted
+                menuItems.sortedWithOrderBy(order)
             }
         }
 
