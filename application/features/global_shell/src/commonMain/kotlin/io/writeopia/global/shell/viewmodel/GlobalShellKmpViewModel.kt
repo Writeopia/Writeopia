@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
 import io.writeopia.account.ui.CloudAiUsageState
+import io.writeopia.api.LocalAiAutoConfigApi
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.api.GenAiApi
@@ -25,6 +26,11 @@ import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.model.ColorThemeOption
+import io.writeopia.model.LocalAiWizardState
+import io.writeopia.model.ProviderInfo
+import io.writeopia.model.WizardErrorType
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.model.UiConfiguration
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.viewmodel.FolderController
@@ -71,6 +77,7 @@ class GlobalShellKmpViewModel(
     private val folderStateController: FolderStateController =
         FolderStateController.singleton(notesUseCase, authRepository, documentsApi),
     private val localAiRepository: LocalAiRepository,
+    private val localAiAutoConfigApi: LocalAiAutoConfigApi,
     private val workspaceHandler: WorkspaceHandler,
     private val keyboardEventFlow: Flow<KeyboardEvent>?,
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
@@ -113,6 +120,12 @@ class GlobalShellKmpViewModel(
 
     private val _downloadModelState =
         MutableStateFlow<ResultData<DownloadModelResponse>>(ResultData.Idle())
+
+    private val _autoConfigureState = MutableStateFlow<ResultData<Unit>>(ResultData.Idle())
+    override val autoConfigureState: StateFlow<ResultData<Unit>> = _autoConfigureState.asStateFlow()
+
+    private val _wizardState = MutableStateFlow<LocalAiWizardState>(LocalAiWizardState.Closed)
+    override val wizardState: StateFlow<LocalAiWizardState> = _wizardState.asStateFlow()
 
     override val downloadModelState: StateFlow<ResultData<DownloadState>> =
         _downloadModelState.map { resultData ->
@@ -311,6 +324,13 @@ class GlobalShellKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             workspaceHandler.localSyncRequired.collect {
                 syncLocalWorkspace()
+            }
+        }
+
+        // Load Local AI configuration on startup
+        viewModelScope.launch(Dispatchers.Default) {
+            authRepository.listenForUser().collect { user ->
+                localAiRepository.refreshConfiguration(user.id)
             }
         }
 
@@ -541,6 +561,182 @@ class GlobalShellKmpViewModel(
                 retryModels()
             }
         }
+    }
+
+    override fun autoConfigure() {
+        viewModelScope.launch(Dispatchers.Default) {
+            _autoConfigureState.value = ResultData.Loading()
+
+            when (val configResult = localAiAutoConfigApi.getAutoConfig()) {
+                is ResultData.Complete -> {
+                    val config = configResult.data
+                    var workingUrl: String? = null
+                    for (candidateUrl in listOf(config.ollamaUrl, config.llmmanUrl)) {
+                        if (localAiRepository.getModels(candidateUrl) is ResultData.Complete) {
+                            workingUrl = candidateUrl
+                            break
+                        }
+                    }
+
+                    if (workingUrl == null) {
+                        _autoConfigureState.value = ResultData.Error(
+                            Exception(
+                                "Local AI was not found running on this machine. " +
+                                    "Please, install and start Ollama or llmman and try again."
+                            )
+                        )
+                        return@launch
+                    }
+
+                    val userId = getUserId()
+                    localAiRepository.saveLocalAiUrl(userId, workingUrl)
+
+                    val defaultModel = config.modelTiers[config.defaultTierIndex].modelName
+                    localAiRepository.downloadModel(defaultModel, workingUrl)
+                        .collectLatest { result ->
+                            _downloadModelState.value = result
+
+                            when (result) {
+                                is ResultData.Complete -> {
+                                    localAiRepository.saveLocalAiSelectedModel(userId, defaultModel)
+                                    localAiRepository.refreshConfiguration(userId)
+                                    retryModels()
+                                    _autoConfigureState.value = ResultData.Complete(Unit)
+                                }
+
+                                is ResultData.Error -> {
+                                    _autoConfigureState.value = ResultData.Error(result.exception)
+                                }
+
+                                else -> {}
+                            }
+                        }
+                }
+
+                is ResultData.Error -> {
+                    _autoConfigureState.value = ResultData.Error(configResult.exception)
+                }
+
+                else -> {}
+            }
+        }
+    }
+
+    override fun openWizard() {
+        viewModelScope.launch(Dispatchers.Default) {
+            _wizardState.value = LocalAiWizardState.DetectingProviders
+
+            when (val configResult = localAiAutoConfigApi.getAutoConfig()) {
+                is ResultData.Complete -> {
+                    val config = configResult.data
+                    val providers = mutableListOf<ProviderInfo>()
+
+                    // Check Ollama availability
+                    val ollamaAvailable = localAiRepository.getModels(config.ollamaUrl) is ResultData.Complete
+                    providers.add(
+                        ProviderInfo(
+                            name = "Ollama",
+                            url = config.ollamaUrl,
+                            isAvailable = ollamaAvailable
+                        )
+                    )
+
+                    // Check llmman availability
+                    val llmmanAvailable = localAiRepository.getModels(config.llmmanUrl) is ResultData.Complete
+                    providers.add(
+                        ProviderInfo(
+                            name = "llmman",
+                            url = config.llmmanUrl,
+                            isAvailable = llmmanAvailable
+                        )
+                    )
+
+                    if (!ollamaAvailable && !llmmanAvailable) {
+                        _wizardState.value = LocalAiWizardState.Error(
+                            WizardErrorType.NO_PROVIDER_DETECTED
+                        )
+                    } else {
+                        _wizardState.value = LocalAiWizardState.SelectingConfiguration(
+                            config = config,
+                            availableProviders = providers
+                        )
+                    }
+                }
+
+                is ResultData.Error -> {
+                    _wizardState.value = LocalAiWizardState.Error(
+                        WizardErrorType.FETCH_CONFIG_FAILED,
+                        configResult.exception?.message
+                    )
+                }
+
+                else -> {}
+            }
+        }
+    }
+
+    override fun selectProviderAndModel(providerUrl: String, modelName: String) {
+        viewModelScope.launch(Dispatchers.Default) {
+            // Close the wizard immediately
+            _wizardState.value = LocalAiWizardState.Closed
+
+            val userId = getUserId()
+
+            // Save configuration immediately (don't wait for download)
+            localAiRepository.saveLocalAiUrl(userId, providerUrl)
+            localAiRepository.saveLocalAiSelectedModel(userId, modelName)
+            localAiRepository.refreshConfiguration(userId)
+
+            val taskId = "download-model-$modelName-${Clock.System.now()}"
+            val taskManager = AiTaskManager.singleton()
+
+            // Enqueue download task in the AI task manager
+            taskManager.enqueueTask(
+                id = taskId,
+                type = AiTaskType.MODEL_DOWNLOAD,
+                description = "Downloading $modelName"
+            ) {
+                var lastResult: ResultData<*>? = null
+                localAiRepository.downloadModel(modelName, providerUrl)
+                    .collect { result ->
+                        _downloadModelState.value = result
+                        lastResult = result
+
+                        when (result) {
+                            is ResultData.Complete -> {
+                                // Update progress to 100% before completing
+                                taskManager.updateTaskProgress(taskId, 1.0f)
+                                // Refresh models list after download completes
+                                retryModels()
+                            }
+                            is ResultData.InProgress -> {
+                                // Update progress from download response
+                                val downloadResponse = result.data
+                                val total = downloadResponse.total
+                                val completed = downloadResponse.completed
+                                if (total != null && completed != null && total > 0) {
+                                    val percentage = completed.toFloat() / total.toFloat()
+                                    taskManager.updateTaskProgress(taskId, percentage)
+                                }
+                            }
+                            else -> {}
+                        }
+                    }
+
+                // Return result for task manager
+                when (lastResult) {
+                    is ResultData.Complete -> Result.success(Unit)
+                    is ResultData.Error -> Result.failure(
+                        (lastResult as ResultData.Error).exception ?: Exception("Download failed")
+                    )
+                    else -> Result.failure(Exception("Download did not complete"))
+                }
+            }
+        }
+    }
+
+    override fun closeWizard() {
+        _wizardState.value = LocalAiWizardState.Closed
     }
 
     override fun logout(onSuccessSideEffect: () -> Unit) {

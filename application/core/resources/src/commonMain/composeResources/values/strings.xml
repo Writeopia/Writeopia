@@ -48,6 +48,9 @@
   <string name="accent_color">Accent Color</string>
   <string name="local_folder">Local Folder</string>
   <string name="local_ai">Local AI</string>
+  <string name="auto_configure_local_ai">Auto configure</string>
+  <string name="auto_configure_local_ai_success">Local AI configured successfully!</string>
+  <string name="auto_configure_local_ai_error">Local AI was not found running on this machine. Please, install and start Ollama or llmman and try again.</string>
   <string name="url">Url</string>
   <string name="available_models">Available Models</string>
   <string name="no_models">No models</string>
@@ -217,4 +220,26 @@
   <string name="no_usage_data">No usage data available</string>
   <string name="tokens_used">tokens used (renews every month)</string>
   <string name="monthly_quota">Monthly quota</string>
+  <string name="manual_configuration">Manual Configuration</string>
+  <string name="detecting_local_ai">Detecting Local AI</string>
+  <string name="configure_local_ai">Configure Local AI</string>
+  <string name="select_provider">Select Provider</string>
+  <string name="select_model_tier">Select Model Tier</string>
+  <string name="download_and_configure">Download &amp; Configure</string>
+  <string name="configuration_failed">Configuration Failed</string>
+  <string name="ai_configured">AI configured</string>
+  <string name="ai_not_configured">AI not configured</string>
+  <string name="provider_available">Available</string>
+  <string name="provider_not_detected">Not Detected</string>
+  <string name="error_no_provider_detected">Local AI was not found running on this machine. Please, install and start Ollama or llmman and try again.</string>
+  <string name="error_fetch_config">Failed to fetch configuration</string>
+  <string name="error_download_model">Failed to download model</string>
+  <string name="task_cancelled">Task Cancelled</string>
+  <string name="unknown_error">Unknown error</string>
+  <string name="model_tier_light">Light</string>
+  <string name="model_tier_light_description">Fast and efficient for basic tasks</string>
+  <string name="model_tier_medium">Medium</string>
+  <string name="model_tier_medium_description">Balanced performance for most use cases</string>
+  <string name="model_tier_heavy">Heavy</string>
+  <string name="model_tier_heavy_description">Maximum quality for complex tasks</string>
 </resources>

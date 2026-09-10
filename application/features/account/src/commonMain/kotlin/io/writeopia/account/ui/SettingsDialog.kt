@@ -73,6 +73,8 @@ import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
 import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
+import io.writeopia.model.LocalAiWizardState
+import io.writeopia.ui.LocalAiWizardDialog
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
@@ -95,6 +97,7 @@ fun SettingsDialog(
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
     cloudAiUsageState: StateFlow<CloudAiUsageState>,
+    autoConfigureState: StateFlow<ResultData<Unit>>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
@@ -112,6 +115,11 @@ fun SettingsDialog(
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     loadCloudAiUsage: () -> Unit,
+    autoConfigureLocalAi: () -> Unit,
+    wizardState: StateFlow<LocalAiWizardState>,
+    openWizard: () -> Unit,
+    closeWizard: () -> Unit,
+    selectProviderAndModel: (String, String) -> Unit,
     signIn: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
@@ -200,12 +208,15 @@ fun SettingsDialog(
                         localAiSelectedModel,
                         downloadModelState,
                         cloudAiUsageState,
+                        autoConfigureState,
                         localAiUrlChange,
                         localAiModelChange,
                         localAiModelsRetry,
                         downloadModel,
                         deleteModel,
-                        loadCloudAiUsage
+                        loadCloudAiUsage,
+                        autoConfigureLocalAi,
+                        openWizard
                     )
                 },
                 teamsScreen = {
@@ -220,6 +231,13 @@ fun SettingsDialog(
             )
         }
     }
+
+    // Wizard Dialog
+    LocalAiWizardDialog(
+        wizardState = wizardState,
+        onClose = closeWizard,
+        onSelectProviderAndModel = selectProviderAndModel
+    )
 }
 
 @Composable
@@ -236,6 +254,7 @@ fun SettingsScreen(
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
     cloudAiUsageState: StateFlow<CloudAiUsageState>,
+    autoConfigureState: StateFlow<ResultData<Unit>>,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
     selectWorkplacePath: (String) -> Unit,
@@ -245,6 +264,7 @@ fun SettingsScreen(
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     loadCloudAiUsage: () -> Unit,
+    autoConfigureLocalAi: () -> Unit,
     syncWorkspace: () -> Unit,
     onAutoSyncToggle: (Boolean) -> Unit,
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
@@ -304,16 +324,19 @@ fun SettingsScreen(
     if (showLocalAiConfig) {
         AiSection(
             localAiUrl = localAiUrl,
-            localAiAvailableModels = localAiAvailableModels,
-            localAiSelectedModel = localAiSelectedModel,
-            downloadModelState = downloadModelState,
-            cloudAiUsageState = cloudAiUsageState,
-            localAiUrlChange = localAiUrlChange,
-            localAiModelChange = localAiModelChange,
-            localAiModelsRetry = localAiModelsRetry,
-            downloadModel = downloadModel,
-            deleteModel = deleteModel,
-            loadCloudAiUsage = loadCloudAiUsage
+            localAiAvailableModels,
+            localAiSelectedModel,
+            downloadModelState,
+            cloudAiUsageState,
+            autoConfigureState,
+            localAiUrlChange,
+            localAiModelChange,
+            localAiModelsRetry,
+            downloadModel,
+            deleteModel,
+            loadCloudAiUsage,
+            autoConfigureLocalAi,
+            openWizard = {} // SettingsScreen is not used, but keeping it for consistency
         )
     }
 
@@ -776,12 +799,15 @@ private fun AiSection(
     localAiSelectedModel: StateFlow<String>,
     downloadModelState: StateFlow<ResultData<DownloadState>>,
     cloudAiUsageState: StateFlow<CloudAiUsageState>,
+    autoConfigureState: StateFlow<ResultData<Unit>>,
     localAiUrlChange: (String) -> Unit,
     localAiModelChange: (String) -> Unit,
     localAiModelsRetry: () -> Unit,
     downloadModel: (String) -> Unit,
     deleteModel: (String) -> Unit,
     loadCloudAiUsage: () -> Unit,
+    autoConfigureLocalAi: () -> Unit,
+    openWizard: () -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -801,50 +827,116 @@ private fun AiSection(
 
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
-        Text(WrStrings.url(), style = MaterialTheme.typography.bodyMedium, color = titleColor)
+        // Configuration status indicator
+        val availableModelsState by localAiAvailableModels.collectAsState(ResultData.Idle())
+        val selectedModel by localAiSelectedModel.collectAsState()
 
-        Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
+        // AI is considered configured if we can successfully fetch models and a model is selected
+        val isConfigured = availableModelsState is ResultData.Complete &&
+            (availableModelsState as? ResultData.Complete)?.data?.isNotEmpty() == true &&
+            selectedModel.isNotBlank()
 
-        BasicTextField(
-            modifier = Modifier.border(
-                1.dp,
-                MaterialTheme.colorScheme.onSurfaceVariant,
-                MaterialTheme.shapes.medium
-            ).padding(10.dp)
-                .fillMaxWidth(),
-            value = localAiUrl,
-            onValueChange = localAiUrlChange,
-            textStyle = MaterialTheme.typography.bodySmall.copy(
-                color = MaterialTheme.colorScheme.onBackground
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.onBackground)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 8.dp)
+        ) {
+            Icon(
+                imageVector = if (isConfigured) WrIcons.check else WrIcons.close,
+                contentDescription = null,
+                tint = if (isConfigured) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = if (isConfigured) WrStrings.aiConfigured() else WrStrings.aiNotConfigured(),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isConfigured) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+            )
+        }
+
+        // Wizard trigger button
+        CommonButton(
+            text = WrStrings.autoConfigureLocalAi(),
+            clickListener = openWizard
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            WrStrings.availableModels(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = titleColor
-        )
+        // Collapsible Manual Configuration Section
+        var manualConfigExpanded by remember { mutableStateOf(false) }
 
-        SelectModels(
-            localAiAvailableModels,
-            localAiSelectedModel,
-            localAiModelChange,
-            localAiModelsRetry,
-            deleteModel
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .clickable { manualConfigExpanded = !manualConfigExpanded }
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                WrStrings.manualConfiguration(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = titleColor,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                imageVector = if (manualConfigExpanded) WrIcons.smallArrowUp else WrIcons.smallArrowDown,
+                contentDescription = if (manualConfigExpanded) "Collapse" else "Expand",
+                tint = titleColor
+            )
+        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        AnimatedVisibility(visible = manualConfigExpanded) {
+            Column {
+                Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            WrStrings.downloadModels(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = titleColor
-        )
+                Text(WrStrings.url(), style = MaterialTheme.typography.bodyMedium, color = titleColor)
 
-        DownloadModels(downloadModelState, downloadModel)
+                Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
+
+                BasicTextField(
+                    modifier = Modifier.border(
+                        1.dp,
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                        MaterialTheme.shapes.medium
+                    ).padding(10.dp)
+                        .fillMaxWidth(),
+                    value = localAiUrl,
+                    onValueChange = localAiUrlChange,
+                    textStyle = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onBackground)
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    WrStrings.availableModels(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = titleColor
+                )
+
+                SelectModels(
+                    localAiAvailableModels,
+                    localAiSelectedModel,
+                    localAiModelChange,
+                    localAiModelsRetry,
+                    deleteModel
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    WrStrings.downloadModels(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = titleColor
+                )
+
+                DownloadModels(downloadModelState, downloadModel)
+            }
+        }
     }
 }
 
@@ -945,6 +1037,52 @@ private fun CloudAiUsageSection(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AutoConfigureLocalAi(
+    autoConfigureState: StateFlow<ResultData<Unit>>,
+    autoConfigureLocalAi: () -> Unit,
+) {
+    val state by autoConfigureState.collectAsState()
+    val titleColor = MaterialTheme.colorScheme.onBackground
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        CommonButton(
+            text = WrStrings.autoConfigureLocalAi(),
+            clickListener = autoConfigureLocalAi
+        )
+
+        if (state is ResultData.Loading) {
+            Spacer(modifier = Modifier.width(8.dp))
+
+            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+        }
+    }
+
+    when (val currentState = state) {
+        is ResultData.Complete -> {
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                WrStrings.autoConfigureLocalAiSuccess(),
+                style = MaterialTheme.typography.bodySmall,
+                color = titleColor
+            )
+        }
+
+        is ResultData.Error -> {
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                currentState.exception?.message ?: WrStrings.autoConfigureLocalAiError(),
+                style = MaterialTheme.typography.bodySmall,
+                color = titleColor
+            )
+        }
+
+        else -> {}
     }
 }
 

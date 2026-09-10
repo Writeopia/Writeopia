@@ -28,6 +28,9 @@ import writeopia.application.core.resources.generated.resources.total_tokens
 import writeopia.application.core.resources.generated.resources.are_you_sure
 import writeopia.application.core.resources.generated.resources.arrangement
 import writeopia.application.core.resources.generated.resources.ask_ai
+import writeopia.application.core.resources.generated.resources.auto_configure_local_ai
+import writeopia.application.core.resources.generated.resources.auto_configure_local_ai_error
+import writeopia.application.core.resources.generated.resources.auto_configure_local_ai_success
 import writeopia.application.core.resources.generated.resources.available_models
 import writeopia.application.core.resources.generated.resources.box
 import writeopia.application.core.resources.generated.resources.card
@@ -196,6 +199,28 @@ import writeopia.application.core.resources.generated.resources.password_medium
 import writeopia.application.core.resources.generated.resources.password_strong
 import writeopia.application.core.resources.generated.resources.password_req_min_length
 import writeopia.application.core.resources.generated.resources.password_req_special_char
+import writeopia.application.core.resources.generated.resources.manual_configuration
+import writeopia.application.core.resources.generated.resources.detecting_local_ai
+import writeopia.application.core.resources.generated.resources.configure_local_ai
+import writeopia.application.core.resources.generated.resources.select_provider
+import writeopia.application.core.resources.generated.resources.select_model_tier
+import writeopia.application.core.resources.generated.resources.download_and_configure
+import writeopia.application.core.resources.generated.resources.configuration_failed
+import writeopia.application.core.resources.generated.resources.provider_available
+import writeopia.application.core.resources.generated.resources.provider_not_detected
+import writeopia.application.core.resources.generated.resources.error_no_provider_detected
+import writeopia.application.core.resources.generated.resources.error_fetch_config
+import writeopia.application.core.resources.generated.resources.error_download_model
+import writeopia.application.core.resources.generated.resources.ai_configured
+import writeopia.application.core.resources.generated.resources.ai_not_configured
+import writeopia.application.core.resources.generated.resources.task_cancelled
+import writeopia.application.core.resources.generated.resources.unknown_error
+import writeopia.application.core.resources.generated.resources.model_tier_light
+import writeopia.application.core.resources.generated.resources.model_tier_light_description
+import writeopia.application.core.resources.generated.resources.model_tier_medium
+import writeopia.application.core.resources.generated.resources.model_tier_medium_description
+import writeopia.application.core.resources.generated.resources.model_tier_heavy
+import writeopia.application.core.resources.generated.resources.model_tier_heavy_description
 
 object WrStrings {
 
@@ -231,6 +256,15 @@ object WrStrings {
 
     @Composable
     fun localAi() = stringResource(Res.string.local_ai)
+
+    @Composable
+    fun autoConfigureLocalAi() = stringResource(Res.string.auto_configure_local_ai)
+
+    @Composable
+    fun autoConfigureLocalAiSuccess() = stringResource(Res.string.auto_configure_local_ai_success)
+
+    @Composable
+    fun autoConfigureLocalAiError() = stringResource(Res.string.auto_configure_local_ai_error)
 
     @Composable
     fun url() = stringResource(Res.string.url)
@@ -783,4 +817,70 @@ object WrStrings {
 
     @Composable
     fun monthlyQuota() = stringResource(Res.string.monthly_quota)
+
+    @Composable
+    fun manualConfiguration() = stringResource(Res.string.manual_configuration)
+
+    @Composable
+    fun detectingLocalAi() = stringResource(Res.string.detecting_local_ai)
+
+    @Composable
+    fun configureLocalAi() = stringResource(Res.string.configure_local_ai)
+
+    @Composable
+    fun selectProvider() = stringResource(Res.string.select_provider)
+
+    @Composable
+    fun selectModelTier() = stringResource(Res.string.select_model_tier)
+
+    @Composable
+    fun downloadAndConfigure() = stringResource(Res.string.download_and_configure)
+
+    @Composable
+    fun configurationFailed() = stringResource(Res.string.configuration_failed)
+
+    @Composable
+    fun providerAvailable() = stringResource(Res.string.provider_available)
+
+    @Composable
+    fun providerNotDetected() = stringResource(Res.string.provider_not_detected)
+
+    @Composable
+    fun errorNoProviderDetected() = stringResource(Res.string.error_no_provider_detected)
+
+    @Composable
+    fun errorFetchConfig() = stringResource(Res.string.error_fetch_config)
+
+    @Composable
+    fun errorDownloadModel() = stringResource(Res.string.error_download_model)
+
+    @Composable
+    fun aiConfigured() = stringResource(Res.string.ai_configured)
+
+    @Composable
+    fun aiNotConfigured() = stringResource(Res.string.ai_not_configured)
+
+    @Composable
+    fun taskCancelled() = stringResource(Res.string.task_cancelled)
+
+    @Composable
+    fun unknownError() = stringResource(Res.string.unknown_error)
+
+    @Composable
+    fun modelTierLight() = stringResource(Res.string.model_tier_light)
+
+    @Composable
+    fun modelTierLightDescription() = stringResource(Res.string.model_tier_light_description)
+
+    @Composable
+    fun modelTierMedium() = stringResource(Res.string.model_tier_medium)
+
+    @Composable
+    fun modelTierMediumDescription() = stringResource(Res.string.model_tier_medium_description)
+
+    @Composable
+    fun modelTierHeavy() = stringResource(Res.string.model_tier_heavy)
+
+    @Composable
+    fun modelTierHeavyDescription() = stringResource(Res.string.model_tier_heavy_description)
 }

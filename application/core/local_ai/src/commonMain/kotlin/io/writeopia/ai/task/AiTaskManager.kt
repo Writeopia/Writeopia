@@ -76,11 +76,21 @@ class AiTaskManager(
 
                     val result = runCatching { execution() }.getOrElse { Result.failure(it) }
 
+                    // Check if task was cancelled while running
+                    if (isCancelled(id)) {
+                        // Don't overwrite CANCELLED status
+                        return@withLock
+                    }
+
                     if (result.isSuccess) {
                         updateTaskStatus(id, AiTaskStatus.COMPLETED)
                     } else {
-                        val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
-                        updateTaskStatus(id, AiTaskStatus.FAILED, errorMessage)
+                        val exception = result.exceptionOrNull()
+                        if (exception is CancellationException) {
+                            updateTaskStatus(id, AiTaskStatus.CANCELLED, AiTaskErrorType.CANCELLED, null)
+                        } else {
+                            updateTaskStatus(id, AiTaskStatus.FAILED, AiTaskErrorType.UNKNOWN, exception?.message)
+                        }
                     }
 
                     delay(autoRemoveDelayMs)
@@ -144,12 +154,32 @@ class AiTaskManager(
     private fun updateTaskStatus(
         taskId: String,
         status: AiTaskStatus,
+        errorType: AiTaskErrorType? = null,
         errorMessage: String? = null
     ) {
         _tasks.update { currentTasks ->
             currentTasks.map { task ->
                 if (task.id == taskId) {
-                    task.copy(status = status, errorMessage = errorMessage)
+                    task.copy(status = status, errorType = errorType, errorMessage = errorMessage)
+                } else {
+                    task
+                }
+            }
+        }
+    }
+
+    /**
+     * Updates the progress of a task by its ID.
+     * Progress should be a value between 0.0 and 1.0.
+     */
+    fun updateTaskProgress(
+        taskId: String,
+        progress: Float
+    ) {
+        _tasks.update { currentTasks ->
+            currentTasks.map { task ->
+                if (task.id == taskId) {
+                    task.copy(progress = progress.coerceIn(0f, 1f))
                 } else {
                     task
                 }

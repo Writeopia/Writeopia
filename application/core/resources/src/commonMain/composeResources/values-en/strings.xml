@@ -182,4 +182,12 @@
   <string name="password_strong">Strong password</string>
   <string name="password_req_min_length">At least 8 characters</string>
   <string name="password_req_special_char">One special character (!@#$%^&amp;*)</string>
+  <string name="task_cancelled">Task Cancelled</string>
+  <string name="unknown_error">Unknown error</string>
+  <string name="model_tier_light">Light</string>
+  <string name="model_tier_light_description">Fast and efficient for basic tasks</string>
+  <string name="model_tier_medium">Medium</string>
+  <string name="model_tier_medium_description">Balanced performance for most use cases</string>
+  <string name="model_tier_heavy">Heavy</string>
+  <string name="model_tier_heavy_description">Maximum quality for complex tasks</string>
 </resources>

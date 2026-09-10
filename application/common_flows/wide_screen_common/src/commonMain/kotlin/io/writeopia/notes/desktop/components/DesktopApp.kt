@@ -261,6 +261,7 @@ fun DesktopApp(
                                     localAiSelectedModel = globalShellViewModel.localAiSelectedModelState,
                                     downloadModelState = globalShellViewModel.downloadModelState,
                                     cloudAiUsageState = globalShellViewModel.cloudAiUsageState,
+                                    autoConfigureState = globalShellViewModel.autoConfigureState,
                                     userOnlineState = globalShellViewModel.userState,
                                     showDeleteConfirmation = globalShellViewModel.showDeleteConfirmation,
                                     syncWorkspaceState = globalShellViewModel.lastWorkspaceSync,
@@ -278,6 +279,11 @@ fun DesktopApp(
                                     downloadModel = globalShellViewModel::modelToDownload,
                                     deleteModel = globalShellViewModel::deleteModel,
                                     loadCloudAiUsage = globalShellViewModel::loadCloudAiUsage,
+                                    autoConfigureLocalAi = globalShellViewModel::autoConfigure,
+                                    wizardState = globalShellViewModel.wizardState,
+                                    openWizard = globalShellViewModel::openWizard,
+                                    closeWizard = globalShellViewModel::closeWizard,
+                                    selectProviderAndModel = globalShellViewModel::selectProviderAndModel,
                                     signIn = navigateToRegister,
                                     changeWorkspace = {
                                         globalShellViewModel.changeWorkspace(sideEffect = navigateToChooseWorkspace)

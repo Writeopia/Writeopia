@@ -187,4 +187,26 @@
   <string name="no_usage_data">Nenhum dado de uso disponível</string>
   <string name="tokens_used">tokens usados (renova todo mês)</string>
   <string name="monthly_quota">Cota mensal</string>
+  <string name="task_cancelled">Tarefa Cancelada</string>
+  <string name="unknown_error">Erro desconhecido</string>
+  <string name="model_tier_light">Leve</string>
+  <string name="model_tier_light_description">Rápido e eficiente para tarefas básicas</string>
+  <string name="model_tier_medium">Médio</string>
+  <string name="model_tier_medium_description">Desempenho equilibrado para a maioria dos casos</string>
+  <string name="model_tier_heavy">Pesado</string>
+  <string name="model_tier_heavy_description">Máxima qualidade para tarefas complexas</string>
+  <string name="auto_configure_local_ai">Configurar automaticamente</string>
+  <string name="auto_configure_local_ai_success">IA Local configurada com sucesso!</string>
+  <string name="auto_configure_local_ai_error">IA Local não foi encontrada rodando nesta máquina. Por favor, instale e inicie Ollama ou llmman e tente novamente.</string>
+  <string name="manual_configuration">Configuração Manual</string>
+  <string name="detecting_local_ai">Detectando IA Local</string>
+  <string name="configure_local_ai">Configurar IA Local</string>
+  <string name="select_provider">Selecionar Provedor</string>
+  <string name="select_model_tier">Selecionar Nível do Modelo</string>
+  <string name="download_and_configure">Baixar &amp; Configurar</string>
+  <string name="configuration_failed">Falha na Configuração</string>
+  <string name="provider_available">Disponível</string>
+  <string name="provider_not_detected">Não Detectado</string>
+  <string name="error_no_provider_detected">IA Local não foi encontrada rodando nesta máquina. Por favor, instale e inicie Ollama ou llmman e tente novamente.</string>
+  <string name="error_fetch_config">Falha ao buscar configuração</string>
 </resources>
