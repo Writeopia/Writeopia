@@ -76,11 +76,26 @@ class AiTaskManager(
 
                     val result = runCatching { execution() }.getOrElse { Result.failure(it) }
 
+                    // Check if task was cancelled while running
+                    if (isCancelled(id)) {
+                        // Don't overwrite CANCELLED status
+                        return@withLock
+                    }
+
                     if (result.isSuccess) {
                         updateTaskStatus(id, AiTaskStatus.COMPLETED)
                     } else {
-                        val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
-                        updateTaskStatus(id, AiTaskStatus.FAILED, errorMessage)
+                        val exception = result.exceptionOrNull()
+                        val errorType = when (exception) {
+                            is CancellationException -> AiTaskErrorType.CANCELLED
+                            else -> AiTaskErrorType.UNKNOWN
+                        }
+                        val customMessage = if (exception !is CancellationException) {
+                            exception?.message
+                        } else {
+                            null
+                        }
+                        updateTaskStatus(id, AiTaskStatus.FAILED, errorType, customMessage)
                     }
 
                     delay(autoRemoveDelayMs)
@@ -144,12 +159,13 @@ class AiTaskManager(
     private fun updateTaskStatus(
         taskId: String,
         status: AiTaskStatus,
+        errorType: AiTaskErrorType? = null,
         errorMessage: String? = null
     ) {
         _tasks.update { currentTasks ->
             currentTasks.map { task ->
                 if (task.id == taskId) {
-                    task.copy(status = status, errorMessage = errorMessage)
+                    task.copy(status = status, errorType = errorType, errorMessage = errorMessage)
                 } else {
                     task
                 }

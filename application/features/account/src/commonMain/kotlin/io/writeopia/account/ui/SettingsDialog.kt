@@ -827,6 +827,33 @@ private fun AiSection(
 
         Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
+        // Configuration status indicator
+        val availableModelsState by localAiAvailableModels.collectAsState(ResultData.Idle())
+        val selectedModel by localAiSelectedModel.collectAsState()
+
+        // AI is considered configured if we can successfully fetch models and a model is selected
+        val isConfigured = availableModelsState is ResultData.Complete &&
+                          (availableModelsState as? ResultData.Complete)?.data?.isNotEmpty() == true &&
+                          selectedModel.isNotBlank()
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 8.dp)
+        ) {
+            Icon(
+                imageVector = if (isConfigured) WrIcons.check else WrIcons.close,
+                contentDescription = null,
+                tint = if (isConfigured) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = if (isConfigured) WrStrings.aiConfigured() else WrStrings.aiNotConfigured(),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isConfigured) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+            )
+        }
+
         // Wizard trigger button
         CommonButton(
             text = WrStrings.autoConfigureLocalAi(),

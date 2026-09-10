@@ -327,6 +327,13 @@ class GlobalShellKmpViewModel(
             }
         }
 
+        // Load Local AI configuration on startup
+        viewModelScope.launch(Dispatchers.Default) {
+            authRepository.listenForUser().collect { user ->
+                localAiRepository.refreshConfiguration(user.id)
+            }
+        }
+
         // For backend-only mode, load menu items from the backend
         if (useBackendOnly) {
             viewModelScope.launch(Dispatchers.Default) {
@@ -674,7 +681,11 @@ class GlobalShellKmpViewModel(
             _wizardState.value = LocalAiWizardState.Closed
 
             val userId = getUserId()
+
+            // Save configuration immediately (don't wait for download)
             localAiRepository.saveLocalAiUrl(userId, providerUrl)
+            localAiRepository.saveLocalAiSelectedModel(userId, modelName)
+            localAiRepository.refreshConfiguration(userId)
 
             val taskId = "download-model-$modelName-${System.currentTimeMillis()}"
             val taskManager = AiTaskManager.singleton()
@@ -695,8 +706,7 @@ class GlobalShellKmpViewModel(
                             is ResultData.Complete -> {
                                 // Update progress to 100% before completing
                                 taskManager.updateTaskProgress(taskId, 1.0f)
-                                localAiRepository.saveLocalAiSelectedModel(userId, modelName)
-                                localAiRepository.refreshConfiguration(userId)
+                                // Refresh models list after download completes
                                 retryModels()
                             }
                             is ResultData.InProgress -> {

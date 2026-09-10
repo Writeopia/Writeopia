@@ -182,4 +182,6 @@
   <string name="password_strong">Strong password</string>
   <string name="password_req_min_length">At least 8 characters</string>
   <string name="password_req_special_char">One special character (!@#$%^&amp;*)</string>
+  <string name="task_cancelled">Task Cancelled</string>
+  <string name="unknown_error">Unknown error</string>
 </resources>

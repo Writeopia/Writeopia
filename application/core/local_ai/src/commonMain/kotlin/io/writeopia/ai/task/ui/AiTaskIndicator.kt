@@ -47,9 +47,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.writeopia.ai.task.AiTask
+import io.writeopia.ai.task.AiTaskErrorType
 import io.writeopia.ai.task.AiTaskStatus
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.resources.WrStrings
 import io.writeopia.ui.icons.WrSdkIcons
 import kotlinx.coroutines.flow.StateFlow
 
@@ -212,9 +214,13 @@ private fun TaskItem(
                 overflow = TextOverflow.Ellipsis
             )
 
-            if (task.status == AiTaskStatus.FAILED && task.errorMessage != null) {
+            if (task.status == AiTaskStatus.FAILED && task.errorType != null) {
+                val errorText = when (task.errorType) {
+                    AiTaskErrorType.CANCELLED -> WrStrings.taskCancelled()
+                    AiTaskErrorType.UNKNOWN -> task.errorMessage ?: WrStrings.unknownError()
+                }
                 Text(
-                    text = task.errorMessage,
+                    text = errorText,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
                     maxLines = 1,

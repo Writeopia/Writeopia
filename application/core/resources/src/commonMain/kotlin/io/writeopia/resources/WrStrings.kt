@@ -211,6 +211,10 @@ import writeopia.application.core.resources.generated.resources.provider_not_det
 import writeopia.application.core.resources.generated.resources.error_no_provider_detected
 import writeopia.application.core.resources.generated.resources.error_fetch_config
 import writeopia.application.core.resources.generated.resources.error_download_model
+import writeopia.application.core.resources.generated.resources.ai_configured
+import writeopia.application.core.resources.generated.resources.ai_not_configured
+import writeopia.application.core.resources.generated.resources.task_cancelled
+import writeopia.application.core.resources.generated.resources.unknown_error
 
 object WrStrings {
 
@@ -843,4 +847,16 @@ object WrStrings {
 
     @Composable
     fun errorDownloadModel() = stringResource(Res.string.error_download_model)
+
+    @Composable
+    fun aiConfigured() = stringResource(Res.string.ai_configured)
+
+    @Composable
+    fun aiNotConfigured() = stringResource(Res.string.ai_not_configured)
+
+    @Composable
+    fun taskCancelled() = stringResource(Res.string.task_cancelled)
+
+    @Composable
+    fun unknownError() = stringResource(Res.string.unknown_error)
 }

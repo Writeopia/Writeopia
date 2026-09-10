@@ -187,4 +187,6 @@
   <string name="no_usage_data">Nenhum dado de uso disponível</string>
   <string name="tokens_used">tokens usados (renova todo mês)</string>
   <string name="monthly_quota">Cota mensal</string>
+  <string name="task_cancelled">Tarefa Cancelada</string>
+  <string name="unknown_error">Erro desconhecido</string>
 </resources>

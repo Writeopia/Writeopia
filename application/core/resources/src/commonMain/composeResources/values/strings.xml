@@ -227,9 +227,13 @@
   <string name="select_model_tier">Select Model Tier</string>
   <string name="download_and_configure">Download &amp; Configure</string>
   <string name="configuration_failed">Configuration Failed</string>
+  <string name="ai_configured">AI configured</string>
+  <string name="ai_not_configured">AI not configured</string>
   <string name="provider_available">Available</string>
   <string name="provider_not_detected">Not Detected</string>
   <string name="error_no_provider_detected">Local AI was not found running on this machine. Please, install and start Ollama or llmman and try again.</string>
   <string name="error_fetch_config">Failed to fetch configuration</string>
   <string name="error_download_model">Failed to download model</string>
+  <string name="task_cancelled">Task Cancelled</string>
+  <string name="unknown_error">Unknown error</string>
 </resources>

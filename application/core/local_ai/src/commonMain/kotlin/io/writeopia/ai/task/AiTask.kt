@@ -14,11 +14,17 @@ enum class AiTaskStatus {
     CANCELLED
 }
 
+enum class AiTaskErrorType {
+    CANCELLED,
+    UNKNOWN
+}
+
 data class AiTask(
     val id: String,
     val type: AiTaskType,
     val description: String,
     val status: AiTaskStatus,
-    val errorMessage: String? = null,
+    val errorType: AiTaskErrorType? = null,
+    val errorMessage: String? = null, // Optional custom error message
     val progress: Float? = null // Progress percentage (0.0 to 1.0) for tasks that support it
 )
