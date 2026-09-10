@@ -833,8 +833,8 @@ private fun AiSection(
 
         // AI is considered configured if we can successfully fetch models and a model is selected
         val isConfigured = availableModelsState is ResultData.Complete &&
-                          (availableModelsState as? ResultData.Complete)?.data?.isNotEmpty() == true &&
-                          selectedModel.isNotBlank()
+            (availableModelsState as? ResultData.Complete)?.data?.isNotEmpty() == true &&
+            selectedModel.isNotBlank()
 
         Row(
             verticalAlignment = Alignment.CenterVertically,

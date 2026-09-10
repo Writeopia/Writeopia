@@ -3,12 +3,16 @@ package io.writeopia.model
 import io.writeopia.sdk.serialization.response.LocalAiAutoConfigResponse
 
 sealed class LocalAiWizardState {
+
     data object Closed : LocalAiWizardState()
+
     data object DetectingProviders : LocalAiWizardState()
+
     data class SelectingConfiguration(
         val config: LocalAiAutoConfigResponse,
         val availableProviders: List<ProviderInfo>
     ) : LocalAiWizardState()
+
     data class Error(val errorType: WizardErrorType, val customMessage: String? = null) : LocalAiWizardState()
 }
 

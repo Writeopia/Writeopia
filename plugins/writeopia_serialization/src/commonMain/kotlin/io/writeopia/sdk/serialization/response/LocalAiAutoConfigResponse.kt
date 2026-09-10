@@ -18,5 +18,6 @@ data class LocalAiAutoConfigResponse(
         ModelTier("Medium", "Balanced performance for most use cases", "gpt-oss:20b"),
         ModelTier("Heavy", "Maximum quality for complex tasks", "mistral-small:24b")
     ),
-    val defaultTierIndex: Int = 1 // Medium pre-selected
+    // Medium pre-selected
+    val defaultTierIndex: Int = 1
 )
