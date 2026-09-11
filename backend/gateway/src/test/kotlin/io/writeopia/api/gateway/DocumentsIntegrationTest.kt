@@ -2,6 +2,10 @@
 
 package io.writeopia.api.gateway
 
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -1756,5 +1760,61 @@ class DocumentationIntegrationTests {
 
         // Clean up
         db.deleteDocumentById(document.id)
+    }
+
+    @Test
+    fun `it should be possible to upload document header image`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspace = Random.nextInt().toString()
+        val docId = "test_doc_header_${Random.nextInt()}"
+
+        val now = System.currentTimeMillis()
+        db.documentEntityQueries.insert(
+            id = docId,
+            title = "Test Note for Header",
+            created_at = now,
+            last_updated_at = now,
+            last_synced = now,
+            workspace_id = workspace,
+            favorite = false,
+            parent_document_id = "root",
+            icon = null,
+            icon_tint = null,
+            is_locked = false,
+            company_id = null,
+            deleted = false,
+            published = false
+        )
+
+        val response = client.submitFormWithBinaryData(
+            url = "/api/docs/workspace/$workspace/document/$docId/header",
+            formData = formData {
+                append(
+                    key = "image",
+                    value = byteArrayOf(1, 2, 3, 4),
+                    headers = Headers.build {
+                        append(HttpHeaders.ContentType, "image/png")
+                        append(HttpHeaders.ContentDisposition, "filename=\"test.png\"")
+                    }
+                )
+            }
+        )
+
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val updatedDoc = db.documentEntityQueries.selectById(
+            id = docId,
+            workspace_id = workspace
+        ).executeAsOne()
+
+        assertTrue(updatedDoc.header_image != null && updatedDoc.header_image!!.isNotEmpty())
+        assertTrue(updatedDoc.last_updated_at >= now)
+        assertTrue(updatedDoc.last_synced >= now)
+
+        db.deleteDocumentById(docId)
     }
 }

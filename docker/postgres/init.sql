@@ -12,7 +12,8 @@ CREATE TABLE document_entity (
   is_locked BOOLEAN NOT NULL,
   company_id TEXT NULL,
   deleted BOOLEAN NOT NULL,
-  published BOOLEAN NOT NULL DEFAULT FALSE
+  published BOOLEAN NOT NULL DEFAULT FALSE,
+  header_image TEXT 
 );
 
 CREATE TABLE story_step_entity (

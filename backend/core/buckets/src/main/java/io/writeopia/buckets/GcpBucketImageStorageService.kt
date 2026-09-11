@@ -30,26 +30,29 @@ object GcpBucketImageStorageService : ImageStorageService {
 
             multipart.forEachPart { part ->
                 if (part is PartData.FileItem) {
-                    val fileName =
-                        "uploads/$userId/${System.currentTimeMillis()}-${part.originalFileName}"
+                    if (debugMode) {
+                        uploadedUrl = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809"
+                    } else {
+                        val fileName =
+                            "uploads/$userId/${System.currentTimeMillis()}-${part.originalFileName}"
 
-                    val blobInfo =
-                        BlobInfo.newBuilder(bucketName, fileName)
-                            .setContentType(part.contentType?.toString())
-                            .build()
+                        val blobInfo =
+                            BlobInfo.newBuilder(bucketName, fileName)
+                                .setContentType(part.contentType?.toString())
+                                .build()
 
                     val bytes = part.streamProvider().readBytes()
                     storage.create(blobInfo, bytes)
 
-                    // Generate a signed URL for private access
-                    val blobId = BlobId.of(bucketName, fileName)
-                    val signedUrl = storage.signUrl(
-                        BlobInfo.newBuilder(blobId).build(),
-                        SIGNED_URL_EXPIRATION_DAYS,
-                        TimeUnit.DAYS
-                    )
+                        val blobId = BlobId.of(bucketName, fileName)
+                        val signedUrl = storage.signUrl(
+                            BlobInfo.newBuilder(blobId).build(),
+                            SIGNED_URL_EXPIRATION_DAYS,
+                            TimeUnit.DAYS
+                        )
 
-                    uploadedUrl = signedUrl.toString()
+                        uploadedUrl = signedUrl.toString()
+                    }
                 }
                 part.dispose()
             }
@@ -57,10 +60,6 @@ object GcpBucketImageStorageService : ImageStorageService {
             uploadedUrl
         }
 
-    /**
-     * Generates a new signed URL for an existing image.
-     * Useful for refreshing expired URLs.
-     */
     suspend fun refreshSignedUrl(
         bucketName: String,
         objectPath: String,
