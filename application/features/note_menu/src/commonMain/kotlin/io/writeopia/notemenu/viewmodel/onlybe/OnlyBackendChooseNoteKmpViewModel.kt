@@ -550,18 +550,23 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         if (menuItemUi.documentId == parentId) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val workspace = authRepository.getWorkspace() ?: return@launch
+            _menuItemsState.value = ResultData.Loading()
 
-            when (menuItemUi) {
-                is MenuItemUi.FolderUi -> {
-                    documentsApi.moveFolder(menuItemUi.documentId, parentId, workspace.id)
+            val workspace = authRepository.getWorkspace()
+
+            if (workspace != null) {
+                when (menuItemUi) {
+                    is MenuItemUi.FolderUi -> {
+                        documentsApi.moveFolder(menuItemUi.documentId, parentId, workspace.id)
+                    }
+                    is MenuItemUi.DocumentUi -> {
+                        documentsApi.moveDocument(menuItemUi.documentId, parentId, workspace.id)
+                    }
                 }
-                is MenuItemUi.DocumentUi -> {
-                    // Would need a move document API endpoint
-                }
+
+                // Refresh the folder contents to update the UI
+                loadFolderContents()
             }
-
-            loadFolderContents()
         }
     }
 
