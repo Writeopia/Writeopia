@@ -1150,7 +1150,6 @@ fun Routing.documentsRoute(
                     workspace_id = workspaceId
                 )
 
-
                 call.respond(
                     HttpStatusCode.OK,
                     mapOf("headerImage" to imageUrl, "documentId" to documentId)
@@ -1158,5 +1157,4 @@ fun Routing.documentsRoute(
             }
         }
     }
-
 }
