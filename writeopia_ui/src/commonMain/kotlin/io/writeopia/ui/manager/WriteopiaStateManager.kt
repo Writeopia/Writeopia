@@ -90,6 +90,7 @@ class WriteopiaStateManager(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val documentRepository: DocumentRepository? = null,
     val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
+    val supportedPdfFiles: Set<String> = setOf("pdf"),
     private val drawStateModify: (List<DrawStory>, Double) -> (List<DrawStory>) = StepsModifier::modify,
     private val permanentTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number),
     private val listTypes: Set<Int> = setOf(
@@ -1238,6 +1239,47 @@ class WriteopiaStateManager(
         }
     }
 
+    fun addPdf(pdfPath: String, position: Double? = null) {
+        println("[WRITEOPIA] addPdf called: path=$pdfPath, position=$position, isEditable=$isEditable")
+        if (!isEditable) {
+            println("[WRITEOPIA] addPdf aborted - document not editable")
+            return
+        }
+        (position ?: currentPosition())?.let { pos ->
+            println("[WRITEOPIA] addPdf using position: $pos")
+            val story = getStory(pos)
+
+            if (story != null) {
+                val (targetPosition, useInsertMode) = getTitleProtectedPosition(
+                    pos,
+                    story,
+                    explicitPosition = position != null
+                )
+
+                println("[WRITEOPIA] addPdf targetPosition=$targetPosition, useInsertMode=$useInsertMode")
+
+                if (useInsertMode || position != null) {
+                    println("[WRITEOPIA] addPdf - adding at position")
+                    addAtPosition(
+                        StoryStep(type = StoryTypes.PDF.type, path = pdfPath),
+                        targetPosition
+                    )
+                } else {
+                    println("[WRITEOPIA] addPdf - changing story state")
+                    changeStoryStateAndTrackIt(
+                        Action.StoryStateChange(
+                            story.copy(type = StoryTypes.PDF.type, path = pdfPath),
+                            targetPosition
+                        )
+                    )
+                }
+                println("[WRITEOPIA] addPdf completed successfully")
+            } else {
+                println("[WRITEOPIA] addPdf - story is null at position $pos")
+            }
+        } ?: println("[WRITEOPIA] addPdf - no position available")
+    }
+
     /**
      * Adds a story in a position.
      */
@@ -1386,11 +1428,28 @@ class WriteopiaStateManager(
     }
 
     fun receiveExternalFiles(files: List<ExternalFile>, position: Double) {
-        files
-            .filter { file -> supportedImageFiles.contains(file.extension) }
-            .forEach { (filePath, _) ->
-                addImage(filePath, position)
+        println("[WRITEOPIA] receiveExternalFiles called with ${files.size} files at position $position")
+        files.forEach { (filePath, extension) ->
+            val lowerExt = extension.lowercase()
+            println("[WRITEOPIA] Processing file: $filePath")
+            println("[WRITEOPIA]   Original extension: '$extension', Lowercase: '$lowerExt'")
+            println("[WRITEOPIA]   Supported images: $supportedImageFiles")
+            println("[WRITEOPIA]   Supported PDFs: $supportedPdfFiles")
+
+            when {
+                supportedImageFiles.contains(lowerExt) -> {
+                    println("[WRITEOPIA]   ✓ Matched as IMAGE")
+                    addImage(filePath, position)
+                }
+                supportedPdfFiles.contains(lowerExt) -> {
+                    println("[WRITEOPIA]   ✓ Matched as PDF")
+                    addPdf(filePath, position)
+                }
+                else -> {
+                    println("[WRITEOPIA]   ✗ No match - file ignored")
+                }
             }
+        }
     }
 
     fun getDocumentText() = currentStory.value
@@ -1978,6 +2037,7 @@ class WriteopiaStateManager(
             keyboardEventFlow.filterNotNull(),
             documentRepository,
             setOf("jpg", "jpeg", "png"),
+            setOf("pdf"),
             StepsModifier::modify,
             imageUploader = imageUploader,
             textSelectionActiveState = textSelectionActiveState

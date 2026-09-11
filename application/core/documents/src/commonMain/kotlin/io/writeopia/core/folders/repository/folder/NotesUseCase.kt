@@ -9,9 +9,11 @@ import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.document.PdfDocument
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.repository.PdfDocumentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -25,6 +27,7 @@ import kotlin.time.ExperimentalTime
  */
 class NotesUseCase private constructor(
     private val documentRepository: DocumentRepository,
+    private val pdfDocumentRepository: PdfDocumentRepository?,
     private val notesConfig: ConfigurationRepository,
     private val folderRepository: FolderRepository,
 ) {
@@ -71,6 +74,11 @@ class NotesUseCase private constructor(
         when (menuItem) {
             is MenuItemUi.DocumentUi -> {
                 documentRepository.moveToFolder(menuItem.documentId, parentId)
+            }
+
+            is MenuItemUi.PdfUi -> {
+                // TODO: Implement PDF move to folder
+                // pdfDocumentRepository?.moveToFolder(menuItem.documentId, parentId)
             }
 
             is MenuItemUi.FolderUi -> {
@@ -133,8 +141,32 @@ class NotesUseCase private constructor(
     ): List<MenuItem> {
         val folders = loadFoldersByIds(ids)
         val documents = loadDocumentsByIds(ids, workspaceId)
+        val pdfDocuments = pdfDocumentRepository?.loadPdfDocumentsByIds(ids.toList(), workspaceId) ?: emptyList()
 
-        return (folders + documents)
+        println("[NOTES USE CASE] loadMenuItemsByIds: Loaded ${folders.size} folders, ${documents.size} documents, ${pdfDocuments.size} PDFs")
+
+        return (folders + documents + pdfDocuments)
+    }
+
+    private suspend fun loadPdfDocumentsByIds(
+        ids: Iterable<String>,
+        workspaceId: String
+    ): List<MenuItem> {
+        return pdfDocumentRepository?.loadPdfDocumentsByIds(ids.toList(), workspaceId) ?: emptyList()
+    }
+
+    /**
+     * Listen for PDF documents by parent ID
+     */
+    private suspend fun listenForPdfDocumentsByParentId(
+        parentId: String,
+        workspaceId: String
+    ): Flow<Map<String, List<MenuItem>>> {
+        return pdfDocumentRepository?.listenForPdfDocumentsByParentId(parentId, workspaceId)
+            ?.map { pdfDocuments ->
+                val key = "$parentId:$workspaceId"
+                mapOf(key to pdfDocuments as List<MenuItem>)
+            } ?: kotlinx.coroutines.flow.flowOf(emptyMap())
     }
 
     /**
@@ -151,13 +183,17 @@ class NotesUseCase private constructor(
         combine(
             listenForFoldersByParentId(parentId, workspaceId),
             listenForDocumentsByParentId(parentId, workspaceId),
+            listenForPdfDocumentsByParentId(parentId, workspaceId),
             notesConfig.listenOrderPreference(userId)
-        ) { folders, documents, orderPreference ->
+        ) { folders, documents, pdfDocuments, orderPreference ->
+
             val order =
                 orderPreference.takeIf { it.isNotEmpty() }?.let(OrderBy.Companion::fromString)
                     ?: OrderBy.UPDATE
 
-            folders.merge(documents).mapValues { (_, menuItems) ->
+            val combined = folders.merge(documents).merge(pdfDocuments)
+
+            combined.mapValues { (_, menuItems) ->
                 menuItems.sortedWithOrderBy(order)
             }
         }
@@ -207,12 +243,20 @@ class NotesUseCase private constructor(
         documentRepository.refreshDocuments()
     }
 
+    suspend fun savePdfDocumentDb(pdfDocument: PdfDocument) {
+        println("[NOTES USE CASE] savePdfDocumentDb: Saving PDF document ${pdfDocument.title}")
+        pdfDocumentRepository?.savePdfDocument(pdfDocument)
+            ?: println("[NOTES USE CASE] savePdfDocumentDb: WARNING - pdfDocumentRepository is null!")
+    }
+
     /**
      * Soft delete notes: marks as deleted but keeps in database.
      * The notes will be synced to backend and then hard deleted once confirmed.
      */
     suspend fun deleteNotes(ids: Set<String>, workspaceId: String) {
+        println("[NOTES USE CASE] deleteNotes: Deleting ${ids.size} items")
         documentRepository.deleteDocumentByIds(ids, workspaceId)
+        pdfDocumentRepository?.deletePdfDocuments(ids, workspaceId)
         ids.forEach { id ->
             deleteFolderById(id, workspaceId)
         }
@@ -401,11 +445,13 @@ class NotesUseCase private constructor(
 
         fun singleton(
             documentRepository: DocumentRepository,
+            pdfDocumentRepository: PdfDocumentRepository?,
             notesConfig: ConfigurationRepository,
             folderRepository: FolderRepository,
         ): NotesUseCase =
             instance ?: NotesUseCase(
                 documentRepository,
+                pdfDocumentRepository,
                 notesConfig,
                 folderRepository,
             ).also {

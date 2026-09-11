@@ -893,21 +893,47 @@ class NoteEditorKmpViewModel(
     }
 
     override fun receiveExternalFile(files: List<ExternalFile>, position: Double) {
+        println("[EDITOR VM] receiveExternalFile called with ${files.size} files at position $position")
         viewModelScope.launch(Dispatchers.Default) {
-            val newFiles = workspaceConfigRepository
-                .loadWorkspacePath(authRepository.getUser().id)
-                ?.let { workspace ->
-                    files.map { file ->
-                        if (writeopiaManager.supportedImageFiles.contains(file.extension)) {
-                            val newPath = SaveImage.saveLocally(file.fullPath, "$workspace/images")
+            val userId = authRepository.getUser().id
+            println("[EDITOR VM] User ID: $userId")
 
+            val workspace = workspaceConfigRepository.loadWorkspacePath(userId)
+            println("[EDITOR VM] Workspace path: $workspace")
+
+            val newFiles = workspace?.let { workspacePath ->
+                println("[EDITOR VM] Processing files for saving...")
+                files.map { file ->
+                    val lowerExt = file.extension.lowercase()
+                    println("[EDITOR VM] File: ${file.name}, Extension: '${file.extension}' -> '$lowerExt'")
+
+                    when {
+                        writeopiaManager.supportedImageFiles.contains(lowerExt) -> {
+                            println("[EDITOR VM]   Saving as IMAGE to: $workspacePath/images")
+                            val newPath = SaveImage.saveLocally(file.fullPath, "$workspacePath/images")
+                            println("[EDITOR VM]   Saved to: $newPath")
                             file.copy(fullPath = newPath)
-                        } else {
+                        }
+
+                        writeopiaManager.supportedPdfFiles.contains(lowerExt) -> {
+                            println("[EDITOR VM]   Saving as PDF to: $workspacePath/files")
+                            val newPath = SaveImage.saveLocally(file.fullPath, "$workspacePath/files")
+                            println("[EDITOR VM]   Saved to: $newPath")
+                            file.copy(fullPath = newPath)
+                        }
+
+                        else -> {
+                            println("[EDITOR VM]   Not matched - keeping original file")
                             file
                         }
                     }
-                } ?: files
+                }
+            } ?: run {
+                println("[EDITOR VM] No workspace path - using original files")
+                files
+            }
 
+            println("[EDITOR VM] Passing ${newFiles.size} files to writeopiaManager")
             writeopiaManager.receiveExternalFiles(newFiles, position)
         }
     }

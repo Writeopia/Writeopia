@@ -65,8 +65,14 @@ actual fun NotesMenuScreen(
 
     val dragAndDropTarget = documentFilesDropTarget(
         chooseNoteViewModel::loadFiles,
-        onStart = { onDropEvent = true },
-        onEnd = { onDropEvent = false },
+        onStart = {
+            println("[NOTES MENU] Drag started - highlighting background")
+            onDropEvent = true
+        },
+        onEnd = {
+            println("[NOTES MENU] Drag ended - removing highlight")
+            onDropEvent = false
+        },
     )
 
     DesktopNotesMenu(
@@ -84,7 +90,13 @@ actual fun NotesMenuScreen(
 //        editFolder = editFolder,
         modifier = modifier.background(background).dragAndDropTarget(
             shouldStartDragAndDrop = { event ->
-                event.awtTransferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)
+                println("[NOTES MENU] shouldStartDragAndDrop called")
+                val supported = event.awtTransferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)
+                println("[NOTES MENU] shouldStartDragAndDrop returning: $supported")
+                if (!supported) {
+                    println("[NOTES MENU] Available flavors: ${event.awtTransferable.transferDataFlavors.joinToString { it.toString() }}")
+                }
+                supported
             },
             target = dragAndDropTarget
         ),
@@ -98,40 +110,53 @@ private fun documentFilesDropTarget(
     onStart: () -> Unit,
     onEnd: () -> Unit,
 ) = remember {
+    println("[NOTES MENU] documentFilesDropTarget composable created/remembered")
     object : DragAndDropTarget {
         override fun onStarted(event: DragAndDropEvent) {
+            println("[NOTES MENU] DragAndDropTarget.onStarted")
             onStart()
         }
 
         override fun onEnded(event: DragAndDropEvent) {
+            println("[NOTES MENU] DragAndDropTarget.onEnded")
             onEnd()
         }
 
         override fun onDrop(event: DragAndDropEvent): Boolean {
+            println("[NOTES MENU] DragAndDropTarget.onDrop called")
             val files = event.awtTransferable.let { transferable ->
+                println("[NOTES MENU] DataFlavor supported: ${transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)}")
                 if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                     val files =
                         transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<File>
 
+                    println("[NOTES MENU] Files received: ${files.size}")
+                    files.forEach { file ->
+                        println("[NOTES MENU] File: ${file.name}, Extension: '${file.extension}', Path: ${file.absolutePath}")
+                    }
+
                     if (files.isNotEmpty()) {
-                        onFileReceived(
-                            files.map { file ->
-                                ExternalFile(
-                                    file.absolutePath,
-                                    file.extension,
-                                    file.name
-                                )
-                            }
-                        )
+                        val externalFiles = files.map { file ->
+                            ExternalFile(
+                                file.absolutePath,
+                                file.extension,
+                                file.name
+                            )
+                        }
+                        println("[NOTES MENU] Calling onFileReceived with ${externalFiles.size} files")
+                        onFileReceived(externalFiles)
                     }
 
                     files
                 } else {
+                    println("[NOTES MENU] No files found in drop event")
                     emptyList()
                 }
             }
 
-            return files.isNotEmpty()
+            val result = files.isNotEmpty()
+            println("[NOTES MENU] DragAndDropTarget.onDrop returning: $result")
+            return result
         }
     }
 }

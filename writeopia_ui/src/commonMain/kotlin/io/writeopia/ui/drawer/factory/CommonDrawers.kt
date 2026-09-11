@@ -30,6 +30,7 @@ import io.writeopia.ui.drawer.content.EquationDrawer
 import io.writeopia.ui.drawer.content.ImageDrawer
 import io.writeopia.ui.drawer.content.LastEmptySpace
 import io.writeopia.ui.drawer.content.LoadingDrawer
+import io.writeopia.ui.drawer.content.PdfDrawer
 import io.writeopia.ui.drawer.content.RowGroupDrawer
 import io.writeopia.ui.drawer.content.SlashCommand
 import io.writeopia.ui.drawer.content.SpaceDrawer
@@ -263,6 +264,14 @@ object CommonDrawers {
             onDragStop = manager::onDragStop
         )
 
+        val pdfDrawer = PdfDrawer(
+            config = drawConfig,
+            onSelected = manager::onSelected,
+            onDelete = manager::onDelete,
+            onDragStart = manager::onDragStart,
+            onDragStop = manager::onDragStop
+        )
+
         val loadingDrawer = LoadingDrawer()
 
         val equationsDrawer = EquationDrawer(
@@ -313,6 +322,7 @@ object CommonDrawers {
             put(StoryTypes.CODE_BLOCK.type.number, codeBlockDrawer)
             put(StoryTypes.IMAGE.type.number, imageDrawer)
             put(StoryTypes.GROUP_IMAGE.type.number, RowGroupDrawer(imageDrawerInGroup))
+            put(StoryTypes.PDF.type.number, pdfDrawer)
             put(StoryTypes.AI_ANSWER.type.number, aiAnswerDrawer)
             put(StoryTypes.LOADING.type.number, loadingDrawer)
             put(StoryTypes.DOCUMENT_LINK.type.number, documentLinkDrawer)

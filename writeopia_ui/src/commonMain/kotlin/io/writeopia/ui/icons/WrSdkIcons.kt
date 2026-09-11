@@ -65,6 +65,8 @@ object WrSdkIcons {
 
     val copy: ImageVector = Files
 
+    val pdf: ImageVector = Files
+
     val check: ImageVector = Check
 
     val ai = WandSparkles

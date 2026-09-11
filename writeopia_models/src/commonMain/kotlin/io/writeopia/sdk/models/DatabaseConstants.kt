@@ -1,6 +1,7 @@
 package io.writeopia.sdk.models
 
 const val DOCUMENT_ENTITY: String = "DOCUMENT_ENTITY_TABLE"
+const val PDF_DOCUMENT_ENTITY: String = "PDF_DOCUMENT_ENTITY_TABLE"
 
 const val TITLE: String = "title"
 const val CREATED_AT: String = "created_at"
@@ -12,3 +13,4 @@ const val PARENT_ID: String = "parent_id"
 const val ICON: String = "icon"
 const val IS_LOCKED: String = "is_locked"
 const val IS_DELETED: String = "is_deleted"
+const val FILE_PATH: String = "file_path"

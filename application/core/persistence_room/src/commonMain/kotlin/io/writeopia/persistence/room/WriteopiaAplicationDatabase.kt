@@ -19,8 +19,10 @@ import io.writeopia.persistence.room.data.entities.UserEntity
 import io.writeopia.persistence.room.data.entities.WorkspaceEntity
 import io.writeopia.sdk.persistence.converter.IdListConverter
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
+import io.writeopia.sdk.persistence.dao.PdfDocumentEntityDao
 import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
+import io.writeopia.sdk.persistence.entity.document.PdfDocumentEntity
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
 
 // The Room compiler generates the `actual` implementations.
@@ -32,6 +34,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
 @Database(
     entities = [
         DocumentEntity::class,
+        PdfDocumentEntity::class,
         StoryStepEntity::class,
         NotesConfigurationEntity::class,
         FolderEntity::class,
@@ -40,7 +43,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         TokenEntity::class,
         WorkspaceEntity::class
     ],
-    version = 29,
+    version = 30,
     exportSchema = false
 )
 @TypeConverters(IdListConverter::class)
@@ -48,6 +51,8 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
 abstract class WriteopiaApplicationDatabase : RoomDatabase() {
 
     abstract fun documentDao(): DocumentEntityDao
+
+    abstract fun pdfDocumentDao(): PdfDocumentEntityDao
 
     abstract fun storyUnitDao(): StoryUnitEntityDao
 

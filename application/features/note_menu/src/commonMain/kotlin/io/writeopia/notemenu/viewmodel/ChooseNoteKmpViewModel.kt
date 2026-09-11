@@ -32,6 +32,7 @@ import io.writeopia.sdk.import.markdown.MarkdownToDocument
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.document.PdfDocument
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.sorting.OrderBy
@@ -85,6 +86,7 @@ internal class ChooseNoteKmpViewModel(
     private val documentToJson: DocumentToJson = DocumentToJson(),
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
     private val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
+    private val supportedPdfFiles: Set<String> = setOf("pdf"),
 ) : ChooseNoteViewModel, ViewModel(), FolderController by folderController {
 
     private val _showOnboardingState =
@@ -569,12 +571,20 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun loadFiles(filePaths: List<ExternalFile>) {
+        println("[CHOOSE NOTE VM] loadFiles called with ${filePaths.size} files")
+        filePaths.forEach { file ->
+            println("[CHOOSE NOTE VM]   File: ${file.name}, Extension: '${file.extension}'")
+        }
+
         val now = Clock.System.now()
 
         viewModelScope.launch(Dispatchers.Default) {
+            println("[CHOOSE NOTE VM] Starting import process...")
             importJsonNotes(filePaths, now)
             importMarkdownNotes(filePaths, now)
             importImages(filePaths, now)
+            importPdfs(filePaths, now)
+            println("[CHOOSE NOTE VM] Import process completed")
         }
     }
 
@@ -720,13 +730,21 @@ internal class ChooseNoteKmpViewModel(
     private suspend fun importJsonNotes(externalFiles: List<ExternalFile>, now: Instant) {
         val workspaceId = authRepository.getWorkspace()?.id ?: return
 
-        externalFiles.filter { file -> file.extension == "json" }
-            .map { file -> file.fullPath }
+        val jsonFiles = externalFiles.filter { file -> file.extension == "json" }
+        println("[CHOOSE NOTE VM] importJsonNotes: Found ${jsonFiles.size} JSON files")
+        jsonFiles.forEach { file ->
+            println("[CHOOSE NOTE VM]   JSON: ${file.name}")
+        }
+
+        jsonFiles.map { file -> file.fullPath }
             .let(writeopiaJsonParser::readDocuments)
             .onCompletion { exception ->
                 if (exception == null) {
 //                        refreshNotes()
+                    println("[CHOOSE NOTE VM] importJsonNotes: Import completed successfully")
                     cancelEditMenu()
+                } else {
+                    println("[CHOOSE NOTE VM] importJsonNotes: Import failed with exception: ${exception.message}")
                 }
             }
             .map { document ->
@@ -753,15 +771,23 @@ internal class ChooseNoteKmpViewModel(
     private suspend fun importMarkdownNotes(externalFiles: List<ExternalFile>, now: Instant) {
         val workspaceId = authRepository.getWorkspace()?.id ?: return
 
-        externalFiles.filter { file -> file.extension == "md" }
-            .map { file -> file.fullPath }
+        val mdFiles = externalFiles.filter { file -> file.extension == "md" }
+        println("[CHOOSE NOTE VM] importMarkdownNotes: Found ${mdFiles.size} Markdown files")
+        mdFiles.forEach { file ->
+            println("[CHOOSE NOTE VM]   Markdown: ${file.name}")
+        }
+
+        mdFiles.map { file -> file.fullPath }
             .let { files ->
                 MarkdownToDocument.readDocuments(files, notesNavigation.id, getWorkspaceId())
             }
             .onCompletion { exception ->
                 if (exception == null) {
 //                        refreshNotes()
+                    println("[CHOOSE NOTE VM] importMarkdownNotes: Import completed successfully")
                     cancelEditMenu()
+                } else {
+                    println("[CHOOSE NOTE VM] importMarkdownNotes: Import failed with exception: ${exception.message}")
                 }
             }
             .map { document ->
@@ -780,18 +806,31 @@ internal class ChooseNoteKmpViewModel(
     private suspend fun importImages(externalFiles: List<ExternalFile>, now: Instant) {
         val workspaceId = authRepository.getWorkspace()?.id ?: return
 
-        externalFiles.filter { file -> supportedImageFiles.contains(file.extension) }
-            .map { externalImage ->
+        val imageFiles = externalFiles.filter { file -> supportedImageFiles.contains(file.extension.lowercase()) }
+        println("[CHOOSE NOTE VM] importImages: Found ${imageFiles.size} image files")
+        println("[CHOOSE NOTE VM] supportedImageFiles: $supportedImageFiles")
+        imageFiles.forEach { file ->
+            println("[CHOOSE NOTE VM]   Image: ${file.name}")
+        }
+
+        imageFiles.map { externalImage ->
                 val imagePath = externalImage.fullPath
+                println("[CHOOSE NOTE VM] importImages: Processing ${externalImage.name}")
 
                 val path = workspaceConfigRepository
                     .loadWorkspacePath(authRepository.getUser().id)
                     ?.let { workspace ->
+                        println("[CHOOSE NOTE VM] importImages: Saving to workspace: $workspace/images")
                         SaveImage.saveLocally(
                             imagePath,
                             "$workspace/images"
                         )
-                    } ?: imagePath
+                    } ?: run {
+                        println("[CHOOSE NOTE VM] importImages: No workspace path, using original path")
+                        imagePath
+                    }
+
+                println("[CHOOSE NOTE VM] importImages: Final path: $path")
 
                 Document(
                     parentId = notesNavigation.id,
@@ -809,8 +848,60 @@ internal class ChooseNoteKmpViewModel(
                 )
             }
             .forEach { document ->
+                println("[CHOOSE NOTE VM] importImages: Saving document to DB")
                 notesUseCase.saveDocumentDb(document)
             }
+
+        println("[CHOOSE NOTE VM] importImages: Import completed")
+    }
+
+    private suspend fun importPdfs(externalFiles: List<ExternalFile>, now: Instant) {
+        val workspaceId = authRepository.getWorkspace()?.id ?: return
+
+        val pdfFiles = externalFiles.filter { file -> supportedPdfFiles.contains(file.extension.lowercase()) }
+        println("[CHOOSE NOTE VM] importPdfs: Found ${pdfFiles.size} PDF files")
+        println("[CHOOSE NOTE VM] supportedPdfFiles: $supportedPdfFiles")
+        pdfFiles.forEach { file ->
+            println("[CHOOSE NOTE VM]   PDF: ${file.name}")
+        }
+
+        pdfFiles.map { externalPdf ->
+                val pdfPath = externalPdf.fullPath
+                println("[CHOOSE NOTE VM] importPdfs: Processing ${externalPdf.name}")
+
+                val path = workspaceConfigRepository
+                    .loadWorkspacePath(authRepository.getUser().id)
+                    ?.let { workspace ->
+                        println("[CHOOSE NOTE VM] importPdfs: Saving to workspace: $workspace/files")
+                        SaveImage.saveLocally(
+                            pdfPath,
+                            "$workspace/files"
+                        )
+                    } ?: run {
+                        println("[CHOOSE NOTE VM] importPdfs: No workspace path, using original path")
+                        pdfPath
+                    }
+
+                println("[CHOOSE NOTE VM] importPdfs: Final path: $path")
+
+                PdfDocument(
+                    parentId = notesNavigation.id,
+                    id = GenerateId.generate(),
+                    lastUpdatedAt = now,
+                    createdAt = now,
+                    workspaceId = workspaceId,
+                    lastSyncedAt = null,
+                    favorite = false,
+                    title = externalPdf.name.removeSuffix(".pdf").removeSuffix(".PDF"),
+                    filePath = path
+                )
+            }
+            .forEach { pdfDocument ->
+                println("[CHOOSE NOTE VM] importPdfs: Saving PDF document to DB")
+                notesUseCase.savePdfDocumentDb(pdfDocument)
+            }
+
+        println("[CHOOSE NOTE VM] importPdfs: Import completed")
     }
 
     private fun handleStorage(workspaceFunc: suspend (String) -> Unit, syncRequest: SyncRequest) {
