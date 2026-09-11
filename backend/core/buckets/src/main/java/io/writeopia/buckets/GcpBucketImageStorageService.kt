@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 
 object GcpBucketImageStorageService : ImageStorageService {
 
-    private val storage = GcpStorageProvider.storage
+    private val storage by lazy { GcpStorageProvider.storage } // Don't run when it's not accessed useful in debug mode
 
     // Signed URL expiration time (7 days)
     private const val SIGNED_URL_EXPIRATION_DAYS = 7L
@@ -31,7 +31,7 @@ object GcpBucketImageStorageService : ImageStorageService {
             multipart.forEachPart { part ->
                 if (part is PartData.FileItem) {
                     if (debugMode) {
-                        uploadedUrl = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809"
+                        uploadedUrl = "https://picsum.photos/200"
                     } else {
                         val fileName =
                             "uploads/$userId/${System.currentTimeMillis()}-${part.originalFileName}"
@@ -41,8 +41,8 @@ object GcpBucketImageStorageService : ImageStorageService {
                                 .setContentType(part.contentType?.toString())
                                 .build()
 
-                    val bytes = part.streamProvider().readBytes()
-                    storage.create(blobInfo, bytes)
+                        val bytes = part.streamProvider().readBytes()
+                        storage.create(blobInfo, bytes)
 
                         val blobId = BlobId.of(bucketName, fileName)
                         val signedUrl = storage.signUrl(
