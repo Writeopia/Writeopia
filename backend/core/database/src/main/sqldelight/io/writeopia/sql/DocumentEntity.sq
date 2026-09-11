@@ -12,7 +12,8 @@ CREATE TABLE document_entity (
   is_locked BOOLEAN NOT NULL,
   company_id TEXT NULL,
   deleted BOOLEAN NOT NULL,
-  published BOOLEAN NOT NULL DEFAULT FALSE
+  published BOOLEAN NOT NULL DEFAULT FALSE,
+  header_image TEXT
 );
 
 selectAll:
@@ -189,3 +190,11 @@ selectIdsByWorkspaceId:
 SELECT id
 FROM document_entity
 WHERE workspace_id = ? AND deleted = FALSE;
+
+updateHeaderImage:
+UPDATE document_entity
+SET 
+  header_image = ?, 
+  last_updated_at = ?, 
+  last_synced = ? 
+WHERE id = ? AND workspace_id = ? AND deleted = FALSE;

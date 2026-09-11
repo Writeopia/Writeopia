@@ -1124,5 +1124,37 @@ fun Routing.documentsRoute(
             }
         }
     }
-}
 
+    authenticate("auth-jwt", optional = debug) {
+        post("/api/docs/workspace/{workspaceId}/document/{documentId}/header") {
+            val userId = getUserId() ?: ""
+            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+            val documentId = call.pathParameters["documentId"] ?: ""
+
+            runIfMember(userId, workspaceId, writeopiaDb, debug) {
+                val multipart = call.receiveMultipart()
+
+                val imageUrl = imageStorageService.uploadImage(multipart, userId, debug)
+
+                if (imageUrl == null) {
+                    call.respond(HttpStatusCode.BadRequest, "No image found in request")
+                    return@runIfMember
+                }
+
+                val now = System.currentTimeMillis()
+                writeopiaDb.documentEntityQueries.updateHeaderImage(
+                    header_image = imageUrl,
+                    last_updated_at = now,
+                    last_synced = now,
+                    id = documentId,
+                    workspace_id = workspaceId
+                )
+
+                call.respond(
+                    HttpStatusCode.OK,
+                    mapOf("headerImage" to imageUrl, "documentId" to documentId)
+                )
+            }
+        }
+    }
+}

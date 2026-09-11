@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 
 object GcpBucketImageStorageService : ImageStorageService {
 
-    private val storage = GcpStorageProvider.storage
+    private val storage by lazy { GcpStorageProvider.storage } // Don't run when it's not accessed useful in debug mode
 
     // Signed URL expiration time (7 days)
     private const val SIGNED_URL_EXPIRATION_DAYS = 7L
@@ -30,26 +30,29 @@ object GcpBucketImageStorageService : ImageStorageService {
 
             multipart.forEachPart { part ->
                 if (part is PartData.FileItem) {
-                    val fileName =
-                        "uploads/$userId/${System.currentTimeMillis()}-${part.originalFileName}"
+                    if (debugMode) {
+                        uploadedUrl = "https://picsum.photos/200"
+                    } else {
+                        val fileName =
+                            "uploads/$userId/${System.currentTimeMillis()}-${part.originalFileName}"
 
-                    val blobInfo =
-                        BlobInfo.newBuilder(bucketName, fileName)
-                            .setContentType(part.contentType?.toString())
-                            .build()
+                        val blobInfo =
+                            BlobInfo.newBuilder(bucketName, fileName)
+                                .setContentType(part.contentType?.toString())
+                                .build()
 
-                    val bytes = part.streamProvider().readBytes()
-                    storage.create(blobInfo, bytes)
+                        val bytes = part.streamProvider().readBytes()
+                        storage.create(blobInfo, bytes)
 
-                    // Generate a signed URL for private access
-                    val blobId = BlobId.of(bucketName, fileName)
-                    val signedUrl = storage.signUrl(
-                        BlobInfo.newBuilder(blobId).build(),
-                        SIGNED_URL_EXPIRATION_DAYS,
-                        TimeUnit.DAYS
-                    )
+                        val blobId = BlobId.of(bucketName, fileName)
+                        val signedUrl = storage.signUrl(
+                            BlobInfo.newBuilder(blobId).build(),
+                            SIGNED_URL_EXPIRATION_DAYS,
+                            TimeUnit.DAYS
+                        )
 
-                    uploadedUrl = signedUrl.toString()
+                        uploadedUrl = signedUrl.toString()
+                    }
                 }
                 part.dispose()
             }
