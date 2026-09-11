@@ -16,7 +16,7 @@ object JwtConfig {
     // Private key: only needed by the service that CREATES tokens
     // Public key: shared with all services that VERIFY tokens
     private val privateKey: RSAPrivateKey? = System.getenv("JWT_PRIVATE_KEY")?.let { loadPrivateKey(it) }
-    private val publicKey: RSAPublicKey = loadPublicKey(
+    internal val publicKey: RSAPublicKey = loadPublicKey(
         System.getenv("JWT_PUBLIC_KEY")
             ?: throw IllegalStateException(
                 """
@@ -26,6 +26,11 @@ object JwtConfig {
                 """.trimIndent()
             )
     )
+
+    /**
+     * Get the RSA public key for JWKS generation
+     */
+    fun getPublicKey(): RSAPublicKey = publicKey
 
     private const val ISSUER = "writeopia"
     private const val AUDIENCE = "writeopia-app"

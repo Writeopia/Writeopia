@@ -9,6 +9,7 @@ import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.cookieAuthRoute
 import io.writeopia.api.core.auth.routing.emailRoute
+import io.writeopia.api.core.auth.routing.jwksRouting
 import io.writeopia.api.core.auth.routing.passwordResetRoute
 import io.writeopia.api.core.auth.routing.workspaceRoute
 import io.writeopia.connection.logger
@@ -29,6 +30,10 @@ fun Application.configureRouting(
         get("/api/auth/health") {
             call.respondText("OK", status = HttpStatusCode.OK)
         }
+
+        // JWKS (JSON Web Key Set) endpoint for ESPv2 JWT validation
+        // ESPv2 uses this to get the public key for JWT signature verification
+        jwksRouting()
 
         if (writeopiaDb != null) {
             // Auth routes: login, register, password reset, account deletion, current user
