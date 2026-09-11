@@ -60,6 +60,10 @@ object GcpBucketImageStorageService : ImageStorageService {
             uploadedUrl
         }
 
+    /**
+     * Generates a new signed URL for an existing image.
+     * Useful for refreshing expired URLs.
+     */
     suspend fun refreshSignedUrl(
         bucketName: String,
         objectPath: String,
