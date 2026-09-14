@@ -27,7 +27,7 @@ jobs:
           path: application/composeApp/build/compose/binaries/main-release/msi
       - id: optional_step_id
         name: Sign Windows app
-        uses: signpath/github-action-submit-signing-request@v2.3
+        uses: signpath/github-action-submit-signing-request@v3.0
         with:
           api-token: '${{ secrets.SIGN_PATH_API_TOKEN }}'
           organization-id: '${{ secrets.SIGN_PATH_ORG_ID }}'
