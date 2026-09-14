@@ -118,7 +118,8 @@ private object ApiInjectorDefaults {
         install(Logging) {
             logger = apiLogger
             level = LogLevel.HEADERS
-            sanitizeHeader { header -> header == HttpHeaders.Authorization }
+            // Don't sanitize Authorization header to see JWT token in logs
+            // sanitizeHeader { header -> header == HttpHeaders.Authorization }
         }
 
         if (bearerTokenHandler != null) {
@@ -127,6 +128,12 @@ private object ApiInjectorDefaults {
                     loadTokens {
                         val accessToken = bearerTokenHandler.getIdToken() ?: ""
                         val refreshToken = bearerTokenHandler.getRefreshToken() ?: ""
+
+                        // Debug logging for JWT token
+                        println("=== JWT TOKEN DEBUG ===")
+                        println("Access Token: $accessToken")
+                        println("======================")
+
                         BearerTokens(accessToken, refreshToken)
                     }
 
