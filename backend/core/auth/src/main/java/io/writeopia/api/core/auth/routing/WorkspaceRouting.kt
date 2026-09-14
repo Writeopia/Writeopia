@@ -1,9 +1,6 @@
 package io.writeopia.api.core.auth.routing
 
-import com.auth0.jwt.JWT
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.auth.authenticate
 import io.ktor.server.request.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
@@ -19,6 +16,7 @@ import io.writeopia.api.core.auth.repository.getUserRoleInWorkspace
 import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.api.core.auth.repository.searchUsersByEmail
 import io.writeopia.api.core.auth.service.WorkspaceService
+import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
 import io.writeopia.api.core.auth.utils.runIfAdmin
 import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
@@ -36,29 +34,6 @@ import io.writeopia.sql.WriteopiaDbBackend
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("WorkspaceRouting")
-
-/**
- * Extract userId from X-Forwarded-Authorization header (from API Gateway).
- * API Gateway already validated the JWT, so we just decode it to extract the userId claim.
- */
-private fun ApplicationCall.getUserIdFromApiGateway(): String? {
-    val forwardedAuth = request.headers["X-Forwarded-Authorization"] ?: return null
-
-    val token = if (forwardedAuth.startsWith("Bearer ", ignoreCase = true)) {
-        forwardedAuth.substring(7).trim()
-    } else {
-        forwardedAuth
-    }
-
-    return try {
-        // Decode without verifying (API Gateway already verified it)
-        val decodedJWT = JWT.decode(token)
-        decodedJWT.getClaim("userId").asString()
-    } catch (e: Exception) {
-        logger.error("Failed to decode JWT from X-Forwarded-Authorization: ${e.message}")
-        null
-    }
-}
 
 fun Routing.workspaceRoute(
     apiKey: String?,
@@ -117,170 +92,176 @@ fun Routing.workspaceRoute(
         call.respond(HttpStatusCode.OK, workspaces)
     }
 
-    authenticate("auth-jwt", optional = debugMode) {
-        post<CreateWorkspaceRequest>("/api/workspace/create") { request ->
-            val userId = getUserId() ?: ""
-            val (workspaceName) = request
+    post<CreateWorkspaceRequest>("/api/workspace/create") { request ->
+        val userId = call.getUserIdFromApiGateway() ?: run {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@post
+        }
+        val (workspaceName) = request
 
-            // Create workspace and add user as admin atomically
-            val workspaceId = GenerateId.generate()
-            WorkspaceService.createWorkspaceWithOwner(
+        // Create workspace and add user as admin atomically
+        val workspaceId = GenerateId.generate()
+        WorkspaceService.createWorkspaceWithOwner(
+            workspaceId = workspaceId,
+            workspaceName = workspaceName,
+            userId = userId,
+            writeopiaDb = writeopiaDb
+        )
+
+        // Initialize tutorial documents for the new workspace.
+        // This is idempotent - if it fails, users can retry via
+        // POST /api/docs/workspace/{workspaceId}/tutorials/initialize
+        try {
+            onWorkspaceCreated?.invoke(userId, workspaceId)
+        } catch (e: Exception) {
+            logger.warn("Failed to initialize tutorials for workspace $workspaceId: ${e.message}")
+            // Continue - workspace is created, tutorials can be initialized later
+        }
+
+        call.respond(HttpStatusCode.Created, ServerResponse("Workspace created"))
+    }
+
+    get("/api/workspace/{workspaceId}/user/{userEmail}") {
+        val userId = call.getUserIdFromApiGateway() ?: run {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@get
+        }
+        val workspaceId = call.pathParameters["workspaceId"]
+            ?: throw IllegalArgumentException("Workspace id is required")
+        val userEmail = call.pathParameters["userEmail"]
+            ?: throw IllegalArgumentException("User email is required")
+
+        runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+            val user = WorkspaceService.getUserInWorkspace(
                 workspaceId = workspaceId,
-                workspaceName = workspaceName,
-                userId = userId,
+                userEmail = userEmail,
                 writeopiaDb = writeopiaDb
             )
 
-            // Initialize tutorial documents for the new workspace.
-            // This is idempotent - if it fails, users can retry via
-            // POST /api/docs/workspace/{workspaceId}/tutorials/initialize
-            try {
-                onWorkspaceCreated?.invoke(userId, workspaceId)
-            } catch (e: Exception) {
-                logger.warn("Failed to initialize tutorials for workspace $workspaceId: ${e.message}")
-                // Continue - workspace is created, tutorials can be initialized later
+            if (user != null) {
+                call.respond(HttpStatusCode.OK, user.toApi())
+            } else {
+                call.respond(HttpStatusCode.NotFound, ServerResponse("User not found"))
             }
-
-            call.respond(HttpStatusCode.Created, ServerResponse("Workspace created"))
         }
     }
 
-    authenticate("auth-jwt", optional = debugMode) {
-        get("/api/workspace/{workspaceId}/user/{userEmail}") {
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"]
-                ?: throw IllegalArgumentException("Workspace id is required")
-            val userEmail = call.pathParameters["userEmail"]
-                ?: throw IllegalArgumentException("User email is required")
+    get("/api/workspace/{workspaceId}/users") {
+        val currentUserId = call.getUserIdFromApiGateway() ?: run {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@get
+        }
+        val workspaceId = call.pathParameters["workspaceId"]
+            ?: throw IllegalArgumentException("Workspace id is required")
 
-            runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
-                val user = WorkspaceService.getUserInWorkspace(
-                    workspaceId = workspaceId,
-                    userEmail = userEmail,
-                    writeopiaDb = writeopiaDb
+        runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
+            val workspaces = WorkspaceService
+                .getUsersInWorkspace(workspaceId, writeopiaDb)
+                .map { workspaceUser -> workspaceUser.toApi() }
+
+            if (workspaces.isNotEmpty()) {
+                call.respond(HttpStatusCode.OK, workspaces)
+            } else {
+                call.respond(HttpStatusCode.NotFound, ServerResponse("No users found for workspace"))
+            }
+        }
+    }
+
+    get("/api/workspace/{workspaceId}/users/paginated") {
+        val currentUserId = call.getUserIdFromApiGateway() ?: run {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@get
+        }
+        val workspaceId = call.pathParameters["workspaceId"]
+            ?: throw IllegalArgumentException("Workspace id is required")
+        val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+        val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
+
+        runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
+            val paginatedUsers = WorkspaceService
+                .getUsersInWorkspacePaginated(workspaceId, page, pageSize, writeopiaDb)
+
+            val response = PaginatedWorkspaceUsersResponse(
+                users = paginatedUsers.users.map { it.toApi() },
+                page = paginatedUsers.page,
+                pageSize = paginatedUsers.pageSize,
+                totalCount = paginatedUsers.totalCount,
+                totalPages = paginatedUsers.totalPages,
+                hasNextPage = paginatedUsers.hasNextPage
+            )
+
+            call.respond(HttpStatusCode.OK, response)
+        }
+    }
+
+    get("/api/workspace/{workspaceId}/users/search") {
+        val currentUserId = call.getUserIdFromApiGateway() ?: run {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@get
+        }
+        val workspaceId = call.pathParameters["workspaceId"]
+            ?: throw IllegalArgumentException("Workspace id is required")
+        val emailQuery = call.request.queryParameters["email"] ?: ""
+        val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+        val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
+
+        if (emailQuery.length < 2) {
+            call.respond(HttpStatusCode.BadRequest, ServerResponse("Email query must be at least 2 characters"))
+            return@get
+        }
+
+        runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
+            val offset = ((page - 1) * pageSize).toLong()
+            val limit = (pageSize + 1).toLong() // Request one extra to check if there's a next page
+
+            val results = writeopiaDb.searchUsersByEmail(emailQuery, limit, offset)
+
+            val hasNextPage = results.size > pageSize
+            val users = results.take(pageSize).map { user ->
+                SearchUserApi(
+                    id = user.id,
+                    name = user.name,
+                    email = user.email
                 )
+            }
 
-                if (user != null) {
-                    call.respond(HttpStatusCode.OK, user.toApi())
-                } else {
+            val response = PaginatedUserSearchResponse(
+                users = users,
+                page = page,
+                pageSize = pageSize,
+                hasNextPage = hasNextPage
+            )
+
+            call.respond(HttpStatusCode.OK, response)
+        }
+    }
+
+    post<AddUserToWorkspaceRequest>("/api/workspace/user") { request ->
+        val userId = call.getUserIdFromApiGateway() ?: run {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@post
+        }
+        println("adding user to workspace")
+        val (userEmail, workspaceId, role) = request
+
+        runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+            val result = WorkspaceService.addUserToWorkspaceSecure(
+                workspaceOwnerId = userId,
+                userEmail,
+                workspaceId,
+                role,
+                writeopiaDb
+            )
+
+            when (result) {
+                AddUserResult.SUCCESS -> {
+                    call.respond(HttpStatusCode.OK, ServerResponse("User added to workspace"))
+                }
+                AddUserResult.USER_NOT_FOUND -> {
                     call.respond(HttpStatusCode.NotFound, ServerResponse("User not found"))
                 }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debugMode) {
-        get("/api/workspace/{workspaceId}/users") {
-            val currentUserId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"]
-                ?: throw IllegalArgumentException("Workspace id is required")
-
-            runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
-                val workspaces = WorkspaceService
-                    .getUsersInWorkspace(workspaceId, writeopiaDb)
-                    .map { workspaceUser -> workspaceUser.toApi() }
-
-                if (workspaces.isNotEmpty()) {
-                    call.respond(HttpStatusCode.OK, workspaces)
-                } else {
-                    call.respond(HttpStatusCode.NotFound, ServerResponse("No users found for workspace"))
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debugMode) {
-        get("/api/workspace/{workspaceId}/users/paginated") {
-            val currentUserId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"]
-                ?: throw IllegalArgumentException("Workspace id is required")
-            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-            val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
-
-            runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
-                val paginatedUsers = WorkspaceService
-                    .getUsersInWorkspacePaginated(workspaceId, page, pageSize, writeopiaDb)
-
-                val response = PaginatedWorkspaceUsersResponse(
-                    users = paginatedUsers.users.map { it.toApi() },
-                    page = paginatedUsers.page,
-                    pageSize = paginatedUsers.pageSize,
-                    totalCount = paginatedUsers.totalCount,
-                    totalPages = paginatedUsers.totalPages,
-                    hasNextPage = paginatedUsers.hasNextPage
-                )
-
-                call.respond(HttpStatusCode.OK, response)
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debugMode) {
-        get("/api/workspace/{workspaceId}/users/search") {
-            val currentUserId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"]
-                ?: throw IllegalArgumentException("Workspace id is required")
-            val emailQuery = call.request.queryParameters["email"] ?: ""
-            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-            val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
-
-            if (emailQuery.length < 2) {
-                call.respond(HttpStatusCode.BadRequest, ServerResponse("Email query must be at least 2 characters"))
-                return@get
-            }
-
-            runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
-                val offset = ((page - 1) * pageSize).toLong()
-                val limit = (pageSize + 1).toLong() // Request one extra to check if there's a next page
-
-                val results = writeopiaDb.searchUsersByEmail(emailQuery, limit, offset)
-
-                val hasNextPage = results.size > pageSize
-                val users = results.take(pageSize).map { user ->
-                    SearchUserApi(
-                        id = user.id,
-                        name = user.name,
-                        email = user.email
-                    )
-                }
-
-                val response = PaginatedUserSearchResponse(
-                    users = users,
-                    page = page,
-                    pageSize = pageSize,
-                    hasNextPage = hasNextPage
-                )
-
-                call.respond(HttpStatusCode.OK, response)
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debugMode) {
-        post<AddUserToWorkspaceRequest>("/api/workspace/user") { request ->
-            println("adding user to workspace")
-            val userId = getUserId() ?: ""
-            val (userEmail, workspaceId, role) = request
-
-            runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
-                val result = WorkspaceService.addUserToWorkspaceSecure(
-                    workspaceOwnerId = userId,
-                    userEmail,
-                    workspaceId,
-                    role,
-                    writeopiaDb
-                )
-
-                when (result) {
-                    AddUserResult.SUCCESS -> {
-                        call.respond(HttpStatusCode.OK, ServerResponse("User added to workspace"))
-                    }
-                    AddUserResult.USER_NOT_FOUND -> {
-                        call.respond(HttpStatusCode.NotFound, ServerResponse("User not found"))
-                    }
-                    AddUserResult.USER_ALREADY_IN_WORKSPACE -> {
-                        call.respond(HttpStatusCode.Conflict, ServerResponse("User is already in this workspace"))
-                    }
+                AddUserResult.USER_ALREADY_IN_WORKSPACE -> {
+                    call.respond(HttpStatusCode.Conflict, ServerResponse("User is already in this workspace"))
                 }
             }
         }
@@ -306,78 +287,81 @@ fun Routing.workspaceRoute(
         }
     }
 
-    authenticate("auth-jwt", optional = debugMode) {
-        put<WorkspaceNameChangeRequest>("/api/workspace/name") { nameChange ->
-            val userId = getUserId() ?: ""
-            val (workspaceId, newName) = nameChange
-
-            runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
-                writeopiaDb.changeWorkspaceName(
-                    workspaceId = workspaceId,
-                    newName = newName
-                )
-
-                call.respond(status = HttpStatusCode.OK, ServerResponse("Name changed"))
-            }
+    put<WorkspaceNameChangeRequest>("/api/workspace/name") { nameChange ->
+        val userId = call.getUserIdFromApiGateway() ?: run {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@put
         }
-    }
+        val (workspaceId, newName) = nameChange
 
-    authenticate("auth-jwt", optional = debugMode) {
-        put<WorkspaceRoleChangeRequest>("/api/workspace/role") { roleChange ->
-            val userId = getUserId() ?: ""
-            val (workspaceId, changeRoleUserId, newRole) = roleChange
-
-            runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
-                // Check if this change would leave the workspace without admins
-                val currentRole = writeopiaDb.getUserRoleInWorkspace(workspaceId, changeRoleUserId)
-                val isCurrentlyAdmin = currentRole?.equals(Role.ADMIN.value, ignoreCase = true) == true
-                val isChangingToNonAdmin = !newRole.equals(Role.ADMIN.value, ignoreCase = true)
-
-                if (isCurrentlyAdmin && isChangingToNonAdmin) {
-                    val adminCount = writeopiaDb.countAdminsInWorkspace(workspaceId)
-                    if (adminCount <= 1) {
-                        call.respond(
-                            status = HttpStatusCode.Conflict,
-                            ServerResponse("Cannot change role: workspace must have at least one admin")
-                        )
-                        return@runIfAdmin
-                    }
-                }
-
-                writeopiaDb.changeWorkspaceRoleForUser(
-                    workspaceId = workspaceId,
-                    userId = changeRoleUserId,
-                    newRole = newRole
-                )
-
-                call.respond(status = HttpStatusCode.OK, ServerResponse("Role changed"))
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debugMode) {
-        delete("/api/workspace/{workspaceId}/user/{userId}") {
-            val userId = getUserId() ?: ""
-
-            val workspaceId = call.parameters["workspaceId"] ?: ""
-            val userToDelete = call.parameters["userId"] ?: ""
-
-            if (workspaceId.isEmpty() || userToDelete.isEmpty()) {
-                call.respond(HttpStatusCode.BadRequest, ServerResponse("Invalid request"))
-            }
-
-            val result = WorkspaceService.removeUserFromWorkspaceSecure(
-                workspaceOwnerId = userId,
-                userId = userToDelete,
+        runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+            writeopiaDb.changeWorkspaceName(
                 workspaceId = workspaceId,
-                writeopiaDb = writeopiaDb
+                newName = newName
             )
 
-            if (result) {
-                call.respond(HttpStatusCode.OK, ServerResponse("User removed from workspace"))
-            } else {
-                call.respond(HttpStatusCode.NotFound, ServerResponse("User not removed"))
+            call.respond(status = HttpStatusCode.OK, ServerResponse("Name changed"))
+        }
+    }
+
+    put<WorkspaceRoleChangeRequest>("/api/workspace/role") { roleChange ->
+        val userId = call.getUserIdFromApiGateway() ?: run {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@put
+        }
+        val (workspaceId, changeRoleUserId, newRole) = roleChange
+
+        runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+            // Check if this change would leave the workspace without admins
+            val currentRole = writeopiaDb.getUserRoleInWorkspace(workspaceId, changeRoleUserId)
+            val isCurrentlyAdmin = currentRole?.equals(Role.ADMIN.value, ignoreCase = true) == true
+            val isChangingToNonAdmin = !newRole.equals(Role.ADMIN.value, ignoreCase = true)
+
+            if (isCurrentlyAdmin && isChangingToNonAdmin) {
+                val adminCount = writeopiaDb.countAdminsInWorkspace(workspaceId)
+                if (adminCount <= 1) {
+                    call.respond(
+                        status = HttpStatusCode.Conflict,
+                        ServerResponse("Cannot change role: workspace must have at least one admin")
+                    )
+                    return@runIfAdmin
+                }
             }
+
+            writeopiaDb.changeWorkspaceRoleForUser(
+                workspaceId = workspaceId,
+                userId = changeRoleUserId,
+                newRole = newRole
+            )
+
+            call.respond(status = HttpStatusCode.OK, ServerResponse("Role changed"))
+        }
+    }
+
+    delete("/api/workspace/{workspaceId}/user/{userId}") {
+        val userId = call.getUserIdFromApiGateway() ?: run {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@delete
+        }
+
+        val workspaceId = call.parameters["workspaceId"] ?: ""
+        val userToDelete = call.parameters["userId"] ?: ""
+
+        if (workspaceId.isEmpty() || userToDelete.isEmpty()) {
+            call.respond(HttpStatusCode.BadRequest, ServerResponse("Invalid request"))
+        }
+
+        val result = WorkspaceService.removeUserFromWorkspaceSecure(
+            workspaceOwnerId = userId,
+            userId = userToDelete,
+            workspaceId = workspaceId,
+            writeopiaDb = writeopiaDb
+        )
+
+        if (result) {
+            call.respond(HttpStatusCode.OK, ServerResponse("User removed from workspace"))
+        } else {
+            call.respond(HttpStatusCode.NotFound, ServerResponse("User not removed"))
         }
     }
 
@@ -431,43 +415,43 @@ fun Routing.workspaceRoute(
         }
     }
 
-    authenticate("auth-jwt", optional = debugMode) {
-        post("/api/workspace/{workspaceId}/export") {
-            logger.info("[Export] ========== EXPORT REQUEST RECEIVED ==========")
-            logger.info("[Export] debugMode: $debugMode")
-
-            val authHeader = call.request.header("Authorization")
-            logger.info("[Export] Authorization header present: ${authHeader != null}")
-            logger.info("[Export] Authorization header length: ${authHeader?.length ?: 0}")
-
-            val userId = getUserId()
-            logger.info("[Export] getUserId() returned: ${userId ?: "NULL"}")
-
-            val userIdOrEmpty = userId ?: ""
-            val workspaceId = call.pathParameters["workspaceId"]
-                ?: throw IllegalArgumentException("Workspace id is required")
-
-            logger.info("[Export] userId: '$userIdOrEmpty', workspaceId: '$workspaceId'")
-            logger.info("[Export] Calling runIfAdmin...")
-
-            runIfAdmin(userIdOrEmpty, workspaceId, writeopiaDb, debugMode) {
-                logger.info("[Export] Inside runIfAdmin block - user IS admin!")
-                logger.info("[Export] Triggering export...")
-                val result = WorkspaceService.triggerWorkspaceExport(
-                    userId = userIdOrEmpty,
-                    workspaceId = workspaceId,
-                    writeopiaDb = writeopiaDb
-                )
-
-                if (result) {
-                    logger.info("[Export] Export triggered successfully")
-                    call.respond(HttpStatusCode.Accepted, ServerResponse("Export job started"))
-                } else {
-                    logger.error("[Export] Failed to trigger export")
-                    call.respond(HttpStatusCode.InternalServerError, ServerResponse("Failed to start export"))
-                }
-            }
-            logger.info("[Export] ========== EXPORT REQUEST COMPLETED ==========")
+    post("/api/workspace/{workspaceId}/export") {
+        val userId = call.getUserIdFromApiGateway() ?: run {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@post
         }
+        logger.info("[Export] ========== EXPORT REQUEST RECEIVED ==========")
+        logger.info("[Export] debugMode: $debugMode")
+
+        val authHeader = call.request.header("Authorization")
+        logger.info("[Export] Authorization header present: ${authHeader != null}")
+        logger.info("[Export] Authorization header length: ${authHeader?.length ?: 0}")
+
+        logger.info("[Export] getUserId() returned: $userId")
+
+        val workspaceId = call.pathParameters["workspaceId"]
+            ?: throw IllegalArgumentException("Workspace id is required")
+
+        logger.info("[Export] userId: '$userId', workspaceId: '$workspaceId'")
+        logger.info("[Export] Calling runIfAdmin...")
+
+        runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+            logger.info("[Export] Inside runIfAdmin block - user IS admin!")
+            logger.info("[Export] Triggering export...")
+            val result = WorkspaceService.triggerWorkspaceExport(
+                userId = userId,
+                workspaceId = workspaceId,
+                writeopiaDb = writeopiaDb
+            )
+
+            if (result) {
+                logger.info("[Export] Export triggered successfully")
+                call.respond(HttpStatusCode.Accepted, ServerResponse("Export job started"))
+            } else {
+                logger.error("[Export] Failed to trigger export")
+                call.respond(HttpStatusCode.InternalServerError, ServerResponse("Failed to start export"))
+            }
+        }
+        logger.info("[Export] ========== EXPORT REQUEST COMPLETED ==========")
     }
 }
