@@ -1,6 +1,8 @@
 package io.writeopia.api.core.auth.routing
 
+import com.auth0.jwt.JWT
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.authenticate
 import io.ktor.server.request.header
 import io.ktor.server.response.respond
@@ -34,6 +36,29 @@ import io.writeopia.sql.WriteopiaDbBackend
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("WorkspaceRouting")
+
+/**
+ * Extract userId from X-Forwarded-Authorization header (from API Gateway).
+ * API Gateway already validated the JWT, so we just decode it to extract the userId claim.
+ */
+private fun ApplicationCall.getUserIdFromApiGateway(): String? {
+    val forwardedAuth = request.headers["X-Forwarded-Authorization"] ?: return null
+
+    val token = if (forwardedAuth.startsWith("Bearer ", ignoreCase = true)) {
+        forwardedAuth.substring(7).trim()
+    } else {
+        forwardedAuth
+    }
+
+    return try {
+        // Decode without verifying (API Gateway already verified it)
+        val decodedJWT = JWT.decode(token)
+        decodedJWT.getClaim("userId").asString()
+    } catch (e: Exception) {
+        logger.error("Failed to decode JWT from X-Forwarded-Authorization: ${e.message}")
+        null
+    }
+}
 
 fun Routing.workspaceRoute(
     apiKey: String?,
@@ -73,20 +98,23 @@ fun Routing.workspaceRoute(
         }
     }
 
-    authenticate("auth-jwt", optional = debugMode) {
-        get("/api/workspace/user") {
-            val userId = getUserId() ?: ""
+    get("/api/workspace/user") {
+        val userId = call.getUserIdFromApiGateway()
 
-            val workspaces = WorkspaceService.getWorkspacesByUserId(userId, writeopiaDb)
-                .map { workspace ->
-                    val count = writeopiaDb.documentEntityQueries
-                        .countByWorkspaceId(workspace.id)
-                        .executeAsOne()
-                    workspace.toApi(documentCount = count.toInt())
-                }
-
-            call.respond(HttpStatusCode.OK, workspaces)
+        if (userId.isNullOrEmpty()) {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@get
         }
+
+        val workspaces = WorkspaceService.getWorkspacesByUserId(userId, writeopiaDb)
+            .map { workspace ->
+                val count = writeopiaDb.documentEntityQueries
+                    .countByWorkspaceId(workspace.id)
+                    .executeAsOne()
+                workspace.toApi(documentCount = count.toInt())
+            }
+
+        call.respond(HttpStatusCode.OK, workspaces)
     }
 
     authenticate("auth-jwt", optional = debugMode) {

@@ -20,14 +20,17 @@ fun Application.installAuth() {
 
             // Support both Bearer token in Authorization header AND HttpOnly cookie
             authHeader { call ->
-                // Debug: Check all headers from API Gateway
-                println("=== ALL AUTH HEADERS DEBUG ===")
-                println("Authorization: ${call.request.headers["Authorization"]}")
-                println("X-Endpoint-API-UserInfo: ${call.request.headers["X-Endpoint-API-UserInfo"]}")
-                println("X-Forwarded-Authorization: ${call.request.headers["X-Forwarded-Authorization"]}")
-                println("==============================")
+                // First check X-Forwarded-Authorization (from API Gateway with user's original token)
+                val forwardedAuth = call.request.headers["X-Forwarded-Authorization"]
+                if (!forwardedAuth.isNullOrEmpty()) {
+                    // Parse "Bearer <token>" format
+                    if (forwardedAuth.startsWith("Bearer ", ignoreCase = true)) {
+                        val token = forwardedAuth.substring(7).trim()
+                        return@authHeader HttpAuthHeader.Single("Bearer", token)
+                    }
+                }
 
-                // First try the standard Authorization header
+                // Then try the standard Authorization header (for old endpoint/backward compatibility)
                 val authHeader = call.request.parseAuthorizationHeader()
                 if (authHeader != null) {
                     return@authHeader authHeader
