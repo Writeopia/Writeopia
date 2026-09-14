@@ -46,7 +46,7 @@ fun MainViewController() = ComposeUIViewController {
             WriteopiaDbInjector.initialize(database)
             RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
             WriteopiaConnectionInjector.setBaseUrl(
-                "https://writeopia.io"
+                "https://api2.writeopia.io"
 //                        "http://localhost:8080"
             )
             setupBearerTokenHandler()

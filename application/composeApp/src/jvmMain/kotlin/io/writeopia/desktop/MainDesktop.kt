@@ -227,14 +227,14 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 WriteopiaDbInjector.initialize(database)
                 RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
                 WriteopiaConnectionInjector.setBaseUrl(
-                    "https://writeopia.io"
+                    "https://api2.writeopia.io"
 //                        "http://localhost:8080"
                 )
                 setupBearerTokenHandler()
 
                 // Initialize GenAI (Cloud AI) for the desktop app
                 GenAiInjection.initialize(
-                    baseUrl = "https://writeopia.io"
+                    baseUrl = "https://api2.writeopia.io"
                 )
 
                 val uiConfigurationInjector = UiConfigurationInjector.singleton()
