@@ -122,13 +122,6 @@ class AiAuthorizationTest {
 
     @Test
     fun `quota check should consider only current month usage`() {
-        val monthlyQuota = 100_000L
-        val now = System.currentTimeMillis()
-
-        // Manually insert old record with old timestamp
-        // Note: We can't easily test this without modifying the insert function
-        // So we test the date range filtering in the query
-
         // Insert current usage
         db.insertAiUsage(
             id = UUID.randomUUID().toString(),
@@ -139,6 +132,9 @@ class AiAuthorizationTest {
             totalTokens = 10000,
             model = "gemini-2.0-flash"
         )
+
+        // Get now AFTER insert to ensure record timestamp is included
+        val now = System.currentTimeMillis()
 
         // Query from start of current month (approximation)
         val startOfMonth = now - (30L * 24 * 60 * 60 * 1000) // ~30 days ago
