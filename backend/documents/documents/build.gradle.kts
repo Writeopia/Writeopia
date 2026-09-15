@@ -41,4 +41,5 @@ dependencies {
     implementation(libs.ktor.client.core)
 
     implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.auth.jwt)
 }

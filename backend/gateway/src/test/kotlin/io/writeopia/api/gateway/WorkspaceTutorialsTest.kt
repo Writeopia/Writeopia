@@ -3,6 +3,7 @@ package io.writeopia.api.gateway
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -82,7 +83,10 @@ class WorkspaceTutorialsTest {
         val newWorkspaceName = "New Workspace With Tutorials"
         val createWorkspaceResponse = client.post("/api/workspace/create") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $accessToken")
+                append("X-Forwarded-Authorization", "Bearer $accessToken")
+            }
             setBody(CreateWorkspaceRequest(newWorkspaceName))
         }
 
@@ -98,11 +102,18 @@ class WorkspaceTutorialsTest {
 
         // Find the newly created workspace
         val newWorkspace = workspaces.find { it.name == newWorkspaceName }
-        assertTrue(newWorkspace != null, "New workspace should exist. Found workspaces: ${workspaces.map { it.name }}")
+        assertTrue(
+            newWorkspace != null,
+            "New workspace should exist. Found workspaces: ${workspaces.map { it.name }}"
+        )
 
         // The new workspace should have tutorial documents (5 tutorials)
         // Tutorials: welcomeTutorial, aiTutorial, savingNotesTutorial, commandsTutorial, videoTutorial
-        assertEquals(5, newWorkspace.documentCount, "New workspace should have 5 tutorial documents")
+        assertEquals(
+            5,
+            newWorkspace.documentCount,
+            "New workspace should have 5 tutorial documents"
+        )
     }
 
     @Test
@@ -145,7 +156,10 @@ class WorkspaceTutorialsTest {
         val workspaceName = "Workspace For Idempotent Test"
         val createResponse1 = client.post("/api/workspace/create") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $accessToken")
+                append("X-Forwarded-Authorization", "Bearer $accessToken")
+            }
             setBody(CreateWorkspaceRequest(workspaceName))
         }
 
@@ -163,10 +177,14 @@ class WorkspaceTutorialsTest {
 
         // Manually call the tutorials initialization endpoint again
         // This should not create duplicate tutorials
-        val initTutorialsResponse = client.post("/api/docs/workspace/${workspace1.id}/tutorials/initialize") {
-            contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-        }
+        val initTutorialsResponse =
+            client.post("/api/docs/workspace/${workspace1.id}/tutorials/initialize") {
+                contentType(ContentType.Application.Json)
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $accessToken")
+                    append("X-Forwarded-Authorization", "Bearer $accessToken")
+                }
+            }
 
         assertEquals(HttpStatusCode.OK, initTutorialsResponse.status)
 
@@ -187,84 +205,91 @@ class WorkspaceTutorialsTest {
     }
 
     @Test
-    fun `multiple workspaces created by same user should each have their own tutorials`() = testApplication {
-        application {
-            module(db, debugMode = true)
-        }
+    fun `multiple workspaces created by same user should each have their own tutorials`() =
+        testApplication {
+            application {
+                module(db, debugMode = true)
+            }
 
-        val client = defaultClient()
-        val email = "tutorials_multiple_${Random.nextInt(10000)}@test.com"
-        val password = "testpassword123&"
-        testEmails.add(email)
+            val client = defaultClient()
+            val email = "tutorials_multiple_${Random.nextInt(10000)}@test.com"
+            val password = "testpassword123&"
+            testEmails.add(email)
 
-        // Register a user
-        val registerResponse = client.post("/api/auth/register") {
-            contentType(ContentType.Application.Json)
-            setBody(
-                RegisterRequest(
-                    workspaceName = "Initial Workspace",
-                    name = "Test User",
-                    email = email,
-                    password = password,
+            // Register a user
+            val registerResponse = client.post("/api/auth/register") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    RegisterRequest(
+                        workspaceName = "Initial Workspace",
+                        name = "Test User",
+                        email = email,
+                        password = password,
+                    )
                 )
+            }
+
+            assertEquals(HttpStatusCode.Created, registerResponse.status)
+
+            // Login to get access token
+            val loginResponse = client.post("/api/auth/login") {
+                contentType(ContentType.Application.Json)
+                setBody(LoginRequest(email, password))
+            }
+
+            assertEquals(HttpStatusCode.OK, loginResponse.status)
+            val authResponse = loginResponse.body<AuthResponse>()
+            val accessToken = authResponse.accessToken!!
+
+            // Create first new workspace
+            val workspace1Name = "First New Workspace"
+            val createResponse1 = client.post("/api/workspace/create") {
+                contentType(ContentType.Application.Json)
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $accessToken")
+                    append("X-Forwarded-Authorization", "Bearer $accessToken")
+                }
+                setBody(CreateWorkspaceRequest(workspace1Name))
+            }
+
+            assertEquals(HttpStatusCode.Created, createResponse1.status)
+
+            // Create second new workspace
+            val workspace2Name = "Second New Workspace"
+            val createResponse2 = client.post("/api/workspace/create") {
+                contentType(ContentType.Application.Json)
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $accessToken")
+                    append("X-Forwarded-Authorization", "Bearer $accessToken")
+                }
+                setBody(CreateWorkspaceRequest(workspace2Name))
+            }
+
+            assertEquals(HttpStatusCode.Created, createResponse2.status)
+
+            // Get all workspaces
+            val getWorkspacesResponse = client.get("/api/workspace/user/email/$email") {
+                contentType(ContentType.Application.Json)
+            }
+
+            assertEquals(HttpStatusCode.OK, getWorkspacesResponse.status)
+            val workspaces = getWorkspacesResponse.body<List<WorkspaceApi>>()
+
+            // Find both new workspaces
+            val newWorkspace1 = workspaces.find { it.name == workspace1Name }
+            val newWorkspace2 = workspaces.find { it.name == workspace2Name }
+
+            assertTrue(newWorkspace1 != null, "First new workspace should exist")
+            assertTrue(newWorkspace2 != null, "Second new workspace should exist")
+
+            // Both workspaces should have 5 tutorials each
+            assertEquals(5, newWorkspace1.documentCount, "First workspace should have 5 tutorials")
+            assertEquals(5, newWorkspace2.documentCount, "Second workspace should have 5 tutorials")
+
+            // They should have different IDs
+            assertTrue(
+                newWorkspace1.id != newWorkspace2.id,
+                "Workspaces should have different IDs"
             )
         }
-
-        assertEquals(HttpStatusCode.Created, registerResponse.status)
-
-        // Login to get access token
-        val loginResponse = client.post("/api/auth/login") {
-            contentType(ContentType.Application.Json)
-            setBody(LoginRequest(email, password))
-        }
-
-        assertEquals(HttpStatusCode.OK, loginResponse.status)
-        val authResponse = loginResponse.body<AuthResponse>()
-        val accessToken = authResponse.accessToken!!
-
-        // Create first new workspace
-        val workspace1Name = "First New Workspace"
-        val createResponse1 = client.post("/api/workspace/create") {
-            contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-            setBody(CreateWorkspaceRequest(workspace1Name))
-        }
-
-        assertEquals(HttpStatusCode.Created, createResponse1.status)
-
-        // Create second new workspace
-        val workspace2Name = "Second New Workspace"
-        val createResponse2 = client.post("/api/workspace/create") {
-            contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-            setBody(CreateWorkspaceRequest(workspace2Name))
-        }
-
-        assertEquals(HttpStatusCode.Created, createResponse2.status)
-
-        // Get all workspaces
-        val getWorkspacesResponse = client.get("/api/workspace/user/email/$email") {
-            contentType(ContentType.Application.Json)
-        }
-
-        assertEquals(HttpStatusCode.OK, getWorkspacesResponse.status)
-        val workspaces = getWorkspacesResponse.body<List<WorkspaceApi>>()
-
-        // Find both new workspaces
-        val newWorkspace1 = workspaces.find { it.name == workspace1Name }
-        val newWorkspace2 = workspaces.find { it.name == workspace2Name }
-
-        assertTrue(newWorkspace1 != null, "First new workspace should exist")
-        assertTrue(newWorkspace2 != null, "Second new workspace should exist")
-
-        // Both workspaces should have 5 tutorials each
-        assertEquals(5, newWorkspace1.documentCount, "First workspace should have 5 tutorials")
-        assertEquals(5, newWorkspace2.documentCount, "Second workspace should have 5 tutorials")
-
-        // They should have different IDs
-        assertTrue(
-            newWorkspace1.id != newWorkspace2.id,
-            "Workspaces should have different IDs"
-        )
-    }
 }

@@ -35,7 +35,7 @@ data class JwkKey(
 )
 
 fun Routing.jwksRouting() {
-    get("/.well-known/jwks.json") {
+    get("/api/.well-known/jwks.json") {
         try {
             val jwks = JwtConfig.getJwks()
 
