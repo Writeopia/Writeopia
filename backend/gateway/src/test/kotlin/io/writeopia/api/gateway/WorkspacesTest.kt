@@ -386,7 +386,8 @@ class WorkspacesTest {
                     username = email1 + "_user",
                     password = "testpassword123&",
                 )
-            }
+            )
+        }
 
             assertEquals(HttpStatusCode.Created, response1.status)
 
@@ -401,7 +402,8 @@ class WorkspacesTest {
                     username = email2 + "_user",
                     password = "testpassword123&",
                 )
-            }
+            )
+        }
 
             assertEquals(HttpStatusCode.Created, response2.status)
 

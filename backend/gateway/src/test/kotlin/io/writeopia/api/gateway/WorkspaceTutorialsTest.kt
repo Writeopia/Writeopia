@@ -229,7 +229,8 @@ class WorkspaceTutorialsTest {
                     username = email + "_user",
                     password = password,
                 )
-            }
+            )
+        }
 
             assertEquals(HttpStatusCode.Created, registerResponse.status)
 
