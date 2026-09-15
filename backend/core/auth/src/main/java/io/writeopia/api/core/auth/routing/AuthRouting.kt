@@ -161,58 +161,57 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
 
-            // since we are not allowing email probing and we don't need user data in this case
-            if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) { 
+            if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
+                // vague response — no email/username probing allowed
                 logger.info("register request - user already exists")
                 call.respond(HttpStatusCode.Conflict, "Not Created")
-                return@post
-            }
-
-            // Create user with enabled = false (always requires email confirmation)
-            val wUser = AuthService.createUser(writeopiaDb, request, enabled = false)
-
-            // Generate confirmation code and send email
-            val confirmationCode = EmailService.generateConfirmationCode()
-            val codeExpiry = EmailService.getCodeExpiry()
-            writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
-
-            EmailService.sendConfirmationEmail(
-                toEmail = request.email,
-                code = confirmationCode,
-                userName = request.name
-            )
-
-            val workspaceId = GenerateId.generate()
-            // Every user has its own workspace.
-            WorkspaceService.createWorkspace(
-                workspaceId = workspaceId,
-                workspaceName = request.workspaceName,
-                writeopiaDb = writeopiaDb
-            )
-
-            val created = WorkspaceService.addUserToWorkspaceAdmin(
-                request.email,
-                workspaceId,
-                "ADMIN",
-                writeopiaDb
-            )
-
-            if (created) {
-                call.respond(
-                    HttpStatusCode.Created,
-                    RegisterResponse(
-                        writeopiaUser = wUser.toApi(),
-                        emailConfirmationRequired = true
-                    ),
-                )
             } else {
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    RegisterResponse(
-                        writeopiaUser = wUser.toApi(),
-                        emailConfirmationRequired = true
-                    ),
+                // Create user with enabled = false (always requires email confirmation)
+                val wUser = AuthService.createUser(writeopiaDb, request, enabled = false)
+
+                // Generate confirmation code and send email
+                val confirmationCode = EmailService.generateConfirmationCode()
+                val codeExpiry = EmailService.getCodeExpiry()
+                writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
+
+                EmailService.sendConfirmationEmail(
+                    toEmail = request.email,
+                    code = confirmationCode,
+                    userName = request.name
                 )
+
+                val workspaceId = GenerateId.generate()
+                // Every user has its own workspace.
+                WorkspaceService.createWorkspace(
+                    workspaceId = workspaceId,
+                    workspaceName = request.workspaceName,
+                    writeopiaDb = writeopiaDb
+                )
+
+                val created = WorkspaceService.addUserToWorkspaceAdmin(
+                    request.email,
+                    workspaceId,
+                    "ADMIN",
+                    writeopiaDb
+                )
+
+                if (created) {
+                    call.respond(
+                        HttpStatusCode.Created,
+                        RegisterResponse(
+                            writeopiaUser = wUser.toApi(),
+                            emailConfirmationRequired = true
+                        ),
+                    )
+                } else {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        RegisterResponse(
+                            writeopiaUser = wUser.toApi(),
+                            emailConfirmationRequired = true
+                        ),
+                    )
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
