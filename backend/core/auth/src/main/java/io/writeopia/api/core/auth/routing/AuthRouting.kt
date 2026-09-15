@@ -160,12 +160,8 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         try {
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
-
-            if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
-                // vague response — no email/username probing allowed
-                logger.info("register request - user already exists")
-                call.respond(HttpStatusCode.Conflict, "Not Created")
-            } else {
+            // since we are not allowing email probing and we don't need user data in this case
+            if (!writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
                 // Create user with enabled = false (always requires email confirmation)
                 val wUser = AuthService.createUser(writeopiaDb, request, enabled = false)
 
@@ -212,6 +208,10 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                         ),
                     )
                 }
+            
+            } else {
+                logger.info("register request - user or workspace already exist")
+                call.respond(HttpStatusCode.Conflict, "Not Created")
             }
         } catch (e: Exception) {
             e.printStackTrace()
