@@ -19,6 +19,9 @@ import io.ktor.server.testing.testApplication
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
+import io.writeopia.api.core.auth.repository.getUserByEmail
+import io.writeopia.api.core.auth.repository.insertUser
+import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
 import io.writeopia.sdk.serialization.data.WorkspaceApi
@@ -34,6 +37,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -91,7 +95,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "Name",
                     email = email,
-                    username = email + "_user",
+                    username = email + "_user1",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -104,7 +108,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "Name",
                     email = email,
-                    username = email + "_user",
+                    username = email + "_user2",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -112,6 +116,69 @@ class AuthIntegrationTest {
 
         assertEquals(HttpStatusCode.Created, response.status)
         assertEquals(HttpStatusCode.Conflict, response1.status)
+    }
+
+    @Test
+    fun `it should not be possible to create 2 users with the same username`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val username = "user_${Random.nextInt()}"
+
+        val response1 = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = "Name 1",
+                    email = "${Random.nextInt()}@gmail.com",
+                    username = username,
+                    password = "lasjbdalsdq08w9y&",
+                )
+            )
+        }
+
+        val response2 = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = "Name 2",
+                    email = "${Random.nextInt()}@gmail.com",
+                    username = username,
+                    password = "lasjbdalsdq08w9y&",
+                )
+            )
+        }
+
+        assertEquals(HttpStatusCode.Created, response1.status)
+        assertEquals(HttpStatusCode.Conflict, response2.status)
+    }
+
+    @Test
+    fun `userExistsByUsernameOrEmail should return true if username or email exists, and false if neither exists`() {
+        val email = "existstest_${Random.nextInt()}@gmail.com"
+        val username = "existstest_${Random.nextInt()}"
+
+        db.insertUser(
+            name = "Test User",
+            username = username,
+            email = email,
+            password = "password",
+            salt = "salt",
+            enabled = true,
+        )
+
+        // Both match
+        assertTrue(db.userExistsByUsernameOrEmail(username = username, email = email))
+        // Only username matches
+        assertTrue(db.userExistsByUsernameOrEmail(username = username, email = "nonexistent_${Random.nextInt()}@gmail.com"))
+        // Only email matches
+        assertTrue(db.userExistsByUsernameOrEmail(username = "nonexistent_${Random.nextInt()}", email = email))
+        // Neither matches
+        assertFalse(db.userExistsByUsernameOrEmail(username = "nonexistent_${Random.nextInt()}", email = "nonexistent_${Random.nextInt()}@gmail.com"))
     }
 
     @Test
