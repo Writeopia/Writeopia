@@ -20,7 +20,7 @@ data class WriteopiaBeUser(
         const val DISCONNECTED = "disconnected_user"
 
         fun disconnectedUser(): WriteopiaBeUser =
-            WriteopiaBeUser(id = "disconnected_user", email = "", username = "", name = "", password = "", salt = "", enabled = false)
+            WriteopiaBeUser(id = "disconnected_user", "", "", "", "", "", enabled = false)
     }
 }
 
