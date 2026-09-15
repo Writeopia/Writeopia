@@ -2,7 +2,6 @@ package io.writeopia.api.core.auth.routing
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.plugins.ContentTransformationException
-import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
@@ -27,6 +26,7 @@ import io.writeopia.api.core.auth.service.EmailService
 import io.writeopia.api.core.auth.service.RefreshTokenService
 import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.JwtConfig
+import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
 import io.writeopia.connection.logger
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
@@ -143,19 +143,16 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         }
     }
 
-    authenticate("auth-jwt", optional = debugMode) {
-        post("/api/auth/logout-all") {
-            val userId = getUserId()
-
-            if (userId != null) {
-                with(RefreshTokenService) {
-                    writeopiaDb.revokeAllUserTokens(userId)
-                }
-                call.respond(HttpStatusCode.OK, "All sessions logged out")
-            } else {
-                call.respond(HttpStatusCode.Unauthorized, "Not authenticated")
-            }
+    post("/api/auth/logout-all") {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
+            return@post
         }
+
+        with(RefreshTokenService) {
+            writeopiaDb.revokeAllUserTokens(userId)
+        }
+        call.respond(HttpStatusCode.OK, "All sessions logged out")
     }
 
     post("/api/auth/register") {
@@ -222,55 +219,62 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         }
     }
 
-    authenticate("auth-jwt", optional = debugMode) {
-        delete("/api/auth/account") {
-            val userId = getUserId()
+    delete("/api/auth/account") {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
+            return@delete
+        }
 
-            if (userId != null) {
-                writeopiaDb.deleteUserById(id = userId)
-                call.respond(DeleteAccountResponse(true))
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
+        val rowsAffected = writeopiaDb.deleteUserById(id = userId)
+        if (rowsAffected > 0) {
+            call.respond(HttpStatusCode.OK, DeleteAccountResponse(true))
+        } else {
+            call.respond(HttpStatusCode.NotFound, "User not found")
         }
     }
 
-    authenticate("auth-jwt", optional = debugMode) {
-        put("/api/auth/password/reset") {
-            val request = call.receive<ResetPasswordRequest>()
-            val userId = getUserId()
-            val user = userId?.let(writeopiaDb::getUserById)
+    put("/api/auth/password/reset") {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
+            return@put
+        }
 
-            if (user != null) {
-                AuthService.resetPassword(writeopiaDb, user, request.newPassword)
-                call.respond(HttpStatusCode.OK)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
+        val request = call.receive<ResetPasswordRequest>()
+        val user = writeopiaDb.getUserById(userId)
+
+        if (user != null) {
+            AuthService.resetPassword(writeopiaDb, user, request.newPassword)
+            call.respond(HttpStatusCode.OK)
+        } else {
+            call.respond(HttpStatusCode.NotFound)
         }
     }
 
-    authenticate("auth-jwt", optional = debugMode) {
-        get("/api/auth/user/current") {
-            val userId = getUserId()
+    get("/api/auth/user/current") {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
+            return@get
+        }
 
-            val user = userId?.let(writeopiaDb::getUserById)
+        val user = writeopiaDb.getUserById(userId)
 
-            if (user != null) {
-                call.respond(HttpStatusCode.OK, user.toApi())
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
+        if (user != null) {
+            call.respond(HttpStatusCode.OK, user.toApi())
+        } else {
+            call.respond(HttpStatusCode.NotFound)
         }
     }
 
-    authenticate("auth-jwt", optional = debugMode) {
-        get("/api/auth/hello-auth") {
-            val principal = call.principal<JWTPrincipal>()
-            val username = principal!!.payload.getClaim("username").asString()
-            val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
-            call.respondText("Hello, $username! Token is expired at $expiresAt ms.")
+    get("/api/auth/hello-auth") {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
+            return@get
         }
+
+        val principal = call.principal<JWTPrincipal>()
+        val username = principal!!.payload.getClaim("username").asString()
+        val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
+        call.respondText("Hello, $username! Token is expired at $expiresAt ms.")
     }
 }
 

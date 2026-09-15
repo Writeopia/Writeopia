@@ -359,105 +359,106 @@ class WorkspacesTest {
     }
 
     @Test
-    fun `it should be possible to change an admin to editor when there are multiple admins`() = testApplication {
-        application {
-            module(db, debugMode = true)
-        }
+    fun `it should be possible to change an admin to editor when there are multiple admins`() =
+        testApplication {
+            application {
+                module(db, debugMode = true)
+            }
 
-        val client = defaultClient()
-        val email1 = "multiadmin1_${Random.nextInt(10000)}@test.com"
-        val email2 = "multiadmin2_${Random.nextInt(10000)}@test.com"
-        val workspaceName = "workspace_multiadmin_test"
+            val client = defaultClient()
+            val email1 = "multiadmin1_${Random.nextInt(10000)}@test.com"
+            val email2 = "multiadmin2_${Random.nextInt(10000)}@test.com"
+            val workspaceName = "workspace_multiadmin_test"
 
-        // Register first user (creates workspace with user as ADMIN)
-        val response1 = client.post("/api/auth/register") {
-            contentType(ContentType.Application.Json)
-            setBody(
-                RegisterRequest(
-                    workspaceName = workspaceName,
-                    name = "Admin User 1",
-                    email = email1,
-                    password = "testpassword123&",
+            // Register first user (creates workspace with user as ADMIN)
+            val response1 = client.post("/api/auth/register") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    RegisterRequest(
+                        workspaceName = workspaceName,
+                        name = "Admin User 1",
+                        email = email1,
+                        password = "testpassword123&",
+                    )
                 )
-            )
-        }
+            }
 
-        assertEquals(HttpStatusCode.Created, response1.status)
+            assertEquals(HttpStatusCode.Created, response1.status)
 
-        // Register second user
-        val response2 = client.post("/api/auth/register") {
-            contentType(ContentType.Application.Json)
-            setBody(
-                RegisterRequest(
-                    workspaceName = "other workspace",
-                    name = "Admin User 2",
-                    email = email2,
-                    password = "testpassword123&",
+            // Register second user
+            val response2 = client.post("/api/auth/register") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    RegisterRequest(
+                        workspaceName = "other workspace",
+                        name = "Admin User 2",
+                        email = email2,
+                        password = "testpassword123&",
+                    )
                 )
-            )
-        }
+            }
 
-        assertEquals(HttpStatusCode.Created, response2.status)
+            assertEquals(HttpStatusCode.Created, response2.status)
 
-        // Get the workspace of user 1
-        val getWorkspaceResponse = client.get("/api/workspace/user/email/$email1") {
-            contentType(ContentType.Application.Json)
-        }
+            // Get the workspace of user 1
+            val getWorkspaceResponse = client.get("/api/workspace/user/email/$email1") {
+                contentType(ContentType.Application.Json)
+            }
 
-        val workspace = getWorkspaceResponse.body<List<WorkspaceApi>>().first()
+            val workspace = getWorkspaceResponse.body<List<WorkspaceApi>>().first()
 
-        // Add second user to the workspace as ADMIN
-        val addUserResponse = client.post("/api/workspace/user") {
-            contentType(ContentType.Application.Json)
-            setBody(
-                AddUserToWorkspaceRequest(
-                    email = email2,
-                    workspaceId = workspace.id,
-                    role = "ADMIN"
+            // Add second user to the workspace as ADMIN
+            val addUserResponse = client.post("/api/workspace/user") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    AddUserToWorkspaceRequest(
+                        email = email2,
+                        workspaceId = workspace.id,
+                        role = "ADMIN"
+                    )
                 )
-            )
-        }
+            }
 
-        assertTrue(addUserResponse.status.isSuccess())
+            assertTrue(addUserResponse.status.isSuccess())
 
-        // Get first user in workspace to get user ID
-        val getUser1InWorkspace = client.get(
-            "/api/workspace/${workspace.id}/user/$email1"
-        ) {
-            contentType(ContentType.Application.Json)
-        }.body<WorkspaceUserApi>()
+            // Get first user in workspace to get user ID
+            val getUser1InWorkspace = client.get(
+                "/api/workspace/${workspace.id}/user/$email1"
+            ) {
+                contentType(ContentType.Application.Json)
+            }.body<WorkspaceUserApi>()
 
-        // Verify user1 is ADMIN
-        assertEquals("ADMIN", getUser1InWorkspace.role)
+            // Verify user1 is ADMIN
+            assertEquals("ADMIN", getUser1InWorkspace.role)
 
-        // Change first admin to EDITOR - should succeed because there's another admin
-        val roleChangeResponse = client.put("/api/workspace/role") {
-            contentType(ContentType.Application.Json)
-            setBody(
-                WorkspaceRoleChangeRequest(
-                    workspaceId = workspace.id,
-                    userId = getUser1InWorkspace.id,
-                    newRole = "EDITOR"
+            // Change first admin to EDITOR - should succeed because there's another admin
+            val roleChangeResponse = client.put("/api/workspace/role") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    WorkspaceRoleChangeRequest(
+                        workspaceId = workspace.id,
+                        userId = getUser1InWorkspace.id,
+                        newRole = "EDITOR"
+                    )
                 )
-            )
+            }
+
+            // Should succeed
+            assertTrue(roleChangeResponse.status.isSuccess())
+
+            // Verify user1 is now EDITOR
+            val getUser1InWorkspace2 = client.get(
+                "/api/workspace/${workspace.id}/user/$email1"
+            ) {
+                contentType(ContentType.Application.Json)
+            }.body<WorkspaceUserApi>()
+
+            assertEquals("EDITOR", getUser1InWorkspace2.role)
+
+            // Clean up
+            db.deleteUserByEmail(email1)
+            db.deleteUserByEmail(email2)
         }
-
-        // Should succeed
-        assertTrue(roleChangeResponse.status.isSuccess())
-
-        // Verify user1 is now EDITOR
-        val getUser1InWorkspace2 = client.get(
-            "/api/workspace/${workspace.id}/user/$email1"
-        ) {
-            contentType(ContentType.Application.Json)
-        }.body<WorkspaceUserApi>()
-
-        assertEquals("EDITOR", getUser1InWorkspace2.role)
-
-        // Clean up
-        db.deleteUserByEmail(email1)
-        db.deleteUserByEmail(email2)
-    }
 
     @Test
     fun `it should be possible to change an editor to admin`() = testApplication {

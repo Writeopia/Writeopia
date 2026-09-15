@@ -2,15 +2,22 @@
 
 package io.writeopia.api.gateway
 
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
+import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.documents.documents.repository.deleteDocumentById
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
@@ -121,7 +128,8 @@ class DocumentationIntegrationTests {
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        val response1 = client.get("/api/docs/workspace/someSpace/folder/${folderApiList.first().id}")
+        val response1 =
+            client.get("/api/docs/workspace/someSpace/folder/${folderApiList.first().id}")
         val actual = response1.body<FolderApi>()
 
         assertEquals(HttpStatusCode.OK, response1.status)
@@ -337,7 +345,12 @@ class DocumentationIntegrationTests {
         // Save folders
         val folderResponse = client.post("/api/docs/workspace/folder") {
             contentType(ContentType.Application.Json)
-            setBody(SendFoldersRequest(listOf(subfolder1, subfolder2, unrelatedFolder), workspaceId))
+            setBody(
+                SendFoldersRequest(
+                    listOf(subfolder1, subfolder2, unrelatedFolder),
+                    workspaceId
+                )
+            )
         }
         assertEquals(HttpStatusCode.OK, folderResponse.status)
 
@@ -468,98 +481,100 @@ class DocumentationIntegrationTests {
     }
 
     @Test
-    fun `it should be possible to get folder contents with folders and documents`() = testApplication {
-        application {
-            module(db, debugMode = true)
+    fun `it should be possible to get folder contents with folders and documents`() =
+        testApplication {
+            application {
+                module(db, debugMode = true)
+            }
+
+            val client = defaultClient()
+            val workspaceId = Random.nextInt().toString()
+            val parentFolderId = "parentFolderId_${Random.nextInt()}"
+
+            val childFolder1 = FolderApi(
+                id = "childFolder1_${Random.nextInt()}",
+                title = "Child Folder 1",
+                parentId = parentFolderId,
+                createdAt = Clock.System.now(),
+                lastUpdatedAt = Clock.System.now(),
+                workspaceId = workspaceId,
+                itemCount = 0L,
+            )
+
+            val childFolder2 = FolderApi(
+                id = "childFolder2_${Random.nextInt()}",
+                title = "Child Folder 2",
+                parentId = parentFolderId,
+                createdAt = Clock.System.now(),
+                lastUpdatedAt = Clock.System.now(),
+                workspaceId = workspaceId,
+                itemCount = 0L,
+            )
+
+            val document1 = DocumentApi(
+                id = "document1_${Random.nextInt()}",
+                title = "Document 1",
+                workspaceId = workspaceId,
+                parentId = parentFolderId,
+                isLocked = false,
+                createdAt = 1000L,
+                lastUpdatedAt = 2000L,
+                lastSyncedAt = 0L
+            )
+
+            val document2 = DocumentApi(
+                id = "document2_${Random.nextInt()}",
+                title = "Document 2",
+                workspaceId = workspaceId,
+                parentId = parentFolderId,
+                isLocked = false,
+                createdAt = 1000L,
+                lastUpdatedAt = 2000L,
+                lastSyncedAt = 0L
+            )
+
+            // Save folders
+            val folderResponse = client.post("/api/docs/workspace/folder") {
+                contentType(ContentType.Application.Json)
+                setBody(SendFoldersRequest(listOf(childFolder1, childFolder2), workspaceId))
+            }
+
+            assertEquals(HttpStatusCode.OK, folderResponse.status)
+
+            // Save documents
+            val documentResponse = client.post("/api/docs/workspace/document") {
+                contentType(ContentType.Application.Json)
+                setBody(SendDocumentsRequest(listOf(document1, document2), workspaceId))
+            }
+
+            assertEquals(HttpStatusCode.OK, documentResponse.status)
+
+            // Get folder contents
+            val contentsResponse =
+                client.get("/api/docs/workspace/$workspaceId/folder/$parentFolderId/contents")
+
+            assertEquals(HttpStatusCode.OK, contentsResponse.status)
+
+            val contents = contentsResponse.body<FolderContentResponse>()
+
+            // Verify folders
+            assertEquals(2, contents.folders.size)
+            assertEquals(
+                listOf(childFolder1.id, childFolder2.id).sorted(),
+                contents.folders.map { it.id }.sorted()
+            )
+
+            // Verify documents
+            assertEquals(2, contents.documents.size)
+            assertEquals(
+                listOf(document1.id, document2.id).sorted(),
+                contents.documents.map { it.id }.sorted()
+            )
+
+            // Clean up
+            db.deleteDocumentById(document1.id)
+            db.deleteDocumentById(document2.id)
         }
-
-        val client = defaultClient()
-        val workspaceId = Random.nextInt().toString()
-        val parentFolderId = "parentFolderId_${Random.nextInt()}"
-
-        val childFolder1 = FolderApi(
-            id = "childFolder1_${Random.nextInt()}",
-            title = "Child Folder 1",
-            parentId = parentFolderId,
-            createdAt = Clock.System.now(),
-            lastUpdatedAt = Clock.System.now(),
-            workspaceId = workspaceId,
-            itemCount = 0L,
-        )
-
-        val childFolder2 = FolderApi(
-            id = "childFolder2_${Random.nextInt()}",
-            title = "Child Folder 2",
-            parentId = parentFolderId,
-            createdAt = Clock.System.now(),
-            lastUpdatedAt = Clock.System.now(),
-            workspaceId = workspaceId,
-            itemCount = 0L,
-        )
-
-        val document1 = DocumentApi(
-            id = "document1_${Random.nextInt()}",
-            title = "Document 1",
-            workspaceId = workspaceId,
-            parentId = parentFolderId,
-            isLocked = false,
-            createdAt = 1000L,
-            lastUpdatedAt = 2000L,
-            lastSyncedAt = 0L
-        )
-
-        val document2 = DocumentApi(
-            id = "document2_${Random.nextInt()}",
-            title = "Document 2",
-            workspaceId = workspaceId,
-            parentId = parentFolderId,
-            isLocked = false,
-            createdAt = 1000L,
-            lastUpdatedAt = 2000L,
-            lastSyncedAt = 0L
-        )
-
-        // Save folders
-        val folderResponse = client.post("/api/docs/workspace/folder") {
-            contentType(ContentType.Application.Json)
-            setBody(SendFoldersRequest(listOf(childFolder1, childFolder2), workspaceId))
-        }
-
-        assertEquals(HttpStatusCode.OK, folderResponse.status)
-
-        // Save documents
-        val documentResponse = client.post("/api/docs/workspace/document") {
-            contentType(ContentType.Application.Json)
-            setBody(SendDocumentsRequest(listOf(document1, document2), workspaceId))
-        }
-
-        assertEquals(HttpStatusCode.OK, documentResponse.status)
-
-        // Get folder contents
-        val contentsResponse = client.get("/api/docs/workspace/$workspaceId/folder/$parentFolderId/contents")
-
-        assertEquals(HttpStatusCode.OK, contentsResponse.status)
-
-        val contents = contentsResponse.body<FolderContentResponse>()
-
-        // Verify folders
-        assertEquals(2, contents.folders.size)
-        assertEquals(
-            listOf(childFolder1.id, childFolder2.id).sorted(),
-            contents.folders.map { it.id }.sorted()
-        )
-
-        // Verify documents
-        assertEquals(2, contents.documents.size)
-        assertEquals(
-            listOf(document1.id, document2.id).sorted(),
-            contents.documents.map { it.id }.sorted()
-        )
-
-        // Clean up
-        db.deleteDocumentById(document1.id)
-        db.deleteDocumentById(document2.id)
-    }
 
     @Test
     fun `it should be possible to create a folder inside another folder`() = testApplication {
@@ -592,10 +607,11 @@ class DocumentationIntegrationTests {
         // Create a child folder inside the parent folder
         val createFolderRequest = CreateFolderRequest(title = "Child Folder")
 
-        val createResponse = client.post("/api/docs/workspace/$workspaceId/folder/$parentFolderId/create") {
-            contentType(ContentType.Application.Json)
-            setBody(createFolderRequest)
-        }
+        val createResponse =
+            client.post("/api/docs/workspace/$workspaceId/folder/$parentFolderId/create") {
+                contentType(ContentType.Application.Json)
+                setBody(createFolderRequest)
+            }
 
         assertEquals(HttpStatusCode.Created, createResponse.status)
 
@@ -612,12 +628,16 @@ class DocumentationIntegrationTests {
         assertTrue(createdFolder.id != parentFolderId)
 
         // Verify the folder appears in the parent folder's contents
-        val contentsResponse = client.get("/api/docs/workspace/$workspaceId/folder/$parentFolderId/contents")
+        val contentsResponse =
+            client.get("/api/docs/workspace/$workspaceId/folder/$parentFolderId/contents")
         assertEquals(HttpStatusCode.OK, contentsResponse.status)
 
         val contents = contentsResponse.body<FolderContentResponse>()
         assertTrue(contents.folders.any { it.id == createdFolder.id })
-        assertEquals(createFolderRequest.title, contents.folders.first { it.id == createdFolder.id }.title)
+        assertEquals(
+            createFolderRequest.title,
+            contents.folders.first { it.id == createdFolder.id }.title
+        )
 
         // Clean up
         db.deleteDocumentById(createdFolder.id)
@@ -722,7 +742,8 @@ class DocumentationIntegrationTests {
         assertEquals(workspaceId, upsertedDocument.workspaceId)
 
         // Verify the updated document can be retrieved
-        val getResponse = client.get("/api/docs/workspace/$workspaceId/document/${originalDocument.id}")
+        val getResponse =
+            client.get("/api/docs/workspace/$workspaceId/document/${originalDocument.id}")
         assertEquals(HttpStatusCode.OK, getResponse.status)
         val retrievedDocument = getResponse.body<DocumentApi>()
         assertEquals(originalDocument.id, retrievedDocument.id)
@@ -769,159 +790,214 @@ class DocumentationIntegrationTests {
         assertEquals(HttpStatusCode.OK, deleteResponse.status)
 
         // Verify folder is deleted
-        val getAfterDeleteResponse = client.get("/api/docs/workspace/$workspaceId/folder/${folder.id}")
+        val getAfterDeleteResponse =
+            client.get("/api/docs/workspace/$workspaceId/folder/${folder.id}")
         assertEquals(HttpStatusCode.NotFound, getAfterDeleteResponse.status)
     }
 
     @Test
-    fun `it should recursively delete nested folders and documents when deleting a parent folder`() = testApplication {
-        application {
-            module(db, debugMode = true)
+    fun `it should recursively delete nested folders and documents when deleting a parent folder`() =
+        testApplication {
+            application {
+                module(db, debugMode = true)
+            }
+
+            val client = defaultClient()
+            val workspaceId = Random.nextInt().toString()
+
+            // Create folder structure:
+            // parentFolder
+            // ├── childFolder1
+            // │   ├── grandchildFolder
+            // │   │   └── deepDocument
+            // │   └── childDocument1
+            // ├── childFolder2
+            // │   └── childDocument2
+            // └── parentDocument
+
+            val parentFolder = FolderApi(
+                id = "parentFolder_${Random.nextInt()}",
+                title = "Parent Folder",
+                parentId = "root",
+                createdAt = Clock.System.now(),
+                lastUpdatedAt = Clock.System.now(),
+                workspaceId = workspaceId,
+                itemCount = 0L,
+            )
+
+            val childFolder1 = FolderApi(
+                id = "childFolder1_${Random.nextInt()}",
+                title = "Child Folder 1",
+                parentId = parentFolder.id,
+                createdAt = Clock.System.now(),
+                lastUpdatedAt = Clock.System.now(),
+                workspaceId = workspaceId,
+                itemCount = 0L,
+            )
+
+            val childFolder2 = FolderApi(
+                id = "childFolder2_${Random.nextInt()}",
+                title = "Child Folder 2",
+                parentId = parentFolder.id,
+                createdAt = Clock.System.now(),
+                lastUpdatedAt = Clock.System.now(),
+                workspaceId = workspaceId,
+                itemCount = 0L,
+            )
+
+            val grandchildFolder = FolderApi(
+                id = "grandchildFolder_${Random.nextInt()}",
+                title = "Grandchild Folder",
+                parentId = childFolder1.id,
+                createdAt = Clock.System.now(),
+                lastUpdatedAt = Clock.System.now(),
+                workspaceId = workspaceId,
+                itemCount = 0L,
+            )
+
+            val parentDocument = DocumentApi(
+                id = "parentDoc_${Random.nextInt()}",
+                title = "Parent Document",
+                workspaceId = workspaceId,
+                parentId = parentFolder.id,
+                isLocked = false,
+                createdAt = 1000L,
+                lastUpdatedAt = 2000L,
+                lastSyncedAt = 0L
+            )
+
+            val childDocument1 = DocumentApi(
+                id = "childDoc1_${Random.nextInt()}",
+                title = "Child Document 1",
+                workspaceId = workspaceId,
+                parentId = childFolder1.id,
+                isLocked = false,
+                createdAt = 1000L,
+                lastUpdatedAt = 2000L,
+                lastSyncedAt = 0L
+            )
+
+            val childDocument2 = DocumentApi(
+                id = "childDoc2_${Random.nextInt()}",
+                title = "Child Document 2",
+                workspaceId = workspaceId,
+                parentId = childFolder2.id,
+                isLocked = false,
+                createdAt = 1000L,
+                lastUpdatedAt = 2000L,
+                lastSyncedAt = 0L
+            )
+
+            val deepDocument = DocumentApi(
+                id = "deepDoc_${Random.nextInt()}",
+                title = "Deep Document",
+                workspaceId = workspaceId,
+                parentId = grandchildFolder.id,
+                isLocked = false,
+                createdAt = 1000L,
+                lastUpdatedAt = 2000L,
+                lastSyncedAt = 0L
+            )
+
+            // Create all folders
+            val folderResponse = client.post("/api/docs/workspace/folder") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    SendFoldersRequest(
+                        listOf(parentFolder, childFolder1, childFolder2, grandchildFolder),
+                        workspaceId
+                    )
+                )
+            }
+            assertEquals(HttpStatusCode.OK, folderResponse.status)
+
+            // Create all documents
+            val documentResponse = client.post("/api/docs/workspace/document") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    SendDocumentsRequest(
+                        listOf(parentDocument, childDocument1, childDocument2, deepDocument),
+                        workspaceId
+                    )
+                )
+            }
+            assertEquals(HttpStatusCode.OK, documentResponse.status)
+
+            // Verify all items exist before deletion
+            assertEquals(
+                HttpStatusCode.OK,
+                client.get("/api/docs/workspace/$workspaceId/folder/${parentFolder.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.OK,
+                client.get("/api/docs/workspace/$workspaceId/folder/${childFolder1.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.OK,
+                client.get("/api/docs/workspace/$workspaceId/folder/${childFolder2.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.OK,
+                client.get("/api/docs/workspace/$workspaceId/folder/${grandchildFolder.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.OK,
+                client.get("/api/docs/workspace/$workspaceId/document/${parentDocument.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.OK,
+                client.get("/api/docs/workspace/$workspaceId/document/${childDocument1.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.OK,
+                client.get("/api/docs/workspace/$workspaceId/document/${childDocument2.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.OK,
+                client.get("/api/docs/workspace/$workspaceId/document/${deepDocument.id}").status
+            )
+
+            // Delete the parent folder - should recursively delete everything
+            val deleteResponse =
+                client.delete("/api/docs/workspace/$workspaceId/folder/${parentFolder.id}")
+            assertEquals(HttpStatusCode.OK, deleteResponse.status)
+
+            // Verify all folders are deleted
+            assertEquals(
+                HttpStatusCode.NotFound,
+                client.get("/api/docs/workspace/$workspaceId/folder/${parentFolder.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.NotFound,
+                client.get("/api/docs/workspace/$workspaceId/folder/${childFolder1.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.NotFound,
+                client.get("/api/docs/workspace/$workspaceId/folder/${childFolder2.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.NotFound,
+                client.get("/api/docs/workspace/$workspaceId/folder/${grandchildFolder.id}").status
+            )
+
+            // Verify all documents are deleted
+            assertEquals(
+                HttpStatusCode.NotFound,
+                client.get("/api/docs/workspace/$workspaceId/document/${parentDocument.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.NotFound,
+                client.get("/api/docs/workspace/$workspaceId/document/${childDocument1.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.NotFound,
+                client.get("/api/docs/workspace/$workspaceId/document/${childDocument2.id}").status
+            )
+            assertEquals(
+                HttpStatusCode.NotFound,
+                client.get("/api/docs/workspace/$workspaceId/document/${deepDocument.id}").status
+            )
         }
-
-        val client = defaultClient()
-        val workspaceId = Random.nextInt().toString()
-
-        // Create folder structure:
-        // parentFolder
-        // ├── childFolder1
-        // │   ├── grandchildFolder
-        // │   │   └── deepDocument
-        // │   └── childDocument1
-        // ├── childFolder2
-        // │   └── childDocument2
-        // └── parentDocument
-
-        val parentFolder = FolderApi(
-            id = "parentFolder_${Random.nextInt()}",
-            title = "Parent Folder",
-            parentId = "root",
-            createdAt = Clock.System.now(),
-            lastUpdatedAt = Clock.System.now(),
-            workspaceId = workspaceId,
-            itemCount = 0L,
-        )
-
-        val childFolder1 = FolderApi(
-            id = "childFolder1_${Random.nextInt()}",
-            title = "Child Folder 1",
-            parentId = parentFolder.id,
-            createdAt = Clock.System.now(),
-            lastUpdatedAt = Clock.System.now(),
-            workspaceId = workspaceId,
-            itemCount = 0L,
-        )
-
-        val childFolder2 = FolderApi(
-            id = "childFolder2_${Random.nextInt()}",
-            title = "Child Folder 2",
-            parentId = parentFolder.id,
-            createdAt = Clock.System.now(),
-            lastUpdatedAt = Clock.System.now(),
-            workspaceId = workspaceId,
-            itemCount = 0L,
-        )
-
-        val grandchildFolder = FolderApi(
-            id = "grandchildFolder_${Random.nextInt()}",
-            title = "Grandchild Folder",
-            parentId = childFolder1.id,
-            createdAt = Clock.System.now(),
-            lastUpdatedAt = Clock.System.now(),
-            workspaceId = workspaceId,
-            itemCount = 0L,
-        )
-
-        val parentDocument = DocumentApi(
-            id = "parentDoc_${Random.nextInt()}",
-            title = "Parent Document",
-            workspaceId = workspaceId,
-            parentId = parentFolder.id,
-            isLocked = false,
-            createdAt = 1000L,
-            lastUpdatedAt = 2000L,
-            lastSyncedAt = 0L
-        )
-
-        val childDocument1 = DocumentApi(
-            id = "childDoc1_${Random.nextInt()}",
-            title = "Child Document 1",
-            workspaceId = workspaceId,
-            parentId = childFolder1.id,
-            isLocked = false,
-            createdAt = 1000L,
-            lastUpdatedAt = 2000L,
-            lastSyncedAt = 0L
-        )
-
-        val childDocument2 = DocumentApi(
-            id = "childDoc2_${Random.nextInt()}",
-            title = "Child Document 2",
-            workspaceId = workspaceId,
-            parentId = childFolder2.id,
-            isLocked = false,
-            createdAt = 1000L,
-            lastUpdatedAt = 2000L,
-            lastSyncedAt = 0L
-        )
-
-        val deepDocument = DocumentApi(
-            id = "deepDoc_${Random.nextInt()}",
-            title = "Deep Document",
-            workspaceId = workspaceId,
-            parentId = grandchildFolder.id,
-            isLocked = false,
-            createdAt = 1000L,
-            lastUpdatedAt = 2000L,
-            lastSyncedAt = 0L
-        )
-
-        // Create all folders
-        val folderResponse = client.post("/api/docs/workspace/folder") {
-            contentType(ContentType.Application.Json)
-            setBody(SendFoldersRequest(
-                listOf(parentFolder, childFolder1, childFolder2, grandchildFolder),
-                workspaceId
-            ))
-        }
-        assertEquals(HttpStatusCode.OK, folderResponse.status)
-
-        // Create all documents
-        val documentResponse = client.post("/api/docs/workspace/document") {
-            contentType(ContentType.Application.Json)
-            setBody(SendDocumentsRequest(
-                listOf(parentDocument, childDocument1, childDocument2, deepDocument),
-                workspaceId
-            ))
-        }
-        assertEquals(HttpStatusCode.OK, documentResponse.status)
-
-        // Verify all items exist before deletion
-        assertEquals(HttpStatusCode.OK, client.get("/api/docs/workspace/$workspaceId/folder/${parentFolder.id}").status)
-        assertEquals(HttpStatusCode.OK, client.get("/api/docs/workspace/$workspaceId/folder/${childFolder1.id}").status)
-        assertEquals(HttpStatusCode.OK, client.get("/api/docs/workspace/$workspaceId/folder/${childFolder2.id}").status)
-        assertEquals(HttpStatusCode.OK, client.get("/api/docs/workspace/$workspaceId/folder/${grandchildFolder.id}").status)
-        assertEquals(HttpStatusCode.OK, client.get("/api/docs/workspace/$workspaceId/document/${parentDocument.id}").status)
-        assertEquals(HttpStatusCode.OK, client.get("/api/docs/workspace/$workspaceId/document/${childDocument1.id}").status)
-        assertEquals(HttpStatusCode.OK, client.get("/api/docs/workspace/$workspaceId/document/${childDocument2.id}").status)
-        assertEquals(HttpStatusCode.OK, client.get("/api/docs/workspace/$workspaceId/document/${deepDocument.id}").status)
-
-        // Delete the parent folder - should recursively delete everything
-        val deleteResponse = client.delete("/api/docs/workspace/$workspaceId/folder/${parentFolder.id}")
-        assertEquals(HttpStatusCode.OK, deleteResponse.status)
-
-        // Verify all folders are deleted
-        assertEquals(HttpStatusCode.NotFound, client.get("/api/docs/workspace/$workspaceId/folder/${parentFolder.id}").status)
-        assertEquals(HttpStatusCode.NotFound, client.get("/api/docs/workspace/$workspaceId/folder/${childFolder1.id}").status)
-        assertEquals(HttpStatusCode.NotFound, client.get("/api/docs/workspace/$workspaceId/folder/${childFolder2.id}").status)
-        assertEquals(HttpStatusCode.NotFound, client.get("/api/docs/workspace/$workspaceId/folder/${grandchildFolder.id}").status)
-
-        // Verify all documents are deleted
-        assertEquals(HttpStatusCode.NotFound, client.get("/api/docs/workspace/$workspaceId/document/${parentDocument.id}").status)
-        assertEquals(HttpStatusCode.NotFound, client.get("/api/docs/workspace/$workspaceId/document/${childDocument1.id}").status)
-        assertEquals(HttpStatusCode.NotFound, client.get("/api/docs/workspace/$workspaceId/document/${childDocument2.id}").status)
-        assertEquals(HttpStatusCode.NotFound, client.get("/api/docs/workspace/$workspaceId/document/${deepDocument.id}").status)
-    }
 
     @Test
     fun `it should be possible to delete a list of documents`() = testApplication {
@@ -995,14 +1071,17 @@ class DocumentationIntegrationTests {
         assertEquals(HttpStatusCode.OK, deleteResponse.status)
 
         // Verify documents 1 and 2 are deleted
-        val getAfterDelete1 = client.get("/api/docs/workspace/$workspaceId/document/${document1.id}")
+        val getAfterDelete1 =
+            client.get("/api/docs/workspace/$workspaceId/document/${document1.id}")
         assertEquals(HttpStatusCode.NotFound, getAfterDelete1.status)
 
-        val getAfterDelete2 = client.get("/api/docs/workspace/$workspaceId/document/${document2.id}")
+        val getAfterDelete2 =
+            client.get("/api/docs/workspace/$workspaceId/document/${document2.id}")
         assertEquals(HttpStatusCode.NotFound, getAfterDelete2.status)
 
         // Verify document 3 still exists
-        val getAfterDelete3 = client.get("/api/docs/workspace/$workspaceId/document/${document3.id}")
+        val getAfterDelete3 =
+            client.get("/api/docs/workspace/$workspaceId/document/${document3.id}")
         assertEquals(HttpStatusCode.OK, getAfterDelete3.status)
 
         // Clean up
@@ -1068,10 +1147,11 @@ class DocumentationIntegrationTests {
         assertEquals("root", folderADataBefore.parentId)
 
         // Move folderA to be under folderB
-        val moveResponse = client.post("/api/docs/workspace/$workspaceId/folder/${folderA.id}/move") {
-            contentType(ContentType.Application.Json)
-            setBody(MoveFolderRequest(folderB.id))
-        }
+        val moveResponse =
+            client.post("/api/docs/workspace/$workspaceId/folder/${folderA.id}/move") {
+                contentType(ContentType.Application.Json)
+                setBody(MoveFolderRequest(folderB.id))
+            }
         assertEquals(HttpStatusCode.OK, moveResponse.status)
 
         // Verify folderA is now under folderB
@@ -1087,7 +1167,8 @@ class DocumentationIntegrationTests {
         assertEquals(folderA.id, childDataAfter.parentId)
 
         // Verify folderB contents now include folderA
-        val folderBContents = client.get("/api/docs/workspace/$workspaceId/folder/${folderB.id}/contents")
+        val folderBContents =
+            client.get("/api/docs/workspace/$workspaceId/folder/${folderB.id}/contents")
         assertEquals(HttpStatusCode.OK, folderBContents.status)
         val contentsData = folderBContents.body<FolderContentResponse>()
         assertTrue(contentsData.folders.any { it.id == folderA.id })
@@ -1120,147 +1201,204 @@ class DocumentationIntegrationTests {
         assertEquals(HttpStatusCode.OK, createResponse.status)
 
         // Try to move folder into itself
-        val moveResponse = client.post("/api/docs/workspace/$workspaceId/folder/${folder.id}/move") {
-            contentType(ContentType.Application.Json)
-            setBody(MoveFolderRequest(folder.id))
-        }
+        val moveResponse =
+            client.post("/api/docs/workspace/$workspaceId/folder/${folder.id}/move") {
+                contentType(ContentType.Application.Json)
+                setBody(MoveFolderRequest(folder.id))
+            }
         assertEquals(HttpStatusCode.BadRequest, moveResponse.status)
     }
 
     @Test
-    fun `it should not be possible to move a folder into its descendant (prevent cycle)`() = testApplication {
-        application {
-            module(db, debugMode = true)
+    fun `it should not be possible to move a folder into its descendant (prevent cycle)`() =
+        testApplication {
+            application {
+                module(db, debugMode = true)
+            }
+
+            val client = defaultClient()
+            val workspaceId = Random.nextInt().toString()
+
+            // Create folder structure:
+            // root
+            // └── folderA
+            //     └── folderB
+            //         └── folderC
+            //
+            // Trying to move folderA into folderC should fail (would create cycle)
+
+            val folderA = FolderApi(
+                id = "cycleTestA_${Random.nextInt()}",
+                title = "Folder A",
+                parentId = "root",
+                createdAt = Clock.System.now(),
+                lastUpdatedAt = Clock.System.now(),
+                workspaceId = workspaceId,
+                itemCount = 0L,
+            )
+
+            val folderB = FolderApi(
+                id = "cycleTestB_${Random.nextInt()}",
+                title = "Folder B",
+                parentId = folderA.id,
+                createdAt = Clock.System.now(),
+                lastUpdatedAt = Clock.System.now(),
+                workspaceId = workspaceId,
+                itemCount = 0L,
+            )
+
+            val folderC = FolderApi(
+                id = "cycleTestC_${Random.nextInt()}",
+                title = "Folder C",
+                parentId = folderB.id,
+                createdAt = Clock.System.now(),
+                lastUpdatedAt = Clock.System.now(),
+                workspaceId = workspaceId,
+                itemCount = 0L,
+            )
+
+            // Create all folders
+            val createResponse = client.post("/api/docs/workspace/folder") {
+                contentType(ContentType.Application.Json)
+                setBody(SendFoldersRequest(listOf(folderA, folderB, folderC), workspaceId))
+            }
+            assertEquals(HttpStatusCode.OK, createResponse.status)
+
+            // Try to move folderA into folderC (its grandchild) - should fail
+            val moveResponse =
+                client.post("/api/docs/workspace/$workspaceId/folder/${folderA.id}/move") {
+                    contentType(ContentType.Application.Json)
+                    setBody(MoveFolderRequest(folderC.id))
+                }
+            assertEquals(moveResponse.status, HttpStatusCode.BadRequest)
+
+            // Verify folderA is still under root (not moved)
+            val folderAAfter = client.get("/api/docs/workspace/$workspaceId/folder/${folderA.id}")
+            assertEquals(HttpStatusCode.OK, folderAAfter.status)
+            val folderAData = folderAAfter.body<FolderApi>()
+            assertEquals("root", folderAData.parentId)
+
+            // Try to move folderA into folderB (its child) - should also fail
+            val moveResponse2 =
+                client.post("/api/docs/workspace/$workspaceId/folder/${folderA.id}/move") {
+                    contentType(ContentType.Application.Json)
+                    setBody(MoveFolderRequest(folderB.id))
+                }
+            assertEquals(moveResponse2.status, HttpStatusCode.BadRequest)
         }
-
-        val client = defaultClient()
-        val workspaceId = Random.nextInt().toString()
-
-        // Create folder structure:
-        // root
-        // └── folderA
-        //     └── folderB
-        //         └── folderC
-        //
-        // Trying to move folderA into folderC should fail (would create cycle)
-
-        val folderA = FolderApi(
-            id = "cycleTestA_${Random.nextInt()}",
-            title = "Folder A",
-            parentId = "root",
-            createdAt = Clock.System.now(),
-            lastUpdatedAt = Clock.System.now(),
-            workspaceId = workspaceId,
-            itemCount = 0L,
-        )
-
-        val folderB = FolderApi(
-            id = "cycleTestB_${Random.nextInt()}",
-            title = "Folder B",
-            parentId = folderA.id,
-            createdAt = Clock.System.now(),
-            lastUpdatedAt = Clock.System.now(),
-            workspaceId = workspaceId,
-            itemCount = 0L,
-        )
-
-        val folderC = FolderApi(
-            id = "cycleTestC_${Random.nextInt()}",
-            title = "Folder C",
-            parentId = folderB.id,
-            createdAt = Clock.System.now(),
-            lastUpdatedAt = Clock.System.now(),
-            workspaceId = workspaceId,
-            itemCount = 0L,
-        )
-
-        // Create all folders
-        val createResponse = client.post("/api/docs/workspace/folder") {
-            contentType(ContentType.Application.Json)
-            setBody(SendFoldersRequest(listOf(folderA, folderB, folderC), workspaceId))
-        }
-        assertEquals(HttpStatusCode.OK, createResponse.status)
-
-        // Try to move folderA into folderC (its grandchild) - should fail
-        val moveResponse = client.post("/api/docs/workspace/$workspaceId/folder/${folderA.id}/move") {
-            contentType(ContentType.Application.Json)
-            setBody(MoveFolderRequest(folderC.id))
-        }
-        assertEquals(HttpStatusCode.BadRequest, moveResponse.status)
-
-        // Verify folderA is still under root (not moved)
-        val folderAAfter = client.get("/api/docs/workspace/$workspaceId/folder/${folderA.id}")
-        assertEquals(HttpStatusCode.OK, folderAAfter.status)
-        val folderAData = folderAAfter.body<FolderApi>()
-        assertEquals("root", folderAData.parentId)
-
-        // Try to move folderA into folderB (its child) - should also fail
-        val moveResponse2 = client.post("/api/docs/workspace/$workspaceId/folder/${folderA.id}/move") {
-            contentType(ContentType.Application.Json)
-            setBody(MoveFolderRequest(folderB.id))
-        }
-        assertEquals(HttpStatusCode.BadRequest, moveResponse2.status)
-    }
 
     @Test
-    fun `it should be possible to favorite and unfavorite a document for a user`() = testApplication {
-        application {
-            module(db, debugMode = true)
+    fun `it should be possible to favorite and unfavorite a document for a user`() =
+        testApplication {
+            application {
+                module(db, debugMode = true)
+            }
+
+            val client = defaultClient()
+            val email = "favorite_test_${Random.nextInt()}@test.com"
+            val password = "testpassword123&"
+
+            // Register a user to get a consistent user ID
+            val registerResponse = client.post("/api/auth/register") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    io.writeopia.sdk.serialization.data.auth.RegisterRequest(
+                        workspaceName = "Test Workspace",
+                        name = "Test User",
+                        email = email,
+                        password = password,
+                    )
+                )
+            }
+            assertEquals(HttpStatusCode.Created, registerResponse.status)
+
+            // Login to get access token
+            val loginResponse = client.post("/api/auth/login") {
+                contentType(ContentType.Application.Json)
+                setBody(io.writeopia.sdk.serialization.data.auth.LoginRequest(email, password))
+            }
+            assertEquals(HttpStatusCode.OK, loginResponse.status)
+            val authResponse = loginResponse.body<io.writeopia.sdk.serialization.data.auth.AuthResponse>()
+            val accessToken = authResponse.accessToken!!
+
+            // Get the workspace ID
+            val getWorkspacesResponse = client.get("/api/workspace/user/email/$email") {
+                contentType(ContentType.Application.Json)
+            }
+            assertEquals(HttpStatusCode.OK, getWorkspacesResponse.status)
+            val workspaces = getWorkspacesResponse.body<List<io.writeopia.sdk.serialization.data.WorkspaceApi>>()
+            val workspaceId = workspaces.first().id
+
+            // Create a document
+            val document = DocumentApi(
+                id = "favoriteDoc_${Random.nextInt()}",
+                title = "Favorite Test Document",
+                workspaceId = workspaceId,
+                parentId = "root",
+                isLocked = false,
+                createdAt = 1000L,
+                lastUpdatedAt = 2000L,
+                lastSyncedAt = 0L,
+            )
+
+            val createResponse = client.post("/api/docs/workspace/document") {
+                contentType(ContentType.Application.Json)
+                headers {
+                    append("X-Forwarded-Authorization", "Bearer $accessToken")
+                }
+                setBody(SendDocumentsRequest(listOf(document), workspaceId))
+            }
+            assertEquals(HttpStatusCode.OK, createResponse.status)
+
+            // Verify user has no favorites initially
+            val getInitialFavorites = client.get("/api/docs/workspace/$workspaceId/user/favorites") {
+                header("X-Forwarded-Authorization", "Bearer $accessToken")
+            }
+            assertEquals(HttpStatusCode.OK, getInitialFavorites.status)
+            val initialFavorites = getInitialFavorites.body<List<String>>()
+            assertFalse(initialFavorites.contains(document.id))
+
+            // Favorite the document
+            val favoriteResponse =
+                client.post("/api/docs/workspace/$workspaceId/document/${document.id}/favorite") {
+                    contentType(ContentType.Application.Json)
+                    headers {
+                        append("X-Forwarded-Authorization", "Bearer $accessToken")
+                    }
+                    setBody(FavoriteDocumentRequest(true))
+                }
+            assertEquals(HttpStatusCode.OK, favoriteResponse.status)
+
+            // Verify document is now in user's favorites
+            val getAfterFavorite = client.get("/api/docs/workspace/$workspaceId/user/favorites") {
+                header("X-Forwarded-Authorization", "Bearer $accessToken")
+            }
+            assertEquals(HttpStatusCode.OK, getAfterFavorite.status)
+            val favoritesAfter = getAfterFavorite.body<List<String>>()
+            assertTrue(favoritesAfter.contains(document.id))
+
+            // Unfavorite the document
+            val unfavoriteResponse =
+                client.post("/api/docs/workspace/$workspaceId/document/${document.id}/favorite") {
+                    contentType(ContentType.Application.Json)
+                    headers {
+                        append("X-Forwarded-Authorization", "Bearer $accessToken")
+                    }
+                    setBody(FavoriteDocumentRequest(false))
+                }
+            assertEquals(HttpStatusCode.OK, unfavoriteResponse.status)
+
+            // Verify document is no longer in user's favorites
+            val getAfterUnfavorite = client.get("/api/docs/workspace/$workspaceId/user/favorites") {
+                header("X-Forwarded-Authorization", "Bearer $accessToken")
+            }
+            assertEquals(HttpStatusCode.OK, getAfterUnfavorite.status)
+            val favoritesAfterUnfavorite = getAfterUnfavorite.body<List<String>>()
+            assertFalse(favoritesAfterUnfavorite.contains(document.id))
+
+            // Cleanup
+            db.deleteUserByEmail(email)
         }
-
-        val client = defaultClient()
-        val workspaceId = Random.nextInt().toString()
-
-        // Create a document
-        val document = DocumentApi(
-            id = "favoriteDoc_${Random.nextInt()}",
-            title = "Favorite Test Document",
-            workspaceId = workspaceId,
-            parentId = "root",
-            isLocked = false,
-            createdAt = 1000L,
-            lastUpdatedAt = 2000L,
-            lastSyncedAt = 0L,
-        )
-
-        val createResponse = client.post("/api/docs/workspace/document") {
-            contentType(ContentType.Application.Json)
-            setBody(SendDocumentsRequest(listOf(document), workspaceId))
-        }
-        assertEquals(HttpStatusCode.OK, createResponse.status)
-
-        // Verify user has no favorites initially
-        val getInitialFavorites = client.get("/api/docs/workspace/$workspaceId/user/favorites")
-        assertEquals(HttpStatusCode.OK, getInitialFavorites.status)
-        val initialFavorites = getInitialFavorites.body<List<String>>()
-        assertFalse(initialFavorites.contains(document.id))
-
-        // Favorite the document
-        val favoriteResponse = client.post("/api/docs/workspace/$workspaceId/document/${document.id}/favorite") {
-            contentType(ContentType.Application.Json)
-            setBody(FavoriteDocumentRequest(true))
-        }
-        assertEquals(HttpStatusCode.OK, favoriteResponse.status)
-
-        // Verify document is now in user's favorites
-        val getAfterFavorite = client.get("/api/docs/workspace/$workspaceId/user/favorites")
-        assertEquals(HttpStatusCode.OK, getAfterFavorite.status)
-        val favoritesAfter = getAfterFavorite.body<List<String>>()
-        assertTrue(favoritesAfter.contains(document.id))
-
-        // Unfavorite the document
-        val unfavoriteResponse = client.post("/api/docs/workspace/$workspaceId/document/${document.id}/favorite") {
-            contentType(ContentType.Application.Json)
-            setBody(FavoriteDocumentRequest(false))
-        }
-        assertEquals(HttpStatusCode.OK, unfavoriteResponse.status)
-
-        // Verify document is no longer in user's favorites
-        val getAfterUnfavorite = client.get("/api/docs/workspace/$workspaceId/user/favorites")
-        assertEquals(HttpStatusCode.OK, getAfterUnfavorite.status)
-        val favoritesAfterUnfavorite = getAfterUnfavorite.body<List<String>>()
-        assertFalse(favoritesAfterUnfavorite.contains(document.id))
-    }
 
     @Test
     fun `it should return 404 when favoriting a non-existent document`() = testApplication {
@@ -1271,10 +1409,11 @@ class DocumentationIntegrationTests {
         val client = defaultClient()
         val workspaceId = Random.nextInt().toString()
 
-        val favoriteResponse = client.post("/api/docs/workspace/$workspaceId/document/nonExistentDoc/favorite") {
-            contentType(ContentType.Application.Json)
-            setBody(FavoriteDocumentRequest(true))
-        }
+        val favoriteResponse =
+            client.post("/api/docs/workspace/$workspaceId/document/nonExistentDoc/favorite") {
+                contentType(ContentType.Application.Json)
+                setBody(FavoriteDocumentRequest(true))
+            }
         assertEquals(HttpStatusCode.NotFound, favoriteResponse.status)
     }
 
@@ -1410,7 +1549,8 @@ class DocumentationIntegrationTests {
         val client = defaultClient()
         val workspaceId = Random.nextInt().toString()
 
-        val cloneRequest = CloneDocumentsRequest(documentIds = listOf("nonExistent1", "nonExistent2"))
+        val cloneRequest =
+            CloneDocumentsRequest(documentIds = listOf("nonExistent1", "nonExistent2"))
 
         val cloneResponse = client.post("/api/docs/workspace/$workspaceId/document/clone") {
             contentType(ContentType.Application.Json)
@@ -1534,7 +1674,8 @@ class DocumentationIntegrationTests {
         assertEquals(HttpStatusCode.OK, createResponse.status)
 
         // Search for something that doesn't exist
-        val searchResponse = client.get("/api/docs/workspace/$workspaceId/document/search?q=NonExistentTerm")
+        val searchResponse =
+            client.get("/api/docs/workspace/$workspaceId/document/search?q=NonExistentTerm")
         assertEquals(HttpStatusCode.OK, searchResponse.status)
 
         val searchResults = searchResponse.body<List<DocumentApi>>()
@@ -1648,14 +1789,16 @@ class DocumentationIntegrationTests {
         assertEquals(HttpStatusCode.OK, createResponse2.status)
 
         // Search in workspace 1 - should only return document1
-        val searchResponse1 = client.get("/api/docs/workspace/$workspaceId1/document/search?q=Shared")
+        val searchResponse1 =
+            client.get("/api/docs/workspace/$workspaceId1/document/search?q=Shared")
         assertEquals(HttpStatusCode.OK, searchResponse1.status)
         val results1 = searchResponse1.body<List<DocumentApi>>()
         assertEquals(1, results1.size)
         assertEquals(document1.id, results1.first().id)
 
         // Search in workspace 2 - should only return document2
-        val searchResponse2 = client.get("/api/docs/workspace/$workspaceId2/document/search?q=Shared")
+        val searchResponse2 =
+            client.get("/api/docs/workspace/$workspaceId2/document/search?q=Shared")
         assertEquals(HttpStatusCode.OK, searchResponse2.status)
         val results2 = searchResponse2.body<List<DocumentApi>>()
         assertEquals(1, results2.size)
@@ -1756,5 +1899,61 @@ class DocumentationIntegrationTests {
 
         // Clean up
         db.deleteDocumentById(document.id)
+    }
+
+    @Test
+    fun `it should be possible to upload document header image`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspace = Random.nextInt().toString()
+        val docId = "test_doc_header_${Random.nextInt()}"
+
+        val now = System.currentTimeMillis()
+        db.documentEntityQueries.insert(
+            id = docId,
+            title = "Test Note for Header",
+            created_at = now,
+            last_updated_at = now,
+            last_synced = now,
+            workspace_id = workspace,
+            favorite = false,
+            parent_document_id = "root",
+            icon = null,
+            icon_tint = null,
+            is_locked = false,
+            company_id = null,
+            deleted = false,
+            published = false
+        )
+
+        val response = client.submitFormWithBinaryData(
+            url = "/api/docs/workspace/$workspace/document/$docId/header",
+            formData = formData {
+                append(
+                    key = "image",
+                    value = byteArrayOf(1, 2, 3, 4),
+                    headers = Headers.build {
+                        append(HttpHeaders.ContentType, "image/png")
+                        append(HttpHeaders.ContentDisposition, "filename=\"test.png\"")
+                    }
+                )
+            }
+        )
+
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val updatedDoc = db.documentEntityQueries.selectById(
+            id = docId,
+            workspace_id = workspace
+        ).executeAsOne()
+
+        assertTrue(updatedDoc.header_image != null && updatedDoc.header_image!!.isNotEmpty())
+        assertTrue(updatedDoc.last_updated_at >= now)
+        assertTrue(updatedDoc.last_synced >= now)
+
+        db.deleteDocumentById(docId)
     }
 }

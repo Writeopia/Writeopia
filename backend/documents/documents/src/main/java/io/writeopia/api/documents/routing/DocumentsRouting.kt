@@ -3,7 +3,6 @@
 package io.writeopia.api.documents.routing
 
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
@@ -12,7 +11,7 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
-import io.writeopia.api.core.auth.routing.getUserId
+import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
 import io.writeopia.api.core.auth.utils.runIfMember
 import io.writeopia.api.documents.documents.DocumentsService
 import io.writeopia.api.documents.documents.TutorialsService
@@ -21,36 +20,36 @@ import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
 import io.writeopia.api.documents.documents.repository.getSyncEventsAfterTime
+import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.backend.models.ImageStorageService
 import io.writeopia.buckets.GcpBucketImageStorageService
 import io.writeopia.connection.ResultData
 import io.writeopia.connection.logger
 import io.writeopia.connection.map
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CloneDocumentsRequest
-import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
-import io.writeopia.sdk.serialization.request.UpdateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.EventDiffRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
+import io.writeopia.sdk.serialization.request.GenerateSummaryRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
 import io.writeopia.sdk.serialization.request.MoveDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
+import io.writeopia.sdk.serialization.request.UpdateFolderRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
-import io.writeopia.sdk.serialization.request.GenerateSummaryRequest
 import io.writeopia.sdk.serialization.response.EventDiffResponse
 import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.GenerateSummaryResponse
 import io.writeopia.sdk.serialization.response.SyncEventApi
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
-import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -78,140 +77,255 @@ fun Routing.documentsRoute(
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        get("/api/docs/workspace/{workspaceId}/document/{id}") {
-            val userId = getUserId() ?: ""
-            val id = call.pathParameters["id"] ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+    get("/api/docs/workspace/{workspaceId}/document/{id}") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@get
+        }
+        val id = call.pathParameters["id"] ?: ""
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                val document = DocumentsService.getDocumentById(id, workspaceId, writeopiaDb)
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            val document = DocumentsService.getDocumentById(id, workspaceId, writeopiaDb)
 
-                if (document != null) {
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = document.toApi()
-                    )
-                } else {
-                    call.respond(
-                        status = HttpStatusCode.NotFound,
-                        message = "No lead with id: $id"
-                    )
-                }
+            if (document != null) {
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = document.toApi()
+                )
+            } else {
+                call.respond(
+                    status = HttpStatusCode.NotFound,
+                    message = "No lead with id: $id"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        get("/api/docs/workspace/{workspaceId}/document/title/{title}") {
-            val userId = getUserId() ?: ""
-            val title = call.pathParameters["title"] ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+    get("/api/docs/workspace/{workspaceId}/document/title/{title}") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@get
+        }
+        val title = call.pathParameters["title"] ?: ""
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                val document = DocumentsService.getDocumentByTitle(title, workspaceId, writeopiaDb)
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            val document = DocumentsService.getDocumentByTitle(title, workspaceId, writeopiaDb)
 
-                if (document != null) {
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = document.toApi()
-                    )
-                } else {
-                    call.respond(
-                        status = HttpStatusCode.NotFound,
-                        message = "No document with title: $title"
-                    )
-                }
+            if (document != null) {
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = document.toApi()
+                )
+            } else {
+                call.respond(
+                    status = HttpStatusCode.NotFound,
+                    message = "No document with title: $title"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        get("/api/docs/workspace/{workspaceId}/document/parent/{parentId}") {
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+    get("/api/docs/workspace/{workspaceId}/document/parent/{parentId}") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@get
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                val parentId = call.pathParameters["parentId"]!!
-                val documentList = writeopiaDb.getDocumentsByParentId(parentId)
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            val parentId = call.pathParameters["parentId"]!!
+            val documentList = writeopiaDb.getDocumentsByParentId(parentId)
 
-                if (documentList.isNotEmpty()) {
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = documentList.map { it.toApi() }
-                    )
-                } else {
-                    call.respond(
-                        status = HttpStatusCode.NotFound,
-                        message = "No lead with id parent parentId: $parentId"
-                    )
-                }
+            if (documentList.isNotEmpty()) {
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = documentList.map { it.toApi() }
+                )
+            } else {
+                call.respond(
+                    status = HttpStatusCode.NotFound,
+                    message = "No lead with id parent parentId: $parentId"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        get("/api/docs/workspace/{workspaceId}/document/parent/{id}") {
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val id = call.pathParameters["id"]!!
+    get("/api/docs/workspace/{workspaceId}/document/parent/{id}") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@get
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val id = call.pathParameters["id"]!!
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                val ids = writeopiaDb.getIdsByParentId(id)
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            val ids = writeopiaDb.getIdsByParentId(id)
 
-                if (ids.isNotEmpty()) {
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = ids
-                    )
-                } else {
-                    call.respond(
-                        status = HttpStatusCode.NotFound,
-                        message = "document id by parent with id: $id"
-                    )
-                }
+            if (ids.isNotEmpty()) {
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = ids
+                )
+            } else {
+                call.respond(
+                    status = HttpStatusCode.NotFound,
+                    message = "document id by parent with id: $id"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        get("/api/docs/workspace/{workspaceId}/document/search") {
-            val userId = getUserId() ?: ""
-            val query = call.queryParameters["q"]
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+    get("/api/docs/workspace/{workspaceId}/document/search") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@get
+        }
+        val query = call.queryParameters["q"]
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-            logger.info("Search request - query: '$query', userId: $userId, workspaceId: $workspaceId")
+        logger.info("Search request - query: '$query', userId: $userId, workspaceId: $workspaceId")
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                if (query == null) {
-                    logger.info("Search failed - query is null")
-                    call.respond(HttpStatusCode.BadRequest)
-                } else {
-                    val result =
-                        DocumentsService.search(query, workspaceId, writeopiaDb).map { resultData ->
-                            resultData.map { document -> document.toApi() }
-                        }
-
-                    if (result is ResultData.Complete) {
-                        logger.info("Search completed - returning ${result.data.size} documents")
-                        call.respond(status = HttpStatusCode.OK, message = result.data)
-                    } else {
-                        logger.error("Search failed - internal error")
-                        call.respond(HttpStatusCode.InternalServerError)
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            if (query == null) {
+                logger.info("Search failed - query is null")
+                call.respond(HttpStatusCode.BadRequest)
+            } else {
+                val result =
+                    DocumentsService.search(query, workspaceId, writeopiaDb).map { resultData ->
+                        resultData.map { document -> document.toApi() }
                     }
+
+                if (result is ResultData.Complete) {
+                    logger.info("Search completed - returning ${result.data.size} documents")
+                    call.respond(status = HttpStatusCode.OK, message = result.data)
+                } else {
+                    logger.error("Search failed - internal error")
+                    call.respond(HttpStatusCode.InternalServerError)
                 }
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        get("/api/docs/workspace/{workspaceId}/folder/{id}") {
-            val id = call.pathParameters["id"]!!
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+    get("/api/docs/workspace/{workspaceId}/folder/{id}") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@get
+        }
+        val id = call.pathParameters["id"]!!
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                val folder = DocumentsService.getFolderById(id, workspaceId, writeopiaDb)
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            val folder = DocumentsService.getFolderById(id, workspaceId, writeopiaDb)
+
+            if (folder != null) {
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = folder.toApi()
+                )
+            } else {
+                call.respond(
+                    status = HttpStatusCode.NotFound,
+                    message = "No lead with id: $id"
+                )
+            }
+        }
+    }
+
+    get("/api/docs/workspace/{workspaceId}/folder/{folderId}/contents") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@get
+        }
+        val folderId = call.pathParameters["folderId"]!!
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val folders = writeopiaDb.getFoldersByParentId(folderId)
+                val documents = writeopiaDb.getDocumentsByParentId(folderId)
+
+                // Get user's favorite document IDs
+                val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                    userId, workspaceId, writeopiaDb
+                ).toSet()
+
+                // Set favorite status on each document
+                val documentsWithFavorites = documents.map { doc ->
+                    val isFavorite = userFavoriteIds.contains(doc.id)
+                    doc.copy(favorite = isFavorite)
+                }
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = FolderContentResponse(
+                        folders = folders.map { it.toApi() },
+                        documents = documentsWithFavorites.map { it.toApi() }
+                    )
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    post<CreateFolderRequest>("/api/docs/workspace/{workspaceId}/folder/{parentFolderId}/create") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val parentFolderId = call.pathParameters["parentFolderId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val folder = DocumentsService.createFolder(
+                    parentFolderId = parentFolderId,
+                    title = request.title,
+                    workspaceId = workspaceId,
+                    icon = request.icon?.toModel(),
+                    writeopiaDb = writeopiaDb
+                )
+
+                call.respond(
+                    status = HttpStatusCode.Created,
+                    message = folder.toApi()
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    put<UpdateFolderRequest>("/api/docs/workspace/{workspaceId}/folder/{folderId}") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@put
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val folderId = call.pathParameters["folderId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val icon = request.icon?.let { iconApi ->
+                    MenuItem.Icon(iconApi.label, iconApi.tint)
+                }
+
+                val folder = DocumentsService.updateFolder(
+                    folderId = folderId,
+                    workspaceId = workspaceId,
+                    title = request.title,
+                    icon = icon,
+                    favorite = request.favorite,
+                    writeopiaDb = writeopiaDb
+                )
 
                 if (folder != null) {
                     call.respond(
@@ -221,908 +335,857 @@ fun Routing.documentsRoute(
                 } else {
                     call.respond(
                         status = HttpStatusCode.NotFound,
-                        message = "No lead with id: $id"
+                        message = "Folder not found"
                     )
                 }
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        get("/api/docs/workspace/{workspaceId}/folder/{folderId}/contents") {
-            val folderId = call.pathParameters["folderId"]!!
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    val folders = writeopiaDb.getFoldersByParentId(folderId)
-                    val documents = writeopiaDb.getDocumentsByParentId(folderId)
-
-                    // Get user's favorite document IDs
-                    val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
-                        userId, workspaceId, writeopiaDb
-                    ).toSet()
-
-                    // Set favorite status on each document
-                    val documentsWithFavorites = documents.map { doc ->
-                        val isFavorite = userFavoriteIds.contains(doc.id)
-                        doc.copy(favorite = isFavorite)
-                    }
-
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = FolderContentResponse(
-                            folders = folders.map { it.toApi() },
-                            documents = documentsWithFavorites.map { it.toApi() }
-                        )
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
+    post<SendDocumentsRequest>("/api/docs/workspace/document") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
         }
-    }
+        val workspaceId = request.workspaceId
+        val documentList = request.documents.map { document ->
+            document.copy(workspaceId = workspaceId)
+        }
 
-    authenticate("auth-jwt", optional = debug) {
-        post<CreateFolderRequest>("/api/docs/workspace/{workspaceId}/folder/{parentFolderId}/create") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val parentFolderId = call.pathParameters["parentFolderId"] ?: ""
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    val folder = DocumentsService.createFolder(
-                        parentFolderId = parentFolderId,
-                        title = request.title,
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                if (documentList.isNotEmpty()) {
+                    val addedToHub = DocumentsService.receiveDocuments(
+                        documentList.map { document ->
+                            document
+                                .toModel()
+                                .copy(lastSyncedAt = Clock.System.now())
+                        },
                         workspaceId = workspaceId,
-                        icon = request.icon?.toModel(),
-                        writeopiaDb = writeopiaDb
+                        writeopiaDb,
+                        useAi
                     )
 
-                    call.respond(
-                        status = HttpStatusCode.Created,
-                        message = folder.toApi()
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debug) {
-        put<UpdateFolderRequest>("/api/docs/workspace/{workspaceId}/folder/{folderId}") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val folderId = call.pathParameters["folderId"] ?: ""
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    val icon = request.icon?.let { iconApi ->
-                        MenuItem.Icon(iconApi.label, iconApi.tint)
-                    }
-
-                    val folder = DocumentsService.updateFolder(
-                        folderId = folderId,
-                        workspaceId = workspaceId,
-                        title = request.title,
-                        icon = icon,
-                        favorite = request.favorite,
-                        writeopiaDb = writeopiaDb
-                    )
-
-                    if (folder != null) {
+                    if (addedToHub) {
                         call.respond(
                             status = HttpStatusCode.OK,
-                            message = folder.toApi()
+                            message = "Accepted"
                         )
                     } else {
                         call.respond(
-                            status = HttpStatusCode.NotFound,
-                            message = "Folder not found"
+                            status = HttpStatusCode.InternalServerError,
+                            message = "It was not possible to add documents to AI HUB"
                         )
                     }
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debug) {
-        post<SendDocumentsRequest>("/api/docs/workspace/document") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = request.workspaceId
-            val documentList = request.documents.map { document ->
-                document.copy(workspaceId = workspaceId)
-            }
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    if (documentList.isNotEmpty()) {
-                        val addedToHub = DocumentsService.receiveDocuments(
-                            documentList.map { document ->
-                                document
-                                    .toModel()
-                                    .copy(lastSyncedAt = Clock.System.now())
-                            },
-                            workspaceId = workspaceId,
-                            writeopiaDb,
-                            useAi
-                        )
-
-                        if (addedToHub) {
-                            call.respond(
-                                status = HttpStatusCode.OK,
-                                message = "Accepted"
-                            )
-                        } else {
-                            call.respond(
-                                status = HttpStatusCode.InternalServerError,
-                                message = "It was not possible to add documents to AI HUB"
-                            )
-                        }
-                    } else {
-                        call.respond(
-                            status = HttpStatusCode.OK,
-                            message = "Empty documents"
-                        )
-                    }
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debug) {
-        post<UpsertDocumentRequest>("/api/docs/workspace/{workspaceId}/document/upsert") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    val documentModel = request.document
-                        .copy(workspaceId = workspaceId)
-                        .toModel()
-
-                    val upsertedDocument = DocumentsService.upsertDocument(
-                        document = documentModel,
-                        workspaceId = workspaceId,
-                        writeopiaDb = writeopiaDb,
-                        useAi = useAi
-                    )
-
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = upsertedDocument.toApi()
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debug) {
-        post<SendFoldersRequest>("/api/docs/workspace/folder") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = request.workspaceId
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    val folderList = request.folders.map { folder ->
-                        folder.copy(workspaceId = workspaceId)
-                    }
-
-                    if (folderList.isNotEmpty()) {
-                        val addedToHub = DocumentsService.receiveFolders(
-                            folderList.map { folder -> folder.toModel() },
-                            writeopiaDb,
-                        )
-
-                        if (addedToHub) {
-                            call.respond(
-                                status = HttpStatusCode.OK,
-                                message = "Accepted"
-                            )
-                        } else {
-                            call.respond(
-                                status = HttpStatusCode.InternalServerError,
-                                message = "It was not possible to add documents to AI HUB"
-                            )
-                        }
-                    } else {
-                        call.respond(
-                            status = HttpStatusCode.OK,
-                            message = "Empty documents"
-                        )
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debug) {
-        post<FolderDiffRequest>("/api/docs/workspace/document/folder/diff") { folderDiff ->
-            val userId = getUserId() ?: ""
-            val workspaceId = folderDiff.workspaceId
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    println("loading folder diff")
-                    println("user id: ${getUserId()}")
-                    println("last sync: ${Instant.fromEpochMilliseconds(folderDiff.lastFolderSync)}")
-                    println("orderBy: ${folderDiff.orderBy}")
-
-                    val documents =
-                        DocumentsService.getDocumentsDiffByFolder(
-                            folderDiff.folderId,
-                            folderDiff.workspaceId,
-                            folderDiff.lastFolderSync,
-                            folderDiff.orderBy,
-                            writeopiaDb
-                        )
-
-                    // Get subfolders for this folder
-                    val subfolders = writeopiaDb.getFoldersByParentId(folderDiff.folderId)
-
-                    // Get user's favorite document IDs
-                    val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
-                        userId, workspaceId, writeopiaDb
-                    ).toSet()
-
-                    // Set favorite status on each document
-                    val documentsWithFavorites = documents.map { doc ->
-                        doc.copy(favorite = userFavoriteIds.contains(doc.id))
-                    }
-
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = FolderContentResponse(
-                            folders = subfolders.map { it.toApi() },
-                            documents = documentsWithFavorites.map { document -> document.toApi() }
-                        )
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debug) {
-        post<WorkspaceDiffRequest>("/api/docs/workspace/diff") { workspaceDiff ->
-            val userId = getUserId() ?: ""
-            val workspaceId = workspaceDiff.workspaceId
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    println("loading workspace diff")
-                    println("user id: ${getUserId()}")
-                    println("last sync: ${Instant.fromEpochMilliseconds(workspaceDiff.lastSync)}")
-                    println("orderBy: ${workspaceDiff.orderBy}")
-
-                    val documents = DocumentsService.getDocumentsDiffByWorkspace(
-                        workspaceDiff.workspaceId,
-                        workspaceDiff.lastSync,
-                        workspaceDiff.orderBy,
-                        writeopiaDb
-                    )
-                    val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceDiff.workspaceId)
-
-                    println("returning ${documents.count()} documents and ${folders.count()} folders")
-
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = WorkspaceDiffResponse(
-                            folders.map { it.toApi() },
-                            documents.map { it.toApi() }
-                        )
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debug) {
-        post("/api/docs/workspace/{workspaceId}/document/upload-image") {
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                val multipart = call.receiveMultipart()
-
-                val imageUrl = imageStorageService.uploadImage(multipart, userId, debug)
-
-                if (imageUrl != null) {
-                    call.respond(HttpStatusCode.Created, ImageUploadRequest(imageUrl))
                 } else {
-                    call.respond(HttpStatusCode.BadRequest, "No image found in request")
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debug) {
-        delete("/api/docs/workspace/{workspaceId}/folder/{folderId}") {
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val folderId = call.pathParameters["folderId"] ?: ""
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    // Verify folder exists and belongs to workspace
-                    val folder = DocumentsService.getFolderById(folderId, workspaceId, writeopiaDb)
-                    if (folder == null) {
-                        call.respond(
-                            status = HttpStatusCode.NotFound,
-                            message = "Folder not found"
-                        )
-                        return@runIfMember
-                    }
-
-                    DocumentsService.deleteFolder(folderId, workspaceId, userId, writeopiaDb)
-
                     call.respond(
                         status = HttpStatusCode.OK,
-                        message = "Folder deleted successfully"
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
+                        message = "Empty documents"
                     )
                 }
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        post<DeleteDocumentsRequest>("/api/docs/workspace/{workspaceId}/document/delete") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+    post<UpsertDocumentRequest>("/api/docs/workspace/{workspaceId}/document/upsert") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    if (request.documentIds.isEmpty()) {
-                        call.respond(
-                            status = HttpStatusCode.BadRequest,
-                            message = "Document IDs list cannot be empty"
-                        )
-                        return@runIfMember
-                    }
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val documentModel = request.document
+                    .copy(workspaceId = workspaceId)
+                    .toModel()
 
-                    DocumentsService.deleteDocuments(request.documentIds, workspaceId, userId, writeopiaDb)
+                val upsertedDocument = DocumentsService.upsertDocument(
+                    document = documentModel,
+                    workspaceId = workspaceId,
+                    writeopiaDb = writeopiaDb,
+                    useAi = useAi
+                )
 
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = "Documents deleted successfully"
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = upsertedDocument.toApi()
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        post<MoveFolderRequest>("/api/docs/workspace/{workspaceId}/folder/{folderId}/move") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val folderId = call.pathParameters["folderId"] ?: ""
+    post<SendFoldersRequest>("/api/docs/workspace/folder") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = request.workspaceId
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    // Verify folder exists and belongs to workspace
-                    val folder = DocumentsService.getFolderById(folderId, workspaceId, writeopiaDb)
-                    if (folder == null) {
-                        call.respond(
-                            status = HttpStatusCode.NotFound,
-                            message = "Folder not found"
-                        )
-                        return@runIfMember
-                    }
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val folderList = request.folders.map { folder ->
+                    folder.copy(workspaceId = workspaceId)
+                }
 
-                    val moved = DocumentsService.moveFolder(
-                        folderId,
-                        request.targetParentId,
-                        workspaceId,
-                        userId,
-                        writeopiaDb
+                if (folderList.isNotEmpty()) {
+                    val addedToHub = DocumentsService.receiveFolders(
+                        folderList.map { folder -> folder.toModel() },
+                        writeopiaDb,
                     )
 
-                    if (moved) {
+                    if (addedToHub) {
                         call.respond(
                             status = HttpStatusCode.OK,
-                            message = "Folder moved successfully"
+                            message = "Accepted"
                         )
                     } else {
                         call.respond(
-                            status = HttpStatusCode.BadRequest,
-                            message = "Cannot move a folder into itself"
+                            status = HttpStatusCode.InternalServerError,
+                            message = "It was not possible to add documents to AI HUB"
                         )
                     }
-                } catch (e: Exception) {
+                } else {
                     call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
+                        status = HttpStatusCode.OK,
+                        message = "Empty documents"
                     )
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        post<CloneDocumentsRequest>("/api/docs/workspace/{workspaceId}/document/clone") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+    post<FolderDiffRequest>("/api/docs/workspace/document/folder/diff") { folderDiff ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = folderDiff.workspaceId
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    if (request.documentIds.isEmpty()) {
-                        call.respond(
-                            status = HttpStatusCode.BadRequest,
-                            message = "Document IDs list cannot be empty"
-                        )
-                        return@runIfMember
-                    }
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                println("loading folder diff")
+                println("user id: $userId")
+                println("last sync: ${Instant.fromEpochMilliseconds(folderDiff.lastFolderSync)}")
+                println("orderBy: ${folderDiff.orderBy}")
 
-                    val clonedDocuments = DocumentsService.cloneDocuments(
-                        documentIds = request.documentIds,
-                        workspaceId = workspaceId,
-                        writeopiaDb = writeopiaDb,
-                        useAi = useAi
+                val documents =
+                    DocumentsService.getDocumentsDiffByFolder(
+                        folderDiff.folderId,
+                        folderDiff.workspaceId,
+                        folderDiff.lastFolderSync,
+                        folderDiff.orderBy,
+                        writeopiaDb
                     )
 
-                    call.respond(
-                        status = HttpStatusCode.Created,
-                        message = clonedDocuments.map { it.toApi() }
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
+                // Get subfolders for this folder
+                val subfolders = writeopiaDb.getFoldersByParentId(folderDiff.folderId)
+
+                // Get user's favorite document IDs
+                val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                    userId, workspaceId, writeopiaDb
+                ).toSet()
+
+                // Set favorite status on each document
+                val documentsWithFavorites = documents.map { doc ->
+                    doc.copy(favorite = userFavoriteIds.contains(doc.id))
                 }
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = FolderContentResponse(
+                        folders = subfolders.map { it.toApi() },
+                        documents = documentsWithFavorites.map { document -> document.toApi() }
+                    )
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        post<GenerateSummaryRequest>("/api/docs/workspace/{workspaceId}/document/generate-summary") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
+    post<WorkspaceDiffRequest>("/api/docs/workspace/diff") { workspaceDiff ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = workspaceDiff.workspaceId
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                // Check if GenAI service is provided
-                if (genAiService == null) {
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                println("loading workspace diff")
+                println("user id: $userId")
+                println("last sync: ${Instant.fromEpochMilliseconds(workspaceDiff.lastSync)}")
+                println("orderBy: ${workspaceDiff.orderBy}")
+
+                val documents = DocumentsService.getDocumentsDiffByWorkspace(
+                    workspaceDiff.workspaceId,
+                    workspaceDiff.lastSync,
+                    workspaceDiff.orderBy,
+                    writeopiaDb
+                )
+                val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceDiff.workspaceId)
+
+                println("returning ${documents.count()} documents and ${folders.count()} folders")
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = WorkspaceDiffResponse(
+                        folders.map { it.toApi() },
+                        documents.map { it.toApi() }
+                    )
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    post("/api/docs/workspace/{workspaceId}/document/upload-image") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            val multipart = call.receiveMultipart()
+
+            val imageUrl = imageStorageService.uploadImage(multipart, userId, debug)
+
+            if (imageUrl != null) {
+                call.respond(HttpStatusCode.Created, ImageUploadRequest(imageUrl))
+            } else {
+                call.respond(HttpStatusCode.BadRequest, "No image found in request")
+            }
+        }
+    }
+
+    delete("/api/docs/workspace/{workspaceId}/folder/{folderId}") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@delete
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val folderId = call.pathParameters["folderId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                // Verify folder exists and belongs to workspace
+                val folder = DocumentsService.getFolderById(folderId, workspaceId, writeopiaDb)
+                if (folder == null) {
                     call.respond(
-                        status = HttpStatusCode.ServiceUnavailable,
-                        message = GenerateSummaryResponse(error = "GenAI service is not available")
+                        status = HttpStatusCode.NotFound,
+                        message = "Folder not found"
                     )
                     return@runIfMember
                 }
 
-                // Validate request
-                if (request.documents.isEmpty()) {
+                DocumentsService.deleteFolder(folderId, workspaceId, userId, writeopiaDb)
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = "Folder deleted successfully"
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    post<DeleteDocumentsRequest>("/api/docs/workspace/{workspaceId}/document/delete") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                if (request.documentIds.isEmpty()) {
                     call.respond(
                         status = HttpStatusCode.BadRequest,
-                        message = GenerateSummaryResponse(error = "Documents list cannot be empty")
+                        message = "Document IDs list cannot be empty"
                     )
                     return@runIfMember
                 }
 
-                try {
-                    val result = DocumentsService.generateSummaryDocument(
-                        documents = request.documents,
-                        targetFolderId = request.targetFolderId,
-                        workspaceId = workspaceId,
-                        summaryTitle = request.summaryTitle,
-                        model = request.model,
-                        ignoreSyncCheck = request.ignoreSyncCheck,
-                        genAiService = genAiService,
-                        writeopiaDb = writeopiaDb
-                    )
+                DocumentsService.deleteDocuments(request.documentIds, workspaceId, userId, writeopiaDb)
 
-                    when (result) {
-                        is DocumentsService.GenerateSummaryResult.Success -> {
-                            call.respond(
-                                status = HttpStatusCode.Created,
-                                message = GenerateSummaryResponse(document = result.document.toApi())
-                            )
-                        }
-                        is DocumentsService.GenerateSummaryResult.NeedsSync -> {
-                            call.respond(
-                                status = HttpStatusCode.Conflict,
-                                message = GenerateSummaryResponse(unsyncedDocuments = result.unsyncedDocuments)
-                            )
-                        }
-                        is DocumentsService.GenerateSummaryResult.InvalidRequest -> {
-                            call.respond(
-                                status = HttpStatusCode.BadRequest,
-                                message = GenerateSummaryResponse(error = result.message)
-                            )
-                        }
-                        is DocumentsService.GenerateSummaryResult.NotFound -> {
-                            call.respond(
-                                status = HttpStatusCode.NotFound,
-                                message = GenerateSummaryResponse(error = result.message)
-                            )
-                        }
-                        is DocumentsService.GenerateSummaryResult.GenAiUnavailable -> {
-                            call.respond(
-                                status = HttpStatusCode.ServiceUnavailable,
-                                message = GenerateSummaryResponse(error = "GenAI service is not configured")
-                            )
-                        }
-                        is DocumentsService.GenerateSummaryResult.Error -> {
-                            logger.error("Summary generation failed for workspace $workspaceId: ${result.message}")
-                            call.respond(
-                                status = HttpStatusCode.InternalServerError,
-                                message = GenerateSummaryResponse(error = "Failed to generate summary")
-                            )
-                        }
-                    }
-                } catch (e: Exception) {
-                    logger.error("Error generating summary for workspace $workspaceId", e)
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = GenerateSummaryResponse(error = "An unexpected error occurred while generating the summary")
-                    )
-                }
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = "Documents deleted successfully"
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        post<FavoriteDocumentRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/favorite") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val documentId = call.pathParameters["documentId"] ?: ""
+    post<MoveFolderRequest>("/api/docs/workspace/{workspaceId}/folder/{folderId}/move") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val folderId = call.pathParameters["folderId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    // Verify document exists and belongs to workspace
-                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
-                    if (document == null) {
-                        call.respond(
-                            status = HttpStatusCode.NotFound,
-                            message = "Document not found"
-                        )
-                        return@runIfMember
-                    }
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                // Verify folder exists and belongs to workspace
+                val folder = DocumentsService.getFolderById(folderId, workspaceId, writeopiaDb)
+                if (folder == null) {
+                    call.respond(
+                        status = HttpStatusCode.NotFound,
+                        message = "Folder not found"
+                    )
+                    return@runIfMember
+                }
 
-                    if (request.favorite) {
-                        DocumentsService.favoriteDocument(userId, documentId, workspaceId, writeopiaDb)
-                    } else {
-                        DocumentsService.unFavoriteDocument(userId, documentId, writeopiaDb)
-                    }
+                val moved = DocumentsService.moveFolder(
+                    folderId,
+                    request.targetParentId,
+                    workspaceId,
+                    userId,
+                    writeopiaDb
+                )
 
+                if (moved) {
                     call.respond(
                         status = HttpStatusCode.OK,
-                        message = if (request.favorite) "Document favorited" else "Document unfavorited"
+                        message = "Folder moved successfully"
                     )
-                } catch (e: Exception) {
+                } else {
                     call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
+                        status = HttpStatusCode.BadRequest,
+                        message = "Cannot move a folder into itself"
                     )
                 }
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        post("/api/docs/workspace/{workspaceId}/document/{documentId}/publish") {
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val documentId = call.pathParameters["documentId"] ?: ""
+    post<CloneDocumentsRequest>("/api/docs/workspace/{workspaceId}/document/clone") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    // Verify document exists and belongs to workspace
-                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
-                    if (document == null) {
-                        call.respond(
-                            status = HttpStatusCode.NotFound,
-                            message = "Document not found"
-                        )
-                        return@runIfMember
-                    }
-
-                    DocumentsService.setPublished(documentId, true, writeopiaDb)
-
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                if (request.documentIds.isEmpty()) {
                     call.respond(
-                        status = HttpStatusCode.OK,
-                        message = "Document published"
+                        status = HttpStatusCode.BadRequest,
+                        message = "Document IDs list cannot be empty"
                     )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
+                    return@runIfMember
                 }
+
+                val clonedDocuments = DocumentsService.cloneDocuments(
+                    documentIds = request.documentIds,
+                    workspaceId = workspaceId,
+                    writeopiaDb = writeopiaDb,
+                    useAi = useAi
+                )
+
+                call.respond(
+                    status = HttpStatusCode.Created,
+                    message = clonedDocuments.map { it.toApi() }
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
             }
         }
     }
 
-    authenticate("auth-jwt", optional = debug) {
-        post("/api/docs/workspace/{workspaceId}/document/{documentId}/unpublish") {
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val documentId = call.pathParameters["documentId"] ?: ""
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    // Verify document exists and belongs to workspace
-                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
-                    if (document == null) {
-                        call.respond(
-                            status = HttpStatusCode.NotFound,
-                            message = "Document not found"
-                        )
-                        return@runIfMember
-                    }
-
-                    DocumentsService.setPublished(documentId, false, writeopiaDb)
-
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = "Document unpublished"
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
+    post<GenerateSummaryRequest>("/api/docs/workspace/{workspaceId}/document/generate-summary") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
         }
-    }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
-    authenticate("auth-jwt", optional = debug) {
-        get("/api/docs/workspace/{workspaceId}/document/{documentId}/published") {
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val documentId = call.pathParameters["documentId"] ?: ""
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    // Verify document exists and belongs to workspace
-                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
-                    if (document == null) {
-                        call.respond(
-                            status = HttpStatusCode.NotFound,
-                            message = "Document not found"
-                        )
-                        return@runIfMember
-                    }
-
-                    val isPublished = DocumentsService.isPublished(documentId, writeopiaDb)
-
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = mapOf("published" to isPublished)
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            // Check if GenAI service is provided
+            if (genAiService == null) {
+                call.respond(
+                    status = HttpStatusCode.ServiceUnavailable,
+                    message = GenerateSummaryResponse(error = "GenAI service is not available")
+                )
+                return@runIfMember
             }
-        }
-    }
 
-    authenticate("auth-jwt", optional = debug) {
-        get("/api/docs/workspace/{workspaceId}/user/favorites") {
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    val favoriteIds = DocumentsService.getUserFavoriteDocumentIds(
-                        userId,
-                        workspaceId,
-                        writeopiaDb
-                    )
-
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = favoriteIds
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
+            // Validate request
+            if (request.documents.isEmpty()) {
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = GenerateSummaryResponse(error = "Documents list cannot be empty")
+                )
+                return@runIfMember
             }
-        }
-    }
 
-    authenticate("auth-jwt", optional = debug) {
-        post<StoryStepSyncRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/steps/sync") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val documentId = call.pathParameters["documentId"] ?: ""
+            try {
+                val result = DocumentsService.generateSummaryDocument(
+                    documents = request.documents,
+                    targetFolderId = request.targetFolderId,
+                    workspaceId = workspaceId,
+                    summaryTitle = request.summaryTitle,
+                    model = request.model,
+                    ignoreSyncCheck = request.ignoreSyncCheck,
+                    genAiService = genAiService,
+                    writeopiaDb = writeopiaDb
+                )
 
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    val response = DocumentsService.syncStorySteps(
-                        documentId = documentId,
-                        workspaceId = workspaceId,
-                        request = request,
-                        writeopiaDb = writeopiaDb
-                    )
-
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = response
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debug) {
-        post<EventDiffRequest>("/api/docs/workspace/events/diff") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = request.workspaceId
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    val events = writeopiaDb.getSyncEventsAfterTime(
-                        workspaceId = workspaceId,
-                        afterTime = request.lastEventSync
-                    )
-
-                    val response = EventDiffResponse(
-                        events = events.map { event ->
-                            SyncEventApi(
-                                id = event.id,
-                                eventType = event.event_type,
-                                entityId = event.entity_id,
-                                oldParentId = event.old_parent_id,
-                                newParentId = event.new_parent_id,
-                                createdAt = event.created_at
-                            )
-                        },
-                        serverTimestamp = Clock.System.now().toEpochMilliseconds()
-                    )
-
-                    call.respond(
-                        status = HttpStatusCode.OK,
-                        message = response
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debug) {
-        post<MoveDocumentRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/move") { request ->
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-            val documentId = call.pathParameters["documentId"] ?: ""
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    // Verify document exists and belongs to workspace
-                    val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
-                    if (document == null) {
-                        call.respond(
-                            status = HttpStatusCode.NotFound,
-                            message = "Document not found"
-                        )
-                        return@runIfMember
-                    }
-
-                    val moved = DocumentsService.moveDocument(
-                        documentId,
-                        request.targetParentId,
-                        workspaceId,
-                        userId,
-                        writeopiaDb
-                    )
-
-                    if (moved) {
-                        call.respond(
-                            status = HttpStatusCode.OK,
-                            message = "Document moved successfully"
-                        )
-                    } else {
-                        call.respond(
-                            status = HttpStatusCode.BadRequest,
-                            message = "Failed to move document"
-                        )
-                    }
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    authenticate("auth-jwt", optional = debug) {
-        post("/api/docs/workspace/{workspaceId}/tutorials/initialize") {
-            val userId = getUserId() ?: ""
-            val workspaceId = call.pathParameters["workspaceId"] ?: ""
-
-            runIfMember(userId, workspaceId, writeopiaDb, debug) {
-                try {
-                    val created = TutorialsService.initializeTutorialsForUser(
-                        userId = userId,
-                        workspaceId = workspaceId,
-                        writeopiaDb = writeopiaDb,
-                    )
-
-                    if (created) {
+                when (result) {
+                    is DocumentsService.GenerateSummaryResult.Success -> {
                         call.respond(
                             status = HttpStatusCode.Created,
-                            message = "Tutorials created successfully"
-                        )
-                    } else {
-                        call.respond(
-                            status = HttpStatusCode.OK,
-                            message = "Tutorials already exist"
+                            message = GenerateSummaryResponse(document = result.document.toApi())
                         )
                     }
-                } catch (e: Exception) {
+                    is DocumentsService.GenerateSummaryResult.NeedsSync -> {
+                        call.respond(
+                            status = HttpStatusCode.Conflict,
+                            message = GenerateSummaryResponse(unsyncedDocuments = result.unsyncedDocuments)
+                        )
+                    }
+                    is DocumentsService.GenerateSummaryResult.InvalidRequest -> {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = GenerateSummaryResponse(error = result.message)
+                        )
+                    }
+                    is DocumentsService.GenerateSummaryResult.NotFound -> {
+                        call.respond(
+                            status = HttpStatusCode.NotFound,
+                            message = GenerateSummaryResponse(error = result.message)
+                        )
+                    }
+                    is DocumentsService.GenerateSummaryResult.GenAiUnavailable -> {
+                        call.respond(
+                            status = HttpStatusCode.ServiceUnavailable,
+                            message = GenerateSummaryResponse(error = "GenAI service is not configured")
+                        )
+                    }
+                    is DocumentsService.GenerateSummaryResult.Error -> {
+                        logger.error("Summary generation failed for workspace $workspaceId: ${result.message}")
+                        call.respond(
+                            status = HttpStatusCode.InternalServerError,
+                            message = GenerateSummaryResponse(error = "Failed to generate summary")
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                logger.error("Error generating summary for workspace $workspaceId", e)
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = GenerateSummaryResponse(error = "An unexpected error occurred while generating the summary")
+                )
+            }
+        }
+    }
+
+    post<FavoriteDocumentRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/favorite") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val documentId = call.pathParameters["documentId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                // Verify document exists and belongs to workspace
+                // Read then-then-write concurrency problems are acceptable here.
+                // Favorite state is not critical.
+                val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                if (document == null) {
                     call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = "${e.message}"
+                        status = HttpStatusCode.NotFound,
+                        message = "Document not found"
+                    )
+                    return@runIfMember
+                }
+
+                if (request.favorite) {
+                    DocumentsService.favoriteDocument(userId, documentId, workspaceId, writeopiaDb)
+                } else {
+                    DocumentsService.unFavoriteDocument(userId, documentId, writeopiaDb)
+                }
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = if (request.favorite) "Document favorited" else "Document unfavorited"
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    post("/api/docs/workspace/{workspaceId}/document/{documentId}/publish") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val documentId = call.pathParameters["documentId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                // Verify document exists and belongs to workspace
+                val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                if (document == null) {
+                    call.respond(
+                        status = HttpStatusCode.NotFound,
+                        message = "Document not found"
+                    )
+                    return@runIfMember
+                }
+
+                DocumentsService.setPublished(documentId, true, writeopiaDb)
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = "Document published"
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    post("/api/docs/workspace/{workspaceId}/document/{documentId}/unpublish") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val documentId = call.pathParameters["documentId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                // Verify document exists and belongs to workspace
+                val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                if (document == null) {
+                    call.respond(
+                        status = HttpStatusCode.NotFound,
+                        message = "Document not found"
+                    )
+                    return@runIfMember
+                }
+
+                DocumentsService.setPublished(documentId, false, writeopiaDb)
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = "Document unpublished"
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    get("/api/docs/workspace/{workspaceId}/document/{documentId}/published") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@get
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val documentId = call.pathParameters["documentId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                // Verify document exists and belongs to workspace
+                val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                if (document == null) {
+                    call.respond(
+                        status = HttpStatusCode.NotFound,
+                        message = "Document not found"
+                    )
+                    return@runIfMember
+                }
+
+                val isPublished = DocumentsService.isPublished(documentId, writeopiaDb)
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = mapOf("published" to isPublished)
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    get("/api/docs/workspace/{workspaceId}/user/favorites") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@get
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val favoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                    userId,
+                    workspaceId,
+                    writeopiaDb
+                )
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = favoriteIds
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    post<StoryStepSyncRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/steps/sync") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val documentId = call.pathParameters["documentId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val response = DocumentsService.syncStorySteps(
+                    documentId = documentId,
+                    workspaceId = workspaceId,
+                    request = request,
+                    writeopiaDb = writeopiaDb
+                )
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = response
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    post<EventDiffRequest>("/api/docs/workspace/events/diff") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = request.workspaceId
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val events = writeopiaDb.getSyncEventsAfterTime(
+                    workspaceId = workspaceId,
+                    afterTime = request.lastEventSync
+                )
+
+                val response = EventDiffResponse(
+                    events = events.map { event ->
+                        SyncEventApi(
+                            id = event.id,
+                            eventType = event.event_type,
+                            entityId = event.entity_id,
+                            oldParentId = event.old_parent_id,
+                            newParentId = event.new_parent_id,
+                            createdAt = event.created_at
+                        )
+                    },
+                    serverTimestamp = Clock.System.now().toEpochMilliseconds()
+                )
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = response
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    post<MoveDocumentRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/move") { request ->
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val documentId = call.pathParameters["documentId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                // Verify document exists and belongs to workspace
+                val document = DocumentsService.getDocumentById(documentId, workspaceId, writeopiaDb)
+                if (document == null) {
+                    call.respond(
+                        status = HttpStatusCode.NotFound,
+                        message = "Document not found"
+                    )
+                    return@runIfMember
+                }
+
+                val moved = DocumentsService.moveDocument(
+                    documentId,
+                    request.targetParentId,
+                    workspaceId,
+                    userId,
+                    writeopiaDb
+                )
+
+                if (moved) {
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = "Document moved successfully"
+                    )
+                } else {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = "Failed to move document"
                     )
                 }
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
             }
+        }
+    }
+
+    post("/api/docs/workspace/{workspaceId}/tutorials/initialize") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val created = TutorialsService.initializeTutorialsForUser(
+                    userId = userId,
+                    workspaceId = workspaceId,
+                    writeopiaDb = writeopiaDb,
+                )
+
+                if (created) {
+                    call.respond(
+                        status = HttpStatusCode.Created,
+                        message = "Tutorials created successfully"
+                    )
+                } else {
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = "Tutorials already exist"
+                    )
+                }
+            } catch (e: Exception) {
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    post("/api/docs/workspace/{workspaceId}/document/{documentId}/header") {
+        val userId = call.getUserIdFromApiGateway(debug) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, "Authentication required")
+            return@post
+        }
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val documentId = call.pathParameters["documentId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            val multipart = call.receiveMultipart()
+
+            val imageUrl = imageStorageService.uploadImage(multipart, userId, debug)
+
+            if (imageUrl == null) {
+                call.respond(HttpStatusCode.BadRequest, "No image found in request")
+                return@runIfMember
+            }
+
+            val now = System.currentTimeMillis()
+            writeopiaDb.documentEntityQueries.updateHeaderImage(
+                header_image = imageUrl,
+                last_updated_at = now,
+                last_synced = now,
+                id = documentId,
+                workspace_id = workspaceId
+            )
+
+            call.respond(
+                HttpStatusCode.OK,
+                mapOf("headerImage" to imageUrl, "documentId" to documentId)
+            )
         }
     }
 }
-

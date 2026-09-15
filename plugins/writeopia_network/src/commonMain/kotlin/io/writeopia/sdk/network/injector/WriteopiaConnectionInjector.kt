@@ -127,6 +127,7 @@ private object ApiInjectorDefaults {
                     loadTokens {
                         val accessToken = bearerTokenHandler.getIdToken() ?: ""
                         val refreshToken = bearerTokenHandler.getRefreshToken() ?: ""
+
                         BearerTokens(accessToken, refreshToken)
                     }
 
