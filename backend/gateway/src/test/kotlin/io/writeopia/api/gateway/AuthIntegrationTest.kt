@@ -66,6 +66,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
+                    username = "email@gmail.com_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -90,6 +91,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "Name",
                     email = email,
+                    username = email + "_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -102,6 +104,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "Name",
                     email = email,
+                    username = email + "_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -127,6 +130,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
+                    username = "email@gmail.com_user",
                     password = password,
                 )
             )
@@ -186,6 +190,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
+                    username = "email@gmail.com_user",
                     password = password,
                 )
             )
@@ -275,6 +280,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
+                    username = "email@gmail.com_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -299,6 +305,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
+                    username = "email@gmail.com_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -333,6 +340,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = Random.nextInt().toString(),
                     email = email1,
+                    username = email1 + "_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -349,6 +357,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = Random.nextInt().toString(),
                     email = email2,
+                    username = email2 + "_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -401,6 +410,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = Random.nextInt().toString(),
                     email = email1,
+                    username = email1 + "_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -417,6 +427,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = Random.nextInt().toString(),
                     email = email2,
+                    username = email2 + "_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -476,6 +487,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = Random.nextInt().toString(),
                     email = email1,
+                    username = email1 + "_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -492,6 +504,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = Random.nextInt().toString(),
                     email = email2,
+                    username = email2 + "_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )

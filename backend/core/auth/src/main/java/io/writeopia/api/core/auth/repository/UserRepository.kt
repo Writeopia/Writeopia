@@ -16,6 +16,7 @@ fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaBeUser? =
             WriteopiaBeUser(
                 id = userEntity.id,
                 email = userEntity.email,
+                username = userEntity.username,
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
@@ -33,6 +34,7 @@ fun WriteopiaDbBackend.getEnabledUserByEmail(email: String): WriteopiaBeUser? =
             WriteopiaBeUser(
                 id = userEntity.id,
                 email = userEntity.email,
+                username = userEntity.username,
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
@@ -50,6 +52,7 @@ fun WriteopiaDbBackend.getUserById(id: String): WriteopiaBeUser? =
             WriteopiaBeUser(
                 id = userEntity.id,
                 email = userEntity.email,
+                username = userEntity.username,
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
@@ -92,6 +95,7 @@ fun WriteopiaDbBackend.insertUser(
     insertUser(
         id = user.id,
         name = user.name,
+        username = user.username,
         email = user.email,
         password = user.password,
         salt = user.salt,

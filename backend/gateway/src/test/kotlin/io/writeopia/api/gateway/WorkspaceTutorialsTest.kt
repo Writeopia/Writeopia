@@ -62,6 +62,7 @@ class WorkspaceTutorialsTest {
                     workspaceName = "Initial Workspace",
                     name = "Test User",
                     email = email,
+                    username = email + "_user",
                     password = password,
                 )
             )
@@ -135,6 +136,7 @@ class WorkspaceTutorialsTest {
                     workspaceName = "Initial Workspace",
                     name = "Test User",
                     email = email,
+                    username = email + "_user",
                     password = password,
                 )
             )
@@ -216,16 +218,16 @@ class WorkspaceTutorialsTest {
             val password = "testpassword123&"
             testEmails.add(email)
 
-            // Register a user
-            val registerResponse = client.post("/api/auth/register") {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    RegisterRequest(
-                        workspaceName = "Initial Workspace",
-                        name = "Test User",
-                        email = email,
-                        password = password,
-                    )
+        // Register a user
+        val registerResponse = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "Initial Workspace",
+                    name = "Test User",
+                    email = email,
+                    username = email + "_user",
+                    password = password,
                 )
             }
 
