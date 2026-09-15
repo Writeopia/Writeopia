@@ -62,6 +62,7 @@ fun WriteopiaDbBackend.getUserById(id: String): WriteopiaBeUser? =
 fun WriteopiaDbBackend.insertUser(
     id: String = UUID.randomUUID().toString(),
     name: String,
+    username: String,
     email: String,
     password: String,
     salt: String,
@@ -73,10 +74,11 @@ fun WriteopiaDbBackend.insertUser(
     this.userEntityQueries.insertUser(
         id = id,
         created_at = Clock.System.now().toEpochMilliseconds(),
+        name = name,
+        username = username,
         email = email,
         password = password,
         salt = salt,
-        name = name,
         enabled = enabled,
         confirmation_code = confirmationCode,
         confirmation_code_expiry = confirmationCodeExpiry,
@@ -98,6 +100,11 @@ fun WriteopiaDbBackend.insertUser(
         confirmationCodeExpiry = user.confirmationCodeExpiry,
     )
 }
+
+fun WriteopiaDbBackend.userExistsByUsernameOrEmail(username: String, email: String): Boolean =
+    this.userEntityQueries
+        .userExistsByUsernameOrEmail(username, email) 
+        .executeAsOne()
 
 fun WriteopiaDbBackend.updatePassword(id: String, password: String, salt: String) {
     this.userEntityQueries.updatePassword(password, salt, id)

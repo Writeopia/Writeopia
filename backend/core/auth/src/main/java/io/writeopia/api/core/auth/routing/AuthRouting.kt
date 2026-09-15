@@ -18,6 +18,7 @@ import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.deleteUserById
 import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
+import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
@@ -159,58 +160,59 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         try {
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
-            val existingUser = writeopiaDb.getUserByEmail(request.email)
 
-            if (existingUser == null) {
-                // Create user with enabled = false (always requires email confirmation)
-                val wUser = AuthService.createUser(writeopiaDb, request, enabled = false)
-
-                // Generate confirmation code and send email
-                val confirmationCode = EmailService.generateConfirmationCode()
-                val codeExpiry = EmailService.getCodeExpiry()
-                writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
-
-                EmailService.sendConfirmationEmail(
-                    toEmail = request.email,
-                    code = confirmationCode,
-                    userName = request.name
-                )
-
-                val workspaceId = GenerateId.generate()
-                // Every user has its own workspace.
-                WorkspaceService.createWorkspace(
-                    workspaceId = workspaceId,
-                    workspaceName = request.workspaceName,
-                    writeopiaDb = writeopiaDb
-                )
-
-                val created = WorkspaceService.addUserToWorkspaceAdmin(
-                    request.email,
-                    workspaceId,
-                    "ADMIN",
-                    writeopiaDb
-                )
-
-                if (created) {
-                    call.respond(
-                        HttpStatusCode.Created,
-                        RegisterResponse(
-                            writeopiaUser = wUser.toApi(),
-                            emailConfirmationRequired = true
-                        ),
-                    )
-                } else {
-                    call.respond(
-                        HttpStatusCode.InternalServerError,
-                        RegisterResponse(
-                            writeopiaUser = wUser.toApi(),
-                            emailConfirmationRequired = true
-                        ),
-                    )
-                }
-            } else {
-                logger.info("register request - user or workspace already exist")
+            // since we are not allowing email probing and we don't need user data in this case
+            if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) { 
+                logger.info("register request - user already exists")
                 call.respond(HttpStatusCode.Conflict, "Not Created")
+                return@post
+            }
+
+            // Create user with enabled = false (always requires email confirmation)
+            val wUser = AuthService.createUser(writeopiaDb, request, enabled = false)
+
+            // Generate confirmation code and send email
+            val confirmationCode = EmailService.generateConfirmationCode()
+            val codeExpiry = EmailService.getCodeExpiry()
+            writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
+
+            EmailService.sendConfirmationEmail(
+                toEmail = request.email,
+                code = confirmationCode,
+                userName = request.name
+            )
+
+            val workspaceId = GenerateId.generate()
+            // Every user has its own workspace.
+            WorkspaceService.createWorkspace(
+                workspaceId = workspaceId,
+                workspaceName = request.workspaceName,
+                writeopiaDb = writeopiaDb
+            )
+
+            val created = WorkspaceService.addUserToWorkspaceAdmin(
+                request.email,
+                workspaceId,
+                "ADMIN",
+                writeopiaDb
+            )
+
+            if (created) {
+                call.respond(
+                    HttpStatusCode.Created,
+                    RegisterResponse(
+                        writeopiaUser = wUser.toApi(),
+                        emailConfirmationRequired = true
+                    ),
+                )
+            } else {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    RegisterResponse(
+                        writeopiaUser = wUser.toApi(),
+                        emailConfirmationRequired = true
+                    ),
+                )
             }
         } catch (e: Exception) {
             e.printStackTrace()

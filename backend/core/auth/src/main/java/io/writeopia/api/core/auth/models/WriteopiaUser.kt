@@ -7,6 +7,7 @@ import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 data class WriteopiaBeUser(
     val id: String,
     val email: String,
+    val username String, 
     val name: String,
     val password: String,
     val salt: String,
