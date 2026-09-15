@@ -9,12 +9,15 @@ import io.ktor.http.HttpHeaders
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
+import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.documents.documents.repository.deleteDocumentById
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
@@ -1292,7 +1295,39 @@ class DocumentationIntegrationTests {
             }
 
             val client = defaultClient()
-            val workspaceId = Random.nextInt().toString()
+            val email = "favorite_test_${Random.nextInt()}@test.com"
+            val password = "testpassword123&"
+
+            // Register a user to get a consistent user ID
+            val registerResponse = client.post("/api/auth/register") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    io.writeopia.sdk.serialization.data.auth.RegisterRequest(
+                        workspaceName = "Test Workspace",
+                        name = "Test User",
+                        email = email,
+                        password = password,
+                    )
+                )
+            }
+            assertEquals(HttpStatusCode.Created, registerResponse.status)
+
+            // Login to get access token
+            val loginResponse = client.post("/api/auth/login") {
+                contentType(ContentType.Application.Json)
+                setBody(io.writeopia.sdk.serialization.data.auth.LoginRequest(email, password))
+            }
+            assertEquals(HttpStatusCode.OK, loginResponse.status)
+            val authResponse = loginResponse.body<io.writeopia.sdk.serialization.data.auth.AuthResponse>()
+            val accessToken = authResponse.accessToken!!
+
+            // Get the workspace ID
+            val getWorkspacesResponse = client.get("/api/workspace/user/email/$email") {
+                contentType(ContentType.Application.Json)
+            }
+            assertEquals(HttpStatusCode.OK, getWorkspacesResponse.status)
+            val workspaces = getWorkspacesResponse.body<List<io.writeopia.sdk.serialization.data.WorkspaceApi>>()
+            val workspaceId = workspaces.first().id
 
             // Create a document
             val document = DocumentApi(
@@ -1308,12 +1343,17 @@ class DocumentationIntegrationTests {
 
             val createResponse = client.post("/api/docs/workspace/document") {
                 contentType(ContentType.Application.Json)
+                headers {
+                    append("X-Forwarded-Authorization", "Bearer $accessToken")
+                }
                 setBody(SendDocumentsRequest(listOf(document), workspaceId))
             }
             assertEquals(HttpStatusCode.OK, createResponse.status)
 
             // Verify user has no favorites initially
-            val getInitialFavorites = client.get("/api/docs/workspace/$workspaceId/user/favorites")
+            val getInitialFavorites = client.get("/api/docs/workspace/$workspaceId/user/favorites") {
+                header("X-Forwarded-Authorization", "Bearer $accessToken")
+            }
             assertEquals(HttpStatusCode.OK, getInitialFavorites.status)
             val initialFavorites = getInitialFavorites.body<List<String>>()
             assertFalse(initialFavorites.contains(document.id))
@@ -1322,12 +1362,17 @@ class DocumentationIntegrationTests {
             val favoriteResponse =
                 client.post("/api/docs/workspace/$workspaceId/document/${document.id}/favorite") {
                     contentType(ContentType.Application.Json)
+                    headers {
+                        append("X-Forwarded-Authorization", "Bearer $accessToken")
+                    }
                     setBody(FavoriteDocumentRequest(true))
                 }
             assertEquals(HttpStatusCode.OK, favoriteResponse.status)
 
             // Verify document is now in user's favorites
-            val getAfterFavorite = client.get("/api/docs/workspace/$workspaceId/user/favorites")
+            val getAfterFavorite = client.get("/api/docs/workspace/$workspaceId/user/favorites") {
+                header("X-Forwarded-Authorization", "Bearer $accessToken")
+            }
             assertEquals(HttpStatusCode.OK, getAfterFavorite.status)
             val favoritesAfter = getAfterFavorite.body<List<String>>()
             assertTrue(favoritesAfter.contains(document.id))
@@ -1336,15 +1381,23 @@ class DocumentationIntegrationTests {
             val unfavoriteResponse =
                 client.post("/api/docs/workspace/$workspaceId/document/${document.id}/favorite") {
                     contentType(ContentType.Application.Json)
+                    headers {
+                        append("X-Forwarded-Authorization", "Bearer $accessToken")
+                    }
                     setBody(FavoriteDocumentRequest(false))
                 }
             assertEquals(HttpStatusCode.OK, unfavoriteResponse.status)
 
             // Verify document is no longer in user's favorites
-            val getAfterUnfavorite = client.get("/api/docs/workspace/$workspaceId/user/favorites")
+            val getAfterUnfavorite = client.get("/api/docs/workspace/$workspaceId/user/favorites") {
+                header("X-Forwarded-Authorization", "Bearer $accessToken")
+            }
             assertEquals(HttpStatusCode.OK, getAfterUnfavorite.status)
             val favoritesAfterUnfavorite = getAfterUnfavorite.body<List<String>>()
             assertFalse(favoritesAfterUnfavorite.contains(document.id))
+
+            // Cleanup
+            db.deleteUserByEmail(email)
         }
 
     @Test
