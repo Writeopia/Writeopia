@@ -31,6 +31,7 @@ import io.writeopia.sdk.serialization.json.writeopiaJson
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -116,7 +117,7 @@ class AuthIntegrationTest {
             module(db, debugMode = true)
         }
 
-        val client = createClientWithCookies()
+        val client = defaultClient()
         val password = "lasjbdalsdq08w9y&"
 
         val response = client.post("/api/auth/register") {
@@ -133,15 +134,20 @@ class AuthIntegrationTest {
 
         assertEquals(HttpStatusCode.Created, response.status)
 
-        val response1 = client.post("/api/auth/login/web") {
+        val response1 = client.post("/api/auth/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequest("email@gmail.com", password))
         }
 
         assertEquals(HttpStatusCode.OK, response1.status)
+        val authResponse = response1.body<AuthResponse>()
+        val accessToken = authResponse.accessToken!!
 
         val response2 = client.delete("/api/auth/account") {
             contentType(ContentType.Application.Json)
+            headers {
+                append("X-Forwarded-Authorization", "Bearer $accessToken")
+            }
         }
 
         assertEquals(HttpStatusCode.OK, response2.status)
@@ -151,7 +157,7 @@ class AuthIntegrationTest {
     fun `it should be NOT possible to delete your account, if don't have the right token`() =
         testApplication {
             application {
-                module(db, debugMode = true)
+                module(db, debugMode = false)
             }
 
             val client = defaultClient()
@@ -169,7 +175,7 @@ class AuthIntegrationTest {
             module(db, debugMode = true)
         }
 
-        val client = createClientWithCookies()
+        val client = defaultClient()
 
         val password = "lasjbdalsdq08w9y&"
 
@@ -187,15 +193,20 @@ class AuthIntegrationTest {
 
         assertEquals(HttpStatusCode.Created, response.status)
 
-        val response1 = client.post("/api/auth/login/web") {
+        val response1 = client.post("/api/auth/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequest("email@gmail.com", password))
         }
 
         assertEquals(HttpStatusCode.OK, response1.status)
+        val authResponse = response1.body<AuthResponse>()
+        val accessToken = authResponse.accessToken!!
 
         val response2 = client.put("/api/auth/password/reset") {
             contentType(ContentType.Application.Json)
+            headers {
+                append("X-Forwarded-Authorization", "Bearer $accessToken")
+            }
             setBody(ResetPasswordRequest(newPassword = "newpassword"))
         }
 
@@ -203,6 +214,9 @@ class AuthIntegrationTest {
 
         val response3 = client.get("/api/auth/user/current") {
             contentType(ContentType.Application.Json)
+            headers {
+                append("X-Forwarded-Authorization", "Bearer $accessToken")
+            }
         }
 
         assertEquals(HttpStatusCode.OK, response3.status)

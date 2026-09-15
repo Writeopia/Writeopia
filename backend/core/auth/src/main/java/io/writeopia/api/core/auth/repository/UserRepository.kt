@@ -103,8 +103,8 @@ fun WriteopiaDbBackend.updatePassword(id: String, password: String, salt: String
     this.userEntityQueries.updatePassword(password, salt, id)
 }
 
-fun WriteopiaDbBackend.deleteUserById(id: String) {
-    this.userEntityQueries.deleteUser(id)
+suspend fun WriteopiaDbBackend.deleteUserById(id: String): Long {
+    return this.userEntityQueries.deleteUser(id).await()
 }
 
 fun WriteopiaDbBackend.deleteUserByEmail(email: String) {

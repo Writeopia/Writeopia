@@ -144,7 +144,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     }
 
     post("/api/auth/logout-all") {
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
             return@post
         }
@@ -220,17 +220,21 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     }
 
     delete("/api/auth/account") {
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
             return@delete
         }
 
-        writeopiaDb.deleteUserById(id = userId)
-        call.respond(DeleteAccountResponse(true))
+        val rowsAffected = writeopiaDb.deleteUserById(id = userId)
+        if (rowsAffected > 0) {
+            call.respond(HttpStatusCode.OK, DeleteAccountResponse(true))
+        } else {
+            call.respond(HttpStatusCode.NotFound, "User not found")
+        }
     }
 
     put("/api/auth/password/reset") {
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
             return@put
         }
@@ -247,7 +251,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     }
 
     get("/api/auth/user/current") {
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
             return@get
         }
@@ -262,7 +266,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     }
 
     get("/api/auth/hello-auth") {
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
             return@get
         }

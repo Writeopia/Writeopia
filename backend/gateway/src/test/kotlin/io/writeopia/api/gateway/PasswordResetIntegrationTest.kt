@@ -78,24 +78,25 @@ class PasswordResetIntegrationTest {
     }
 
     @Test
-    fun `forgot password endpoint should return success for non-existing user for security`() = testApplication {
-        application {
-            module(db, debugMode = true)
+    fun `forgot password endpoint should return success for non-existing user for security`() =
+        testApplication {
+            application {
+                module(db, debugMode = true)
+            }
+
+            val client = defaultClient()
+
+            // Don't register any user, just request password reset
+            val response = client.post("/api/auth/password/forgot") {
+                contentType(ContentType.Application.Json)
+                setBody(ForgotPasswordRequest(email = "nonexistent@example.com"))
+            }
+
+            // Should still return success for security reasons (not revealing if email exists)
+            assertEquals(HttpStatusCode.OK, response.status)
+            val body = response.body<ForgotPasswordResponse>()
+            assertTrue(body.success)
         }
-
-        val client = defaultClient()
-
-        // Don't register any user, just request password reset
-        val response = client.post("/api/auth/password/forgot") {
-            contentType(ContentType.Application.Json)
-            setBody(ForgotPasswordRequest(email = "nonexistent@example.com"))
-        }
-
-        // Should still return success for security reasons (not revealing if email exists)
-        assertEquals(HttpStatusCode.OK, response.status)
-        val body = response.body<ForgotPasswordResponse>()
-        assertTrue(body.success)
-    }
 
     @Test
     fun `verify code endpoint should return success for valid code`() = testApplication {
@@ -184,7 +185,13 @@ class PasswordResetIntegrationTest {
 
         val response = client.post("/api/auth/password/reset-with-code") {
             contentType(ContentType.Application.Json)
-            setBody(PasswordResetWithCodeRequest(email = testEmail, code = testCode, newPassword = newPassword))
+            setBody(
+                PasswordResetWithCodeRequest(
+                    email = testEmail,
+                    code = testCode,
+                    newPassword = newPassword
+                )
+            )
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
@@ -215,7 +222,13 @@ class PasswordResetIntegrationTest {
 
         val response = client.post("/api/auth/password/reset-with-code") {
             contentType(ContentType.Application.Json)
-            setBody(PasswordResetWithCodeRequest(email = testEmail, code = "wrongcode", newPassword = "newPassword"))
+            setBody(
+                PasswordResetWithCodeRequest(
+                    email = testEmail,
+                    code = "wrongcode",
+                    newPassword = "newPassword"
+                )
+            )
         }
 
         assertEquals(HttpStatusCode.BadRequest, response.status)
@@ -233,7 +246,13 @@ class PasswordResetIntegrationTest {
 
         val response = client.post("/api/auth/password/reset-with-code") {
             contentType(ContentType.Application.Json)
-            setBody(PasswordResetWithCodeRequest(email = "nonexistent@example.com", code = testCode, newPassword = "newPassword"))
+            setBody(
+                PasswordResetWithCodeRequest(
+                    email = "nonexistent@example.com",
+                    code = testCode,
+                    newPassword = "newPassword"
+                )
+            )
         }
 
         // Should fail since user doesn't exist (code can't be valid)
@@ -258,7 +277,13 @@ class PasswordResetIntegrationTest {
         // Reset password
         val response1 = client.post("/api/auth/password/reset-with-code") {
             contentType(ContentType.Application.Json)
-            setBody(PasswordResetWithCodeRequest(email = testEmail, code = testCode, newPassword = newPassword))
+            setBody(
+                PasswordResetWithCodeRequest(
+                    email = testEmail,
+                    code = testCode,
+                    newPassword = newPassword
+                )
+            )
         }
 
         assertEquals(HttpStatusCode.OK, response1.status)
@@ -266,7 +291,13 @@ class PasswordResetIntegrationTest {
         // Try to reset again with same code - should fail because code was cleared
         val response2 = client.post("/api/auth/password/reset-with-code") {
             contentType(ContentType.Application.Json)
-            setBody(PasswordResetWithCodeRequest(email = testEmail, code = testCode, newPassword = "anotherPassword"))
+            setBody(
+                PasswordResetWithCodeRequest(
+                    email = testEmail,
+                    code = testCode,
+                    newPassword = "anotherPassword"
+                )
+            )
         }
 
         assertEquals(HttpStatusCode.BadRequest, response2.status)
@@ -290,7 +321,13 @@ class PasswordResetIntegrationTest {
         // Reset password
         val response = client.post("/api/auth/password/reset-with-code") {
             contentType(ContentType.Application.Json)
-            setBody(PasswordResetWithCodeRequest(email = testEmail, code = testCode, newPassword = newPassword))
+            setBody(
+                PasswordResetWithCodeRequest(
+                    email = testEmail,
+                    code = testCode,
+                    newPassword = newPassword
+                )
+            )
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
@@ -335,7 +372,13 @@ class PasswordResetIntegrationTest {
         val newPassword = "completelyNewPassword789"
         val resetResponse = client.post("/api/auth/password/reset-with-code") {
             contentType(ContentType.Application.Json)
-            setBody(PasswordResetWithCodeRequest(email = testEmail, code = generatedCode, newPassword = newPassword))
+            setBody(
+                PasswordResetWithCodeRequest(
+                    email = testEmail,
+                    code = generatedCode,
+                    newPassword = newPassword
+                )
+            )
         }
         assertEquals(HttpStatusCode.OK, resetResponse.status)
 

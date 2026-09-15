@@ -74,7 +74,7 @@ fun Routing.workspaceRoute(
     }
 
     get("/api/workspace/user") {
-        val userId = call.getUserIdFromApiGateway()
+        val userId = call.getUserIdFromApiGateway(debugMode)
 
         if (userId.isNullOrEmpty()) {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
@@ -93,7 +93,7 @@ fun Routing.workspaceRoute(
     }
 
     post<CreateWorkspaceRequest>("/api/workspace/create") { request ->
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
             return@post
         }
@@ -122,7 +122,7 @@ fun Routing.workspaceRoute(
     }
 
     get("/api/workspace/{workspaceId}/user/{userEmail}") {
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
             return@get
         }
@@ -147,7 +147,7 @@ fun Routing.workspaceRoute(
     }
 
     get("/api/workspace/{workspaceId}/users") {
-        val currentUserId = call.getUserIdFromApiGateway() ?: run {
+        val currentUserId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
             return@get
         }
@@ -168,7 +168,7 @@ fun Routing.workspaceRoute(
     }
 
     get("/api/workspace/{workspaceId}/users/paginated") {
-        val currentUserId = call.getUserIdFromApiGateway() ?: run {
+        val currentUserId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
             return@get
         }
@@ -195,7 +195,7 @@ fun Routing.workspaceRoute(
     }
 
     get("/api/workspace/{workspaceId}/users/search") {
-        val currentUserId = call.getUserIdFromApiGateway() ?: run {
+        val currentUserId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
             return@get
         }
@@ -237,7 +237,7 @@ fun Routing.workspaceRoute(
     }
 
     post<AddUserToWorkspaceRequest>("/api/workspace/user") { request ->
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
             return@post
         }
@@ -288,7 +288,7 @@ fun Routing.workspaceRoute(
     }
 
     put<WorkspaceNameChangeRequest>("/api/workspace/name") { nameChange ->
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
             return@put
         }
@@ -305,7 +305,7 @@ fun Routing.workspaceRoute(
     }
 
     put<WorkspaceRoleChangeRequest>("/api/workspace/role") { roleChange ->
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
             return@put
         }
@@ -339,7 +339,7 @@ fun Routing.workspaceRoute(
     }
 
     delete("/api/workspace/{workspaceId}/user/{userId}") {
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
             return@delete
         }
@@ -416,7 +416,7 @@ fun Routing.workspaceRoute(
     }
 
     post("/api/workspace/{workspaceId}/export") {
-        val userId = call.getUserIdFromApiGateway() ?: run {
+        val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
             return@post
         }

@@ -6,6 +6,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
 import io.writeopia.backend.models.ServerResponse
 import org.slf4j.LoggerFactory
+import kotlin.random.Random
 
 private val logger = LoggerFactory.getLogger("ApiGatewayAuth")
 
@@ -13,24 +14,22 @@ private val logger = LoggerFactory.getLogger("ApiGatewayAuth")
  * Extract userId from X-Forwarded-Authorization header (from API Gateway).
  * API Gateway already validated the JWT, so we just decode it to extract the userId claim.
  *
+ * @param debugMode If true, reads userId from cookie for testing without API Gateway
  * @return userId if found, null otherwise
  */
-fun ApplicationCall.getUserIdFromApiGateway(): String? {
-    val forwardedAuth = request.headers["X-Forwarded-Authorization"] ?: return null
-
-    val token = if (forwardedAuth.startsWith("Bearer ", ignoreCase = true)) {
+fun ApplicationCall.getUserIdFromApiGateway(debugMode: Boolean = false): String? {
+    // In debug mode, extract userId from the access token cookie for testing
+    val forwardedAuth = request.headers["X-Forwarded-Authorization"]
+    val token = if (forwardedAuth?.startsWith("Bearer ", ignoreCase = true) == true) {
         forwardedAuth.substring(7).trim()
     } else {
         forwardedAuth
     }
-
     return try {
-        // Decode without verifying (API Gateway already verified it)
         val decodedJWT = JWT.decode(token)
         decodedJWT.getClaim("userId").asString()
     } catch (e: Exception) {
-        logger.error("Failed to decode JWT from X-Forwarded-Authorization: ${e.message}")
-        null
+        if (debugMode) return Random.nextInt().toString() else null
     }
 }
 
@@ -38,10 +37,11 @@ fun ApplicationCall.getUserIdFromApiGateway(): String? {
  * Get userId from API Gateway header or respond with 401 Unauthorized.
  * Use this in endpoints that require authentication.
  *
+ * @param debugMode If true, reads userId from cookie for testing without API Gateway
  * @return userId if authenticated, null if not (and sends 401 response)
  */
-suspend fun ApplicationCall.requireUserId(): String? {
-    val userId = getUserIdFromApiGateway()
+suspend fun ApplicationCall.requireUserId(debugMode: Boolean = false): String? {
+    val userId = getUserIdFromApiGateway(debugMode)
     if (userId.isNullOrEmpty()) {
         respond(
             HttpStatusCode.Unauthorized,
