@@ -55,6 +55,12 @@
   <string name="suggestions">Sugestões:</string>
   <string name="error_model_download">Error ao baixar modelo.</string>
   <string name="version">"Alpha 47 - Amado, Jorge"</string>
+  <string name="update_check_failed">Não foi possível verificar atualizações. Tente novamente mais tarde.</string>
+  <string name="update_open_failed">Não foi possível abrir o download da atualização. Tente novamente.</string>
+  <string name="update_available">Atualização disponível</string>
+  <string name="new_version_available">Uma nova versão do Writeopia está disponível:</string>
+  <string name="download_update">Baixar atualização</string>
+  <string name="later">Mais tarde</string>
   <string name="light_theme">Claro</string>
   <string name="dark_theme">Escuro</string>
   <string name="system_theme">Sistema</string>
