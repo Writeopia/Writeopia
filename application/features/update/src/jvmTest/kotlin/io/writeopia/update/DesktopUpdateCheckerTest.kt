@@ -85,6 +85,7 @@ class DesktopUpdateCheckerTest {
         assertEquals(DesktopPlatform.WINDOWS, currentDesktopPlatform("Windows 11"))
         assertEquals(DesktopPlatform.LINUX, currentDesktopPlatform("Linux"))
         assertEquals(DesktopPlatform.MAC, currentDesktopPlatform("Mac OS X"))
+        assertEquals(DesktopPlatform.MAC, currentDesktopPlatform("Darwin"))
         assertEquals(null, currentDesktopPlatform("Unknown"))
     }
 
