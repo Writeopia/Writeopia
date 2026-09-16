@@ -39,6 +39,7 @@ CREATE TABLE story_step_entity (
 CREATE TABLE user_entity (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
+  username TEXT NOT NULL UNIQUE,
   created_at BIGINT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,

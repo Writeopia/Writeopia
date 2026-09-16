@@ -18,6 +18,7 @@ import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.deleteUserById
 import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
+import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
@@ -159,9 +160,8 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         try {
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
-            val existingUser = writeopiaDb.getUserByEmail(request.email)
-
-            if (existingUser == null) {
+            // since we are not allowing email probing and we don't need user data in this case
+            if (!writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
                 // Create user with enabled = false (always requires email confirmation)
                 val wUser = AuthService.createUser(writeopiaDb, request, enabled = false)
 
@@ -208,6 +208,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                         ),
                     )
                 }
+            
             } else {
                 logger.info("register request - user or workspace already exist")
                 call.respond(HttpStatusCode.Conflict, "Not Created")

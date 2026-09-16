@@ -16,6 +16,7 @@ fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaBeUser? =
             WriteopiaBeUser(
                 id = userEntity.id,
                 email = userEntity.email,
+                username = userEntity.username,
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
@@ -33,6 +34,7 @@ fun WriteopiaDbBackend.getEnabledUserByEmail(email: String): WriteopiaBeUser? =
             WriteopiaBeUser(
                 id = userEntity.id,
                 email = userEntity.email,
+                username = userEntity.username,
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
@@ -50,6 +52,7 @@ fun WriteopiaDbBackend.getUserById(id: String): WriteopiaBeUser? =
             WriteopiaBeUser(
                 id = userEntity.id,
                 email = userEntity.email,
+                username = userEntity.username,
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
@@ -62,6 +65,7 @@ fun WriteopiaDbBackend.getUserById(id: String): WriteopiaBeUser? =
 fun WriteopiaDbBackend.insertUser(
     id: String = UUID.randomUUID().toString(),
     name: String,
+    username: String,
     email: String,
     password: String,
     salt: String,
@@ -73,10 +77,11 @@ fun WriteopiaDbBackend.insertUser(
     this.userEntityQueries.insertUser(
         id = id,
         created_at = Clock.System.now().toEpochMilliseconds(),
+        name = name,
+        username = username,
         email = email,
         password = password,
         salt = salt,
-        name = name,
         enabled = enabled,
         confirmation_code = confirmationCode,
         confirmation_code_expiry = confirmationCodeExpiry,
@@ -90,6 +95,7 @@ fun WriteopiaDbBackend.insertUser(
     insertUser(
         id = user.id,
         name = user.name,
+        username = user.username,
         email = user.email,
         password = user.password,
         salt = user.salt,
@@ -98,6 +104,11 @@ fun WriteopiaDbBackend.insertUser(
         confirmationCodeExpiry = user.confirmationCodeExpiry,
     )
 }
+
+fun WriteopiaDbBackend.userExistsByUsernameOrEmail(username: String, email: String): Boolean =
+    this.userEntityQueries
+        .userExistsByUsernameOrEmail(username, email) 
+        .executeAsOne()
 
 fun WriteopiaDbBackend.updatePassword(id: String, password: String, salt: String) {
     this.userEntityQueries.updatePassword(password, salt, id)

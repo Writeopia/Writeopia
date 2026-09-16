@@ -21,7 +21,7 @@ object AuthService {
         registerRequest: RegisterRequest,
         enabled: Boolean
     ): WriteopiaUser {
-        val (name, email, workspaceName, password) = registerRequest
+        val (name, email, username, workspaceName, password) = registerRequest
 
         val id = UUID.randomUUID().toString()
 
@@ -31,6 +31,7 @@ object AuthService {
         writeopiaDb.insertUser(
             id = id,
             name = name,
+            username = username,
             email = email,
             password = hash,
             salt = salt.toBase64(),
