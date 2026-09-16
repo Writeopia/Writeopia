@@ -51,8 +51,8 @@ internal fun currentDesktopPlatform(
     val normalizedOs = osName.lowercase()
 
     return when {
-        normalizedOs.contains("win") -> DesktopPlatform.WINDOWS
         normalizedOs.contains("mac") || normalizedOs.contains("darwin") -> DesktopPlatform.MAC
+        normalizedOs.contains("win") -> DesktopPlatform.WINDOWS
         normalizedOs.contains("linux") -> DesktopPlatform.LINUX
         else -> null
     }
