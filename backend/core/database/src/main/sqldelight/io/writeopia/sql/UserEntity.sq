@@ -19,9 +19,11 @@ WHERE email = ?
 LIMIT 1;
 
 userExistsByUsernameOrEmail:
-SELECT COUNT(*) > 0
-FROM user_entity
-WHERE username = ? OR email = ?;
+SELECT EXISTS(
+  SELECT 1
+  FROM user_entity
+  WHERE username = ? OR email = ?
+);
 
 selectEnabledUserByEmail:
 SELECT *
