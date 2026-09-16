@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.multiplatform.compiler)
     alias(libs.plugins.ktlint)
@@ -29,6 +30,7 @@ kotlin {
                 implementation(compose.ui)
 
                 implementation(libs.ktor.client.core)
+                implementation(libs.kotlinx.serialization.json)
             }
         }
 
