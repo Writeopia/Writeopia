@@ -86,16 +86,9 @@ kotlin {
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:genai"))
+                implementation(project(":application:features:update"))
                 implementation(project(":plugins:writeopia_presentation"))
                 implementation(compose.desktop.currentOs)
-                implementation(libs.kotlinx.serialization.json)
-            }
-        }
-
-        val jvmTest by getting {
-            dependencies {
-                implementation(libs.kotlin.test)
-                implementation(libs.kotlinx.coroutines.test)
             }
         }
 
