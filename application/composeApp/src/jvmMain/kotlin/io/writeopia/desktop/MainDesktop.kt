@@ -2,29 +2,17 @@ package io.writeopia.desktop
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
@@ -44,9 +32,6 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
 import io.writeopia.common.utils.ui.GlobalToastBox
-import io.writeopia.desktop.update.DesktopUpdate
-import io.writeopia.desktop.update.DesktopUpdateCheckResult
-import io.writeopia.desktop.update.DesktopUpdateChecker
 import io.writeopia.model.AccentColor
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.ScreenLoading
@@ -60,6 +45,7 @@ import io.writeopia.sqldelight.database.DatabaseFactory
 import io.writeopia.sqldelight.database.driver.DriverFactory
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
 import io.writeopia.theme.WriteopiaTheme
+import io.writeopia.update.ui.DesktopUpdatePrompt
 import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.common.utils.ALLOW_BACKEND
@@ -87,9 +73,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
     ImageLoadConfig.configImageLoad()
 
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-    var availableUpdate by remember { mutableStateOf<DesktopUpdate?>(null) }
-    var updateOpenFailed by remember { mutableStateOf(false) }
 
     val homeDirectory: String = System.getProperty("user.home")
     val appDirectory = File(homeDirectory, APP_DIRECTORY)
@@ -274,82 +257,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     darkTheme = colorTheme.value.isDarkTheme(),
                     accentColor = accentColor ?: AccentColor.PURPLE
                 ) {
-                    val uriHandler = LocalUriHandler.current
-                    val updateCheckFailedMessage = WrStrings.updateCheckFailed()
-                    val updateOpenFailedMessage = WrStrings.updateOpenFailed()
-
-                    LaunchedEffect(Unit) {
-                        when (val result = DesktopUpdateChecker().checkForUpdate()) {
-                            is DesktopUpdateCheckResult.UpdateAvailable -> {
-                                updateOpenFailed = false
-                                availableUpdate = result.update
-                            }
-
-                            DesktopUpdateCheckResult.NoUpdate -> Unit
-
-                            is DesktopUpdateCheckResult.Failure -> {
-                                snackbarHostState.showSnackbar(updateCheckFailedMessage)
-                            }
-                        }
-                    }
-
-                    availableUpdate?.let { update ->
-                        AlertDialog(
-                            onDismissRequest = {
-                                updateOpenFailed = false
-                                availableUpdate = null
-                            },
-                            title = {
-                                Text(WrStrings.updateAvailable())
-                            },
-                            text = {
-                                Column {
-                                    Text(
-                                        "${WrStrings.newVersionAvailable()} ${update.tagName}"
-                                    )
-                                    if (updateOpenFailed) {
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = updateOpenFailedMessage,
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                }
-                            },
-                            confirmButton = {
-                                TextButton(
-                                    onClick = {
-                                        try {
-                                            uriHandler.openUri(update.downloadUrl)
-                                            updateOpenFailed = false
-                                            availableUpdate = null
-                                        } catch (error: Exception) {
-                                            println(
-                                                "Failed to open desktop update URL " +
-                                                    "${update.downloadUrl}: " +
-                                                    "${error.message ?: error::class.simpleName}"
-                                            )
-                                            error.printStackTrace()
-                                            updateOpenFailed = true
-                                        }
-                                    }
-                                ) {
-                                    Text(WrStrings.downloadUpdate())
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(
-                                    onClick = {
-                                        updateOpenFailed = false
-                                        availableUpdate = null
-                                    }
-                                ) {
-                                    Text(WrStrings.later())
-                                }
-                            }
-                        )
-                    }
-
                     GlobalToastBox(
                         modifier = Modifier
                             .background(WriteopiaTheme.colorScheme.globalBackground)
@@ -404,10 +311,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                             }
                         }
 
-                        SnackbarHost(
-                            hostState = snackbarHostState,
-                            modifier = Modifier.align(Alignment.BottomCenter)
-                        )
+                        DesktopUpdatePrompt()
                     }
                 }
             }
