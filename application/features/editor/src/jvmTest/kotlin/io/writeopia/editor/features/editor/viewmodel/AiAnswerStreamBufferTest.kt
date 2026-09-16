@@ -81,4 +81,34 @@ class AiAnswerStreamBufferTest {
     fun emptyTextReturnsASingleEmptyBlock() {
         assertEquals(listOf(""), AiAnswerStreamBuffer.splitIntoBlocks(""))
     }
+
+    @Test
+    fun consecutiveHeadingsWithoutContentAreNotSplitApart() {
+        val text = "# Title\n## Subtitle\nContent."
+        val expected = listOf(text)
+
+        assertEquals(expected, AiAnswerStreamBuffer.splitIntoBlocks(text))
+    }
+
+    @Test
+    fun aHeadingFollowedByAnotherHeadingWithContentDoesNotLeaveALoneTitleBlock() {
+        val text = "# Title\nIntro.\n## Empty\n## Another\nBody."
+        val expected = listOf(
+            "# Title\nIntro.",
+            "## Empty\n## Another\nBody."
+        )
+
+        assertEquals(expected, AiAnswerStreamBuffer.splitIntoBlocks(text))
+    }
+
+    @Test
+    fun trailingHeadingWithoutContentYetStaysAsItsOwnBlockWhileStreaming() {
+        val text = "Intro.\n# Section 1\n## Subsection"
+        val expected = listOf(
+            "Intro.",
+            "# Section 1\n## Subsection"
+        )
+
+        assertEquals(expected, AiAnswerStreamBuffer.splitIntoBlocks(text))
+    }
 }
