@@ -236,7 +236,8 @@ fun SettingsDialog(
     LocalAiWizardDialog(
         wizardState = wizardState,
         onClose = closeWizard,
-        onSelectProviderAndModel = selectProviderAndModel
+        onSelectProviderAndModel = selectProviderAndModel,
+        onRetry = openWizard
     )
 }
 
@@ -1076,10 +1077,14 @@ private fun AutoConfigureLocalAi(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                currentState.exception?.message ?: WrStrings.autoConfigureLocalAiError(),
+                WrStrings.autoConfigureLocalAiError(),
                 style = MaterialTheme.typography.bodySmall,
                 color = titleColor
             )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            CommonButton(text = WrStrings.retry(), clickListener = autoConfigureLocalAi)
         }
 
         else -> {}
