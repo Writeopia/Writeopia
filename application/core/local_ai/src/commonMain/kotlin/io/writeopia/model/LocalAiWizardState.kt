@@ -13,7 +13,7 @@ sealed class LocalAiWizardState {
         val availableProviders: List<ProviderInfo>
     ) : LocalAiWizardState()
 
-    data class Error(val errorType: WizardErrorType, val customMessage: String? = null) : LocalAiWizardState()
+    data class Error(val errorType: WizardErrorType) : LocalAiWizardState()
 }
 
 enum class WizardErrorType {
