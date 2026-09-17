@@ -68,9 +68,6 @@ fun Application.configureRouting(
         // Public, CDN-cacheable Local AI auto-configuration. Independent of Cloud AI.
         localAiConfigRoute()
 
-        // Public, CDN-cacheable desktop application version.
-        desktopAppVersionRoute()
-
         get {
             call.respondText("Hi")
         }
