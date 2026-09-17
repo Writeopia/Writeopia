@@ -40,6 +40,7 @@ import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
+import java.sql.SQLException
 
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
@@ -161,59 +162,72 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
             // since we are not allowing email probing and we don't need user data in this case
-            if (!writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
-                // Create user with enabled = false (always requires email confirmation)
-                val wUser = AuthService.createUser(writeopiaDb, request, enabled = false)
-
-                // Generate confirmation code and send email
-                val confirmationCode = EmailService.generateConfirmationCode()
-                val codeExpiry = EmailService.getCodeExpiry()
-                writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
-
-                EmailService.sendConfirmationEmail(
-                    toEmail = request.email,
-                    code = confirmationCode,
-                    userName = request.name
-                )
-
-                val workspaceId = GenerateId.generate()
-                // Every user has its own workspace.
-                WorkspaceService.createWorkspace(
-                    workspaceId = workspaceId,
-                    workspaceName = request.workspaceName,
-                    writeopiaDb = writeopiaDb
-                )
-
-                val created = WorkspaceService.addUserToWorkspaceAdmin(
-                    request.email,
-                    workspaceId,
-                    "ADMIN",
-                    writeopiaDb
-                )
-
-                if (created) {
-                    call.respond(
-                        HttpStatusCode.Created,
-                        RegisterResponse(
-                            writeopiaUser = wUser.toApi(),
-                            emailConfirmationRequired = true
-                        ),
-                    )
-                } else {
-                    call.respond(
-                        HttpStatusCode.InternalServerError,
-                        RegisterResponse(
-                            writeopiaUser = wUser.toApi(),
-                            emailConfirmationRequired = true
-                        ),
-                    )
-                }
-            
-            } else {
+            if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
                 logger.info("register request - user or workspace already exist")
                 call.respond(HttpStatusCode.Conflict, "Not Created")
+                return@post
             }
+
+            // Create user with enabled = false (always requires email confirmation)
+            val wUser = AuthService.createUser(writeopiaDb, request, enabled = false)
+
+            // Generate confirmation code
+            val confirmationCode = EmailService.generateConfirmationCode()
+            val codeExpiry = EmailService.getCodeExpiry()
+            writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
+
+            val workspaceId = GenerateId.generate()
+            // Every user has its own workspace.
+            WorkspaceService.createWorkspace(
+                workspaceId = workspaceId,
+                workspaceName = request.workspaceName,
+                writeopiaDb = writeopiaDb
+            )
+
+            val created = WorkspaceService.addUserToWorkspaceAdmin(
+                request.email,
+                workspaceId,
+                "ADMIN",
+                writeopiaDb
+            )
+
+            if (!created) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    RegisterResponse(
+                        writeopiaUser = wUser.toApi(),
+                        emailConfirmationRequired = true
+                    ),
+                )
+                return@post
+            }
+
+            // Send confirmation email after workspace and user are successfully created
+            EmailService.sendConfirmationEmail(
+                toEmail = request.email,
+                code = confirmationCode,
+                userName = request.name
+            )
+
+            call.respond(
+                HttpStatusCode.Created,
+                RegisterResponse(
+                    writeopiaUser = wUser.toApi(),
+                    emailConfirmationRequired = true
+                ),
+            )
         } catch (e: Exception) {
+            /*
+            If we want to solve the concurrency issue between `.userExistsByUsernameOrEmail` and `.createUser`,
+            which fools the server into throwing "HttpStatusCode.InternalServerError" instead of "HttpStatusCode.Conflict",
+            and we are not doing any locking on read.
+            This is enough to solve that.
+            */
+            if (e.isUniqueViolation()) {
+                logger.info("register request - user or workspace already exist: ${e.message}")
+                call.respond(HttpStatusCode.Conflict, "Not Created")
+                return@post
+            }
             e.printStackTrace()
             logger.info("register request error message: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, "Unknown error")
@@ -288,3 +302,19 @@ fun RoutingContext.getUserId(): String? {
 
     return principal?.payload?.getClaim("userId")?.asString()
 }
+
+
+private const val SQLSTATE_UNIQUE_VIOLATION = "23505"
+
+private fun Throwable.isUniqueViolation(): Boolean {
+    var current: Throwable? = this
+    while (current != null) {
+        if (current is SQLException && current.sqlState == SQLSTATE_UNIQUE_VIOLATION) {
+            return true
+        }
+
+        current = current.cause
+    }
+    return false
+}
+
