@@ -36,7 +36,7 @@ class DesktopUpdateApiTest {
 
         val response = DesktopUpdateApi(
             client = client,
-            baseUrl = "https://writeopia.io/"
+            baseUrl = "https://writeopia.io"
         ).latestVersion()
 
         assertEquals("0.48.0", response.version)
