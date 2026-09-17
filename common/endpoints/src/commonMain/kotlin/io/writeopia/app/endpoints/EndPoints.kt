@@ -36,5 +36,5 @@ object EndPoints {
     fun aiLocalConfig() = "api/ai/local-config"
 
     // Public, CDN-cacheable latest desktop application version
-    fun desktopAppVersion() = "api/app/desktop-version"
+    fun desktopAppVersion() = "auth/app/version"
 }
