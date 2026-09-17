@@ -5,70 +5,55 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import io.writeopia.resources.WrStrings
-import io.writeopia.update.DesktopUpdateChecker
 import io.writeopia.update.di.DesktopUpdateInjection
-import io.writeopia.update.model.DesktopUpdate
-import io.writeopia.update.model.DesktopUpdateCheckResult
+import io.writeopia.update.viewmodel.DesktopUpdateUiState
+import io.writeopia.update.viewmodel.DesktopUpdateViewModel
 
 /**
- * Checks for a newer desktop version and owns all UI related to the update prompt.
+ * Displays update UI driven by [DesktopUpdateViewModel].
  */
 @Composable
 fun BoxScope.DesktopUpdatePrompt(
-    checker: DesktopUpdateChecker = remember { DesktopUpdateInjection.provideChecker() }
+    viewModel: DesktopUpdateViewModel = DesktopUpdateInjection.provideViewModel()
 ) {
     val uriHandler = LocalUriHandler.current
     val snackbarHostState = remember { SnackbarHostState() }
     val updateCheckFailedMessage = WrStrings.updateCheckFailed()
+    val uiState by viewModel.uiState.collectAsState()
 
-    var availableUpdate by remember { mutableStateOf<DesktopUpdate?>(null) }
-    var updateOpenFailed by remember { mutableStateOf(false) }
-
-    LaunchedEffect(checker) {
-        when (val result = checker.checkForUpdate()) {
-            is DesktopUpdateCheckResult.UpdateAvailable -> {
-                updateOpenFailed = false
-                availableUpdate = result.update
-            }
-
-            DesktopUpdateCheckResult.NoUpdate -> Unit
-
-            is DesktopUpdateCheckResult.Failure -> {
-                snackbarHostState.showSnackbar(updateCheckFailedMessage)
-            }
+    LaunchedEffect(uiState) {
+        if (uiState == DesktopUpdateUiState.CheckFailed) {
+            snackbarHostState.showSnackbar(updateCheckFailedMessage)
+            viewModel.dismissCheckFailure()
         }
     }
 
-    availableUpdate?.let { update ->
+    val available = uiState as? DesktopUpdateUiState.UpdateAvailable
+    if (available != null) {
         DesktopUpdateDialog(
-            update = update,
-            openFailed = updateOpenFailed,
+            update = available.update,
+            openFailed = available.openFailed,
             onDownload = {
                 try {
-                    uriHandler.openUri(update.downloadUrl)
-                    updateOpenFailed = false
-                    availableUpdate = null
+                    uriHandler.openUri(available.update.downloadUrl)
+                    viewModel.onDownloadOpened()
                 } catch (error: Exception) {
                     println(
-                        "Failed to open desktop update URL ${update.downloadUrl}: " +
+                        "Failed to open desktop update URL ${available.update.downloadUrl}: " +
                             (error.message ?: error::class.simpleName)
                     )
                     error.printStackTrace()
-                    updateOpenFailed = true
+                    viewModel.onDownloadOpenFailed()
                 }
             },
-            onDismiss = {
-                updateOpenFailed = false
-                availableUpdate = null
-            }
+            onDismiss = viewModel::dismissUpdate
         )
     }
 
