@@ -1,8 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-val desktopAppVersion = rootProject.extra["desktopAppVersion"] as String
-
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.compose.multiplatform)
@@ -120,7 +118,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Writeopia"
-            packageVersion = desktopAppVersion
+            packageVersion = "1.0.0"
             modules("java.sql")
 
             val iconsRoot = project.file("./src/jvmMain/resources/images")
@@ -146,10 +144,12 @@ compose.desktop {
             }
 
             linux {
+                packageVersion = "0.47.0"
                 iconFile.set(iconsRoot.resolve("icon-linux.png"))
             }
 
             windows {
+                packageVersion = "0.47.0"
                 iconFile.set(iconsRoot.resolve("icon-windows.ico"))
             }
         }
