@@ -101,15 +101,18 @@ CREATE TABLE user_favorite_entity (
   PRIMARY KEY (user_id, document_id)
 );
 
+-- Non-partitioned here for local dev simplicity. Production (Cloud SQL) uses a
+-- RANGE-partitioned version, see backend/core/database/scripts/sync_event_partitioning.sql.
 CREATE TABLE sync_event (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   workspace_id TEXT NOT NULL,
   event_type TEXT NOT NULL,
   entity_id TEXT NOT NULL,
   old_parent_id TEXT,
   new_parent_id TEXT,
   created_at BIGINT NOT NULL,
-  user_id TEXT NOT NULL
+  user_id TEXT NOT NULL,
+  PRIMARY KEY (id, created_at)
 );
 
 CREATE TABLE workspace_tutorial_status (

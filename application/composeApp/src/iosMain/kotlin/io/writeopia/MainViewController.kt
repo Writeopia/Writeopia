@@ -14,6 +14,7 @@ import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.KmpSearchInjection
+import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.mobile.AppMobile
 import io.writeopia.navigation.MobileNavigationViewModel
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
@@ -50,6 +51,7 @@ fun MainViewController() = ComposeUIViewController {
 //                        "http://localhost:8080"
             )
             setupBearerTokenHandler()
+            GenAiInjection.initialize(baseUrl = "https://writeopia.io")
 
             val searchInjection = remember { KmpSearchInjection.singleton() }
 

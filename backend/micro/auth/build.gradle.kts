@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
     implementation(project(":plugins:writeopia_serialization"))
+    implementation(project(":common:endpoints"))
 
     // Ktor
     implementation(libs.ktor.server.cors)

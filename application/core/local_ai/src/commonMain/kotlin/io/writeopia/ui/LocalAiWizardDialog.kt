@@ -46,6 +46,7 @@ fun LocalAiWizardDialog(
     wizardState: StateFlow<LocalAiWizardState>,
     onClose: () -> Unit,
     onSelectProviderAndModel: (String, String) -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by wizardState.collectAsState()
@@ -74,8 +75,8 @@ fun LocalAiWizardDialog(
                         is LocalAiWizardState.Error -> {
                             ErrorContent(
                                 errorType = currentState.errorType,
-                                customMessage = currentState.customMessage,
-                                onClose = onClose
+                                onClose = onClose,
+                                onRetry = onRetry
                             )
                         }
                         else -> {}
@@ -319,10 +320,10 @@ private fun ModelTierItem(
 @Composable
 private fun ErrorContent(
     errorType: WizardErrorType,
-    customMessage: String?,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onRetry: () -> Unit
 ) {
-    val errorMessage = customMessage ?: when (errorType) {
+    val errorMessage = when (errorType) {
         WizardErrorType.NO_PROVIDER_DETECTED -> WrStrings.errorNoProviderDetected()
         WizardErrorType.FETCH_CONFIG_FAILED -> WrStrings.errorFetchConfig()
         WizardErrorType.DOWNLOAD_FAILED -> WrStrings.errorDownloadModel()
@@ -359,15 +360,30 @@ private fun ErrorContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            WrStrings.close(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.medium)
-                .clickable(onClick = onClose)
-                .padding(6.dp)
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                WrStrings.close(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.medium)
+                    .clickable(onClick = onClose)
+                    .padding(6.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                WrStrings.retry(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.medium)
+                    .clickable(onClick = onRetry)
+                    .padding(6.dp)
+            )
+        }
     }
 }

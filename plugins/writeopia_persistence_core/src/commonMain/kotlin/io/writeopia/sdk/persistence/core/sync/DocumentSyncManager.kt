@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
  * ensuring that document syncing continues even when the user leaves the editor.
  *
  * Usage:
- * 1. Register a document for syncing when the editor opens using [registerForSync]
+ * 1. Register a document for syncing when the editor opens using [registerForDbSync]
  * 2. The sync will continue even after the ViewModel is cleared
  * 3. Call [unregisterFromSync] when you want to explicitly stop syncing a document
  */
@@ -47,7 +47,7 @@ class DocumentSyncManager(
      * @param workspaceIdFlow Flow emitting the current workspace ID
      * @param documentTracker The tracker responsible for saving document changes
      */
-    fun registerForSync(
+    fun registerForDbSync(
         documentId: String,
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
