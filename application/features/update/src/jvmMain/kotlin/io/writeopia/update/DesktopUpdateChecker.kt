@@ -49,9 +49,12 @@ internal fun currentDesktopPlatform(
     osName: String = System.getProperty("os.name").orEmpty()
 ): DesktopPlatform? {
     val normalizedOs = osName.lowercase()
+    val normalizedArch = System.getProperty("os.arch").orEmpty().lowercase()
+    val isAppleSilicon = normalizedArch == "aarch64" || normalizedArch == "arm64"
 
     return when {
-        normalizedOs.contains("mac") || normalizedOs.contains("darwin") -> DesktopPlatform.MAC
+        (normalizedOs.contains("mac") || normalizedOs.contains("darwin")) && isAppleSilicon -> DesktopPlatform.MAC
+        normalizedOs.contains("mac") || normalizedOs.contains("darwin") -> null
         normalizedOs.contains("win") -> DesktopPlatform.WINDOWS
         normalizedOs.contains("linux") -> DesktopPlatform.LINUX
         else -> null
