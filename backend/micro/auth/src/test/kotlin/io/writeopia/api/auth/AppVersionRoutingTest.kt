@@ -10,6 +10,7 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
+import io.writeopia.api.core.auth.utils.DesktopAppVersionConfig
 import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.serialization.response.DesktopAppVersionResponse
 import kotlinx.serialization.json.Json
