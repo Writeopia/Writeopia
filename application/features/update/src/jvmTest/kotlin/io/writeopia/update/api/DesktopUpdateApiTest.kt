@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class DesktopUpdateApiTest {
 
@@ -43,5 +44,31 @@ class DesktopUpdateApiTest {
             "https://writeopia.io/api/auth/app/version",
             requestedUrl
         )
+    }
+
+    @Test
+    fun `rejects non-success response before deserialization`() = runTest {
+        val client = HttpClient(
+            MockEngine {
+                respond(
+                    content = """{"version":"9.9.9"}""",
+                    status = HttpStatusCode.InternalServerError,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json")
+                )
+            }
+        ) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val result = runCatching {
+            DesktopUpdateApi(
+                client = client,
+                baseUrl = "https://writeopia.io"
+            ).latestVersion()
+        }
+
+        assertTrue(result.isFailure)
     }
 }
