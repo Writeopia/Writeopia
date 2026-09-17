@@ -6,6 +6,7 @@ import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
+import io.writeopia.api.core.auth.utils.DesktopAppVersionConfig
 import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.serialization.response.DesktopAppVersionResponse
 
