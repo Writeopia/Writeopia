@@ -3,16 +3,10 @@ name: Create apps
 on:
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   create_msi_app:
     name: Create MSI App
     runs-on: windows-latest
-    permissions:
-      actions: read
-      contents: read
     steps:
       - name: Check out code
         uses: actions/checkout@v7
@@ -85,7 +79,7 @@ jobs:
         env:
           SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
       - name: Notarize
-        run: xcrun notarytool submit application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-*.dmg --wait  --apple-id $APPLE_ID_NOTARIZATION --password $NOTARIZATION_PASSWORD --team-id $APPSTORE_TEAM_ID
+        run: xcrun  notarytool submit application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg --wait  --apple-id $APPLE_ID_NOTARIZATION --password $NOTARIZATION_PASSWORD --team-id $APPSTORE_TEAM_ID
         env:
           APPLE_ID_NOTARIZATION: ${{ secrets.APPLE_ID_NOTARIZATION }}
           APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
@@ -94,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: Writeopia-macos
-          path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-*.dmg
+          path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg
   notarize_mac_os_intel:
     name: Notarize Mac OS app - Intel
     runs-on: macos-13
@@ -119,7 +113,7 @@ jobs:
         env:
           SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
       - name: Notarize
-        run: xcrun notarytool submit application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-*.dmg --wait --apple-id $APPLE_ID_NOTARIZATION --password $NOTARIZATION_PASSWORD --team-id $APPSTORE_TEAM_ID
+        run: xcrun notarytool submit application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg --wait --apple-id $APPLE_ID_NOTARIZATION --password $NOTARIZATION_PASSWORD --team-id $APPSTORE_TEAM_ID
         env:
           APPLE_ID_NOTARIZATION: ${{ secrets.APPLE_ID_NOTARIZATION }}
           APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
@@ -128,4 +122,4 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: Writeopia-macos-intel
-          path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-*.dmg
+          path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg
