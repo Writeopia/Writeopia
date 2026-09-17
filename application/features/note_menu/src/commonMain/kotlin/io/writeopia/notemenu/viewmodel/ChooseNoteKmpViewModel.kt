@@ -389,6 +389,8 @@ internal class ChooseNoteKmpViewModel(
         if (authRepository.getUser().tier != Tier.PREMIUM) return true // No sync for non-premium
 
         val workspace = authRepository.getWorkspace() ?: return true
+        // Skip sync for offline/disconnected workspace
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return true
 
         // Sync document deletions
         val documentsSuccess = if (documentIds.isNotEmpty()) {
@@ -432,6 +434,8 @@ internal class ChooseNoteKmpViewModel(
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
+        // Skip sync for offline/disconnected workspace
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return
 
         documentsApi.sendDocuments(
             documents = documents,
@@ -444,6 +448,8 @@ internal class ChooseNoteKmpViewModel(
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
+        // Skip sync for offline/disconnected workspace
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return
 
         documentIds.forEach { documentId ->
             documentsApi.favoriteDocument(
