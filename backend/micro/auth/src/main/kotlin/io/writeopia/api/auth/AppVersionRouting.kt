@@ -15,7 +15,7 @@ private const val CACHE_MAX_AGE_SECONDS = 60 * 60
  * Registers the public desktop application version endpoint.
  */
 fun Routing.appVersionRoute() {
-    get("/${EndPoints.desktopAppVersion()}") {
+    get("/api/${EndPoints.desktopAppVersion()}") {
         call.response.header(HttpHeaders.CacheControl, "public, max-age=$CACHE_MAX_AGE_SECONDS")
         call.respond(
             HttpStatusCode.OK,
