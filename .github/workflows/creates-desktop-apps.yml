@@ -3,10 +3,16 @@ name: Create apps
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   create_msi_app:
     name: Create MSI App
     runs-on: windows-latest
+    permissions:
+      actions: read
+      contents: read
     steps:
       - name: Check out code
         uses: actions/checkout@v7
