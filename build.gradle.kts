@@ -23,3 +23,4 @@ dagCommand {
 }
 
 extra["sdkVersion"] = "0.14.0"
+extra["desktopAppVersion"] = "0.47.0"
