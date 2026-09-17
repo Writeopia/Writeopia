@@ -40,7 +40,7 @@ class DesktopUpdateApiTest {
 
         assertEquals("0.48.0", response.version)
         assertEquals(
-            "https://writeopia.io/api/app/desktop-version",
+            "https://writeopia.io/auth/app/version",
             requestedUrl
         )
     }
