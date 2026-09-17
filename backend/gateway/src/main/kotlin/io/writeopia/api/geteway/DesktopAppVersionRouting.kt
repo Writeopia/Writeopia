@@ -10,7 +10,6 @@ import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.serialization.response.DesktopAppVersionResponse
 
 private const val CACHE_MAX_AGE_SECONDS = 60 * 60
-private const val LATEST_DESKTOP_APP_VERSION = "0.47.0"
 
 /**
  * Public endpoint exposing the latest desktop application version.
@@ -22,7 +21,7 @@ fun Routing.desktopAppVersionRoute() {
         call.response.header(HttpHeaders.CacheControl, "public, max-age=$CACHE_MAX_AGE_SECONDS")
         call.respond(
             HttpStatusCode.OK,
-            DesktopAppVersionResponse(version = LATEST_DESKTOP_APP_VERSION)
+            DesktopAppVersionResponse(version = DesktopAppVersionConfig.CURRENT)
         )
     }
 }
