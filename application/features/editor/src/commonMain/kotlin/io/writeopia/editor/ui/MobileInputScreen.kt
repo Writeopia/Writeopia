@@ -92,6 +92,22 @@ internal fun MobileInputScreen(
                         .padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    if (!isWorkspaceOffline) {
+                        Icon(
+                            modifier = Modifier
+                                .clip(buttonShape)
+                                .clickable {
+                                    onAiClick()
+                                }
+                                .padding(iconPadding),
+                            imageVector = WrIcons.ai,
+                            contentDescription = "AI",
+                            tint = buttonColor
+                        )
+
+                        Spacer(modifier = Modifier.width(15.dp))
+                    }
+
                     val boldBgColor = if (metadata.contains(SelectionMetadata.BOLD)) {
                         WriteopiaTheme.colorScheme.optionsSelector
                     } else {
@@ -223,22 +239,6 @@ internal fun MobileInputScreen(
                         contentDescription = "Spreadsheet",
                         tint = buttonColor
                     )
-
-                    if (!isWorkspaceOffline) {
-                        Spacer(modifier = Modifier.width(15.dp))
-
-                        Icon(
-                            modifier = Modifier
-                                .clip(buttonShape)
-                                .clickable {
-                                    onAiClick()
-                                }
-                                .padding(iconPadding),
-                            imageVector = WrIcons.ai,
-                            contentDescription = "AI",
-                            tint = buttonColor
-                        )
-                    }
 
                     Spacer(modifier = Modifier.width(15.dp))
 

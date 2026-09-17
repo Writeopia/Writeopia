@@ -103,6 +103,21 @@ fun EditionScreen(
                 modifier = Modifier.horizontalScroll(rememberScrollState()).weight(1F),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (!isWorkspaceOffline) {
+                    Icon(
+                        modifier = Modifier
+                            .clip(clipShape)
+                            .clickable(onClick = onAiClick)
+                            .size(iconSize)
+                            .padding(iconPadding),
+                        imageVector = WrSdkIcons.ai,
+                        contentDescription = "AI",
+                        tint = tint
+                    )
+
+                    Spacer(modifier = Modifier.width(spaceWidth))
+                }
+
                 Icon(
                     modifier = Modifier
                         .clip(clipShape)
@@ -236,21 +251,6 @@ fun EditionScreen(
                     contentDescription = "Font Options",
                     tint = tint
                 )
-
-                if (!isWorkspaceOffline) {
-                    Spacer(modifier = Modifier.width(spaceWidth))
-
-                    Icon(
-                        modifier = Modifier
-                            .clip(clipShape)
-                            .clickable(onClick = onAiClick)
-                            .size(iconSize)
-                            .padding(iconPadding),
-                        imageVector = WrSdkIcons.ai,
-                        contentDescription = "AI",
-                        tint = tint
-                    )
-                }
 
                 Spacer(modifier = Modifier.width(spaceWidth))
 
