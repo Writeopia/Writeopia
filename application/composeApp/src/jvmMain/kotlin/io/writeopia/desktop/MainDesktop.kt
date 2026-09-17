@@ -8,7 +8,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +37,6 @@ import io.writeopia.navigation.ScreenLoading
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.resources.CommonImages
-import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sqldelight.database.DatabaseCreation
 import io.writeopia.sqldelight.database.DatabaseFactory
