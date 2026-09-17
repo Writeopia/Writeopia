@@ -3,33 +3,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-val desktopAppVersion = rootProject.extra["desktopAppVersion"] as String
-val generatedDesktopVersionDir =
-    layout.buildDirectory.dir("generated/desktopVersion/kotlin")
-
-val generateDesktopAppVersion by tasks.registering {
-    inputs.property("desktopAppVersion", desktopAppVersion)
-    outputs.dir(generatedDesktopVersionDir)
-
-    doLast {
-        val outputFile = generatedDesktopVersionDir
-            .get()
-            .file("io/writeopia/core/configuration/DesktopAppVersion.kt")
-            .asFile
-
-        outputFile.parentFile.mkdirs()
-        outputFile.writeText(
-            """
-            package io.writeopia.core.configuration
-
-            object DesktopAppVersion {
-                const val CURRENT = "$desktopAppVersion"
-            }
-            """.trimIndent()
-        )
-    }
-}
-
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.androidMultiplatformLibrary)
@@ -71,10 +44,6 @@ kotlin {
     }
 
     sourceSets {
-        val jvmMain by getting {
-            kotlin.srcDir(generatedDesktopVersionDir)
-        }
-
         val commonMain by getting {
             dependencies {
                 implementation(project(":writeopia_models"))
@@ -90,8 +59,4 @@ kotlin {
             }
         }
     }
-}
-
-tasks.named("compileKotlinJvm") {
-    dependsOn(generateDesktopAppVersion)
 }
