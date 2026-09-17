@@ -12,5 +12,5 @@ class DesktopUpdateApi(
 ) : DesktopUpdateVersionSource {
 
     override suspend fun latestVersion(): DesktopAppVersionResponse =
-        client.get("${baseUrl.trimEnd('/')}/${EndPoints.desktopAppVersion()}").body()
+        client.get("${baseUrl.trimEnd('/')}/api/${EndPoints.desktopAppVersion()}").body()
 }
