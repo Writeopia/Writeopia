@@ -1,30 +1,3 @@
-val desktopAppVersion = rootProject.extra["desktopAppVersion"] as String
-val generatedDesktopVersionDir =
-    layout.buildDirectory.dir("generated/desktopVersion/kotlin")
-
-val generateDesktopAppVersion by tasks.registering {
-    inputs.property("desktopAppVersion", desktopAppVersion)
-    outputs.dir(generatedDesktopVersionDir)
-
-    doLast {
-        val outputFile = generatedDesktopVersionDir
-            .get()
-            .file("io/writeopia/api/auth/DesktopAppVersionConfig.kt")
-            .asFile
-
-        outputFile.parentFile.mkdirs()
-        outputFile.writeText(
-            """
-            package io.writeopia.api.auth
-
-            internal object DesktopAppVersionConfig {
-                const val CURRENT = "$desktopAppVersion"
-            }
-            """.trimIndent()
-        )
-    }
-}
-
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
     alias(libs.plugins.ktor.framework)
@@ -75,12 +48,4 @@ dependencies {
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.ktor.client.content.negotiation)
     testImplementation(libs.kotlin.test)
-}
-
-kotlin.sourceSets.named("main") {
-    kotlin.srcDir(generatedDesktopVersionDir)
-}
-
-tasks.named("compileKotlin") {
-    dependsOn(generateDesktopAppVersion)
 }
