@@ -66,7 +66,7 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         email: String,
         workspaceName: String,
         password: String,
-        username: String = email, // for now
+        username: String
     ): ResultData<RegisterResponse> = try {
         val response = client.post("$baseUrl/api/auth/register") {
             contentType(ContentType.Application.Json)
