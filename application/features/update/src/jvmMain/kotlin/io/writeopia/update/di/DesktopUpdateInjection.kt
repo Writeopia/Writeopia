@@ -1,9 +1,12 @@
 package io.writeopia.update.di
 
+import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.core.configuration.DesktopAppVersion
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.update.DesktopUpdateChecker
 import io.writeopia.update.api.DesktopUpdateApi
+import io.writeopia.update.viewmodel.DesktopUpdateViewModel
 
 object DesktopUpdateInjection {
 
@@ -19,4 +22,10 @@ object DesktopUpdateInjection {
             downloadBaseUrl = connection.baseUrl()
         )
     }
+
+    @Composable
+    fun provideViewModel(): DesktopUpdateViewModel =
+        viewModel {
+            DesktopUpdateViewModel(provideChecker())
+        }
 }
