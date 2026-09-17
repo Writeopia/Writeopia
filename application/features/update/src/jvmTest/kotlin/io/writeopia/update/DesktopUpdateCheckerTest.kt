@@ -1,7 +1,7 @@
 package io.writeopia.update
 
-import io.writeopia.update.api.DesktopUpdateVersionSource
 import io.writeopia.sdk.serialization.response.DesktopAppVersionResponse
+import io.writeopia.update.api.DesktopUpdateVersionSource
 import io.writeopia.update.model.DesktopPlatform
 import io.writeopia.update.model.DesktopUpdateCheckResult
 import kotlinx.coroutines.test.runTest
@@ -81,12 +81,40 @@ class DesktopUpdateCheckerTest {
     }
 
     @Test
-    fun `detects supported desktop platforms`() {
+    fun `detects Windows and Linux desktop platforms`() {
         assertEquals(DesktopPlatform.WINDOWS, currentDesktopPlatform("Windows 11"))
         assertEquals(DesktopPlatform.LINUX, currentDesktopPlatform("Linux"))
-        assertEquals(DesktopPlatform.MAC, currentDesktopPlatform("Mac OS X"))
-        assertEquals(DesktopPlatform.MAC, currentDesktopPlatform("Darwin"))
         assertEquals(null, currentDesktopPlatform("Unknown"))
+    }
+
+    @Test
+    fun `supports Apple Silicon macOS updates`() {
+        withOsArch("aarch64") {
+            assertEquals(DesktopPlatform.MAC, currentDesktopPlatform("Mac OS X"))
+            assertEquals(DesktopPlatform.MAC, currentDesktopPlatform("Darwin"))
+        }
+    }
+
+    @Test
+    fun `does not support Intel macOS updates`() {
+        withOsArch("x86_64") {
+            assertEquals(null, currentDesktopPlatform("Mac OS X"))
+            assertEquals(null, currentDesktopPlatform("Darwin"))
+        }
+    }
+
+    private fun withOsArch(osArch: String, block: () -> Unit) {
+        val previous = System.getProperty("os.arch")
+        try {
+            System.setProperty("os.arch", osArch)
+            block()
+        } finally {
+            if (previous == null) {
+                System.clearProperty("os.arch")
+            } else {
+                System.setProperty("os.arch", previous)
+            }
+        }
     }
 
     private fun checker(
