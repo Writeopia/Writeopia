@@ -222,6 +222,11 @@ class NoteEditorKmpViewModel(
             hasLines || hasTextSelection
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), false)
 
+    override val isWorkspaceOffline: StateFlow<Boolean> =
+        authRepository.listenForWorkspace()
+            .map { workspace -> workspace.id == Workspace.disconnectedWorkspace().id }
+            .stateIn(viewModelScope, SharingStarted.Lazily, false)
+
 //    val selectionOfText = writeopiaManager.
 
     private val findsOfSearch: Flow<Set<Int>> =
@@ -1028,6 +1033,12 @@ class NoteEditorKmpViewModel(
             type = AiTaskType.TEXT_GENERATION,
             description = "Generating text..."
         ) {
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+
+            if (workspace.id == Workspace.disconnectedWorkspace().id) {
+                return@enqueueTask Result.success(Unit)
+            }
+
             PromptService.documentPromptGenAi(
                 targetMode = targetMode,
                 promptFn = promptFn,

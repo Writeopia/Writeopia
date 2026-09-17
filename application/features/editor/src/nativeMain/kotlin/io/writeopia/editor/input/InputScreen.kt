@@ -21,6 +21,8 @@ internal fun InputScreen(
     canRedoState: StateFlow<Boolean>,
     onDrawingClick: () -> Unit = {},
     onImageClick: () -> Unit = {},
+    onAiClick: () -> Unit = {},
+    isWorkspaceOfflineState: StateFlow<Boolean>,
 ) {
     MobileInputScreen(
         modifier = modifier,
@@ -33,5 +35,7 @@ internal fun InputScreen(
         canRedoState = canRedoState,
         onDrawingClick = onDrawingClick,
         onImageClick = onImageClick,
+        onAiClick = onAiClick,
+        isWorkspaceOfflineState = isWorkspaceOfflineState,
     )
 }
