@@ -22,6 +22,7 @@ internal fun InputScreen(
     onDrawingClick: () -> Unit = {},
     onImageClick: () -> Unit = {},
     onSpreadsheetClick: () -> Unit = {},
+    onAiClick: () -> Unit = {},
 ) {
     MobileInputScreen(
         modifier = modifier,
@@ -35,5 +36,6 @@ internal fun InputScreen(
         onDrawingClick = onDrawingClick,
         onImageClick = onImageClick,
         onSpreadsheetClick = onSpreadsheetClick,
+        onAiClick = onAiClick,
     )
 }

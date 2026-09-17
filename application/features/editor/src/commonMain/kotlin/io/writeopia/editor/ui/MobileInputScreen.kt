@@ -54,6 +54,7 @@ internal fun MobileInputScreen(
     onDrawingClick: () -> Unit = {},
     onImageClick: () -> Unit = {},
     onSpreadsheetClick: () -> Unit = {},
+    onAiClick: () -> Unit = {},
 ) {
     val canUndo by canUndoState.collectAsState()
     val canRedo by canRedoState.collectAsState()
@@ -217,6 +218,20 @@ internal fun MobileInputScreen(
                             .padding(iconPadding),
                         imageVector = WrIcons.spreadsheet,
                         contentDescription = "Spreadsheet",
+                        tint = buttonColor
+                    )
+
+                    Spacer(modifier = Modifier.width(15.dp))
+
+                    Icon(
+                        modifier = Modifier
+                            .clip(buttonShape)
+                            .clickable {
+                                onAiClick()
+                            }
+                            .padding(iconPadding),
+                        imageVector = WrIcons.ai,
+                        contentDescription = "AI",
                         tint = buttonColor
                     )
 

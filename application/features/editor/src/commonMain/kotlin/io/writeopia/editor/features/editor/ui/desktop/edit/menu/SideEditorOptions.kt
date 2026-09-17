@@ -1054,7 +1054,7 @@ private fun Actions(
 }
 
 @Composable
-private fun AiOptions(
+internal fun AiOptions(
     currentModel: Flow<String>,
     models: Flow<List<String>>,
     hasSelectedLinesState: StateFlow<Boolean>,
