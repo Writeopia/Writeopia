@@ -120,7 +120,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Writeopia"
-            packageVersion = "1.0.0"
+            packageVersion = desktopAppVersion
             modules("java.sql")
 
             val iconsRoot = project.file("./src/jvmMain/resources/images")
@@ -146,12 +146,10 @@ compose.desktop {
             }
 
             linux {
-                packageVersion = desktopAppVersion
                 iconFile.set(iconsRoot.resolve("icon-linux.png"))
             }
 
             windows {
-                packageVersion = desktopAppVersion
                 iconFile.set(iconsRoot.resolve("icon-windows.ico"))
             }
         }
