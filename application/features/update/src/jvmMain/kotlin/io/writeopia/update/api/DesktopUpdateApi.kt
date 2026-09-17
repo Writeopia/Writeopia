@@ -2,6 +2,7 @@ package io.writeopia.update.api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.get
 import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.serialization.response.DesktopAppVersionResponse
@@ -12,5 +13,7 @@ class DesktopUpdateApi(
 ) : DesktopUpdateVersionSource {
 
     override suspend fun latestVersion(): DesktopAppVersionResponse =
-        client.get("${baseUrl.trimEnd('/')}/api/${EndPoints.desktopAppVersion()}").body()
+        client.get("${baseUrl.trimEnd('/')}/api/${EndPoints.desktopAppVersion()}") {
+            expectSuccess = true
+        }.body()
 }
