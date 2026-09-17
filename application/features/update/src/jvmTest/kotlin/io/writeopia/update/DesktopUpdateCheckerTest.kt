@@ -1,7 +1,7 @@
 package io.writeopia.update
 
 import io.writeopia.update.api.DesktopUpdateVersionSource
-import io.writeopia.update.model.DesktopAppVersionResponse
+import io.writeopia.sdk.serialization.response.DesktopAppVersionResponse
 import io.writeopia.update.model.DesktopPlatform
 import io.writeopia.update.model.DesktopUpdateCheckResult
 import kotlinx.coroutines.test.runTest
