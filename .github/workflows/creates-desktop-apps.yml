@@ -79,7 +79,7 @@ jobs:
         env:
           SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
       - name: Notarize
-        run: xcrun  notarytool submit application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg --wait  --apple-id $APPLE_ID_NOTARIZATION --password $NOTARIZATION_PASSWORD --team-id $APPSTORE_TEAM_ID
+        run: xcrun notarytool submit application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-*.dmg --wait  --apple-id $APPLE_ID_NOTARIZATION --password $NOTARIZATION_PASSWORD --team-id $APPSTORE_TEAM_ID
         env:
           APPLE_ID_NOTARIZATION: ${{ secrets.APPLE_ID_NOTARIZATION }}
           APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
@@ -88,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: Writeopia-macos
-          path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg
+          path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-*.dmg
   notarize_mac_os_intel:
     name: Notarize Mac OS app - Intel
     runs-on: macos-13
@@ -113,7 +113,7 @@ jobs:
         env:
           SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
       - name: Notarize
-        run: xcrun notarytool submit application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg --wait --apple-id $APPLE_ID_NOTARIZATION --password $NOTARIZATION_PASSWORD --team-id $APPSTORE_TEAM_ID
+        run: xcrun notarytool submit application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-*.dmg --wait --apple-id $APPLE_ID_NOTARIZATION --password $NOTARIZATION_PASSWORD --team-id $APPSTORE_TEAM_ID
         env:
           APPLE_ID_NOTARIZATION: ${{ secrets.APPLE_ID_NOTARIZATION }}
           APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
@@ -122,4 +122,4 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: Writeopia-macos-intel
-          path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg
+          path: application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-*.dmg
