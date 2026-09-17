@@ -40,7 +40,7 @@ class DesktopAppVersionRoutingTest {
 
         assertEquals(HttpStatusCode.OK, response.status)
         val body = json.decodeFromString<DesktopAppVersionResponse>(response.bodyAsText())
-        assertEquals("0.47.0", body.version)
+        assertEquals(DesktopAppVersionConfig.CURRENT, body.version)
     }
 
     @Test
