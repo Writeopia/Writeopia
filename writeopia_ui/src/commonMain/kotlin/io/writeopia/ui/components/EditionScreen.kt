@@ -46,6 +46,8 @@ import io.writeopia.sdk.models.story.Tag
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.model.SelectionMetadata
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -70,11 +72,13 @@ fun EditionScreen(
     onCut: () -> Unit = {},
     onAddPage: () -> Unit = {},
     onClose: () -> Unit = {},
-    titleClick: (Tag) -> Unit = {}
+    titleClick: (Tag) -> Unit = {},
+    isWorkspaceOfflineState: StateFlow<Boolean> = MutableStateFlow(false)
 ) {
     val iconPadding = PaddingValues(vertical = 4.dp)
     val clipShape = MaterialTheme.shapes.medium
     val spaceWidth = 8.dp
+    val isWorkspaceOffline by isWorkspaceOfflineState.collectAsState()
 
     var showFontOptions by remember {
         mutableStateOf(false)
@@ -233,18 +237,20 @@ fun EditionScreen(
                     tint = tint
                 )
 
-                Spacer(modifier = Modifier.width(spaceWidth))
+                if (!isWorkspaceOffline) {
+                    Spacer(modifier = Modifier.width(spaceWidth))
 
-                Icon(
-                    modifier = Modifier
-                        .clip(clipShape)
-                        .clickable(onClick = onAiClick)
-                        .size(iconSize)
-                        .padding(iconPadding),
-                    imageVector = WrSdkIcons.ai,
-                    contentDescription = "AI",
-                    tint = tint
-                )
+                    Icon(
+                        modifier = Modifier
+                            .clip(clipShape)
+                            .clickable(onClick = onAiClick)
+                            .size(iconSize)
+                            .padding(iconPadding),
+                        imageVector = WrSdkIcons.ai,
+                        contentDescription = "AI",
+                        tint = tint
+                    )
+                }
 
                 Spacer(modifier = Modifier.width(spaceWidth))
 

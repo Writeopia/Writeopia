@@ -39,6 +39,7 @@ import io.writeopia.sdk.models.span.Span
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.model.SelectionMetadata
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
@@ -55,9 +56,11 @@ internal fun MobileInputScreen(
     onImageClick: () -> Unit = {},
     onSpreadsheetClick: () -> Unit = {},
     onAiClick: () -> Unit = {},
+    isWorkspaceOfflineState: StateFlow<Boolean> = MutableStateFlow(false),
 ) {
     val canUndo by canUndoState.collectAsState()
     val canRedo by canRedoState.collectAsState()
+    val isWorkspaceOffline by isWorkspaceOfflineState.collectAsState()
 
     val buttonColor = MaterialTheme.colorScheme.onPrimary
     val disabledColor = Color.LightGray
@@ -221,19 +224,21 @@ internal fun MobileInputScreen(
                         tint = buttonColor
                     )
 
-                    Spacer(modifier = Modifier.width(15.dp))
+                    if (!isWorkspaceOffline) {
+                        Spacer(modifier = Modifier.width(15.dp))
 
-                    Icon(
-                        modifier = Modifier
-                            .clip(buttonShape)
-                            .clickable {
-                                onAiClick()
-                            }
-                            .padding(iconPadding),
-                        imageVector = WrIcons.ai,
-                        contentDescription = "AI",
-                        tint = buttonColor
-                    )
+                        Icon(
+                            modifier = Modifier
+                                .clip(buttonShape)
+                                .clickable {
+                                    onAiClick()
+                                }
+                                .padding(iconPadding),
+                            imageVector = WrIcons.ai,
+                            contentDescription = "AI",
+                            tint = buttonColor
+                        )
+                    }
 
                     Spacer(modifier = Modifier.width(15.dp))
 

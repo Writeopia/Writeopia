@@ -82,6 +82,7 @@ import io.writeopia.ui.components.EditionScreen
 import io.writeopia.ui.drawer.factory.DefaultDrawersAndroid
 import io.writeopia.ui.model.SelectionMetadata
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 const val NAVIGATE_BACK_TEST_TAG = "NoteEditorScreenNavigateBack"
@@ -232,7 +233,8 @@ internal fun NoteEditorScreen(
                     onBoxClick = noteEditorViewModel::toggleHighLightBlock,
                     onCardClick = noteEditorViewModel::toggleCardBlock,
                     onAiClick = { showAiDialog = true },
-                    onSelectedLinesAiClick = { showSelectedLinesAiDialog = true }
+                    onSelectedLinesAiClick = { showSelectedLinesAiDialog = true },
+                    isWorkspaceOfflineState = noteEditorViewModel.isWorkspaceOffline
                 )
             }
 
@@ -473,7 +475,8 @@ private fun BottomScreen(
     onBoxClick: () -> Unit = {},
     onCardClick: () -> Unit = {},
     onAiClick: () -> Unit = {},
-    onSelectedLinesAiClick: () -> Unit = {}
+    onSelectedLinesAiClick: () -> Unit = {},
+    isWorkspaceOfflineState: StateFlow<Boolean> = MutableStateFlow(false)
 ) {
     val edit by editState.collectAsState()
 
@@ -510,7 +513,8 @@ private fun BottomScreen(
                     onDrawingClick = onDrawingClick,
                     onImageClick = onImageClick,
                     onSpreadsheetClick = onSpreadsheetClick,
-                    onAiClick = onAiClick
+                    onAiClick = onAiClick,
+                    isWorkspaceOfflineState = isWorkspaceOfflineState
                 )
             }
 
@@ -531,7 +535,8 @@ private fun BottomScreen(
                     onCardClick = onCardClick,
                     onAiClick = onSelectedLinesAiClick,
                     onAddPage = onAddPage,
-                    titleClick = titleClick
+                    titleClick = titleClick,
+                    isWorkspaceOfflineState = isWorkspaceOfflineState
                 )
             }
         }

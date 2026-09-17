@@ -23,6 +23,7 @@ internal fun InputScreen(
     onImageClick: () -> Unit = {},
     onSpreadsheetClick: () -> Unit = {},
     onAiClick: () -> Unit = {},
+    isWorkspaceOfflineState: StateFlow<Boolean>,
 ) {
     MobileInputScreen(
         modifier = modifier,
@@ -37,5 +38,6 @@ internal fun InputScreen(
         onImageClick = onImageClick,
         onSpreadsheetClick = onSpreadsheetClick,
         onAiClick = onAiClick,
+        isWorkspaceOfflineState = isWorkspaceOfflineState,
     )
 }
