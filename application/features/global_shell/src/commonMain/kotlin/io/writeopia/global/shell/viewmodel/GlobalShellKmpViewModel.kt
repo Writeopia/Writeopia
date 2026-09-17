@@ -664,10 +664,7 @@ class GlobalShellKmpViewModel(
                 }
 
                 is ResultData.Error -> {
-                    _wizardState.value = LocalAiWizardState.Error(
-                        WizardErrorType.FETCH_CONFIG_FAILED,
-                        configResult.exception?.message
-                    )
+                    _wizardState.value = LocalAiWizardState.Error(WizardErrorType.FETCH_CONFIG_FAILED)
                 }
 
                 else -> {}
@@ -718,6 +715,9 @@ class GlobalShellKmpViewModel(
                                     val percentage = completed.toFloat() / total.toFloat()
                                     taskManager.updateTaskProgress(taskId, percentage)
                                 }
+                            }
+                            is ResultData.Error -> {
+                                _wizardState.value = LocalAiWizardState.Error(WizardErrorType.DOWNLOAD_FAILED)
                             }
                             else -> {}
                         }
