@@ -1,13 +1,27 @@
+-- NOTE: In real deployments (Cloud SQL) this table is dropped and recreated as a
+-- native RANGE-partitioned table (partitioned on created_at, monthly partitions,
+-- managed by pg_partman + pg_cron) by the scripts in the WriteopiaScripts2 repo,
+-- under db-migrations/sync_event_partitioning/ (kept with the Terraform that
+-- provisions Cloud SQL, not in this repo, since it's infra-side setup independent
+-- of the webserver/app build). See that folder's README.md for the setup sequence.
+-- That statement is not written here because SQLDelight's PostgreSQL dialect parser does
+-- not support the `PARTITION BY` clause. This plain definition is what SQLDelight uses to
+-- generate typed queries and what Schema.create() applies for local/test databases (e.g.
+-- embedded Postgres in tests), which don't have pg_partman installed. The composite primary
+-- key matches production, where Postgres requires the partition key in any primary/unique key.
 CREATE TABLE sync_event (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   workspace_id TEXT NOT NULL,
   event_type TEXT NOT NULL,
   entity_id TEXT NOT NULL,
   old_parent_id TEXT,
   new_parent_id TEXT,
   created_at BIGINT NOT NULL,
-  user_id TEXT NOT NULL
+  user_id TEXT NOT NULL,
+  PRIMARY KEY (id, created_at)
 );
+
+CREATE INDEX idx_sync_event_workspace_id ON sync_event(workspace_id);
 
 -- Query for fetching events since timestamp
 selectByWorkspaceAfterTime:
@@ -17,7 +31,3 @@ SELECT * FROM sync_event WHERE workspace_id = ? AND created_at > ? ORDER BY crea
 insert:
 INSERT INTO sync_event(id, workspace_id, event_type, entity_id, old_parent_id, new_parent_id, created_at, user_id)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-
--- Cleanup old events (optional maintenance)
-deleteOldEvents:
-DELETE FROM sync_event WHERE created_at < ?;

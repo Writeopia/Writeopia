@@ -49,11 +49,3 @@ fun WriteopiaDbBackend.getSyncEventsAfterTime(
 ): List<Sync_event> {
     return syncEventEntityQueries.selectByWorkspaceAfterTime(workspaceId, afterTime).executeAsList()
 }
-
-/**
- * Deletes sync events older than the given timestamp.
- * Useful for cleanup of old events.
- */
-fun WriteopiaDbBackend.deleteOldSyncEvents(beforeTime: Long) {
-    syncEventEntityQueries.deleteOldEvents(beforeTime)
-}
