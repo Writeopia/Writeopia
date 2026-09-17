@@ -1,6 +1,7 @@
 package io.writeopia.sdk.network.injector
 
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -109,6 +110,12 @@ private object ApiInjectorDefaults {
         bearerTokenHandler: BearerTokenHandler?,
         apiLogger: Logger,
     ) = HttpClient {
+        install(HttpTimeout) {
+            requestTimeoutMillis = 300_000
+            connectTimeoutMillis = 300_000
+            socketTimeoutMillis = 300_000
+        }
+
         install(ContentNegotiation) {
             json(json = json)
         }

@@ -64,6 +64,7 @@ fun EditionScreen(
     codeBlockClick: () -> Unit = {},
     onBoxClick: () -> Unit = {},
     onCardClick: () -> Unit = {},
+    onAiClick: () -> Unit = {},
     onDelete: () -> Unit = {},
     onCopy: () -> Unit = {},
     onCut: () -> Unit = {},
@@ -229,6 +230,19 @@ fun EditionScreen(
                         .padding(iconPadding),
                     imageVector = WrSdkIcons.titleChange,
                     contentDescription = "Font Options",
+                    tint = tint
+                )
+
+                Spacer(modifier = Modifier.width(spaceWidth))
+
+                Icon(
+                    modifier = Modifier
+                        .clip(clipShape)
+                        .clickable(onClick = onAiClick)
+                        .size(iconSize)
+                        .padding(iconPadding),
+                    imageVector = WrSdkIcons.ai,
+                    contentDescription = "AI",
                     tint = tint
                 )
 

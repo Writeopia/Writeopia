@@ -24,6 +24,7 @@ fun MobileAiDialog(
     aiActionPoints: (AiTargetMode) -> Unit,
     aiFaq: (AiTargetMode) -> Unit,
     aiTags: (AiTargetMode) -> Unit,
+    fixedTargetMode: AiTargetMode? = null,
 ) {
     Dialog(onDismissRequest = onDismissRequest) {
         AiOptions(
@@ -32,6 +33,10 @@ fun MobileAiDialog(
             hasSelectedLinesState = hasSelectedLinesState,
             selectModel = selectModel,
             showModelSelection = false,
+            // Mobile has no block-selection UI to drive Selected Lines from the picker; it's
+            // only ever used as a fixedTargetMode when opened from an active text selection.
+            availableTargetModes = listOf(AiTargetMode.DOCUMENT, AiTargetMode.CURSOR),
+            fixedTargetMode = fixedTargetMode,
             askAiWithMode = { mode ->
                 askAiWithMode(mode)
                 onDismissRequest()

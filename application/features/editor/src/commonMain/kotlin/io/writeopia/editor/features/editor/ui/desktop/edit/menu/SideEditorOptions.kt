@@ -677,6 +677,31 @@ private fun TextButton(
 }
 
 @Composable
+private fun targetModeLabel(targetMode: AiTargetMode): String = when (targetMode) {
+    AiTargetMode.DOCUMENT -> WrStrings.document()
+    AiTargetMode.SELECTED_LINES -> WrStrings.selectedLines()
+    AiTargetMode.CURSOR -> WrStrings.cursor()
+}
+
+// Mobile has no mouse-precision clicking, so AI buttons get more vertical padding and a
+// larger font than the compact desktop side panel.
+@Composable
+private fun aiButtonPadding(): PaddingValues =
+    if (LocalPlatform.current.isMobile()) {
+        PaddingValues(horizontal = 10.dp, vertical = 14.dp)
+    } else {
+        smallButtonPadding()
+    }
+
+@Composable
+private fun aiButtonTextStyle(): TextStyle =
+    if (LocalPlatform.current.isMobile()) {
+        MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+    } else {
+        buttonsTextStyle()
+    }
+
+@Composable
 private fun AiTargetButton(
     text: String,
     isSelected: Boolean,
@@ -694,6 +719,7 @@ private fun AiTargetButton(
     } else {
         MaterialTheme.colorScheme.surfaceVariant
     }
+    val isMobile = LocalPlatform.current.isMobile()
 
     Text(
         modifier = modifier
@@ -708,10 +734,10 @@ private fun AiTargetButton(
                 color = backgroundColor,
                 shape = shape
             )
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+            .padding(horizontal = 6.dp, vertical = if (isMobile) 14.dp else 6.dp),
         text = text,
         color = MaterialTheme.colorScheme.onBackground,
-        style = MaterialTheme.typography.labelSmall,
+        style = if (isMobile) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.labelSmall,
         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
         textAlign = TextAlign.Center,
         maxLines = 1
@@ -1065,9 +1091,17 @@ internal fun AiOptions(
     aiFaq: (AiTargetMode) -> Unit,
     aiTags: (AiTargetMode) -> Unit,
     showModelSelection: Boolean = true,
+    availableTargetModes: List<AiTargetMode> = listOf(
+        AiTargetMode.DOCUMENT,
+        AiTargetMode.SELECTED_LINES,
+        AiTargetMode.CURSOR
+    ),
+    fixedTargetMode: AiTargetMode? = null,
     modifier: Modifier = Modifier,
 ) {
-    var selectedTargetMode by remember { mutableStateOf(AiTargetMode.DOCUMENT) }
+    var selectedTargetMode by remember {
+        mutableStateOf(fixedTargetMode ?: availableTargetModes.firstOrNull() ?: AiTargetMode.DOCUMENT)
+    }
     val hasSelectedLines by hasSelectedLinesState.collectAsState()
 
     // Buttons are disabled when Selected Lines mode is active but no lines are selected
@@ -1086,7 +1120,10 @@ internal fun AiOptions(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Apply to section
+        // Apply to section. When the target mode is fixed by the caller (e.g. mobile's
+        // selected-lines menu, which always targets the selection it was opened from), only that
+        // one mode is shown, already selected and not changeable, so the user still sees what
+        // the actions below are about to run on.
         Text(
             text = WrStrings.applyTo(),
             style = MaterialTheme.typography.labelMedium,
@@ -1098,28 +1135,30 @@ internal fun AiOptions(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            AiTargetButton(
-                text = WrStrings.document(),
-                isSelected = selectedTargetMode == AiTargetMode.DOCUMENT,
-                onClick = { selectedTargetMode = AiTargetMode.DOCUMENT },
-                modifier = Modifier.weight(1f)
-            )
-            AiTargetButton(
-                text = WrStrings.selectedLines(),
-                isSelected = selectedTargetMode == AiTargetMode.SELECTED_LINES,
-                onClick = { selectedTargetMode = AiTargetMode.SELECTED_LINES },
-                modifier = Modifier.weight(1f)
-            )
-            AiTargetButton(
-                text = WrStrings.cursor(),
-                isSelected = selectedTargetMode == AiTargetMode.CURSOR,
-                onClick = { selectedTargetMode = AiTargetMode.CURSOR },
-                modifier = Modifier.weight(1f)
-            )
+            if (fixedTargetMode != null) {
+                AiTargetButton(
+                    text = targetModeLabel(fixedTargetMode),
+                    isSelected = true,
+                    onClick = {},
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                availableTargetModes.forEach { targetMode ->
+                    AiTargetButton(
+                        text = targetModeLabel(targetMode),
+                        isSelected = selectedTargetMode == targetMode,
+                        onClick = { selectedTargetMode = targetMode },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
         }
 
         // Show warning when Selected Lines is chosen but no lines are selected
-        if (selectedTargetMode == AiTargetMode.SELECTED_LINES && !hasSelectedLines) {
+        if (fixedTargetMode == null &&
+            selectedTargetMode == AiTargetMode.SELECTED_LINES &&
+            !hasSelectedLines
+        ) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = WrStrings.selectLinesFirst(),
@@ -1134,50 +1173,60 @@ internal fun AiOptions(
         TextButton(
             modifier = Modifier.fillMaxWidth(),
             text = "Prompt",
-            paddingValues = smallButtonPadding(),
+            paddingValues = aiButtonPadding(),
+            textStyle = aiButtonTextStyle(),
             enabled = actionsEnabled,
             onClick = { askAiWithMode(selectedTargetMode) }
         )
 
-        Spacer(modifier = Modifier.height(2.dp))
+        // Summary/Action Points/FAQ/Tags all summarize existing content, which doesn't apply
+        // to Cursor mode (there is no selection or document to summarize, only new text to
+        // generate at the cursor) - only Prompt is offered there.
+        if (selectedTargetMode != AiTargetMode.CURSOR) {
+            Spacer(modifier = Modifier.height(2.dp))
 
-        TextButton(
-            modifier = Modifier.fillMaxWidth(),
-            text = WrStrings.summary(),
-            paddingValues = smallButtonPadding(),
-            enabled = actionsEnabled,
-            onClick = { aiSummary(selectedTargetMode) }
-        )
+            TextButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = WrStrings.summary(),
+                paddingValues = aiButtonPadding(),
+                textStyle = aiButtonTextStyle(),
+                enabled = actionsEnabled,
+                onClick = { aiSummary(selectedTargetMode) }
+            )
 
-        Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
-        TextButton(
-            modifier = Modifier.fillMaxWidth(),
-            text = WrStrings.actionPoints(),
-            paddingValues = smallButtonPadding(),
-            enabled = actionsEnabled,
-            onClick = { aiActionPoints(selectedTargetMode) }
-        )
+            TextButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = WrStrings.actionPoints(),
+                paddingValues = aiButtonPadding(),
+                textStyle = aiButtonTextStyle(),
+                enabled = actionsEnabled,
+                onClick = { aiActionPoints(selectedTargetMode) }
+            )
 
-        Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
-        TextButton(
-            modifier = Modifier.fillMaxWidth(),
-            text = "FAQ",
-            paddingValues = smallButtonPadding(),
-            enabled = actionsEnabled,
-            onClick = { aiFaq(selectedTargetMode) }
-        )
+            TextButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = "FAQ",
+                paddingValues = aiButtonPadding(),
+                textStyle = aiButtonTextStyle(),
+                enabled = actionsEnabled,
+                onClick = { aiFaq(selectedTargetMode) }
+            )
 
-        Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
-        TextButton(
-            modifier = Modifier.fillMaxWidth(),
-            text = "Tags",
-            paddingValues = smallButtonPadding(),
-            enabled = actionsEnabled,
-            onClick = { aiTags(selectedTargetMode) }
-        )
+            TextButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = "Tags",
+                paddingValues = aiButtonPadding(),
+                textStyle = aiButtonTextStyle(),
+                enabled = actionsEnabled,
+                onClick = { aiTags(selectedTargetMode) }
+            )
+        }
 
         // Model selection is only shown for desktop (Local AI)
         // Web uses GenAI with server-side model configuration
