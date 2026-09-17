@@ -22,7 +22,9 @@ kotlin {
             dependencies {
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:core:resources"))
+                implementation(project(":common:endpoints"))
                 implementation(project(":plugins:writeopia_network"))
+                implementation(project(":plugins:writeopia_serialization"))
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)
