@@ -35,7 +35,7 @@ class AppVersionRoutingTest {
             testModule()
         }
 
-        val response = client.get("/${EndPoints.desktopAppVersion()}")
+        val response = client.get("/api/${EndPoints.desktopAppVersion()}")
 
         assertEquals(HttpStatusCode.OK, response.status)
         val body = json.decodeFromString<DesktopAppVersionResponse>(response.bodyAsText())
@@ -48,7 +48,7 @@ class AppVersionRoutingTest {
             testModule()
         }
 
-        val response = client.get("/${EndPoints.desktopAppVersion()}")
+        val response = client.get("/api/${EndPoints.desktopAppVersion()}")
 
         assertEquals(
             "public, max-age=3600",
