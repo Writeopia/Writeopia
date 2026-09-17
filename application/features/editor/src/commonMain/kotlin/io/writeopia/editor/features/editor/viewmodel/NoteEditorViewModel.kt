@@ -58,6 +58,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val hasSelectedLines: StateFlow<Boolean>
 
+    val isWorkspaceOffline: StateFlow<Boolean>
+
     val selectionMetadataState: StateFlow<Set<SelectionMetadata>>
 
     val sideMenuTabState: StateFlow<SideMenuTab>

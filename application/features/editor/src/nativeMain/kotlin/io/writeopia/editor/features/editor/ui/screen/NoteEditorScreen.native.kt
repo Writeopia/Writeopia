@@ -33,6 +33,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +52,8 @@ import io.writeopia.common.utils.colors.ColorUtils
 import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
+import io.writeopia.editor.features.editor.ui.mobile.MobileAiDialog
+import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
 import io.writeopia.editor.input.InputScreen
@@ -63,6 +68,7 @@ import io.writeopia.ui.components.EditionScreen
 import io.writeopia.ui.drawer.factory.DefaultDrawersNative
 import io.writeopia.ui.model.SelectionMetadata
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 const val NAVIGATE_BACK_TEST_TAG = "NoteEditorScreenNavigateBack"
@@ -96,6 +102,9 @@ internal fun NoteEditorScreen(
     val launchImagePicker = rememberImagePickerLauncher { imagePath ->
         noteEditorViewModel.addImage(imagePath)
     }
+
+    var showAiDialog by remember { mutableStateOf(false) }
+    var showSelectedLinesAiDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier,
@@ -172,7 +181,10 @@ internal fun NoteEditorScreen(
                     onDrawingClick = onNewDrawingClick,
                     onImageClick = launchImagePicker,
                     onBoxClick = noteEditorViewModel::toggleHighLightBlock,
-                    onCardClick = noteEditorViewModel::toggleCardBlock
+                    onCardClick = noteEditorViewModel::toggleCardBlock,
+                    onAiClick = { showAiDialog = true },
+                    onSelectedLinesAiClick = { showSelectedLinesAiDialog = true },
+                    isWorkspaceOfflineState = noteEditorViewModel.isWorkspaceOffline
                 )
             }
 
@@ -211,6 +223,37 @@ internal fun NoteEditorScreen(
                     onShareMd = { noteEditorViewModel.shareDocumentInMarkdown() },
                     changeFontFamily = noteEditorViewModel::changeFontFamily,
                     selectedState = noteEditorViewModel.fontFamily
+                )
+            }
+
+            if (showAiDialog) {
+                MobileAiDialog(
+                    onDismissRequest = { showAiDialog = false },
+                    currentModel = noteEditorViewModel.currentModel,
+                    models = noteEditorViewModel.models,
+                    hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
+                    selectModel = noteEditorViewModel::selectModel,
+                    askAiWithMode = noteEditorViewModel::askAiWithMode,
+                    aiSummary = noteEditorViewModel::aiSummary,
+                    aiActionPoints = noteEditorViewModel::aiActionPoints,
+                    aiFaq = noteEditorViewModel::aiFaq,
+                    aiTags = noteEditorViewModel::aiTags,
+                )
+            }
+
+            if (showSelectedLinesAiDialog) {
+                MobileAiDialog(
+                    onDismissRequest = { showSelectedLinesAiDialog = false },
+                    currentModel = noteEditorViewModel.currentModel,
+                    models = noteEditorViewModel.models,
+                    hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
+                    selectModel = noteEditorViewModel::selectModel,
+                    askAiWithMode = noteEditorViewModel::askAiWithMode,
+                    aiSummary = noteEditorViewModel::aiSummary,
+                    aiActionPoints = noteEditorViewModel::aiActionPoints,
+                    aiFaq = noteEditorViewModel::aiFaq,
+                    aiTags = noteEditorViewModel::aiTags,
+                    fixedTargetMode = AiTargetMode.SELECTED_LINES,
                 )
             }
         }
@@ -324,7 +367,10 @@ private fun BottomScreen(
     onDrawingClick: () -> Unit = {},
     onImageClick: () -> Unit = {},
     onBoxClick: () -> Unit = {},
-    onCardClick: () -> Unit = {}
+    onCardClick: () -> Unit = {},
+    onAiClick: () -> Unit = {},
+    onSelectedLinesAiClick: () -> Unit = {},
+    isWorkspaceOfflineState: StateFlow<Boolean> = MutableStateFlow(false)
 ) {
     val edit by editState.collectAsState()
 
@@ -359,7 +405,9 @@ private fun BottomScreen(
                     canUndoState = canUndo,
                     canRedoState = canRedo,
                     onDrawingClick = onDrawingClick,
-                    onImageClick = onImageClick
+                    onImageClick = onImageClick,
+                    onAiClick = onAiClick,
+                    isWorkspaceOfflineState = isWorkspaceOfflineState
                 )
             }
 
@@ -378,8 +426,10 @@ private fun BottomScreen(
                     checkboxClick = onCheckItem,
                     listItemClick = onListItem,
                     codeBlockClick = onCodeBlock,
+                    onAiClick = onSelectedLinesAiClick,
                     onAddPage = onAddPage,
-                    titleClick = titleClick
+                    titleClick = titleClick,
+                    isWorkspaceOfflineState = isWorkspaceOfflineState
                 )
             }
         }

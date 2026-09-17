@@ -204,12 +204,15 @@ class EditorKmpInjector private constructor(
                 WriteopiaConnectionInjector.singleton(),
             authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
             imageUploader: ImageUploader? = null,
+            genAiInjection: GenAiInjection? = GenAiInjection.singleton(),
         ) = EditorKmpInjector(
             authCoreInjection,
             RepositoryInjector.singleton(),
             connectionInjector,
             MutableStateFlow(false),
             MutableStateFlow(KeyboardEvent.IDLE),
+            localAiInjection = null,
+            genAiInjection = genAiInjection,
             imageUploader = imageUploader,
         )
 

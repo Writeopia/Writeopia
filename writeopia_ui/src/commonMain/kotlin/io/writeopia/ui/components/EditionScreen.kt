@@ -46,6 +46,8 @@ import io.writeopia.sdk.models.story.Tag
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.model.SelectionMetadata
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -64,16 +66,19 @@ fun EditionScreen(
     codeBlockClick: () -> Unit = {},
     onBoxClick: () -> Unit = {},
     onCardClick: () -> Unit = {},
+    onAiClick: () -> Unit = {},
     onDelete: () -> Unit = {},
     onCopy: () -> Unit = {},
     onCut: () -> Unit = {},
     onAddPage: () -> Unit = {},
     onClose: () -> Unit = {},
-    titleClick: (Tag) -> Unit = {}
+    titleClick: (Tag) -> Unit = {},
+    isWorkspaceOfflineState: StateFlow<Boolean> = MutableStateFlow(false)
 ) {
     val iconPadding = PaddingValues(vertical = 4.dp)
     val clipShape = MaterialTheme.shapes.medium
     val spaceWidth = 8.dp
+    val isWorkspaceOffline by isWorkspaceOfflineState.collectAsState()
 
     var showFontOptions by remember {
         mutableStateOf(false)
@@ -98,6 +103,21 @@ fun EditionScreen(
                 modifier = Modifier.horizontalScroll(rememberScrollState()).weight(1F),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (!isWorkspaceOffline) {
+                    Icon(
+                        modifier = Modifier
+                            .clip(clipShape)
+                            .clickable(onClick = onAiClick)
+                            .size(iconSize)
+                            .padding(iconPadding),
+                        imageVector = WrSdkIcons.ai,
+                        contentDescription = "AI",
+                        tint = tint
+                    )
+
+                    Spacer(modifier = Modifier.width(spaceWidth))
+                }
+
                 Icon(
                     modifier = Modifier
                         .clip(clipShape)
