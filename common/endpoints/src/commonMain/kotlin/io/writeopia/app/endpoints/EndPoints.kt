@@ -34,4 +34,7 @@ object EndPoints {
 
     // Public, CDN-cacheable configuration for auto-configuring Local AI (Ollama / llmman)
     fun aiLocalConfig() = "api/ai/local-config"
+
+    // Public, CDN-cacheable latest desktop application version
+    fun desktopAppVersion() = "auth/app/version"
 }
