@@ -32,17 +32,12 @@ class DesktopUpdateChecker(
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
-            println(
-                "Desktop update check failed: " +
-                    (error.message ?: error::class.simpleName)
-            )
-            error.printStackTrace()
             DesktopUpdateCheckResult.Failure(error)
         }
     }
 
     private fun downloadUrl(platform: DesktopPlatform): String =
-        "${downloadBaseUrl.trimEnd('/')}/apps-download/latest/${platform.downloadFileName}"
+        "$downloadBaseUrl/apps-download/latest/${platform.downloadFileName}"
 }
 
 internal fun currentDesktopPlatform(

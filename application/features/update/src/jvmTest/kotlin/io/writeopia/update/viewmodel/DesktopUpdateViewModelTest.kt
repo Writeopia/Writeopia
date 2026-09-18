@@ -24,6 +24,9 @@ class DesktopUpdateViewModelTest {
         try {
             val viewModel = DesktopUpdateViewModel(checker("0.48.0"))
 
+            assertSame(DesktopUpdateUiState.Idle, viewModel.uiState.value)
+            viewModel.checkForUpdate()
+
             val available = assertIs<DesktopUpdateUiState.UpdateAvailable>(viewModel.uiState.value)
             assertEquals("0.48.0", available.update.latestVersion)
 
@@ -46,6 +49,8 @@ class DesktopUpdateViewModelTest {
         try {
             val viewModel = DesktopUpdateViewModel(checker("0.47.0"))
 
+            viewModel.checkForUpdate()
+
             assertSame(DesktopUpdateUiState.Idle, viewModel.uiState.value)
         } finally {
             Dispatchers.resetMain()
@@ -63,6 +68,8 @@ class DesktopUpdateViewModelTest {
                 platformProvider = { DesktopPlatform.LINUX }
             )
             val viewModel = DesktopUpdateViewModel(checker)
+
+            viewModel.checkForUpdate()
 
             assertSame(DesktopUpdateUiState.CheckFailed, viewModel.uiState.value)
 

@@ -27,15 +27,12 @@ class DesktopUpdateViewModel(
     private val checker: DesktopUpdateChecker
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<DesktopUpdateUiState>(DesktopUpdateUiState.Checking)
+    private val _uiState = MutableStateFlow<DesktopUpdateUiState>(DesktopUpdateUiState.Idle)
     val uiState: StateFlow<DesktopUpdateUiState> = _uiState.asStateFlow()
 
-    init {
-        checkForUpdate()
-    }
-
-    private fun checkForUpdate() {
+    fun checkForUpdate() {
         viewModelScope.launch {
+            _uiState.value = DesktopUpdateUiState.Checking
             _uiState.value = when (val result = checker.checkForUpdate()) {
                 is DesktopUpdateCheckResult.UpdateAvailable -> {
                     DesktopUpdateUiState.UpdateAvailable(result.update)

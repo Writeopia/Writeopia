@@ -28,6 +28,10 @@ fun BoxScope.DesktopUpdatePrompt(
     val updateCheckFailedMessage = WrStrings.updateCheckFailed()
     val uiState by viewModel.uiState.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.checkForUpdate()
+    }
+
     LaunchedEffect(uiState) {
         if (uiState == DesktopUpdateUiState.CheckFailed) {
             snackbarHostState.showSnackbar(updateCheckFailedMessage)
@@ -44,12 +48,7 @@ fun BoxScope.DesktopUpdatePrompt(
                 try {
                     uriHandler.openUri(available.update.downloadUrl)
                     viewModel.onDownloadOpened()
-                } catch (error: Exception) {
-                    println(
-                        "Failed to open desktop update URL ${available.update.downloadUrl}: " +
-                            (error.message ?: error::class.simpleName)
-                    )
-                    error.printStackTrace()
+                } catch (_: Exception) {
                     viewModel.onDownloadOpenFailed()
                 }
             },
