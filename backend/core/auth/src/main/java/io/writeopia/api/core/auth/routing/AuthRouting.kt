@@ -18,6 +18,7 @@ import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.deleteUserById
 import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
+import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
@@ -39,6 +40,7 @@ import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
+import java.sql.SQLException
 
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
@@ -159,25 +161,24 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         try {
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
-            val existingUser = writeopiaDb.getUserByEmail(request.email)
+            // since we are not allowing email probing and we don't need user data in this case
+            if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
+                logger.info("register request - user or workspace already exist")
+                call.respond(HttpStatusCode.Conflict, "Not Created")
+                return@post
+            }
 
-            if (existingUser == null) {
-                // Create user with enabled = false (always requires email confirmation)
-                val wUser = AuthService.createUser(writeopiaDb, request, enabled = false)
+            val confirmationCode = EmailService.generateConfirmationCode()
+            val codeExpiry = EmailService.getCodeExpiry()
+            val workspaceId = GenerateId.generate()
 
-                // Generate confirmation code and send email
-                val confirmationCode = EmailService.generateConfirmationCode()
-                val codeExpiry = EmailService.getCodeExpiry()
+            // Run user creation, confirmation code, workspace, and membership in one atomic transaction
+            val wUser = writeopiaDb.transactionWithResult {
+                
+                val user = AuthService.createUser(writeopiaDb, request, enabled = false)
+
                 writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
-
-                EmailService.sendConfirmationEmail(
-                    toEmail = request.email,
-                    code = confirmationCode,
-                    userName = request.name
-                )
-
-                val workspaceId = GenerateId.generate()
-                // Every user has its own workspace.
+                
                 WorkspaceService.createWorkspace(
                     workspaceId = workspaceId,
                     workspaceName = request.workspaceName,
@@ -191,28 +192,38 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                     writeopiaDb
                 )
 
-                if (created) {
-                    call.respond(
-                        HttpStatusCode.Created,
-                        RegisterResponse(
-                            writeopiaUser = wUser.toApi(),
-                            emailConfirmationRequired = true
-                        ),
-                    )
-                } else {
-                    call.respond(
-                        HttpStatusCode.InternalServerError,
-                        RegisterResponse(
-                            writeopiaUser = wUser.toApi(),
-                            emailConfirmationRequired = true
-                        ),
-                    )
+                if (!created) {
+                    error("Failed to associate user with workspace")
                 }
-            } else {
-                logger.info("register request - user or workspace already exist")
-                call.respond(HttpStatusCode.Conflict, "Not Created")
+
+                user
             }
+
+            EmailService.sendConfirmationEmail(
+                toEmail = request.email,
+                code = confirmationCode,
+                userName = request.name
+            )
+
+            call.respond(
+                HttpStatusCode.Created,
+                RegisterResponse(
+                    writeopiaUser = wUser.toApi(),
+                    emailConfirmationRequired = true
+                ),
+            )
         } catch (e: Exception) {
+            /*
+            If we want to solve the concurrency issue between `.userExistsByUsernameOrEmail` and `.createUser`,
+            which fools the server into throwing "HttpStatusCode.InternalServerError" instead of "HttpStatusCode.Conflict",
+            and we are not doing any locking on read.
+            This is enough to solve that.
+            */
+            if (e.isUniqueViolation()) {
+                logger.info("register request - user or workspace already exist: ${e.message}")
+                call.respond(HttpStatusCode.Conflict, "Not Created")
+                return@post
+            }
             e.printStackTrace()
             logger.info("register request error message: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, "Unknown error")
@@ -286,4 +297,19 @@ fun RoutingContext.getUserId(): String? {
     }
 
     return principal?.payload?.getClaim("userId")?.asString()
+}
+
+
+private const val SQLSTATE_UNIQUE_VIOLATION = "23505"
+
+private fun Throwable.isUniqueViolation(): Boolean {
+    var current: Throwable? = this
+    while (current != null) {
+        if (current is SQLException && current.sqlState == SQLSTATE_UNIQUE_VIOLATION) {
+            return true
+        }
+
+        current = current.cause
+    }
+    return false
 }

@@ -60,6 +60,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName1,
                     name = "Name",
                     email = email,
+                    username = email + "_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -113,6 +114,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName1,
                     name = "Name",
                     email = email1,
+                    username = email1 + "_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -128,6 +130,7 @@ class WorkspacesTest {
                     workspaceName = "other workspace",
                     name = "Name 2",
                     email = email2,
+                    username = email2 + "_user",
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -207,6 +210,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName,
                     name = "Test User",
                     email = email,
+                    username = email + "_user",
                     password = "testpassword123&",
                 )
             )
@@ -306,6 +310,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName,
                     name = "Admin User",
                     email = email,
+                    username = email + "_user",
                     password = "testpassword123&",
                 )
             )
@@ -370,33 +375,35 @@ class WorkspacesTest {
             val email2 = "multiadmin2_${Random.nextInt(10000)}@test.com"
             val workspaceName = "workspace_multiadmin_test"
 
-            // Register first user (creates workspace with user as ADMIN)
-            val response1 = client.post("/api/auth/register") {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    RegisterRequest(
-                        workspaceName = workspaceName,
-                        name = "Admin User 1",
-                        email = email1,
-                        password = "testpassword123&",
-                    )
+        // Register first user (creates workspace with user as ADMIN)
+        val response1 = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = workspaceName,
+                    name = "Admin User 1",
+                    email = email1,
+                    username = email1 + "_user",
+                    password = "testpassword123&",
                 )
-            }
+            )
+        }
 
             assertEquals(HttpStatusCode.Created, response1.status)
 
-            // Register second user
-            val response2 = client.post("/api/auth/register") {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    RegisterRequest(
-                        workspaceName = "other workspace",
-                        name = "Admin User 2",
-                        email = email2,
-                        password = "testpassword123&",
-                    )
+        // Register second user
+        val response2 = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "other workspace",
+                    name = "Admin User 2",
+                    email = email2,
+                    username = email2 + "_user",
+                    password = "testpassword123&",
                 )
-            }
+            )
+        }
 
             assertEquals(HttpStatusCode.Created, response2.status)
 
@@ -479,6 +486,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName,
                     name = "Admin User",
                     email = email1,
+                    username = email1 + "_user",
                     password = "testpassword123&",
                 )
             )
@@ -494,6 +502,7 @@ class WorkspacesTest {
                     workspaceName = "other workspace",
                     name = "Editor User",
                     email = email2,
+                    username = email2 + "_user",
                     password = "testpassword123&",
                 )
             )
@@ -579,6 +588,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName,
                     name = "Admin User",
                     email = email,
+                    username = email + "_user",
                     password = "testpassword123&",
                 )
             )

@@ -7,6 +7,7 @@ import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 data class WriteopiaBeUser(
     val id: String,
     val email: String,
+    val username: String,
     val name: String,
     val password: String,
     val salt: String,
@@ -19,7 +20,7 @@ data class WriteopiaBeUser(
         const val DISCONNECTED = "disconnected_user"
 
         fun disconnectedUser(): WriteopiaBeUser =
-            WriteopiaBeUser(id = "disconnected_user", "", "", "", "", enabled = false)
+            WriteopiaBeUser(id = "disconnected_user", "", "", "", "", "", enabled = false)
     }
 }
 

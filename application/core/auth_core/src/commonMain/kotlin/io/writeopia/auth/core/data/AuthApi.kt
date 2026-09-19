@@ -65,11 +65,20 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         name: String,
         email: String,
         workspaceName: String,
-        password: String
+        password: String,
+        username: String
     ): ResultData<RegisterResponse> = try {
         val response = client.post("$baseUrl/api/auth/register") {
             contentType(ContentType.Application.Json)
-            setBody(RegisterRequest(name, email, workspaceName, password))
+            setBody(
+                RegisterRequest(
+                    name = name,
+                    email = email,
+                    username = username,
+                    workspaceName = workspaceName,
+                    password = password,
+                )
+            )
         }.body<RegisterResponse>()
 
         ResultData.Complete(response)
