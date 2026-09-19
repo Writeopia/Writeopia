@@ -30,6 +30,9 @@ class DesktopUpdateViewModel(
     private val _uiState = MutableStateFlow<DesktopUpdateUiState>(DesktopUpdateUiState.Idle)
     val uiState: StateFlow<DesktopUpdateUiState> = _uiState.asStateFlow()
 
+    private val _showErrorSnackbar = MutableStateFlow(false)
+    val showErrorSnackbar: StateFlow<Boolean> = _showErrorSnackbar.asStateFlow()
+
     fun checkForUpdate() {
         viewModelScope.launch {
             _uiState.value = DesktopUpdateUiState.Checking
@@ -61,5 +64,9 @@ class DesktopUpdateViewModel(
         if (_uiState.value == DesktopUpdateUiState.CheckFailed) {
             _uiState.value = DesktopUpdateUiState.Idle
         }
+    }
+
+    fun setShowErrorSnackbar(show: Boolean) {
+        _showErrorSnackbar.value = show
     }
 }
