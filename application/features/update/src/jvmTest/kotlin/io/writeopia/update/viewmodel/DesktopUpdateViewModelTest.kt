@@ -69,9 +69,15 @@ class DesktopUpdateViewModelTest {
             )
             val viewModel = DesktopUpdateViewModel(checker)
 
+            assertEquals(false, viewModel.showErrorSnackbar.value)
+
             viewModel.checkForUpdate()
 
             assertSame(DesktopUpdateUiState.CheckFailed, viewModel.uiState.value)
+            assertEquals(false, viewModel.showErrorSnackbar.value)
+
+            viewModel.setShowErrorSnackbar(true)
+            assertEquals(true, viewModel.showErrorSnackbar.value)
 
             viewModel.dismissCheckFailure()
             assertSame(DesktopUpdateUiState.Idle, viewModel.uiState.value)

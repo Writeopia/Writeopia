@@ -20,6 +20,7 @@ kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
+                implementation(project(":application:core:common_ui"))
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:core:resources"))
                 implementation(project(":common:endpoints"))
