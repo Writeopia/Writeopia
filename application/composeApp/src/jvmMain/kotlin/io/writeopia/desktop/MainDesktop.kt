@@ -43,6 +43,7 @@ import io.writeopia.sqldelight.database.DatabaseFactory
 import io.writeopia.sqldelight.database.driver.DriverFactory
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
 import io.writeopia.theme.WriteopiaTheme
+import io.writeopia.update.ui.DesktopUpdatePrompt
 import io.writeopia.ui.image.ImageLoadConfig
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.common.utils.ALLOW_BACKEND
@@ -307,6 +308,8 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                 navigationController.navigate(Destinations.MAIN_APP.id)
                             }
                         }
+
+                        DesktopUpdatePrompt()
                     }
                 }
             }
