@@ -293,7 +293,7 @@ class RoomDocumentRepository(
         folderId: String,
         workspaceId: String
     ): List<Document> =
-        documentEntityDao.loadOutdatedDocumentsByFolderId(folderId)
+        documentEntityDao.loadOutdatedDocumentsByFolderId(folderId, workspaceId)
             .map { (documentEntity, storyEntity) ->
                 val content = loadInnerSteps(storyEntity)
                 documentEntity.toModel(content, loadCommentConversations(documentEntity.id))
