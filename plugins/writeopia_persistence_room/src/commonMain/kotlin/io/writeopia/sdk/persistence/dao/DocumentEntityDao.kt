@@ -77,12 +77,16 @@ interface DocumentEntityDao {
             "FROM $DOCUMENT_ENTITY " +
             "LEFT OUTER JOIN $STORY_UNIT_ENTITY " +
             "ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
-            "WHERE $DOCUMENT_ENTITY.parent_id = :folderId AND is_deleted = FALSE " +
+            "WHERE $DOCUMENT_ENTITY.parent_id = :folderId " +
+            "AND $DOCUMENT_ENTITY.workspace_id = :workspaceId AND is_deleted = FALSE " +
             "AND ($DOCUMENT_ENTITY.last_updated_at > $DOCUMENT_ENTITY.last_synced_at " +
             "OR $DOCUMENT_ENTITY.last_synced_at IS NULL) " +
             "ORDER BY $DOCUMENT_ENTITY.created_at, $STORY_UNIT_ENTITY.position"
     )
-    suspend fun loadOutdatedDocumentsByFolderId(folderId: String): Map<DocumentEntity, List<StoryStepEntity>>
+    suspend fun loadOutdatedDocumentsByFolderId(
+        folderId: String,
+        workspaceId: String,
+    ): Map<DocumentEntity, List<StoryStepEntity>>
 
     @Query("SELECT * FROM $DOCUMENT_ENTITY")
     suspend fun loadAllDocuments(): List<DocumentEntity>

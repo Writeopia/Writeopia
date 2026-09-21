@@ -35,6 +35,12 @@ class CommentSerializationTest {
                 """{"id":"conversation-1","comments":[{"text":"Text"}]}"""
             )
         }
+
+        assertFailsWith<SerializationException> {
+            writeopiaJson.decodeFromString<CommentConversationApi>(
+                """{"id":"conversation-1"}"""
+            )
+        }
     }
 
     @Test
