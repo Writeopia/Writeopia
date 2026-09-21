@@ -12,7 +12,8 @@ class RoomRepositoryInjection private constructor(
     override fun provideDocumentRepository(): DocumentRepository =
         RoomDocumentRepository(
             database.documentDao(),
-            database.storyUnitDao()
+            database.storyUnitDao(),
+            database.commentDao(),
         )
 
     companion object {

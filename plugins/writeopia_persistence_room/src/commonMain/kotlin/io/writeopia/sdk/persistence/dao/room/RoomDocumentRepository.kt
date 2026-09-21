@@ -9,9 +9,12 @@ import io.writeopia.sdk.models.link.DocumentLink
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.persistence.dao.CommentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
 import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
+import io.writeopia.sdk.persistence.parse.toCommentConversations
+import io.writeopia.sdk.persistence.parse.toCommentEntities
 import io.writeopia.sdk.persistence.parse.toEntity
 import io.writeopia.sdk.persistence.parse.toModel
 import kotlinx.coroutines.flow.Flow
@@ -26,7 +29,8 @@ import kotlin.time.ExperimentalTime
 
 class RoomDocumentRepository(
     private val documentEntityDao: DocumentEntityDao,
-    private val storyUnitEntityDao: StoryUnitEntityDao? = null
+    private val storyUnitEntityDao: StoryUnitEntityDao? = null,
+    private val commentEntityDao: CommentEntityDao? = null,
 ) : DocumentRepository, DocumentSearch {
 
     private val documentsState: MutableStateFlow<Map<String, List<Document>>> =
@@ -110,7 +114,11 @@ class RoomDocumentRepository(
             val content = loadInnerSteps(
                 storyUnitEntityDao?.loadDocumentContent(documentEntity.id) ?: emptyList()
             )
-            documentEntity.toModel(content)
+            val comments = commentEntityDao
+                ?.loadByDocumentId(documentEntity.id)
+                ?.toCommentConversations()
+                ?: emptyList()
+            documentEntity.toModel(content, comments)
         }
 
     override suspend fun loadDocumentByIds(
@@ -143,6 +151,12 @@ class RoomDocumentRepository(
             storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
             storyUnitEntityDao?.insertStoryUnits(*data.toTypedArray())
         }
+
+        commentEntityDao?.deleteByDocumentId(document.id)
+        document.commentConversations
+            .toCommentEntities(document.id)
+            .takeIf { it.isNotEmpty() }
+            ?.let { comments -> commentEntityDao?.insertComments(*comments.toTypedArray()) }
     }
 
     override suspend fun saveDocumentMetadata(document: Document) {
@@ -173,7 +187,7 @@ class RoomDocumentRepository(
     }
 
     override suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
-        // Atomic deletion: removes both documents and their story steps in a single transaction (scoped to workspace)
+        commentEntityDao?.deleteByDocumentIds(ids.toList())
         documentEntityDao.hardDeleteDocumentsWithContentByIds(ids.toList(), workspaceId)
     }
 
