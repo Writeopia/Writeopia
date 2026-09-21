@@ -29,7 +29,7 @@ import kotlin.time.Instant
 class DocumentSqlDao(
     private val documentQueries: DocumentEntityQueries?,
     private val storyStepQueries: StoryStepEntityQueries?,
-    private val commentQueries: CommentEntityQueries? = null,
+    private val commentQueries: CommentEntityQueries?,
 ) : DocumentSearch {
 
     override suspend fun search(
@@ -72,26 +72,30 @@ class DocumentSqlDao(
             } ?: emptyList()
 
     suspend fun insertDocumentWithContent(document: Document) {
-        storyStepQueries?.deleteByDocumentId(document.id)
-        document.content.values.forEachIndexed { i, storyStep ->
-            insertStoryStep(storyStep, i.toDouble(), document.id)
-        }
+        val queries = documentQueries ?: return
 
-        commentQueries?.deleteByDocumentId(document.id)
-        document.commentConversations.forEachIndexed { conversationPosition, conversation ->
-            conversation.comments.forEachIndexed { commentPosition, comment ->
-                commentQueries?.insert(
-                    comment.id,
-                    conversation.id,
-                    document.id,
-                    conversationPosition.toLong(),
-                    commentPosition.toLong(),
-                    comment.text,
-                )
+        queries.transaction {
+            storyStepQueries?.deleteByDocumentId(document.id)
+            document.content.values.forEachIndexed { i, storyStep ->
+                insertStoryStep(storyStep, i.toDouble(), document.id)
             }
-        }
 
-        insertDocument(document)
+            commentQueries?.deleteByDocumentId(document.id)
+            document.commentConversations.forEachIndexed { conversationPosition, conversation ->
+                conversation.comments.forEachIndexed { commentPosition, comment ->
+                    commentQueries?.insert(
+                        comment.id,
+                        conversation.id,
+                        document.id,
+                        conversationPosition.toLong(),
+                        commentPosition.toLong(),
+                        comment.text,
+                    )
+                }
+            }
+
+            insertDocument(document)
+        }
     }
 
     suspend fun insertDocument(document: Document) {

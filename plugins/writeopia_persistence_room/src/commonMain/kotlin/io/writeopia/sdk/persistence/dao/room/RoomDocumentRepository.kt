@@ -30,7 +30,7 @@ import kotlin.time.ExperimentalTime
 class RoomDocumentRepository(
     private val documentEntityDao: DocumentEntityDao,
     private val storyUnitEntityDao: StoryUnitEntityDao? = null,
-    private val commentEntityDao: CommentEntityDao? = null,
+    private val commentEntityDao: CommentEntityDao,
 ) : DocumentRepository, DocumentSearch {
 
     private val documentsState: MutableStateFlow<Map<String, List<Document>>> =
