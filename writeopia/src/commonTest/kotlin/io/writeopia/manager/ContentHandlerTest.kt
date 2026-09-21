@@ -142,6 +142,35 @@ class ContentHandlerTest {
         )
     }
 
+
+    @Test
+    fun `line break should split a partially covered comment range`() {
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val conversationId = "conversation-1"
+        val storyStep = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "hello\nworld",
+            spans = setOf(
+                SpanInfo.create(2, 9, Span.COMMENT, conversationId)
+            )
+        )
+
+        val (_, newState) = contentHandler.onLineBreak(
+            mapOf(0.0 to storyStep),
+            Action.LineBreak(storyStep, 0.0)
+        )
+
+        val sortedStories = newState.stories.entries.sortedBy { it.key }
+        assertEquals(
+            setOf(SpanInfo.create(2, 5, Span.COMMENT, conversationId)),
+            sortedStories[0].value.spans,
+        )
+        assertEquals(
+            setOf(SpanInfo.create(0, 3, Span.COMMENT, conversationId)),
+            sortedStories[1].value.spans,
+        )
+    }
+
     @Test
     fun `multiple line breaks should keep comment identity on every covered line`() {
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())

@@ -18,7 +18,7 @@ object SpansHandler {
                 val currentSpan = spanSet
                     .filter { it.hasSameIdentity(newSpan) }
                     .firstOrNull { it.intersection(newSpan) != Intersection.OUTSIDE }
-                    ?: return spanSet + newSpan
+                    ?: return normalizeSpans(spanSet + newSpan)
 
                 val intersection: Intersection = currentSpan.intersection(newSpan)
 

@@ -96,6 +96,17 @@ class SpansHandlerTest {
         assertEquals(setOf(first, second), result)
     }
 
+
+    @Test
+    fun `removing one comment should not remove another conversation`() {
+        val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(0, 5, Span.COMMENT, "conversation-2")
+
+        val result = SpansHandler.toggleSpans(setOf(first, second), first)
+
+        assertEquals(setOf(second), result)
+    }
+
     @Test
     fun `splitting a comment span should preserve the conversation id`() {
         val comment = SpanInfo.create(0, 10, Span.COMMENT, "conversation-1")
