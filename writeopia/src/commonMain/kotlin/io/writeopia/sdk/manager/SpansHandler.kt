@@ -109,7 +109,10 @@ object SpansHandler {
                 val text = story.text
                 if (text?.isNotEmpty() == true) {
                     val newSpanInfo = SpanInfo.create(0, text.length, newSpan, extra)
-                    story.copy(spans = story.spans + newSpanInfo, localId = GenerateId.generate())
+                    story.copy(
+                        spans = normalizeSpans(story.spans + newSpanInfo),
+                        localId = GenerateId.generate()
+                    )
                 } else {
                     story
                 }
