@@ -9,6 +9,29 @@ import kotlin.test.assertTrue
 class SpanTest {
 
     @Test
+    fun `replacement should restore the covered fragment when the same identity survives elsewhere`() {
+        val first = SpanInfo.create(0, 2, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(4, 6, Span.COMMENT, "conversation-1")
+
+        val result = Spans.recalculateSpans(
+            spans = setOf(first, second),
+            oldText = "abcdefgh",
+            newText = "abcdXYgh",
+            oldSelectionStart = 4,
+            oldSelectionEnd = 6,
+            newSelectionStart = 6,
+        )
+
+        assertEquals(
+            setOf(
+                first,
+                SpanInfo.create(4, 6, Span.COMMENT, "conversation-1"),
+            ),
+            result,
+        )
+    }
+
+    @Test
     fun `replacing the full comment range should preserve its identity`() {
         val comment = SpanInfo.create(2, 8, Span.COMMENT, "conversation-1")
 
