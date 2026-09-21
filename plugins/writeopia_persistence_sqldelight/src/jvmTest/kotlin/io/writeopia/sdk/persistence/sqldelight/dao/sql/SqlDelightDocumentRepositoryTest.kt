@@ -5,6 +5,7 @@ package io.writeopia.sdk.persistence.sqldelight.dao.sql
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import io.writeopia.libraries.dbtests.DocumentRepositoryTests
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
@@ -250,6 +251,11 @@ class SqlDelightDocumentRepositoryTest {
         val loadedFromWorkspace = documentRepository.loadDocumentsWorkspace(document.workspaceId)
             .first { it.id == document.id }
         assertEquals(document.commentConversations, loadedFromWorkspace.commentConversations)
+    }
+
+    @Test
+    fun `comment persistence respects workspace boundaries`() = runTest {
+        DocumentRepositoryTests(documentRepository).commentPersistenceRespectsWorkspaceBoundaries()
     }
 
     @Test
