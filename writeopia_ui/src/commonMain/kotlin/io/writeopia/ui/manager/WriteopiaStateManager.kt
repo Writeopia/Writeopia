@@ -1116,7 +1116,7 @@ class WriteopiaStateManager(
 
             if (onEdit.isNotEmpty()) {
                 _currentStory.value =
-                    writeopiaManager.addSpanToStories(_currentStory.value, onEdit, span)
+                    writeopiaManager.addSpanToStories(_currentStory.value, onEdit, span, extra)
             } else {
                 val selection = currentStory.value.selection
                 val (start, end) = selection.sortedPositions()
