@@ -184,6 +184,35 @@ class SpansHandlerTest {
     }
 
     @Test
+    fun `bulk removing one comment identity should preserve another`() {
+        val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(0, 5, Span.COMMENT, "conversation-2")
+        val stories = mapOf(
+            0.0 to StoryStep(
+                type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
+                text = "first",
+                spans = setOf(first, second),
+            ),
+            1.0 to StoryStep(
+                type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
+                text = "second",
+                spans = setOf(
+                    SpanInfo.create(0, 6, Span.COMMENT, "conversation-2")
+                ),
+            ),
+        )
+
+        val result = SpansHandler.toggleSpansForManyStories(
+            stories,
+            Span.COMMENT,
+            "conversation-2",
+        )
+
+        assertEquals(setOf(first), result.getValue(0.0).spans)
+        assertTrue(result.getValue(1.0).spans.isEmpty())
+    }
+
+    @Test
     fun `when adding a containing span only the new one should live`() {
         val boldSpan = SpanInfo.create(start = 2, end = 10, Span.BOLD)
         val boldSpan1 = SpanInfo.create(start = 0, end = 15, Span.BOLD)
