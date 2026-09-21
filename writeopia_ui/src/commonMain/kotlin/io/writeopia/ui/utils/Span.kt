@@ -129,13 +129,21 @@ object Spans {
         }
 
         replacementSpans.forEach { original ->
-            if (recalculated.none { span -> span.hasSameIdentity(original) }) {
-                recalculated += SpanInfo.create(
-                    start = edit.start,
-                    end = edit.start + edit.insertedSize,
-                    span = original.span,
-                    extra = original.extra,
-                )
+            val replacement = SpanInfo.create(
+                start = edit.start,
+                end = edit.start + edit.insertedSize,
+                span = original.span,
+                extra = original.extra,
+            )
+
+            if (
+                recalculated.none { span ->
+                    span.hasSameIdentity(original) &&
+                        span.start <= replacement.start &&
+                        span.end >= replacement.end
+                }
+            ) {
+                recalculated += replacement
             }
         }
 
