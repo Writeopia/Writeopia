@@ -499,7 +499,7 @@ class ContentHandler(
 
                 val updated = previous.copy(
                     text = previousText + deletedText,
-                    spans = previous.spans + shiftedSpans,
+                    spans = SpansHandler.normalizeSpans(previous.spans + shiftedSpans),
                     localId = GenerateId.generate(),
                     nextPosition = nextPos
                 )
