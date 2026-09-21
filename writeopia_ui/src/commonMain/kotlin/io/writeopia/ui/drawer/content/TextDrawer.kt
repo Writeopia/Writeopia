@@ -256,12 +256,18 @@ class TextDrawer(
                     onValueChange = { value ->
                         val start = value.selection.start
                         val end = value.selection.end
-                        val previousStart = inputText.selection.start
-
+                        val previousSelection = inputText.selection
                         val sizeDifference = value.text.length - inputText.text.length
 
-                        if (abs(sizeDifference) > 0) {
-                            spans = Spans.recalculateSpans(spans, previousStart, sizeDifference)
+                        if (abs(sizeDifference) > 0 || value.text != inputText.text) {
+                            spans = Spans.recalculateSpans(
+                                spans = spans,
+                                oldText = inputText.text,
+                                newText = value.text,
+                                oldSelectionStart = previousSelection.start,
+                                oldSelectionEnd = previousSelection.end,
+                                newSelectionStart = value.selection.start,
+                            )
                         }
 
                         // Detect slash command
