@@ -12,7 +12,6 @@ data class DocumentApi(
     val title: String = "",
     val workspaceId: String,
     val content: List<StoryStepApi> = emptyList(),
-    val commentConversations: List<CommentConversationApi> = emptyList(),
     val createdAt: Long = Clock.System.now().toEpochMilliseconds(),
     val lastUpdatedAt: Long = Clock.System.now().toEpochMilliseconds(),
     val isFavorite: Boolean = false,
@@ -21,5 +20,6 @@ data class DocumentApi(
     val isLocked: Boolean = false,
     val icon: IconApi? = null,
     val deleted: Boolean = false,
-    val published: Boolean = false
+    val published: Boolean = false,
+    val commentConversations: List<CommentConversationApi> = emptyList(),
 )

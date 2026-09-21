@@ -12,7 +12,6 @@ data class Document(
     override val id: String = GenerateId.generate(),
     override val title: String = "",
     val content: Map<Double, StoryStep> = emptyMap(),
-    val commentConversations: List<CommentConversation> = emptyList(),
     override val createdAt: Instant,
     override val lastUpdatedAt: Instant,
     val lastSyncedAt: Instant?,
@@ -22,5 +21,6 @@ data class Document(
     override val icon: MenuItem.Icon? = null,
     val isLocked: Boolean = false,
     val deleted: Boolean = false,
-    val published: Boolean = false
+    val published: Boolean = false,
+    val commentConversations: List<CommentConversation> = emptyList(),
 ) : MenuItem
