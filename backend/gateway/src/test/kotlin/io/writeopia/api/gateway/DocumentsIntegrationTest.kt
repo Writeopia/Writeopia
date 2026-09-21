@@ -1306,6 +1306,7 @@ class DocumentationIntegrationTests {
                         workspaceName = "Test Workspace",
                         name = "Test User",
                         email = email,
+                        username = email + "_user",
                         password = password,
                     )
                 )

@@ -24,6 +24,7 @@ class UserRepositoryTest {
     private lateinit var db: WriteopiaDbBackend
     private val testUserId = "test-user-123"
     private val testEmail = "test@example.com"
+    private val testUsername = "testuser"
 
     @BeforeTest
     fun setup() {
@@ -50,6 +51,7 @@ class UserRepositoryTest {
         db.insertUser(
             id = testUserId,
             name = name,
+            username = testUsername,
             email = testEmail,
             password = password,
             salt = salt,
@@ -61,6 +63,7 @@ class UserRepositoryTest {
         assertNotNull(retrievedUser, "User should be found after insertion")
         assertEquals(testUserId, retrievedUser.id)
         assertEquals(name, retrievedUser.name)
+        assertEquals(testUsername, retrievedUser.username)
         assertEquals(testEmail, retrievedUser.email)
         assertEquals(password, retrievedUser.password)
         assertEquals(salt, retrievedUser.salt)
@@ -73,6 +76,7 @@ class UserRepositoryTest {
         db.insertUser(
             id = testUserId,
             name = "Test User",
+            username = testUsername,
             email = testEmail,
             password = "hashedPassword123",
             salt = "randomSalt123",
@@ -119,6 +123,7 @@ class UserRepositoryTest {
         db.insertUser(
             id = userId,
             name = "Delete Test User",
+            username = "delete_user",
             email = email,
             password = "password",
             salt = "salt",
@@ -148,6 +153,7 @@ class UserRepositoryTest {
         db.insertUser(
             id = testUserId,
             name = "Test User",
+            username = testUsername,
             email = testEmail,
             password = "password",
             salt = "salt",
@@ -160,6 +166,7 @@ class UserRepositoryTest {
         // Then: user should be found
         assertNotNull(user, "User should be found by email")
         assertEquals(testUserId, user.id)
+        assertEquals(testUsername, user.username)
         assertEquals(testEmail, user.email)
     }
 

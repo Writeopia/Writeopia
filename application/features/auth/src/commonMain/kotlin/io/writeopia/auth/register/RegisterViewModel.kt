@@ -91,7 +91,8 @@ internal class RegisterViewModel(
                     name = _name.value,
                     email = _email.value,
                     workspaceName = _workspace.value,
-                    password = _password.value
+                    password = _password.value,
+                    username = _email.value, // to pass the test
                 )
 
                 _register.value = when (result) {

@@ -1,6 +1,7 @@
 CREATE TABLE user_entity (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
+  username TEXT NOT NULL UNIQUE,
   created_at BIGINT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
@@ -17,6 +18,13 @@ FROM user_entity
 WHERE email = ?
 LIMIT 1;
 
+userExistsByUsernameOrEmail:
+SELECT EXISTS(
+  SELECT 1
+  FROM user_entity
+  WHERE username = ? OR email = ?
+);
+
 selectEnabledUserByEmail:
 SELECT *
 FROM user_entity
@@ -30,10 +38,10 @@ WHERE id = ?
 LIMIT 1;
 
 insertUser:
-INSERT INTO user_entity(id, name, created_at, email, password, salt, enabled, confirmation_code, confirmation_code_expiry, account_type)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO user_entity(id, name, username, created_at, email, password, salt, enabled, confirmation_code, confirmation_code_expiry, account_type)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
-UPDATE SET id=excluded.id, name=excluded.name, created_at=excluded.created_at, email=excluded.email, password=excluded.password, salt=excluded.salt, enabled=excluded.enabled, confirmation_code=excluded.confirmation_code, confirmation_code_expiry=excluded.confirmation_code_expiry, account_type=excluded.account_type;
+UPDATE SET id=excluded.id, name=excluded.name, username=excluded.username, created_at=excluded.created_at, email=excluded.email, password=excluded.password, salt=excluded.salt, enabled=excluded.enabled, confirmation_code=excluded.confirmation_code, confirmation_code_expiry=excluded.confirmation_code_expiry, account_type=excluded.account_type;
 
 deleteUser:
 DELETE
