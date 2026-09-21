@@ -40,7 +40,8 @@ class RoomDocumentRepository(
         folderId: String,
         workspaceId: String
     ): List<Document> =
-        documentEntityDao.loadDocumentsByParentId(folderId).map { it.toModel() }
+        documentEntityDao.loadDocumentsByParentIdForWorkspace(folderId, workspaceId)
+            .map { it.toModel() }
 
     override suspend fun loadFavDocumentsForWorkspace(
         orderBy: String,
@@ -72,8 +73,10 @@ class RoomDocumentRepository(
         parentId: String,
         workspaceId: String
     ): Flow<Map<String, List<Document>>> =
-        documentEntityDao.listenForDocumentsWithContentByParentId(parentId)
-            .map { resultsMap ->
+        documentEntityDao.listenForDocumentsWithContentByParentIdForWorkspace(
+            parentId,
+            workspaceId,
+        ).map { resultsMap ->
                 resultsMap.map { (documentEntity, storyEntity) ->
                     val content = loadInnerSteps(storyEntity)
                     documentEntity.toModel(content, loadCommentConversations(documentEntity.id))
@@ -110,7 +113,7 @@ class RoomDocumentRepository(
         id: String,
         workspaceId: String
     ): Document? =
-        documentEntityDao.loadDocumentById(id)?.let { documentEntity ->
+        documentEntityDao.loadDocumentByIdForWorkspace(id, workspaceId)?.let { documentEntity ->
             val content = loadInnerSteps(
                 storyUnitEntityDao?.loadDocumentContent(documentEntity.id) ?: emptyList()
             )
@@ -121,7 +124,7 @@ class RoomDocumentRepository(
         ids: List<String>,
         workspaceId: String
     ): List<Document> =
-        documentEntityDao.loadDocumentByIds(ids).map { documentEntity ->
+        documentEntityDao.loadDocumentByIdsForWorkspace(ids, workspaceId).map { documentEntity ->
             val content = loadInnerSteps(
                 storyUnitEntityDao?.loadDocumentContent(documentEntity.id) ?: emptyList()
             )
@@ -133,7 +136,7 @@ class RoomDocumentRepository(
         orderBy: String,
         workspaceId: String
     ): List<Document> =
-        documentEntityDao.loadDocumentWithContentByIds(ids, orderBy)
+        documentEntityDao.loadDocumentWithContentByIdsForWorkspace(ids, orderBy, workspaceId)
             .entries
             .map { (documentEntity, storyEntity) ->
                 val content = loadInnerSteps(storyEntity)
@@ -141,18 +144,14 @@ class RoomDocumentRepository(
             }
 
     override suspend fun saveDocument(document: Document) {
-        saveDocumentMetadata(document)
+        val storySteps = document.content.toEntity(document.id)
+        val comments = document.commentConversations.toCommentEntities(document.id)
 
-        document.content.toEntity(document.id).let { data ->
-            storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
-            storyUnitEntityDao?.insertStoryUnits(*data.toTypedArray())
-        }
-
-        commentEntityDao?.deleteByDocumentId(document.id)
-        document.commentConversations
-            .toCommentEntities(document.id)
-            .takeIf { it.isNotEmpty() }
-            ?.let { comments -> commentEntityDao?.insertComments(*comments.toTypedArray()) }
+        documentEntityDao.saveDocumentWithContent(
+            document = document.toEntity(),
+            storySteps = storySteps,
+            comments = comments,
+        )
     }
 
     override suspend fun saveDocumentMetadata(document: Document) {
@@ -214,15 +213,7 @@ class RoomDocumentRepository(
     }
 
     override suspend fun deleteByWorkspace(userId: String) {
-        val documentIds = documentEntityDao.loadAllDocuments()
-            .filter { document -> document.workspaceId == userId }
-            .map { document -> document.id }
-
-        if (documentIds.isNotEmpty()) {
-            commentEntityDao?.deleteByDocumentIds(documentIds)
-        }
-
-        documentEntityDao.purgeDocumentsByUserId(userId)
+        documentEntityDao.purgeDocumentsWithContentByWorkspace(userId)
     }
 
     override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
@@ -240,7 +231,8 @@ class RoomDocumentRepository(
         parentId: String,
         workspaceId: String
     ): List<Document> =
-        documentEntityDao.loadDocumentsByParentId(parentId).map { it.toModel() }
+        documentEntityDao.loadDocumentsByParentIdForWorkspace(parentId, workspaceId)
+            .map { it.toModel() }
 
     /**
      * This method removes the story units that are not in the root level (they don't have parents)
