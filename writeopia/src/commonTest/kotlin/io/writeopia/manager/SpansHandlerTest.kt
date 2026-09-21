@@ -3,6 +3,7 @@ package io.writeopia.manager
 import io.writeopia.sdk.manager.SpansHandler
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
+import io.writeopia.sdk.models.story.StoryStep
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
