@@ -17,6 +17,8 @@ import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.command.CommandInfo
 import io.writeopia.sdk.models.command.CommandTrigger
 import io.writeopia.sdk.models.command.TypeInfo
+import io.writeopia.sdk.models.comment.Comment
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
@@ -221,6 +223,11 @@ class WriteopiaStateManager(
     private val _documentInfo: MutableStateFlow<DocumentInfo> =
         MutableStateFlow(DocumentInfo.empty())
 
+    private val _commentConversations =
+        MutableStateFlow<List<CommentConversation>>(emptyList())
+    val commentConversations: StateFlow<List<CommentConversation>> =
+        _commentConversations.asStateFlow()
+
     private val isEditable: Boolean
         get() = !_documentInfo.value.isLocked
 
@@ -246,8 +253,8 @@ class WriteopiaStateManager(
         }
 
     val currentDocument: StateFlow<Document?> =
-        combine(_documentInfo, _currentStory) { info, state ->
-            parseDocument(info, state)
+        combine(_documentInfo, _currentStory, _commentConversations) { info, state, conversations ->
+            parseDocument(info, state, conversations)
         }.stateIn(coroutineScope, SharingStarted.Lazily, null)
 
     /**
@@ -386,7 +393,7 @@ class WriteopiaStateManager(
     }
 
     fun getDocument(): Document =
-        parseDocument(_documentInfo.value, _currentStory.value)
+        parseDocument(_documentInfo.value, _currentStory.value, _commentConversations.value)
 
     fun liveSync(sharedEditionManager: SharedEditionManager) {
         coroutineScope.launch(dispatcher) {
@@ -426,6 +433,7 @@ class WriteopiaStateManager(
 
         backStackManager.addState(withNextPositions)
 
+        _commentConversations.value = emptyList()
         _documentInfo.value = documentInfo
         _currentStory.value = withNextPositions
     }
@@ -440,6 +448,7 @@ class WriteopiaStateManager(
         if (isInitialized()) return
 
         initialized = true
+        _commentConversations.value = document.commentConversations
 
         val stories = document.content
         val state =
@@ -461,6 +470,7 @@ class WriteopiaStateManager(
      * @param document [Document] the updated document
      */
     fun updateDocument(document: Document) {
+        _commentConversations.value = document.commentConversations
         val stories = document.content
         val normalized = stepsNormalizer(stories.toEditState())
         val withNextPositions = NextPositionCalculator.calculate(normalized)
@@ -806,6 +816,7 @@ class WriteopiaStateManager(
                     }
                 }
 
+                cleanupOrphanCommentConversations()
                 _scrollToPosition.value = -1
             }
         }
@@ -986,6 +997,7 @@ class WriteopiaStateManager(
                 _documentInfo.value.id
             )?.let { newState ->
                 _currentStory.value = newState
+                cleanupOrphanCommentConversations()
             }
         }
     }
@@ -1015,6 +1027,7 @@ class WriteopiaStateManager(
 
             backStackManager.addState(_currentStory.value)
             _currentStory.value = state
+            cleanupOrphanCommentConversations()
         }
     }
 
@@ -1046,6 +1059,7 @@ class WriteopiaStateManager(
                 lastEdit = LastEdit.BulkDeleteEdition(deletedIds, updatedSteps)
             )
             _currentStory.value = state
+            cleanupOrphanCommentConversations()
         }
     }
 
@@ -1107,6 +1121,163 @@ class WriteopiaStateManager(
         val info = _documentInfo.value
         if (info.isFavorite != isFavorite) {
             _documentInfo.value = info.copy(isFavorite = isFavorite)
+        }
+    }
+
+    fun createComment(text: String): CommentConversation? {
+        if (!isEditable) return null
+
+        val state = _currentStory.value
+        val selection = state.selection
+        val (start, end) = selection.sortedPositions()
+        if (start == end) return null
+
+        val story = state.stories[selection.position] ?: return null
+        val textLength = story.text?.length ?: return null
+        if (start < 0 || end > textLength) return null
+
+        val comment = Comment(text = text)
+        val conversation = CommentConversation(comments = listOf(comment))
+        _commentConversations.value = _commentConversations.value + conversation
+        _currentStory.value = writeopiaManager.addSpan(
+            state,
+            selection.position,
+            SpanInfo.create(start, end, Span.COMMENT, conversation.id)
+        )
+        persistCommentDocument()
+        return conversation
+    }
+
+    fun addComment(conversationId: String, text: String): Comment? {
+        if (!isEditable) return null
+
+        val conversations = _commentConversations.value
+        val index = conversations.indexOfFirst { it.id == conversationId }
+        if (index < 0) return null
+
+        val comment = Comment(text = text)
+        val updated = conversations[index].copy(
+            comments = conversations[index].comments + comment
+        )
+        _commentConversations.value = conversations.toMutableList().apply {
+            this[index] = updated
+        }
+        persistCommentDocument()
+        return comment
+    }
+
+    fun getCommentConversationAtCursor(): CommentConversation? {
+        val state = _currentStory.value
+        val selection = state.selection
+        val story = state.stories[selection.position] ?: return null
+
+        val conversationId = story.spans
+            .asSequence()
+            .filter { it.span == Span.COMMENT && it.isInside(selection.start) }
+            .sortedWith(compareBy<SpanInfo> { it.size() }.thenBy { it.start })
+            .mapNotNull { it.extra }
+            .firstOrNull()
+            ?: return null
+
+        return _commentConversations.value.firstOrNull { it.id == conversationId }
+    }
+
+    fun getCommentConversationAtSelection(): CommentConversation? {
+        val state = _currentStory.value
+        val selection = state.selection
+        val story = state.stories[selection.position] ?: return null
+        val (start, end) = selection.sortedPositions()
+
+        val conversationId = story.spans
+            .asSequence()
+            .filter { span ->
+                span.span == Span.COMMENT &&
+                    if (start == end) {
+                        span.isInside(start)
+                    } else {
+                        span.start <= end && span.end >= start
+                    }
+            }
+            .sortedWith(compareBy<SpanInfo> { it.start }.thenBy { it.end })
+            .mapNotNull { it.extra }
+            .firstOrNull()
+            ?: return null
+
+        return _commentConversations.value.firstOrNull { it.id == conversationId }
+    }
+
+    fun deleteComment(conversationId: String, commentId: String): Boolean {
+        if (!isEditable) return false
+
+        val conversations = _commentConversations.value
+        val conversation = conversations.firstOrNull { it.id == conversationId } ?: return false
+        if (conversation.comments.none { it.id == commentId }) return false
+
+        val remainingComments = conversation.comments.filterNot { it.id == commentId }
+        if (remainingComments.isNotEmpty()) {
+            _commentConversations.value = conversations.map {
+                if (it.id == conversationId) {
+                    it.copy(comments = remainingComments)
+                } else {
+                    it
+                }
+            }
+        } else {
+            _commentConversations.value = conversations.filterNot { it.id == conversationId }
+            removeCommentSpans(conversationId)
+        }
+
+        persistCommentDocument()
+        return true
+    }
+
+    private fun removeCommentSpans(conversationId: String) {
+        val state = _currentStory.value
+        val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
+        val stories = state.stories.mapValues { (position, story) ->
+            val spans = story.spans.filterNot { span ->
+                span.span == Span.COMMENT && span.extra == conversationId
+            }.toSet()
+
+            if (spans != story.spans) {
+                story.copy(
+                    localId = GenerateId.generate(),
+                    spans = spans
+                ).also { changedSteps += position to it }
+            } else {
+                story
+            }
+        }
+
+        if (changedSteps.isNotEmpty()) {
+            _currentStory.value = state.copy(
+                stories = stories,
+                lastEdit = LastEdit.BulkEdition(changedSteps)
+            )
+        }
+    }
+
+    private fun cleanupOrphanCommentConversations() {
+        val referencedConversationIds = _currentStory.value.stories.values
+            .asSequence()
+            .flatMap { it.spans.asSequence() }
+            .filter { it.span == Span.COMMENT }
+            .mapNotNull { it.extra }
+            .toSet()
+
+        val conversations = _commentConversations.value
+        val remaining = conversations.filter { it.id in referencedConversationIds }
+        if (remaining.size != conversations.size) {
+            _commentConversations.value = remaining
+            persistCommentDocument()
+        }
+    }
+
+    private fun persistCommentDocument() {
+        val repository = documentRepository ?: return
+        val document = getDocument()
+        coroutineScope.launch(dispatcher) {
+            repository.saveDocument(document)
         }
     }
 
@@ -1740,6 +1911,7 @@ class WriteopiaStateManager(
                     newSelectionPosition
                 )
             )
+            cleanupOrphanCommentConversations()
         }
     }
 
@@ -1928,7 +2100,11 @@ class WriteopiaStateManager(
         _onEditPositions.value = getStories().keys - setOf(0.0)
     }
 
-    private fun parseDocument(info: DocumentInfo, state: StoryState): Document {
+    private fun parseDocument(
+        info: DocumentInfo,
+        state: StoryState,
+        conversations: List<CommentConversation>,
+    ): Document {
         val titleFromContent = state.stories.values.firstOrNull { storyStep ->
             // Todo: Change the type of change to allow different types. The client code should decide what is a title
             // It is also interesting to inv
@@ -1945,7 +2121,8 @@ class WriteopiaStateManager(
             workspaceId = localUserId ?: "disconnected_user",
             parentId = info.parentId,
             isLocked = info.isLocked,
-            icon = info.icon
+            icon = info.icon,
+            commentConversations = conversations
         )
     }
 
