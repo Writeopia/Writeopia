@@ -2,10 +2,15 @@
 
 package io.writeopia.sdk.persistence.sqldelight.dao.sql
 
+import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import io.writeopia.sdk.models.comment.Comment
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
@@ -33,6 +38,7 @@ class SqlDelightDocumentRepositoryTest {
     private val documentSqlDao: DocumentSqlDao = DocumentSqlDao(
         database.documentEntityQueries,
         database.storyStepEntityQueries,
+        database.commentEntityQueries,
     )
 
     private val documentRepository = SqlDelightDocumentRepository(documentSqlDao)
@@ -194,4 +200,69 @@ class SqlDelightDocumentRepositoryTest {
         assertEquals(1, newDocument.size)
         assertEquals(documentId, newDocument.first().id)
     }
+    @Test
+    fun `comments survive save and load in sqldelight`() = runTest {
+        val now = Clock.System.now()
+        val conversationId = "conversation-1"
+        val document = Document(
+            id = "document-with-comments",
+            title = "Comments",
+            content = mapOf(
+                0.0 to StoryStep(
+                    type = StoryTypes.TEXT.type,
+                    text = "Commented text",
+                    spans = setOf(
+                        SpanInfo.create(0, 9, Span.COMMENT, conversationId)
+                    ),
+                    dbPosition = 0.0,
+                )
+            ),
+            commentConversations = listOf(
+                CommentConversation(
+                    id = conversationId,
+                    comments = listOf(
+                        Comment(id = "comment-1", text = "First"),
+                        Comment(id = "comment-2", text = "Second"),
+                    )
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+        )
+
+        documentRepository.saveDocument(document)
+
+        assertEquals(
+            document,
+            documentRepository.loadDocumentById(document.id, document.workspaceId)
+        )
+    }
+
+    @Test
+    fun `hard delete removes comment rows in sqldelight`() = runTest {
+        val now = Clock.System.now()
+        val document = Document(
+            id = "document-to-delete",
+            commentConversations = listOf(
+                CommentConversation(
+                    id = "conversation-delete",
+                    comments = listOf(Comment(id = "comment-delete", text = "Delete me"))
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+        )
+
+        documentRepository.saveDocument(document)
+        documentRepository.hardDeleteDocumentByIds(setOf(document.id), document.workspaceId)
+
+        assertTrue(database.commentEntityQueries.selectByDocumentId(document.id).awaitAsList().isEmpty())
+    }
+
 }

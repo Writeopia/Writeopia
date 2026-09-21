@@ -4,6 +4,8 @@ package io.writeopia.sdk.persistence.sqldelight.dao
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
+import io.writeopia.sdk.models.comment.Comment
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.link.DocumentLink
@@ -16,6 +18,7 @@ import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sdk.models.extensions.sortWithOrderBy
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.persistence.sqldelight.toLong
+import io.writeopia.sdk.sql.CommentEntityQueries
 import io.writeopia.sdk.sql.DocumentEntityQueries
 import io.writeopia.sdk.sql.StoryStepEntity
 import io.writeopia.sdk.sql.StoryStepEntityQueries
@@ -26,6 +29,7 @@ import kotlin.time.Instant
 class DocumentSqlDao(
     private val documentQueries: DocumentEntityQueries?,
     private val storyStepQueries: StoryStepEntityQueries?,
+    private val commentQueries: CommentEntityQueries? = null,
 ) : DocumentSearch {
 
     override suspend fun search(
@@ -71,6 +75,20 @@ class DocumentSqlDao(
         storyStepQueries?.deleteByDocumentId(document.id)
         document.content.values.forEachIndexed { i, storyStep ->
             insertStoryStep(storyStep, i.toDouble(), document.id)
+        }
+
+        commentQueries?.deleteByDocumentId(document.id)
+        document.commentConversations.forEachIndexed { conversationPosition, conversation ->
+            conversation.comments.forEachIndexed { commentPosition, comment ->
+                commentQueries?.insert(
+                    comment.id,
+                    conversation.id,
+                    document.id,
+                    conversationPosition.toLong(),
+                    commentPosition.toLong(),
+                    comment.text,
+                )
+            }
         }
 
         insertDocument(document)
@@ -262,6 +280,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -341,6 +360,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -423,6 +443,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -505,6 +526,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -585,6 +607,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -622,6 +645,7 @@ class DocumentSqlDao(
     suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
         // Use transaction from documentQueries (both queries share the same driver)
         documentQueries?.transaction {
+            commentQueries?.deleteByDocumentIds(ids)
             storyStepQueries?.deleteByDocumentIds(ids)
             documentQueries.hardDeleteByIds(ids, workspaceId)
         }
@@ -708,6 +732,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -785,6 +810,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -865,6 +891,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -942,6 +969,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -993,6 +1021,25 @@ class DocumentSqlDao(
     suspend fun updateStoryStepUrl(url: String, id: String) {
         storyStepQueries?.updateUrl(url, id)
     }
+
+    private suspend fun loadCommentConversations(documentId: String): List<CommentConversation> =
+        commentQueries
+            ?.selectByDocumentId(documentId)
+            ?.awaitAsList()
+            ?.groupBy { entity -> entity.conversation_id }
+            ?.values
+            ?.map { entities ->
+                CommentConversation(
+                    id = entities.first().conversation_id,
+                    comments = entities.map { entity ->
+                        Comment(
+                            id = entity.id,
+                            text = entity.text,
+                        )
+                    },
+                )
+            }
+            ?: emptyList()
 
     suspend fun queryUnsyncedImagesSteps(): List<StoryStep> {
         return storyStepQueries?.selectUnSyncedSteps()

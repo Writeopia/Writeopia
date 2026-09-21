@@ -23,6 +23,7 @@ class SqlDelightDaoInjector(
                 documentSqlDao = DocumentSqlDao(
                     documentEntityQueries,
                     storyStepEntityQueries,
+                    commentEntityQueries,
                 )
 
                 documentSqlDao
