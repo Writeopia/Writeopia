@@ -11,6 +11,7 @@ import io.writeopia.sdk.models.CREATED_AT
 import io.writeopia.sdk.models.DOCUMENT_ENTITY
 import io.writeopia.sdk.models.LAST_UPDATED_AT
 import io.writeopia.sdk.models.TITLE
+import io.writeopia.sdk.persistence.entity.comment.COMMENT_ENTITY
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
 import io.writeopia.sdk.persistence.entity.story.STORY_UNIT_ENTITY
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
@@ -162,9 +163,13 @@ interface DocumentEntityDao {
     @Query("DELETE FROM $STORY_UNIT_ENTITY WHERE $STORY_UNIT_ENTITY.document_id IN (:documentIds)")
     suspend fun hardDeleteStoryStepsByDocumentIds(documentIds: List<String>)
 
-    // Atomic hard delete: removes both documents and their story steps in a single transaction (scoped to workspace)
+    @Query("DELETE FROM $COMMENT_ENTITY WHERE document_id IN (:documentIds)")
+    suspend fun hardDeleteCommentsByDocumentIds(documentIds: List<String>)
+
+    // Atomic hard delete: removes the document and all local content owned by it.
     @Transaction
     suspend fun hardDeleteDocumentsWithContentByIds(ids: List<String>, workspaceId: String) {
+        hardDeleteCommentsByDocumentIds(ids)
         hardDeleteStoryStepsByDocumentIds(ids)
         hardDeleteDocumentByIds(ids, workspaceId)
     }

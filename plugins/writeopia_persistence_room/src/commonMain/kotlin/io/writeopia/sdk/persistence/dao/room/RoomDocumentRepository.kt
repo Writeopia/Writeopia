@@ -183,7 +183,6 @@ class RoomDocumentRepository(
     }
 
     override suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
-        commentEntityDao?.deleteByDocumentIds(ids.toList())
         documentEntityDao.hardDeleteDocumentsWithContentByIds(ids.toList(), workspaceId)
     }
 
