@@ -135,8 +135,10 @@ import writeopia.application.core.resources.generated.resources.teams
 import writeopia.application.core.resources.generated.resources.text
 import writeopia.application.core.resources.generated.resources.title
 import writeopia.application.core.resources.generated.resources.type_new_password
+import writeopia.application.core.resources.generated.resources.untitled
 import writeopia.application.core.resources.generated.resources.update_available
 import writeopia.application.core.resources.generated.resources.url
+import writeopia.application.core.resources.generated.resources.username
 import writeopia.application.core.resources.generated.resources.version
 import writeopia.application.core.resources.generated.resources.workspaceName
 import writeopia.application.core.resources.generated.resources.you_are_offline
@@ -424,6 +426,9 @@ object WrStrings {
 
     @Composable
     fun name() = stringResource(Res.string.name)
+
+    @Composable
+    fun username() = stringResource(Res.string.username)
 
     @Composable
     fun font() = stringResource(Res.string.font)

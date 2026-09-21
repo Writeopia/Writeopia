@@ -15,6 +15,7 @@
   <string name="last_updated">Atualização</string>
   <string name="last_created">Criação</string>
   <string name="name">Nome</string>
+  <string name="username">Nome de usuário</string>
   <string name="add_note">Adicionar nota</string>
   <string name="back">Voltar</string>
   <string name="copy_note">Copiar documento</string>

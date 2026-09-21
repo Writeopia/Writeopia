@@ -60,6 +60,7 @@ class RegisterViewModelTest {
         val viewModel = RegisterViewModel(authRepository, authApi)
         viewModel.emailChanged("test@example.com")
         viewModel.nameChanged("Test User")
+        viewModel.usernameChanged("testuser")
         viewModel.workspaceChanged("My Workspace")
         viewModel.passwordChanged("password123")
 
@@ -68,7 +69,7 @@ class RegisterViewModelTest {
         advanceUntilIdle()
 
         // Then - verify register was called and pending email saved (no admin key available)
-        coVerify { authApi.register("Test User", "test@example.com", "My Workspace", "password123", "test@example.com") }
+        coVerify { authApi.register("Test User", "test@example.com", "My Workspace", "password123", "testuser") }
         coVerify { authRepository.saveUser(any(), selected = true) }
         coVerify { authRepository.savePendingConfirmationEmail("test@example.com") }
     }
@@ -81,6 +82,7 @@ class RegisterViewModelTest {
         val viewModel = RegisterViewModel(authRepository, authApi)
         viewModel.emailChanged("test@example.com")
         viewModel.nameChanged("Test User")
+        viewModel.usernameChanged("testuser")
         viewModel.workspaceChanged("My Workspace")
         viewModel.passwordChanged("password123")
 
@@ -100,6 +102,7 @@ class RegisterViewModelTest {
         val viewModel = RegisterViewModel(authRepository, authApi)
         viewModel.emailChanged("test@example.com")
         viewModel.nameChanged("Test User")
+        viewModel.usernameChanged("testuser")
         viewModel.workspaceChanged("My Workspace")
         viewModel.passwordChanged("password123")
 
