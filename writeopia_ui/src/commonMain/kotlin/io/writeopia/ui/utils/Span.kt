@@ -53,6 +53,176 @@ object Spans {
         }
     }
 
+    fun recalculateSpans(
+        spans: Set<SpanInfo>,
+        oldText: String,
+        newText: String,
+        oldSelectionStart: Int,
+        oldSelectionEnd: Int,
+        newSelectionStart: Int,
+    ): Set<SpanInfo> {
+        if (oldText == newText) return spans
+
+        val selectionStart = minOf(oldSelectionStart, oldSelectionEnd)
+        val selectionEnd = maxOf(oldSelectionStart, oldSelectionEnd)
+        val selectionSize = selectionEnd - selectionStart
+        val sizeDifference = newText.length - oldText.length
+
+        val edit = when {
+            selectionSize > 0 -> {
+                val insertedSize = newText.length - (oldText.length - selectionSize)
+                TextEdit(
+                    start = selectionStart,
+                    end = selectionEnd,
+                    insertedSize = insertedSize.coerceAtLeast(0),
+                )
+            }
+
+            sizeDifference > 0 -> TextEdit(
+                start = selectionStart,
+                end = selectionStart,
+                insertedSize = sizeDifference,
+            )
+
+            sizeDifference < 0 -> {
+                val removedSize = -sizeDifference
+                val deleteStart = if (newSelectionStart < selectionStart) {
+                    (selectionStart - removedSize).coerceAtLeast(0)
+                } else {
+                    selectionStart
+                }
+
+                TextEdit(
+                    start = deleteStart,
+                    end = (deleteStart + removedSize).coerceAtMost(oldText.length),
+                    insertedSize = 0,
+                )
+            }
+
+            else -> changedRange(oldText, newText)
+        }
+
+        val afterDeletion = if (edit.end > edit.start) {
+            spans.flatMapTo(mutableSetOf()) { span ->
+                deleteRange(span, edit.start, edit.end)
+            }
+        } else {
+            spans
+        }
+
+        return if (edit.insertedSize > 0) {
+            afterDeletion.flatMapTo(mutableSetOf()) { span ->
+                insertRange(span, edit.start, edit.insertedSize)
+            }
+        } else {
+            afterDeletion
+        }
+    }
+
+    private fun deleteRange(
+        span: SpanInfo,
+        deleteStart: Int,
+        deleteEnd: Int,
+    ): Set<SpanInfo> {
+        val deletedSize = deleteEnd - deleteStart
+
+        if (span.end <= deleteStart) return setOf(span)
+        if (span.start >= deleteEnd) return setOf(span.move(-deletedSize))
+
+        val left = if (span.start < deleteStart) {
+            SpanInfo.create(
+                start = span.start,
+                end = minOf(span.end, deleteStart),
+                span = span.span,
+                extra = span.extra,
+            )
+        } else {
+            null
+        }
+
+        val right = if (span.end > deleteEnd) {
+            SpanInfo.create(
+                start = maxOf(span.start, deleteEnd) - deletedSize,
+                end = span.end - deletedSize,
+                span = span.span,
+                extra = span.extra,
+            )
+        } else {
+            null
+        }
+
+        return when {
+            left != null && right != null -> setOf(
+                SpanInfo.create(
+                    start = left.start,
+                    end = right.end,
+                    span = span.span,
+                    extra = span.extra,
+                )
+            )
+
+            left != null -> setOf(left)
+            right != null -> setOf(right)
+            else -> emptySet()
+        }
+    }
+
+    private fun insertRange(
+        span: SpanInfo,
+        position: Int,
+        insertedSize: Int,
+    ): Set<SpanInfo> {
+        if (position < span.start) return setOf(span.move(insertedSize))
+        if (position > span.end) return setOf(span)
+
+        if (span.expandable()) {
+            return setOf(span.copy(end = span.end + insertedSize))
+        }
+
+        if (position == span.start) return setOf(span.move(insertedSize))
+        if (position == span.end) return setOf(span)
+
+        return setOf(
+            SpanInfo.create(
+                start = span.start,
+                end = position,
+                span = span.span,
+                extra = span.extra,
+            ),
+            SpanInfo.create(
+                start = position + insertedSize,
+                end = span.end + insertedSize,
+                span = span.span,
+                extra = span.extra,
+            ),
+        )
+    }
+
+    private fun changedRange(oldText: String, newText: String): TextEdit {
+        val prefix = oldText.commonPrefixWith(newText).length
+        val maxSuffix = minOf(oldText.length - prefix, newText.length - prefix)
+        var suffix = 0
+
+        while (
+            suffix < maxSuffix &&
+            oldText[oldText.lastIndex - suffix] == newText[newText.lastIndex - suffix]
+        ) {
+            suffix++
+        }
+
+        return TextEdit(
+            start = prefix,
+            end = oldText.length - suffix,
+            insertedSize = newText.length - prefix - suffix,
+        )
+    }
+
+    private data class TextEdit(
+        val start: Int,
+        val end: Int,
+        val insertedSize: Int,
+    )
+
     fun recalculateSpans(spans: Set<SpanInfo>, position: Int, change: Int): Set<SpanInfo> {
         val toChangeSize = spans
             .filterTo(mutableSetOf()) { span ->
