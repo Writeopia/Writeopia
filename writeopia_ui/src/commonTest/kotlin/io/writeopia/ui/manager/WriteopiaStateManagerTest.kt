@@ -1165,7 +1165,6 @@ class WriteopiaStateManagerTest {
         }
     }
 
-
     @Test
     fun lineBreakTextInputShouldUseRecalculatedCommentSpans() = runTest {
         val now = Clock.System.now()
