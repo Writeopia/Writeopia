@@ -142,7 +142,6 @@ class ContentHandlerTest {
         )
     }
 
-
     @Test
     fun `line break should split a partially covered comment range`() {
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
@@ -199,6 +198,38 @@ class ContentHandlerTest {
                 SpanInfo.create(0, 5, Span.COMMENT, conversationId),
             ),
             spans,
+        )
+    }
+
+    @Test
+    fun `erasing a line should rejoin adjacent parts of the same comment`() {
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val conversationId = "conversation-1"
+        val first = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "hello",
+            spans = setOf(
+                SpanInfo.create(0, 5, Span.COMMENT, conversationId)
+            ),
+            nextPosition = 1.0,
+        )
+        val second = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "world",
+            spans = setOf(
+                SpanInfo.create(0, 5, Span.COMMENT, conversationId)
+            ),
+            previousPosition = 0.0,
+        )
+
+        val newState = contentHandler.eraseStory(
+            Action.EraseStory(second, 1.0),
+            mapOf(0.0 to first, 1.0 to second),
+        )
+
+        assertEquals(
+            setOf(SpanInfo.create(0, 10, Span.COMMENT, conversationId)),
+            newState.stories.getValue(0.0).spans,
         )
     }
 
