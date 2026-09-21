@@ -222,8 +222,11 @@ class DocumentSqlDao(
                 )
             }
 
-    suspend fun loadDocumentWithContentByIds(id: List<String>): List<Document> =
-        documentQueries?.selectWithContentByIds(id)
+    suspend fun loadDocumentWithContentByIds(
+        id: List<String>,
+        workspaceId: String,
+    ): List<Document> =
+        documentQueries?.selectWithContentByIds(id, workspaceId)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -643,11 +646,19 @@ class DocumentSqlDao(
      * Both document and story step deletions are performed atomically in a transaction.
      */
     suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
-        // Use transaction from documentQueries (both queries share the same driver)
-        documentQueries?.transaction {
-            commentQueries?.deleteByDocumentIds(ids)
-            storyStepQueries?.deleteByDocumentIds(ids)
-            documentQueries.hardDeleteByIds(ids, workspaceId)
+        val ownedIds = documentQueries
+            ?.selectIdsByIdsAndWorkspace(ids, workspaceId)
+            ?.awaitAsList()
+            ?.toSet()
+            ?: emptySet()
+
+        if (ownedIds.isEmpty()) return
+
+        // Use transaction from documentQueries (all queries share the same driver).
+        documentQueries.transaction {
+            commentQueries?.deleteByDocumentIds(ownedIds)
+            storyStepQueries?.deleteByDocumentIds(ownedIds)
+            documentQueries.hardDeleteByIds(ownedIds, workspaceId)
         }
     }
 
