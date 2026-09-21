@@ -115,6 +115,34 @@ class ContentHandlerTest {
     }
 
     @Test
+    fun `line break should preserve link extra on both lines`() {
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val url = "https://writeopia.io"
+        val storyStep = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "link1\nlink2",
+            spans = setOf(
+                SpanInfo.create(0, 11, Span.LINK, url)
+            )
+        )
+
+        val (_, newState) = contentHandler.onLineBreak(
+            mapOf(0.0 to storyStep),
+            Action.LineBreak(storyStep, 0.0)
+        )
+
+        val sortedStories = newState.stories.entries.sortedBy { it.key }
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.LINK, url)),
+            sortedStories[0].value.spans,
+        )
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.LINK, url)),
+            sortedStories[1].value.spans,
+        )
+    }
+
+    @Test
     fun `line break should split comment span and preserve conversation id`() {
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
         val conversationId = "conversation-1"
