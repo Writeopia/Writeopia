@@ -12,16 +12,21 @@ data class SpanInfo private constructor(
 ) {
 
     operator fun plus(spanInfo: SpanInfo) =
-        if (spanInfo.span == spanInfo.span) {
+        if (hasSameIdentity(spanInfo)) {
             val minStart = min(this.start, spanInfo.start)
             val maxEnd = max(this.end, spanInfo.end)
 
             this.copy(start = minStart, end = maxEnd)
         } else {
             throw IllegalArgumentException(
-                "The spans being summed are not the same. Span1: ${this.span.label}, Span2: ${spanInfo.span.label}"
+                "The spans being summed are not the same. " +
+                    "Span1: ${this.span.label} (${this.extra}), " +
+                    "Span2: ${spanInfo.span.label} (${spanInfo.extra})"
             )
         }
+
+    fun hasSameIdentity(spanInfo: SpanInfo): Boolean =
+        span == spanInfo.span && extra == spanInfo.extra
 
     fun changeSize(amount: Int): SpanInfo = this.copy(end = end + amount)
 

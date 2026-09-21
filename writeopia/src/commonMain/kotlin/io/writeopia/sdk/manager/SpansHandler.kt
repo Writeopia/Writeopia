@@ -12,10 +12,13 @@ object SpansHandler {
         return when {
             spanSet.contains(newSpan) -> (spanSet - newSpan)
 
-            !spanSet.any { it.span == newSpan.span } -> (spanSet + newSpan)
+            !spanSet.any { it.hasSameIdentity(newSpan) } -> (spanSet + newSpan)
 
             else -> {
-                val currentSpan = spanSet.first { it.span == newSpan.span }
+                val currentSpan = spanSet
+                    .filter { it.hasSameIdentity(newSpan) }
+                    .firstOrNull { it.intersection(newSpan) != Intersection.OUTSIDE }
+                    ?: return spanSet + newSpan
 
                 val intersection: Intersection = currentSpan.intersection(newSpan)
 
@@ -33,12 +36,14 @@ object SpansHandler {
                             SpanInfo.create(
                                 currentStart,
                                 newStart,
-                                currentSpan.span
+                                currentSpan.span,
+                                currentSpan.extra,
                             ),
                             SpanInfo.create(
                                 newEnd,
                                 currentEnd,
-                                currentSpan.span
+                                currentSpan.span,
+                                currentSpan.extra,
                             ),
                         ).filter { it.size() > 0 }
 

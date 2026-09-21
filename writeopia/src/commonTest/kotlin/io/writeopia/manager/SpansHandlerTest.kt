@@ -86,6 +86,46 @@ class SpansHandlerTest {
         assertEquals(expected, newSpans)
     }
 
+
+    @Test
+    fun `comment spans from different conversations should live together`() {
+        val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(2, 7, Span.COMMENT, "conversation-2")
+
+        val result = SpansHandler.toggleSpans(setOf(first), second)
+
+        assertEquals(setOf(first, second), result)
+    }
+
+    @Test
+    fun `splitting a comment span should preserve the conversation id`() {
+        val comment = SpanInfo.create(0, 10, Span.COMMENT, "conversation-1")
+        val selection = SpanInfo.create(2, 8, Span.COMMENT, "conversation-1")
+
+        val result = SpansHandler.toggleSpans(setOf(comment), selection)
+
+        assertEquals(
+            setOf(
+                SpanInfo.create(0, 2, Span.COMMENT, "conversation-1"),
+                SpanInfo.create(8, 10, Span.COMMENT, "conversation-1"),
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `intersecting comment spans with the same conversation should preserve identity`() {
+        val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(3, 10, Span.COMMENT, "conversation-1")
+
+        val result = SpansHandler.toggleSpans(setOf(first), second)
+
+        assertEquals(
+            setOf(SpanInfo.create(0, 10, Span.COMMENT, "conversation-1")),
+            result,
+        )
+    }
+
     @Test
     fun `when adding a containing span only the new one should live`() {
         val boldSpan = SpanInfo.create(start = 2, end = 10, Span.BOLD)

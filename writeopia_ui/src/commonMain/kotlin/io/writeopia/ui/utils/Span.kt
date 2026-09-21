@@ -69,6 +69,7 @@ object Spans {
         val toMove = spans.filterTo(mutableSetOf()) { span -> span.isBefore(position) }
         val moved = toMove.map { span -> span.move(change) }
 
-        return spans - toChangeSize + sizeChanged - toMove + moved
+        return (spans - toChangeSize + sizeChanged - toMove + moved)
+            .filterTo(mutableSetOf()) { span -> span.end > span.start }
     }
 }
