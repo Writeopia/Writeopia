@@ -125,6 +125,21 @@ class SpansHandlerTest {
         )
     }
 
+
+    @Test
+    fun `intersecting fragmented spans with the same identity should normalize`() {
+        val first = SpanInfo.create(0, 2, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(8, 10, Span.COMMENT, "conversation-1")
+        val bridge = SpanInfo.create(1, 9, Span.COMMENT, "conversation-1")
+
+        val result = SpansHandler.toggleSpans(setOf(first, second), bridge)
+
+        assertEquals(
+            setOf(SpanInfo.create(0, 10, Span.COMMENT, "conversation-1")),
+            result,
+        )
+    }
+
     @Test
     fun `when adding a containing span only the new one should live`() {
         val boldSpan = SpanInfo.create(start = 2, end = 10, Span.BOLD)

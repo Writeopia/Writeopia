@@ -10,9 +10,9 @@ object SpansHandler {
 
     fun toggleSpans(spanSet: Set<SpanInfo>, newSpan: SpanInfo): Set<SpanInfo> {
         return when {
-            spanSet.contains(newSpan) -> (spanSet - newSpan)
+            spanSet.contains(newSpan) -> normalizeSpans(spanSet - newSpan)
 
-            !spanSet.any { it.hasSameIdentity(newSpan) } -> (spanSet + newSpan)
+            !spanSet.any { it.hasSameIdentity(newSpan) } -> normalizeSpans(spanSet + newSpan)
 
             else -> {
                 val currentSpan = spanSet
@@ -47,27 +47,46 @@ object SpansHandler {
                             ),
                         ).filter { it.size() > 0 }
 
-                        removed + splitSpans
+                        normalizeSpans(removed + splitSpans)
                     }
 
                     Intersection.INTERSECT -> {
                         val removed = (spanSet - currentSpan)
                         val expandedSpan = (currentSpan + newSpan)
-                        removed + expandedSpan
+                        normalizeSpans(removed + expandedSpan)
                     }
 
-                    Intersection.OUTSIDE -> spanSet + newSpan
+                    Intersection.OUTSIDE -> normalizeSpans(spanSet + newSpan)
 
                     Intersection.INSIDE -> {
                         val removed = (spanSet - currentSpan)
-                        removed + newSpan
+                        normalizeSpans(removed + newSpan)
                     }
 
-                    Intersection.MATCH -> (spanSet - currentSpan)
+                    Intersection.MATCH -> normalizeSpans(spanSet - currentSpan)
                 }
             }
         }
     }
+
+    private fun normalizeSpans(spanSet: Set<SpanInfo>): Set<SpanInfo> =
+        spanSet
+            .groupBy { span -> span.span to span.extra }
+            .values
+            .flatMapTo(mutableSetOf()) { group ->
+                val normalized = mutableListOf<SpanInfo>()
+
+                group.sortedBy { span -> span.start }.forEach { span ->
+                    val previous = normalized.lastOrNull()
+                    if (previous != null && span.start < previous.end) {
+                        normalized[normalized.lastIndex] = previous + span
+                    } else {
+                        normalized.add(span)
+                    }
+                }
+
+                normalized
+            }
 
     fun toggleSpansForManyStories(
         storySteps: Map<Double, StoryStep>,
