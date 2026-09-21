@@ -9,6 +9,44 @@ import kotlin.test.assertTrue
 class SpanTest {
 
     @Test
+    fun `replacing the full comment range should preserve its identity`() {
+        val comment = SpanInfo.create(2, 8, Span.COMMENT, "conversation-1")
+
+        val result = Spans.recalculateSpans(
+            spans = setOf(comment),
+            oldText = "abcdefghij",
+            newText = "abXYij",
+            oldSelectionStart = 2,
+            oldSelectionEnd = 8,
+            newSelectionStart = 4,
+        )
+
+        assertEquals(
+            setOf(SpanInfo.create(2, 4, Span.COMMENT, "conversation-1")),
+            result,
+        )
+    }
+
+    @Test
+    fun `replacing bold text should keep formatting on the replacement`() {
+        val bold = SpanInfo.create(1, 4, Span.BOLD)
+
+        val result = Spans.recalculateSpans(
+            spans = setOf(bold),
+            oldText = "abcdef",
+            newText = "aXYef",
+            oldSelectionStart = 1,
+            oldSelectionEnd = 4,
+            newSelectionStart = 3,
+        )
+
+        assertEquals(
+            setOf(SpanInfo.create(1, 3, Span.BOLD)),
+            result,
+        )
+    }
+
+    @Test
     fun `selected deletion before a span should clip and move the surviving range`() {
         val comment = SpanInfo.create(2, 8, Span.COMMENT, "conversation-1")
 
