@@ -96,7 +96,6 @@ class SpansHandlerTest {
         assertEquals(setOf(first, second), result)
     }
 
-
     @Test
     fun `removing one comment should not remove another conversation`() {
         val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
@@ -135,7 +134,6 @@ class SpansHandlerTest {
             result,
         )
     }
-
 
     @Test
     fun `intersecting fragmented spans with the same identity should normalize`() {
