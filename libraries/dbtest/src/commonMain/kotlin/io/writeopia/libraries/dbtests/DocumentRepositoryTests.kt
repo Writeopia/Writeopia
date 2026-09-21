@@ -184,7 +184,8 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
                     type = StoryTypes.TEXT.type,
                     text = "Commented text",
                     spans = setOf(
-                        SpanInfo.create(0, 9, Span.COMMENT, conversationId)
+                        SpanInfo.create(0, 9, Span.COMMENT, conversationId),
+                        SpanInfo.create(10, 13, Span.COMMENT, "conversation-2"),
                     ),
                     dbPosition = 0.0,
                 )
@@ -196,7 +197,13 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
                         Comment(id = "comment-1", text = "First"),
                         Comment(id = "comment-2", text = "Second"),
                     )
-                )
+                ),
+                CommentConversation(
+                    id = "conversation-2",
+                    comments = listOf(
+                        Comment(id = "comment-3", text = "Third"),
+                    )
+                ),
             ),
             createdAt = now,
             lastUpdatedAt = now,
@@ -215,6 +222,14 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         val loadedDocument = documentRepository.loadDocumentById(document.id, document.workspaceId)
 
         assertEquals(document, loadedDocument)
+    }
+
+    suspend fun collectionLoadPreservesComments() {
+        val document = saveDocumentWithComments()
+        val loadedDocument = documentRepository.loadDocumentsWorkspace(document.workspaceId)
+            .first { it.id == document.id }
+
+        assertEquals(document.commentConversations, loadedDocument.commentConversations)
     }
 
     suspend fun saveSimpleDocumentAndLoadByParentId() {

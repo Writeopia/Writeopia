@@ -117,6 +117,11 @@ class DocumentRoomRepositoryTest {
     }
 
     @Test
+    fun collectionLoadPreservesComments() = runTest {
+        documentRepositoryTests.collectionLoadPreservesComments()
+    }
+
+    @Test
     fun hardDeleteRemovesComments() = runTest {
         val document = documentRepositoryTests.saveDocumentWithComments()
 

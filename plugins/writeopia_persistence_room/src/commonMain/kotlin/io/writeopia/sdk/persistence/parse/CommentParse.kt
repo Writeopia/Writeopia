@@ -21,6 +21,7 @@ fun List<CommentConversation>.toCommentEntities(documentId: String): List<Commen
 fun List<CommentEntity>.toCommentConversations(): List<CommentConversation> =
     groupBy { it.conversationId }
         .values
+        .sortedBy { entities -> entities.minOf { it.conversationPosition } }
         .map { entities ->
             CommentConversation(
                 id = entities.first().conversationId,

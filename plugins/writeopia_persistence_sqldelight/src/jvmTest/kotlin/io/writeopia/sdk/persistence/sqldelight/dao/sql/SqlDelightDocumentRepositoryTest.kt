@@ -239,6 +239,10 @@ class SqlDelightDocumentRepositoryTest {
             document,
             documentRepository.loadDocumentById(document.id, document.workspaceId)
         )
+
+        val loadedFromWorkspace = documentRepository.loadDocumentsWorkspace(document.workspaceId)
+            .first { it.id == document.id }
+        assertEquals(document.commentConversations, loadedFromWorkspace.commentConversations)
     }
 
     @Test

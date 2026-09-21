@@ -1028,10 +1028,13 @@ class DocumentSqlDao(
             ?.awaitAsList()
             ?.groupBy { entity -> entity.conversation_id }
             ?.values
+            ?.sortedBy { entities -> entities.minOf { it.conversation_position } }
             ?.map { entities ->
                 CommentConversation(
                     id = entities.first().conversation_id,
-                    comments = entities.map { entity ->
+                    comments = entities
+                        .sortedBy { entity -> entity.comment_position }
+                        .map { entity ->
                         Comment(
                             id = entity.id,
                             text = entity.text,
