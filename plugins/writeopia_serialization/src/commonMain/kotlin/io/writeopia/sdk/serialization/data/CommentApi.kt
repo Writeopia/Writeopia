@@ -11,5 +11,5 @@ data class CommentApi(
 @Serializable
 data class CommentConversationApi(
     val id: String,
-    val comments: List<CommentApi> = emptyList(),
+    val comments: List<CommentApi>,
 )
