@@ -9,6 +9,7 @@ import io.writeopia.persistence.room.WriteopiaApplicationDatabase
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.persistence.dao.CommentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
 import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
 import io.writeopia.sdk.persistence.dao.room.RoomDocumentRepository
@@ -30,6 +31,7 @@ class DocumentRoomRepositoryTest {
     private lateinit var database: WriteopiaApplicationDatabase
     private lateinit var documentEntityDao: DocumentEntityDao
     private lateinit var storyUnitEntityDao: StoryUnitEntityDao
+    private lateinit var commentEntityDao: CommentEntityDao
     private lateinit var documentRepository: DocumentRepository
     private lateinit var documentRepositoryTests: DocumentRepositoryTests
 
@@ -43,8 +45,13 @@ class DocumentRoomRepositoryTest {
 
         documentEntityDao = database.documentDao()
         storyUnitEntityDao = database.storyUnitDao()
+        commentEntityDao = database.commentDao()
 
-        documentRepository = RoomDocumentRepository(documentEntityDao, storyUnitEntityDao)
+        documentRepository = RoomDocumentRepository(
+            documentEntityDao,
+            storyUnitEntityDao,
+            commentEntityDao,
+        )
         documentRepositoryTests = DocumentRepositoryTests(documentRepository)
     }
 
@@ -102,6 +109,20 @@ class DocumentRoomRepositoryTest {
     @Test
     fun saveSimpleDocumentAndLoadByParentId() = runTest {
         documentRepositoryTests.saveSimpleDocumentAndLoadByParentId()
+    }
+
+    @Test
+    fun saveAndLoadDocumentWithComments() = runTest {
+        documentRepositoryTests.saveAndLoadDocumentWithComments()
+    }
+
+    @Test
+    fun hardDeleteRemovesComments() = runTest {
+        val document = documentRepositoryTests.saveDocumentWithComments()
+
+        documentRepository.hardDeleteDocumentByIds(setOf(document.id), document.workspaceId)
+
+        assertTrue(commentEntityDao.loadByDocumentId(document.id).isEmpty())
     }
 
     @Test

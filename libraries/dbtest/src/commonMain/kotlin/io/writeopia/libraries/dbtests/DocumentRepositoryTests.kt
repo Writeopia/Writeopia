@@ -2,8 +2,12 @@
 
 package io.writeopia.libraries.dbtests
 
+import io.writeopia.sdk.models.comment.Comment
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
@@ -167,6 +171,50 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         documentRepository.unFavoriteDocumentByIds(setOf(id))
         val loadedDocument2 = documentRepository.loadDocumentById(id, workspaceId)
         assertEquals(loadedDocument2?.favorite, false)
+    }
+
+    suspend fun saveDocumentWithComments(): Document {
+        val now = now()
+        val conversationId = "conversation-1"
+        val document = Document(
+            id = GenerateId.generate(),
+            title = "Document with comments",
+            content = mapOf(
+                0.0 to StoryStep(
+                    type = StoryTypes.TEXT.type,
+                    text = "Commented text",
+                    spans = setOf(
+                        SpanInfo.create(0, 9, Span.COMMENT, conversationId)
+                    ),
+                    dbPosition = 0.0,
+                )
+            ),
+            commentConversations = listOf(
+                CommentConversation(
+                    id = conversationId,
+                    comments = listOf(
+                        Comment(id = "comment-1", text = "First"),
+                        Comment(id = "comment-2", text = "Second"),
+                    )
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+            isLocked = false,
+        )
+
+        documentRepository.saveDocument(document)
+        return document
+    }
+
+    suspend fun saveAndLoadDocumentWithComments() {
+        val document = saveDocumentWithComments()
+        val loadedDocument = documentRepository.loadDocumentById(document.id, document.workspaceId)
+
+        assertEquals(document, loadedDocument)
     }
 
     suspend fun saveSimpleDocumentAndLoadByParentId() {
