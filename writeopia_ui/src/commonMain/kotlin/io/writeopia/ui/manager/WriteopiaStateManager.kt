@@ -1283,7 +1283,7 @@ class WriteopiaStateManager(
         val step = _currentStory.value.stories[position] ?: return
 
         if (lineBreakByContent && text.contains("\n")) {
-            val newStep = step.copy(text = text)
+            val newStep = step.copy(text = text, spans = input.spans)
             onLineBreak(Action.LineBreak(newStep, position), processCommands = processCommands)
         } else {
             val newText = text.replace("\n", "")
