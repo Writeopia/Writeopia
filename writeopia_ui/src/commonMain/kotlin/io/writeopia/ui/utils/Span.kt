@@ -125,7 +125,7 @@ object Spans {
                 insertRange(span, edit.start, edit.insertedSize)
             }
         } else {
-            afterDeletion
+            afterDeletion.toMutableSet()
         }
 
         replacementSpans.forEach { original ->
