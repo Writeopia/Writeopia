@@ -140,6 +140,7 @@ enum class Span(val label: String) {
     HIGHLIGHT_GREEN("HIGHLIGHT_GREEN"),
     HIGHLIGHT_RED("HIGHLIGHT_RED"),
     LINK("LINK"),
+    COMMENT("COMMENT"),
     NONE("");
 
     fun toText() = this.label

@@ -2,6 +2,7 @@
 
 package io.writeopia.sdk.models.document
 
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import kotlin.time.ExperimentalTime
@@ -11,6 +12,7 @@ data class Document(
     override val id: String = GenerateId.generate(),
     override val title: String = "",
     val content: Map<Double, StoryStep> = emptyMap(),
+    val commentConversations: List<CommentConversation> = emptyList(),
     override val createdAt: Instant,
     override val lastUpdatedAt: Instant,
     val lastSyncedAt: Instant?,
