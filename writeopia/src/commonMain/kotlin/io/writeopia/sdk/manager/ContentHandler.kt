@@ -372,7 +372,6 @@ class ContentHandler(
         )
     }
 
-
     private fun splitSpansByLines(
         text: String,
         spans: Set<SpanInfo>

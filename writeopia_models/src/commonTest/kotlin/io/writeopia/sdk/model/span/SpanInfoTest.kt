@@ -9,7 +9,6 @@ import kotlin.test.assertFailsWith
 
 class SpanInfoTest {
 
-
     @Test
     fun `plus should preserve span identity`() {
         val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")

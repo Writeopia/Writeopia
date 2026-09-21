@@ -86,7 +86,6 @@ class SpansHandlerTest {
         assertEquals(expected, newSpans)
     }
 
-
     @Test
     fun `comment spans from different conversations should live together`() {
         val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")

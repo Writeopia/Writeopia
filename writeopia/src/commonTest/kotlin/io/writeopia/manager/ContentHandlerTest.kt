@@ -87,6 +87,32 @@ class ContentHandlerTest {
         assertEquals("line4", sortedStories[3].value.text)
     }
 
+    @Test
+    fun `line break should preserve regular formatting spans`() {
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val storyStep = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "bold1\nbold2",
+            spans = setOf(
+                SpanInfo.create(0, 11, Span.BOLD)
+            )
+        )
+
+        val (_, newState) = contentHandler.onLineBreak(
+            mapOf(0.0 to storyStep),
+            Action.LineBreak(storyStep, 0.0)
+        )
+
+        val sortedStories = newState.stories.entries.sortedBy { it.key }
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.BOLD)),
+            sortedStories[0].value.spans,
+        )
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.BOLD)),
+            sortedStories[1].value.spans,
+        )
+    }
 
     @Test
     fun `line break should split comment span and preserve conversation id`() {
