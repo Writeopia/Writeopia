@@ -102,6 +102,16 @@ object Spans {
             else -> changedRange(oldText, newText)
         }
 
+        val replacementSpans = if (edit.end > edit.start && edit.insertedSize > 0) {
+            spans.filter { span ->
+                span.expandable() &&
+                    span.start <= edit.start &&
+                    span.end >= edit.end
+            }
+        } else {
+            emptyList()
+        }
+
         val afterDeletion = if (edit.end > edit.start) {
             spans.flatMapTo(mutableSetOf()) { span ->
                 deleteRange(span, edit.start, edit.end)
@@ -110,13 +120,26 @@ object Spans {
             spans
         }
 
-        return if (edit.insertedSize > 0) {
+        val recalculated = if (edit.insertedSize > 0) {
             afterDeletion.flatMapTo(mutableSetOf()) { span ->
                 insertRange(span, edit.start, edit.insertedSize)
             }
         } else {
             afterDeletion
         }
+
+        replacementSpans.forEach { original ->
+            if (recalculated.none { span -> span.hasSameIdentity(original) }) {
+                recalculated += SpanInfo.create(
+                    start = edit.start,
+                    end = edit.start + edit.insertedSize,
+                    span = original.span,
+                    extra = original.extra,
+                )
+            }
+        }
+
+        return recalculated
     }
 
     private fun deleteRange(
