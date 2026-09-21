@@ -6,6 +6,7 @@ import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
@@ -239,6 +240,87 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             .first { it.id == document.id }
 
         assertEquals(document.commentConversations, loadedDocument.commentConversations)
+    }
+
+
+    suspend fun commentPersistenceRespectsWorkspaceBoundaries() {
+        val now = now()
+
+        fun document(
+            id: String,
+            workspaceId: String,
+            conversationId: String,
+            commentId: String,
+        ) = Document(
+            id = id,
+            title = id,
+            content = mapOf(
+                0.0 to StoryStep(
+                    type = StoryTypes.TEXT.type,
+                    text = "Commented",
+                    spans = setOf(
+                        SpanInfo.create(0, 9, Span.COMMENT, conversationId)
+                    ),
+                    dbPosition = 0.0,
+                )
+            ),
+            commentConversations = listOf(
+                CommentConversation(
+                    id = conversationId,
+                    comments = listOf(Comment(id = commentId, text = workspaceId)),
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = workspaceId,
+            parentId = "root",
+        )
+
+        val first = document(
+            id = "workspace-a-document",
+            workspaceId = "workspace-a",
+            conversationId = "conversation-a",
+            commentId = "comment-a",
+        )
+        val second = document(
+            id = "workspace-b-document",
+            workspaceId = "workspace-b",
+            conversationId = "conversation-b",
+            commentId = "comment-b",
+        )
+
+        documentRepository.saveDocument(first)
+        documentRepository.saveDocument(second)
+
+        assertEquals(null, documentRepository.loadDocumentById(second.id, first.workspaceId))
+        assertEquals(
+            listOf(first.id),
+            documentRepository.loadDocumentByIds(
+                listOf(first.id, second.id),
+                first.workspaceId,
+            ).map { it.id },
+        )
+        assertEquals(
+            listOf(first.id),
+            documentRepository.loadDocumentsWithContentByIds(
+                listOf(first.id, second.id),
+                OrderBy.NAME.type,
+                first.workspaceId,
+            ).map { it.id },
+        )
+
+        documentRepository.hardDeleteDocumentByIds(
+            setOf(first.id, second.id),
+            first.workspaceId,
+        )
+
+        assertEquals(null, documentRepository.loadDocumentById(first.id, first.workspaceId))
+        assertEquals(
+            second.commentConversations,
+            documentRepository.loadDocumentById(second.id, second.workspaceId)
+                ?.commentConversations,
+        )
     }
 
     suspend fun saveSimpleDocumentAndLoadByParentId() {

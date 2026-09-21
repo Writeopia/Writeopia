@@ -122,6 +122,11 @@ class DocumentRoomRepositoryTest {
     }
 
     @Test
+    fun commentPersistenceRespectsWorkspaceBoundaries() = runTest {
+        documentRepositoryTests.commentPersistenceRespectsWorkspaceBoundaries()
+    }
+
+    @Test
     fun hardDeleteRemovesComments() = runTest {
         val document = documentRepositoryTests.saveDocumentWithComments()
 

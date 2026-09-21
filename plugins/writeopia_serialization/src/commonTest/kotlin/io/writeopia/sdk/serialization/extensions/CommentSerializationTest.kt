@@ -21,6 +21,21 @@ import kotlin.time.Instant
 class CommentSerializationTest {
 
     @Test
+    fun `comment ids are required in serialized payloads`() {
+        assertFailsWith<SerializationException> {
+            writeopiaJson.decodeFromString<CommentConversationApi>(
+                """{"comments":[{"id":"comment-1","text":"Text"}]}"""
+            )
+        }
+
+        assertFailsWith<SerializationException> {
+            writeopiaJson.decodeFromString<CommentConversationApi>(
+                """{"id":"conversation-1","comments":[{"text":"Text"}]}"""
+            )
+        }
+    }
+
+    @Test
     fun `empty comment conversation is rejected`() {
         assertFailsWith<IllegalArgumentException> {
             CommentConversation(id = "conversation-empty", comments = emptyList())

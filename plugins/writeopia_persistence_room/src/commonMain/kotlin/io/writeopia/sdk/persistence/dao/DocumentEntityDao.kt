@@ -12,6 +12,7 @@ import io.writeopia.sdk.models.DOCUMENT_ENTITY
 import io.writeopia.sdk.models.LAST_UPDATED_AT
 import io.writeopia.sdk.models.TITLE
 import io.writeopia.sdk.persistence.entity.comment.COMMENT_ENTITY
+import io.writeopia.sdk.persistence.entity.comment.CommentEntity
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
 import io.writeopia.sdk.persistence.entity.story.STORY_UNIT_ENTITY
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
@@ -44,8 +45,32 @@ interface DocumentEntityDao {
     @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.id in (:ids)")
     suspend fun loadDocumentByIds(ids: List<String>): List<DocumentEntity>
 
+    @Query(
+        "SELECT * FROM $DOCUMENT_ENTITY " +
+            "WHERE $DOCUMENT_ENTITY.id = :id AND workspace_id = :workspaceId"
+    )
+    suspend fun loadDocumentByIdForWorkspace(id: String, workspaceId: String): DocumentEntity?
+
+    @Query(
+        "SELECT * FROM $DOCUMENT_ENTITY " +
+            "WHERE $DOCUMENT_ENTITY.id in (:ids) AND workspace_id = :workspaceId"
+    )
+    suspend fun loadDocumentByIdsForWorkspace(
+        ids: List<String>,
+        workspaceId: String,
+    ): List<DocumentEntity>
+
     @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.parent_id = :id")
     suspend fun loadDocumentsByParentId(id: String): List<DocumentEntity>
+
+    @Query(
+        "SELECT * FROM $DOCUMENT_ENTITY " +
+            "WHERE $DOCUMENT_ENTITY.parent_id = :id AND workspace_id = :workspaceId"
+    )
+    suspend fun loadDocumentsByParentIdForWorkspace(
+        id: String,
+        workspaceId: String,
+    ): List<DocumentEntity>
 
     @Query(
         "SELECT * " +
@@ -95,6 +120,23 @@ interface DocumentEntityDao {
     @Query(
         "SELECT * FROM $DOCUMENT_ENTITY " +
             "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
+            "WHERE $DOCUMENT_ENTITY.id IN (:documentIds) " +
+            "AND $DOCUMENT_ENTITY.workspace_id = :workspaceId AND is_deleted = FALSE " +
+            "ORDER BY " +
+            "CASE WHEN :orderBy = '$TITLE' THEN $DOCUMENT_ENTITY.title END COLLATE NOCASE ASC, " +
+            "CASE WHEN :orderBy = '$CREATED_AT' THEN $DOCUMENT_ENTITY.created_at END DESC, " +
+            "CASE WHEN :orderBy = '$LAST_UPDATED_AT' THEN $DOCUMENT_ENTITY.last_updated_at END DESC, " +
+            "$STORY_UNIT_ENTITY.position"
+    )
+    suspend fun loadDocumentWithContentByIdsForWorkspace(
+        documentIds: List<String>,
+        orderBy: String,
+        workspaceId: String,
+    ): Map<DocumentEntity, List<StoryStepEntity>>
+
+    @Query(
+        "SELECT * FROM $DOCUMENT_ENTITY " +
+            "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
             "WHERE workspace_id = :userId " +
             "ORDER BY " +
 //                "CASE WHEN :orderBy = \'$TITLE\' THEN $DOCUMENT_ENTITY.title END COLLATE NOCASE ASC, " +
@@ -134,6 +176,18 @@ interface DocumentEntityDao {
         parentId: String
     ): Flow<Map<DocumentEntity, List<StoryStepEntity>>>
 
+    @Query(
+        "SELECT * FROM $DOCUMENT_ENTITY " +
+            "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
+            "WHERE $DOCUMENT_ENTITY.parent_id = :parentId " +
+            "AND $DOCUMENT_ENTITY.workspace_id = :workspaceId AND is_deleted = FALSE " +
+            "ORDER BY $STORY_UNIT_ENTITY.position"
+    )
+    fun listenForDocumentsWithContentByParentIdForWorkspace(
+        parentId: String,
+        workspaceId: String,
+    ): Flow<Map<DocumentEntity, List<StoryStepEntity>>>
+
     @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.id = :id")
     fun listenForDocumentById(id: String): Flow<DocumentEntity?>
 
@@ -166,12 +220,58 @@ interface DocumentEntityDao {
     @Query("DELETE FROM $COMMENT_ENTITY WHERE document_id IN (:documentIds)")
     suspend fun hardDeleteCommentsByDocumentIds(documentIds: List<String>)
 
-    // Atomic hard delete: removes the document and all local content owned by it.
+    @Query(
+        "SELECT id FROM $DOCUMENT_ENTITY " +
+            "WHERE id IN (:ids) AND workspace_id = :workspaceId"
+    )
+    suspend fun loadOwnedDocumentIds(ids: List<String>, workspaceId: String): List<String>
+
+    @Query("SELECT id FROM $DOCUMENT_ENTITY WHERE workspace_id = :workspaceId")
+    suspend fun loadDocumentIdsByWorkspace(workspaceId: String): List<String>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertStoryStepsForDocument(vararg storySteps: StoryStepEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCommentsForDocument(vararg comments: CommentEntity)
+
+    @Transaction
+    suspend fun saveDocumentWithContent(
+        document: DocumentEntity,
+        storySteps: List<StoryStepEntity>,
+        comments: List<CommentEntity>,
+    ) {
+        insertDocuments(document)
+        hardDeleteStoryStepsByDocumentIds(listOf(document.id))
+        if (storySteps.isNotEmpty()) {
+            insertStoryStepsForDocument(*storySteps.toTypedArray())
+        }
+
+        hardDeleteCommentsByDocumentIds(listOf(document.id))
+        if (comments.isNotEmpty()) {
+            insertCommentsForDocument(*comments.toTypedArray())
+        }
+    }
+
+    @Transaction
+    suspend fun purgeDocumentsWithContentByWorkspace(workspaceId: String) {
+        val documentIds = loadDocumentIdsByWorkspace(workspaceId)
+        if (documentIds.isNotEmpty()) {
+            hardDeleteCommentsByDocumentIds(documentIds)
+            hardDeleteStoryStepsByDocumentIds(documentIds)
+        }
+        purgeDocumentsByUserId(workspaceId)
+    }
+
+    // Atomic hard delete: removes only documents owned by the requested workspace.
     @Transaction
     suspend fun hardDeleteDocumentsWithContentByIds(ids: List<String>, workspaceId: String) {
-        hardDeleteCommentsByDocumentIds(ids)
-        hardDeleteStoryStepsByDocumentIds(ids)
-        hardDeleteDocumentByIds(ids, workspaceId)
+        val ownedIds = loadOwnedDocumentIds(ids, workspaceId)
+        if (ownedIds.isEmpty()) return
+
+        hardDeleteCommentsByDocumentIds(ownedIds)
+        hardDeleteStoryStepsByDocumentIds(ownedIds)
+        hardDeleteDocumentByIds(ownedIds, workspaceId)
     }
 
     // Get soft-deleted documents for a workspace (for syncing deletions to backend)
