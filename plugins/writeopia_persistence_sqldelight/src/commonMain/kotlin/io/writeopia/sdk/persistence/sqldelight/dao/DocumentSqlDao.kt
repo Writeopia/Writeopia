@@ -646,19 +646,18 @@ class DocumentSqlDao(
      * Both document and story step deletions are performed atomically in a transaction.
      */
     suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
-        val ownedIds = documentQueries
-            ?.selectIdsByIdsAndWorkspace(ids, workspaceId)
-            ?.awaitAsList()
-            ?.toSet()
-            ?: emptySet()
+        val queries = documentQueries ?: return
+        val ownedIds = queries.selectIdsByIdsAndWorkspace(ids, workspaceId)
+            .awaitAsList()
+            .toSet()
 
         if (ownedIds.isEmpty()) return
 
         // Use transaction from documentQueries (all queries share the same driver).
-        documentQueries.transaction {
+        queries.transaction {
             commentQueries?.deleteByDocumentIds(ownedIds)
             storyStepQueries?.deleteByDocumentIds(ownedIds)
-            documentQueries.hardDeleteByIds(ownedIds, workspaceId)
+            queries.hardDeleteByIds(ownedIds, workspaceId)
         }
     }
 
