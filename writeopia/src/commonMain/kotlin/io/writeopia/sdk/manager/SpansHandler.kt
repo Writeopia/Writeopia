@@ -90,18 +90,25 @@ object SpansHandler {
 
     fun toggleSpansForManyStories(
         storySteps: Map<Double, StoryStep>,
-        newSpan: Span
+        newSpan: Span,
+        extra: String? = null,
     ): Map<Double, StoryStep> =
-        if (storySteps.all { (_, story) -> story.spans.any { it.span == newSpan } }) {
+        if (
+            storySteps.all { (_, story) ->
+                story.spans.any { span -> span.span == newSpan && span.extra == extra }
+            }
+        ) {
             storySteps.mapValues { (_, story) ->
-                val removedSpans = story.spans.filterTo(mutableSetOf()) { it.span != newSpan }
+                val removedSpans = story.spans.filterTo(mutableSetOf()) { span ->
+                    span.span != newSpan || span.extra != extra
+                }
                 story.copy(spans = removedSpans, localId = GenerateId.generate())
             }
         } else {
             storySteps.mapValues { (_, story) ->
                 val text = story.text
                 if (text?.isNotEmpty() == true) {
-                    val newSpanInfo = SpanInfo.create(0, text.length, newSpan)
+                    val newSpanInfo = SpanInfo.create(0, text.length, newSpan, extra)
                     story.copy(spans = story.spans + newSpanInfo, localId = GenerateId.generate())
                 } else {
                     story
