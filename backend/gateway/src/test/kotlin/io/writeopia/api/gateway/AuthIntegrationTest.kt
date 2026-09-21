@@ -225,6 +225,47 @@ class AuthIntegrationTest {
     }
 
     @Test
+    fun `it should be possible to login with username`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val password = "lasjbdalsdq08w9y&"
+
+        val response = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = "Name",
+                    email = "email@gmail.com",
+                    username = "email@gmail.com_user",
+                    password = password,
+                )
+            )
+        }
+
+        assertEquals(HttpStatusCode.Created, response.status)
+
+        // Login using username
+        val loginWithUsername = client.post("/api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest("email@gmail.com_user", password))
+        }
+        assertEquals(HttpStatusCode.OK, loginWithUsername.status)
+        assertEquals("email@gmail.com", loginWithUsername.body<AuthResponse>().writeopiaUser.email)
+
+        // Login using email
+        val loginWithEmail = client.post("/api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest("email@gmail.com", password))
+        }
+        assertEquals(HttpStatusCode.OK, loginWithEmail.status)
+        assertEquals("email@gmail.com", loginWithEmail.body<AuthResponse>().writeopiaUser.email)
+    }
+
+    @Test
     fun `it should be NOT possible to delete your account, if don't have the right token`() =
         testApplication {
             application {

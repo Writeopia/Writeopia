@@ -30,6 +30,7 @@
   <string name="offline_workspace">Offline Workspace</string>
   <string name="disconnected">Disconnected</string>
   <string name="email">Email</string>
+  <string name="email_or_username">Email or username</string>
   <string name="password">Password</string>
   <string name="enter">Enter</string>
   <string name="content_description_visibility_on">Visible</string>

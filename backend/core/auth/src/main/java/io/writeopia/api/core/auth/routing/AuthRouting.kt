@@ -18,6 +18,7 @@ import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.deleteUserById
 import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
+import io.writeopia.api.core.auth.repository.getUserByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getWorkspaceById
@@ -47,8 +48,8 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     post("/api/auth/login") {
         try {
             val credentials = call.receive<LoginRequest>()
-            // Always get user by email first to check if they exist but are unconfirmed
-            val user = writeopiaDb.getUserByEmail(credentials.email)
+            // Always get user by email or username first to check if they exist but are unconfirmed
+            val user = writeopiaDb.getUserByUsernameOrEmail(credentials.identifier)
 
             if (user != null) {
                 val hash = user.password

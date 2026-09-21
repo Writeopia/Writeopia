@@ -12,6 +12,7 @@ import io.ktor.server.routing.post
 import io.writeopia.api.core.auth.hash.HashUtils
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.getUserByEmail
+import io.writeopia.api.core.auth.repository.getUserByUsernameOrEmail
 import io.writeopia.api.core.auth.service.RefreshTokenService
 import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.connection.logger
@@ -53,7 +54,7 @@ fun Routing.cookieAuthRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean 
     post("/api/auth/login/web") {
         try {
             val credentials = call.receive<LoginRequest>()
-            val user = writeopiaDb.getUserByEmail(credentials.email)
+            val user = writeopiaDb.getUserByUsernameOrEmail(credentials.identifier)
 
             if (user != null) {
                 val hash = user.password

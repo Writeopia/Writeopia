@@ -31,10 +31,10 @@ import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
 class AuthApi(private val client: HttpClient, private val baseUrl: String) {
-    suspend fun login(email: String, password: String): ResultData<AuthResponse> = try {
+    suspend fun login(identifier: String, password: String): ResultData<AuthResponse> = try {
         val response = client.post("$baseUrl/api/auth/login") {
             contentType(ContentType.Application.Json)
-            setBody(LoginRequest(email, password))
+            setBody(LoginRequest(identifier, password))
         }.body<AuthResponse>()
 
         ResultData.Complete(response)
@@ -48,10 +48,10 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
      * Web-specific login that uses HttpOnly cookies for token storage.
      * The backend sets the tokens in HttpOnly cookies instead of returning them in the response body.
      */
-    suspend fun loginWeb(email: String, password: String): ResultData<AuthResponse> = try {
+    suspend fun loginWeb(identifier: String, password: String): ResultData<AuthResponse> = try {
         val response = client.post("$baseUrl/api/auth/login/web") {
             contentType(ContentType.Application.Json)
-            setBody(LoginRequest(email, password))
+            setBody(LoginRequest(identifier, password))
         }.body<AuthResponse>()
 
         ResultData.Complete(response)

@@ -115,7 +115,6 @@ fun RegisterScreen(
                 onRegisterRequest,
                 modifier
             )
-
         }
 
         when (val register = registerStateValue) {
