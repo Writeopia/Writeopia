@@ -69,7 +69,7 @@ object SpansHandler {
         }
     }
 
-    private fun normalizeSpans(spanSet: Set<SpanInfo>): Set<SpanInfo> =
+    internal fun normalizeSpans(spanSet: Set<SpanInfo>): Set<SpanInfo> =
         spanSet
             .groupBy { span -> span.span to span.extra }
             .values
@@ -78,7 +78,7 @@ object SpansHandler {
 
                 group.sortedBy { span -> span.start }.forEach { span ->
                     val previous = normalized.lastOrNull()
-                    if (previous != null && span.start < previous.end) {
+                    if (previous != null && span.start <= previous.end) {
                         normalized[normalized.lastIndex] = previous + span
                     } else {
                         normalized.add(span)
