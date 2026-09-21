@@ -184,6 +184,37 @@ class SpansHandlerTest {
     }
 
     @Test
+    fun `bulk adding an existing comment identity should normalize the range`() {
+        val partial = SpanInfo.create(1, 3, Span.COMMENT, "conversation-1")
+        val stories = mapOf(
+            0.0 to StoryStep(
+                type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
+                text = "first",
+                spans = setOf(partial),
+            ),
+            1.0 to StoryStep(
+                type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
+                text = "second",
+            ),
+        )
+
+        val result = SpansHandler.toggleSpansForManyStories(
+            stories,
+            Span.COMMENT,
+            "conversation-1",
+        )
+
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")),
+            result.getValue(0.0).spans,
+        )
+        assertEquals(
+            setOf(SpanInfo.create(0, 6, Span.COMMENT, "conversation-1")),
+            result.getValue(1.0).spans,
+        )
+    }
+
+    @Test
     fun `bulk removing one comment identity should preserve another`() {
         val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
         val second = SpanInfo.create(0, 5, Span.COMMENT, "conversation-2")
