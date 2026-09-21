@@ -77,11 +77,11 @@ class RoomDocumentRepository(
             parentId,
             workspaceId,
         ).map { resultsMap ->
-                resultsMap.map { (documentEntity, storyEntity) ->
-                    val content = loadInnerSteps(storyEntity)
-                    documentEntity.toModel(content, loadCommentConversations(documentEntity.id))
-                }.groupBy { it.parentId }
-            }
+            resultsMap.map { (documentEntity, storyEntity) ->
+                val content = loadInnerSteps(storyEntity)
+                documentEntity.toModel(content, loadCommentConversations(documentEntity.id))
+            }.groupBy { it.parentId }
+        }
 
     override suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo?> =
         documentEntityDao.listenForDocumentById(id).map { entity ->
