@@ -9,5 +9,9 @@ data class Comment(
 
 data class CommentConversation(
     val id: String = GenerateId.generate(),
-    val comments: List<Comment> = emptyList(),
-)
+    val comments: List<Comment>,
+) {
+    init {
+        require(comments.isNotEmpty()) { "A comment conversation must contain at least one comment." }
+    }
+}

@@ -13,11 +13,19 @@ import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 class CommentSerializationTest {
+
+    @Test
+    fun `empty comment conversation is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            CommentConversation(id = "conversation-empty", comments = emptyList())
+        }
+    }
 
     @Test
     fun `span extra survives api conversion`() {
