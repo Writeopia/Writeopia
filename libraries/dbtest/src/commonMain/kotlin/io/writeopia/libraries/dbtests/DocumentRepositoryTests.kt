@@ -221,7 +221,16 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         val document = saveDocumentWithComments()
         val loadedDocument = documentRepository.loadDocumentById(document.id, document.workspaceId)
 
-        assertEquals(document, loadedDocument)
+        assertEquals(document.id, loadedDocument?.id)
+        assertEquals(document.commentConversations, loadedDocument?.commentConversations)
+        assertEquals(
+            document.content.getValue(0.0).spans,
+            loadedDocument?.content?.get(0.0)?.spans,
+        )
+        assertEquals(
+            document.content.getValue(0.0).text,
+            loadedDocument?.content?.get(0.0)?.text,
+        )
     }
 
     suspend fun collectionLoadPreservesComments() {

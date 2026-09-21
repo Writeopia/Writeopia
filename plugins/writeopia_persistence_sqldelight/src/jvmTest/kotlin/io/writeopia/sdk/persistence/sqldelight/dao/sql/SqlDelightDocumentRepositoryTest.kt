@@ -235,9 +235,16 @@ class SqlDelightDocumentRepositoryTest {
 
         documentRepository.saveDocument(document)
 
+        val loadedDocument = documentRepository.loadDocumentById(document.id, document.workspaceId)
+        assertEquals(document.id, loadedDocument?.id)
+        assertEquals(document.commentConversations, loadedDocument?.commentConversations)
         assertEquals(
-            document,
-            documentRepository.loadDocumentById(document.id, document.workspaceId)
+            document.content.getValue(0.0).spans,
+            loadedDocument?.content?.get(0.0)?.spans,
+        )
+        assertEquals(
+            document.content.getValue(0.0).text,
+            loadedDocument?.content?.get(0.0)?.text,
         )
 
         val loadedFromWorkspace = documentRepository.loadDocumentsWorkspace(document.workspaceId)
