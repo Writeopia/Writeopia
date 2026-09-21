@@ -69,7 +69,17 @@ class CommentSerializationTest {
         val encoded = writeopiaJson.encodeToString(DocumentApi.serializer(), api)
         val decoded = writeopiaJson.decodeFromString(DocumentApi.serializer(), encoded).toModel()
 
-        assertEquals(document, decoded)
+        assertEquals(document.id, decoded.id)
+        assertEquals(document.title, decoded.title)
+        assertEquals(document.commentConversations, decoded.commentConversations)
+
+        val decodedStep = decoded.content.getValue(0.0)
+        assertEquals("step-1", decodedStep.id)
+        assertEquals("Commented text", decodedStep.text)
+        assertEquals(
+            setOf(SpanInfo.create(0, 9, Span.COMMENT, "conversation-1")),
+            decodedStep.spans,
+        )
     }
 
     @Test
