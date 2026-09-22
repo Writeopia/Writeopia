@@ -50,6 +50,8 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     val logoutInProgress: StateFlow<Boolean>
 
+    val deleteAccountInProgress: StateFlow<Boolean>
+
     override val localAiSelectedModelState: StateFlow<String>
 
     override val localAiUrl: StateFlow<String>
