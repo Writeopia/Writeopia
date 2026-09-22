@@ -41,7 +41,8 @@ class CommentUiStateTest {
 
         val result = resolveCommentUiState(state, listOf(conversation))
 
-        assertEquals(conversation, result.activeConversation)
+        assertEquals(null, result.activeConversation)
+        assertEquals(listOf(conversation), result.paragraphConversations)
         assertTrue(result.canCreateComment)
     }
 
