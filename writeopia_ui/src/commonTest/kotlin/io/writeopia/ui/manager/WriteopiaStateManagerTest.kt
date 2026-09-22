@@ -2215,6 +2215,64 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun undoAndRedoShouldRestoreCommentConversationLifecycle() = runTest {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "conversation-1",
+            comments = listOf(Comment(id = "comment-1", text = "hello")),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "hello",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, conversation.id)),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = listOf(conversation),
+            )
+        )
+
+        val story = manager.currentStory.value.stories[0.0]!!
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = story.copy(spans = emptySet()),
+                position = 0.0,
+            )
+        )
+        assertTrue(manager.commentConversations.value.isEmpty())
+
+        manager.undo()
+        advanceUntilIdle()
+
+        assertEquals(listOf(conversation), manager.commentConversations.value)
+        assertEquals(
+            conversation.id,
+            manager.currentStory.value.stories[0.0]!!
+                .spans
+                .single { it.span == Span.COMMENT }
+                .extra,
+        )
+
+        manager.redo()
+        advanceUntilIdle()
+
+        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isEmpty())
+    }
+
+    @Test
     fun deletingOneConversationShouldNotAffectAnotherConversation() {
         val now = Clock.System.now()
         val first = CommentConversation(
@@ -2259,5 +2317,4 @@ class WriteopiaStateManagerTest {
             manager.currentStory.value.stories[0.0]!!.spans,
         )
     }
-
 }
