@@ -353,18 +353,18 @@ fun Routing.documentsRoute(
             return@post
         }
         val workspaceId = request.workspaceId
-        val documentList = request.documents.map { document ->
-            document.copy(workspaceId = workspaceId)
-        }
+        val documentList = request.documents
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
             try {
                 if (documentList.isNotEmpty()) {
                     val addedToHub = DocumentsService.receiveDocuments(
                         documentList.map { document ->
-                            document
-                                .toModel()
-                                .copy(lastSyncedAt = Clock.System.now())
+                            DocumentsService.documentFromApiForWrite(
+                                document = document,
+                                workspaceId = workspaceId,
+                                writeopiaDb = writeopiaDb,
+                            ).copy(lastSyncedAt = Clock.System.now())
                         },
                         workspaceId = workspaceId,
                         writeopiaDb,
@@ -388,6 +388,11 @@ fun Routing.documentsRoute(
                         message = "Empty documents"
                     )
                 }
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "${e.message}"
+                )
             } catch (e: Exception) {
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
@@ -406,9 +411,11 @@ fun Routing.documentsRoute(
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
             try {
-                val documentModel = request.document
-                    .copy(workspaceId = workspaceId)
-                    .toModel()
+                val documentModel = DocumentsService.documentFromApiForWrite(
+                    document = request.document,
+                    workspaceId = workspaceId,
+                    writeopiaDb = writeopiaDb,
+                )
 
                 val upsertedDocument = DocumentsService.upsertDocument(
                     document = documentModel,
@@ -420,6 +427,11 @@ fun Routing.documentsRoute(
                 call.respond(
                     status = HttpStatusCode.OK,
                     message = upsertedDocument.toApi()
+                )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "${e.message}"
                 )
             } catch (e: Exception) {
                 call.respond(
