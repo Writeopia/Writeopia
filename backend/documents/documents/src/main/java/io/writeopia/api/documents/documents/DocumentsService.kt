@@ -337,6 +337,12 @@ object DocumentsService {
         userId: String,
         writeopiaDb: WriteopiaDbBackend
     ) {
+        documentIds.forEach { documentId ->
+            require(writeopiaDb.getDocumentWorkspaceId(documentId) == workspaceId) {
+                "Document does not belong to the requested workspace"
+            }
+        }
+
         // Create DELETE_DOCUMENT events for all documents
         documentIds.forEach { documentId ->
             writeopiaDb.createSyncEvent(
@@ -624,15 +630,17 @@ object DocumentsService {
         }
 
         request.commentConversations?.let { conversations ->
-            writeopiaDb.replaceCommentConversations(
-                documentId = documentId,
-                conversations = conversations.map { it.toModel() },
-            )
-            writeopiaDb.touchDocument(
-                documentId = documentId,
-                workspaceId = workspaceId,
-                timestamp = serverTimestamp,
-            )
+            writeopiaDb.transaction {
+                writeopiaDb.replaceCommentConversations(
+                    documentId = documentId,
+                    conversations = conversations.map { it.toModel() },
+                )
+                writeopiaDb.touchDocument(
+                    documentId = documentId,
+                    workspaceId = workspaceId,
+                    timestamp = serverTimestamp,
+                )
+            }
         }
 
         // Get server steps updated after client's last sync
