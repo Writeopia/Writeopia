@@ -62,7 +62,7 @@ class DocumentationIntegrationTests {
 
         val documentApiList = listOf(
             DocumentApi(
-                id = "testiaskkakakaka",
+                id = "document_by_id_${Random.nextInt()}",
                 title = "Test Note",
                 workspaceId = workspace,
                 parentId = "parentIdddd",
@@ -153,7 +153,7 @@ class DocumentationIntegrationTests {
 
         val documentApiList = listOf(
             DocumentApi(
-                id = "testiaskkakakaka",
+                id = "documents_by_parent_${Random.nextInt()}",
                 title = "Test Note",
                 workspaceId = workspace,
                 parentId = "parentIdddd",
@@ -194,7 +194,7 @@ class DocumentationIntegrationTests {
 
         val workspace = Random.nextInt().toString()
         val documentApi = DocumentApi(
-            id = "testias",
+            id = "ids_by_parent_${Random.nextInt()}",
             title = "Test Note",
             workspaceId = workspace,
             parentId = "parentId",
@@ -242,7 +242,7 @@ class DocumentationIntegrationTests {
         }
 
         val documentApi = DocumentApi(
-            id = "testias",
+            id = "folder_diff_${Random.nextInt()}",
             title = "Test Note",
             workspaceId = workspace,
             parentId = "parentId",
@@ -254,7 +254,7 @@ class DocumentationIntegrationTests {
             commentConversations = emptyList(),
         )
 
-        val documentApi2 = documentApi.copy(id = "testias2", lastUpdatedAt = 4000L)
+        val documentApi2 = documentApi.copy(id = "${documentApi.id}_2", lastUpdatedAt = 4000L)
 
         val response = client.post("/api/docs/workspace/document") {
             contentType(ContentType.Application.Json)
@@ -438,7 +438,7 @@ class DocumentationIntegrationTests {
         val workspaceId = Random.nextInt().toString()
 
         val documentApi = DocumentApi(
-            id = "testias",
+            id = "workspace_diff_${Random.nextInt()}",
             title = "Test Note",
             workspaceId = workspaceId,
             parentId = "parentId",
@@ -448,7 +448,7 @@ class DocumentationIntegrationTests {
             lastSyncedAt = 4000
         )
 
-        val documentApi2 = documentApi.copy(id = "testias2", lastUpdatedAt = 4000L)
+        val documentApi2 = documentApi.copy(id = "${documentApi.id}_2", lastUpdatedAt = 4000L)
 
         val response = client.post("/api/docs/workspace/document") {
             contentType(ContentType.Application.Json)
