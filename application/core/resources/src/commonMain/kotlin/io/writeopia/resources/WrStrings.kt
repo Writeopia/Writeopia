@@ -927,5 +927,4 @@ object WrStrings {
 
     @Composable
     fun reply() = stringResource(Res.string.reply)
-
 }
