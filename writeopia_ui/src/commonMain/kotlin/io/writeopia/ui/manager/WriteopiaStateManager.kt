@@ -1182,7 +1182,11 @@ class WriteopiaStateManager(
 
         val conversationId = story.spans
             .asSequence()
-            .filter { it.span == Span.COMMENT && it.isInside(selection.start) }
+            .filter { span ->
+                span.span == Span.COMMENT &&
+                    selection.start >= span.start &&
+                    selection.start < span.end
+            }
             .sortedWith(compareBy<SpanInfo> { it.size() }.thenBy { it.start })
             .mapNotNull { it.extra }
             .firstOrNull()
@@ -1204,7 +1208,7 @@ class WriteopiaStateManager(
                     if (start == end) {
                         span.isInside(start)
                     } else {
-                        span.start <= end && span.end >= start
+                        span.start < end && span.end > start
                     }
             }
             .sortedWith(compareBy<SpanInfo> { it.start }.thenBy { it.end })
