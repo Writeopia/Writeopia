@@ -136,7 +136,7 @@ fun Routing.documentsRoute(
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
             val parentId = call.pathParameters["parentId"]!!
-            val documentList = writeopiaDb.getDocumentsByParentId(parentId)
+            val documentList = writeopiaDb.getDocumentsByParentId(parentId, workspaceId)
 
             if (documentList.isNotEmpty()) {
                 call.respond(
@@ -161,7 +161,7 @@ fun Routing.documentsRoute(
         val id = call.pathParameters["id"]!!
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
-            val ids = writeopiaDb.getIdsByParentId(id)
+            val ids = writeopiaDb.getIdsByParentId(id, workspaceId)
 
             if (ids.isNotEmpty()) {
                 call.respond(
@@ -243,8 +243,8 @@ fun Routing.documentsRoute(
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
             try {
-                val folders = writeopiaDb.getFoldersByParentId(folderId)
-                val documents = writeopiaDb.getDocumentsByParentId(folderId)
+                val folders = writeopiaDb.getFoldersByParentId(folderId, workspaceId)
+                val documents = writeopiaDb.getDocumentsByParentId(folderId, workspaceId)
 
                 // Get user's favorite document IDs
                 val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
@@ -500,7 +500,7 @@ fun Routing.documentsRoute(
                     )
 
                 // Get subfolders for this folder
-                val subfolders = writeopiaDb.getFoldersByParentId(folderDiff.folderId)
+                val subfolders = writeopiaDb.getFoldersByParentId(folderDiff.folderId, workspaceId)
 
                 // Get user's favorite document IDs
                 val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
