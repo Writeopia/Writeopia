@@ -7,6 +7,12 @@ import androidx.room.Query
 import io.writeopia.sdk.persistence.entity.comment.COMMENT_ENTITY
 import io.writeopia.sdk.persistence.entity.comment.CommentEntity
 
+/**
+ * Persists comments for documents.
+ *
+ * Inserts replace rows with the same comment ID. Load operations preserve conversation and comment
+ * order. Delete operations remove only rows belonging to the supplied document IDs.
+ */
 @Dao
 interface CommentEntityDao {
 
