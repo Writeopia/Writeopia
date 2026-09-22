@@ -225,6 +225,7 @@ class WriteopiaStateManager(
 
     private val _commentConversations =
         MutableStateFlow<List<CommentConversation>>(emptyList())
+    private val commentConversationArchive = mutableMapOf<String, CommentConversation>()
     val commentConversations: StateFlow<List<CommentConversation>> =
         _commentConversations.asStateFlow()
 
@@ -434,6 +435,7 @@ class WriteopiaStateManager(
         backStackManager.addState(withNextPositions)
 
         _commentConversations.value = emptyList()
+        commentConversationArchive.clear()
         _documentInfo.value = documentInfo
         _currentStory.value = withNextPositions
     }
@@ -449,6 +451,8 @@ class WriteopiaStateManager(
 
         initialized = true
         _commentConversations.value = document.commentConversations
+        commentConversationArchive.clear()
+        rememberCommentConversations(document.commentConversations)
 
         val stories = document.content
         val state =
@@ -471,6 +475,8 @@ class WriteopiaStateManager(
      */
     fun updateDocument(document: Document) {
         _commentConversations.value = document.commentConversations
+        commentConversationArchive.clear()
+        rememberCommentConversations(document.commentConversations)
         val stories = document.content
         val normalized = stepsNormalizer(stories.toEditState())
         val withNextPositions = NextPositionCalculator.calculate(normalized)
@@ -958,6 +964,7 @@ class WriteopiaStateManager(
                     story.copy(localId = GenerateId.generate())
                 }
                 _currentStory.value = state.copy(stories = stories)
+                restoreCommentConversationsForCurrentStory()
             }
         }
     }
@@ -977,6 +984,7 @@ class WriteopiaStateManager(
                     story.copy(localId = GenerateId.generate())
                 }
                 _currentStory.value = state.copy(stories = stories)
+                restoreCommentConversationsForCurrentStory()
             }
         }
     }
@@ -1139,6 +1147,7 @@ class WriteopiaStateManager(
         val comment = Comment(text = text)
         val conversation = CommentConversation(comments = listOf(comment))
         _commentConversations.value = _commentConversations.value + conversation
+        rememberCommentConversations(listOf(conversation))
         _currentStory.value = writeopiaManager.addSpan(
             state,
             selection.position,
@@ -1162,6 +1171,7 @@ class WriteopiaStateManager(
         _commentConversations.value = conversations.toMutableList().apply {
             this[index] = updated
         }
+        rememberCommentConversations(listOf(updated))
         persistCommentDocument()
         return comment
     }
@@ -1215,15 +1225,14 @@ class WriteopiaStateManager(
 
         val remainingComments = conversation.comments.filterNot { it.id == commentId }
         if (remainingComments.isNotEmpty()) {
+            val updatedConversation = conversation.copy(comments = remainingComments)
             _commentConversations.value = conversations.map {
-                if (it.id == conversationId) {
-                    it.copy(comments = remainingComments)
-                } else {
-                    it
-                }
+                if (it.id == conversationId) updatedConversation else it
             }
+            rememberCommentConversations(listOf(updatedConversation))
         } else {
             _commentConversations.value = conversations.filterNot { it.id == conversationId }
+            commentConversationArchive.remove(conversationId)
             removeCommentSpans(conversationId)
         }
 
@@ -1258,19 +1267,56 @@ class WriteopiaStateManager(
     }
 
     private fun cleanupOrphanCommentConversations() {
-        val referencedConversationIds = _currentStory.value.stories.values
+        val referencedConversationIds = referencedCommentConversationIds()
+        val conversations = _commentConversations.value
+        val removed = conversations.filterNot { it.id in referencedConversationIds }
+        val remaining = conversations.filter { it.id in referencedConversationIds }
+
+        if (remaining.size != conversations.size) {
+            rememberCommentConversations(removed)
+            _commentConversations.value = remaining
+            persistCommentDocument()
+        }
+    }
+
+    private fun referencedCommentConversationIds(): Set<String> =
+        _currentStory.value.stories.values
             .asSequence()
             .flatMap { it.spans.asSequence() }
             .filter { it.span == Span.COMMENT }
             .mapNotNull { it.extra }
             .toSet()
 
-        val conversations = _commentConversations.value
-        val remaining = conversations.filter { it.id in referencedConversationIds }
-        if (remaining.size != conversations.size) {
-            _commentConversations.value = remaining
-            persistCommentDocument()
+    private fun rememberCommentConversations(conversations: List<CommentConversation>) {
+        conversations.forEach { conversation ->
+            commentConversationArchive[conversation.id] = conversation
         }
+    }
+
+    private fun restoreCommentConversationsForCurrentStory() {
+        val referencedConversationIds = referencedCommentConversationIds()
+        val currentById = _commentConversations.value.associateBy { it.id }
+        val restored = referencedConversationIds.mapNotNull { conversationId ->
+            currentById[conversationId] ?: commentConversationArchive[conversationId]
+        }
+
+        val missingConversationIds = referencedConversationIds - restored.map { it.id }.toSet()
+        if (missingConversationIds.isNotEmpty()) {
+            val state = _currentStory.value
+            val stories = state.stories.mapValues { (_, story) ->
+                story.copy(
+                    spans = story.spans.filterNot { span ->
+                        span.span == Span.COMMENT && span.extra in missingConversationIds
+                    }.toSet()
+                )
+            }
+            _currentStory.value = state.copy(stories = stories)
+        }
+
+        if (_commentConversations.value != restored) {
+            _commentConversations.value = restored
+        }
+        persistCommentDocument()
     }
 
     private fun persistCommentDocument() {
