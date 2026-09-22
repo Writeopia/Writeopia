@@ -18,6 +18,7 @@ import io.writeopia.api.documents.documents.repository.deleteFolder
 import io.writeopia.api.documents.documents.repository.deleteStoryStepById
 import io.writeopia.api.documents.documents.repository.deleteStoryStepsByIds
 import io.writeopia.api.documents.documents.repository.getDocumentById
+import io.writeopia.api.documents.documents.repository.getDocumentWorkspaceId
 import io.writeopia.api.documents.documents.repository.getFolderById
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
@@ -569,6 +570,18 @@ object DocumentsService {
         request: StoryStepSyncRequest,
         writeopiaDb: WriteopiaDbBackend
     ): StoryStepSyncResponse {
+        require(request.documentId == documentId && request.workspaceId == workspaceId) {
+            "Sync request document/workspace does not match the route"
+        }
+        require(request.commentConversations.orEmpty().none { it.comments.isEmpty() }) {
+            "Comment conversations must contain at least one comment"
+        }
+
+        val documentWorkspaceId = writeopiaDb.getDocumentWorkspaceId(documentId)
+        require(documentWorkspaceId == null || documentWorkspaceId == workspaceId) {
+            "Document does not belong to the requested workspace"
+        }
+
         val serverTimestamp = Clock.System.now().toEpochMilliseconds()
 
         // Check if document exists, create it if not
