@@ -2,6 +2,8 @@
 
 package io.writeopia.api.documents.documents.repository
 
+import io.writeopia.sdk.models.comment.Comment
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
@@ -14,6 +16,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.search.DocumentSearch
+import io.writeopia.sql.CommentEntityQueries
 import io.writeopia.sql.DocumentEntityQueries
 import io.writeopia.sql.FolderEntityQueries
 import io.writeopia.sql.Folder_entity
@@ -29,6 +32,7 @@ class DocumentSqlBeDao(
     private val storyStepQueries: StoryStepEntityQueries?,
     private val foldersQueries: FolderEntityQueries?,
     private val userFavoriteQueries: UserFavoriteEntityQueries? = null,
+    private val commentQueries: CommentEntityQueries? = null,
 ) : DocumentSearch {
 
     override suspend fun search(query: String, workspaceId: String): List<Document> =
@@ -79,8 +83,49 @@ class DocumentSqlBeDao(
             insertStoryStep(storyStep, i.toDouble(), document.id)
         }
 
+        replaceCommentConversations(document.id, document.commentConversations)
         insertDocument(document)
     }
+
+    fun replaceCommentConversations(
+        documentId: String,
+        conversations: List<CommentConversation>,
+    ) {
+        commentQueries?.deleteByDocumentId(documentId)
+        conversations.forEachIndexed { conversationPosition, conversation ->
+            conversation.comments.forEachIndexed { commentPosition, comment ->
+                commentQueries?.insert(
+                    id = comment.id,
+                    conversation_id = conversation.id,
+                    document_id = documentId,
+                    conversation_position = conversationPosition.toLong(),
+                    comment_position = commentPosition.toLong(),
+                    text = comment.text,
+                )
+            }
+        }
+    }
+
+    private fun loadCommentConversations(documentId: String): List<CommentConversation> =
+        commentQueries?.selectByDocumentId(documentId)
+            ?.executeAsList()
+            ?.groupBy { it.conversation_id }
+            ?.values
+            ?.sortedBy { rows -> rows.minOf { it.conversation_position } }
+            ?.map { rows ->
+                CommentConversation(
+                    id = rows.first().conversation_id,
+                    comments = rows
+                        .sortedBy { it.comment_position }
+                        .map { row ->
+                            Comment(
+                                id = row.id,
+                                text = row.text,
+                            )
+                        },
+                )
+            }
+            ?: emptyList()
 
     private fun insertDocument(document: Document) {
         documentQueries?.insert(
@@ -278,6 +323,8 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                    commentConversations = loadCommentConversations(document.id),
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -348,6 +395,8 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                    commentConversations = loadCommentConversations(document.id),
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -421,6 +470,8 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                    commentConversations = loadCommentConversations(document.id),
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -494,6 +545,8 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                    commentConversations = loadCommentConversations(document.id),
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -565,6 +618,8 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                    commentConversations = loadCommentConversations(document.id),
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -636,6 +691,8 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                    commentConversations = loadCommentConversations(document.id),
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -707,6 +764,8 @@ class DocumentSqlBeDao(
                         id = docId,
                         title = document.title,
                         content = innerContent,
+                    commentConversations = loadCommentConversations(document.id),
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -778,6 +837,8 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                    commentConversations = loadCommentConversations(document.id),
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -850,6 +911,8 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                    commentConversations = loadCommentConversations(document.id),
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -873,11 +936,13 @@ class DocumentSqlBeDao(
         val now = Clock.System.now().toEpochMilliseconds()
         documentQueries?.delete(now, documentId)
         storyStepQueries?.deleteByDocumentId(documentId)
+        commentQueries?.deleteByDocumentId(documentId)
     }
 
     fun deleteDocumentByIds(ids: Set<String>) {
         documentQueries?.deleteByIds(Clock.System.now().toEpochMilliseconds(), ids)
         storyStepQueries?.deleteByDocumentIds(ids)
+        commentQueries?.deleteByDocumentIds(ids)
     }
 
     fun loadDocumentIdsByParentId(parentId: String): List<String> =
@@ -1131,6 +1196,8 @@ class DocumentSqlBeDao(
                         id = docId,
                         title = document.title,
                         content = innerContent,
+                    commentConversations = loadCommentConversations(document.id),
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
