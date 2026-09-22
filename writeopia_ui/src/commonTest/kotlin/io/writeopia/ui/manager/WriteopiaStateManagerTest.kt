@@ -2135,6 +2135,50 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun selectionTouchingCommentEndShouldNotResolveThatConversation() {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "conversation-1",
+            comments = listOf(Comment(id = "comment-1", text = "first")),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "hello world",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, conversation.id)),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = listOf(conversation),
+            )
+        )
+
+        val story = manager.currentStory.value.stories[0.0]!!
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = story,
+                position = 0.0,
+                selectionStart = 5,
+                selectionEnd = 8,
+            )
+        )
+
+        assertEquals(null, manager.getCommentConversationAtSelection())
+        assertEquals(null, manager.getCommentConversationAtCursor())
+    }
+
+    @Test
     fun deletingTheLastCommentShouldRemoveConversationAndItsSpans() {
         val now = Clock.System.now()
         val conversation = CommentConversation(
