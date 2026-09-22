@@ -30,6 +30,7 @@ import io.writeopia.api.documents.documents.repository.isUserFavorite
 import io.writeopia.api.documents.documents.repository.moveDocumentToFolder
 import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.removeUserFavorite
+import io.writeopia.api.documents.documents.repository.replaceCommentConversations
 import io.writeopia.api.documents.documents.repository.getDocumentByTitle
 import io.writeopia.api.documents.documents.repository.getDocumentWithContentById
 import io.writeopia.api.documents.documents.repository.saveDocument
@@ -42,11 +43,15 @@ import io.writeopia.api.documents.search.SearchDocument
 import io.writeopia.connection.ResultData
 import io.writeopia.connection.Urls
 import io.writeopia.connection.wrWebClient
+import io.writeopia.sdk.models.comment.Comment
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.markdown.InlineMarkdownParser
+import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -193,15 +198,31 @@ object DocumentsService {
             // Skip if document doesn't belong to the workspace
             if (originalDocument.workspaceId != workspaceId) continue
 
-            // Clone the content with new IDs for each StoryStep
+            val conversationIdMap = originalDocument.commentConversations.associate { conversation ->
+                conversation.id to GenerateId.generate()
+            }
+            val clonedComments = originalDocument.commentConversations.map { conversation ->
+                CommentConversation(
+                    id = conversationIdMap.getValue(conversation.id),
+                    comments = conversation.comments.map { comment ->
+                        Comment(
+                            id = GenerateId.generate(),
+                            text = comment.text,
+                        )
+                    },
+                )
+            }
+
+            // Clone the content with new IDs for each StoryStep and remap comment span references.
             val clonedContent = originalDocument.content.mapValues { (_, storyStep) ->
-                cloneStoryStep(storyStep)
+                cloneStoryStep(storyStep, conversationIdMap)
             }
 
             val clonedDocument = originalDocument.copy(
                 id = GenerateId.generate(),
                 title = "${originalDocument.title} (Copy)",
                 content = clonedContent,
+                commentConversations = clonedComments,
                 createdAt = now,
                 lastUpdatedAt = now,
                 lastSyncedAt = now,
@@ -219,11 +240,28 @@ object DocumentsService {
         return clonedDocuments
     }
 
-    private fun cloneStoryStep(storyStep: StoryStep): StoryStep {
+    private fun cloneStoryStep(
+        storyStep: StoryStep,
+        conversationIdMap: Map<String, String>,
+    ): StoryStep {
+        val remappedSpans = storyStep.spans.map { span ->
+            if (span.span == Span.COMMENT && span.extra != null) {
+                SpanInfo.create(
+                    start = span.start,
+                    end = span.end,
+                    span = span.span,
+                    extra = conversationIdMap[span.extra] ?: span.extra,
+                )
+            } else {
+                span
+            }
+        }.toSet()
+
         return storyStep.copy(
             id = GenerateId.generate(),
             localId = GenerateId.generate(),
-            steps = storyStep.steps.map { cloneStoryStep(it) }
+            spans = remappedSpans,
+            steps = storyStep.steps.map { cloneStoryStep(it, conversationIdMap) }
         )
     }
 
@@ -541,6 +579,13 @@ object DocumentsService {
                 workspaceId = workspaceId
             )
             writeopiaDb.saveDocument(newDocument)
+        }
+
+        request.commentConversations?.let { conversations ->
+            writeopiaDb.replaceCommentConversations(
+                documentId = documentId,
+                conversations = conversations.map { it.toModel() },
+            )
         }
 
         // Get server steps updated after client's last sync
