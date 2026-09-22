@@ -40,6 +40,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             ),
             createdAt = now,
             lastUpdatedAt = now,
+            lastSyncedAt = now,
             workspaceId = "workspace-1",
             parentId = "root",
         )
@@ -109,6 +110,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             content = mapOf(0.0 to initialStep),
             createdAt = now,
             lastUpdatedAt = now,
+            lastSyncedAt = now,
             workspaceId = "workspace-1",
             parentId = "root",
         )
@@ -170,5 +172,4 @@ class OnUpdateStoryStepSyncTrackerTest {
         assertEquals(null, synced.commentConversations)
         assertEquals(listOf("Updated"), synced.changes.map { it.storyStep.text })
     }
-
 }
