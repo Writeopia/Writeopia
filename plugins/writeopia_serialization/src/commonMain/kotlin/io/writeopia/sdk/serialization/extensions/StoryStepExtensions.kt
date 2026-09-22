@@ -99,7 +99,7 @@ fun DocumentApi.toModel(): Document =
         content = content
             .sortedBy { it.position }
             .associate { story -> story.position to story.toModel() },
-        commentConversations = commentConversations.map { it.toModel() },
+        commentConversations = commentConversations.orEmpty().map { it.toModel() },
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
         lastSyncedAt = lastSyncedAt?.let { Instant.fromEpochMilliseconds(it) },
