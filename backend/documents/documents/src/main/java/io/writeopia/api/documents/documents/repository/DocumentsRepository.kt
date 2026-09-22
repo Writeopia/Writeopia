@@ -15,7 +15,8 @@ private fun WriteopiaDbBackend.getDocumentDaoFn(): DocumentSqlBeDao =
             documentEntityQueries,
             storyStepEntityQueries,
             folderEntityQueries,
-            userFavoriteEntityQueries
+            userFavoriteEntityQueries,
+            commentEntityQueries
         ).also {
             documentSqlDao = it
         }
@@ -200,4 +201,12 @@ fun WriteopiaDbBackend.getDocumentIdsByWorkspaceId(workspaceId: String): List<St
  */
 fun WriteopiaDbBackend.updateDocumentTitle(documentId: String, title: String) {
     getDocumentDaoFn().updateDocumentTitle(documentId, title)
+}
+
+
+fun WriteopiaDbBackend.replaceCommentConversations(
+    documentId: String,
+    conversations: List<io.writeopia.sdk.models.comment.CommentConversation>,
+) {
+    getDocumentDaoFn().replaceCommentConversations(documentId, conversations)
 }
