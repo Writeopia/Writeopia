@@ -6,3 +6,5 @@ CREATE TABLE commentEntity (
   comment_position INTEGER NOT NULL,
   text TEXT NOT NULL
 );
+
+CREATE INDEX commentEntity_document_id_index ON commentEntity(document_id);
