@@ -78,6 +78,52 @@ class OnUpdateDocumentTrackerTest {
     }
 
     @Test
+    fun legacySaveShouldRejectNestedCommentSpansBeforePersisting() = runTest {
+        val now = Clock.System.now()
+        val conversation = conversation()
+        val document = Document(
+            id = "document-nested",
+            content = mapOf(
+                0.0 to StoryStep(
+                    text = "parent",
+                    type = StoryTypes.TEXT.type,
+                    steps = listOf(
+                        StoryStep(
+                            text = "nested",
+                            type = StoryTypes.TEXT.type,
+                            spans = setOf(
+                                SpanInfo.create(0, 6, Span.COMMENT, conversation.id)
+                            ),
+                        )
+                    ),
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspace-1",
+            parentId = "root",
+            commentConversations = listOf(conversation),
+        )
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+
+        assertFailsWith<IllegalStateException> {
+            tracker.saveOnStoryChanges(
+                MutableStateFlow(
+                    StoryState(
+                        stories = document.content,
+                        lastEdit = LastEdit.Whole,
+                    ) to document.info()
+                ),
+                MutableStateFlow(document.workspaceId),
+            )
+        }
+
+        assertFalse(recorder.savedDocument.isCompleted)
+    }
+
+    @Test
     fun commentOnlyChangeShouldPersistThroughDocumentTracker() = runTest {
         val firstComment = Comment(id = "comment-1", text = "first")
         val conversation = CommentConversation(
