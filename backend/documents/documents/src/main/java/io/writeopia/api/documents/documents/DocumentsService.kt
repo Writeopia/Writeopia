@@ -38,6 +38,7 @@ import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.documents.repository.setDocumentPublished
 import io.writeopia.api.documents.documents.repository.SyncEventType
 import io.writeopia.api.documents.documents.repository.updateDocumentTitle
+import io.writeopia.api.documents.documents.repository.touchDocument
 import io.writeopia.api.documents.documents.repository.upsertStoryStep
 import io.writeopia.api.documents.search.SearchDocument
 import io.writeopia.connection.ResultData
@@ -595,6 +596,11 @@ object DocumentsService {
             writeopiaDb.replaceCommentConversations(
                 documentId = documentId,
                 conversations = conversations.map { it.toModel() },
+            )
+            writeopiaDb.touchDocument(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                timestamp = serverTimestamp,
             )
         }
 
