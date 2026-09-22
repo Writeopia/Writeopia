@@ -203,7 +203,6 @@ fun WriteopiaDbBackend.updateDocumentTitle(documentId: String, title: String) {
     getDocumentDaoFn().updateDocumentTitle(documentId, title)
 }
 
-
 fun WriteopiaDbBackend.replaceCommentConversations(
     documentId: String,
     conversations: List<io.writeopia.sdk.models.comment.CommentConversation>,
