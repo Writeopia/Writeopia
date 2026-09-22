@@ -272,7 +272,7 @@ class OnUpdateStoryStepSyncTracker(
                 )
             },
             deletions = batch.deletions.toList(),
-            commentConversations = currentComments?.map { it.toApi() },
+            commentConversations = if (commentsChanged) currentComments?.map { it.toApi() } else null,
         )
 
         try {
