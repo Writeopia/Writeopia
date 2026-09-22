@@ -209,3 +209,11 @@ fun WriteopiaDbBackend.replaceCommentConversations(
 ) {
     getDocumentDaoFn().replaceCommentConversations(documentId, conversations)
 }
+
+fun WriteopiaDbBackend.touchDocument(
+    documentId: String,
+    workspaceId: String,
+    timestamp: Long,
+) {
+    getDocumentDaoFn().touchDocument(documentId, workspaceId, timestamp)
+}
