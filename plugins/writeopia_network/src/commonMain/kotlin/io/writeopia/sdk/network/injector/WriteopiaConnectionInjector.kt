@@ -31,13 +31,8 @@ private val consoleLogger = object : Logger {
 
 class WriteopiaConnectionInjector private constructor(
     private val baseUrl: String,
-    private val bearerTokenHandler: BearerTokenHandler? = null,
     private val apiLogger: Logger = consoleLogger,
-    private val client: HttpClient =
-        ApiInjectorDefaults.httpClient(
-            bearerTokenHandler = bearerTokenHandler,
-            apiLogger = apiLogger
-        ),
+    private val client: HttpClient = ApiInjectorDefaults.httpClient(apiLogger = apiLogger),
     private val disableWebsocket: Boolean = false
 ) {
 
@@ -82,6 +77,13 @@ class WriteopiaConnectionInjector private constructor(
         }
 
         /**
+         * Looked up dynamically on every request (instead of being captured once at
+         * HttpClient construction time) so callers can build the singleton and set the
+         * bearer token handler in either order without permanently baking in "no auth".
+         */
+        internal fun currentBearerTokenHandler(): BearerTokenHandler? = bearerTokenHandler
+
+        /**
          * Clears the singleton instance and closes the HttpClient.
          * Call this on logout to ensure cached bearer tokens are invalidated.
          */
@@ -97,7 +99,6 @@ class WriteopiaConnectionInjector private constructor(
 
             return WriteopiaConnectionInjector(
                 baseUrl = thisBaseUrl,
-                bearerTokenHandler = bearerTokenHandler,
                 disableWebsocket = disableWebsocket
             ).also { instance = it }
         }
@@ -107,7 +108,6 @@ class WriteopiaConnectionInjector private constructor(
 private object ApiInjectorDefaults {
     fun httpClient(
         json: Json = writeopiaJson,
-        bearerTokenHandler: BearerTokenHandler?,
         apiLogger: Logger,
     ) = HttpClient {
         install(HttpTimeout) {
@@ -128,24 +128,27 @@ private object ApiInjectorDefaults {
             sanitizeHeader { header -> header == HttpHeaders.Authorization }
         }
 
-        if (bearerTokenHandler != null) {
-            install(Auth) {
-                bearer {
-                    loadTokens {
-                        val accessToken = bearerTokenHandler.getIdToken() ?: ""
-                        val refreshToken = bearerTokenHandler.getRefreshToken() ?: ""
+        // The handler is looked up dynamically (not captured as a parameter) so this
+        // client works correctly regardless of whether it's built before or after
+        // WriteopiaConnectionInjector.setBearerTokenHandler() is called.
+        install(Auth) {
+            bearer {
+                loadTokens {
+                    val handler = WriteopiaConnectionInjector.currentBearerTokenHandler()
+                    val accessToken = handler?.getIdToken() ?: ""
+                    val refreshToken = handler?.getRefreshToken() ?: ""
 
-                        BearerTokens(accessToken, refreshToken)
-                    }
+                    BearerTokens(accessToken, refreshToken)
+                }
 
-                    refreshTokens {
-                        when (val result = bearerTokenHandler.refreshTokens()) {
-                            is TokenRefreshResult.Success -> {
-                                BearerTokens(result.accessToken, result.refreshToken)
-                            }
-                            is TokenRefreshResult.NoRefreshToken -> null
-                            is TokenRefreshResult.Failure -> null
+                refreshTokens {
+                    val handler = WriteopiaConnectionInjector.currentBearerTokenHandler()
+
+                    when (val result = handler?.refreshTokens()) {
+                        is TokenRefreshResult.Success -> {
+                            BearerTokens(result.accessToken, result.refreshToken)
                         }
+                        else -> null
                     }
                 }
             }
