@@ -74,6 +74,59 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun `comment id collision should not move a comment between documents`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val firstWorkspaceId = GenerateId.generate()
+        val secondWorkspaceId = GenerateId.generate()
+        val firstDocumentId = GenerateId.generate()
+        val secondDocumentId = GenerateId.generate()
+        val sharedCommentId = GenerateId.generate()
+
+        database.saveDocument(
+            Document(
+                id = firstDocumentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = firstWorkspaceId,
+                parentId = "root",
+                commentConversations = listOf(
+                    CommentConversation(
+                        id = GenerateId.generate(),
+                        comments = listOf(Comment(id = sharedCommentId, text = "owner")),
+                    )
+                ),
+            )
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            database.saveDocument(
+                Document(
+                    id = secondDocumentId,
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    lastSyncedAt = now,
+                    workspaceId = secondWorkspaceId,
+                    parentId = "root",
+                    commentConversations = listOf(
+                        CommentConversation(
+                            id = GenerateId.generate(),
+                            comments = listOf(Comment(id = sharedCommentId, text = "collision")),
+                        )
+                    ),
+                )
+            )
+        }
+
+        val owner = database.getDocumentWithContentById(firstDocumentId, firstWorkspaceId)
+        assertEquals("owner", owner?.commentConversations?.single()?.comments?.single()?.text)
+        assertEquals(null, database.getDocumentWithContentById(secondDocumentId, secondWorkspaceId))
+
+        database.deleteDocumentById(firstDocumentId)
+    }
+
+    @Test
     fun `full document write should reject document owned by another workspace`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()

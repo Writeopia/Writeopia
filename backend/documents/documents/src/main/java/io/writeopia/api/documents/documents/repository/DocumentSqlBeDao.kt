@@ -97,6 +97,16 @@ class DocumentSqlBeDao(
         documentId: String,
         conversations: List<CommentConversation>,
     ) {
+        conversations.asSequence()
+            .flatMap { conversation -> conversation.comments.asSequence() }
+            .forEach { comment ->
+                val existingDocumentId =
+                    commentQueries?.selectDocumentIdById(comment.id)?.executeAsOneOrNull()
+                require(existingDocumentId == null || existingDocumentId == documentId) {
+                    "Comment does not belong to the requested document"
+                }
+            }
+
         commentQueries?.deleteByDocumentId(documentId)
         conversations.forEachIndexed { conversationPosition, conversation ->
             conversation.comments.forEachIndexed { commentPosition, comment ->
@@ -935,15 +945,27 @@ class DocumentSqlBeDao(
     // Delete and other operations - with real implementation
     fun deleteDocumentById(documentId: String) {
         val now = Clock.System.now().toEpochMilliseconds()
-        documentQueries?.delete(now, documentId)
-        storyStepQueries?.deleteByDocumentId(documentId)
-        commentQueries?.deleteByDocumentId(documentId)
+        val delete = {
+            documentQueries?.delete(now, documentId)
+            storyStepQueries?.deleteByDocumentId(documentId)
+            commentQueries?.deleteByDocumentId(documentId)
+        }
+
+        documentQueries?.transaction {
+            delete()
+        } ?: delete()
     }
 
     fun deleteDocumentByIds(ids: Set<String>) {
-        documentQueries?.deleteByIds(Clock.System.now().toEpochMilliseconds(), ids)
-        storyStepQueries?.deleteByDocumentIds(ids)
-        commentQueries?.deleteByDocumentIds(ids)
+        val delete = {
+            documentQueries?.deleteByIds(Clock.System.now().toEpochMilliseconds(), ids)
+            storyStepQueries?.deleteByDocumentIds(ids)
+            commentQueries?.deleteByDocumentIds(ids)
+        }
+
+        documentQueries?.transaction {
+            delete()
+        } ?: delete()
     }
 
     fun loadDocumentIdsByParentId(parentId: String, workspaceId: String): List<String> =

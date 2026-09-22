@@ -56,6 +56,7 @@ import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
@@ -537,6 +538,8 @@ object DocumentsService {
     }
 
     private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String): Boolean {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return true
+
         val aiHubUrl = Urls.AI_HUB ?: return true
 
         return wrWebClient.post("$aiHubUrl/documents/") {

@@ -9,6 +9,11 @@ CREATE TABLE comment_entity (
 
 CREATE INDEX comment_entity_document_id_index ON comment_entity(document_id);
 
+selectDocumentIdById:
+SELECT document_id
+FROM comment_entity
+WHERE id = ?;
+
 selectByDocumentId:
 SELECT *
 FROM comment_entity
@@ -31,7 +36,8 @@ UPDATE SET
   document_id = excluded.document_id,
   conversation_position = excluded.conversation_position,
   comment_position = excluded.comment_position,
-  text = excluded.text;
+  text = excluded.text
+WHERE comment_entity.document_id = excluded.document_id;
 
 deleteByDocumentId:
 DELETE FROM comment_entity
