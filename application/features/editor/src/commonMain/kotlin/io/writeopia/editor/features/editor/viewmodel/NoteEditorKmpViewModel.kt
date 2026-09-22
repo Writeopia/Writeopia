@@ -520,6 +520,7 @@ class NoteEditorKmpViewModel(
                         documentId = documentId,
                         documentEditionFlow = writeopiaManager.documentEditionState,
                         workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                        commentConversationsFlow = writeopiaManager.commentConversations,
                         syncApi = syncApi
                     )
                 }
@@ -614,6 +615,7 @@ class NoteEditorKmpViewModel(
                     documentId = documentId,
                     documentEditionFlow = writeopiaManager.documentEditionState,
                     workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                    commentConversationsFlow = writeopiaManager.commentConversations,
                     syncApi = syncApi
                 )
             }
