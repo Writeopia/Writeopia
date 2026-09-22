@@ -119,6 +119,56 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun `published documents should not expose editor comments`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        val conversation = CommentConversation(
+            id = GenerateId.generate(),
+            comments = listOf(Comment(id = GenerateId.generate(), text = "Private note")),
+        )
+        val nestedStep = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "Nested text",
+            spans = setOf(
+                SpanInfo.create(0, 6, Span.COMMENT, conversation.id)
+            ),
+        )
+        val document = Document(
+            id = documentId,
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = now,
+            workspaceId = workspaceId,
+            parentId = "root",
+            published = true,
+            content = mapOf(
+                0.0 to StoryStep(
+                    type = StoryTypes.TEXT.type,
+                    text = "Public text",
+                    spans = setOf(
+                        SpanInfo.create(0, 6, Span.COMMENT, conversation.id)
+                    ),
+                    steps = listOf(nestedStep),
+                )
+            ),
+            commentConversations = listOf(conversation),
+        )
+
+        database.saveDocument(document)
+        val published = DocumentsService.getPublishedDocument(documentId, database)
+
+        assertTrue(published != null)
+        assertTrue(published.commentConversations.isEmpty())
+        val publishedStep = published.content.values.single()
+        assertTrue(publishedStep.spans.none { it.span == Span.COMMENT })
+        assertTrue(publishedStep.steps.single().spans.none { it.span == Span.COMMENT })
+
+        database.deleteDocumentById(documentId)
+    }
+
+    @Test
     fun `when getting a document, the order of steps should be correct`() = runTest {
         val database = configurePersistence()
 
