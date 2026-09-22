@@ -58,6 +58,9 @@ suspend fun WriteopiaDbBackend.allFoldersByWorkspaceId(workspaceId: String): Lis
 fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
     getDocumentDaoFn().loadDocumentByParentId(parentId)
 
+fun WriteopiaDbBackend.getDocumentWorkspaceId(id: String): String? =
+    getDocumentDaoFn().loadDocumentWorkspaceId(id)
+
 suspend fun WriteopiaDbBackend.getDocumentById(
     id: String = "test",
     workspaceId: String
