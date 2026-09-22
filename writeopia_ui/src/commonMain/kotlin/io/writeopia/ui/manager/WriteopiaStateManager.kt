@@ -1257,15 +1257,11 @@ class WriteopiaStateManager(
         val state = _currentStory.value
         val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
         val stories = state.stories.mapValues { (position, story) ->
-            val spans = story.spans.filterNot { span ->
-                span.span == Span.COMMENT && span.extra == conversationId
-            }.toSet()
+            val updated = story.removeCommentSpansRecursively(setOf(conversationId))
 
-            if (spans != story.spans) {
-                story.copy(
-                    localId = GenerateId.generate(),
-                    spans = spans
-                ).also { changedSteps += position to it }
+            if (updated != story) {
+                changedSteps += position to updated
+                updated
             } else {
                 story
             }
@@ -1276,6 +1272,27 @@ class WriteopiaStateManager(
                 stories = stories,
                 lastEdit = LastEdit.BulkEdition(changedSteps)
             )
+        }
+    }
+
+    private fun StoryStep.removeCommentSpansRecursively(
+        conversationIds: Set<String>,
+    ): StoryStep {
+        val updatedSpans = spans.filterNot { span ->
+            span.span == Span.COMMENT && span.extra in conversationIds
+        }.toSet()
+        val updatedSteps = steps.map { step ->
+            step.removeCommentSpansRecursively(conversationIds)
+        }
+
+        return if (updatedSpans != spans || updatedSteps != steps) {
+            copy(
+                localId = GenerateId.generate(),
+                spans = updatedSpans,
+                steps = updatedSteps,
+            )
+        } else {
+            this
         }
     }
 
@@ -1294,10 +1311,20 @@ class WriteopiaStateManager(
     private fun referencedCommentConversationIds(): Set<String> =
         _currentStory.value.stories.values
             .asSequence()
-            .flatMap { it.spans.asSequence() }
-            .filter { it.span == Span.COMMENT }
-            .mapNotNull { it.extra }
+            .flatMap { it.commentConversationIdsRecursively() }
             .toSet()
+
+    private fun StoryStep.commentConversationIdsRecursively(): Sequence<String> =
+        sequence {
+            spans.asSequence()
+                .filter { it.span == Span.COMMENT }
+                .mapNotNull { it.extra }
+                .forEach { yield(it) }
+
+            steps.forEach { step ->
+                yieldAll(step.commentConversationIdsRecursively())
+            }
+        }
 
     private fun replaceCommentConversationArchive(conversations: List<CommentConversation>) {
         commentConversationArchive.value = conversations.associateBy { it.id }
@@ -1322,11 +1349,7 @@ class WriteopiaStateManager(
         if (missingConversationIds.isNotEmpty()) {
             val state = _currentStory.value
             val stories = state.stories.mapValues { (_, story) ->
-                story.copy(
-                    spans = story.spans.filterNot { span ->
-                        span.span == Span.COMMENT && span.extra in missingConversationIds
-                    }.toSet()
-                )
+                story.removeCommentSpansRecursively(missingConversationIds)
             }
             _currentStory.value = state.copy(stories = stories)
         }
