@@ -281,10 +281,31 @@ class SqlDelightDocumentRepositoryTest {
             parentId = "root",
         )
 
+        val retainedDocument = Document(
+            id = "document-to-keep",
+            commentConversations = listOf(
+                CommentConversation(
+                    id = "conversation-keep",
+                    comments = listOf(Comment(id = "comment-keep", text = "Keep me"))
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = document.workspaceId,
+            parentId = "root",
+        )
+
         documentRepository.saveDocument(document)
+        documentRepository.saveDocument(retainedDocument)
         documentRepository.hardDeleteDocumentByIds(setOf(document.id), document.workspaceId)
 
         assertTrue(database.commentEntityQueries.selectByDocumentId(document.id).awaitAsList().isEmpty())
+        assertTrue(
+            database.commentEntityQueries.selectByDocumentId(retainedDocument.id)
+                .awaitAsList()
+                .isNotEmpty()
+        )
     }
 
 }
