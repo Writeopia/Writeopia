@@ -106,6 +106,7 @@ class DocumentSyncManager(
         documentId: String,
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
+        commentConversationsFlow: StateFlow<List<CommentConversation>>? = null,
         syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse,
         onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> }
     ) {
@@ -114,7 +115,8 @@ class DocumentSyncManager(
 
         val storyStepSyncTracker: StoryStepSyncTracker = OnUpdateStoryStepSyncTracker(
             syncApi = syncApi,
-            onServerUpdate = onServerUpdate
+            onServerUpdate = onServerUpdate,
+            commentConversationsFlow = commentConversationsFlow,
         )
 
         // Start a new backend sync job in the global scope
