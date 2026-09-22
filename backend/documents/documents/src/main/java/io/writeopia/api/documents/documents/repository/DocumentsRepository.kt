@@ -55,8 +55,10 @@ suspend fun WriteopiaDbBackend.allFoldersByWorkspaceId(workspaceId: String): Lis
     return getDocumentDaoFn().loadAllFoldersByWorkspaceId(workspaceId)
 }
 
-fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
-    getDocumentDaoFn().loadDocumentByParentId(parentId)
+fun WriteopiaDbBackend.getDocumentsByParentId(
+    parentId: String = "root",
+    workspaceId: String,
+): List<Document> = getDocumentDaoFn().loadDocumentByParentId(parentId, workspaceId)
 
 fun WriteopiaDbBackend.getDocumentWorkspaceId(id: String): String? =
     getDocumentDaoFn().loadDocumentWorkspaceId(id)
@@ -77,11 +79,15 @@ suspend fun WriteopiaDbBackend.getDocumentByTitle(
 suspend fun WriteopiaDbBackend.getFolderById(id: String = "test", workspaceId: String): Folder? =
     getDocumentDaoFn().loadFolderById(id, workspaceId)
 
-suspend fun WriteopiaDbBackend.getIdsByParentId(parentId: String = "root"): List<String> =
-    getDocumentDaoFn().loadDocumentIdsByParentId(parentId)
+suspend fun WriteopiaDbBackend.getIdsByParentId(
+    parentId: String = "root",
+    workspaceId: String,
+): List<String> = getDocumentDaoFn().loadDocumentIdsByParentId(parentId, workspaceId)
 
-fun WriteopiaDbBackend.getFoldersByParentId(parentId: String = "root"): List<Folder> =
-    getDocumentDaoFn().loadFoldersByParentId(parentId)
+fun WriteopiaDbBackend.getFoldersByParentId(
+    parentId: String = "root",
+    workspaceId: String,
+): List<Folder> = getDocumentDaoFn().loadFoldersByParentId(parentId, workspaceId)
 
 suspend fun WriteopiaDbBackend.deleteDocumentById(vararg documentIds: String) {
     val dao = getDocumentDaoFn()
@@ -92,8 +98,8 @@ fun WriteopiaDbBackend.deleteFolder(folderId: String, workspaceId: String) {
     getDocumentDaoFn().deleteFolder(folderId, workspaceId)
 }
 
-fun WriteopiaDbBackend.deleteDocumentsByFolderId(folderId: String) {
-    getDocumentDaoFn().deleteDocumentsByFolderId(folderId)
+fun WriteopiaDbBackend.deleteDocumentsByFolderId(folderId: String, workspaceId: String) {
+    getDocumentDaoFn().deleteDocumentsByFolderId(folderId, workspaceId)
 }
 
 fun WriteopiaDbBackend.moveFolderToFolder(folderId: String, parentId: String) {
