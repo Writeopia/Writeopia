@@ -153,6 +153,13 @@ fun WriteopiaDbBackend.enableUserByEmail(email: String) {
     this.userEntityQueries.enableUserByEmail(email)
 }
 
+/**
+ * Atomically enables the account and clears its confirmation code, but only if it isn't
+ * pending deletion. Returns true if the transition happened.
+ */
+suspend fun WriteopiaDbBackend.confirmEmailIfNotPendingDeletion(email: String): Boolean =
+    this.userEntityQueries.confirmEmailIfNotPendingDeletion(email).await() > 0
+
 fun WriteopiaDbBackend.disableUserByEmail(email: String) {
     this.userEntityQueries.disableUserByEmail(email)
 }

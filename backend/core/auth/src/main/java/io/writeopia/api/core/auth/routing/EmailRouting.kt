@@ -7,8 +7,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
 import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.toApi
-import io.writeopia.api.core.auth.repository.clearConfirmationCode
-import io.writeopia.api.core.auth.repository.enableUserByEmail
+import io.writeopia.api.core.auth.repository.confirmEmailIfNotPendingDeletion
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.isCodeValid
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
@@ -30,9 +29,9 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
             val isValid = writeopiaDb.isCodeValid(request.email, request.code)
 
             if (isValid) {
-                val user = writeopiaDb.getUserByEmail(request.email)
+                val confirmed = writeopiaDb.confirmEmailIfNotPendingDeletion(request.email)
 
-                if (user?.status == UserStatus.DELETION_PENDING) {
+                if (!confirmed) {
                     logger.warn("Email confirmation rejected, account is being deleted: ${request.email}")
                     call.respond(
                         HttpStatusCode.Conflict,
@@ -41,8 +40,7 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
                     return@post
                 }
 
-                writeopiaDb.enableUserByEmail(request.email)
-                writeopiaDb.clearConfirmationCode(request.email)
+                val user = writeopiaDb.getUserByEmail(request.email)
 
                 if (user != null) {
                     val tokenPair = with(RefreshTokenService) {
