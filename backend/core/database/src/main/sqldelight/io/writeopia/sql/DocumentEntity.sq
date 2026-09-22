@@ -176,6 +176,11 @@ UPDATE document_entity SET published = ?, last_updated_at = ? WHERE id = ?;
 updateTitle:
 UPDATE document_entity SET title = ?, last_updated_at = ?, last_synced = ? WHERE id = ?;
 
+touch:
+UPDATE document_entity
+SET last_updated_at = ?, last_synced = ?
+WHERE id = ? AND workspace_id = ? AND deleted = FALSE;
+
 selectPublishedWithContentById:
 SELECT *
 FROM document_entity
