@@ -14,6 +14,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.data.CommentApi
 import io.writeopia.sdk.serialization.data.CommentConversationApi
+import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import kotlinx.coroutines.test.runTest
 import kotlin.time.Clock
@@ -67,6 +68,61 @@ class DocumentRepositoryTest {
                 ?.spans
                 ?.firstOrNull { it.span == Span.COMMENT }
                 ?.extra,
+        )
+
+        database.deleteDocumentById(documentId)
+    }
+
+    @Test
+    fun `legacy full document write should not erase existing comments`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        val conversation = CommentConversation(
+            id = GenerateId.generate(),
+            comments = listOf(Comment(id = GenerateId.generate(), text = "keep")),
+        )
+
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+                commentConversations = listOf(conversation),
+            )
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            DocumentsService.documentFromApiForWrite(
+                document = DocumentApi(
+                    id = documentId,
+                    workspaceId = workspaceId,
+                    parentId = "root",
+                ),
+                workspaceId = workspaceId,
+                writeopiaDb = database,
+            )
+        }
+
+        val explicitModernPayload = DocumentsService.documentFromApiForWrite(
+            document = DocumentApi(
+                id = documentId,
+                workspaceId = workspaceId,
+                parentId = "root",
+                commentConversations = emptyList(),
+            ),
+            workspaceId = workspaceId,
+            writeopiaDb = database,
+        )
+        assertTrue(explicitModernPayload.commentConversations.isEmpty())
+
+        assertEquals(
+            listOf(conversation),
+            database.getDocumentWithContentById(documentId, workspaceId)?.commentConversations,
         )
 
         database.deleteDocumentById(documentId)
