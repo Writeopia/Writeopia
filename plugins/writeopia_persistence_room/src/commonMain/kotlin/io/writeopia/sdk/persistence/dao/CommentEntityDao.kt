@@ -19,6 +19,12 @@ interface CommentEntityDao {
     )
     suspend fun loadByDocumentId(documentId: String): List<CommentEntity>
 
+    @Query(
+        "SELECT * FROM $COMMENT_ENTITY WHERE document_id IN (:documentIds) " +
+            "ORDER BY document_id, conversation_position, comment_position"
+    )
+    suspend fun loadByDocumentIds(documentIds: List<String>): List<CommentEntity>
+
     @Query("DELETE FROM $COMMENT_ENTITY WHERE document_id = :documentId")
     suspend fun deleteByDocumentId(documentId: String)
 
