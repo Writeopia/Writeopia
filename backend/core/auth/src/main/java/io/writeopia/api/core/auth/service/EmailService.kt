@@ -206,4 +206,92 @@ object EmailService {
             </html>
         """.trimIndent()
     }
+
+    /**
+     * Sent only after the account-deletion saga has confirmed the user's data (workspaces,
+     * documents, media) is gone AND the user_entity row itself has been hard-deleted - see
+     * AccountDeletionService.checkAndFinalize. Routed through the account-deletion-finalized
+     * Pub/Sub topic (transactional outbox + Debezium) rather than called in-process right
+     * after the delete, specifically so a crash or Mailgun failure here doesn't silently drop
+     * the email - Pub/Sub redelivers the finalized event until this call succeeds.
+     */
+    suspend fun sendAccountDeletionCompleteEmail(
+        toEmail: String,
+        userName: String
+    ): Boolean {
+        val apiKey = mailgunApiKey
+        val domain = mailgunDomain
+
+        if (apiKey == null || domain == null) {
+            logger.warn("Mailgun not configured. MAILGUN_API_KEY or MAILGUN_DOMAIN missing.")
+            logger.info("Account deletion complete for $toEmail")
+            return true
+        }
+
+        return try {
+            val response = client.submitForm(
+                url = "https://api.eu.mailgun.net/v3/$domain/messages",
+                formParameters = Parameters.build {
+                    append("from", "Writeopia <$mailgunFromEmail>")
+                    append("to", toEmail)
+                    append("subject", "Your Writeopia account has been deleted")
+                    append("text", buildAccountDeletionEmailText(userName))
+                    append("html", buildAccountDeletionEmailHtml(userName))
+                }
+            ) {
+                header("Authorization", "Basic ${java.util.Base64.getEncoder().encodeToString("api:$apiKey".toByteArray())}")
+            }
+
+            if (response.status == HttpStatusCode.OK) {
+                logger.info("Account deletion confirmation email sent to $toEmail")
+                true
+            } else {
+                logger.error("Failed to send account deletion email to $toEmail: ${response.status}")
+                false
+            }
+        } catch (e: Exception) {
+            logger.error("Error sending account deletion email to $toEmail: ${e.message}")
+            e.printStackTrace()
+            false
+        }
+    }
+
+    private fun buildAccountDeletionEmailText(userName: String): String {
+        return """
+            Hi $userName,
+
+            Your Writeopia account and all associated data - workspaces, documents, and
+            uploaded media - have been permanently deleted, as requested.
+
+            If you didn't request this, please contact us immediately.
+
+            Best regards,
+            The Writeopia Team
+        """.trimIndent()
+    }
+
+    private fun buildAccountDeletionEmailHtml(userName: String): String {
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .footer { color: #666; font-size: 14px; margin-top: 30px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>Account Deleted</h1>
+                    <p>Hi $userName,</p>
+                    <p>Your Writeopia account and all associated data - workspaces, documents, and uploaded media - have been permanently deleted, as requested.</p>
+                    <p>If you didn't request this, please contact us immediately.</p>
+                    <p class="footer">Best regards,<br>The Writeopia Team</p>
+                </div>
+            </body>
+            </html>
+        """.trimIndent()
+    }
 }

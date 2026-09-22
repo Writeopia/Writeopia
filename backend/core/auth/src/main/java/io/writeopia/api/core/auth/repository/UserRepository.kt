@@ -2,6 +2,7 @@
 
 package io.writeopia.api.core.auth.repository
 
+import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.WriteopiaBeUser
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
@@ -20,27 +21,9 @@ fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaBeUser? =
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
-                enabled = userEntity.enabled,
                 confirmationCode = userEntity.confirmation_code,
-                confirmationCodeExpiry = userEntity.confirmation_code_expiry
-            )
-        }
-
-fun WriteopiaDbBackend.getEnabledUserByEmail(email: String): WriteopiaBeUser? =
-    this.userEntityQueries
-        .selectEnabledUserByEmail(email)
-        .executeAsOneOrNull()
-        ?.let { userEntity ->
-            WriteopiaBeUser(
-                id = userEntity.id,
-                email = userEntity.email,
-                username = userEntity.username,
-                password = userEntity.password,
-                name = userEntity.name,
-                salt = userEntity.salt,
-                enabled = userEntity.enabled,
-                confirmationCode = userEntity.confirmation_code,
-                confirmationCodeExpiry = userEntity.confirmation_code_expiry
+                confirmationCodeExpiry = userEntity.confirmation_code_expiry,
+                status = UserStatus.fromString(userEntity.status)
             )
         }
 
@@ -56,9 +39,9 @@ fun WriteopiaDbBackend.getUserById(id: String): WriteopiaBeUser? =
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
-                enabled = userEntity.enabled,
                 confirmationCode = userEntity.confirmation_code,
-                confirmationCodeExpiry = userEntity.confirmation_code_expiry
+                confirmationCodeExpiry = userEntity.confirmation_code_expiry,
+                status = UserStatus.fromString(userEntity.status)
             )
         }
 
@@ -69,7 +52,7 @@ fun WriteopiaDbBackend.insertUser(
     email: String,
     password: String,
     salt: String,
-    enabled: Boolean,
+    status: UserStatus,
     confirmationCode: String? = null,
     confirmationCodeExpiry: Long? = null,
     accountType: String = "FREE",
@@ -82,10 +65,10 @@ fun WriteopiaDbBackend.insertUser(
         email = email,
         password = password,
         salt = salt,
-        enabled = enabled,
         confirmation_code = confirmationCode,
         confirmation_code_expiry = confirmationCodeExpiry,
         account_type = accountType,
+        status = status.value,
     )
 }
 
@@ -99,7 +82,7 @@ fun WriteopiaDbBackend.insertUser(
         email = user.email,
         password = user.password,
         salt = user.salt,
-        enabled = user.enabled,
+        status = user.status,
         confirmationCode = user.confirmationCode,
         confirmationCodeExpiry = user.confirmationCodeExpiry,
     )
@@ -113,6 +96,13 @@ fun WriteopiaDbBackend.userExistsByUsernameOrEmail(username: String, email: Stri
 fun WriteopiaDbBackend.updatePassword(id: String, password: String, salt: String) {
     this.userEntityQueries.updatePassword(password, salt, id)
 }
+
+/** Idempotent: no-op if the user is already DELETION_PENDING. Returns true if this call changed it. */
+suspend fun WriteopiaDbBackend.setUserStatusPendingDeletion(id: String): Boolean =
+    this.userEntityQueries.setStatusPendingDeletion(id).await() > 0
+
+fun WriteopiaDbBackend.getUserStatus(id: String): UserStatus? =
+    this.userEntityQueries.selectStatusById(id).executeAsOneOrNull()?.let(UserStatus::fromString)
 
 suspend fun WriteopiaDbBackend.deleteUserById(id: String): Long {
     return this.userEntityQueries.deleteUser(id).await()

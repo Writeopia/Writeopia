@@ -5,6 +5,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
+import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.clearConfirmationCode
 import io.writeopia.api.core.auth.repository.enableUserByEmail
@@ -88,7 +89,7 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
                 return@post
             }
 
-            if (user.enabled) {
+            if (user.status == UserStatus.ACTIVE) {
                 logger.info("User already confirmed: ${request.email}")
                 call.respond(
                     HttpStatusCode.OK,
