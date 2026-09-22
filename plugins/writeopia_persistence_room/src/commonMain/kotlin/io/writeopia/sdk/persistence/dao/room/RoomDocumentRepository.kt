@@ -41,7 +41,11 @@ class RoomDocumentRepository(
         workspaceId: String
     ): List<Document> =
         documentEntityDao.loadDocumentsByParentIdForWorkspace(folderId, workspaceId)
-            .map { it.toModel() }
+            .map { documentEntity ->
+                documentEntity.toModel(
+                    commentConversations = loadCommentConversations(documentEntity.id)
+                )
+            }
 
     override suspend fun loadFavDocumentsForWorkspace(
         orderBy: String,
@@ -232,7 +236,11 @@ class RoomDocumentRepository(
         workspaceId: String
     ): List<Document> =
         documentEntityDao.loadDocumentsByParentIdForWorkspace(parentId, workspaceId)
-            .map { it.toModel() }
+            .map { documentEntity ->
+                documentEntity.toModel(
+                    commentConversations = loadCommentConversations(documentEntity.id)
+                )
+            }
 
     /**
      * This method removes the story units that are not in the root level (they don't have parents)
@@ -269,9 +277,13 @@ class RoomDocumentRepository(
 
     private suspend fun setFavorite(ids: Set<String>, workspaceId: String, isFavorite: Boolean) {
         ids.mapNotNull { id ->
-            loadDocumentById(id, workspaceId)
-        }.forEach { document ->
-            documentEntityDao.updateDocument(document.copy(favorite = isFavorite).toEntity())
+            if (workspaceId.isEmpty()) {
+                documentEntityDao.loadDocumentById(id)
+            } else {
+                documentEntityDao.loadDocumentByIdForWorkspace(id, workspaceId)
+            }
+        }.forEach { documentEntity ->
+            documentEntityDao.updateDocument(documentEntity.copy(favorite = isFavorite))
         }
     }
 
