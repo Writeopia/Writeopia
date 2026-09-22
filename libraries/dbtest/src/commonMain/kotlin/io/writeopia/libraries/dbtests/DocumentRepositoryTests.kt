@@ -242,6 +242,15 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         assertEquals(document.commentConversations, loadedDocument.commentConversations)
     }
 
+    suspend fun parentLoadPreservesComments() {
+        val document = saveDocumentWithComments()
+        val loadedDocument =
+            documentRepository.loadDocumentsByParentId(document.parentId, document.workspaceId)
+                .first { it.id == document.id }
+
+        assertEquals(document.commentConversations, loadedDocument.commentConversations)
+    }
+
     suspend fun commentPersistenceRespectsWorkspaceBoundaries() {
         val now = now()
 
