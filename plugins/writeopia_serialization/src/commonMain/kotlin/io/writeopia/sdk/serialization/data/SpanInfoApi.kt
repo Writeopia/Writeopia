@@ -8,4 +8,11 @@ data class SpanInfoApi(
     val end: Int,
     val span: String,
     val extra: String? = null
-)
+) {
+    @Deprecated("Use primary constructor with extra.")
+    constructor(
+        start: Int,
+        end: Int,
+        span: String,
+    ) : this(start, end, span, null)
+}
