@@ -3,8 +3,10 @@ package io.writeopia.sdk.manager
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.comment.CommentConversation
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 /**
  * Saves the document automatically based of content changes.
@@ -25,6 +27,20 @@ interface DocumentTracker {
         workspaceIdFlow: Flow<String>,
         commentConversationsFlow: StateFlow<List<CommentConversation>>
     ) {
-        saveOnStoryChanges(documentEditionFlow, workspaceIdFlow)
+        coroutineScope {
+            val commentGuard = launch {
+                commentConversationsFlow.collect { conversations ->
+                    check(conversations.isEmpty()) {
+                        "This DocumentTracker does not support comment conversations."
+                    }
+                }
+            }
+
+            try {
+                saveOnStoryChanges(documentEditionFlow, workspaceIdFlow)
+            } finally {
+                commentGuard.cancel()
+            }
+        }
     }
 }

@@ -15,7 +15,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -57,13 +56,16 @@ class DocumentSyncManager(
         workspaceIdFlow: Flow<String>,
         documentTracker: DocumentTracker
     ) {
-        registerForDbSync(
-            documentId = documentId,
-            documentEditionFlow = documentEditionFlow,
-            workspaceIdFlow = workspaceIdFlow,
-            commentConversationsFlow = MutableStateFlow(emptyList()),
-            documentTracker = documentTracker,
-        )
+        activeSyncJobs[documentId]?.cancel()
+
+        val job = scope.launch(dispatcher) {
+            documentTracker.saveOnStoryChanges(
+                documentEditionFlow,
+                workspaceIdFlow
+            )
+        }
+
+        activeSyncJobs[documentId] = job
     }
 
     fun registerForDbSync(

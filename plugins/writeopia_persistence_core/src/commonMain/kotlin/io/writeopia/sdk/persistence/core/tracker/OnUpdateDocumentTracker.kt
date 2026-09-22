@@ -12,6 +12,7 @@ import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import kotlinx.coroutines.NonCancellable
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -34,8 +36,18 @@ class OnUpdateDocumentTracker(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
     ) {
+        val commentFreeDocumentEditionFlow = documentEditionFlow.onEach { (storyState, _) ->
+            check(
+                storyState.stories.values.none { story ->
+                    story.spans.any { span -> span.span == Span.COMMENT }
+                }
+            ) {
+                "Comment-bearing documents require the comment-aware saveOnStoryChanges overload."
+            }
+        }
+
         saveOnStoryChanges(
-            documentEditionFlow,
+            commentFreeDocumentEditionFlow,
             workspaceIdFlow,
             MutableStateFlow(emptyList()),
         )

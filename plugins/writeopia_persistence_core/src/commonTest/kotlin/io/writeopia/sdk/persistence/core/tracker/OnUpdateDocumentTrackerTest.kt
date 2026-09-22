@@ -21,6 +21,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -51,6 +53,28 @@ class OnUpdateDocumentTrackerTest {
 
         assertEquals(listOf(conversation), persisted.commentConversations)
         assertEquals(sourceDocument.workspaceId, persisted.workspaceId)
+    }
+
+    @Test
+    fun legacySaveShouldRejectCommentBearingDocumentsBeforePersisting() = runTest {
+        val conversation = conversation()
+        val sourceDocument = sourceDocument(listOf(conversation))
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+
+        assertFailsWith<IllegalStateException> {
+            tracker.saveOnStoryChanges(
+                MutableStateFlow(
+                    StoryState(
+                        stories = sourceDocument.content,
+                        lastEdit = LastEdit.Whole,
+                    ) to sourceDocument.info()
+                ),
+                MutableStateFlow(sourceDocument.workspaceId),
+            )
+        }
+
+        assertFalse(recorder.savedDocument.isCompleted)
     }
 
     @Test
