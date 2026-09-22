@@ -778,8 +778,8 @@ class DocumentSqlBeDao(
             }
             ?.firstOrNull()
 
-    fun loadDocumentByParentId(parentId: String): List<Document> {
-        return documentQueries?.selectWithContentByParentId(parentId)
+    fun loadDocumentByParentId(parentId: String, workspaceId: String): List<Document> {
+        return documentQueries?.selectWithContentByParentId(parentId, workspaceId)
             ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -940,8 +940,8 @@ class DocumentSqlBeDao(
         commentQueries?.deleteByDocumentIds(ids)
     }
 
-    fun loadDocumentIdsByParentId(parentId: String): List<String> =
-        documentQueries?.selectIdsByParentId(parentId)
+    fun loadDocumentIdsByParentId(parentId: String, workspaceId: String): List<String> =
+        documentQueries?.selectIdsByParentId(parentId, workspaceId)
             ?.executeAsList()
             ?: emptyList()
 
@@ -952,8 +952,8 @@ class DocumentSqlBeDao(
             ?: emptyList()
     }
 
-    fun loadFoldersByParentId(parentId: String): List<Folder> {
-        return foldersQueries?.selectChildrenFolder(parentId)
+    fun loadFoldersByParentId(parentId: String, workspaceId: String): List<Folder> {
+        return foldersQueries?.selectChildrenFolder(parentId, workspaceId)
             ?.executeAsList()
             ?.map { it.toModel(0) }
             ?: emptyList()
@@ -963,8 +963,12 @@ class DocumentSqlBeDao(
         documentQueries?.deleteByUserId(Clock.System.now().toEpochMilliseconds(), userId)
     }
 
-    fun deleteDocumentsByFolderId(folderId: String) {
-        documentQueries?.deleteByFolderId(Clock.System.now().toEpochMilliseconds(), folderId)
+    fun deleteDocumentsByFolderId(folderId: String, workspaceId: String) {
+        documentQueries?.deleteByFolderId(
+            Clock.System.now().toEpochMilliseconds(),
+            folderId,
+            workspaceId,
+        )
     }
 
     fun addUserFavorite(userId: String, documentId: String, workspaceId: String) {
