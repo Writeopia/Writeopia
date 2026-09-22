@@ -19,6 +19,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.time.Clock
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
@@ -171,6 +172,96 @@ class DocumentRepositoryTest {
 
         assertEquals(conversationId, changed.commentConversations.single().id)
         assertTrue(changed.lastSyncedAt!!.toEpochMilliseconds() > 1)
+
+        database.deleteDocumentById(documentId)
+    }
+
+    @Test
+    fun `step sync should reject document owned by another workspace`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val ownerWorkspaceId = GenerateId.generate()
+        val otherWorkspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = ownerWorkspaceId,
+                parentId = "root",
+            )
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            DocumentsService.syncStorySteps(
+                documentId = documentId,
+                workspaceId = otherWorkspaceId,
+                request = StoryStepSyncRequest(
+                    documentId = documentId,
+                    workspaceId = otherWorkspaceId,
+                    lastSyncTimestamp = 0,
+                    requestTimestamp = 1,
+                    changes = emptyList(),
+                    deletions = emptyList(),
+                    commentConversations = emptyList(),
+                ),
+                writeopiaDb = database,
+            )
+        }
+
+        assertEquals(ownerWorkspaceId, database.getDocumentById(documentId, ownerWorkspaceId)?.workspaceId)
+        assertEquals(null, database.getDocumentById(documentId, otherWorkspaceId))
+
+        database.deleteDocumentById(documentId)
+    }
+
+    @Test
+    fun `step sync should reject empty comment conversations`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+            )
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            DocumentsService.syncStorySteps(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                request = StoryStepSyncRequest(
+                    documentId = documentId,
+                    workspaceId = workspaceId,
+                    lastSyncTimestamp = 0,
+                    requestTimestamp = 1,
+                    changes = emptyList(),
+                    deletions = emptyList(),
+                    commentConversations = listOf(
+                        CommentConversationApi(
+                            id = GenerateId.generate(),
+                            comments = emptyList(),
+                        )
+                    ),
+                ),
+                writeopiaDb = database,
+            )
+        }
+
+        assertTrue(
+            database.getDocumentWithContentById(documentId, workspaceId)
+                ?.commentConversations
+                .orEmpty()
+                .isEmpty()
+        )
 
         database.deleteDocumentById(documentId)
     }
