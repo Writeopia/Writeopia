@@ -1,5 +1,6 @@
 package io.writeopia.sdk.serialization.request
 
+import io.writeopia.sdk.serialization.data.CommentConversationApi
 import io.writeopia.sdk.serialization.data.StoryStepApi
 import kotlinx.serialization.Serializable
 
@@ -20,7 +21,8 @@ data class StoryStepSyncRequest(
     val lastSyncTimestamp: Long,
     val requestTimestamp: Long,
     val changes: List<StoryStepChangeApi>,
-    val deletions: List<String>
+    val deletions: List<String>,
+    val commentConversations: List<CommentConversationApi>? = null,
 )
 
 /**
