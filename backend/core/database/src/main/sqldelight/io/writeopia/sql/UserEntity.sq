@@ -56,6 +56,15 @@ UPDATE user_entity
 SET status = 'ACTIVE'
 WHERE email = ?;
 
+-- Atomically enables the account and clears its confirmation code in one statement, but only
+-- if it isn't pending deletion. Used by the email-confirmation flow so there's no window
+-- between checking the status and applying the update where a concurrent deletion could sneak
+-- in. Returns 0 rows affected if the account is DELETION_PENDING - see EmailRouting.kt.
+confirmEmailIfNotPendingDeletion:
+UPDATE user_entity
+SET status = 'ACTIVE', confirmation_code = NULL, confirmation_code_expiry = NULL
+WHERE email = ? AND status != 'DELETION_PENDING';
+
 disableUserByEmail:
 UPDATE user_entity
 SET status = 'EMAIL_CONFIRMATION_PENDING'
