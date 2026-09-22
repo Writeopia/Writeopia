@@ -229,11 +229,16 @@ class DocumentSqlDao(
     suspend fun loadDocumentWithContentByIds(
         id: List<String>,
         workspaceId: String,
-    ): List<Document> =
-        documentQueries?.selectWithContentByIds(id, workspaceId)
+    ): List<Document> {
+        val rows = documentQueries?.selectWithContentByIds(id, workspaceId)
             ?.awaitAsList()
-            ?.groupBy { it.id }
-            ?.mapNotNull { (documentId, content) ->
+            ?: return emptyList()
+        val commentsByDocumentId =
+            loadCommentConversationsByDocumentIds(rows.map { it.id }.distinct())
+
+        return rows
+            .groupBy { it.id }
+            .mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
                     val innerContent = content.filter { innerContent ->
                         // Only include top-level steps (no parent_id)
@@ -287,7 +292,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
-                        commentConversations = loadCommentConversations(documentId),
+                        commentConversations = commentsByDocumentId[documentId].orEmpty(),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -304,7 +309,8 @@ class DocumentSqlDao(
                         deleted = document.deleted == 1L
                     )
                 }
-            } ?: emptyList()
+            }
+    }
 
     suspend fun loadDocumentsWithContentByWorkspaceId(
         orderBy: String,
@@ -1035,6 +1041,38 @@ class DocumentSqlDao(
     suspend fun updateStoryStepUrl(url: String, id: String) {
         storyStepQueries?.updateUrl(url, id)
     }
+
+    private suspend fun loadCommentConversationsByDocumentIds(
+        documentIds: List<String>
+    ): Map<String, List<CommentConversation>> =
+        if (documentIds.isEmpty()) {
+            emptyMap()
+        } else {
+            commentQueries
+                ?.selectByDocumentIds(documentIds)
+                ?.awaitAsList()
+                ?.groupBy { entity -> entity.document_id }
+                ?.mapValues { (_, documentComments) ->
+                    documentComments
+                        .groupBy { entity -> entity.conversation_id }
+                        .values
+                        .sortedBy { entities -> entities.minOf { it.conversation_position } }
+                        .map { entities ->
+                            CommentConversation(
+                                id = entities.first().conversation_id,
+                                comments = entities
+                                    .sortedBy { entity -> entity.comment_position }
+                                    .map { entity ->
+                                        Comment(
+                                            id = entity.id,
+                                            text = entity.text,
+                                        )
+                                    },
+                            )
+                        }
+                }
+                ?: emptyMap()
+        }
 
     private suspend fun loadCommentConversations(documentId: String): List<CommentConversation> =
         commentQueries
