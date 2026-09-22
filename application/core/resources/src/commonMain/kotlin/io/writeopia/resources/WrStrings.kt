@@ -6,6 +6,8 @@ import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.accent_color
 import writeopia.application.core.resources.generated.resources.access_local_ai_site
 import writeopia.application.core.resources.generated.resources.account
+import writeopia.application.core.resources.generated.resources.account_deletion_started_description
+import writeopia.application.core.resources.generated.resources.account_deletion_started_title
 import writeopia.application.core.resources.generated.resources.action_points
 import writeopia.application.core.resources.generated.resources.actions
 import writeopia.application.core.resources.generated.resources.add
@@ -61,6 +63,7 @@ import writeopia.application.core.resources.generated.resources.update_check_fai
 import writeopia.application.core.resources.generated.resources.update_open_failed
 import writeopia.application.core.resources.generated.resources.download_local_ai
 import writeopia.application.core.resources.generated.resources.email
+import writeopia.application.core.resources.generated.resources.email_to_confirm
 import writeopia.application.core.resources.generated.resources.error_loading_teams
 import writeopia.application.core.resources.generated.resources.error_loading_workspaces
 import writeopia.application.core.resources.generated.resources.error_model_download
@@ -489,6 +492,13 @@ object WrStrings {
     fun account() = stringResource(Res.string.account)
 
     @Composable
+    fun accountDeletionStartedTitle() = stringResource(Res.string.account_deletion_started_title)
+
+    @Composable
+    fun accountDeletionStartedDescription() =
+        stringResource(Res.string.account_deletion_started_description)
+
+    @Composable
     fun workspaceName() = stringResource(Res.string.workspaceName)
 
     @Composable
@@ -555,7 +565,7 @@ object WrStrings {
     fun notesWillBeDeleted() = stringResource(Res.string.notes_will_be_deleted)
 
     @Composable
-    fun confirmEmail() = stringResource(Res.string.notes_will_be_deleted)
+    fun confirmEmail() = stringResource(Res.string.email_to_confirm)
 
     @Composable
     fun dismiss() = stringResource(Res.string.dismiss)
