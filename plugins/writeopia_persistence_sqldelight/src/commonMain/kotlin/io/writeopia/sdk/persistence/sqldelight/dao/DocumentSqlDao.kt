@@ -32,6 +32,12 @@ class DocumentSqlDao(
     private val commentQueries: CommentEntityQueries?,
 ) : DocumentSearch {
 
+    @Deprecated("Pass CommentEntityQueries to preserve comment loading.")
+    constructor(
+        documentQueries: DocumentEntityQueries?,
+        storyStepQueries: StoryStepEntityQueries?,
+    ) : this(documentQueries, storyStepQueries, null)
+
     override suspend fun search(
         query: String,
         workspaceId: String,
