@@ -47,6 +47,20 @@ class CommentUiStateTest {
     }
 
     @Test
+    fun `selection touching the end of a comment can create a new conversation`() {
+        val conversation = conversation("conversation-1")
+        val state = drawState(
+            selection = Selection(start = 7, end = 10, position = 1.0),
+            spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversation.id)),
+        )
+
+        val result = resolveCommentUiState(state, listOf(conversation))
+
+        assertEquals(null, result.activeConversation)
+        assertTrue(result.canCreateComment)
+    }
+
+    @Test
     fun `selection overlapping a comment uses that conversation`() {
         val conversation = conversation("conversation-1")
         val state = drawState(
