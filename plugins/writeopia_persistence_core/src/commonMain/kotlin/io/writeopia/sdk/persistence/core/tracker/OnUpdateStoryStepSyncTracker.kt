@@ -6,6 +6,7 @@ import io.writeopia.sdk.manager.StoryStepSyncTracker
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.model.story.StoryState
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.persistence.core.sync.StoryStepSyncBuffer
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -16,6 +17,8 @@ import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
@@ -37,11 +40,13 @@ class OnUpdateStoryStepSyncTracker(
     private val syncBuffer: StoryStepSyncBuffer = StoryStepSyncBuffer(),
     private val syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse,
     private val onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> },
-    private val maxRetries: Int = 3
+    private val maxRetries: Int = 3,
+    private val commentConversationsFlow: StateFlow<List<CommentConversation>>? = null,
 ) : StoryStepSyncTracker {
 
     private var lastSyncTimestamp: Long = 0L
     private var consecutiveFailures: Int = 0
+    private var lastSyncedCommentConversations: List<CommentConversation>? = null
 
     // Track last known content for each StoryStep to detect actual changes
     private val lastKnownContent = mutableMapOf<String, StoryStepContent>()
@@ -109,12 +114,24 @@ class OnUpdateStoryStepSyncTracker(
                 }
             }
 
+            commentConversationsFlow?.let { commentsFlow ->
+                launch {
+                    commentsFlow
+                        .drop(1)
+                        .collect {
+                            syncBuffer.requestSync()
+                        }
+                }
+            }
+
             // Launch a coroutine to handle sync triggers
             launch {
                 syncBuffer.syncTrigger
                     .debounce(syncBuffer.syncInterval)
                     .collect {
-                        if (syncBuffer.hasPendingChanges()) {
+                        val commentsChanged =
+                            commentConversationsFlow?.value != lastSyncedCommentConversations
+                        if (syncBuffer.hasPendingChanges() || commentsChanged) {
                             val (_, documentInfo) = documentEditionFlow.first()
                             val workspaceId = workspaceIdFlow.first()
                             performSync(documentInfo.id, workspaceId)
@@ -237,7 +254,9 @@ class OnUpdateStoryStepSyncTracker(
 
     private suspend fun performSync(documentId: String, workspaceId: String) {
         val batch = syncBuffer.consumeChanges()
-        if (batch.isEmpty) return
+        val currentComments = commentConversationsFlow?.value
+        val commentsChanged = currentComments != lastSyncedCommentConversations
+        if (batch.isEmpty && !commentsChanged) return
 
         val requestTimestamp = Clock.System.now().toEpochMilliseconds()
 
@@ -252,7 +271,8 @@ class OnUpdateStoryStepSyncTracker(
                     position = change.position
                 )
             },
-            deletions = batch.deletions.toList()
+            deletions = batch.deletions.toList(),
+            commentConversations = currentComments?.map { it.toApi() },
         )
 
         try {
@@ -260,6 +280,7 @@ class OnUpdateStoryStepSyncTracker(
 
             // Update last sync timestamp
             lastSyncTimestamp = response.serverTimestamp
+            lastSyncedCommentConversations = currentComments
             consecutiveFailures = 0
 
             // Apply server updates
@@ -279,6 +300,9 @@ class OnUpdateStoryStepSyncTracker(
                 }
                 batch.deletions.forEach { id ->
                     syncBuffer.addDeletion(id)
+                }
+                if (commentsChanged) {
+                    syncBuffer.requestSync()
                 }
             } else {
                 consecutiveFailures = 0
