@@ -372,7 +372,8 @@ class WriteopiaStateManager(
                 documentEditionState,
                 userRepository?.listenForWorkspace()?.map { workspace ->
                     workspace.id
-                } ?: MutableStateFlow(Workspace.disconnectedWorkspace().id)
+                } ?: MutableStateFlow(Workspace.disconnectedWorkspace().id),
+                commentConversations
             )
         }
     }
@@ -1231,11 +1232,24 @@ class WriteopiaStateManager(
             }
             rememberCommentConversations(listOf(updatedConversation))
         } else {
+            removeCommentSpans(conversationId)
             _commentConversations.value = conversations.filterNot { it.id == conversationId }
             commentConversationArchive.remove(conversationId)
-            removeCommentSpans(conversationId)
         }
 
+        persistCommentDocument()
+        return true
+    }
+
+    fun deleteCommentConversation(conversationId: String): Boolean {
+        if (!isEditable) return false
+
+        val conversations = _commentConversations.value
+        if (conversations.none { it.id == conversationId }) return false
+
+        removeCommentSpans(conversationId)
+        _commentConversations.value = conversations.filterNot { it.id == conversationId }
+        commentConversationArchive.remove(conversationId)
         persistCommentDocument()
         return true
     }

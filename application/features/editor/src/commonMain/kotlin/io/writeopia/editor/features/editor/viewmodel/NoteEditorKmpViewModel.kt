@@ -32,6 +32,8 @@ import io.writeopia.sdk.export.DocumentToMarkdown
 import io.writeopia.sdk.export.DocumentWriter
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.story.StoryState
+import io.writeopia.sdk.models.comment.Comment
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
@@ -253,6 +255,9 @@ class NoteEditorKmpViewModel(
             SharingStarted.WhileSubscribed(),
             emptySet()
         )
+
+    override val commentConversations: StateFlow<List<CommentConversation>> =
+        writeopiaManager.commentConversations
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val aiConfigState = authRepository.listenForUser()
@@ -503,6 +508,7 @@ class NoteEditorKmpViewModel(
             documentId = documentId,
             documentEditionFlow = writeopiaManager.documentEditionState,
             workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+            commentConversationsFlow = writeopiaManager.commentConversations,
             documentTracker = OnUpdateDocumentTracker(documentRepository)
         )
 
@@ -582,6 +588,7 @@ class NoteEditorKmpViewModel(
             documentId = documentId,
             documentEditionFlow = writeopiaManager.documentEditionState,
             workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+            commentConversationsFlow = writeopiaManager.commentConversations,
             documentTracker = OnUpdateDocumentTracker(
                 documentRepository,
                 onStoryStepUpdate = { storyStep, position ->
@@ -709,6 +716,24 @@ class NoteEditorKmpViewModel(
             writeopiaManager.toggleSpan(span)
         }
     }
+
+    override fun createComment(text: String): CommentConversation? =
+        writeopiaManager.createComment(text)
+
+    override fun addComment(conversationId: String, text: String): Comment? =
+        writeopiaManager.addComment(conversationId, text)
+
+    override fun getCommentConversationAtCursor(): CommentConversation? =
+        writeopiaManager.getCommentConversationAtCursor()
+
+    override fun getCommentConversationAtSelection(): CommentConversation? =
+        writeopiaManager.getCommentConversationAtSelection()
+
+    override fun deleteComment(conversationId: String, commentId: String): Boolean =
+        writeopiaManager.deleteComment(conversationId, commentId)
+
+    override fun deleteCommentConversation(conversationId: String): Boolean =
+        writeopiaManager.deleteCommentConversation(conversationId)
 
     override fun toggleEditable() {
         writeopiaManager.toggleLockDocument()

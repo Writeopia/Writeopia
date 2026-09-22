@@ -4,6 +4,7 @@ import io.writeopia.sdk.manager.DocumentTracker
 import io.writeopia.sdk.manager.StoryStepSyncTracker
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.StoryState
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateStoryStepSyncTracker
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
@@ -14,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -45,12 +47,14 @@ class DocumentSyncManager(
      * @param documentId The unique identifier of the document to sync
      * @param documentEditionFlow Flow emitting the document state and info on each change
      * @param workspaceIdFlow Flow emitting the current workspace ID
+     * @param commentConversationsFlow Current document-level comment conversations
      * @param documentTracker The tracker responsible for saving document changes
      */
     fun registerForDbSync(
         documentId: String,
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
+        commentConversationsFlow: StateFlow<List<CommentConversation>>,
         documentTracker: DocumentTracker
     ) {
         // Cancel any existing sync for this document
@@ -60,7 +64,8 @@ class DocumentSyncManager(
         val job = scope.launch(dispatcher) {
             documentTracker.saveOnStoryChanges(
                 documentEditionFlow,
-                workspaceIdFlow
+                workspaceIdFlow,
+                commentConversationsFlow
             )
         }
 

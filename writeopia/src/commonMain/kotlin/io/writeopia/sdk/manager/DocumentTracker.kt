@@ -2,7 +2,10 @@ package io.writeopia.sdk.manager
 
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.StoryState
+import io.writeopia.sdk.models.comment.CommentConversation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Saves the document automatically based of content changes.
@@ -15,6 +18,7 @@ interface DocumentTracker {
      */
     suspend fun saveOnStoryChanges(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
-        workspaceIdFlow: Flow<String>
+        workspaceIdFlow: Flow<String>,
+        commentConversationsFlow: StateFlow<List<CommentConversation>> = MutableStateFlow(emptyList())
     )
 }

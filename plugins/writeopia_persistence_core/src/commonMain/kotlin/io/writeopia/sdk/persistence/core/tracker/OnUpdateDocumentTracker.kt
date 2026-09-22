@@ -9,12 +9,14 @@ import io.writeopia.sdk.manager.DocumentUpdate
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.model.story.StoryState
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
@@ -30,6 +32,7 @@ class OnUpdateDocumentTracker(
     override suspend fun saveOnStoryChanges(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
+        commentConversationsFlow: StateFlow<List<CommentConversation>>,
     ) {
         combine(
             documentEditionFlow,
@@ -95,7 +98,8 @@ class OnUpdateDocumentTracker(
                         workspaceId = workspaceId,
                         parentId = documentInfo.parentId,
                         icon = documentInfo.icon,
-                        isLocked = documentInfo.isLocked
+                        isLocked = documentInfo.isLocked,
+                        commentConversations = commentConversationsFlow.value
                     )
 
                     documentUpdate.saveDocument(document)
