@@ -276,6 +276,38 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun `delete should reject document owned by another workspace`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val ownerWorkspaceId = GenerateId.generate()
+        val otherWorkspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = ownerWorkspaceId,
+                parentId = "root",
+            )
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            DocumentsService.deleteDocuments(
+                documentIds = listOf(documentId),
+                workspaceId = otherWorkspaceId,
+                userId = "user",
+                writeopiaDb = database,
+            )
+        }
+
+        assertEquals(ownerWorkspaceId, database.getDocumentById(documentId, ownerWorkspaceId)?.workspaceId)
+
+        database.deleteDocumentById(documentId)
+    }
+
+    @Test
     fun `step sync should reject document owned by another workspace`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()
