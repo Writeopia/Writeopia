@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -50,6 +51,21 @@ class DocumentSyncManager(
      * @param commentConversationsFlow Current document-level comment conversations
      * @param documentTracker The tracker responsible for saving document changes
      */
+    fun registerForDbSync(
+        documentId: String,
+        documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
+        workspaceIdFlow: Flow<String>,
+        documentTracker: DocumentTracker
+    ) {
+        registerForDbSync(
+            documentId = documentId,
+            documentEditionFlow = documentEditionFlow,
+            workspaceIdFlow = workspaceIdFlow,
+            commentConversationsFlow = MutableStateFlow(emptyList()),
+            documentTracker = documentTracker,
+        )
+    }
+
     fun registerForDbSync(
         documentId: String,
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,

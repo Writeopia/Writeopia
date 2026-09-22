@@ -16,6 +16,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
@@ -28,6 +29,17 @@ class OnUpdateDocumentTracker(
     private val onStoryStepUpdate: suspend (StoryStep, Double) -> Unit = { _, _ -> },
     private val onDocumentUpdate: suspend (Document) -> Unit = {}
 ) : DocumentTracker {
+
+    override suspend fun saveOnStoryChanges(
+        documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
+        workspaceIdFlow: Flow<String>,
+    ) {
+        saveOnStoryChanges(
+            documentEditionFlow,
+            workspaceIdFlow,
+            MutableStateFlow(emptyList()),
+        )
+    }
 
     override suspend fun saveOnStoryChanges(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
