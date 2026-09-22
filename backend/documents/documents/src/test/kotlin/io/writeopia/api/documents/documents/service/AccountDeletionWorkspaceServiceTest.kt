@@ -41,6 +41,7 @@ class AccountDeletionWorkspaceServiceTest {
         db.insertUser(
             id = userId,
             name = "Test User",
+            username = "user_name",
             email = "test-${UUID.randomUUID()}@example.com",
             password = "p",
             salt = "s",
@@ -49,6 +50,7 @@ class AccountDeletionWorkspaceServiceTest {
         db.insertUser(
             id = otherAdminId,
             name = "Other Admin",
+            username = "user_name",
             email = "other-${UUID.randomUUID()}@example.com",
             password = "p",
             salt = "s",
