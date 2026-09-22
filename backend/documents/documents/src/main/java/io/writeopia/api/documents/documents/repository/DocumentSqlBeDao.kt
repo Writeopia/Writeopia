@@ -72,19 +72,25 @@ class DocumentSqlBeDao(
             } ?: emptyList()
 
     fun insertDocumentWithContent(document: Document) {
-        val result =
-            documentQueries?.selectById(document.id, document.workspaceId)?.executeAsOneOrNull()
+        val insert = {
+            val result =
+                documentQueries?.selectById(document.id, document.workspaceId)?.executeAsOneOrNull()
 
-        if (result != null) {
-            storyStepQueries?.deleteByDocumentId(document.id)
+            if (result != null) {
+                storyStepQueries?.deleteByDocumentId(document.id)
+            }
+
+            document.content.values.forEachIndexed { i, storyStep ->
+                insertStoryStep(storyStep, i.toDouble(), document.id)
+            }
+
+            replaceCommentConversations(document.id, document.commentConversations)
+            insertDocument(document)
         }
 
-        document.content.values.forEachIndexed { i, storyStep ->
-            insertStoryStep(storyStep, i.toDouble(), document.id)
-        }
-
-        replaceCommentConversations(document.id, document.commentConversations)
-        insertDocument(document)
+        documentQueries?.transaction {
+            insert()
+        } ?: insert()
     }
 
     fun replaceCommentConversations(
