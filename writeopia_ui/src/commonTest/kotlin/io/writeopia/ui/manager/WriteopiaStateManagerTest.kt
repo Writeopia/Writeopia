@@ -2382,6 +2382,58 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun nestedCommentSpansShouldParticipateInConversationLifecycle() {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "conversation-nested",
+            comments = listOf(Comment(id = "comment-nested", text = "nested")),
+        )
+        val nested = StoryStep(
+            text = "nested text",
+            type = StoryTypes.TEXT.type,
+            spans = setOf(SpanInfo.create(0, 6, Span.COMMENT, conversation.id)),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "parent",
+                        type = StoryTypes.TEXT.type,
+                        steps = listOf(nested),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = listOf(conversation),
+            )
+        )
+
+        val parent = manager.currentStory.value.stories.getValue(0.0)
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = parent.copy(text = "parent changed"),
+                position = 0.0,
+            )
+        )
+
+        assertEquals(listOf(conversation), manager.commentConversations.value)
+
+        assertTrue(manager.deleteCommentConversation(conversation.id))
+
+        val updatedNested = manager.currentStory.value.stories.getValue(0.0).steps.single()
+        assertTrue(updatedNested.spans.none { it.span == Span.COMMENT })
+        assertTrue(manager.commentConversations.value.isEmpty())
+    }
+
+    @Test
     fun deletingConversationShouldRemoveAllItsCommentSpans() {
         val now = Clock.System.now()
         val conversation = CommentConversation(
