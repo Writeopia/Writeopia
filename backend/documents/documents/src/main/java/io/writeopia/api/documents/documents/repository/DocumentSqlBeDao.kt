@@ -1219,6 +1219,10 @@ class DocumentSqlBeDao(
         documentQueries?.updateTitle(title, now, now, documentId)
     }
 
+    fun touchDocument(documentId: String, workspaceId: String, timestamp: Long) {
+        documentQueries?.touch(timestamp, timestamp, documentId, workspaceId)
+    }
+
     /**
      * Checks if a document is published.
      */
