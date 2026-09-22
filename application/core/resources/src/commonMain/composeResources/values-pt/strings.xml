@@ -215,4 +215,9 @@
   <string name="provider_not_detected">Não Detectado</string>
   <string name="error_no_provider_detected">IA Local não foi encontrada rodando nesta máquina. Por favor, instale e inicie Ollama ou llmman e tente novamente.</string>
   <string name="error_fetch_config">Falha ao buscar configuração</string>
+  <string name="add_comment">Adicionar comentário</string>
+  <string name="comment">Comentário</string>
+  <string name="comments_count">Comentários (%1$d)</string>
+  <string name="delete_thread">Excluir conversa</string>
+  <string name="reply">Responder</string>
 </resources>
