@@ -523,8 +523,18 @@ object DocumentsService {
      * Returns null if the document doesn't exist or is not published.
      */
     suspend fun getPublishedDocument(documentId: String, writeopiaDb: WriteopiaDbBackend): Document? {
-        return writeopiaDb.getPublishedDocumentById(documentId)
+        return writeopiaDb.getPublishedDocumentById(documentId)?.withoutEditorComments()
     }
+
+    private fun Document.withoutEditorComments(): Document = copy(
+        content = content.mapValues { (_, storyStep) -> storyStep.withoutEditorComments() },
+        commentConversations = emptyList(),
+    )
+
+    private fun StoryStep.withoutEditorComments(): StoryStep = copy(
+        spans = spans.filterNot { span -> span.span == Span.COMMENT }.toSet(),
+        steps = steps.map { storyStep -> storyStep.withoutEditorComments() },
+    )
 
     /**
      * Sets the published status of a document.
