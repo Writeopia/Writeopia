@@ -12,6 +12,9 @@ import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.serialization.data.CommentApi
+import io.writeopia.sdk.serialization.data.CommentConversationApi
+import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import kotlinx.coroutines.test.runTest
 import kotlin.time.Clock
 import kotlin.test.Test
@@ -116,6 +119,60 @@ class DocumentRepositoryTest {
 
         database.deleteDocumentById(documentId)
         database.deleteDocumentById(clone.id)
+    }
+
+    @Test
+    fun `comment only sync should publish document to workspace diff`() = runTest {
+        val database = configurePersistence()
+        val initial = kotlin.time.Instant.fromEpochMilliseconds(1)
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        val document = Document(
+            id = documentId,
+            createdAt = initial,
+            lastUpdatedAt = initial,
+            lastSyncedAt = initial,
+            workspaceId = workspaceId,
+            parentId = "root",
+            content = mapOf(
+                0.0 to StoryStep(
+                    type = StoryTypes.TEXT.type,
+                    text = "Text",
+                )
+            ),
+        )
+        database.saveDocument(document)
+
+        val conversationId = GenerateId.generate()
+        DocumentsService.syncStorySteps(
+            documentId = documentId,
+            workspaceId = workspaceId,
+            request = StoryStepSyncRequest(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                lastSyncTimestamp = 1,
+                requestTimestamp = 2,
+                changes = emptyList(),
+                deletions = emptyList(),
+                commentConversations = listOf(
+                    CommentConversationApi(
+                        id = conversationId,
+                        comments = listOf(
+                            CommentApi(id = GenerateId.generate(), text = "Remote comment")
+                        ),
+                    )
+                ),
+            ),
+            writeopiaDb = database,
+        )
+
+        val changedDocuments = database.documentsDiffByWorkspace(workspaceId, 1)
+        val changed = changedDocuments.single { it.id == documentId }
+
+        assertEquals(conversationId, changed.commentConversations.single().id)
+        assertTrue(changed.lastSyncedAt!!.toEpochMilliseconds() > 1)
+
+        database.deleteDocumentById(documentId)
     }
 
     @Test
