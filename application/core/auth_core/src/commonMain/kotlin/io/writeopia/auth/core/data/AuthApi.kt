@@ -9,6 +9,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.models.utils.ResultData
@@ -32,12 +33,16 @@ import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
 class AuthApi(private val client: HttpClient, private val baseUrl: String) {
     suspend fun login(email: String, password: String): ResultData<AuthResponse> = try {
-        val response = client.post("$baseUrl/api/auth/login") {
+        val httpResponse = client.post("$baseUrl/api/auth/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequest(email, password))
-        }.body<AuthResponse>()
+        }
 
-        ResultData.Complete(response)
+        if (httpResponse.status == HttpStatusCode.Forbidden) {
+            ResultData.Error(AccountDeletionPendingException())
+        } else {
+            ResultData.Complete(httpResponse.body<AuthResponse>())
+        }
     } catch (e: Exception) {
         println("login error: ${e.message}")
         e.printStackTrace()
@@ -49,12 +54,16 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
      * The backend sets the tokens in HttpOnly cookies instead of returning them in the response body.
      */
     suspend fun loginWeb(email: String, password: String): ResultData<AuthResponse> = try {
-        val response = client.post("$baseUrl/api/auth/login/web") {
+        val httpResponse = client.post("$baseUrl/api/auth/login/web") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequest(email, password))
-        }.body<AuthResponse>()
+        }
 
-        ResultData.Complete(response)
+        if (httpResponse.status == HttpStatusCode.Forbidden) {
+            ResultData.Error(AccountDeletionPendingException())
+        } else {
+            ResultData.Complete(httpResponse.body<AuthResponse>())
+        }
     } catch (e: Exception) {
         println("loginWeb error: ${e.message}")
         e.printStackTrace()
