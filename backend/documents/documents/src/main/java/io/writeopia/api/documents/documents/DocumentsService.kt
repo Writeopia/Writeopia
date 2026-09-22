@@ -510,7 +510,7 @@ object DocumentsService {
 
         return wrWebClient.post("$aiHubUrl/documents/") {
             contentType(ContentType.Application.Json)
-            setBody(SendDocumentsRequest(documents.map { it.toApi() }, workspaceId))
+            setBody(SendDocumentsRequest(documents.map { it.withoutEditorComments().toApi() }, workspaceId))
         }.status.isSuccess()
     }
 
