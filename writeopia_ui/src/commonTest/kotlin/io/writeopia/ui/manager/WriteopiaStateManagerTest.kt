@@ -21,6 +21,8 @@ import io.writeopia.ui.model.TextInput
 import io.writeopia.ui.utils.MapStoryData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -1989,7 +1991,7 @@ class WriteopiaStateManagerTest {
         )
     }
     @Test
-    fun loadedCommentConversationsShouldBePreservedInDocumentState() {
+    fun loadedCommentConversationsShouldBePreservedInDocumentState() = runTest {
         val now = Clock.System.now()
         val conversation = CommentConversation(
             id = "conversation-1",
@@ -2021,6 +2023,68 @@ class WriteopiaStateManagerTest {
 
         assertEquals(listOf(conversation), manager.commentConversations.value)
         assertEquals(listOf(conversation), manager.getDocument().commentConversations)
+        assertEquals(
+            listOf(conversation),
+            manager.currentDocument.filterNotNull().first().commentConversations,
+        )
+    }
+
+    @Test
+    fun updateDocumentShouldReplaceAndPreserveCommentConversationState() = runTest {
+        val now = Clock.System.now()
+        val first = CommentConversation(
+            id = "conversation-1",
+            comments = listOf(Comment(id = "comment-1", text = "first")),
+        )
+        val second = CommentConversation(
+            id = "conversation-2",
+            comments = listOf(
+                Comment(id = "comment-2", text = "second"),
+                Comment(id = "comment-3", text = "reply"),
+            ),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        val baseDocument = Document(
+            id = "document-1",
+            content = mapOf(
+                0.0 to StoryStep(
+                    text = "hello",
+                    type = StoryTypes.TEXT.type,
+                    spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, first.id)),
+                )
+            ),
+            workspaceId = "",
+            createdAt = now,
+            lastUpdatedAt = now,
+            parentId = "root",
+            lastSyncedAt = null,
+            commentConversations = listOf(first),
+        )
+        manager.loadDocument(baseDocument)
+
+        manager.updateDocument(
+            baseDocument.copy(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "world",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, second.id)),
+                    )
+                ),
+                commentConversations = listOf(second),
+            )
+        )
+
+        assertEquals(listOf(second), manager.commentConversations.value)
+        assertEquals(listOf(second), manager.getDocument().commentConversations)
+        assertEquals(
+            listOf(second),
+            manager.currentDocument.filterNotNull().first().commentConversations,
+        )
     }
 
     @Test
@@ -2270,6 +2334,56 @@ class WriteopiaStateManagerTest {
 
         assertTrue(manager.commentConversations.value.isEmpty())
         assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isEmpty())
+    }
+
+    @Test
+    fun deletingConversationShouldRemoveAllItsCommentSpans() {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "conversation-1",
+            comments = listOf(
+                Comment(id = "comment-1", text = "first"),
+                Comment(id = "comment-2", text = "second"),
+            ),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "first",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, conversation.id)),
+                    ),
+                    1.0 to StoryStep(
+                        text = "second",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(SpanInfo.create(0, 6, Span.COMMENT, conversation.id)),
+                    ),
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = listOf(conversation),
+            )
+        )
+
+        assertTrue(manager.deleteCommentConversation(conversation.id))
+
+        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.currentStory.value.stories.values.all { story ->
+                story.spans.none { span ->
+                    span.span == Span.COMMENT && span.extra == conversation.id
+                }
+            }
+        )
     }
 
     @Test
