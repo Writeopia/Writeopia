@@ -110,42 +110,56 @@ object AccountDeletionService {
 
     /**
      * Guarded finalize: only actually deletes the user + inserts the finalized outbox event if
-     * this call is the one that flips status to COMPLETED (tryFinalizeAccountDeletion's guarded
-     * UPDATE). Safe to call redundantly - a losing caller (both legs already finalized by
-     * someone else, or not both legs done yet) just returns.
+     * this call is the one that flips status to COMPLETED. The guard (tryFinalizeAccountDeletion)
+     * and the delete+outbox-insert live in the SAME transaction - if they didn't, a crash right
+     * after the guard commits but before the delete/outbox-insert would leave status=COMPLETED
+     * forever with the user never actually deleted and no FINALIZED event ever queued (so the
+     * completion email would never be sent), because a retry's guard UPDATE would then see
+     * status already COMPLETED and no-op. Keeping them atomic means either both happen or
+     * neither does, so a retry after a crash safely re-attempts the whole thing.
+     * Safe to call redundantly - a losing caller (both legs already finalized by someone else,
+     * or not both legs done yet) just no-ops.
+     *
+     * [afterGuardWon] runs right after the guard succeeds, still inside the transaction - only
+     * ever passed by tests, to force a failure at exactly that point and prove the guard rolls
+     * back along with everything else (see AccountDeletionServiceTest).
      */
     fun checkAndFinalize(
         userId: String,
         writeopiaDb: WriteopiaDbBackend,
+        afterGuardWon: () -> Unit = {},
     ) {
         val now = Clock.System.now().toEpochMilliseconds()
-        val won = writeopiaDb.tryFinalizeAccountDeletion(userId, now)
-        if (!won) return
-
-        val deletion = writeopiaDb.getAccountDeletionByUserId(userId) ?: run {
-            logger.error("[AccountDeletion] tryFinalize won for missing deletion, user $userId")
-            return
-        }
-
-        val payload = writeopiaJson.encodeToString(
-            AccountDeletionEventPayload.serializer(),
-            AccountDeletionEventPayload(userId = deletion.userId)
-        )
 
         writeopiaDb.transaction {
-            // Cascades refresh_token_entity via its existing FK. Everything else (workspaces,
-            // documents, story steps, favorites, media) was already torn down by the
-            // documents/media legs before either completion event could have fired.
-            writeopiaDb.userEntityQueries.deleteUser(deletion.userId)
-            writeopiaDb.insertOutboxEvent(
-                id = GenerateId.generate(),
-                aggregateType = ACCOUNT_DELETION_AGGREGATE_TYPE,
-                aggregateId = deletion.userId,
-                eventType = AccountDeletionEventTypes.FINALIZED,
-                topic = AccountDeletionTopics.FINALIZED,
-                payload = payload,
-                createdAt = now,
-            )
+            val won = writeopiaDb.tryFinalizeAccountDeletion(userId, now)
+
+            if (won) {
+                afterGuardWon()
+                val deletion = writeopiaDb.getAccountDeletionByUserId(userId)
+
+                if (deletion != null) {
+                    // Cascades refresh_token_entity via its existing FK. Everything else
+                    // (workspaces, documents, story steps, favorites, media) was already torn
+                    // down by the documents/media legs before either completion event could
+                    // have fired.
+                    writeopiaDb.userEntityQueries.deleteUser(deletion.userId)
+                    writeopiaDb.insertOutboxEvent(
+                        id = GenerateId.generate(),
+                        aggregateType = ACCOUNT_DELETION_AGGREGATE_TYPE,
+                        aggregateId = deletion.userId,
+                        eventType = AccountDeletionEventTypes.FINALIZED,
+                        topic = AccountDeletionTopics.FINALIZED,
+                        payload = writeopiaJson.encodeToString(
+                            AccountDeletionEventPayload.serializer(),
+                            AccountDeletionEventPayload(userId = deletion.userId)
+                        ),
+                        createdAt = now,
+                    )
+                } else {
+                    logger.error("[AccountDeletion] tryFinalize won for missing deletion, user $userId")
+                }
+            }
         }
     }
 

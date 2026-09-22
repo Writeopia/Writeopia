@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package io.writeopia.api.core.auth.service
 
 import io.writeopia.api.core.auth.configureTestPersistence
@@ -8,6 +10,8 @@ import io.writeopia.api.core.auth.repository.getAccountDeletionByUserId
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getUserStatus
 import io.writeopia.api.core.auth.repository.insertUser
+import io.writeopia.api.core.auth.repository.setAccountDeletionMediaCompleted
+import io.writeopia.api.core.auth.repository.setAccountDeletionWorkspacesCompleted
 import io.writeopia.sql.WriteopiaDbBackend
 import java.util.UUID
 import kotlin.test.AfterTest
@@ -18,6 +22,8 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /**
  * Covers the properties the account-deletion saga specifically depends on for correctness:
@@ -150,6 +156,45 @@ class AccountDeletionServiceTest {
         val secondTimestamp = db.getAccountDeletionByUserId(userId)?.workspacesCompletedAt
 
         assertEquals(firstTimestamp, secondTimestamp)
+    }
+
+    @Test
+    fun `the guard flip must roll back with everything else in the same transaction if a later step fails`() {
+        AccountDeletionService.requestDeletion(userId, db)
+
+        // Marks both legs done at the repository level directly - unlike
+        // handleWorkspacesCompleted/handleMediaCompleted, these don't also call
+        // checkAndFinalize, so the deletion is left ready-to-finalize-but-not-yet-finalized,
+        // which is the exact state a crash would leave it in.
+        val now = Clock.System.now().toEpochMilliseconds()
+        db.setAccountDeletionWorkspacesCompleted(userId, now)
+        db.setAccountDeletionMediaCompleted(userId, now)
+
+        // Calls the real checkAndFinalize, forcing a failure via afterGuardWon - right after the
+        // guard succeeds, still inside its transaction - simulating a crash between the guard
+        // flip and the delete+outbox insert. This is the bug the fix closes: if the guard lived
+        // in its own transaction (outside this block), it would already be committed as
+        // COMPLETED here, and no retry could ever recover (see checkAndFinalize's doc). Keeping
+        // the guard inside the same transaction means this failure must roll it back too.
+        val attempt = runCatching {
+            AccountDeletionService.checkAndFinalize(userId, db) {
+                error("simulated crash before the delete+outbox insert")
+            }
+        }
+
+        assertTrue(attempt.isFailure, "the simulated crash must propagate out of the transaction")
+        assertNotEquals(
+            "COMPLETED",
+            db.getAccountDeletionByUserId(userId)?.status,
+            "the guard flip must have rolled back along with the rest of the failed transaction",
+        )
+        assertNotNull(db.getUserById(userId), "the failed attempt must not have partially applied")
+
+        // A real, subsequent call must still be able to win and finalize - proving the system
+        // isn't permanently stuck the way it would be if the guard had survived the rollback.
+        AccountDeletionService.checkAndFinalize(userId, db)
+        assertEquals("COMPLETED", db.getAccountDeletionByUserId(userId)?.status)
+        assertNull(db.getUserById(userId))
     }
 
     @Test

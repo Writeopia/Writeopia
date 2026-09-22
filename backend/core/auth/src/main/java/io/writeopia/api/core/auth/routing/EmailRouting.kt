@@ -30,11 +30,20 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
             val isValid = writeopiaDb.isCodeValid(request.email, request.code)
 
             if (isValid) {
+                val user = writeopiaDb.getUserByEmail(request.email)
+
+                if (user?.status == UserStatus.DELETION_PENDING) {
+                    logger.warn("Email confirmation rejected, account is being deleted: ${request.email}")
+                    call.respond(
+                        HttpStatusCode.Conflict,
+                        EmailConfirmResponse(success = false, message = "Account is being deleted")
+                    )
+                    return@post
+                }
+
                 writeopiaDb.enableUserByEmail(request.email)
                 writeopiaDb.clearConfirmationCode(request.email)
 
-                // Get the user and generate tokens
-                val user = writeopiaDb.getUserByEmail(request.email)
                 if (user != null) {
                     val tokenPair = with(RefreshTokenService) {
                         writeopiaDb.generateAndStoreTokens(user.id)
@@ -60,7 +69,10 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
                 logger.warn("Invalid or expired confirmation code for: ${request.email}")
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    EmailConfirmResponse(success = false, message = "Invalid or expired confirmation code")
+                    EmailConfirmResponse(
+                        success = false,
+                        message = "Invalid or expired confirmation code"
+                    )
                 )
             }
         } catch (e: Exception) {
@@ -94,6 +106,15 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
                 call.respond(
                     HttpStatusCode.OK,
                     EmailConfirmResponse(success = true, message = "Email already confirmed")
+                )
+                return@post
+            }
+
+            if (user.status == UserStatus.DELETION_PENDING) {
+                logger.warn("Resend confirmation rejected, account is being deleted: ${request.email}")
+                call.respond(
+                    HttpStatusCode.Conflict,
+                    EmailConfirmResponse(success = false, message = "Account is being deleted")
                 )
                 return@post
             }
