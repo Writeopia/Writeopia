@@ -66,6 +66,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -225,7 +226,8 @@ class WriteopiaStateManager(
 
     private val _commentConversations =
         MutableStateFlow<List<CommentConversation>>(emptyList())
-    private val commentConversationArchive = mutableMapOf<String, CommentConversation>()
+    private val commentConversationArchive =
+        MutableStateFlow<Map<String, CommentConversation>>(emptyMap())
     val commentConversations: StateFlow<List<CommentConversation>> =
         _commentConversations.asStateFlow()
 
@@ -436,7 +438,7 @@ class WriteopiaStateManager(
         backStackManager.addState(withNextPositions)
 
         _commentConversations.value = emptyList()
-        commentConversationArchive.clear()
+        commentConversationArchive.value = emptyMap()
         _documentInfo.value = documentInfo
         _currentStory.value = withNextPositions
     }
@@ -452,8 +454,7 @@ class WriteopiaStateManager(
 
         initialized = true
         _commentConversations.value = document.commentConversations
-        commentConversationArchive.clear()
-        rememberCommentConversations(document.commentConversations)
+        replaceCommentConversationArchive(document.commentConversations)
 
         val stories = document.content
         val state =
@@ -476,8 +477,7 @@ class WriteopiaStateManager(
      */
     fun updateDocument(document: Document) {
         _commentConversations.value = document.commentConversations
-        commentConversationArchive.clear()
-        rememberCommentConversations(document.commentConversations)
+        replaceCommentConversationArchive(document.commentConversations)
         val stories = document.content
         val normalized = stepsNormalizer(stories.toEditState())
         val withNextPositions = NextPositionCalculator.calculate(normalized)
@@ -1232,7 +1232,7 @@ class WriteopiaStateManager(
         } else {
             removeCommentSpans(conversationId)
             _commentConversations.value = conversations.filterNot { it.id == conversationId }
-            commentConversationArchive.remove(conversationId)
+            commentConversationArchive.update { archived -> archived - conversationId }
         }
         return true
     }
@@ -1245,7 +1245,7 @@ class WriteopiaStateManager(
 
         removeCommentSpans(conversationId)
         _commentConversations.value = conversations.filterNot { it.id == conversationId }
-        commentConversationArchive.remove(conversationId)
+        commentConversationArchive.update { archived -> archived - conversationId }
         return true
     }
 
@@ -1295,17 +1295,23 @@ class WriteopiaStateManager(
             .mapNotNull { it.extra }
             .toSet()
 
+    private fun replaceCommentConversationArchive(conversations: List<CommentConversation>) {
+        commentConversationArchive.value = conversations.associateBy { it.id }
+    }
+
     private fun rememberCommentConversations(conversations: List<CommentConversation>) {
-        conversations.forEach { conversation ->
-            commentConversationArchive[conversation.id] = conversation
+        val conversationsById = conversations.associateBy { it.id }
+        commentConversationArchive.update { archived ->
+            archived + conversationsById
         }
     }
 
     private fun restoreCommentConversationsForCurrentStory() {
         val referencedConversationIds = referencedCommentConversationIds()
         val currentById = _commentConversations.value.associateBy { it.id }
+        val archivedById = commentConversationArchive.value
         val restored = referencedConversationIds.mapNotNull { conversationId ->
-            currentById[conversationId] ?: commentConversationArchive[conversationId]
+            currentById[conversationId] ?: archivedById[conversationId]
         }
 
         val missingConversationIds = referencedConversationIds - restored.map { it.id }.toSet()
