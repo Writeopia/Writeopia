@@ -21,7 +21,6 @@ import kotlin.time.ExperimentalTime
 
 class DocumentRepositoryTest {
 
-
     @Test
     fun `comments should round trip through backend persistence`() = runTest {
         val database = configurePersistence()
