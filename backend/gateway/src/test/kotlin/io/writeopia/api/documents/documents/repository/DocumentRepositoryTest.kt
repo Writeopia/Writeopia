@@ -73,6 +73,49 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun `parent document loading should stay inside the requested workspace`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val otherWorkspaceId = GenerateId.generate()
+        val ownDocumentId = GenerateId.generate()
+        val otherDocumentId = GenerateId.generate()
+        val otherConversation = CommentConversation(
+            id = GenerateId.generate(),
+            comments = listOf(Comment(id = GenerateId.generate(), text = "private")),
+        )
+
+        database.saveDocument(
+            Document(
+                id = ownDocumentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+            ),
+            Document(
+                id = otherDocumentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = otherWorkspaceId,
+                parentId = "root",
+                commentConversations = listOf(otherConversation),
+            ),
+        )
+
+        val loaded = database.getDocumentsByParentId("root", workspaceId)
+
+        assertTrue(loaded.any { it.id == ownDocumentId })
+        assertTrue(loaded.none { it.id == otherDocumentId })
+        assertTrue(loaded.flatMap { it.commentConversations }.none { it.id == otherConversation.id })
+
+        database.deleteDocumentById(ownDocumentId)
+        database.deleteDocumentById(otherDocumentId)
+    }
+
+    @Test
     fun `cloning should remap comment and conversation ids`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()
