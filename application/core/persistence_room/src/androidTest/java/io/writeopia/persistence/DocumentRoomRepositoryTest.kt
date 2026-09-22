@@ -122,6 +122,11 @@ class DocumentRoomRepositoryTest {
     }
 
     @Test
+    fun parentLoadPreservesComments() = runTest {
+        documentRepositoryTests.parentLoadPreservesComments()
+    }
+
+    @Test
     fun commentPersistenceRespectsWorkspaceBoundaries() = runTest {
         documentRepositoryTests.commentPersistenceRespectsWorkspaceBoundaries()
     }
