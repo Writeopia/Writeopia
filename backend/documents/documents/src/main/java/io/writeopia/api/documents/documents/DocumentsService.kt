@@ -56,6 +56,7 @@ import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.request.DocumentSyncInfo
@@ -68,6 +69,23 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 object DocumentsService {
+
+    suspend fun documentFromApiForWrite(
+        document: DocumentApi,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend,
+    ): Document {
+        val scopedDocument = document.copy(workspaceId = workspaceId)
+
+        if (scopedDocument.commentConversations == null) {
+            val existing = writeopiaDb.getDocumentWithContentById(scopedDocument.id, workspaceId)
+            require(existing?.commentConversations.isNullOrEmpty()) {
+                "This document contains comments. Update the client before modifying it."
+            }
+        }
+
+        return scopedDocument.toModel()
+    }
 
     suspend fun receiveDocuments(
         documents: List<Document>,
