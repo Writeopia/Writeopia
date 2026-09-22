@@ -2170,7 +2170,7 @@ class WriteopiaStateManagerTest {
                 storyStep = story,
                 position = 0.0,
                 selectionStart = 5,
-                selectionEnd = 8,
+                selectionEnd = 5,
             )
         )
 
