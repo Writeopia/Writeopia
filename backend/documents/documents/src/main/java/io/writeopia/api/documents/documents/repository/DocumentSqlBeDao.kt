@@ -238,6 +238,10 @@ class DocumentSqlBeDao(
         )
     }
 
+    fun loadDocumentWorkspaceId(id: String): String? =
+        documentQueries?.selectWorkspaceIdById(id)
+            ?.executeAsOneOrNull()
+
     fun loadDocumentById(id: String, workspaceId: String): Document? =
         documentQueries?.selectById(id, workspaceId)
             ?.executeAsOneOrNull()
