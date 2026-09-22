@@ -127,6 +127,73 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun `duplicate conversation ids should be rejected before persistence`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        val conversationId = GenerateId.generate()
+
+        assertFailsWith<IllegalArgumentException> {
+            database.saveDocument(
+                Document(
+                    id = documentId,
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    lastSyncedAt = now,
+                    workspaceId = workspaceId,
+                    parentId = "root",
+                    commentConversations = listOf(
+                        CommentConversation(
+                            id = conversationId,
+                            comments = listOf(Comment(id = GenerateId.generate(), text = "first")),
+                        ),
+                        CommentConversation(
+                            id = conversationId,
+                            comments = listOf(Comment(id = GenerateId.generate(), text = "second")),
+                        ),
+                    ),
+                )
+            )
+        }
+
+        assertEquals(null, database.getDocumentById(documentId, workspaceId))
+    }
+
+    @Test
+    fun `duplicate comment ids should be rejected before persistence`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        val commentId = GenerateId.generate()
+
+        assertFailsWith<IllegalArgumentException> {
+            database.saveDocument(
+                Document(
+                    id = documentId,
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    lastSyncedAt = now,
+                    workspaceId = workspaceId,
+                    parentId = "root",
+                    commentConversations = listOf(
+                        CommentConversation(
+                            id = GenerateId.generate(),
+                            comments = listOf(
+                                Comment(id = commentId, text = "first"),
+                                Comment(id = commentId, text = "second"),
+                            ),
+                        )
+                    ),
+                )
+            )
+        }
+
+        assertEquals(null, database.getDocumentById(documentId, workspaceId))
+    }
+
+    @Test
     fun `full document write should reject document owned by another workspace`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()

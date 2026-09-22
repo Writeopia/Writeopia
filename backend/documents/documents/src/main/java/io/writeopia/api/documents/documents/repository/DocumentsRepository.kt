@@ -27,6 +27,10 @@ suspend fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
     documents.forEach(dao::insertDocumentWithContent)
 }
 
+internal fun WriteopiaDbBackend.saveDocumentInTransaction(document: Document) {
+    getDocumentDaoFn().insertDocumentWithContentInTransaction(document)
+}
+
 suspend fun WriteopiaDbBackend.saveFolder(vararg folders: Folder) {
     val dao = getDocumentDaoFn()
     folders.forEach(dao::insertFolder)

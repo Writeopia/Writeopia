@@ -72,41 +72,64 @@ class DocumentSqlBeDao(
             } ?: emptyList()
 
     fun insertDocumentWithContent(document: Document) {
-        val insert = {
-            val result =
-                documentQueries?.selectById(document.id, document.workspaceId)?.executeAsOneOrNull()
+        documentQueries?.transaction {
+            insertDocumentWithContentInTransaction(document)
+        } ?: insertDocumentWithContentInTransaction(document)
+    }
 
-            if (result != null) {
-                storyStepQueries?.deleteByDocumentId(document.id)
-            }
+    internal fun insertDocumentWithContentInTransaction(document: Document) {
+        validateCommentConversations(document.id, document.commentConversations)
 
-            document.content.values.forEachIndexed { i, storyStep ->
-                insertStoryStep(storyStep, i.toDouble(), document.id)
-            }
+        val result =
+            documentQueries?.selectById(document.id, document.workspaceId)?.executeAsOneOrNull()
 
-            replaceCommentConversations(document.id, document.commentConversations)
-            insertDocument(document)
+        if (result != null) {
+            storyStepQueries?.deleteByDocumentId(document.id)
         }
 
-        documentQueries?.transaction {
-            insert()
-        } ?: insert()
+        document.content.values.forEachIndexed { i, storyStep ->
+            insertStoryStep(storyStep, i.toDouble(), document.id)
+        }
+
+        replaceCommentConversationsUnchecked(document.id, document.commentConversations)
+        insertDocument(document)
     }
 
     fun replaceCommentConversations(
         documentId: String,
         conversations: List<CommentConversation>,
     ) {
-        conversations.asSequence()
-            .flatMap { conversation -> conversation.comments.asSequence() }
-            .forEach { comment ->
-                val existingDocumentId =
-                    commentQueries?.selectDocumentIdById(comment.id)?.executeAsOneOrNull()
-                require(existingDocumentId == null || existingDocumentId == documentId) {
-                    "Comment does not belong to the requested document"
-                }
-            }
+        validateCommentConversations(documentId, conversations)
+        replaceCommentConversationsUnchecked(documentId, conversations)
+    }
 
+    private fun validateCommentConversations(
+        documentId: String,
+        conversations: List<CommentConversation>,
+    ) {
+        val conversationIds = conversations.map { conversation -> conversation.id }
+        require(conversationIds.size == conversationIds.toSet().size) {
+            "Comment conversation IDs must be unique"
+        }
+
+        val comments = conversations.flatMap { conversation -> conversation.comments }
+        require(comments.size == comments.map { comment -> comment.id }.toSet().size) {
+            "Comment IDs must be unique"
+        }
+
+        comments.forEach { comment ->
+            val existingDocumentId =
+                commentQueries?.selectDocumentIdById(comment.id)?.executeAsOneOrNull()
+            require(existingDocumentId == null || existingDocumentId == documentId) {
+                "Comment does not belong to the requested document"
+            }
+        }
+    }
+
+    private fun replaceCommentConversationsUnchecked(
+        documentId: String,
+        conversations: List<CommentConversation>,
+    ) {
         commentQueries?.deleteByDocumentId(documentId)
         conversations.forEachIndexed { conversationPosition, conversation ->
             conversation.comments.forEachIndexed { commentPosition, comment ->

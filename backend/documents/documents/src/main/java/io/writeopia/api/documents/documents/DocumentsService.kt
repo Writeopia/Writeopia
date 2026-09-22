@@ -35,6 +35,7 @@ import io.writeopia.api.documents.documents.repository.replaceCommentConversatio
 import io.writeopia.api.documents.documents.repository.getDocumentByTitle
 import io.writeopia.api.documents.documents.repository.getDocumentWithContentById
 import io.writeopia.api.documents.documents.repository.saveDocument
+import io.writeopia.api.documents.documents.repository.saveDocumentInTransaction
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.documents.repository.setDocumentPublished
 import io.writeopia.api.documents.documents.repository.SyncEventType
@@ -615,16 +616,49 @@ object DocumentsService {
         }
 
         val serverTimestamp = Clock.System.now().toEpochMilliseconds()
-
-        // Check if document exists, create it if not
         val existingDocument = writeopiaDb.getDocumentById(documentId, workspaceId)
-        if (existingDocument == null) {
-            // Extract title from the first title-type story step, or use a default
-            val titleStep = request.changes.firstOrNull { it.storyStep.type.name == "title" }
-            val title = titleStep?.storyStep?.text ?: "Untitled"
 
+        // Read the server state before applying this request so conflict resolution uses one baseline.
+        val serverUpdatedSteps = writeopiaDb.getStoryStepsAfterTime(
+            documentId = documentId,
+            afterTime = request.lastSyncTimestamp
+        )
+        val serverStepTimestamps = serverUpdatedSteps.associate { (_, step) ->
+            step.id to (step.lastUpdatedAt ?: 0L)
+        }
+
+        val acceptedChanges = request.changes.mapNotNull { change ->
+            val clientStep = change.storyStep.toModel()
+            val clientTimestamp = change.storyStep.lastUpdatedAt ?: 0L
+            val serverStepTimestamp = serverStepTimestamps[clientStep.id]
+
+            if (serverStepTimestamp == null || clientTimestamp >= serverStepTimestamp) {
+                change to clientStep
+            } else {
+                null
+            }
+        }
+        val clientUpdatedStepIds = acceptedChanges
+            .mapTo(mutableSetOf()) { (_, clientStep) -> clientStep.id }
+        val updatedTitle = acceptedChanges
+            .lastOrNull { (change, _) -> change.storyStep.type.name == "title" }
+            ?.first
+            ?.storyStep
+            ?.text
+
+        val deletionsToApply = request.deletions.filter { deletionId ->
+            val serverStepTimestamp = serverStepTimestamps[deletionId]
+            serverStepTimestamp == null || serverStepTimestamp <= request.lastSyncTimestamp
+        }
+
+        val newDocument = if (existingDocument == null) {
+            val title = request.changes
+                .firstOrNull { change -> change.storyStep.type.name == "title" }
+                ?.storyStep
+                ?.text
+                ?: "Untitled"
             val now = Clock.System.now()
-            val newDocument = Document(
+            Document(
                 id = documentId,
                 title = title,
                 content = emptyMap(),
@@ -634,78 +668,53 @@ object DocumentsService {
                 parentId = "root",
                 workspaceId = workspaceId
             )
-            writeopiaDb.saveDocument(newDocument)
+        } else {
+            null
         }
 
-        request.commentConversations?.let { conversations ->
+        val hasMutations =
+            newDocument != null ||
+                request.commentConversations != null ||
+                acceptedChanges.isNotEmpty() ||
+                deletionsToApply.isNotEmpty()
+
+        if (hasMutations) {
             writeopiaDb.transaction {
-                writeopiaDb.replaceCommentConversations(
-                    documentId = documentId,
-                    conversations = conversations.map { it.toModel() },
-                )
+                newDocument?.let(writeopiaDb::saveDocumentInTransaction)
+
+                request.commentConversations?.let { conversations ->
+                    writeopiaDb.replaceCommentConversations(
+                        documentId = documentId,
+                        conversations = conversations.map { conversation -> conversation.toModel() },
+                    )
+                }
+
+                acceptedChanges.forEach { (change, clientStep) ->
+                    writeopiaDb.upsertStoryStep(
+                        storyStep = clientStep,
+                        position = change.position,
+                        documentId = documentId,
+                        lastUpdatedAt = request.requestTimestamp
+                    )
+                }
+
+                if (updatedTitle != null) {
+                    val currentTitle = existingDocument?.title ?: newDocument?.title
+                    if (currentTitle != updatedTitle) {
+                        writeopiaDb.updateDocumentTitle(documentId, updatedTitle)
+                    }
+                }
+
+                if (deletionsToApply.isNotEmpty()) {
+                    writeopiaDb.deleteStoryStepsByIds(deletionsToApply)
+                }
+
                 writeopiaDb.touchDocument(
                     documentId = documentId,
                     workspaceId = workspaceId,
                     timestamp = serverTimestamp,
                 )
             }
-        }
-
-        // Get server steps updated after client's last sync
-        val serverUpdatedSteps = writeopiaDb.getStoryStepsAfterTime(
-            documentId = documentId,
-            afterTime = request.lastSyncTimestamp
-        )
-
-        // Create a map of server step IDs to their lastUpdatedAt for conflict resolution
-        val serverStepTimestamps = serverUpdatedSteps.associate { (_, step) ->
-            step.id to (step.lastUpdatedAt ?: 0L)
-        }
-
-        // Track which step IDs the client is updating (to exclude from response)
-        val clientUpdatedStepIds = mutableSetOf<String>()
-        var updatedTitle: String? = null
-
-        // Process client changes
-        for (change in request.changes) {
-            val clientStep = change.storyStep.toModel()
-            val clientTimestamp = change.storyStep.lastUpdatedAt ?: 0L
-            val serverStepTimestamp = serverStepTimestamps[clientStep.id]
-
-            // Only save if server step doesn't exist or client is newer
-            if (serverStepTimestamp == null || clientTimestamp >= serverStepTimestamp) {
-                writeopiaDb.upsertStoryStep(
-                    storyStep = clientStep,
-                    position = change.position,
-                    documentId = documentId,
-                    lastUpdatedAt = request.requestTimestamp
-                )
-                clientUpdatedStepIds.add(clientStep.id)
-
-                // Track title updates
-                if (change.storyStep.type.name == "title") {
-                    updatedTitle = change.storyStep.text
-                }
-            }
-        }
-
-        // Update document title if title step was changed
-        if (updatedTitle != null) {
-            val currentDoc = writeopiaDb.getDocumentById(documentId, workspaceId)
-            if (currentDoc != null && currentDoc.title != updatedTitle) {
-                writeopiaDb.updateDocumentTitle(documentId, updatedTitle)
-            }
-        }
-
-        // Process deletions
-        val deletionsToApply = request.deletions.filter { deletionId ->
-            // Only delete if the step wasn't updated on the server after client's last sync
-            val serverStepTimestamp = serverStepTimestamps[deletionId]
-            serverStepTimestamp == null || serverStepTimestamp <= request.lastSyncTimestamp
-        }
-
-        if (deletionsToApply.isNotEmpty()) {
-            writeopiaDb.deleteStoryStepsByIds(deletionsToApply)
         }
 
         // Get deletions that happened on server (steps that existed before but are now gone)
