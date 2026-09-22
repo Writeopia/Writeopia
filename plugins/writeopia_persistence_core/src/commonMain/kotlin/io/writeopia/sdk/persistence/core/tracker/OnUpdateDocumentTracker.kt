@@ -34,12 +34,60 @@ class OnUpdateDocumentTracker(
         workspaceIdFlow: Flow<String>,
         commentConversationsFlow: StateFlow<List<CommentConversation>>,
     ) {
+        var previousCommentConversations: List<CommentConversation>? = null
+
+        fun fullDocument(
+            storyState: StoryState,
+            documentInfo: DocumentInfo,
+            workspaceId: String,
+            commentConversations: List<CommentConversation>,
+        ): Document {
+            val stories = storyState.stories.filter { (_, story) -> !story.ephemeral }
+            val titleFromContent = stories.values
+                .firstOrNull { storyStep -> storyStep.type == StoryTypes.TITLE.type }
+                ?.text
+
+            return Document(
+                id = documentInfo.id,
+                title = titleFromContent ?: documentInfo.title,
+                content = documentFilter.removeTypesFromDocument(stories),
+                createdAt = documentInfo.createdAt,
+                lastUpdatedAt = Clock.System.now(),
+                lastSyncedAt = documentInfo.lastSyncedAt,
+                workspaceId = workspaceId,
+                parentId = documentInfo.parentId,
+                icon = documentInfo.icon,
+                isLocked = documentInfo.isLocked,
+                favorite = documentInfo.isFavorite,
+                commentConversations = commentConversations,
+            )
+        }
+
         combine(
             documentEditionFlow,
-            workspaceIdFlow
-        ) { (storyState, documentInfo), workspaceId ->
-            Triple(storyState, documentInfo, workspaceId)
-        }.collect { (storyState, documentInfo, workspaceId) ->
+            workspaceIdFlow,
+            commentConversationsFlow,
+        ) { documentEdition, workspaceId, commentConversations ->
+            Triple(documentEdition, workspaceId, commentConversations)
+        }.collect { (documentEdition, workspaceId, commentConversations) ->
+            val (storyState, documentInfo) = documentEdition
+            val commentsChanged = previousCommentConversations?.let { previous ->
+                previous != commentConversations
+            } ?: false
+            previousCommentConversations = commentConversations
+
+            if (commentsChanged) {
+                val document = fullDocument(
+                    storyState,
+                    documentInfo,
+                    workspaceId,
+                    commentConversations,
+                )
+                documentUpdate.saveDocument(document)
+                onDocumentUpdate(document)
+                return@collect
+            }
+
             when (val lastEdit = storyState.lastEdit) {
                 is LastEdit.LineEdition -> {
                     if (lastEdit.storyStep.ephemeral) return@collect
@@ -80,28 +128,12 @@ class OnUpdateDocumentTracker(
                 LastEdit.Nothing -> {}
 
                 LastEdit.Whole -> withContext(NonCancellable) {
-                    val stories = storyState.stories.filter { (_, story) -> !story.ephemeral }
-                    val titleFromContent = stories.values
-                        .firstOrNull { storyStep ->
-                            // Todo: Change the type of change to allow different types. The client code should decide what is a title
-                            // It is also interesting to inv
-                            storyStep.type == StoryTypes.TITLE.type
-                        }?.text
-
-                    val document = Document(
-                        id = documentInfo.id,
-                        title = titleFromContent ?: documentInfo.title,
-                        content = documentFilter.removeTypesFromDocument(stories),
-                        createdAt = documentInfo.createdAt,
-                        lastUpdatedAt = Clock.System.now(),
-                        lastSyncedAt = documentInfo.lastSyncedAt,
-                        workspaceId = workspaceId,
-                        parentId = documentInfo.parentId,
-                        icon = documentInfo.icon,
-                        isLocked = documentInfo.isLocked,
-                        commentConversations = commentConversationsFlow.value
+                    val document = fullDocument(
+                        storyState,
+                        documentInfo,
+                        workspaceId,
+                        commentConversations,
                     )
-
                     documentUpdate.saveDocument(document)
                     onDocumentUpdate(document)
                 }

@@ -19,6 +19,7 @@ interface DocumentTracker {
     suspend fun saveOnStoryChanges(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
-        commentConversationsFlow: StateFlow<List<CommentConversation>> = MutableStateFlow(emptyList())
+        commentConversationsFlow: StateFlow<List<CommentConversation>> =
+            MutableStateFlow(emptyList())
     )
 }

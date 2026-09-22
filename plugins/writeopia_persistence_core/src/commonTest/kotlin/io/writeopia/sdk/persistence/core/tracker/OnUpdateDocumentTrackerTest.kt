@@ -9,11 +9,14 @@ import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
@@ -25,71 +28,127 @@ class OnUpdateDocumentTrackerTest {
 
     @Test
     fun wholeDocumentSaveShouldPreserveCommentConversations() = runTest {
-        val now = Clock.System.now()
+        val conversation = conversation()
+        val sourceDocument = sourceDocument(listOf(conversation))
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                MutableStateFlow(
+                    StoryState(
+                        stories = sourceDocument.content,
+                        lastEdit = LastEdit.Whole,
+                    ) to sourceDocument.info()
+                ),
+                MutableStateFlow(sourceDocument.workspaceId),
+                MutableStateFlow(sourceDocument.commentConversations),
+            )
+        }
+
+        val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
+        job.cancel()
+
+        assertEquals(listOf(conversation), persisted.commentConversations)
+        assertEquals(sourceDocument.workspaceId, persisted.workspaceId)
+    }
+
+    @Test
+    fun commentOnlyChangeShouldPersistThroughDocumentTracker() = runTest {
+        val firstComment = Comment(id = "comment-1", text = "first")
         val conversation = CommentConversation(
+            id = "conversation-1",
+            comments = listOf(firstComment),
+        )
+        val sourceDocument = sourceDocument(listOf(conversation))
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(
+                stories = sourceDocument.content,
+                lastEdit = LastEdit.Nothing,
+            ) to sourceDocument.info()
+        )
+        val commentConversationsFlow = MutableStateFlow(sourceDocument.commentConversations)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                documentEditionFlow,
+                MutableStateFlow(sourceDocument.workspaceId),
+                commentConversationsFlow,
+            )
+        }
+        runCurrent()
+
+        val reply = Comment(id = "comment-2", text = "reply")
+        val updatedConversation = conversation.copy(comments = conversation.comments + reply)
+        commentConversationsFlow.value = listOf(updatedConversation)
+
+        val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
+        job.cancel()
+
+        assertEquals(listOf(updatedConversation), persisted.commentConversations)
+        assertEquals(sourceDocument.workspaceId, persisted.workspaceId)
+    }
+
+    private fun conversation(): CommentConversation =
+        CommentConversation(
             id = "conversation-1",
             comments = listOf(Comment(id = "comment-1", text = "hello")),
         )
-        val sourceDocument = Document(
+
+    private fun sourceDocument(
+        conversations: List<CommentConversation>,
+    ): Document {
+        val now = Clock.System.now()
+        val conversationId = conversations.firstOrNull()?.id
+
+        return Document(
             id = "document-1",
             content = mapOf(
-                0.0 to StoryStep(text = "hello", type = StoryTypes.TEXT.type)
+                0.0 to StoryStep(
+                    text = "hello",
+                    type = StoryTypes.TEXT.type,
+                    spans = conversationId?.let { id ->
+                        setOf(SpanInfo.create(0, 5, Span.COMMENT, id))
+                    } ?: emptySet(),
+                )
             ),
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = null,
             workspaceId = "workspace-1",
             parentId = "root",
-            commentConversations = listOf(conversation),
+            commentConversations = conversations,
         )
+    }
+
+    private class RecordingDocumentUpdate : DocumentUpdate {
         val savedDocument = CompletableDeferred<Document>()
-        val documentUpdate = object : DocumentUpdate {
-            override suspend fun saveDocument(document: Document) {
-                if (!savedDocument.isCompleted) savedDocument.complete(document)
-            }
 
-            override suspend fun saveDocumentMetadata(document: Document) = Unit
-
-            override suspend fun saveStoryStep(
-                storyStep: StoryStep,
-                position: Double,
-                documentId: String,
-            ) = Unit
-
-            override suspend fun updateStoryStep(
-                storyStep: StoryStep,
-                position: Double,
-                documentId: String,
-            ) = Unit
-
-            override suspend fun saveStorySteps(
-                steps: List<Pair<Double, StoryStep>>,
-                documentId: String,
-            ) = Unit
-
-            override suspend fun deleteStoryStep(storyStepId: String, documentId: String) = Unit
-        }
-        val tracker = OnUpdateDocumentTracker(documentUpdate)
-        val documentEditionFlow = MutableStateFlow(
-            StoryState(
-                stories = sourceDocument.content,
-                lastEdit = LastEdit.Whole,
-            ) to sourceDocument.info()
-        )
-        val workspaceIdFlow = MutableStateFlow(sourceDocument.workspaceId)
-        val commentConversationsFlow = MutableStateFlow(sourceDocument.commentConversations)
-
-        val job = launch {
-            tracker.saveOnStoryChanges(
-                documentEditionFlow,
-                workspaceIdFlow,
-                commentConversationsFlow,
-            )
+        override suspend fun saveDocument(document: Document) {
+            if (!savedDocument.isCompleted) savedDocument.complete(document)
         }
 
-        val persisted = withTimeout(1_000) { savedDocument.await() }
-        job.cancel()
+        override suspend fun saveDocumentMetadata(document: Document) = Unit
 
-        assertEquals(listOf(conversation), persisted.commentConversations)
+        override suspend fun saveStoryStep(
+            storyStep: StoryStep,
+            position: Double,
+            documentId: String,
+        ) = Unit
+
+        override suspend fun updateStoryStep(
+            storyStep: StoryStep,
+            position: Double,
+            documentId: String,
+        ) = Unit
+
+        override suspend fun saveStorySteps(
+            steps: List<Pair<Double, StoryStep>>,
+            documentId: String,
+        ) = Unit
+
+        override suspend fun deleteStoryStep(storyStepId: String, documentId: String) = Unit
     }
 }

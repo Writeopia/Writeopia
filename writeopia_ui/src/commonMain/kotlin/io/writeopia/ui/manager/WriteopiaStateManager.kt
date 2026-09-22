@@ -1154,7 +1154,6 @@ class WriteopiaStateManager(
             selection.position,
             SpanInfo.create(start, end, Span.COMMENT, conversation.id)
         )
-        persistCommentDocument()
         return conversation
     }
 
@@ -1173,7 +1172,6 @@ class WriteopiaStateManager(
             this[index] = updated
         }
         rememberCommentConversations(listOf(updated))
-        persistCommentDocument()
         return comment
     }
 
@@ -1236,8 +1234,6 @@ class WriteopiaStateManager(
             _commentConversations.value = conversations.filterNot { it.id == conversationId }
             commentConversationArchive.remove(conversationId)
         }
-
-        persistCommentDocument()
         return true
     }
 
@@ -1250,7 +1246,6 @@ class WriteopiaStateManager(
         removeCommentSpans(conversationId)
         _commentConversations.value = conversations.filterNot { it.id == conversationId }
         commentConversationArchive.remove(conversationId)
-        persistCommentDocument()
         return true
     }
 
@@ -1289,7 +1284,6 @@ class WriteopiaStateManager(
         if (remaining.size != conversations.size) {
             rememberCommentConversations(removed)
             _commentConversations.value = remaining
-            persistCommentDocument()
         }
     }
 
@@ -1329,15 +1323,6 @@ class WriteopiaStateManager(
 
         if (_commentConversations.value != restored) {
             _commentConversations.value = restored
-        }
-        persistCommentDocument()
-    }
-
-    private fun persistCommentDocument() {
-        val repository = documentRepository ?: return
-        val document = getDocument()
-        coroutineScope.launch(dispatcher) {
-            repository.saveDocument(document)
         }
     }
 
