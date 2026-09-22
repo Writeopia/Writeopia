@@ -435,10 +435,10 @@ class WriteopiaStateManager(
 
         backStackManager.addState(withNextPositions)
 
-        _commentConversations.value = emptyList()
-        commentConversationArchive.clear()
         _documentInfo.value = documentInfo
         _currentStory.value = withNextPositions
+        _commentConversations.value = emptyList()
+        commentConversationArchive.clear()
     }
 
     /**
@@ -451,9 +451,6 @@ class WriteopiaStateManager(
         if (isInitialized()) return
 
         initialized = true
-        _commentConversations.value = document.commentConversations
-        commentConversationArchive.clear()
-        rememberCommentConversations(document.commentConversations)
 
         val stories = document.content
         val state =
@@ -466,6 +463,9 @@ class WriteopiaStateManager(
 
         _currentStory.value = StoryState(withNextPositions, LastEdit.Nothing)
         _documentInfo.value = document.info()
+        _commentConversations.value = document.commentConversations
+        commentConversationArchive.clear()
+        rememberCommentConversations(document.commentConversations)
     }
 
     /**
@@ -475,9 +475,6 @@ class WriteopiaStateManager(
      * @param document [Document] the updated document
      */
     fun updateDocument(document: Document) {
-        _commentConversations.value = document.commentConversations
-        commentConversationArchive.clear()
-        rememberCommentConversations(document.commentConversations)
         val stories = document.content
         val normalized = stepsNormalizer(stories.toEditState())
         val withNextPositions = NextPositionCalculator.calculate(normalized)
@@ -485,6 +482,9 @@ class WriteopiaStateManager(
         _currentStory.value = StoryState(withNextPositions, LastEdit.Nothing)
         _documentInfo.value = document.info()
         backStackManager.addState(_currentStory.value)
+        _commentConversations.value = document.commentConversations
+        commentConversationArchive.clear()
+        rememberCommentConversations(document.commentConversations)
     }
 
     /**
@@ -1147,13 +1147,13 @@ class WriteopiaStateManager(
 
         val comment = Comment(text = text)
         val conversation = CommentConversation(comments = listOf(comment))
-        _commentConversations.value = _commentConversations.value + conversation
-        rememberCommentConversations(listOf(conversation))
         _currentStory.value = writeopiaManager.addSpan(
             state,
             selection.position,
             SpanInfo.create(start, end, Span.COMMENT, conversation.id)
         )
+        _commentConversations.value = _commentConversations.value + conversation
+        rememberCommentConversations(listOf(conversation))
         return conversation
     }
 
