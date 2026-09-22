@@ -1206,7 +1206,7 @@ class WriteopiaStateManager(
             .filter { span ->
                 span.span == Span.COMMENT &&
                     if (start == end) {
-                        span.isInside(start)
+                        start >= span.start && start < span.end
                     } else {
                         span.start < end && span.end > start
                     }
