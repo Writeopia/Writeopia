@@ -31,6 +31,7 @@ class AccountDeletionReconciliationServiceTest {
         db.insertUser(
             id = userId,
             name = "Test User",
+            username = "user_name",
             email = userEmail,
             password = "hashedpassword",
             salt = "salt",
