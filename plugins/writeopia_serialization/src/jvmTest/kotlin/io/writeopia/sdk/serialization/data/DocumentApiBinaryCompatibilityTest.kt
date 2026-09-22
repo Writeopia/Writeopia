@@ -15,7 +15,7 @@ class DocumentApiBinaryCompatibilityTest {
         assertTrue(
             (1..13).all { index ->
                 methods.any { method ->
-                    method.name == "component$" + index && method.parameterCount == 0
+                    method.name == "component" + index && method.parameterCount == 0
                 }
             }
         )

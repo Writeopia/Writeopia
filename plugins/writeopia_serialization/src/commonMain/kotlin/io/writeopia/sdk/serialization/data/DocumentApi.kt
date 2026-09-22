@@ -59,17 +59,29 @@ class DocumentApi(
     }
 
     operator fun component1(): String = id
+
     operator fun component2(): String = title
+
     operator fun component3(): String = workspaceId
+
     operator fun component4(): List<StoryStepApi> = content
+
     operator fun component5(): Long = createdAt
+
     operator fun component6(): Long = lastUpdatedAt
+
     operator fun component7(): Boolean = isFavorite
+
     operator fun component8(): Long? = lastSyncedAt
+
     operator fun component9(): String? = parentId
+
     operator fun component10(): Boolean = isLocked
+
     operator fun component11(): IconApi? = icon
+
     operator fun component12(): Boolean = deleted
+
     operator fun component13(): Boolean = published
 
     fun copy(

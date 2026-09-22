@@ -32,12 +32,23 @@ INSERT INTO comment_entity(
 VALUES (?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET
-  conversation_id = excluded.conversation_id,
-  document_id = excluded.document_id,
-  conversation_position = excluded.conversation_position,
-  comment_position = excluded.comment_position,
-  text = excluded.text
-WHERE comment_entity.document_id = excluded.document_id;
+  conversation_id = CASE
+    WHEN comment_entity.document_id = excluded.document_id THEN excluded.conversation_id
+    ELSE comment_entity.conversation_id
+  END,
+  document_id = comment_entity.document_id,
+  conversation_position = CASE
+    WHEN comment_entity.document_id = excluded.document_id THEN excluded.conversation_position
+    ELSE comment_entity.conversation_position
+  END,
+  comment_position = CASE
+    WHEN comment_entity.document_id = excluded.document_id THEN excluded.comment_position
+    ELSE comment_entity.comment_position
+  END,
+  text = CASE
+    WHEN comment_entity.document_id = excluded.document_id THEN excluded.text
+    ELSE comment_entity.text
+  END;
 
 deleteByDocumentId:
 DELETE FROM comment_entity
