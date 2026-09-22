@@ -95,4 +95,80 @@ class OnUpdateStoryStepSyncTrackerTest {
             synced.commentConversations?.single()?.comments?.map { it.text },
         )
     }
+
+    @Test
+    fun unchangedCommentsShouldNotBeResentWithStoryStepChanges() = runTest {
+        val now = Clock.System.now()
+        val initialStep = StoryStep(
+            id = "step-1",
+            type = StoryTypes.TEXT.type,
+            text = "Text",
+        )
+        val document = Document(
+            id = "document-1",
+            content = mapOf(0.0 to initialStep),
+            createdAt = now,
+            lastUpdatedAt = now,
+            workspaceId = "workspace-1",
+            parentId = "root",
+        )
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(
+                stories = document.content,
+                lastEdit = LastEdit.Nothing,
+            ) to document.info()
+        )
+        val workspaceIdFlow = MutableStateFlow(document.workspaceId)
+        val conversation = CommentConversation(
+            id = "conversation-1",
+            comments = listOf(Comment(id = "comment-1", text = "Hello")),
+        )
+        val commentsFlow = MutableStateFlow<List<CommentConversation>>(emptyList())
+        val requests =
+            mutableListOf<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        val secondRequest =
+            CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        val tracker = OnUpdateStoryStepSyncTracker(
+            syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
+            syncApi = { syncRequest ->
+                requests += syncRequest
+                if (requests.size == 2 && !secondRequest.isCompleted) {
+                    secondRequest.complete(syncRequest)
+                }
+                StoryStepSyncResponse(
+                    serverTimestamp = syncRequest.requestTimestamp,
+                    updatedSteps = emptyList(),
+                    deletedIds = emptyList(),
+                )
+            },
+            commentConversationsFlow = commentsFlow,
+        )
+
+        val job = launch {
+            tracker.syncStorySteps(documentEditionFlow, workspaceIdFlow)
+        }
+        runCurrent()
+
+        commentsFlow.value = listOf(conversation)
+        advanceTimeBy(20)
+        runCurrent()
+
+        val changedStep = initialStep.copy(text = "Updated")
+        documentEditionFlow.value =
+            StoryState(
+                stories = mapOf(0.0 to changedStep),
+                lastEdit = LastEdit.LineEdition(0.0, changedStep),
+            ) to document.info()
+
+        advanceTimeBy(20)
+        runCurrent()
+
+        val synced = withTimeout(1_000) { secondRequest.await() }
+        job.cancel()
+
+        assertEquals(2, requests.size)
+        assertEquals(null, synced.commentConversations)
+        assertEquals(listOf("Updated"), synced.changes.map { it.storyStep.text })
+    }
+
 }
