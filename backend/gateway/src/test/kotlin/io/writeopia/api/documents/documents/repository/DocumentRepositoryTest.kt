@@ -74,6 +74,44 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun `full document write should reject document owned by another workspace`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val ownerWorkspaceId = GenerateId.generate()
+        val otherWorkspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = ownerWorkspaceId,
+                parentId = "root",
+            )
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            DocumentsService.documentFromApiForWrite(
+                document = DocumentApi(
+                    id = documentId,
+                    workspaceId = otherWorkspaceId,
+                    parentId = "root",
+                    commentConversations = emptyList(),
+                ),
+                workspaceId = otherWorkspaceId,
+                writeopiaDb = database,
+            )
+        }
+
+        assertEquals(ownerWorkspaceId, database.getDocumentById(documentId, ownerWorkspaceId)?.workspaceId)
+        assertEquals(null, database.getDocumentById(documentId, otherWorkspaceId))
+
+        database.deleteDocumentById(documentId)
+    }
+
+    @Test
     fun `legacy full document write should not erase existing comments`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()
