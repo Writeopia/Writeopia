@@ -45,11 +45,15 @@ internal fun resolveCommentUiState(
             ?.let(conversationsById::get)
     }
 
-    val activeConversation = selectedConversation ?: paragraphConversations.firstOrNull()
     val canCreateComment = selection?.let { cursor ->
         val (start, end) = cursor.sortedPositions()
         start != end && selectedConversation == null
     } ?: false
+    val activeConversation = if (canCreateComment) {
+        null
+    } else {
+        selectedConversation ?: paragraphConversations.firstOrNull()
+    }
 
     return CommentUiState(
         activeConversation = activeConversation,
