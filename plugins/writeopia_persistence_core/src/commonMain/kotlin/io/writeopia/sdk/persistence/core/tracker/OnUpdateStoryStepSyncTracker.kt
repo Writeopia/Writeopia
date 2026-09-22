@@ -17,6 +17,7 @@ import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.combine
@@ -46,7 +47,17 @@ class OnUpdateStoryStepSyncTracker(
 
     private var lastSyncTimestamp: Long = 0L
     private var consecutiveFailures: Int = 0
-    private var commentChangeVersion: Long = 0L
+    private data class CommentSnapshot(
+        val conversations: List<CommentConversation>?,
+        val version: Long,
+    )
+
+    private val commentSnapshot = MutableStateFlow(
+        CommentSnapshot(
+            conversations = commentConversationsFlow?.value,
+            version = 0L,
+        )
+    )
     private var lastSyncedCommentChangeVersion: Long = 0L
 
     // Track last known content for each StoryStep to detect actual changes
@@ -119,8 +130,12 @@ class OnUpdateStoryStepSyncTracker(
                 launch {
                     commentsFlow
                         .drop(1)
-                        .collect {
-                            commentChangeVersion++
+                        .collect { conversations ->
+                            val previous = commentSnapshot.value
+                            commentSnapshot.value = CommentSnapshot(
+                                conversations = conversations,
+                                version = previous.version + 1,
+                            )
                             syncBuffer.requestSync()
                         }
                 }
@@ -132,7 +147,7 @@ class OnUpdateStoryStepSyncTracker(
                     .debounce(syncBuffer.syncInterval)
                     .collect {
                         val commentsChanged =
-                            commentChangeVersion > lastSyncedCommentChangeVersion
+                            commentSnapshot.value.version > lastSyncedCommentChangeVersion
                         if (syncBuffer.hasPendingChanges() || commentsChanged) {
                             val (_, documentInfo) = documentEditionFlow.first()
                             val workspaceId = workspaceIdFlow.first()
@@ -256,8 +271,9 @@ class OnUpdateStoryStepSyncTracker(
 
     private suspend fun performSync(documentId: String, workspaceId: String) {
         val batch = syncBuffer.consumeChanges()
-        val currentComments = commentConversationsFlow?.value
-        val commentVersion = commentChangeVersion
+        val comments = commentSnapshot.value
+        val currentComments = comments.conversations
+        val commentVersion = comments.version
         val commentsChanged = commentVersion > lastSyncedCommentChangeVersion
         if (batch.isEmpty && !commentsChanged) return
 
