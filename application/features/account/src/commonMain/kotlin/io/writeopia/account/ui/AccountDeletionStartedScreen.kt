@@ -43,7 +43,8 @@ fun AccountDeletionStartedScreen(
         Text(
             text = WrStrings.accountDeletionStartedTitle(),
             style = MaterialTheme.typography.headlineSmall,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -59,8 +60,9 @@ fun AccountDeletionStartedScreen(
 
         CommonButton(
             text = WrStrings.logout(),
-            modifier = Modifier.fillMaxWidth(),
-            clickListener = logout
+//            modifier = Modifier.fillMaxWidth(),
+            clickListener = logout,
+            horizontalArrangement = Arrangement.Center
         )
     }
 }
