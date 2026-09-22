@@ -12,7 +12,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
-import io.writeopia.api.core.auth.utils.runIfMember
+import io.writeopia.api.core.workspaces.utils.runIfMember
 import io.writeopia.api.documents.documents.DocumentsService
 import io.writeopia.api.documents.documents.TutorialsService
 import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId

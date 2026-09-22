@@ -1,4 +1,4 @@
-package io.writeopia.api.core.auth.dto
+package io.writeopia.api.core.workspaces.dto
 
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import kotlinx.serialization.Serializable

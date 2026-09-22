@@ -4,10 +4,10 @@ package io.writeopia.api.documents.documents.service
 
 import io.writeopia.api.core.auth.dto.AccountDeletionEventPayload
 import io.writeopia.api.core.auth.models.AccountDeletionTopics
-import io.writeopia.api.core.auth.repository.countAdminsInWorkspace
-import io.writeopia.api.core.auth.repository.getUserRoleInWorkspace
-import io.writeopia.api.core.auth.repository.setWorkspaceStatusDeletionPending
-import io.writeopia.api.core.auth.service.WorkspaceService
+import io.writeopia.api.core.workspaces.repository.countAdminsInWorkspace
+import io.writeopia.api.core.workspaces.repository.getUserRoleInWorkspace
+import io.writeopia.api.core.workspaces.repository.setWorkspaceStatusDeletionPending
+import io.writeopia.api.core.workspaces.service.WorkspaceService
 import io.writeopia.api.documents.documents.repository.AccountDeletionWorkspaceAction
 import io.writeopia.api.documents.documents.repository.AccountDeletionWorkspaceRow
 import io.writeopia.api.documents.documents.repository.getAccountDeletionWorkspaceRows

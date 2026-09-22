@@ -18,13 +18,11 @@ import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getUserById
-import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
 import io.writeopia.api.core.auth.service.AccountDeletionService
 import io.writeopia.api.core.auth.service.AuthService
 import io.writeopia.api.core.auth.service.EmailService
 import io.writeopia.api.core.auth.service.RefreshTokenService
-import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
 import io.writeopia.connection.logger
@@ -42,7 +40,22 @@ import io.writeopia.sql.WriteopiaDbBackend
 import java.sql.SQLException
 
 
-fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
+/**
+ * @param provisionWorkspaceForNewUser Creates the workspace for a newly registered user and adds
+ * them as its admin, run inside the same transaction as user creation. Returns true on success.
+ * Workspace logic lives in the `backend:core:workspaces` module, which depends on this module for
+ * user lookups, so this is injected from the composition root to avoid a circular dependency.
+ */
+fun Routing.authRoute(
+    writeopiaDb: WriteopiaDbBackend,
+    debugMode: Boolean = false,
+    provisionWorkspaceForNewUser: (
+        writeopiaDb: WriteopiaDbBackend,
+        workspaceId: String,
+        workspaceName: String,
+        userEmail: String
+    ) -> Boolean
+) {
     post("/api/auth/login") {
         val credentials = call.receive<LoginRequest>()
 
@@ -167,17 +180,11 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
                 writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
 
-                WorkspaceService.createWorkspace(
-                    workspaceId = workspaceId,
-                    workspaceName = request.workspaceName,
-                    writeopiaDb = writeopiaDb
-                )
-
-                val created = WorkspaceService.addUserToWorkspaceAdmin(
-                    request.email,
+                val created = provisionWorkspaceForNewUser(
+                    writeopiaDb,
                     workspaceId,
-                    "ADMIN",
-                    writeopiaDb
+                    request.workspaceName,
+                    request.email
                 )
 
                 if (!created) {

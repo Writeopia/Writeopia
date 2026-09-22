@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTime::class)
 
-package io.writeopia.api.core.auth.repository
+package io.writeopia.api.core.workspaces.repository
 
 import io.writeopia.models.user.WorkspaceUser
 import io.writeopia.sdk.models.user.WriteopiaUser

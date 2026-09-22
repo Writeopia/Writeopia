@@ -1,4 +1,4 @@
-package io.writeopia.api.core.auth.routing
+package io.writeopia.api.core.workspaces.routing
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.header
@@ -8,16 +8,17 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
-import io.writeopia.api.core.auth.models.AddUserResult
-import io.writeopia.api.core.auth.repository.changeWorkspaceName
-import io.writeopia.api.core.auth.repository.changeWorkspaceRoleForUser
-import io.writeopia.api.core.auth.repository.countAdminsInWorkspace
-import io.writeopia.api.core.auth.repository.getUserRoleInWorkspace
-import io.writeopia.api.core.auth.repository.listWorkspaces
 import io.writeopia.api.core.auth.repository.searchUsersByEmail
-import io.writeopia.api.core.auth.service.WorkspaceService
+import io.writeopia.api.core.auth.routing.adminUserFn
 import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
-import io.writeopia.api.core.auth.utils.runIfAdmin
+import io.writeopia.api.core.workspaces.models.AddUserResult
+import io.writeopia.api.core.workspaces.repository.changeWorkspaceName
+import io.writeopia.api.core.workspaces.repository.changeWorkspaceRoleForUser
+import io.writeopia.api.core.workspaces.repository.countAdminsInWorkspace
+import io.writeopia.api.core.workspaces.repository.getUserRoleInWorkspace
+import io.writeopia.api.core.workspaces.repository.listWorkspaces
+import io.writeopia.api.core.workspaces.service.WorkspaceService
+import io.writeopia.api.core.workspaces.utils.runIfAdmin
 import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
 import io.writeopia.app.dto.SearchUserApi

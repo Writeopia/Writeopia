@@ -6,12 +6,8 @@ import io.writeopia.api.core.auth.models.LoginResult
 import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.WriteopiaBeUser
 import io.writeopia.api.core.auth.repository.getUserByUsernameOrEmail
-import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertUser
-import io.writeopia.api.core.auth.repository.insertUserInWorkspace
 import io.writeopia.api.core.auth.repository.updatePassword
-import io.writeopia.api.core.auth.repository.insertWorkspace
-import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
