@@ -68,6 +68,7 @@ fun AuthMenuScreen(
     emailState: StateFlow<String>,
     passwordState: StateFlow<String>,
     loginState: StateFlow<ResultData<Boolean>>,
+    accountDeletionPending: StateFlow<Boolean>,
     emailChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
@@ -77,13 +78,21 @@ fun AuthMenuScreen(
     showOfflineOption: Boolean = true,
     navigateUp: () -> Unit,
     navigateNext: () -> Unit,
+    navigateToAccountDeletionPending: () -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val loginErrorMessage = WrStrings.loginFailed()
     val loginStateValue by loginState.collectAsState()
+    val accountDeletionPendingValue by accountDeletionPending.collectAsState()
+
+    LaunchedEffect(accountDeletionPendingValue) {
+        if (accountDeletionPendingValue) {
+            navigateToAccountDeletionPending()
+        }
+    }
 
     LaunchedEffect(loginStateValue) {
-        if (loginStateValue is ResultData.Error) {
+        if (loginStateValue is ResultData.Error && !accountDeletionPendingValue) {
             snackbarHostState.showSnackbar(loginErrorMessage)
         }
     }

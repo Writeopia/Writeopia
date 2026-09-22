@@ -69,8 +69,10 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 )
             )
 
+            // Forbidden (not Unauthorized) so the client can tell this apart from
+            // invalid credentials and route the user to the account-deletion screen.
             LoginResult.DeletionPending ->
-                call.respond(HttpStatusCode.Unauthorized, "Account is being deleted")
+                call.respond(HttpStatusCode.Forbidden, "Account is being deleted")
 
             LoginResult.InvalidCredentials ->
                 call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
