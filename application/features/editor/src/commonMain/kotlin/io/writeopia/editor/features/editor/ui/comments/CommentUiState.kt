@@ -36,9 +36,9 @@ internal fun resolveCommentUiState(
         commentSpans
             .firstOrNull { span ->
                 if (start == end) {
-                    span.isInside(start)
+                    start >= span.start && start < span.end
                 } else {
-                    span.start <= end && span.end >= start
+                    span.start < end && span.end > start
                 }
             }
             ?.extra
