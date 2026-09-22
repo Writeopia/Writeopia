@@ -278,7 +278,7 @@ object DocumentsService {
         userId: String,
         writeopiaDb: WriteopiaDbBackend
     ) {
-        val childFolders = writeopiaDb.getFoldersByParentId(folderId)
+        val childFolders = writeopiaDb.getFoldersByParentId(folderId, workspaceId)
 
         // Recursively delete all child folders
         childFolders.forEach { childFolder ->
@@ -286,7 +286,7 @@ object DocumentsService {
         }
 
         // Get document IDs in this folder before deleting them
-        val documentIds = writeopiaDb.getIdsByParentId(folderId)
+        val documentIds = writeopiaDb.getIdsByParentId(folderId, workspaceId)
 
         // Create DELETE_DOCUMENT events for all documents in this folder
         documentIds.forEach { documentId ->
@@ -299,7 +299,7 @@ object DocumentsService {
         }
 
         // Delete all documents in this folder
-        writeopiaDb.deleteDocumentsByFolderId(folderId)
+        writeopiaDb.deleteDocumentsByFolderId(folderId, workspaceId)
 
         // Create DELETE_FOLDER event
         writeopiaDb.createSyncEvent(
