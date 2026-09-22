@@ -330,7 +330,9 @@ class AuthIntegrationTest {
             }
         }
 
-        assertEquals(HttpStatusCode.OK, response2.status)
+        // Starts the account-deletion saga rather than deleting synchronously - see
+        // AccountDeletionService.requestDeletion.
+        assertEquals(HttpStatusCode.Accepted, response2.status)
     }
 
     @Test

@@ -74,6 +74,11 @@ DELETE FROM folder_entity WHERE id = ? AND workspace_id = ?;
 deleteFolderByParent:
 DELETE FROM folder_entity WHERE parent_id = ? AND workspace_id = ?;
 
+-- Bulk delete, every folder in the workspace. Used only by the account-deletion saga
+-- when a whole workspace is being torn down.
+deleteByWorkspace:
+DELETE FROM folder_entity WHERE workspace_id = ?;
+
 moveToFolder:
 UPDATE folder_entity SET parent_id = ?, last_updated_at = ? WHERE id = ?;
 

@@ -37,3 +37,16 @@ WHERE document_id = ?;
 deleteByUser:
 DELETE FROM user_favorite_entity
 WHERE user_id = ?;
+
+-- All users' favorites in the workspace. Used when the whole workspace is torn down
+-- (account-deletion saga) — other members' favorites pointing into it go dangling too,
+-- not just the departing user's.
+deleteByWorkspace:
+DELETE FROM user_favorite_entity
+WHERE workspace_id = ?;
+
+-- Just this user's favorites in this one workspace. Used when the user is leaving a
+-- workspace that is NOT being deleted (they weren't the sole admin).
+deleteByUserAndWorkspace:
+DELETE FROM user_favorite_entity
+WHERE user_id = ? AND workspace_id = ?;
