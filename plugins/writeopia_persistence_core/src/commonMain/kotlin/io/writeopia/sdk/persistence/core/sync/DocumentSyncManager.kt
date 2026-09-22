@@ -2,6 +2,7 @@ package io.writeopia.sdk.persistence.core.sync
 
 import io.writeopia.sdk.manager.DocumentTracker
 import io.writeopia.sdk.manager.StoryStepSyncTracker
+import io.writeopia.sdk.manager.UnsupportedCommentConversationsException
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.comment.CommentConversation
@@ -59,10 +60,14 @@ class DocumentSyncManager(
         activeSyncJobs[documentId]?.cancel()
 
         val job = scope.launch(dispatcher) {
-            documentTracker.saveOnStoryChanges(
-                documentEditionFlow,
-                workspaceIdFlow
-            )
+            try {
+                documentTracker.saveOnStoryChanges(
+                    documentEditionFlow,
+                    workspaceIdFlow
+                )
+            } catch (error: UnsupportedCommentConversationsException) {
+                println("Document sync stopped for $documentId: ${error.message}")
+            }
         }
 
         activeSyncJobs[documentId] = job
@@ -80,11 +85,15 @@ class DocumentSyncManager(
 
         // Start a new sync job in the global scope
         val job = scope.launch(dispatcher) {
-            documentTracker.saveOnStoryChanges(
-                documentEditionFlow,
-                workspaceIdFlow,
-                commentConversationsFlow
-            )
+            try {
+                documentTracker.saveOnStoryChanges(
+                    documentEditionFlow,
+                    workspaceIdFlow,
+                    commentConversationsFlow
+                )
+            } catch (error: UnsupportedCommentConversationsException) {
+                println("Document sync stopped for $documentId: ${error.message}")
+            }
         }
 
         activeSyncJobs[documentId] = job

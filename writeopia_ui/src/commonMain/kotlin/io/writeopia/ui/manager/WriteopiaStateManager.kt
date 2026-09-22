@@ -5,6 +5,7 @@ package io.writeopia.ui.manager
 import io.writeopia.sdk.manager.DocumentTracker
 import io.writeopia.sdk.manager.InTextMarkdownHandler
 import io.writeopia.sdk.manager.StoryStepSyncTracker
+import io.writeopia.sdk.manager.UnsupportedCommentConversationsException
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.manager.fixMove
 import io.writeopia.sdk.model.action.Action
@@ -66,6 +67,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -225,7 +227,8 @@ class WriteopiaStateManager(
 
     private val _commentConversations =
         MutableStateFlow<List<CommentConversation>>(emptyList())
-    private val commentConversationArchive = mutableMapOf<String, CommentConversation>()
+    private val commentConversationArchive =
+        MutableStateFlow<Map<String, CommentConversation>>(emptyMap())
     val commentConversations: StateFlow<List<CommentConversation>> =
         _commentConversations.asStateFlow()
 
@@ -368,13 +371,19 @@ class WriteopiaStateManager(
      */
     fun saveOnStoryChanges(documentTracker: DocumentTracker) {
         coroutineScope.launch(dispatcher) {
-            documentTracker.saveOnStoryChanges(
-                documentEditionState,
-                userRepository?.listenForWorkspace()?.map { workspace ->
-                    workspace.id
-                } ?: MutableStateFlow(Workspace.disconnectedWorkspace().id),
-                commentConversations
-            )
+            try {
+                documentTracker.saveOnStoryChanges(
+                    documentEditionState,
+                    userRepository?.listenForWorkspace()?.map { workspace ->
+                        workspace.id
+                    } ?: MutableStateFlow(Workspace.disconnectedWorkspace().id),
+                    commentConversations
+                )
+            } catch (error: UnsupportedCommentConversationsException) {
+                println(
+                    "Document sync stopped for ${_documentInfo.value.id}: ${error.message}"
+                )
+            }
         }
     }
 
@@ -438,7 +447,7 @@ class WriteopiaStateManager(
         _documentInfo.value = documentInfo
         _currentStory.value = withNextPositions
         _commentConversations.value = emptyList()
-        commentConversationArchive.clear()
+        commentConversationArchive.value = emptyMap()
     }
 
     /**
@@ -464,8 +473,7 @@ class WriteopiaStateManager(
         _currentStory.value = StoryState(withNextPositions, LastEdit.Nothing)
         _documentInfo.value = document.info()
         _commentConversations.value = document.commentConversations
-        commentConversationArchive.clear()
-        rememberCommentConversations(document.commentConversations)
+        replaceCommentConversationArchive(document.commentConversations)
     }
 
     /**
@@ -483,8 +491,7 @@ class WriteopiaStateManager(
         _documentInfo.value = document.info()
         backStackManager.addState(_currentStory.value)
         _commentConversations.value = document.commentConversations
-        commentConversationArchive.clear()
-        rememberCommentConversations(document.commentConversations)
+        replaceCommentConversationArchive(document.commentConversations)
     }
 
     /**
@@ -1152,7 +1159,7 @@ class WriteopiaStateManager(
             selection.position,
             SpanInfo.create(start, end, Span.COMMENT, conversation.id)
         )
-        _commentConversations.value = _commentConversations.value + conversation
+        _commentConversations.update { conversations -> conversations + conversation }
         rememberCommentConversations(listOf(conversation))
         return conversation
     }
@@ -1160,17 +1167,25 @@ class WriteopiaStateManager(
     fun addComment(conversationId: String, text: String): Comment? {
         if (!isEditable) return null
 
-        val conversations = _commentConversations.value
-        val index = conversations.indexOfFirst { it.id == conversationId }
-        if (index < 0) return null
-
         val comment = Comment(text = text)
-        val updated = conversations[index].copy(
-            comments = conversations[index].comments + comment
-        )
-        _commentConversations.value = conversations.toMutableList().apply {
-            this[index] = updated
+        var updatedConversation: CommentConversation? = null
+        _commentConversations.update { conversations ->
+            updatedConversation = null
+            val index = conversations.indexOfFirst { it.id == conversationId }
+            if (index < 0) {
+                conversations
+            } else {
+                val updated = conversations[index].copy(
+                    comments = conversations[index].comments + comment
+                )
+                updatedConversation = updated
+                conversations.toMutableList().apply {
+                    this[index] = updated
+                }
+            }
         }
+
+        val updated = updatedConversation ?: return null
         rememberCommentConversations(listOf(updated))
         return comment
     }
@@ -1182,7 +1197,11 @@ class WriteopiaStateManager(
 
         val conversationId = story.spans
             .asSequence()
-            .filter { it.span == Span.COMMENT && it.isInside(selection.start) }
+            .filter { span ->
+                span.span == Span.COMMENT &&
+                    selection.start >= span.start &&
+                    selection.start < span.end
+            }
             .sortedWith(compareBy<SpanInfo> { it.size() }.thenBy { it.start })
             .mapNotNull { it.extra }
             .firstOrNull()
@@ -1204,7 +1223,7 @@ class WriteopiaStateManager(
                     if (start == end) {
                         span.isInside(start)
                     } else {
-                        span.start <= end && span.end >= start
+                        span.start < end && span.end > start
                     }
             }
             .sortedWith(compareBy<SpanInfo> { it.start }.thenBy { it.end })
@@ -1218,21 +1237,39 @@ class WriteopiaStateManager(
     fun deleteComment(conversationId: String, commentId: String): Boolean {
         if (!isEditable) return false
 
-        val conversations = _commentConversations.value
-        val conversation = conversations.firstOrNull { it.id == conversationId } ?: return false
-        if (conversation.comments.none { it.id == commentId }) return false
+        var updatedConversation: CommentConversation? = null
+        var removedConversation = false
+        var foundComment = false
+        _commentConversations.update { conversations ->
+            updatedConversation = null
+            removedConversation = false
+            foundComment = false
 
-        val remainingComments = conversation.comments.filterNot { it.id == commentId }
-        if (remainingComments.isNotEmpty()) {
-            val updatedConversation = conversation.copy(comments = remainingComments)
-            _commentConversations.value = conversations.map {
-                if (it.id == conversationId) updatedConversation else it
+            val conversation = conversations.firstOrNull { it.id == conversationId }
+                ?: return@update conversations
+            if (conversation.comments.none { it.id == commentId }) {
+                return@update conversations
             }
-            rememberCommentConversations(listOf(updatedConversation))
-        } else {
+
+            foundComment = true
+            val remainingComments = conversation.comments.filterNot { it.id == commentId }
+            if (remainingComments.isNotEmpty()) {
+                val updated = conversation.copy(comments = remainingComments)
+                updatedConversation = updated
+                conversations.map {
+                    if (it.id == conversationId) updated else it
+                }
+            } else {
+                removedConversation = true
+                conversations.filterNot { it.id == conversationId }
+            }
+        }
+
+        if (!foundComment) return false
+        updatedConversation?.let { rememberCommentConversations(listOf(it)) }
+        if (removedConversation) {
             removeCommentSpans(conversationId)
-            _commentConversations.value = conversations.filterNot { it.id == conversationId }
-            commentConversationArchive.remove(conversationId)
+            commentConversationArchive.update { archived -> archived - conversationId }
         }
         return true
     }
@@ -1240,12 +1277,19 @@ class WriteopiaStateManager(
     fun deleteCommentConversation(conversationId: String): Boolean {
         if (!isEditable) return false
 
-        val conversations = _commentConversations.value
-        if (conversations.none { it.id == conversationId }) return false
+        var removed = false
+        _commentConversations.update { conversations ->
+            removed = conversations.any { it.id == conversationId }
+            if (removed) {
+                conversations.filterNot { it.id == conversationId }
+            } else {
+                conversations
+            }
+        }
+        if (!removed) return false
 
         removeCommentSpans(conversationId)
-        _commentConversations.value = conversations.filterNot { it.id == conversationId }
-        commentConversationArchive.remove(conversationId)
+        commentConversationArchive.update { archived -> archived - conversationId }
         return true
     }
 
@@ -1277,13 +1321,13 @@ class WriteopiaStateManager(
 
     private fun cleanupOrphanCommentConversations() {
         val referencedConversationIds = referencedCommentConversationIds()
-        val conversations = _commentConversations.value
-        val removed = conversations.filterNot { it.id in referencedConversationIds }
-        val remaining = conversations.filter { it.id in referencedConversationIds }
-
-        if (remaining.size != conversations.size) {
-            rememberCommentConversations(removed)
-            _commentConversations.value = remaining
+        var removedConversations: List<CommentConversation> = emptyList()
+        _commentConversations.update { conversations ->
+            removedConversations = conversations.filterNot { it.id in referencedConversationIds }
+            conversations.filter { it.id in referencedConversationIds }
+        }
+        if (removedConversations.isNotEmpty()) {
+            rememberCommentConversations(removedConversations)
         }
     }
 
@@ -1295,17 +1339,23 @@ class WriteopiaStateManager(
             .mapNotNull { it.extra }
             .toSet()
 
+    private fun replaceCommentConversationArchive(conversations: List<CommentConversation>) {
+        commentConversationArchive.value = conversations.associateBy { it.id }
+    }
+
     private fun rememberCommentConversations(conversations: List<CommentConversation>) {
-        conversations.forEach { conversation ->
-            commentConversationArchive[conversation.id] = conversation
+        val conversationsById = conversations.associateBy { it.id }
+        commentConversationArchive.update { archived ->
+            archived + conversationsById
         }
     }
 
     private fun restoreCommentConversationsForCurrentStory() {
         val referencedConversationIds = referencedCommentConversationIds()
         val currentById = _commentConversations.value.associateBy { it.id }
+        val archivedById = commentConversationArchive.value
         val restored = referencedConversationIds.mapNotNull { conversationId ->
-            currentById[conversationId] ?: commentConversationArchive[conversationId]
+            currentById[conversationId] ?: archivedById[conversationId]
         }
 
         val missingConversationIds = referencedConversationIds - restored.map { it.id }.toSet()
@@ -1321,8 +1371,8 @@ class WriteopiaStateManager(
             _currentStory.value = state.copy(stories = stories)
         }
 
-        if (_commentConversations.value != restored) {
-            _commentConversations.value = restored
+        _commentConversations.update { current ->
+            if (current == restored) current else restored
         }
     }
 

@@ -6,6 +6,7 @@ import io.writeopia.sdk.filter.DocumentFilter
 import io.writeopia.sdk.filter.DocumentFilterObject
 import io.writeopia.sdk.manager.DocumentTracker
 import io.writeopia.sdk.manager.DocumentUpdate
+import io.writeopia.sdk.manager.UnsupportedCommentConversationsException
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.model.story.StoryState
@@ -37,12 +38,13 @@ class OnUpdateDocumentTracker(
         workspaceIdFlow: Flow<String>,
     ) {
         val commentFreeDocumentEditionFlow = documentEditionFlow.onEach { (storyState, _) ->
-            check(
-                storyState.stories.values.none { story ->
-                    story.spans.any { span -> span.span == Span.COMMENT }
-                }
-            ) {
-                "Comment-bearing documents require the comment-aware saveOnStoryChanges overload."
+            val hasCommentSpans = storyState.stories.values.any { story ->
+                story.spans.any { span -> span.span == Span.COMMENT }
+            }
+            if (hasCommentSpans) {
+                throw UnsupportedCommentConversationsException(
+                    "Comment-bearing documents require the comment-aware saveOnStoryChanges overload."
+                )
             }
         }
 
@@ -101,14 +103,16 @@ class OnUpdateDocumentTracker(
             previousCommentConversations = commentConversations
 
             if (commentsChanged) {
-                val document = fullDocument(
-                    storyState,
-                    documentInfo,
-                    workspaceId,
-                    commentConversations,
-                )
-                documentUpdate.saveDocument(document)
-                onDocumentUpdate(document)
+                withContext(NonCancellable) {
+                    val document = fullDocument(
+                        storyState,
+                        documentInfo,
+                        workspaceId,
+                        commentConversations,
+                    )
+                    documentUpdate.saveDocument(document)
+                    onDocumentUpdate(document)
+                }
                 return@collect
             }
 
