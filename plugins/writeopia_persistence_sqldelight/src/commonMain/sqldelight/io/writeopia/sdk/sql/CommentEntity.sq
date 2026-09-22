@@ -7,11 +7,19 @@ CREATE TABLE commentEntity (
   text TEXT NOT NULL
 );
 
+CREATE INDEX commentEntity_document_id_index ON commentEntity(document_id);
+
 selectByDocumentId:
 SELECT *
 FROM commentEntity
 WHERE document_id = ?
 ORDER BY conversation_position, comment_position;
+
+selectByDocumentIds:
+SELECT *
+FROM commentEntity
+WHERE document_id IN ?
+ORDER BY document_id, conversation_position, comment_position;
 
 insert:
 INSERT INTO commentEntity(
