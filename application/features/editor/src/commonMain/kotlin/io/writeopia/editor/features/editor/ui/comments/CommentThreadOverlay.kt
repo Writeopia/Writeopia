@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import io.writeopia.resources.WrStrings
 
 internal const val COMMENT_BUTTON_TAG = "CommentButton"
 internal const val COMMENT_PANEL_TAG = "CommentPanel"
@@ -48,8 +49,8 @@ internal fun CommentThreadOverlay(
     LaunchedEffect(visible, conversation?.id) {
         if (!visible) {
             expanded = false
-            draft = ""
         }
+        draft = ""
     }
 
     if (!visible) return
@@ -63,10 +64,10 @@ internal fun CommentThreadOverlay(
             onClick = { expanded = !expanded },
         ) {
             val label = when {
-                conversation == null -> "Add comment"
+                conversation == null -> WrStrings.addComment()
                 uiState.paragraphConversations.size > 1 ->
-                    "Comments (${uiState.paragraphConversations.size})"
-                else -> "Comment"
+                    WrStrings.comments(uiState.paragraphConversations.size)
+                else -> WrStrings.comment()
             }
             Text(label)
         }
@@ -103,7 +104,7 @@ internal fun CommentThreadOverlay(
                                         onDeleteComment(conversation.id, comment.id)
                                     },
                                 ) {
-                                    Text("Delete")
+                                    Text(WrStrings.delete())
                                 }
                             }
                         }
@@ -117,7 +118,7 @@ internal fun CommentThreadOverlay(
                                 draft = ""
                             },
                         ) {
-                            Text("Delete thread")
+                            Text(WrStrings.deleteThread())
                         }
                     }
                 }
@@ -130,7 +131,7 @@ internal fun CommentThreadOverlay(
                         value = draft,
                         onValueChange = { draft = it },
                         label = {
-                            Text(if (conversation == null) "Comment" else "Reply")
+                            Text(if (conversation == null) WrStrings.comment() else WrStrings.reply())
                         },
                         minLines = 2,
                         maxLines = 5,
@@ -154,7 +155,7 @@ internal fun CommentThreadOverlay(
                                 }
                             },
                         ) {
-                            Text(if (conversation == null) "Add" else "Reply")
+                            Text(if (conversation == null) WrStrings.add() else WrStrings.reply())
                         }
                     }
                 }
