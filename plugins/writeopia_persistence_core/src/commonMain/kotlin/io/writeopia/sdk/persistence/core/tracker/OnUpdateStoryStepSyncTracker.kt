@@ -47,6 +47,7 @@ class OnUpdateStoryStepSyncTracker(
 
     private var lastSyncTimestamp: Long = 0L
     private var consecutiveFailures: Int = 0
+
     private data class CommentSnapshot(
         val conversations: List<CommentConversation>?,
         val version: Long,
