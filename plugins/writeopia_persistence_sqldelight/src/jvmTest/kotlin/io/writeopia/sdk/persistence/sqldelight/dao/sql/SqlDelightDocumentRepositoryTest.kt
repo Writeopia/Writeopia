@@ -254,6 +254,11 @@ class SqlDelightDocumentRepositoryTest {
     }
 
     @Test
+    fun `parent load preserves comments`() = runTest {
+        DocumentRepositoryTests(documentRepository).parentLoadPreservesComments()
+    }
+
+    @Test
     fun `comment persistence respects workspace boundaries`() = runTest {
         DocumentRepositoryTests(documentRepository).commentPersistenceRespectsWorkspaceBoundaries()
     }
