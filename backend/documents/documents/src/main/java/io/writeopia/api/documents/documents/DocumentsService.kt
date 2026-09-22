@@ -76,6 +76,11 @@ object DocumentsService {
         writeopiaDb: WriteopiaDbBackend,
     ): Document {
         val scopedDocument = document.copy(workspaceId = workspaceId)
+        val existingWorkspaceId = writeopiaDb.getDocumentWorkspaceId(scopedDocument.id)
+
+        require(existingWorkspaceId == null || existingWorkspaceId == workspaceId) {
+            "Document does not belong to the requested workspace"
+        }
 
         if (scopedDocument.commentConversations == null) {
             val existing = writeopiaDb.getDocumentWithContentById(scopedDocument.id, workspaceId)
