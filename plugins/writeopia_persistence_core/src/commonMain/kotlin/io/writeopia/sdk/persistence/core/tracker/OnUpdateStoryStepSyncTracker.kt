@@ -46,7 +46,8 @@ class OnUpdateStoryStepSyncTracker(
 
     private var lastSyncTimestamp: Long = 0L
     private var consecutiveFailures: Int = 0
-    private var lastSyncedCommentConversations: List<CommentConversation>? = null
+    private var commentChangeVersion: Long = 0L
+    private var lastSyncedCommentChangeVersion: Long = 0L
 
     // Track last known content for each StoryStep to detect actual changes
     private val lastKnownContent = mutableMapOf<String, StoryStepContent>()
@@ -119,6 +120,7 @@ class OnUpdateStoryStepSyncTracker(
                     commentsFlow
                         .drop(1)
                         .collect {
+                            commentChangeVersion++
                             syncBuffer.requestSync()
                         }
                 }
@@ -130,7 +132,7 @@ class OnUpdateStoryStepSyncTracker(
                     .debounce(syncBuffer.syncInterval)
                     .collect {
                         val commentsChanged =
-                            commentConversationsFlow?.value != lastSyncedCommentConversations
+                            commentChangeVersion > lastSyncedCommentChangeVersion
                         if (syncBuffer.hasPendingChanges() || commentsChanged) {
                             val (_, documentInfo) = documentEditionFlow.first()
                             val workspaceId = workspaceIdFlow.first()
@@ -255,7 +257,8 @@ class OnUpdateStoryStepSyncTracker(
     private suspend fun performSync(documentId: String, workspaceId: String) {
         val batch = syncBuffer.consumeChanges()
         val currentComments = commentConversationsFlow?.value
-        val commentsChanged = currentComments != lastSyncedCommentConversations
+        val commentVersion = commentChangeVersion
+        val commentsChanged = commentVersion > lastSyncedCommentChangeVersion
         if (batch.isEmpty && !commentsChanged) return
 
         val requestTimestamp = Clock.System.now().toEpochMilliseconds()
@@ -280,7 +283,9 @@ class OnUpdateStoryStepSyncTracker(
 
             // Update last sync timestamp
             lastSyncTimestamp = response.serverTimestamp
-            lastSyncedCommentConversations = currentComments
+            if (commentsChanged) {
+                lastSyncedCommentChangeVersion = commentVersion
+            }
             consecutiveFailures = 0
 
             // Apply server updates
