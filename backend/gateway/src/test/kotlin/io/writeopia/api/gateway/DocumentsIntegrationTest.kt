@@ -69,7 +69,8 @@ class DocumentationIntegrationTests {
                 isLocked = false,
                 createdAt = 1000L,
                 lastUpdatedAt = 2000L,
-                lastSyncedAt = 0L
+                lastSyncedAt = 0L,
+                commentConversations = emptyList(),
             )
         )
 
@@ -159,7 +160,8 @@ class DocumentationIntegrationTests {
                 isLocked = false,
                 createdAt = 1000L,
                 lastUpdatedAt = 2000L,
-                lastSyncedAt = 2000
+                lastSyncedAt = 2000,
+                commentConversations = emptyList(),
             )
         )
 
@@ -171,7 +173,7 @@ class DocumentationIntegrationTests {
         assertEquals(HttpStatusCode.OK, response.status)
 
         val response1 = client.get(
-            "/api/docs/workspace/workspace/document/parent/${documentApiList.first().parentId}"
+            "/api/docs/workspace/$workspace/document/parent/${documentApiList.first().parentId}"
         )
 
         assertEquals(HttpStatusCode.OK, response1.status)
@@ -198,7 +200,8 @@ class DocumentationIntegrationTests {
             parentId = "parentId",
             isLocked = false,
             createdAt = 1000L,
-            lastUpdatedAt = 2000L
+            lastUpdatedAt = 2000L,
+            commentConversations = emptyList(),
         )
 
         val response = client.post("/api/docs/workspace/document") {
@@ -209,7 +212,7 @@ class DocumentationIntegrationTests {
         assertEquals(HttpStatusCode.OK, response.status)
 
         val response1 =
-            client.get("/api/docs/workspace/workspace/document/parent/${documentApi.parentId}")
+            client.get("/api/docs/workspace/$workspace/document/parent/${documentApi.parentId}")
 
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(
@@ -247,7 +250,8 @@ class DocumentationIntegrationTests {
             createdAt = 1000L,
             lastUpdatedAt = 2000L,
             lastSyncedAt = 4000,
-            content = content.values.toList()
+            content = content.values.toList(),
+            commentConversations = emptyList(),
         )
 
         val documentApi2 = documentApi.copy(id = "testias2", lastUpdatedAt = 4000L)
