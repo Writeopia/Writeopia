@@ -45,6 +45,12 @@ FROM document_entity
 WHERE document_entity.id = ? AND workspace_id = ? AND deleted = FALSE
 LIMIT 1;
 
+selectWorkspaceIdById:
+SELECT workspace_id
+FROM document_entity
+WHERE document_entity.id = ?
+LIMIT 1;
+
 selectWithContent:
 SELECT *
 FROM document_entity
