@@ -10,6 +10,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.isSuccess
 import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
@@ -27,7 +28,11 @@ class NotesApi(private val client: HttpClient, private val baseUrl: String) {
         .body<List<DocumentApi>>()
         .map { documentApi -> documentApi.toModel() }
 
-    suspend fun createDocument(document: Document): Boolean = client.post("$baseUrl/${EndPoints.documents()}") {
-        setBody(document.toApi())
-    }.status.isSuccess()
+    suspend fun createDocument(document: Document): Boolean {
+        if (document.workspaceId == Workspace.disconnectedWorkspace().id) return false
+
+        return client.post("$baseUrl/${EndPoints.documents()}") {
+            setBody(document.toApi())
+        }.status.isSuccess()
+    }
 }

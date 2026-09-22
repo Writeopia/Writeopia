@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+class UnsupportedCommentConversationsException(message: String) : IllegalStateException(message)
+
 /**
  * Saves the document automatically based of content changes.
  */
@@ -29,14 +31,18 @@ interface DocumentTracker {
         commentConversationsFlow: StateFlow<List<CommentConversation>>
     ) {
         coroutineScope {
-            check(commentConversationsFlow.value.isEmpty()) {
-                "This DocumentTracker does not support comment conversations."
+            if (commentConversationsFlow.value.isNotEmpty()) {
+                throw UnsupportedCommentConversationsException(
+                    "This DocumentTracker does not support comment conversations."
+                )
             }
 
             val commentGuard = launch(start = CoroutineStart.UNDISPATCHED) {
                 commentConversationsFlow.collect { conversations ->
-                    check(conversations.isEmpty()) {
-                        "This DocumentTracker does not support comment conversations."
+                    if (conversations.isNotEmpty()) {
+                        throw UnsupportedCommentConversationsException(
+                            "This DocumentTracker does not support comment conversations."
+                        )
                     }
                 }
             }
