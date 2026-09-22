@@ -36,6 +36,15 @@ CREATE TABLE story_step_entity (
   last_updated_at INTEGER
 );
 
+CREATE TABLE comment_entity (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL,
+  document_id TEXT NOT NULL,
+  conversation_position BIGINT NOT NULL,
+  comment_position BIGINT NOT NULL,
+  text TEXT NOT NULL
+);
+
 CREATE TABLE user_entity (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -140,6 +149,7 @@ CREATE INDEX idx_document_parent_id ON document_entity(parent_document_id);
 CREATE INDEX idx_folder_workspace_id ON folder_entity(workspace_id);
 CREATE INDEX idx_folder_parent_id ON folder_entity(parent_id);
 CREATE INDEX idx_story_step_document_id ON story_step_entity(document_id);
+CREATE INDEX idx_comment_document_id ON comment_entity(document_id);
 CREATE INDEX idx_workspace_to_user_user_id ON workspace_to_user(user_id);
 CREATE INDEX idx_sync_event_workspace_id ON sync_event(workspace_id);
 CREATE INDEX idx_ai_usage_user_id ON ai_usage(user_id);
