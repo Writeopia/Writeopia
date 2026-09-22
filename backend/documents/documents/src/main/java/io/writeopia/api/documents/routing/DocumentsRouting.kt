@@ -658,6 +658,11 @@ fun Routing.documentsRoute(
                     status = HttpStatusCode.OK,
                     message = "Documents deleted successfully"
                 )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "${e.message}"
+                )
             } catch (e: Exception) {
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
