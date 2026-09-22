@@ -21,7 +21,7 @@ data class DocumentApi(
     val icon: IconApi? = null,
     val deleted: Boolean = false,
     val published: Boolean = false,
-    val commentConversations: List<CommentConversationApi> = emptyList(),
+    val commentConversations: List<CommentConversationApi>? = null,
 ) {
     @Deprecated("Use primary constructor with commentConversations.")
     constructor(
@@ -52,6 +52,6 @@ data class DocumentApi(
         icon = icon,
         deleted = deleted,
         published = published,
-        commentConversations = emptyList(),
+        commentConversations = null,
     )
 }
