@@ -119,8 +119,10 @@ class CommentSerializationTest {
             }
         """.trimIndent()
 
-        val decoded = writeopiaJson.decodeFromString(DocumentApi.serializer(), json).toModel()
+        val api = writeopiaJson.decodeFromString(DocumentApi.serializer(), json)
+        val decoded = api.toModel()
 
+        assertEquals(null, api.commentConversations)
         assertTrue(decoded.commentConversations.isEmpty())
     }
 }
