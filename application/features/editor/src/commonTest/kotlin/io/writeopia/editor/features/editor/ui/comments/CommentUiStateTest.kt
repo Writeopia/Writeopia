@@ -62,7 +62,7 @@ class CommentUiStateTest {
 
     private fun conversation(id: String) = CommentConversation(
         id = id,
-        comments = listOf(Comment(id = "${id}-comment", text = "Text")),
+        comments = listOf(Comment(id = "$id-comment", text = "Text")),
     )
 
     private fun drawState(
