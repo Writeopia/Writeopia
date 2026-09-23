@@ -42,8 +42,6 @@ import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
 import java.sql.SQLException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
@@ -171,7 +169,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
         try {
             logger.info("register request received")
             val request = call.receive<RegisterRequest>()
-            request.validate(skipMxCheck = debugMode)
+            request.validate()
             // since we are not allowing email probing and we don't need user data in this case
             if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
                 logger.info("register request - user or workspace already exist")
@@ -330,22 +328,7 @@ private fun Throwable.isUniqueViolation(): Boolean {
 
 private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
-private suspend fun hasMxRecord(domain: String): Boolean = withContext(Dispatchers.IO) {
-    try {
-        val env = java.util.Hashtable<String, String>().apply {
-            put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory")
-            put("com.sun.jndi.dns.timeout.initial", "2000")
-            put("com.sun.jndi.dns.timeout.retries", "0")
-        }
-        val attrs = javax.naming.directory.InitialDirContext(env).getAttributes(domain, arrayOf("MX"))
-        val mx = attrs.get("MX")
-        mx != null && mx.size() > 0
-    } catch (e: Exception) {
-        false
-    }
-}
-
-private suspend fun RegisterRequest.validate(skipMxCheck: Boolean = false) {
+private fun RegisterRequest.validate() {
     require(name.isNotBlank()) { "Name cannot be blank" }
 
     require(workspaceName.isNotBlank()) { "Workspace name cannot be blank" }
@@ -357,16 +340,10 @@ private suspend fun RegisterRequest.validate(skipMxCheck: Boolean = false) {
         "Username must be 3-30 characters"
     }
     require(username.all { it.isLetterOrDigit() || it == '-' || it == '_' }) {
-        "Username can only contain letters, '-' and '_'"
+        "Username can only contain letters, numbers, '-' and '_'"
     }
 
     require(password.length >= 8) { "Password must be at least 8 characters" }
 
     require(EMAIL_REGEX.matches(email)) { "Invalid email address format" }
-    if (skipMxCheck) {
-        return 
-    }
-    val domain = email.substringAfter('@', "")
-    require(hasMxRecord(domain)) { "invalid email domain" }
-
 }
