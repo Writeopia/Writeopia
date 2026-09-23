@@ -152,9 +152,22 @@ class AuthApiTest {
 
     @Test
     fun `register should return Complete on success`() = runTest {
+        val jsonContent = """
+            {
+                "writeopiaUser": {
+                    "id": "user-1",
+                    "name": "Alice",
+                    "username": "alice",
+                    "email": "alice@test.com",
+                    "enabled": false
+                },
+                "emailConfirmationRequired": true
+            }
+        """.trimIndent()
+
         val mockEngine = MockEngine {
             respond(
-                content = """{"writeopiaUser":{"id":"user-1","name":"Alice","username":"alice","email":"alice@test.com","enabled":false},"emailConfirmationRequired":true}""",
+                content = jsonContent,
                 status = HttpStatusCode.Created,
                 headers = headersOf(HttpHeaders.ContentType, "application/json")
             )
@@ -195,4 +208,3 @@ class AuthApiTest {
         assertEquals("Workspace name must be 3-30 characters", (result as ResultData.Error).exception?.message)
     }
 }
-
