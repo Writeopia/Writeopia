@@ -119,6 +119,22 @@ class OnUpdateStoryStepSyncTracker(
 
         // Collect changes and add to buffer
         coroutineScope {
+            // Subscribe to sync triggers first so an already-changed comment StateFlow cannot
+            // request a sync before the trigger collector is listening.
+            launch {
+                syncBuffer.syncTrigger
+                    .debounce(syncBuffer.syncInterval)
+                    .collect {
+                        val commentsChanged =
+                            commentSnapshot.value.version > lastSyncedCommentChangeVersion
+                        if (syncBuffer.hasPendingChanges() || commentsChanged) {
+                            val (_, documentInfo) = documentEditionFlow.first()
+                            val workspaceId = workspaceIdFlow.first()
+                            performSync(documentInfo.id, workspaceId)
+                        }
+                    }
+            }
+
             // Launch a coroutine to process document changes
             launch {
                 combinedFlow.collect { (storyState, documentInfo, _) ->
@@ -139,21 +155,6 @@ class OnUpdateStoryStepSyncTracker(
                             syncBuffer.requestSync()
                         }
                 }
-            }
-
-            // Launch a coroutine to handle sync triggers
-            launch {
-                syncBuffer.syncTrigger
-                    .debounce(syncBuffer.syncInterval)
-                    .collect {
-                        val commentsChanged =
-                            commentSnapshot.value.version > lastSyncedCommentChangeVersion
-                        if (syncBuffer.hasPendingChanges() || commentsChanged) {
-                            val (_, documentInfo) = documentEditionFlow.first()
-                            val workspaceId = workspaceIdFlow.first()
-                            performSync(documentInfo.id, workspaceId)
-                        }
-                    }
             }
         }
     }
