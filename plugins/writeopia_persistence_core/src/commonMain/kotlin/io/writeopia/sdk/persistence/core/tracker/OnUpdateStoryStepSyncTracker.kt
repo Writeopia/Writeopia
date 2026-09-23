@@ -14,6 +14,7 @@ import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.request.StoryStepChangeApi
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -121,7 +122,7 @@ class OnUpdateStoryStepSyncTracker(
         coroutineScope {
             // Subscribe to sync triggers first so an already-changed comment StateFlow cannot
             // request a sync before the trigger collector is listening.
-            launch {
+            launch(start = CoroutineStart.UNDISPATCHED) {
                 syncBuffer.syncTrigger
                     .debounce(syncBuffer.syncInterval)
                     .collect {
