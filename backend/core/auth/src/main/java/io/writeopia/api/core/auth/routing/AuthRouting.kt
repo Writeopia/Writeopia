@@ -1,6 +1,7 @@
 package io.writeopia.api.core.auth.routing
 
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.ContentTransformationException
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
@@ -95,9 +96,10 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                     enabled = true
                 )
             )
-        } catch (e: ContentTransformationException) {
+            
+        } catch (e: BadRequestException) {
             // broken/unparseable JSON
-            logger.warn("Login bad request: ${e.message}")
+            logger.warn("Login bad request")
             call.respond(HttpStatusCode.BadRequest, "Invalid request body")
         } catch (e: Exception) {
             logger.error("Login internal error: ${e.message}", e)
