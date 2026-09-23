@@ -307,7 +307,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             parentId = "root",
         )
         val documentEditionFlow = MutableStateFlow(
-            StoryState(lastEdit = LastEdit.Nothing) to document.info()
+            StoryState(stories = emptyMap(), lastEdit = LastEdit.Nothing) to document.info()
         )
         val workspaceIdFlow = MutableStateFlow(Workspace.disconnectedWorkspace().id)
         val commentsFlow = MutableStateFlow<List<CommentConversation>>(emptyList())
@@ -363,7 +363,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             parentId = "root",
         )
         val documentEditionFlow = MutableStateFlow(
-            StoryState(lastEdit = LastEdit.Nothing) to document.info()
+            StoryState(stories = emptyMap(), lastEdit = LastEdit.Nothing) to document.info()
         )
         val workspaceIdFlow = MutableStateFlow(document.workspaceId)
         val commentsFlow = MutableStateFlow<List<CommentConversation>>(emptyList())
