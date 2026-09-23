@@ -53,50 +53,57 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             // Always get user by email or username first to check if they exist but are unconfirmed
             val user = writeopiaDb.getUserByUsernameOrEmail(credentials.identifier)
 
-            if (user != null) {
-                val hash = user.password
-                val salt = user.salt
+            // Equalize verification timing against unknown identifiers
+            val hash = user?.password ?: HashUtils.DUMMY_HASH_BASE64
+            val salt = user?.salt ?: HashUtils.DUMMY_SALT_BASE64
 
-                val isVerified = HashUtils.verifyPassword(
-                    inputPassword = credentials.password,
-                    storedHashBase64 = hash,
-                    storedSaltBase64 = salt
-                )
-
-                if (isVerified) {
-                    if (user.enabled || debugMode) {
-                        val tokenPair = with(RefreshTokenService) {
-                            writeopiaDb.generateAndStoreTokens(user.id)
-                        }
-                        call.respond(
-                            HttpStatusCode.OK,
-                            AuthResponse(
-                                accessToken = tokenPair.accessToken,
-                                refreshToken = tokenPair.refreshToken,
-                                writeopiaUser = user.toApi(),
-                                enabled = true
-                            )
-                        )
-                    } else {
-                        // User exists but email not confirmed
-                        call.respond(
-                            HttpStatusCode.OK,
-                            AuthResponse(
-                                accessToken = null,
-                                refreshToken = null,
-                                writeopiaUser = user.toApi(),
-                                enabled = false
-                            )
-                        )
-                    }
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
-                }
-            } else {
+            val isVerified = HashUtils.verifyPassword(
+                inputPassword = credentials.password,
+                storedHashBase64 = hash,
+                storedSaltBase64 = salt
+            )
+            
+            val invalidCredentials = user == null || !isVerified
+            
+            if (invalidCredentials) {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
+                return@post
+            } 
+
+            val requiresEmailConfirmation = !user.enabled && !debugMode
+
+            if (requiresEmailConfirmation) {
+                call.respond(
+                    HttpStatusCode.OK,
+                    AuthResponse(
+                        accessToken = null,
+                        refreshToken = null,
+                        writeopiaUser = user.toApi(),
+                        enabled = false
+                    )
+                )
+                return@post
+            } 
+
+            val tokenPair = with(RefreshTokenService) {
+                writeopiaDb.generateAndStoreTokens(user.id)
             }
+            call.respond(
+                HttpStatusCode.OK,
+                AuthResponse(
+                    accessToken = tokenPair.accessToken,
+                    refreshToken = tokenPair.refreshToken,
+                    writeopiaUser = user.toApi(),
+                    enabled = true
+                )
+            )
+        } catch (e: ContentTransformationException) {
+            // broken/unparseable JSON
+            logger.warn("Login bad request: ${e.message}")
+            call.respond(HttpStatusCode.BadRequest, "Invalid request body")
         } catch (e: Exception) {
-            throw e
+            logger.error("Login internal error: ${e.message}", e)
+            call.respond(HttpStatusCode.InternalServerError, "Login failed")
         }
     }
 

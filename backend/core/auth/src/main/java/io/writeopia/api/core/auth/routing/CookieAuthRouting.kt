@@ -56,64 +56,70 @@ fun Routing.cookieAuthRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean 
             val credentials = call.receive<LoginRequest>()
             val user = writeopiaDb.getUserByUsernameOrEmail(credentials.identifier)
 
-            if (user != null) {
-                val hash = user.password
-                val salt = user.salt
+            // Equalize verification timing against unknown identifiers 
+            val hash = user?.password ?: HashUtils.DUMMY_HASH_BASE64
+            val salt = user?.salt ?: HashUtils.DUMMY_SALT_BASE64
 
-                val isVerified = HashUtils.verifyPassword(
-                    inputPassword = credentials.password,
-                    storedHashBase64 = hash,
-                    storedSaltBase64 = salt
-                )
+            val isVerified = HashUtils.verifyPassword(
+                inputPassword = credentials.password,
+                storedHashBase64 = hash,
+                storedSaltBase64 = salt
+            )
 
-                if (isVerified) {
-                    if (user.enabled || debugMode) {
-                        val tokenPair = with(RefreshTokenService) {
-                            writeopiaDb.generateAndStoreTokens(user.id)
-                        }
+            val invalidCredentials = user == null || !isVerified
 
-                        // Calculate expiry (15 minutes from now)
-                        val accessTokenExpiry = System.currentTimeMillis() + (15 * 60 * 1000)
-
-                        // Set HttpOnly cookies
-                        setAuthCookies(
-                            accessToken = tokenPair.accessToken,
-                            refreshToken = tokenPair.refreshToken,
-                            userId = user.id,
-                            accessTokenExpiry = accessTokenExpiry,
-                            secureCookies = secureCookies
-                        )
-
-                        // Return user info (no tokens in response body)
-                        call.respond(
-                            HttpStatusCode.OK,
-                            AuthResponse(
-                                accessToken = null, // Tokens are in cookies
-                                refreshToken = null,
-                                writeopiaUser = user.toApi(),
-                                enabled = true
-                            )
-                        )
-                    } else {
-                        call.respond(
-                            HttpStatusCode.OK,
-                            AuthResponse(
-                                accessToken = null,
-                                refreshToken = null,
-                                writeopiaUser = user.toApi(),
-                                enabled = false
-                            )
-                        )
-                    }
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
-                }
-            } else {
+            if (invalidCredentials) {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
+                return@post
             }
+
+            val requiresEmailConfirmation = !user.enabled && !debugMode
+
+            if (requiresEmailConfirmation) {
+                call.respond(
+                    HttpStatusCode.OK,
+                    AuthResponse(
+                        accessToken = null,
+                        refreshToken = null,
+                        writeopiaUser = user.toApi(),
+                        enabled = false
+                    )
+                )
+                return@post
+            }
+
+            val tokenPair = with(RefreshTokenService) {
+                writeopiaDb.generateAndStoreTokens(user.id)
+            }
+
+            // Calculate expiry (15 minutes from now)
+            val accessTokenExpiry = System.currentTimeMillis() + (15 * 60 * 1000)
+
+            // Set HttpOnly cookies
+            setAuthCookies(
+                accessToken = tokenPair.accessToken,
+                refreshToken = tokenPair.refreshToken,
+                userId = user.id,
+                accessTokenExpiry = accessTokenExpiry,
+                secureCookies = secureCookies
+            )
+
+            // Return user info (no tokens in response body)
+            call.respond(
+                HttpStatusCode.OK,
+                AuthResponse(
+                    accessToken = null, // Tokens are in cookies
+                    refreshToken = null,
+                    writeopiaUser = user.toApi(),
+                    enabled = true
+                )
+            )
+        } catch (e: ContentTransformationException) {
+            logger.warn("Web login bad request: ${e.message}")
+            call.respond(HttpStatusCode.BadRequest, "Invalid request body")
         } catch (e: Exception) {
-            logger.error("Web login error: ${e.message}")
-            throw e
+            logger.error("Web login internal error: ${e.message}", e)
+            call.respond(HttpStatusCode.InternalServerError, "Login failed")
         }
     }
 
