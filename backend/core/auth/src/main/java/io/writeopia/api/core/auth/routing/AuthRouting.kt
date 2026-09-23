@@ -357,7 +357,7 @@ private suspend fun RegisterRequest.validate(skipMxCheck: Boolean = false) {
 
     require(EMAIL_REGEX.matches(email)) { "Invalid email address format" }
     if (skipMxCheck) {
-        return true
+        return 
     }
     val domain = email.substringAfter('@', "")
     require(domain.isNotBlank() && hasMxRecord(domain)) { "invalid email domain" }
