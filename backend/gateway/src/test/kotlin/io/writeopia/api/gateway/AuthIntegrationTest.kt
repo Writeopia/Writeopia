@@ -119,6 +119,81 @@ class AuthIntegrationTest {
     }
 
     @Test
+    fun `it should not be possible create 2 users with the same email in different casing`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val base = "case_${Random.nextInt(100000)}"
+        val email1 = "${base.uppercase()}@gmail.com"
+        val email2 = "${base.lowercase()}@gmail.com"
+
+        val response1 = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = "Name",
+                    email = email1,
+                    username = "user1_${Random.nextInt(100000)}",
+                    password = "lasjbdalsdq08w9y&",
+                )
+            )
+        }
+
+        val response2 = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name 2",
+                    name = "Name",
+                    email = email2,
+                    username = "user2_${Random.nextInt(100000)}",
+                    password = "lasjbdalsdq08w9y&",
+                )
+            )
+        }
+
+        assertEquals(HttpStatusCode.Created, response1.status)
+        assertEquals(HttpStatusCode.Conflict, response2.status)
+    }
+
+    @Test
+    fun `it should be possible to login with email in different casing`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val password = "lasjbdalsdq08w9y&"
+        val base = "cased_login_${Random.nextInt(100000)}"
+        val emailRegistered = "${base.lowercase()}@gmail.com"
+        val emailLogin = "${base.uppercase()}@GMAIL.COM"
+
+        val response = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = "Name",
+                    email = emailRegistered,
+                    username = "user_${Random.nextInt(100000)}",
+                    password = password,
+                )
+            )
+        }
+        assertEquals(HttpStatusCode.Created, response.status)
+
+        val loginResponse = client.post("/api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest(emailLogin, password))
+        }
+        assertEquals(HttpStatusCode.OK, loginResponse.status)
+        assertEquals(emailRegistered, loginResponse.body<AuthResponse>().writeopiaUser.email)
+    }
+
+    @Test
     fun `it should not be possible to create 2 users with the same username`() = testApplication {
         application {
             module(db, debugMode = true)

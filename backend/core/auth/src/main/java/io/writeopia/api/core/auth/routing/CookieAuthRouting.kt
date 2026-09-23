@@ -55,7 +55,9 @@ fun Routing.cookieAuthRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean 
     post("/api/auth/login/web") {
         try {
             val credentials = call.receive<LoginRequest>()
-            val user = writeopiaDb.getUserByUsernameOrEmail(credentials.identifier)
+            val identifier = credentials.identifier.trim()
+            val lookupIdentifier = if (identifier.contains('@')) identifier.lowercase() else identifier
+            val user = writeopiaDb.getUserByUsernameOrEmail(lookupIdentifier)
 
             // Equalize verification timing against unknown identifiers 
             val hash = user?.password ?: HashUtils.DUMMY_HASH_BASE64

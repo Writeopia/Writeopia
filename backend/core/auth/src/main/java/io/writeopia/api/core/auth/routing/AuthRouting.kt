@@ -49,8 +49,10 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     post("/api/auth/login") {
         try {
             val credentials = call.receive<LoginRequest>()
+            val identifier = credentials.identifier.trim()
+            val lookupIdentifier = if (identifier.contains('@')) identifier.lowercase() else identifier
             // Always get user by email or username first to check if they exist but are unconfirmed
-            val user = writeopiaDb.getUserByUsernameOrEmail(credentials.identifier)
+            val user = writeopiaDb.getUserByUsernameOrEmail(lookupIdentifier)
 
             // Equalize verification timing against unknown identifiers
             val hash = user?.password ?: HashUtils.DUMMY_HASH_BASE64
@@ -170,7 +172,10 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     post("/api/auth/register") {
         try {
             logger.info("register request received")
-            val request = call.receive<RegisterRequest>()
+            val rawRequest = call.receive<RegisterRequest>()
+            val request = rawRequest.copy(
+                email = rawRequest.email.trim().lowercase()
+            )
             request.validate()
             // since we are not allowing email probing and we don't need user data in this case
             if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
