@@ -287,6 +287,34 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun `delete documents should skip unknown ids and delete owned ids`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+            )
+        )
+
+        DocumentsService.deleteDocuments(
+            documentIds = listOf(documentId, "missing-document"),
+            workspaceId = workspaceId,
+            userId = "test-user",
+            writeopiaDb = database,
+        )
+
+        assertEquals(null, database.getDocumentWithContentById(documentId, workspaceId))
+    }
+
+    @Test
     fun `parent document loading should stay inside the requested workspace`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()

@@ -19,7 +19,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
@@ -130,9 +129,9 @@ class OnUpdateStoryStepSyncTracker(
             commentConversationsFlow?.let { commentsFlow ->
                 launch {
                     commentsFlow
-                        .drop(1)
                         .collect { conversations ->
                             val previous = commentSnapshot.value
+                            if (conversations == previous.conversations) return@collect
                             commentSnapshot.value = CommentSnapshot(
                                 conversations = conversations,
                                 version = previous.version + 1,

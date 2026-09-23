@@ -98,6 +98,60 @@ class OnUpdateStoryStepSyncTrackerTest {
     }
 
     @Test
+    fun commentChangeBeforeCollectorStartsShouldTriggerBackendSync() = runTest {
+        val now = Clock.System.now()
+        val document = Document(
+            id = "document-race",
+            content = mapOf(
+                0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "Text")
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = now,
+            workspaceId = "workspace-1",
+            parentId = "root",
+        )
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(stories = document.content, lastEdit = LastEdit.Nothing) to document.info()
+        )
+        val workspaceIdFlow = MutableStateFlow(document.workspaceId)
+        val commentsFlow = MutableStateFlow<List<CommentConversation>>(emptyList())
+        val request = CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        val tracker = OnUpdateStoryStepSyncTracker(
+            syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
+            syncApi = { syncRequest ->
+                if (!request.isCompleted) request.complete(syncRequest)
+                StoryStepSyncResponse(
+                    serverTimestamp = syncRequest.requestTimestamp,
+                    updatedSteps = emptyList(),
+                    deletedIds = emptyList(),
+                )
+            },
+            commentConversationsFlow = commentsFlow,
+        )
+        val conversation = CommentConversation(
+            id = "conversation-race",
+            comments = listOf(Comment(id = "comment-race", text = "Before collect")),
+        )
+
+        commentsFlow.value = listOf(conversation)
+        val job = launch {
+            tracker.syncStorySteps(documentEditionFlow, workspaceIdFlow)
+        }
+        runCurrent()
+        advanceTimeBy(20)
+        runCurrent()
+
+        val synced = withTimeout(1_000) { request.await() }
+        job.cancel()
+
+        assertEquals(
+            listOf(conversation.id),
+            synced.commentConversations?.map { it.id },
+        )
+    }
+
+    @Test
     fun initialCommentsShouldNotBeSentWithFirstStoryOnlySync() = runTest {
         val now = Clock.System.now()
         val initialStep = StoryStep(

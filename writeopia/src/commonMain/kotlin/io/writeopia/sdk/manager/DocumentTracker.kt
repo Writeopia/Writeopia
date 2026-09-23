@@ -3,7 +3,6 @@ package io.writeopia.sdk.manager
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.comment.CommentConversation
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,17 +30,12 @@ interface DocumentTracker {
         commentConversationsFlow: StateFlow<List<CommentConversation>>
     ) {
         coroutineScope {
-            if (commentConversationsFlow.value.isNotEmpty()) {
-                throw UnsupportedCommentConversationsException(
-                    "This DocumentTracker does not support comment conversations."
-                )
-            }
-
-            val commentGuard = launch(start = CoroutineStart.UNDISPATCHED) {
+            val commentGuard = launch {
                 commentConversationsFlow.collect { conversations ->
                     if (conversations.isNotEmpty()) {
-                        throw UnsupportedCommentConversationsException(
-                            "This DocumentTracker does not support comment conversations."
+                        println(
+                            "This DocumentTracker does not persist comment conversations; " +
+                                "continuing story persistence without comment data."
                         )
                     }
                 }

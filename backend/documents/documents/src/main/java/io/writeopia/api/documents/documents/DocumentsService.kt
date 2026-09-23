@@ -344,14 +344,16 @@ object DocumentsService {
         userId: String,
         writeopiaDb: WriteopiaDbBackend
     ) {
-        documentIds.forEach { documentId ->
-            require(writeopiaDb.getDocumentWorkspaceId(documentId) == workspaceId) {
+        val ownedIds = documentIds.filter { documentId ->
+            val ownerWorkspaceId = writeopiaDb.getDocumentWorkspaceId(documentId)
+            require(ownerWorkspaceId == null || ownerWorkspaceId == workspaceId) {
                 "Document does not belong to the requested workspace"
             }
+            ownerWorkspaceId != null
         }
 
-        // Create DELETE_DOCUMENT events for all documents
-        documentIds.forEach { documentId ->
+        // Create DELETE_DOCUMENT events only for documents that exist in this workspace.
+        ownedIds.forEach { documentId ->
             writeopiaDb.createSyncEvent(
                 workspaceId = workspaceId,
                 eventType = SyncEventType.DELETE_DOCUMENT,
@@ -360,7 +362,7 @@ object DocumentsService {
             )
         }
 
-        writeopiaDb.deleteDocumentsByIds(documentIds)
+        writeopiaDb.deleteDocumentsByIds(ownedIds)
     }
 
     suspend fun favoriteDocument(
