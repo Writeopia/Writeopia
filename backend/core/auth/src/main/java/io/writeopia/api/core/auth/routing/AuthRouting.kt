@@ -360,6 +360,6 @@ private suspend fun RegisterRequest.validate(skipMxCheck: Boolean = false) {
         return 
     }
     val domain = email.substringAfter('@', "")
-    require(domain.isNotBlank() && hasMxRecord(domain)) { "invalid email domain" }
+    require(hasMxRecord(domain)) { "invalid email domain" }
 
 }
