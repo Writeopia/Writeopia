@@ -149,4 +149,50 @@ class AuthApiTest {
         val expectedBody = """{"email":"user@test.com"}"""
         assertEquals(expectedBody, capturedBody)
     }
+
+    @Test
+    fun `register should return Complete on success`() = runTest {
+        val mockEngine = MockEngine {
+            respond(
+                content = """{"writeopiaUser":{"id":"user-1","name":"Alice","username":"alice","email":"alice@test.com","enabled":false},"emailConfirmationRequired":true}""",
+                status = HttpStatusCode.Created,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(testJson)
+            }
+        }
+
+        val authApi = AuthApi(client, "https://api.example.com")
+        val result = authApi.register("Alice", "alice@test.com", "MyWorkspace", "password123", "alice")
+
+        assertIs<ResultData.Complete<*>>(result)
+    }
+
+    @Test
+    fun `register should return Error with validation message on plain-text 400 failure`() = runTest {
+        val mockEngine = MockEngine {
+            respond(
+                content = "Workspace name must be 3-30 characters",
+                status = HttpStatusCode.BadRequest,
+                headers = headersOf(HttpHeaders.ContentType, "text/plain")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(testJson)
+            }
+        }
+
+        val authApi = AuthApi(client, "https://api.example.com")
+        val result = authApi.register("Alice", "alice@test.com", "W", "password123", "alice")
+
+        assertIs<ResultData.Error<*>>(result)
+        assertEquals("Workspace name must be 3-30 characters", (result as ResultData.Error).exception?.message)
+    }
 }
+

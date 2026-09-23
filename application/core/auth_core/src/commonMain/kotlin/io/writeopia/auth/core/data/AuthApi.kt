@@ -2,6 +2,7 @@ package io.writeopia.auth.core.data
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.statement.bodyAsText
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -79,9 +80,14 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
                     password = password,
                 )
             )
-        }.body<RegisterResponse>()
+        }
 
-        ResultData.Complete(response)
+        if (response.status.isSuccess()) {
+            return ResultData.Complete(response.body<RegisterResponse>())
+        }
+
+        val errorMessage = response.bodyAsText()
+        ResultData.Error(Exception(errorMessage.ifBlank { "Registration failed" }))
     } catch (e: Exception) {
         e.printStackTrace()
         ResultData.Error(e)
