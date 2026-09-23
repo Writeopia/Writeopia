@@ -7,6 +7,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
 import io.writeopia.api.core.auth.dto.AccountDeletionEventPayload
 import io.writeopia.api.media.service.AccountDeletionMediaService
+import io.writeopia.connection.logger
 import io.writeopia.pubsub.decodePubsubPushData
 import io.writeopia.sdk.serialization.json.writeopiaJson
 
@@ -29,9 +30,19 @@ fun Routing.accountDeletionEventsRoute(debugMode: Boolean = false) {
         val payload =
             writeopiaJson.decodeFromString(AccountDeletionEventPayload.serializer(), rawPayload)
 
+        logger.info(
+            "[AccountDeletion] media service received account-deletion-requested " +
+                "for user ${payload.userId}"
+        )
+
         AccountDeletionMediaService.handleAccountDeletionRequested(
             userId = payload.userId,
             debugMode = debugMode,
+        )
+
+        logger.info(
+            "[AccountDeletion] media service finished handling account-deletion-requested " +
+                "for user ${payload.userId}"
         )
         call.respond(HttpStatusCode.OK)
     }

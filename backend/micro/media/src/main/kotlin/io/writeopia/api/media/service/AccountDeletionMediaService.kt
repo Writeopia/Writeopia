@@ -4,6 +4,7 @@ import io.writeopia.api.core.auth.dto.AccountDeletionEventPayload
 import io.writeopia.api.core.auth.models.AccountDeletionTopics
 import io.writeopia.buckets.BucketConfig
 import io.writeopia.buckets.GcpBucketImageStorageService
+import io.writeopia.connection.logger
 import io.writeopia.pubsub.PubsubPublisher
 import io.writeopia.sdk.serialization.json.writeopiaJson
 
@@ -22,6 +23,8 @@ object AccountDeletionMediaService {
         userId: String,
         debugMode: Boolean = false,
     ) {
+        logger.info("[AccountDeletion] media cleanup started for user $userId")
+
         if (!debugMode) {
             val bucketName = BucketConfig.imagesBucketName(debugMode)
             GcpBucketImageStorageService.deleteAllUnderPrefix(bucketName, "uploads/$userId/")
@@ -36,6 +39,11 @@ object AccountDeletionMediaService {
             orderingKey = userId,
             payload = payload,
             debugMode = debugMode,
+        )
+
+        logger.info(
+            "[AccountDeletion] outbox event ${AccountDeletionTopics.MEDIA_COMPLETED} " +
+                "published for user $userId"
         )
     }
 }

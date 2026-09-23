@@ -7,6 +7,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
 import io.writeopia.api.core.auth.dto.AccountDeletionEventPayload
 import io.writeopia.api.documents.documents.service.AccountDeletionWorkspaceService
+import io.writeopia.connection.logger
 import io.writeopia.pubsub.decodePubsubPushData
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sql.WriteopiaDbBackend
@@ -32,6 +33,11 @@ fun Routing.accountDeletionEventsRoute(writeopiaDb: WriteopiaDbBackend, debugMod
         val rawPayload = decodePubsubPushData(call.receiveText())
         val payload = writeopiaJson.decodeFromString(AccountDeletionEventPayload.serializer(), rawPayload)
 
+        logger.info(
+            "[AccountDeletion] documents service received account-deletion-requested " +
+                "for user ${payload.userId}"
+        )
+
         // Only acks (200) once teardown AND the completion publish both succeed - any
         // exception here leaves the message unacked so Pub/Sub redelivers it, and reprocessing
         // is safe (see AccountDeletionWorkspaceService's doc).
@@ -39,6 +45,11 @@ fun Routing.accountDeletionEventsRoute(writeopiaDb: WriteopiaDbBackend, debugMod
             userId = payload.userId,
             writeopiaDb = writeopiaDb,
             debugMode = debugMode,
+        )
+
+        logger.info(
+            "[AccountDeletion] documents service finished handling account-deletion-requested " +
+                "for user ${payload.userId}"
         )
         call.respond(HttpStatusCode.OK)
     }

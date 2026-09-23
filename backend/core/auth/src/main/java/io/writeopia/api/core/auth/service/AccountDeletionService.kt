@@ -80,6 +80,14 @@ object AccountDeletionService {
                     payload = payload,
                     createdAt = now,
                 )
+                logger.info(
+                    "[AccountDeletion] outbox event ${AccountDeletionEventTypes.REQUESTED} " +
+                        "enqueued on topic ${AccountDeletionTopics.REQUESTED} for user $userId"
+                )
+            } else {
+                logger.info(
+                    "[AccountDeletion] requestDeletion no-op (already requested) for user $userId"
+                )
             }
         }
 
