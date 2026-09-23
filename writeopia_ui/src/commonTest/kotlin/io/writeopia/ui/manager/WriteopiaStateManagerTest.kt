@@ -2570,6 +2570,7 @@ class WriteopiaStateManagerTest {
             manager.currentStory.value.stories[0.0]!!.spans,
         )
     }
+
     @Test
     fun removingLastStoryReferenceShouldRemoveOrphanConversation() {
         val now = Clock.System.now()
@@ -2608,6 +2609,4 @@ class WriteopiaStateManagerTest {
         assertTrue(manager.commentConversations.value.isEmpty())
         assertTrue(manager.getDocument().commentConversations.isEmpty())
     }
-
-
 }
