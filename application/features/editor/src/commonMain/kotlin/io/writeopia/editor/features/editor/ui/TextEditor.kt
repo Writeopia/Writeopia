@@ -119,8 +119,8 @@ internal fun TextEditor(
         CommentThreadOverlay(
             uiState = commentUiState,
             editable = editable,
-            onCreateComment = { text ->
-                noteEditorViewModel.createComment(text) != null
+            onCreateComment = { text, target ->
+                noteEditorViewModel.createComment(text, target) != null
             },
             onReply = { conversationId, text ->
                 noteEditorViewModel.addComment(conversationId, text) != null

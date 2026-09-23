@@ -1140,11 +1140,14 @@ class WriteopiaStateManager(
         }
     }
 
-    fun createComment(text: String): CommentConversation? {
+    fun createComment(text: String): CommentConversation? =
+        createComment(text, _currentStory.value.selection)
+
+    fun createComment(text: String, target: Selection): CommentConversation? {
         if (!isEditable) return null
 
         val state = _currentStory.value
-        val selection = state.selection
+        val selection = target
         val (start, end) = selection.sortedPositions()
         if (start == end) return null
 

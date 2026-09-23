@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.writeopia.resources.WrStrings
+import io.writeopia.sdk.model.story.Selection
 
 internal const val COMMENT_BUTTON_TAG = "CommentButton"
 internal const val COMMENT_PANEL_TAG = "CommentPanel"
@@ -35,20 +36,26 @@ internal const val COMMENT_INPUT_TAG = "CommentInput"
 internal fun CommentThreadOverlay(
     uiState: CommentUiState,
     editable: Boolean,
-    onCreateComment: (String) -> Boolean,
+    onCreateComment: (String, Selection) -> Boolean,
     onReply: (String, String) -> Boolean,
     onDeleteComment: (String, String) -> Unit,
     onDeleteConversation: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val conversation = uiState.activeConversation
-    val visible = conversation != null || uiState.canCreateComment
     var expanded by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
+    var createTarget by remember { mutableStateOf<Selection?>(null) }
+    val visible =
+        conversation != null || (editable && (uiState.canCreateComment || createTarget != null))
 
     LaunchedEffect(visible, conversation?.id) {
         if (!visible) {
             expanded = false
+            createTarget = null
+        }
+        if (conversation != null) {
+            createTarget = null
         }
         draft = ""
     }
@@ -61,7 +68,12 @@ internal fun CommentThreadOverlay(
     ) {
         FilledTonalButton(
             modifier = Modifier.testTag(COMMENT_BUTTON_TAG),
-            onClick = { expanded = !expanded },
+            onClick = {
+                if (!expanded && conversation == null) {
+                    createTarget = uiState.createTarget ?: createTarget
+                }
+                expanded = !expanded
+            },
         ) {
             val label = when {
                 conversation == null -> WrStrings.addComment()
@@ -146,12 +158,14 @@ internal fun CommentThreadOverlay(
                             onClick = {
                                 val text = draft.trim()
                                 val saved = if (conversation == null) {
-                                    onCreateComment(text)
+                                    val target = createTarget ?: uiState.createTarget
+                                    target != null && onCreateComment(text, target)
                                 } else {
                                     onReply(conversation.id, text)
                                 }
                                 if (saved) {
                                     draft = ""
+                                    createTarget = null
                                 }
                             },
                         ) {

@@ -5,6 +5,7 @@ package io.writeopia.ui.manager
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.story.LastEdit
+import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
@@ -2132,6 +2133,47 @@ class WriteopiaStateManagerTest {
             manager.commentConversations.value.single().comments.map { it.text },
         )
         assertEquals(second.id, manager.commentConversations.value.single().comments.last().id)
+    }
+
+    @Test
+    fun createCommentShouldUseCapturedSelectionAfterFocusLoss() {
+        val now = Clock.System.now()
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(text = "hello world", type = StoryTypes.TEXT.type)
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        val target = Selection(start = 0, end = 5, position = 0.0)
+        val story = manager.currentStory.value.stories.getValue(0.0)
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = story,
+                position = 0.0,
+                selectionStart = 5,
+                selectionEnd = 5,
+            )
+        )
+
+        val conversation =
+            manager.createComment("captured", target) ?: fail("Comment was not created")
+
+        val span = manager.currentStory.value.stories.getValue(0.0).spans.single()
+        assertEquals(0, span.start)
+        assertEquals(5, span.end)
+        assertEquals(conversation.id, span.extra)
     }
 
     @Test
