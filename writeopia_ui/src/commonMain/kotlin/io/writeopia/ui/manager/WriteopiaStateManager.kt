@@ -1557,6 +1557,7 @@ class WriteopiaStateManager(
             _currentStory.value,
             position
         )
+        cleanupOrphanCommentConversations()
     }
 
     fun handleTextInput(

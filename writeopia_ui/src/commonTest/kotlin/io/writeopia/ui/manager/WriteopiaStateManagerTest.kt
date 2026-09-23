@@ -2570,4 +2570,44 @@ class WriteopiaStateManagerTest {
             manager.currentStory.value.stories[0.0]!!.spans,
         )
     }
+    @Test
+    fun removingLastStoryReferenceShouldRemoveOrphanConversation() {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "conversation-remove-story",
+            comments = listOf(Comment(id = "comment-remove-story", text = "remove me")),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "commented",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(
+                            SpanInfo.create(0, 9, Span.COMMENT, conversation.id)
+                        ),
+                    ),
+                    1.0 to StoryStep(text = "keep", type = StoryTypes.TEXT.type),
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = listOf(conversation),
+            )
+        )
+
+        manager.removeAtPosition(0.0)
+
+        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(manager.getDocument().commentConversations.isEmpty())
+    }
+
+
 }

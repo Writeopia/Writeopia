@@ -8,6 +8,7 @@ import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.sync.StoryStepSyncBuffer
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
@@ -17,6 +18,7 @@ import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -138,8 +140,16 @@ class OnUpdateStoryStepSyncTracker(
 
             // Launch a coroutine to process document changes
             launch {
-                combinedFlow.collect { (storyState, documentInfo, _) ->
+                combinedFlow.collect { (storyState, documentInfo, workspaceId) ->
                     processLastEdit(storyState.lastEdit, documentInfo.id)
+                    val commentsChanged =
+                        commentSnapshot.value.version > lastSyncedCommentChangeVersion
+                    if (
+                        workspaceId != Workspace.disconnectedWorkspace().id &&
+                        (syncBuffer.hasPendingChanges() || commentsChanged)
+                    ) {
+                        syncBuffer.requestSync()
+                    }
                 }
             }
 
@@ -272,6 +282,8 @@ class OnUpdateStoryStepSyncTracker(
     }
 
     private suspend fun performSync(documentId: String, workspaceId: String) {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return
+
         val batch = syncBuffer.consumeChanges()
         val comments = commentSnapshot.value
         val currentComments = comments.conversations
@@ -317,17 +329,21 @@ class OnUpdateStoryStepSyncTracker(
         } catch (e: Exception) {
             consecutiveFailures++
 
-            if (consecutiveFailures < maxRetries) {
-                batch.changes.forEach { change ->
-                    syncBuffer.addChange(change.storyStep, change.position, change.documentId)
-                }
-                batch.deletions.forEach { id ->
-                    syncBuffer.addDeletion(id)
-                }
-                if (commentsChanged) {
-                    syncBuffer.requestSync()
-                }
-            } else {
+            val retryDelay =
+                syncBuffer.syncInterval * consecutiveFailures.coerceAtMost(maxRetries).toLong()
+            delay(retryDelay)
+
+            batch.changes.forEach { change ->
+                syncBuffer.addChange(change.storyStep, change.position, change.documentId)
+            }
+            batch.deletions.forEach { id ->
+                syncBuffer.addDeletion(id)
+            }
+            if (commentsChanged) {
+                syncBuffer.requestSync()
+            }
+
+            if (consecutiveFailures >= maxRetries) {
                 consecutiveFailures = 0
             }
         }
