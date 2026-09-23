@@ -47,6 +47,8 @@ object AccountDeletionWorkspaceService {
         publish: suspend (topicId: String, orderingKey: String, payload: String, debugMode: Boolean) -> Unit =
             PubsubPublisher::publish,
     ) {
+        logger.info("[AccountDeletion] documents workspace teardown started for user $userId")
+
         if (writeopiaDb.getAccountDeletionWorkspaceRows(userId).isEmpty()) {
             enumerateWorkspaces(userId, writeopiaDb)
         }
@@ -70,6 +72,11 @@ object AccountDeletionWorkspaceService {
         )
 
         publish(AccountDeletionTopics.WORKSPACES_COMPLETED, userId, payload, debugMode)
+
+        logger.info(
+            "[AccountDeletion] outbox event ${AccountDeletionTopics.WORKSPACES_COMPLETED} " +
+                "published for user $userId"
+        )
     }
 
     private fun enumerateWorkspaces(userId: String, writeopiaDb: WriteopiaDbBackend) {
