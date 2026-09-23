@@ -227,7 +227,7 @@ private fun BoxScope.RegisterContent(
             shape = shape,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
-            placeholder = {
+            label = {
                 Text(WrStrings.name())
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -241,7 +241,7 @@ private fun BoxScope.RegisterContent(
             shape = shape,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
-            placeholder = {
+            label = {
                 Text(WrStrings.username())
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -255,7 +255,7 @@ private fun BoxScope.RegisterContent(
             shape = shape,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
-            placeholder = {
+            label = {
                 Text(WrStrings.email())
             },
             keyboardOptions = KeyboardOptions(
@@ -272,7 +272,7 @@ private fun BoxScope.RegisterContent(
             shape = shape,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
-            placeholder = {
+            label = {
                 Text(WrStrings.workspaceName())
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -307,7 +307,7 @@ private fun BoxScope.RegisterContent(
             } else {
                 PasswordVisualTransformation()
             },
-            placeholder = {
+            label = {
                 Text(WrStrings.password())
             },
             trailingIcon = {
