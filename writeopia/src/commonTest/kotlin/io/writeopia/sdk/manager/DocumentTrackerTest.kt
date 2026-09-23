@@ -61,7 +61,7 @@ class DocumentTrackerTest {
             )
         )
         runCurrent()
-        editions.emit(StoryState() to document.info())
+        editions.emit(StoryState(stories = emptyMap()) to document.info())
         runCurrent()
 
         assertTrue(withTimeout(1_000) { storySaved.await() })
