@@ -50,7 +50,7 @@ class WorkspacesTest {
         }
 
         val client = defaultClient()
-        val email = Random.nextInt(10000).toString()
+        val email = "ws_${Random.nextInt(10000)}@test.com"
         val workspaceName1 = "workspace name"
 
         val response = client.post("/api/auth/register") {
@@ -60,7 +60,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName1,
                     name = "Name",
                     email = email,
-                    username = email + "_user",
+                    username = email.substringBefore("@"),
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -114,7 +114,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName1,
                     name = "Name",
                     email = email1,
-                    username = email1 + "_user",
+                    username = email1.substringBefore("@"),
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -130,7 +130,7 @@ class WorkspacesTest {
                     workspaceName = "other workspace",
                     name = "Name 2",
                     email = email2,
-                    username = email2 + "_user",
+                    username = email2.substringBefore("@"),
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -210,7 +210,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName,
                     name = "Test User",
                     email = email,
-                    username = email + "_user",
+                    username = email.substringBefore("@"),
                     password = "testpassword123&",
                 )
             )
@@ -310,7 +310,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName,
                     name = "Admin User",
                     email = email,
-                    username = email + "_user",
+                    username = email.substringBefore("@"),
                     password = "testpassword123&",
                 )
             )
@@ -383,7 +383,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName,
                     name = "Admin User 1",
                     email = email1,
-                    username = email1 + "_user",
+                    username = email1.substringBefore("@"),
                     password = "testpassword123&",
                 )
             )
@@ -399,7 +399,7 @@ class WorkspacesTest {
                     workspaceName = "other workspace",
                     name = "Admin User 2",
                     email = email2,
-                    username = email2 + "_user",
+                    username = email2.substringBefore("@"),
                     password = "testpassword123&",
                 )
             )
@@ -486,7 +486,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName,
                     name = "Admin User",
                     email = email1,
-                    username = email1 + "_user",
+                    username = email1.substringBefore("@"),
                     password = "testpassword123&",
                 )
             )
@@ -502,7 +502,7 @@ class WorkspacesTest {
                     workspaceName = "other workspace",
                     name = "Editor User",
                     email = email2,
-                    username = email2 + "_user",
+                    username = email2.substringBefore("@"),
                     password = "testpassword123&",
                 )
             )
@@ -588,7 +588,7 @@ class WorkspacesTest {
                     workspaceName = workspaceName,
                     name = "Admin User",
                     email = email,
-                    username = email + "_user",
+                    username = email.substringBefore("@"),
                     password = "testpassword123&",
                 )
             )
