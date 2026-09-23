@@ -152,6 +152,7 @@ class AuthApiTest {
 
     @Test
     fun `register should return Complete on success`() = runTest {
+        var capturedRequest: io.ktor.client.request.HttpRequestData? = null
         val jsonContent = """
             {
                 "writeopiaUser": {
@@ -165,7 +166,8 @@ class AuthApiTest {
             }
         """.trimIndent()
 
-        val mockEngine = MockEngine {
+        val mockEngine = MockEngine { request ->
+            capturedRequest = request
             respond(
                 content = jsonContent,
                 status = HttpStatusCode.Created,
@@ -183,6 +185,16 @@ class AuthApiTest {
         val result = authApi.register("Alice", "alice@test.com", "MyWorkspace", "password123", "alice")
 
         assertIs<ResultData.Complete<*>>(result)
+
+        val request = capturedRequest!!
+        assertEquals(HttpMethod.Post, request.method)
+        assertEquals("https://api.example.com/api/auth/register", request.url.toString())
+
+        val bodyString = request.body.toByteArray().decodeToString()
+        assertTrue(bodyString.contains(""""username":"alice""""))
+        assertTrue(bodyString.contains(""""email":"alice@test.com""""))
+        assertTrue(bodyString.contains(""""name":"Alice""""))
+        assertTrue(bodyString.contains(""""workspaceName":"MyWorkspace""""))
     }
 
     @Test
