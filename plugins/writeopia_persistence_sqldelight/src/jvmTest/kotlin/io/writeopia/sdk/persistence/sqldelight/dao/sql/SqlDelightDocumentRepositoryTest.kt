@@ -259,6 +259,54 @@ class SqlDelightDocumentRepositoryTest {
     }
 
     @Test
+    fun `same comment id can exist in different documents in sqldelight`() = runTest {
+        val now = Clock.System.now()
+        val sharedCommentId = "shared-comment-id"
+        val first = Document(
+            id = "comment-scope-first",
+            commentConversations = listOf(
+                CommentConversation(
+                    id = "conversation-first",
+                    comments = listOf(Comment(id = sharedCommentId, text = "first")),
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+        )
+        val second = Document(
+            id = "comment-scope-second",
+            commentConversations = listOf(
+                CommentConversation(
+                    id = "conversation-second",
+                    comments = listOf(Comment(id = sharedCommentId, text = "second")),
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+        )
+
+        documentRepository.saveDocument(first)
+        documentRepository.saveDocument(second)
+
+        assertEquals(
+            "first",
+            documentRepository.loadDocumentById(first.id, first.workspaceId)
+                ?.commentConversations?.single()?.comments?.single()?.text,
+        )
+        assertEquals(
+            "second",
+            documentRepository.loadDocumentById(second.id, second.workspaceId)
+                ?.commentConversations?.single()?.comments?.single()?.text,
+        )
+    }
+
+    @Test
     fun `hard delete removes comment rows in sqldelight`() = runTest {
         val now = Clock.System.now()
         val document = Document(

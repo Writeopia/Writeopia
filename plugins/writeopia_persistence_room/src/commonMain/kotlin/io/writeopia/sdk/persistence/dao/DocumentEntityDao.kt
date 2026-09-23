@@ -243,7 +243,7 @@ interface DocumentEntityDao {
     suspend fun saveDocumentWithContent(
         document: DocumentEntity,
         storySteps: List<StoryStepEntity>,
-        comments: List<CommentEntity>,
+        comments: List<CommentEntity>?,
     ) {
         insertDocuments(document)
         hardDeleteStoryStepsByDocumentIds(listOf(document.id))
@@ -251,9 +251,11 @@ interface DocumentEntityDao {
             insertStoryStepsForDocument(*storySteps.toTypedArray())
         }
 
-        hardDeleteCommentsByDocumentIds(listOf(document.id))
-        if (comments.isNotEmpty()) {
-            insertCommentsForDocument(*comments.toTypedArray())
+        if (comments != null) {
+            hardDeleteCommentsByDocumentIds(listOf(document.id))
+            if (comments.isNotEmpty()) {
+                insertCommentsForDocument(*comments.toTypedArray())
+            }
         }
     }
 

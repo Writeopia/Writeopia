@@ -199,7 +199,11 @@ class RoomDocumentRepository(
 
     override suspend fun saveDocument(document: Document) {
         val storySteps = document.content.toEntity(document.id)
-        val comments = document.commentConversations.toCommentEntities(document.id)
+        val comments = if (commentEntityDao === LegacyCommentEntityDao) {
+            null
+        } else {
+            document.commentConversations.toCommentEntities(document.id)
+        }
 
         documentEntityDao.saveDocumentWithContent(
             document = document.toEntity(),
