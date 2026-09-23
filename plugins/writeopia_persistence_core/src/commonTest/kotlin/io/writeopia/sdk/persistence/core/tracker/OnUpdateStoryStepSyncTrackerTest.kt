@@ -295,6 +295,7 @@ class OnUpdateStoryStepSyncTrackerTest {
         assertEquals(null, synced.commentConversations)
         assertEquals(listOf("Updated"), synced.changes.map { it.storyStep.text })
     }
+
     @Test
     fun disconnectedWorkspaceShouldNotSendCommentsUntilWorkspaceBecomesOnline() = runTest {
         val now = Clock.System.now()
@@ -406,6 +407,4 @@ class OnUpdateStoryStepSyncTrackerTest {
         assertTrue(attempts >= 3)
         assertEquals(listOf(conversation.id), synced.commentConversations?.map { it.id })
     }
-
-
 }
