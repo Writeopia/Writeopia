@@ -117,7 +117,7 @@ fun Routing.cookieAuthRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean 
                     enabled = true
                 )
             )
-        } catch (e: BadRequestException) {
+        } catch (e: ContentTransformationException) {
             // broken/unparseable JSON
             logger.warn("Web login bad request")
             call.respond(HttpStatusCode.BadRequest, "Invalid request body")

@@ -99,7 +99,7 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                 )
             )
             
-        } catch (e: BadRequestException) {
+        } catch (e: ContentTransformationException) {
             // broken/unparseable JSON
             logger.warn("Login bad request")
             call.respond(HttpStatusCode.BadRequest, "Invalid request body")

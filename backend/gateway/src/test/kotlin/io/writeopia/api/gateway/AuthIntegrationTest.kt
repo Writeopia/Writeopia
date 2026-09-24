@@ -233,6 +233,30 @@ class AuthIntegrationTest {
     }
 
     @Test
+    fun `it should not be possible to register with an email as username`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+
+        val response = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "workspace name",
+                    name = "Name",
+                    email = "valid_${Random.nextInt(100000)}@gmail.com",
+                    username = "invalid_user@gmail.com",
+                    password = "lasjbdalsdq08w9y&",
+                )
+            )
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+    }
+
+    @Test
     fun `userExistsByUsernameOrEmail should return true if username or email exists, and false if neither exists`() {
         val email = "existstest_${Random.nextInt()}@gmail.com"
         val username = "existstest_${Random.nextInt()}"
