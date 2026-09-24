@@ -273,11 +273,21 @@ class AuthIntegrationTest {
         // Both match
         assertTrue(db.userExistsByUsernameOrEmail(username = username, email = email))
         // Only username matches
-        assertTrue(db.userExistsByUsernameOrEmail(username = username, email = "nonexistent_${Random.nextInt()}@gmail.com"))
+        assertTrue(
+            db.userExistsByUsernameOrEmail(
+                username = username,
+                email = "nonexistent_${Random.nextInt()}@gmail.com"
+            )
+        )
         // Only email matches
         assertTrue(db.userExistsByUsernameOrEmail(username = "nonexistent_${Random.nextInt()}", email = email))
         // Neither matches
-        assertFalse(db.userExistsByUsernameOrEmail(username = "nonexistent_${Random.nextInt()}", email = "nonexistent_${Random.nextInt()}@gmail.com"))
+        assertFalse(
+            db.userExistsByUsernameOrEmail(
+                username = "nonexistent_${Random.nextInt()}",
+                email = "nonexistent_${Random.nextInt()}@gmail.com"
+            )
+        )
     }
 
     @Test

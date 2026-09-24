@@ -2,7 +2,6 @@ package io.writeopia.api.core.auth.routing
 
 import io.ktor.http.Cookie
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.ContentTransformationException
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond

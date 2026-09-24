@@ -1,7 +1,6 @@
 package io.writeopia.api.core.auth.routing
 
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.ContentTransformationException
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
