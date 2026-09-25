@@ -60,7 +60,6 @@ fun AccountDeletionStartedScreen(
 
         CommonButton(
             text = WrStrings.logout(),
-//            modifier = Modifier.fillMaxWidth(),
             clickListener = logout,
             horizontalArrangement = Arrangement.Center
         )
