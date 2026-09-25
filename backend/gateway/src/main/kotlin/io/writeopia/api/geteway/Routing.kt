@@ -34,9 +34,8 @@ fun Application.configureRouting(
             authRoute(
                 writeopiaDb,
                 debugMode,
-                provisionWorkspaceForNewUser = { db, workspaceId, workspaceName, userEmail ->
-                    WorkspaceService.createWorkspace(workspaceId, workspaceName, db)
-                    WorkspaceService.addUserToWorkspaceAdmin(userEmail, workspaceId, "ADMIN", db)
+                provisionWorkspaceForNewUser = { db, workspaceId, workspaceName, userId ->
+                    WorkspaceService.createWorkspaceWithOwner(workspaceId, workspaceName, userId, db)
                 }
             )
 

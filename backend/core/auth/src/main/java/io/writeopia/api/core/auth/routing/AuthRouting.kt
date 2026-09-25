@@ -42,7 +42,8 @@ import java.sql.SQLException
 
 /**
  * @param provisionWorkspaceForNewUser Creates the workspace for a newly registered user and adds
- * them as its admin, run inside the same transaction as user creation. Returns true on success.
+ * them as its admin, run inside the same transaction as user creation - a failure here throws and
+ * rolls back the whole transaction, so a workspace can never persist without its owner.
  * Workspace logic lives in the `backend:core:workspaces` module, which depends on this module for
  * user lookups, so this is injected from the composition root to avoid a circular dependency.
  */
@@ -53,8 +54,8 @@ fun Routing.authRoute(
         writeopiaDb: WriteopiaDbBackend,
         workspaceId: String,
         workspaceName: String,
-        userEmail: String
-    ) -> Boolean
+        userId: String
+    ) -> Unit
 ) {
     post("/api/auth/login") {
         val credentials = call.receive<LoginRequest>()
@@ -180,16 +181,12 @@ fun Routing.authRoute(
 
                 writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
 
-                val created = provisionWorkspaceForNewUser(
+                provisionWorkspaceForNewUser(
                     writeopiaDb,
                     workspaceId,
                     request.workspaceName,
-                    request.email
+                    user.id
                 )
-
-                if (!created) {
-                    error("Failed to associate user with workspace")
-                }
 
                 user
             }

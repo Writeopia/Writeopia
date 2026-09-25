@@ -79,23 +79,6 @@ object WorkspaceService {
         writeopiaDb: WriteopiaDbBackend
     ): WorkspaceUser? = writeopiaDb.getUserInWorkspace(workspaceId, userEmail)
 
-    fun createWorkspace(
-        workspaceId: String,
-        workspaceName: String,
-        writeopiaDb: WriteopiaDbBackend
-    ) {
-        writeopiaDb.insertWorkspace(
-            Workspace(
-                id = workspaceId,
-                userId = "",
-                name = workspaceName,
-                lastSync = Instant.DISTANT_PAST,
-                selected = false,
-                role = ""
-            )
-        )
-    }
-
     /**
      * Creates a workspace and adds the user as admin in a single transaction.
      * This ensures atomicity - either both operations succeed or neither does.
