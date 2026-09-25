@@ -2067,5 +2067,4 @@ class WriteopiaStateManagerTest {
 
         assertEquals(updatedComments, currentDocument.commentConversations)
     }
-
 }
