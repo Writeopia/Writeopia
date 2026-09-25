@@ -5,7 +5,7 @@ import io.writeopia.sdk.manager.StoryStepSyncTracker
 import io.writeopia.sdk.manager.UnsupportedCommentConversationsException
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.StoryState
-import io.writeopia.sdk.models.comment.CommentConversation
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateStoryStepSyncTracker
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
@@ -77,7 +77,7 @@ class DocumentSyncManager(
         documentId: String,
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
-        commentConversationsFlow: StateFlow<List<CommentConversation>>,
+        commentConversationsFlow: StateFlow<Map<String, List<Comment>>>,
         documentTracker: DocumentTracker
     ) {
         // Cancel any existing sync for this document
