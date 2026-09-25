@@ -2,7 +2,6 @@ package io.writeopia.sdk.persistence.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import io.writeopia.sdk.persistence.entity.comment.COMMENT_ENTITY
 import io.writeopia.sdk.persistence.entity.comment.CommentEntity
@@ -10,7 +9,7 @@ import io.writeopia.sdk.persistence.entity.comment.CommentEntity
 @Dao
 interface CommentEntityDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert
     suspend fun insertComments(vararg comments: CommentEntity)
 
     @Query(
