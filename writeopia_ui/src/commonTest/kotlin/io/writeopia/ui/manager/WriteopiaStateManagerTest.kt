@@ -2018,14 +2018,14 @@ class WriteopiaStateManagerTest {
                 lastUpdatedAt = now,
                 parentId = "root",
                 lastSyncedAt = null,
-                commentConversations = listOf(conversation),
+                commentConversations = mapOf(conversation.id to conversation.comments),
             )
         )
 
-        assertEquals(listOf(conversation), manager.commentConversations.value)
-        assertEquals(listOf(conversation), manager.getDocument().commentConversations)
+        assertEquals(mapOf(conversation.id to conversation.comments), manager.commentConversations.value)
+        assertEquals(mapOf(conversation.id to conversation.comments), manager.getDocument().commentConversations)
         assertEquals(
-            listOf(conversation),
+            mapOf(conversation.id to conversation.comments),
             manager.currentDocument.filterNotNull().first().commentConversations,
         )
     }
@@ -2063,7 +2063,7 @@ class WriteopiaStateManagerTest {
             lastUpdatedAt = now,
             parentId = "root",
             lastSyncedAt = null,
-            commentConversations = listOf(first),
+            commentConversations = mapOf(first.id to first.comments),
         )
         manager.loadDocument(baseDocument)
 
@@ -2076,14 +2076,14 @@ class WriteopiaStateManagerTest {
                         spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, second.id)),
                     )
                 ),
-                commentConversations = listOf(second),
+                commentConversations = mapOf(second.id to second.comments),
             )
         )
 
-        assertEquals(listOf(second), manager.commentConversations.value)
-        assertEquals(listOf(second), manager.getDocument().commentConversations)
+        assertEquals(mapOf(second.id to second.comments), manager.commentConversations.value)
+        assertEquals(mapOf(second.id to second.comments), manager.getDocument().commentConversations)
         assertEquals(
-            listOf(second),
+            mapOf(second.id to second.comments),
             manager.currentDocument.filterNotNull().first().commentConversations,
         )
     }
@@ -2129,9 +2129,9 @@ class WriteopiaStateManagerTest {
         assertEquals(conversation.id, manager.getCommentConversationAtCursor()?.id)
         assertEquals(
             listOf("first", "second"),
-            manager.commentConversations.value.single().comments.map { it.text },
+            manager.commentConversations.value.getValue(conversation.id).map { it.text },
         )
-        assertEquals(second.id, manager.commentConversations.value.single().comments.last().id)
+        assertEquals(second.id, manager.commentConversations.value.getValue(conversation.id).last().id)
     }
 
     @Test
@@ -2163,12 +2163,12 @@ class WriteopiaStateManagerTest {
                 lastUpdatedAt = now,
                 parentId = "root",
                 lastSyncedAt = null,
-                commentConversations = listOf(conversation),
+                commentConversations = mapOf(conversation.id to conversation.comments),
             )
         )
 
         assertTrue(manager.deleteComment(conversation.id, "comment-1"))
-        assertEquals(1, manager.commentConversations.value.single().comments.size)
+        assertEquals(1, manager.commentConversations.value.getValue(conversation.id).size)
         assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isNotEmpty())
 
         assertTrue(manager.deleteComment(conversation.id, "comment-2"))
@@ -2207,7 +2207,7 @@ class WriteopiaStateManagerTest {
                 lastUpdatedAt = now,
                 parentId = "root",
                 lastSyncedAt = null,
-                commentConversations = listOf(conversation),
+                commentConversations = mapOf(conversation.id to conversation.comments),
             )
         )
 
@@ -2217,7 +2217,7 @@ class WriteopiaStateManagerTest {
                 0.0,
             )
         )
-        assertEquals(listOf(conversation), manager.commentConversations.value)
+        assertEquals(mapOf(conversation.id to conversation.comments), manager.commentConversations.value)
 
         manager.changeStoryState(
             Action.StoryStateChange(
@@ -2254,7 +2254,7 @@ class WriteopiaStateManagerTest {
                 lastUpdatedAt = now,
                 parentId = "root",
                 lastSyncedAt = null,
-                commentConversations = listOf(conversation),
+                commentConversations = mapOf(conversation.id to conversation.comments),
             )
         )
 
@@ -2270,7 +2270,7 @@ class WriteopiaStateManagerTest {
         )
         advanceUntilIdle()
 
-        assertEquals(listOf(conversation), manager.commentConversations.value)
+        assertEquals(mapOf(conversation.id to conversation.comments), manager.commentConversations.value)
         assertEquals(
             2,
             manager.currentStory.value.stories.values.count { story ->
@@ -2305,7 +2305,7 @@ class WriteopiaStateManagerTest {
                 lastUpdatedAt = now,
                 parentId = "root",
                 lastSyncedAt = null,
-                commentConversations = listOf(conversation),
+                commentConversations = mapOf(conversation.id to conversation.comments),
             )
         )
 
@@ -2321,7 +2321,7 @@ class WriteopiaStateManagerTest {
         manager.undo()
         advanceUntilIdle()
 
-        assertEquals(listOf(conversation), manager.commentConversations.value)
+        assertEquals(mapOf(conversation.id to conversation.comments), manager.commentConversations.value)
         assertEquals(
             conversation.id,
             manager.currentStory.value.stories[0.0]!!
@@ -2371,7 +2371,7 @@ class WriteopiaStateManagerTest {
                 lastUpdatedAt = now,
                 parentId = "root",
                 lastSyncedAt = null,
-                commentConversations = listOf(conversation),
+                commentConversations = mapOf(conversation.id to conversation.comments),
             )
         )
 
@@ -2420,13 +2420,16 @@ class WriteopiaStateManagerTest {
                 lastUpdatedAt = now,
                 parentId = "root",
                 lastSyncedAt = null,
-                commentConversations = listOf(first, second),
+                commentConversations = mapOf(
+                    first.id to first.comments,
+                    second.id to second.comments,
+                ),
             )
         )
 
         assertTrue(manager.deleteComment(first.id, "comment-1"))
 
-        assertEquals(listOf(second), manager.commentConversations.value)
+        assertEquals(mapOf(second.id to second.comments), manager.commentConversations.value)
         assertEquals(
             setOf(SpanInfo.create(6, 11, Span.COMMENT, second.id)),
             manager.currentStory.value.stories[0.0]!!.spans,
