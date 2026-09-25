@@ -256,7 +256,7 @@ class NoteEditorKmpViewModel(
             emptySet()
         )
 
-    override val commentConversations: StateFlow<List<CommentConversation>> =
+    override val commentConversations: StateFlow<Map<String, List<Comment>>> =
         writeopiaManager.commentConversations
 
     @OptIn(ExperimentalCoroutinesApi::class)

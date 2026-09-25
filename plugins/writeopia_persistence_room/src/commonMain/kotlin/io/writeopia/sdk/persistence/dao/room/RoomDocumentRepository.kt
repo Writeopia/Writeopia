@@ -2,9 +2,12 @@
 
 package io.writeopia.sdk.persistence.dao.room
 
+import androidx.room.RoomDatabase
+import androidx.room.immediateTransaction
+import androidx.room.useWriterConnection
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.info
-import io.writeopia.sdk.models.comment.CommentConversation
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.link.DocumentLink
 import io.writeopia.sdk.models.story.StoryStep
@@ -45,6 +48,7 @@ class RoomDocumentRepository(
     private val documentEntityDao: DocumentEntityDao,
     private val storyUnitEntityDao: StoryUnitEntityDao? = null,
     private val commentEntityDao: CommentEntityDao,
+    private val database: RoomDatabase,
 ) : DocumentRepository, DocumentSearch {
 
     @Deprecated("Pass CommentEntityDao to preserve comment loading.")
@@ -59,16 +63,13 @@ class RoomDocumentRepository(
     override suspend fun loadDocumentsForFolder(
         folderId: String,
         workspaceId: String
-    ): List<Document> {
-        val documents = documentEntityDao.loadDocumentsByParentIdForWorkspace(folderId, workspaceId)
-        val commentsByDocumentId = loadCommentConversationsByDocumentIds(documents.map { it.id })
-
-        return documents.map { documentEntity ->
-            documentEntity.toModel(
-                commentConversations = commentsByDocumentId[documentEntity.id].orEmpty()
-            )
-        }
-    }
+    ): List<Document> =
+        documentEntityDao.loadDocumentsByParentIdForWorkspace(folderId, workspaceId)
+            .map { documentEntity ->
+                documentEntity.toModel(
+                    commentConversations = loadCommentConversations(documentEntity.id)
+                )
+            }
 
     override suspend fun loadFavDocumentsForWorkspace(
         orderBy: String,
@@ -104,15 +105,9 @@ class RoomDocumentRepository(
             parentId,
             workspaceId,
         ).map { resultsMap ->
-            val commentsByDocumentId =
-                loadCommentConversationsByDocumentIds(resultsMap.keys.map { it.id })
-
             resultsMap.map { (documentEntity, storyEntity) ->
                 val content = loadInnerSteps(storyEntity)
-                documentEntity.toModel(
-                    content,
-                    commentsByDocumentId[documentEntity.id].orEmpty(),
-                )
+                documentEntity.toModel(content, loadCommentConversations(documentEntity.id))
             }.groupBy { it.parentId }
         }
 
@@ -121,19 +116,12 @@ class RoomDocumentRepository(
             entity?.toModel()?.info()
         }
 
-    override suspend fun loadDocumentsWorkspace(workspaceId: String): List<Document> {
-        val documents = documentEntityDao.loadDocumentsWithContentForUser(workspaceId)
-        val commentsByDocumentId =
-            loadCommentConversationsByDocumentIds(documents.map { (document, _) -> document.id })
-
-        return documents.map { (documentEntity, storyEntity) ->
-            val content = loadInnerSteps(storyEntity)
-            documentEntity.toModel(
-                content,
-                commentsByDocumentId[documentEntity.id].orEmpty(),
-            )
-        }
-    }
+    override suspend fun loadDocumentsWorkspace(workspaceId: String): List<Document> =
+        documentEntityDao.loadDocumentsWithContentForUser(workspaceId)
+            .map { (documentEntity, storyEntity) ->
+                val content = loadInnerSteps(storyEntity)
+                documentEntity.toModel(content, loadCommentConversations(documentEntity.id))
+            }
 
     override suspend fun loadDocumentsForWorkspace(
         orderBy: String,
@@ -163,49 +151,39 @@ class RoomDocumentRepository(
     override suspend fun loadDocumentByIds(
         ids: List<String>,
         workspaceId: String
-    ): List<Document> {
-        val documents = documentEntityDao.loadDocumentByIdsForWorkspace(ids, workspaceId)
-        val commentsByDocumentId = loadCommentConversationsByDocumentIds(documents.map { it.id })
-
-        return documents.map { documentEntity ->
+    ): List<Document> =
+        documentEntityDao.loadDocumentByIdsForWorkspace(ids, workspaceId).map { documentEntity ->
             val content = loadInnerSteps(
                 storyUnitEntityDao?.loadDocumentContent(documentEntity.id) ?: emptyList()
             )
-            documentEntity.toModel(
-                content,
-                commentsByDocumentId[documentEntity.id].orEmpty(),
-            )
+            documentEntity.toModel(content, loadCommentConversations(documentEntity.id))
         }
-    }
 
     override suspend fun loadDocumentsWithContentByIds(
         ids: List<String>,
         orderBy: String,
         workspaceId: String
-    ): List<Document> {
-        val documents =
-            documentEntityDao.loadDocumentWithContentByIdsForWorkspace(ids, orderBy, workspaceId)
-        val commentsByDocumentId =
-            loadCommentConversationsByDocumentIds(documents.keys.map { it.id })
-
-        return documents.entries.map { (documentEntity, storyEntity) ->
-            val content = loadInnerSteps(storyEntity)
-            documentEntity.toModel(
-                content,
-                commentsByDocumentId[documentEntity.id].orEmpty(),
-            )
-        }
-    }
+    ): List<Document> =
+        documentEntityDao.loadDocumentWithContentByIdsForWorkspace(ids, orderBy, workspaceId)
+            .entries
+            .map { (documentEntity, storyEntity) ->
+                val content = loadInnerSteps(storyEntity)
+                documentEntity.toModel(content, loadCommentConversations(documentEntity.id))
+            }
 
     override suspend fun saveDocument(document: Document) {
-        val storySteps = document.content.toEntity(document.id)
-        val comments = document.commentConversations.toCommentEntities(document.id)
+        writeTransaction {
+            saveDocumentMetadata(document)
 
-        documentEntityDao.saveDocumentWithContent(
-            document = document.toEntity(),
-            storySteps = storySteps,
-            comments = comments,
-        )
+            document.content.toEntity(document.id).let { data ->
+                storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
+                storyUnitEntityDao?.insertStoryUnits(*data.toTypedArray())
+            }
+
+            val comments = document.commentConversations.toCommentEntities(document.id)
+            commentEntityDao.deleteByDocumentId(document.id)
+            commentEntityDao.insertComments(*comments.toTypedArray())
+        }
     }
 
     override suspend fun saveDocumentMetadata(document: Document) {
@@ -236,7 +214,16 @@ class RoomDocumentRepository(
     }
 
     override suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
-        documentEntityDao.hardDeleteDocumentsWithContentByIds(ids.toList(), workspaceId)
+        writeTransaction {
+            val ownedIds = documentEntityDao.loadDocumentByIdsForWorkspace(
+                ids.toList(),
+                workspaceId,
+            ).map { document -> document.id }
+
+            commentEntityDao.deleteByDocumentIds(ownedIds)
+            storyUnitEntityDao?.deleteByDocumentIds(ownedIds)
+            documentEntityDao.hardDeleteDocumentByIds(ownedIds, workspaceId)
+        }
     }
 
     override suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document> =
@@ -267,7 +254,15 @@ class RoomDocumentRepository(
     }
 
     override suspend fun deleteByWorkspace(userId: String) {
-        documentEntityDao.purgeDocumentsWithContentByWorkspace(userId)
+        writeTransaction {
+            val documentIds = documentEntityDao.loadAllDocuments()
+                .filter { document -> document.workspaceId == userId }
+                .map { document -> document.id }
+
+            commentEntityDao.deleteByDocumentIds(documentIds)
+            storyUnitEntityDao?.deleteByDocumentIds(documentIds)
+            documentEntityDao.purgeDocumentsByUserId(userId)
+        }
     }
 
     override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
@@ -284,16 +279,13 @@ class RoomDocumentRepository(
     override suspend fun loadDocumentsByParentId(
         parentId: String,
         workspaceId: String
-    ): List<Document> {
-        val documents = documentEntityDao.loadDocumentsByParentIdForWorkspace(parentId, workspaceId)
-        val commentsByDocumentId = loadCommentConversationsByDocumentIds(documents.map { it.id })
-
-        return documents.map { documentEntity ->
-            documentEntity.toModel(
-                commentConversations = commentsByDocumentId[documentEntity.id].orEmpty()
-            )
-        }
-    }
+    ): List<Document> =
+        documentEntityDao.loadDocumentsByParentIdForWorkspace(parentId, workspaceId)
+            .map { documentEntity ->
+                documentEntity.toModel(
+                    commentConversations = loadCommentConversations(documentEntity.id)
+                )
+            }
 
     /**
      * This method removes the story units that are not in the root level (they don't have parents)
@@ -322,18 +314,17 @@ class RoomDocumentRepository(
                 entity.toModel()
             }
 
-    private suspend fun loadCommentConversations(documentId: String) =
-        commentEntityDao.loadByDocumentId(documentId).toCommentConversations()
+    private suspend fun <T> writeTransaction(block: suspend () -> T): T =
+        database.useWriterConnection { transactor ->
+            transactor.immediateTransaction { block() }
+        }
 
-    private suspend fun loadCommentConversationsByDocumentIds(
-        documentIds: List<String>
-    ): Map<String, List<CommentConversation>> {
-        if (documentIds.isEmpty()) return emptyMap()
-
-        return commentEntityDao.loadByDocumentIds(documentIds.distinct())
-            .groupBy { comment -> comment.documentId }
-            .mapValues { (_, comments) -> comments.toCommentConversations() }
-    }
+    private suspend fun loadCommentConversations(
+        documentId: String,
+    ): Map<String, List<Comment>> =
+        commentEntityDao
+            .loadByDocumentId(documentId)
+            .toCommentConversations()
 
     private suspend fun setFavorite(ids: Set<String>, workspaceId: String, isFavorite: Boolean) {
         ids.mapNotNull { id ->
@@ -364,31 +355,17 @@ class RoomDocumentRepository(
     override suspend fun loadOutdatedDocumentsByFolder(
         folderId: String,
         workspaceId: String
-    ): List<Document> {
-        val documents = documentEntityDao.loadOutdatedDocumentsByFolderId(folderId, workspaceId)
-        val commentsByDocumentId =
-            loadCommentConversationsByDocumentIds(documents.map { (document, _) -> document.id })
+    ): List<Document> =
+        documentEntityDao.loadOutdatedDocumentsByFolderId(folderId, workspaceId)
+            .map { (documentEntity, storyEntity) ->
+                val content = loadInnerSteps(storyEntity)
+                documentEntity.toModel(content, loadCommentConversations(documentEntity.id))
+            }
 
-        return documents.map { (documentEntity, storyEntity) ->
-            val content = loadInnerSteps(storyEntity)
-            documentEntity.toModel(
-                content,
-                commentsByDocumentId[documentEntity.id].orEmpty(),
-            )
-        }
-    }
-
-    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> {
-        val documents = documentEntityDao.loadOutdatedDocumentsWithContentForWorkspace(workspaceId)
-        val commentsByDocumentId =
-            loadCommentConversationsByDocumentIds(documents.map { (document, _) -> document.id })
-
-        return documents.map { (documentEntity, storyEntity) ->
-            val content = loadInnerSteps(storyEntity)
-            documentEntity.toModel(
-                content,
-                commentsByDocumentId[documentEntity.id].orEmpty(),
-            )
-        }
-    }
+    override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
+        documentEntityDao.loadOutdatedDocumentsWithContentForWorkspace(workspaceId)
+            .map { (documentEntity, storyEntity) ->
+                val content = loadInnerSteps(storyEntity)
+                documentEntity.toModel(content, loadCommentConversations(documentEntity.id))
+            }
 }
