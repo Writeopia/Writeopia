@@ -20,13 +20,7 @@ INSERT INTO commentEntity(
   comment_position,
   text
 )
-VALUES (?, ?, ?, ?, ?)
-ON CONFLICT(id) DO
-UPDATE SET
-  conversation_id = excluded.conversation_id,
-  document_id = excluded.document_id,
-  comment_position = excluded.comment_position,
-  text = excluded.text;
+VALUES (?, ?, ?, ?, ?);
 
 deleteByDocumentId:
 DELETE FROM commentEntity
