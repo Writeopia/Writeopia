@@ -51,6 +51,7 @@ class DocumentRoomRepositoryTest {
             documentEntityDao,
             storyUnitEntityDao,
             commentEntityDao,
+            database,
         )
         documentRepositoryTests = DocumentRepositoryTests(documentRepository)
     }
@@ -122,13 +123,13 @@ class DocumentRoomRepositoryTest {
     }
 
     @Test
-    fun parentLoadPreservesComments() = runTest {
-        documentRepositoryTests.parentLoadPreservesComments()
+    fun commentPersistenceRespectsWorkspaceBoundaries() = runTest {
+        documentRepositoryTests.commentPersistenceRespectsWorkspaceBoundaries()
     }
 
     @Test
-    fun commentPersistenceRespectsWorkspaceBoundaries() = runTest {
-        documentRepositoryTests.commentPersistenceRespectsWorkspaceBoundaries()
+    fun commentIdCannotMoveBetweenDocuments() = runTest {
+        documentRepositoryTests.commentIdCannotMoveBetweenDocuments()
     }
 
     @Test

@@ -2,34 +2,21 @@ package io.writeopia.sdk.persistence.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import io.writeopia.sdk.persistence.entity.comment.COMMENT_ENTITY
 import io.writeopia.sdk.persistence.entity.comment.CommentEntity
 
-/**
- * Persists comments for documents.
- *
- * Inserts replace rows with the same comment ID. Load operations preserve conversation and comment
- * order. Delete operations remove only rows belonging to the supplied document IDs.
- */
 @Dao
 interface CommentEntityDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert
     suspend fun insertComments(vararg comments: CommentEntity)
 
     @Query(
         "SELECT * FROM $COMMENT_ENTITY WHERE document_id = :documentId " +
-            "ORDER BY conversation_position, comment_position"
+            "ORDER BY conversation_id, comment_position"
     )
     suspend fun loadByDocumentId(documentId: String): List<CommentEntity>
-
-    @Query(
-        "SELECT * FROM $COMMENT_ENTITY WHERE document_id IN (:documentIds) " +
-            "ORDER BY document_id, conversation_position, comment_position"
-    )
-    suspend fun loadByDocumentIds(documentIds: List<String>): List<CommentEntity>
 
     @Query("DELETE FROM $COMMENT_ENTITY WHERE document_id = :documentId")
     suspend fun deleteByDocumentId(documentId: String)

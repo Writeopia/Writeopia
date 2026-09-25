@@ -14,6 +14,7 @@ class RoomRepositoryInjection private constructor(
             database.documentDao(),
             database.storyUnitDao(),
             database.commentDao(),
+            database,
         )
 
     companion object {

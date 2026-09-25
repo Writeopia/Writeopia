@@ -2,7 +2,7 @@
 
 package io.writeopia.sdk.persistence.parse
 
-import io.writeopia.sdk.models.comment.CommentConversation
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
@@ -11,7 +11,7 @@ import kotlin.time.Instant
 
 fun DocumentEntity.toModel(
     content: Map<Double, StoryStep> = emptyMap(),
-    commentConversations: List<CommentConversation> = emptyList(),
+    commentConversations: Map<String, List<Comment>> = emptyMap(),
 ) = Document(
     id = id,
     title = title,

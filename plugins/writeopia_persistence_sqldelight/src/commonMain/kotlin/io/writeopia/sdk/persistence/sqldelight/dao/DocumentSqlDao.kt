@@ -5,7 +5,6 @@ package io.writeopia.sdk.persistence.sqldelight.dao
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import io.writeopia.sdk.models.comment.Comment
-import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.link.DocumentLink
@@ -81,13 +80,12 @@ class DocumentSqlDao(
             }
 
             commentQueries?.deleteByDocumentId(document.id)
-            document.commentConversations.forEachIndexed { conversationPosition, conversation ->
-                conversation.comments.forEachIndexed { commentPosition, comment ->
+            document.commentConversations.forEach { (conversationId, comments) ->
+                comments.forEachIndexed { commentPosition, comment ->
                     commentQueries?.insert(
                         comment.id,
-                        conversation.id,
+                        conversationId,
                         document.id,
-                        conversationPosition.toLong(),
                         commentPosition.toLong(),
                         comment.text,
                     )
@@ -229,16 +227,11 @@ class DocumentSqlDao(
     suspend fun loadDocumentWithContentByIds(
         id: List<String>,
         workspaceId: String,
-    ): List<Document> {
-        val rows = documentQueries?.selectWithContentByIds(id, workspaceId)
+    ): List<Document> =
+        documentQueries?.selectWithContentByIds(id, workspaceId)
             ?.awaitAsList()
-            ?: return emptyList()
-        val commentsByDocumentId =
-            loadCommentConversationsByDocumentIds(rows.map { it.id }.distinct())
-
-        return rows
-            .groupBy { it.id }
-            .mapNotNull { (documentId, content) ->
+            ?.groupBy { it.id }
+            ?.mapNotNull { (documentId, content) ->
                 content.firstOrNull()?.let { document ->
                     val innerContent = content.filter { innerContent ->
                         // Only include top-level steps (no parent_id)
@@ -292,7 +285,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
-                        commentConversations = commentsByDocumentId[documentId].orEmpty(),
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -309,8 +302,7 @@ class DocumentSqlDao(
                         deleted = document.deleted == 1L
                     )
                 }
-            }
-    }
+            } ?: emptyList()
 
     suspend fun loadDocumentsWithContentByWorkspaceId(
         orderBy: String,
@@ -657,17 +649,12 @@ class DocumentSqlDao(
      */
     suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
         val queries = documentQueries ?: return
-        val ownedIds = queries.selectIdsByIdsAndWorkspace(ids, workspaceId)
-            .awaitAsList()
-            .toSet()
 
-        if (ownedIds.isEmpty()) return
-
-        // Use transaction from documentQueries (all queries share the same driver).
+        // Keep workspace ownership checks inside the transaction that removes child rows.
         queries.transaction {
-            commentQueries?.deleteByDocumentIds(ownedIds)
-            storyStepQueries?.deleteByDocumentIds(ownedIds)
-            queries.hardDeleteByIds(ownedIds, workspaceId)
+            commentQueries?.deleteByDocumentIdsForWorkspace(ids, workspaceId)
+            storyStepQueries?.deleteByDocumentIdsForWorkspace(ids, workspaceId)
+            queries.hardDeleteByIds(ids, workspaceId)
         }
     }
 
@@ -1042,59 +1029,22 @@ class DocumentSqlDao(
         storyStepQueries?.updateUrl(url, id)
     }
 
-    private suspend fun loadCommentConversationsByDocumentIds(
-        documentIds: List<String>
-    ): Map<String, List<CommentConversation>> =
-        if (documentIds.isEmpty()) {
-            emptyMap()
-        } else {
-            commentQueries
-                ?.selectByDocumentIds(documentIds)
-                ?.awaitAsList()
-                ?.groupBy { entity -> entity.document_id }
-                ?.mapValues { (_, documentComments) ->
-                    documentComments
-                        .groupBy { entity -> entity.conversation_id }
-                        .values
-                        .sortedBy { entities -> entities.minOf { it.conversation_position } }
-                        .map { entities ->
-                            CommentConversation(
-                                id = entities.first().conversation_id,
-                                comments = entities
-                                    .sortedBy { entity -> entity.comment_position }
-                                    .map { entity ->
-                                        Comment(
-                                            id = entity.id,
-                                            text = entity.text,
-                                        )
-                                    },
-                            )
-                        }
-                }
-                ?: emptyMap()
-        }
-
-    private suspend fun loadCommentConversations(documentId: String): List<CommentConversation> =
+    private suspend fun loadCommentConversations(
+        documentId: String,
+    ): Map<String, List<Comment>> =
         commentQueries
             ?.selectByDocumentId(documentId)
             ?.awaitAsList()
             ?.groupBy { entity -> entity.conversation_id }
-            ?.values
-            ?.sortedBy { entities -> entities.minOf { it.conversation_position } }
-            ?.map { entities ->
-                CommentConversation(
-                    id = entities.first().conversation_id,
-                    comments = entities
-                        .sortedBy { entity -> entity.comment_position }
-                        .map { entity ->
-                        Comment(
-                            id = entity.id,
-                            text = entity.text,
-                        )
-                    },
-                )
+            ?.mapValues { (_, entities) ->
+                entities.map { entity ->
+                    Comment(
+                        id = entity.id,
+                        text = entity.text,
+                    )
+                }
             }
-            ?: emptyList()
+            ?: emptyMap()
 
     suspend fun queryUnsyncedImagesSteps(): List<StoryStep> {
         return storyStepQueries?.selectUnSyncedSteps()

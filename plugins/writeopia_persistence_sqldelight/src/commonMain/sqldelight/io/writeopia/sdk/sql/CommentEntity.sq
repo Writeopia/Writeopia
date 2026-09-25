@@ -2,42 +2,25 @@ CREATE TABLE commentEntity (
   id TEXT PRIMARY KEY,
   conversation_id TEXT NOT NULL,
   document_id TEXT NOT NULL,
-  conversation_position INTEGER NOT NULL,
   comment_position INTEGER NOT NULL,
   text TEXT NOT NULL
 );
-
-CREATE INDEX commentEntity_document_id_index ON commentEntity(document_id);
 
 selectByDocumentId:
 SELECT *
 FROM commentEntity
 WHERE document_id = ?
-ORDER BY conversation_position, comment_position;
-
-selectByDocumentIds:
-SELECT *
-FROM commentEntity
-WHERE document_id IN ?
-ORDER BY document_id, conversation_position, comment_position;
+ORDER BY conversation_id, comment_position;
 
 insert:
 INSERT INTO commentEntity(
   id,
   conversation_id,
   document_id,
-  conversation_position,
   comment_position,
   text
 )
-VALUES (?, ?, ?, ?, ?, ?)
-ON CONFLICT(id) DO
-UPDATE SET
-  conversation_id = excluded.conversation_id,
-  document_id = excluded.document_id,
-  conversation_position = excluded.conversation_position,
-  comment_position = excluded.comment_position,
-  text = excluded.text;
+VALUES (?, ?, ?, ?, ?);
 
 deleteByDocumentId:
 DELETE FROM commentEntity
@@ -46,3 +29,11 @@ WHERE document_id = ?;
 deleteByDocumentIds:
 DELETE FROM commentEntity
 WHERE document_id IN ?;
+
+deleteByDocumentIdsForWorkspace:
+DELETE FROM commentEntity
+WHERE document_id IN (
+  SELECT id
+  FROM documentEntity
+  WHERE id IN ? AND workspace_id = ?
+);
