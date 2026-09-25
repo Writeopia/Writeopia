@@ -4,6 +4,7 @@ package io.writeopia.sdk.persistence.dao.room
 
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.info
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.link.DocumentLink
 import io.writeopia.sdk.models.story.StoryStep
@@ -148,14 +149,16 @@ class RoomDocumentRepository(
             }
 
     override suspend fun saveDocument(document: Document) {
-        val storySteps = document.content.toEntity(document.id)
-        val comments = document.commentConversations.toCommentEntities(document.id)
+        saveDocumentMetadata(document)
 
-        documentEntityDao.saveDocumentWithContent(
-            document = document.toEntity(),
-            storySteps = storySteps,
-            comments = comments,
-        )
+        document.content.toEntity(document.id).let { data ->
+            storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
+            storyUnitEntityDao?.insertStoryUnits(*data.toTypedArray())
+        }
+
+        val comments = document.commentConversations.toCommentEntities(document.id)
+        commentEntityDao.deleteByDocumentId(document.id)
+        commentEntityDao.insertComments(*comments.toTypedArray())
     }
 
     override suspend fun saveDocumentMetadata(document: Document) {
@@ -186,7 +189,13 @@ class RoomDocumentRepository(
     }
 
     override suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
-        documentEntityDao.hardDeleteDocumentsWithContentByIds(ids.toList(), workspaceId)
+        val ownedIds = documentEntityDao.loadDocumentByIds(ids.toList())
+            .filter { document -> document.workspaceId == workspaceId }
+            .map { document -> document.id }
+
+        commentEntityDao.deleteByDocumentIds(ownedIds)
+        storyUnitEntityDao?.deleteByDocumentIds(ownedIds)
+        documentEntityDao.hardDeleteDocumentByIds(ownedIds, workspaceId)
     }
 
     override suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document> =
@@ -217,7 +226,13 @@ class RoomDocumentRepository(
     }
 
     override suspend fun deleteByWorkspace(userId: String) {
-        documentEntityDao.purgeDocumentsWithContentByWorkspace(userId)
+        val documentIds = documentEntityDao.loadAllDocuments()
+            .filter { document -> document.workspaceId == userId }
+            .map { document -> document.id }
+
+        commentEntityDao.deleteByDocumentIds(documentIds)
+        storyUnitEntityDao?.deleteByDocumentIds(documentIds)
+        documentEntityDao.purgeDocumentsByUserId(userId)
     }
 
     override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
@@ -269,11 +284,12 @@ class RoomDocumentRepository(
                 entity.toModel()
             }
 
-    private suspend fun loadCommentConversations(documentId: String) =
+    private suspend fun loadCommentConversations(
+        documentId: String,
+    ): Map<String, List<Comment>> =
         commentEntityDao
-            ?.loadByDocumentId(documentId)
-            ?.toCommentConversations()
-            ?: emptyList()
+            .loadByDocumentId(documentId)
+            .toCommentConversations()
 
     private suspend fun setFavorite(ids: Set<String>, workspaceId: String, isFavorite: Boolean) {
         ids.mapNotNull { id ->

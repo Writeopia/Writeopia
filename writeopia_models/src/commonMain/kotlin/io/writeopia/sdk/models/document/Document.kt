@@ -2,7 +2,7 @@
 
 package io.writeopia.sdk.models.document
 
-import io.writeopia.sdk.models.comment.CommentConversation
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import kotlin.time.ExperimentalTime
@@ -22,5 +22,5 @@ data class Document(
     val isLocked: Boolean = false,
     val deleted: Boolean = false,
     val published: Boolean = false,
-    val commentConversations: List<CommentConversation> = emptyList(),
+    val commentConversations: Map<String, List<Comment>> = emptyMap(),
 ) : MenuItem

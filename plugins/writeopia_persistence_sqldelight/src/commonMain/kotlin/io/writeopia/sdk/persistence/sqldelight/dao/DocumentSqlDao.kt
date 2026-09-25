@@ -5,7 +5,6 @@ package io.writeopia.sdk.persistence.sqldelight.dao
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import io.writeopia.sdk.models.comment.Comment
-import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.link.DocumentLink
@@ -81,13 +80,12 @@ class DocumentSqlDao(
             }
 
             commentQueries?.deleteByDocumentId(document.id)
-            document.commentConversations.forEachIndexed { conversationPosition, conversation ->
-                conversation.comments.forEachIndexed { commentPosition, comment ->
+            document.commentConversations.forEach { (conversationId, comments) ->
+                comments.forEachIndexed { commentPosition, comment ->
                     commentQueries?.insert(
                         comment.id,
-                        conversation.id,
+                        conversationId,
                         document.id,
-                        conversationPosition.toLong(),
                         commentPosition.toLong(),
                         comment.text,
                     )
@@ -655,8 +653,6 @@ class DocumentSqlDao(
             .awaitAsList()
             .toSet()
 
-        if (ownedIds.isEmpty()) return
-
         // Use transaction from documentQueries (all queries share the same driver).
         queries.transaction {
             commentQueries?.deleteByDocumentIds(ownedIds)
@@ -1036,27 +1032,22 @@ class DocumentSqlDao(
         storyStepQueries?.updateUrl(url, id)
     }
 
-    private suspend fun loadCommentConversations(documentId: String): List<CommentConversation> =
+    private suspend fun loadCommentConversations(
+        documentId: String,
+    ): Map<String, List<Comment>> =
         commentQueries
             ?.selectByDocumentId(documentId)
             ?.awaitAsList()
             ?.groupBy { entity -> entity.conversation_id }
-            ?.values
-            ?.sortedBy { entities -> entities.minOf { it.conversation_position } }
-            ?.map { entities ->
-                CommentConversation(
-                    id = entities.first().conversation_id,
-                    comments = entities
-                        .sortedBy { entity -> entity.comment_position }
-                        .map { entity ->
-                        Comment(
-                            id = entity.id,
-                            text = entity.text,
-                        )
-                    },
-                )
+            ?.mapValues { (_, entities) ->
+                entities.map { entity ->
+                    Comment(
+                        id = entity.id,
+                        text = entity.text,
+                    )
+                }
             }
-            ?: emptyList()
+            ?: emptyMap()
 
     suspend fun queryUnsyncedImagesSteps(): List<StoryStep> {
         return storyStepQueries?.selectUnSyncedSteps()

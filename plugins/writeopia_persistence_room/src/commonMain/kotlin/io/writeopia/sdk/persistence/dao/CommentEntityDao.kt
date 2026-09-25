@@ -15,7 +15,7 @@ interface CommentEntityDao {
 
     @Query(
         "SELECT * FROM $COMMENT_ENTITY WHERE document_id = :documentId " +
-            "ORDER BY conversation_position, comment_position"
+            "ORDER BY conversation_id, comment_position"
     )
     suspend fun loadByDocumentId(documentId: String): List<CommentEntity>
 

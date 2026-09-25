@@ -11,7 +11,6 @@ data class CommentEntity(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "conversation_id") val conversationId: String,
     @ColumnInfo(name = "document_id") val documentId: String,
-    @ColumnInfo(name = "conversation_position") val conversationPosition: Int,
     @ColumnInfo(name = "comment_position") val commentPosition: Int,
     @ColumnInfo(name = "text") val text: String,
 )

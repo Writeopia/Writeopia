@@ -7,7 +7,6 @@ import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.writeopia.libraries.dbtests.DocumentRepositoryTests
 import io.writeopia.sdk.models.comment.Comment
-import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.span.Span
@@ -218,13 +217,10 @@ class SqlDelightDocumentRepositoryTest {
                     dbPosition = 0.0,
                 )
             ),
-            commentConversations = listOf(
-                CommentConversation(
-                    id = conversationId,
-                    comments = listOf(
-                        Comment(id = "comment-1", text = "First"),
-                        Comment(id = "comment-2", text = "Second"),
-                    )
+            commentConversations = mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-1", text = "First"),
+                    Comment(id = "comment-2", text = "Second"),
                 )
             ),
             createdAt = now,
@@ -263,10 +259,9 @@ class SqlDelightDocumentRepositoryTest {
         val now = Clock.System.now()
         val document = Document(
             id = "document-to-delete",
-            commentConversations = listOf(
-                CommentConversation(
-                    id = "conversation-delete",
-                    comments = listOf(Comment(id = "comment-delete", text = "Delete me"))
+            commentConversations = mapOf(
+                "conversation-delete" to listOf(
+                    Comment(id = "comment-delete", text = "Delete me")
                 )
             ),
             createdAt = now,
@@ -278,10 +273,9 @@ class SqlDelightDocumentRepositoryTest {
 
         val retainedDocument = Document(
             id = "document-to-keep",
-            commentConversations = listOf(
-                CommentConversation(
-                    id = "conversation-keep",
-                    comments = listOf(Comment(id = "comment-keep", text = "Keep me"))
+            commentConversations = mapOf(
+                "conversation-keep" to listOf(
+                    Comment(id = "comment-keep", text = "Keep me")
                 )
             ),
             createdAt = now,
