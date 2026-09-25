@@ -44,6 +44,7 @@ class NotesUseCaseIntegrationTest {
             database.documentDao(),
             database.storyUnitDao(),
             database.commentDao(),
+            database,
         )
         folderRepository = RoomFolderRepository(database.folderRoomDao())
 

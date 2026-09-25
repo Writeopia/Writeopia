@@ -228,8 +228,8 @@ class ContentHandler(
         val carryOverTags = storyStep.tags.filterTo(mutableSetOf()) { it.tag.mustCarryOver() }
         val mutable = currentStory.toSortedMutableMap()
         val split = storyStep.text?.split("\n")
-        val splitSpans = storyStep.text
-            ?.let { text -> splitSpansByLines(text, storyStep.spans) }
+        val splitSpans = split
+            ?.let { lines -> splitSpansByLines(lines, storyStep.spans) }
             ?: listOf(storyStep.spans)
 
         val next = storyStep.nextPosition
@@ -373,12 +373,12 @@ class ContentHandler(
     }
 
     private fun splitSpansByLines(
-        text: String,
+        lines: List<String>,
         spans: Set<SpanInfo>
     ): List<Set<SpanInfo>> {
         var lineStart = 0
 
-        return text.split("\n").map { line ->
+        return lines.map { line ->
             val lineEnd = lineStart + line.length
             val lineSpans = spans.mapNotNullTo(mutableSetOf()) { span ->
                 val overlapStart = maxOf(span.start, lineStart)
@@ -499,7 +499,7 @@ class ContentHandler(
 
                 val updated = previous.copy(
                     text = previousText + deletedText,
-                    spans = SpansHandler.normalizeSpans(previous.spans + shiftedSpans),
+                    spans = previous.spans + shiftedSpans,
                     localId = GenerateId.generate(),
                     nextPosition = nextPos
                 )

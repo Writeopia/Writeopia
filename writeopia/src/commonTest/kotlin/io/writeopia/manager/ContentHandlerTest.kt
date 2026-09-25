@@ -230,7 +230,7 @@ class ContentHandlerTest {
     }
 
     @Test
-    fun `erasing a line should rejoin adjacent parts of the same comment`() {
+    fun `erasing a line should preserve adjacent parts of the same comment`() {
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
         val conversationId = "conversation-1"
         val first = StoryStep(
@@ -256,7 +256,10 @@ class ContentHandlerTest {
         )
 
         assertEquals(
-            setOf(SpanInfo.create(0, 10, Span.COMMENT, conversationId)),
+            setOf(
+                SpanInfo.create(0, 5, Span.COMMENT, conversationId),
+                SpanInfo.create(5, 10, Span.COMMENT, conversationId),
+            ),
             newState.stories.getValue(0.0).spans,
         )
     }
