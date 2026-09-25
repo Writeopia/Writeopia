@@ -17,7 +17,6 @@ import io.writeopia.api.core.workspaces.service.WorkspaceService
 import io.writeopia.api.documents.documents.TutorialsService
 import io.writeopia.connection.logger
 import io.writeopia.sql.WriteopiaDbBackend
-import kotlinx.coroutines.runBlocking
 
 fun Application.configureRouting(
     writeopiaDb: WriteopiaDbBackend?,
