@@ -72,9 +72,8 @@ object Spans {
             selectionSize > 0 -> TextEdit(
                 start = selectionStart,
                 end = selectionEnd,
-                insertedSize = (
-                    newText.length - (oldText.length - selectionSize)
-                    ).coerceAtLeast(0),
+                insertedSize =
+                    (newText.length - (oldText.length - selectionSize)).coerceAtLeast(0),
             )
 
             sizeDifference > 0 -> TextEdit(
