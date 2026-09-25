@@ -18,6 +18,7 @@ import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.ManageUserRequest
+import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.insertUser
@@ -266,8 +267,8 @@ class AuthIntegrationTest {
             username = username,
             email = email,
             password = "password",
+            status = UserStatus.ACTIVE,
             salt = "salt",
-            enabled = true,
         )
 
         // Both match
@@ -330,7 +331,9 @@ class AuthIntegrationTest {
             }
         }
 
-        assertEquals(HttpStatusCode.OK, response2.status)
+        // Starts the account-deletion saga rather than deleting synchronously - see
+        // AccountDeletionService.requestDeletion.
+        assertEquals(HttpStatusCode.Accepted, response2.status)
     }
 
     @Test

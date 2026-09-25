@@ -5,6 +5,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import io.writeopia.api.media.routing.accountDeletionEventsRoute
 import io.writeopia.api.media.routing.mediaRoute
 
 fun Application.configureRouting(debugMode: Boolean = false) {
@@ -20,6 +21,9 @@ fun Application.configureRouting(debugMode: Boolean = false) {
         }
 
         mediaRoute(debugMode)
+
+        // Account-deletion saga: internal Pub/Sub-push endpoint.
+        accountDeletionEventsRoute(debugMode)
 
         get {
             call.respondText("Writeopia Media Service")

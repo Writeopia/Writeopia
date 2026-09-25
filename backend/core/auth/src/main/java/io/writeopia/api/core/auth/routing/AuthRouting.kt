@@ -13,16 +13,14 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
-import io.writeopia.api.core.auth.hash.HashUtils
+import io.writeopia.api.core.auth.models.LoginResult
+import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.toApi
-import io.writeopia.api.core.auth.repository.deleteUserById
-import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
-import io.writeopia.api.core.auth.repository.getUserByEmail
-import io.writeopia.api.core.auth.repository.getUserByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
+import io.writeopia.api.core.auth.service.AccountDeletionService
 import io.writeopia.api.core.auth.service.AuthService
 import io.writeopia.api.core.auth.service.EmailService
 import io.writeopia.api.core.auth.service.RefreshTokenService
@@ -46,65 +44,36 @@ import java.sql.SQLException
 
 fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
     post("/api/auth/login") {
-        try {
-            val credentials = call.receive<LoginRequest>()
-            val identifier = credentials.identifier.trim()
-            val lookupIdentifier = if (identifier.contains('@')) identifier.lowercase() else identifier
-            // Always get user by email or username first to check if they exist but are unconfirmed
-            val user = writeopiaDb.getUserByUsernameOrEmail(lookupIdentifier)
+        val credentials = call.receive<LoginRequest>()
 
-            // Equalize verification timing against unknown identifiers
-            val hash = user?.password ?: HashUtils.DUMMY_HASH_BASE64
-            val salt = user?.salt ?: HashUtils.DUMMY_SALT_BASE64
-
-            val isVerified = HashUtils.verifyPassword(
-                inputPassword = credentials.password,
-                storedHashBase64 = hash,
-                storedSaltBase64 = salt
-            )
-            
-            val invalidCredentials = user == null || !isVerified
-            
-            if (invalidCredentials) {
-                call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
-                return@post
-            } 
-
-            val requiresEmailConfirmation = !user.enabled && !debugMode
-
-            if (requiresEmailConfirmation) {
-                call.respond(
-                    HttpStatusCode.OK,
-                    AuthResponse(
-                        accessToken = null,
-                        refreshToken = null,
-                        writeopiaUser = user.toApi(),
-                        enabled = false
-                    )
-                )
-                return@post
-            } 
-
-            val tokenPair = with(RefreshTokenService) {
-                writeopiaDb.generateAndStoreTokens(user.id)
-            }
-            call.respond(
+        when (val result = AuthService.authenticate(writeopiaDb, credentials, debugMode)) {
+            is LoginResult.Success -> call.respond(
                 HttpStatusCode.OK,
                 AuthResponse(
-                    accessToken = tokenPair.accessToken,
-                    refreshToken = tokenPair.refreshToken,
-                    writeopiaUser = user.toApi(),
+                    accessToken = result.tokenPair.accessToken,
+                    refreshToken = result.tokenPair.refreshToken,
+                    writeopiaUser = result.user.toApi(),
                     enabled = true
                 )
             )
-            
-        } catch (e: ContentTransformationException) {
-            // broken/unparseable JSON
-            logger.warn("Login bad request")
-            call.respond(HttpStatusCode.BadRequest, "Invalid request body")
-        } catch (e: Exception) {
-            logger.error("Login internal error: ${e.message}", e)
-            call.respond(HttpStatusCode.InternalServerError, "Login failed")
+
+            is LoginResult.NotConfirmed -> call.respond(
+                HttpStatusCode.OK,
+                AuthResponse(
+                    accessToken = null,
+                    refreshToken = null,
+                    writeopiaUser = result.user.toApi(),
+                    enabled = false
+                )
+            )
+
+            // Forbidden (not Unauthorized) so the client can tell this apart from
+            // invalid credentials and route the user to the account-deletion screen.
+            LoginResult.DeletionPending ->
+                call.respond(HttpStatusCode.Forbidden, "Account is being deleted")
+
+            LoginResult.InvalidCredentials ->
+                call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
         }
     }
 
@@ -190,7 +159,11 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             // Run user creation, confirmation code, workspace, and membership in one atomic transaction
             val wUser = writeopiaDb.transactionWithResult {
 
-                val user = AuthService.createUser(writeopiaDb, request, enabled = false)
+                val user = AuthService.createUser(
+                    writeopiaDb,
+                    request,
+                    status = UserStatus.EMAIL_CONFIRMATION_PENDING
+                )
 
                 writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
 
@@ -254,9 +227,15 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             return@delete
         }
 
-        val rowsAffected = writeopiaDb.deleteUserById(id = userId)
-        if (rowsAffected > 0) {
-            call.respond(HttpStatusCode.OK, DeleteAccountResponse(true))
+        // Starts the account-deletion saga rather than deleting synchronously: flips
+        // user_entity.status to DELETION_PENDING and inserts an outbox event (atomically),
+        // which Debezium picks up and publishes to account-deletion-requested. The actual
+        // user_entity row is deleted later, once documents/media both confirm their legs are
+        // done - see AccountDeletionService. Idempotent: a repeated call for a user who
+        // already has a deletion in flight returns the existing one, not an error.
+        val deletion = AccountDeletionService.requestDeletion(userId, writeopiaDb)
+        if (deletion != null) {
+            call.respond(HttpStatusCode.Accepted, DeleteAccountResponse(true))
         } else {
             call.respond(HttpStatusCode.NotFound, "User not found")
         }

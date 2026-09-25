@@ -167,6 +167,7 @@ fun NavGraphBuilder.authNavigation(
                     emailState = authMenuViewModel.email,
                     passwordState = authMenuViewModel.password,
                     loginState = authMenuViewModel.loginState,
+                    accountDeletionPending = authMenuViewModel.accountDeletionPending,
                     emailChanged = authMenuViewModel::emailChanged,
                     passwordChanged = authMenuViewModel::passwordChanged,
                     onLoginRequest = authMenuViewModel::onLoginRequest,
@@ -183,7 +184,8 @@ fun NavGraphBuilder.authNavigation(
                         } else {
                             navController.navigateToWorkspaceChoice()
                         }
-                    }
+                    },
+                    navigateToAccountDeletionPending = navController::navigateToAccountDeletionPending
                 )
             }
         }
@@ -353,4 +355,12 @@ fun NavController.navigateToForgotPasswordCode() {
 
 fun NavController.navigateToForgotPasswordNewPassword() {
     navigate(Destinations.FORGOT_PASSWORD_NEW_PASSWORD.id)
+}
+
+fun NavController.navigateToAccountDeletionPending() {
+    navigate(Destinations.ACCOUNT_DELETION_STARTED.id) {
+        popUpTo(graph.startDestinationId) {
+            inclusive = true
+        }
+    }
 }

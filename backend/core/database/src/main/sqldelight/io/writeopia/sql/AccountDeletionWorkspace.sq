@@ -1,0 +1,41 @@
+-- One row per (user, workspace) the documents module must act on for that user's account
+-- deletion. `action` is decided once, at enumeration time, based on the sole-admin check
+-- (DELETE_WORKSPACE if the user is the workspace's only admin, REMOVE_MEMBERSHIP otherwise)
+-- and never changes afterwards. `completed` drives resume-after-crash/redelivery: on a
+-- redelivered account-deletion-requested message, the documents module only re-processes
+-- rows where completed=FALSE instead of re-enumerating from scratch.
+CREATE TABLE account_deletion_workspace (
+  user_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  completed BOOLEAN NOT NULL DEFAULT FALSE,
+  completed_at BIGINT,
+  PRIMARY KEY (user_id, workspace_id)
+);
+
+CREATE INDEX idx_account_deletion_workspace_user_id ON account_deletion_workspace(user_id);
+
+-- ON CONFLICT DO NOTHING makes enumeration idempotent: a redelivered request that re-derives
+-- the same (user_id, workspace_id, action) set is a no-op for rows already inserted.
+insert:
+INSERT INTO account_deletion_workspace(user_id, workspace_id, action, completed, completed_at)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT (user_id, workspace_id) DO NOTHING;
+
+selectByUserId:
+SELECT * FROM account_deletion_workspace WHERE user_id = ?;
+
+selectIncompleteByUserId:
+SELECT * FROM account_deletion_workspace WHERE user_id = ? AND completed = FALSE;
+
+countIncompleteByUserId:
+SELECT COUNT(*) FROM account_deletion_workspace WHERE user_id = ? AND completed = FALSE;
+
+markCompleted:
+UPDATE account_deletion_workspace
+SET completed = TRUE, completed_at = ?
+WHERE user_id = ? AND workspace_id = ?;
+
+-- Test-only cleanup helper.
+deleteByUserId:
+DELETE FROM account_deletion_workspace WHERE user_id = ?;

@@ -61,6 +61,7 @@ class VerifyUserTest {
         } returns listOf(
             mockk {
                 every { workspace_id } returns "workspace456"
+                every { workspace_status } returns "ACTIVE"
             }
         )
 
@@ -166,6 +167,7 @@ class VerifyUserTest {
         } returns listOf(
             mockk {
                 every { workspace_id } returns "workspace456"
+                every { workspace_status } returns "ACTIVE"
             }
         )
 
@@ -236,6 +238,7 @@ class VerifyUserTest {
         } returns listOf(
             mockk {
                 every { workspace_id } returns "workspace456"
+                every { workspace_status } returns "ACTIVE"
             }
         )
 

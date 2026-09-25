@@ -26,11 +26,14 @@ tasks.withType<Zip> {
 }
 
 dependencies {
+    implementation(project(":plugins:writeopia_serialization"))
+
     // Core modules
     implementation(project(":backend:core:auth"))
     implementation(project(":backend:core:buckets"))
     implementation(project(":backend:core:connection"))
     implementation(project(":backend:core:models"))
+    implementation(project(":backend:core:pubsub"))
 
     // Ktor
     implementation(libs.ktor.server.cors)
@@ -47,4 +50,6 @@ dependencies {
     // Testing
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

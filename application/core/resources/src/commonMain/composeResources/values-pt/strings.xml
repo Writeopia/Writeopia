@@ -124,6 +124,8 @@
   <string name="are_you_sure">Tem certeza?</string>
   <string name="notes_will_be_deleted">Suas notas serão deletadas.</string>
   <string name="email_to_confirm">Escreva seu email para confirmar</string>
+  <string name="account_deletion_started_title">Exclusão de conta iniciada</string>
+  <string name="account_deletion_started_description">Iniciamos a exclusão da sua conta e de todas as suas notas. Isso pode levar alguns minutos. Você já pode sair com segurança.</string>
   <string name="dismiss">Fechar</string>
   <string name="confirm">Confirmar</string>
   <string name="download_model">Baixar modelo</string>

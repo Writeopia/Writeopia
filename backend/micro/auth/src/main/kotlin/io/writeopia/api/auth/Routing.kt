@@ -5,6 +5,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import io.writeopia.api.core.auth.routing.accountDeletionEventsRoute
 import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.cookieAuthRoute
@@ -63,6 +64,10 @@ fun Application.configureRouting(
             emailRoute(writeopiaDb)
 
             passwordResetRoute(writeopiaDb)
+
+            // Account-deletion saga: internal Pub/Sub-push + Cloud-Scheduler endpoints.
+            // Deliberately not mounted in the gateway (see accountDeletionEventsRoute's doc).
+            accountDeletionEventsRoute(writeopiaDb)
         }
 
         // Root endpoint

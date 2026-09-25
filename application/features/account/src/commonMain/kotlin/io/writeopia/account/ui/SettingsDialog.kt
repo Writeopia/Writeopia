@@ -105,6 +105,7 @@ fun SettingsDialog(
     workspaces: StateFlow<ResultData<List<Workspace>>>,
     workspaceToEdit: Flow<Workspace?>,
     logoutInProgress: StateFlow<Boolean>,
+    deleteAccountInProgress: StateFlow<Boolean>,
     onDismissRequest: () -> Unit,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
@@ -163,6 +164,7 @@ fun SettingsDialog(
                         showDeleteConfirmation = showDeleteConfirmation,
                         exportWorkspaceState = exportWorkspaceState,
                         logoutInProgress = logoutInProgress,
+                        deleteAccountInProgress = deleteAccountInProgress,
                         signIn = signIn,
                         changeWorkspace = changeWorkspace,
                         resetPassword = resetPassword,
@@ -414,6 +416,7 @@ private fun AccountScreen(
     showDeleteConfirmation: StateFlow<Boolean>,
     exportWorkspaceState: StateFlow<ResultData<Unit>>,
     logoutInProgress: StateFlow<Boolean>,
+    deleteAccountInProgress: StateFlow<Boolean>,
     signIn: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
@@ -538,7 +541,15 @@ private fun AccountScreen(
                 )
 
                 if (showDelete) {
-                    Dialog(onDismissRequest = dismissDeleteConfirm) {
+                    val isDeletingAccount by deleteAccountInProgress.collectAsState()
+
+                    Dialog(
+                        onDismissRequest = dismissDeleteConfirm,
+                        properties = DialogProperties(
+                            dismissOnBackPress = !isDeletingAccount,
+                            dismissOnClickOutside = !isDeletingAccount
+                        )
+                    ) {
                         Card(modifier = Modifier, shape = MaterialTheme.shapes.large) {
                             Column(
                                 modifier = Modifier.padding(
@@ -567,10 +578,13 @@ private fun AccountScreen(
 
                                 Spacer(modifier = Modifier.height(12.dp))
 
+                                var confirmEmailInput by remember { mutableStateOf("") }
+
                                 OutlinedTextField(
-                                    "",
-                                    onValueChange = {},
+                                    confirmEmailInput,
+                                    onValueChange = { confirmEmailInput = it },
                                     singleLine = true,
+                                    enabled = !isDeletingAccount,
                                     placeholder = {
                                         Text(WrStrings.email())
                                     }
@@ -582,6 +596,7 @@ private fun AccountScreen(
                                 ) {
                                     TextButton(
                                         onClick = dismissDeleteConfirm,
+                                        enabled = !isDeletingAccount,
                                         modifier = Modifier.padding(8.dp),
                                     ) {
                                         Text(WrStrings.dismiss())
@@ -591,9 +606,19 @@ private fun AccountScreen(
                                         onClick = {
                                             deleteAccount()
                                         },
+                                        enabled = !isDeletingAccount &&
+                                            confirmEmailInput.trim()
+                                                .equals(userOnline.email, ignoreCase = true),
                                         modifier = Modifier.padding(8.dp),
                                     ) {
-                                        Text(WrStrings.confirm())
+                                        if (isDeletingAccount) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(16.dp),
+                                                strokeWidth = 2.dp
+                                            )
+                                        } else {
+                                            Text(WrStrings.confirm())
+                                        }
                                     }
                                 }
                             }

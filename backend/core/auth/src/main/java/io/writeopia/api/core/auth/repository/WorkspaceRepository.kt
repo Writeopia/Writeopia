@@ -76,11 +76,14 @@ internal fun WriteopiaDbBackend.getWorkspacesByUserId(userId: String): List<Work
             )
         }
 
+// Excludes workspaces mid-account-deletion (status=DELETION_PENDING): once a workspace is
+// flipped to that status, no further writes (or membership checks that gate them) should
+// succeed, since the deletion saga is actively tearing it down.
 internal fun WriteopiaDbBackend.isUserInWorkspace(userId: String, workspaceId: String): Boolean =
     this.workspaceEntityQueries
         .getWorkspacesByUserId(userId)
         .executeAsList()
-        .any { entity -> entity.workspace_id == workspaceId }
+        .any { entity -> entity.workspace_id == workspaceId && entity.workspace_status != "DELETION_PENDING" }
 
 
 internal fun WriteopiaDbBackend.isUserAdminInWorkspace(
@@ -90,7 +93,7 @@ internal fun WriteopiaDbBackend.isUserAdminInWorkspace(
     this.workspaceEntityQueries
         .getWorkspacesByUserIdIfAdmin(userId)
         .executeAsList()
-        .any { entity -> entity.workspace_id == workspaceId }
+        .any { entity -> entity.workspace_id == workspaceId && entity.workspace_status != "DELETION_PENDING" }
 
 internal fun WriteopiaDbBackend.getUsersInWorkspace(workspaceId: String): List<WorkspaceUser> =
     this.workspaceToUserQueries
@@ -152,6 +155,14 @@ internal suspend fun WriteopiaDbBackend.removeUserFromWorkspace(
 
 fun WriteopiaDbBackend.changeWorkspaceName(workspaceId: String, newName: String) {
     this.workspaceEntityQueries.changeName(newName, workspaceId)
+}
+
+/** Idempotent: no-op if the workspace is already DELETION_PENDING. Returns true if this call changed it. */
+suspend fun WriteopiaDbBackend.setWorkspaceStatusDeletionPending(workspaceId: String): Boolean =
+    this.workspaceEntityQueries.setStatusDeletionPending(workspaceId).await() > 0
+
+fun WriteopiaDbBackend.deleteWorkspace(workspaceId: String) {
+    this.workspaceEntityQueries.delete(workspaceId)
 }
 
 fun WriteopiaDbBackend.changeWorkspaceRoleForUser(

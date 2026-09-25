@@ -6,10 +6,11 @@ CREATE TABLE user_entity (
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
-  enabled BOOLEAN NOT NULL,
   confirmation_code TEXT,
   confirmation_code_expiry BIGINT,
-  account_type TEXT NOT NULL DEFAULT 'FREE'
+  account_type TEXT NOT NULL DEFAULT 'FREE',
+  -- EMAIL_CONFIRMATION_PENDING | ACTIVE | DELETION_PENDING - see UserStatus in the app repo.
+  status TEXT NOT NULL DEFAULT 'EMAIL_CONFIRMATION_PENDING'
 );
 
 selectUserByEmail:
@@ -31,12 +32,6 @@ SELECT EXISTS(
   WHERE username = ? OR email = ?
 );
 
-selectEnabledUserByEmail:
-SELECT *
-FROM user_entity
-WHERE email = ? AND enabled = TRUE
-LIMIT 1;
-
 selectUserById:
 SELECT *
 FROM user_entity
@@ -44,10 +39,10 @@ WHERE id = ?
 LIMIT 1;
 
 insertUser:
-INSERT INTO user_entity(id, name, username, created_at, email, password, salt, enabled, confirmation_code, confirmation_code_expiry, account_type)
+INSERT INTO user_entity(id, name, username, created_at, email, password, salt, confirmation_code, confirmation_code_expiry, account_type, status)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
-UPDATE SET id=excluded.id, name=excluded.name, username=excluded.username, created_at=excluded.created_at, email=excluded.email, password=excluded.password, salt=excluded.salt, enabled=excluded.enabled, confirmation_code=excluded.confirmation_code, confirmation_code_expiry=excluded.confirmation_code_expiry, account_type=excluded.account_type;
+UPDATE SET id=excluded.id, name=excluded.name, username=excluded.username, created_at=excluded.created_at, email=excluded.email, password=excluded.password, salt=excluded.salt, confirmation_code=excluded.confirmation_code, confirmation_code_expiry=excluded.confirmation_code_expiry, account_type=excluded.account_type, status=excluded.status;
 
 deleteUser:
 DELETE
@@ -59,14 +54,26 @@ DELETE
 FROM user_entity
 WHERE email = ?;
 
+-- "Enable" = mark the account confirmed/usable. Named enableUserByEmail/disableUserByEmail
+-- (rather than e.g. setStatusActive) to match the admin routes and client API that already
+-- call these by name - see AdminRouting.kt.
 enableUserByEmail:
 UPDATE user_entity
-SET enabled = TRUE
+SET status = 'ACTIVE'
 WHERE email = ?;
+
+-- Atomically enables the account and clears its confirmation code in one statement, but only
+-- if it isn't pending deletion. Used by the email-confirmation flow so there's no window
+-- between checking the status and applying the update where a concurrent deletion could sneak
+-- in. Returns 0 rows affected if the account is DELETION_PENDING - see EmailRouting.kt.
+confirmEmailIfNotPendingDeletion:
+UPDATE user_entity
+SET status = 'ACTIVE', confirmation_code = NULL, confirmation_code_expiry = NULL
+WHERE email = ? AND status != 'DELETION_PENDING';
 
 disableUserByEmail:
 UPDATE user_entity
-SET enabled = FALSE
+SET status = 'EMAIL_CONFIRMATION_PENDING'
 WHERE email = ?;
 
 updateConfirmationCode:
@@ -88,7 +95,7 @@ LIMIT 1;
 searchUsersByEmail:
 SELECT id, name, email
 FROM user_entity
-WHERE email ILIKE '%' || ? || '%' AND enabled = TRUE
+WHERE email ILIKE '%' || ? || '%' AND status = 'ACTIVE'
 ORDER BY email ASC
 LIMIT ?
 OFFSET ?;
@@ -108,4 +115,16 @@ updatePassword:
 UPDATE user_entity
 SET password = ?, salt = ?
 WHERE id = ?;
+
+selectStatusById:
+SELECT status
+FROM user_entity
+WHERE id = ?
+LIMIT 1;
+
+-- Idempotent: a no-op UPDATE (0 rows affected) if the user is already DELETION_PENDING.
+setStatusPendingDeletion:
+UPDATE user_entity
+SET status = 'DELETION_PENDING'
+WHERE id = ? AND status != 'DELETION_PENDING';
 
