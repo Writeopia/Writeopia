@@ -156,11 +156,10 @@ object DocumentsService {
         return updatedFolder
     }
 
-    suspend fun upsertDocument(
+    fun upsertDocument(
         document: Document,
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend,
-        useAi: Boolean
     ): Document {
         val documentWithWorkspace = document.copy(
             workspaceId = workspaceId,
@@ -169,10 +168,6 @@ object DocumentsService {
         )
 
         writeopiaDb.saveDocument(documentWithWorkspace)
-
-        if (useAi) {
-            sendToAiHub(listOf(documentWithWorkspace), workspaceId)
-        }
 
         return documentWithWorkspace
     }
@@ -467,7 +462,7 @@ object DocumentsService {
             .map { ensureTitleInSync(it) }
     }
 
-    private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String): Boolean {
+    private fun sendToAiHub(documents: List<Document>, workspaceId: String): Boolean {
         val aiHubUrl = Urls.AI_HUB ?: return true
 
         return wrWebClient.post("$aiHubUrl/documents/") {
