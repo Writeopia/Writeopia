@@ -10,7 +10,7 @@ import io.writeopia.sdk.manager.UnsupportedCommentConversationsException
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.model.story.StoryState
-import io.writeopia.sdk.models.comment.CommentConversation
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
@@ -51,22 +51,22 @@ class OnUpdateDocumentTracker(
         saveOnStoryChanges(
             commentFreeDocumentEditionFlow,
             workspaceIdFlow,
-            MutableStateFlow(emptyList()),
+            MutableStateFlow(emptyMap()),
         )
     }
 
     override suspend fun saveOnStoryChanges(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
-        commentConversationsFlow: StateFlow<List<CommentConversation>>,
+        commentConversationsFlow: StateFlow<Map<String, List<Comment>>>,
     ) {
-        var previousCommentConversations: List<CommentConversation>? = null
+        var previousCommentConversations: Map<String, List<Comment>>? = null
 
         fun fullDocument(
             storyState: StoryState,
             documentInfo: DocumentInfo,
             workspaceId: String,
-            commentConversations: List<CommentConversation>,
+            commentConversations: Map<String, List<Comment>>,
         ): Document {
             val stories = storyState.stories.filter { (_, story) -> !story.ephemeral }
             val titleFromContent = stories.values
