@@ -43,7 +43,21 @@ class DocumentMerger {
             backendDocument
         }
 
-        return baseDocument.copy(content = mergedContent)
+        val commentConversations =
+            if (
+                baseDocument === backendDocument &&
+                backendDocument.commentConversations.isEmpty() &&
+                localDocument.commentConversations.isNotEmpty()
+            ) {
+                localDocument.commentConversations
+            } else {
+                baseDocument.commentConversations
+            }
+
+        return baseDocument.copy(
+            content = mergedContent,
+            commentConversations = commentConversations,
+        )
     }
 
     private fun mergeContent(
