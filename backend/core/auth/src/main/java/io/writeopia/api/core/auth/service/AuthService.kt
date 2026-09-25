@@ -5,7 +5,7 @@ import io.writeopia.api.core.auth.hash.toBase64
 import io.writeopia.api.core.auth.models.LoginResult
 import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.WriteopiaBeUser
-import io.writeopia.api.core.auth.repository.getUserByEmail
+import io.writeopia.api.core.auth.repository.getUserByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
 import io.writeopia.api.core.auth.repository.insertUser
 import io.writeopia.api.core.auth.repository.insertUserInWorkspace
@@ -21,7 +21,7 @@ import java.util.UUID
 
 object AuthService {
     /**
-     * Looks up the user by email, verifies the password and checks account status.
+     * Looks up the user by username or email, verifies the password and checks account status.
      * Does not produce an HTTP response - that's route-specific (tokens in body vs cookies).
      */
     fun authenticate(
@@ -29,16 +29,25 @@ object AuthService {
         credentials: LoginRequest,
         debugMode: Boolean = false
     ): LoginResult {
-        val user = writeopiaDb.getUserByEmail(credentials.email)
-            ?: return LoginResult.InvalidCredentials
+        val identifier = credentials.identifier.trim()
+        // Emails are stored lowercased (see registration); usernames are case-sensitive, so
+        // only normalize the case when the identifier looks like an email.
+        val lookupIdentifier = if (identifier.contains('@')) identifier.lowercase() else identifier
+        val user = writeopiaDb.getUserByUsernameOrEmail(lookupIdentifier)
+
+        // Equalize verification timing against unknown identifiers: always run the (expensive)
+        // hash comparison, falling back to a dummy hash/salt when there's no real user, so an
+        // unknown identifier can't be distinguished from a wrong password by response time.
+        val hash = user?.password ?: HashUtils.DUMMY_HASH_BASE64
+        val salt = user?.salt ?: HashUtils.DUMMY_SALT_BASE64
 
         val isVerified = HashUtils.verifyPassword(
             inputPassword = credentials.password,
-            storedHashBase64 = user.password,
-            storedSaltBase64 = user.salt
+            storedHashBase64 = hash,
+            storedSaltBase64 = salt
         )
 
-        if (!isVerified) {
+        if (user == null || !isVerified) {
             return LoginResult.InvalidCredentials
         }
 

@@ -40,27 +40,9 @@ fun WriteopiaDbBackend.getUserByUsernameOrEmail(identifier: String): WriteopiaBe
                 password = userEntity.password,
                 name = userEntity.name,
                 salt = userEntity.salt,
-                enabled = userEntity.enabled,
                 confirmationCode = userEntity.confirmation_code,
-                confirmationCodeExpiry = userEntity.confirmation_code_expiry
-            )
-        }
-
-fun WriteopiaDbBackend.getEnabledUserByEmail(email: String): WriteopiaBeUser? =
-    this.userEntityQueries
-        .selectEnabledUserByEmail(email)
-        .executeAsOneOrNull()
-        ?.let { userEntity ->
-            WriteopiaBeUser(
-                id = userEntity.id,
-                email = userEntity.email,
-                username = userEntity.username,
-                password = userEntity.password,
-                name = userEntity.name,
-                salt = userEntity.salt,
-                enabled = userEntity.enabled,
-                confirmationCode = userEntity.confirmation_code,
-                confirmationCodeExpiry = userEntity.confirmation_code_expiry
+                confirmationCodeExpiry = userEntity.confirmation_code_expiry,
+                status = UserStatus.fromString(userEntity.status)
             )
         }
 

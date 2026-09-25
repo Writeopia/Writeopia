@@ -16,8 +16,6 @@ import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.models.LoginResult
 import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.toApi
-import io.writeopia.api.core.auth.repository.getUserByEmail
-import io.writeopia.api.core.auth.repository.getUserByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getWorkspaceById
@@ -161,7 +159,11 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             // Run user creation, confirmation code, workspace, and membership in one atomic transaction
             val wUser = writeopiaDb.transactionWithResult {
 
-                val user = AuthService.createUser(writeopiaDb, request, enabled = false)
+                val user = AuthService.createUser(
+                    writeopiaDb,
+                    request,
+                    status = UserStatus.EMAIL_CONFIRMATION_PENDING
+                )
 
                 writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
 

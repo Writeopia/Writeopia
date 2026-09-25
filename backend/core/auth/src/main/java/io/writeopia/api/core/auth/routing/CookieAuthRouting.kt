@@ -11,8 +11,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.writeopia.api.core.auth.models.LoginResult
 import io.writeopia.api.core.auth.models.toApi
-import io.writeopia.api.core.auth.repository.getUserByEmail
-import io.writeopia.api.core.auth.repository.getUserByUsernameOrEmail
 import io.writeopia.api.core.auth.service.AuthService
 import io.writeopia.api.core.auth.service.RefreshTokenService
 import io.writeopia.api.core.auth.utils.JwtConfig
