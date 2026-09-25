@@ -154,6 +154,7 @@ import writeopia.application.core.resources.generated.resources.open_space_label
 import writeopia.application.core.resources.generated.resources.open_space_title
 import writeopia.application.core.resources.generated.resources.open_space_description
 import writeopia.application.core.resources.generated.resources.enter_arrow
+import writeopia.application.core.resources.generated.resources.switch_space
 import writeopia.application.core.resources.generated.resources.user_email
 import writeopia.application.core.resources.generated.resources.your_teams
 import writeopia.application.core.resources.generated.resources.drawing
@@ -621,6 +622,9 @@ object WrStrings {
 
     @Composable
     fun enterArrow() = stringResource(Res.string.enter_arrow)
+
+    @Composable
+    fun switchSpace() = stringResource(Res.string.switch_space)
 
     @Composable
     fun aiExplanation() = stringResource(Res.string.ai_explanation)

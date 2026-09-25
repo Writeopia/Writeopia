@@ -145,6 +145,7 @@
   <string name="open_space_title">Bring in the big brains.</string>
   <string name="open_space_description">Frontier models for the drafts that deserve them. Bring your own key, swap providers mid-document, never get locked to one vendor.</string>
   <string name="enter_arrow">Enter →</string>
+  <string name="switch_space">Switch space</string>
   <string name="ai_explanation">[Tab - accept; Esc - remove]</string>
   <string name="ai_model">AI Model</string>
   <string name="title">Title</string>

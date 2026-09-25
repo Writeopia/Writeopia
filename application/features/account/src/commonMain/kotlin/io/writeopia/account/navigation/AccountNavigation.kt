@@ -641,8 +641,10 @@ fun NavGraphBuilder.accountMenuNavigation(
                 resetExportState = accountMenuViewModel::resetExportState,
                 resetPassword = resetPassword,
                 logout = {
+                    // Resets the nav graph back to START_APP so the login-state
+                    // check re-runs and can land on the space-choice screen.
                     accountMenuViewModel.logout {
-                        navigateToAuthMenu()
+                        navigateToChooseWorkspace()
                     }
                 }
             )

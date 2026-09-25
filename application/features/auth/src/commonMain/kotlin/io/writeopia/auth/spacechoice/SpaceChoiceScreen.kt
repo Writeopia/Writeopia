@@ -1,5 +1,8 @@
 package io.writeopia.auth.spacechoice
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,23 +15,28 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,7 +52,21 @@ fun SpaceChoiceScreen(
     onOfflineSelected: () -> Unit,
     onOnlineSelected: () -> Unit,
 ) {
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+    var isPrivateHovered by remember { mutableStateOf(false) }
+    var isOpenHovered by remember { mutableStateOf(false) }
+
+    val screenBackground = WriteopiaTheme.colorScheme.globalBackground
+    val targetBackground = when {
+        isPrivateHovered -> lerp(screenBackground, Color.Black, 0.8f)
+        isOpenHovered -> lerp(screenBackground, Color.White, 0.3f)
+        else -> screenBackground
+    }
+    val animatedBackground by animateColorAsState(
+        targetValue = targetBackground,
+        animationSpec = tween(durationMillis = 200)
+    )
+
+    BoxWithConstraints(modifier = modifier.fillMaxSize().background(animatedBackground)) {
         val isWide = maxWidth > maxHeight
 
         Column(
@@ -52,7 +74,6 @@ fun SpaceChoiceScreen(
                 .align(Alignment.Center)
                 .widthIn(max = 1000.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
         ) {
             Text(
@@ -75,42 +96,52 @@ fun SpaceChoiceScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             if (isWide) {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     SpaceCard(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                         label = WrStrings.privateSpaceLabel(),
                         title = WrStrings.privateSpaceTitle(),
                         description = WrStrings.privateSpaceDescription(),
                         chips = OFFLINE_MODELS,
+                        onHoveredChange = { isPrivateHovered = it },
                         onClick = onOfflineSelected
                     )
 
                     SpaceCard(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                         label = WrStrings.openSpaceLabel(),
                         title = WrStrings.openSpaceTitle(),
                         description = WrStrings.openSpaceDescription(),
                         chips = ONLINE_MODELS,
+                        onHoveredChange = { isOpenHovered = it },
                         onClick = onOnlineSelected
                     )
                 }
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     SpaceCard(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
                         label = WrStrings.privateSpaceLabel(),
                         title = WrStrings.privateSpaceTitle(),
                         description = WrStrings.privateSpaceDescription(),
                         chips = OFFLINE_MODELS,
+                        onHoveredChange = { isPrivateHovered = it },
                         onClick = onOfflineSelected
                     )
 
                     SpaceCard(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
                         label = WrStrings.openSpaceLabel(),
                         title = WrStrings.openSpaceTitle(),
                         description = WrStrings.openSpaceDescription(),
                         chips = ONLINE_MODELS,
+                        onHoveredChange = { isOpenHovered = it },
                         onClick = onOnlineSelected
                     )
                 }
@@ -126,6 +157,7 @@ private fun SpaceCard(
     title: String,
     description: String,
     chips: List<String>,
+    onHoveredChange: (Boolean) -> Unit = {},
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -133,11 +165,20 @@ private fun SpaceCard(
     val shape = MaterialTheme.shapes.large
     val accentColor = MaterialTheme.colorScheme.primary
 
+    LaunchedEffect(isHovered) {
+        onHoveredChange(isHovered)
+    }
+
     val borderColor = if (isHovered) {
         accentColor
     } else {
         WriteopiaTheme.colorScheme.dividerColor
     }
+
+    val titleScale by animateFloatAsState(
+        targetValue = if (isHovered) 1.06f else 1f,
+        animationSpec = tween(durationMillis = 200)
+    )
 
     Column(
         modifier = modifier
@@ -164,7 +205,8 @@ private fun SpaceCard(
                 color = accentColor,
                 style = MaterialTheme.typography.labelMedium,
                 letterSpacing = 1.5.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.scale(titleScale)
             )
         }
 
@@ -201,7 +243,7 @@ private fun SpaceCard(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.weight(1f))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Text(

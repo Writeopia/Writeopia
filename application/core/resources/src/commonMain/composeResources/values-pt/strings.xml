@@ -139,6 +139,7 @@
   <string name="open_space_title">Traga os grandes modelos.</string>
   <string name="open_space_description">Modelos de ponta para os rascunhos que merecem. Use sua própria chave, troque de provedor no meio do documento, nunca fique preso a um só fornecedor.</string>
   <string name="enter_arrow">Entrar →</string>
+  <string name="switch_space">Trocar de espaço</string>
   <string name="ai_explanation">[Tab - aceitar; Esc - remover]</string>
   <string name="ai_model">Modelo IA</string>
   <string name="title">Título</string>

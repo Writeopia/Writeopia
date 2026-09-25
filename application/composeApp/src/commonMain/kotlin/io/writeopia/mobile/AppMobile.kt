@@ -208,6 +208,11 @@ fun AppMobile(
                             popUpTo(navController.graph.startDestinationId) { inclusive = true }
                         }
                     },
+                    navigateToSpaceChoice = {
+                        navController.navigate(Destinations.WORKSPACE_TYPE_CHOICE.id) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
+                    },
                     navigateToAccountDeletionStarted = {
                         navController.navigate(Destinations.ACCOUNT_DELETION_STARTED.id) {
                             popUpTo(navController.graph.startDestinationId) { inclusive = true }
@@ -219,7 +224,9 @@ fun AppMobile(
             composable(route = Destinations.ACCOUNT_DELETION_STARTED.id) {
                 AccountDeletionStartedScreen(
                     logout = {
-                        navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id) {
+                        // Resets the nav graph back to START_APP so the login-state
+                        // check re-runs and can land on the space-choice screen.
+                        navController.navigate(Destinations.START_APP.id) {
                             popUpTo(navController.graph.startDestinationId) { inclusive = true }
                         }
                     }
