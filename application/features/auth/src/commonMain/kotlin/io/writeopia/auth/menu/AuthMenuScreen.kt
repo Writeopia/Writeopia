@@ -225,11 +225,10 @@ private fun AuthMenuContentScreen(
                 shape = shape,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 singleLine = true,
-                placeholder = {
-                    Text(WrStrings.email())
+                label = {
+                    Text(WrStrings.emailOrUsername())
                 },
                 keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 ),
             )
@@ -271,7 +270,7 @@ private fun AuthMenuContentScreen(
                 } else {
                     PasswordVisualTransformation()
                 },
-                placeholder = {
+                label = {
                     Text(WrStrings.password())
                 },
                 trailingIcon = {

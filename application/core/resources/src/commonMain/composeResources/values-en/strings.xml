@@ -15,6 +15,7 @@
   <string name="last_updated">Last updated</string>
   <string name="last_created">Create</string>
   <string name="name">Name</string>
+  <string name="username">Username</string>
   <string name="add_note">Add note</string>
   <string name="back">Back</string>
   <string name="copy_note">Copy document</string>
@@ -29,6 +30,7 @@
   <string name="offline_workspace">Offline Workspace</string>
   <string name="disconnected">Disconnected</string>
   <string name="email">Email</string>
+  <string name="email_or_username">Email or username</string>
   <string name="password">Password</string>
   <string name="enter">Enter</string>
   <string name="content_description_visibility_on">Visible</string>

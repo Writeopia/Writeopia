@@ -62,7 +62,7 @@ class WorkspaceTutorialsTest {
                     workspaceName = "Initial Workspace",
                     name = "Test User",
                     email = email,
-                    username = email + "_user",
+                    username = email.substringBefore("@"),
                     password = password,
                 )
             )
@@ -136,7 +136,7 @@ class WorkspaceTutorialsTest {
                     workspaceName = "Initial Workspace",
                     name = "Test User",
                     email = email,
-                    username = email + "_user",
+                    username = email.substringBefore("@"),
                     password = password,
                 )
             )
@@ -226,7 +226,7 @@ class WorkspaceTutorialsTest {
                     workspaceName = "Initial Workspace",
                     name = "Test User",
                     email = email,
-                    username = email + "_user",
+                    username = email.substringBefore("@"),
                     password = password,
                 )
             )

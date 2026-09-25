@@ -18,6 +18,12 @@ FROM user_entity
 WHERE email = ?
 LIMIT 1;
 
+selectUserByUsernameOrEmail:
+SELECT *
+FROM user_entity
+WHERE username = ? OR email = ?
+LIMIT 1;
+
 userExistsByUsernameOrEmail:
 SELECT EXISTS(
   SELECT 1

@@ -165,13 +165,13 @@ class AuthMenuViewModel(
                         // Check if user is enabled (email confirmed)
                         if (!result.data.enabled) {
                             // User exists but email not confirmed
-                            authRepository.savePendingConfirmationEmail(_email.value)
+                            authRepository.savePendingConfirmationEmail(user.email)
                             _emailConfirmationRequired.value = true
                             result.map { true }
                         } else {
                             _emailConfirmationRequired.value = false
                             EnvUtils.getAdminKey()?.let { adminKey ->
-                                authApi.enableUser(_email.value, adminKey)
+                                authApi.enableUser(user.email, adminKey)
                             }
 
                             authRepository.unselectAllUsers()

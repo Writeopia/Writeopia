@@ -18,6 +18,7 @@ import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.deleteUserById
 import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
 import io.writeopia.api.core.auth.repository.getUserByEmail
+import io.writeopia.api.core.auth.repository.getUserByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.getWorkspaceById
@@ -47,53 +48,63 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     post("/api/auth/login") {
         try {
             val credentials = call.receive<LoginRequest>()
-            // Always get user by email first to check if they exist but are unconfirmed
-            val user = writeopiaDb.getUserByEmail(credentials.email)
+            val identifier = credentials.identifier.trim()
+            val lookupIdentifier = if (identifier.contains('@')) identifier.lowercase() else identifier
+            // Always get user by email or username first to check if they exist but are unconfirmed
+            val user = writeopiaDb.getUserByUsernameOrEmail(lookupIdentifier)
 
-            if (user != null) {
-                val hash = user.password
-                val salt = user.salt
+            // Equalize verification timing against unknown identifiers
+            val hash = user?.password ?: HashUtils.DUMMY_HASH_BASE64
+            val salt = user?.salt ?: HashUtils.DUMMY_SALT_BASE64
 
-                val isVerified = HashUtils.verifyPassword(
-                    inputPassword = credentials.password,
-                    storedHashBase64 = hash,
-                    storedSaltBase64 = salt
-                )
-
-                if (isVerified) {
-                    if (user.enabled || debugMode) {
-                        val tokenPair = with(RefreshTokenService) {
-                            writeopiaDb.generateAndStoreTokens(user.id)
-                        }
-                        call.respond(
-                            HttpStatusCode.OK,
-                            AuthResponse(
-                                accessToken = tokenPair.accessToken,
-                                refreshToken = tokenPair.refreshToken,
-                                writeopiaUser = user.toApi(),
-                                enabled = true
-                            )
-                        )
-                    } else {
-                        // User exists but email not confirmed
-                        call.respond(
-                            HttpStatusCode.OK,
-                            AuthResponse(
-                                accessToken = null,
-                                refreshToken = null,
-                                writeopiaUser = user.toApi(),
-                                enabled = false
-                            )
-                        )
-                    }
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
-                }
-            } else {
+            val isVerified = HashUtils.verifyPassword(
+                inputPassword = credentials.password,
+                storedHashBase64 = hash,
+                storedSaltBase64 = salt
+            )
+            
+            val invalidCredentials = user == null || !isVerified
+            
+            if (invalidCredentials) {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
+                return@post
+            } 
+
+            val requiresEmailConfirmation = !user.enabled && !debugMode
+
+            if (requiresEmailConfirmation) {
+                call.respond(
+                    HttpStatusCode.OK,
+                    AuthResponse(
+                        accessToken = null,
+                        refreshToken = null,
+                        writeopiaUser = user.toApi(),
+                        enabled = false
+                    )
+                )
+                return@post
+            } 
+
+            val tokenPair = with(RefreshTokenService) {
+                writeopiaDb.generateAndStoreTokens(user.id)
             }
+            call.respond(
+                HttpStatusCode.OK,
+                AuthResponse(
+                    accessToken = tokenPair.accessToken,
+                    refreshToken = tokenPair.refreshToken,
+                    writeopiaUser = user.toApi(),
+                    enabled = true
+                )
+            )
+            
+        } catch (e: ContentTransformationException) {
+            // broken/unparseable JSON
+            logger.warn("Login bad request")
+            call.respond(HttpStatusCode.BadRequest, "Invalid request body")
         } catch (e: Exception) {
-            throw e
+            logger.error("Login internal error: ${e.message}", e)
+            call.respond(HttpStatusCode.InternalServerError, "Login failed")
         }
     }
 
@@ -160,7 +171,11 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     post("/api/auth/register") {
         try {
             logger.info("register request received")
-            val request = call.receive<RegisterRequest>()
+            val rawRequest = call.receive<RegisterRequest>()
+            val request = rawRequest.copy(
+                email = rawRequest.email.trim().lowercase()
+            )
+            request.validate()
             // since we are not allowing email probing and we don't need user data in this case
             if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
                 logger.info("register request - user or workspace already exist")
@@ -174,11 +189,11 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
             // Run user creation, confirmation code, workspace, and membership in one atomic transaction
             val wUser = writeopiaDb.transactionWithResult {
-                
+
                 val user = AuthService.createUser(writeopiaDb, request, enabled = false)
 
                 writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
-                
+
                 WorkspaceService.createWorkspace(
                     workspaceId = workspaceId,
                     workspaceName = request.workspaceName,
@@ -212,6 +227,9 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                     emailConfirmationRequired = true
                 ),
             )
+        } catch (e: IllegalArgumentException) {
+            logger.warn("register request validation failed: ${e.message}")
+            call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
         } catch (e: Exception) {
             /*
             If we want to solve the concurrency issue between `.userExistsByUsernameOrEmail` and `.createUser`,
@@ -312,4 +330,26 @@ private fun Throwable.isUniqueViolation(): Boolean {
         current = current.cause
     }
     return false
+}
+
+private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+
+private fun RegisterRequest.validate() {
+    require(name.isNotBlank()) { "Name cannot be blank" }
+
+    require(workspaceName.isNotBlank()) { "Workspace name cannot be blank" }
+    require(workspaceName.length in 3..30) {
+        "Workspace name must be 3-30 characters"
+    }
+
+    require(username.length in 3..30) {
+        "Username must be 3-30 characters"
+    }
+    require(username.all { it.isLetterOrDigit() || it == '-' || it == '_' }) {
+        "Username can only contain letters, numbers, '-' and '_'"
+    }
+
+    require(password.length >= 8) { "Password must be at least 8 characters" }
+
+    require(EMAIL_REGEX.matches(email)) { "Invalid email address format" }
 }

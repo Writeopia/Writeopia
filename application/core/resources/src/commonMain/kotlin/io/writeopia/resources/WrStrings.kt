@@ -61,6 +61,7 @@ import writeopia.application.core.resources.generated.resources.update_check_fai
 import writeopia.application.core.resources.generated.resources.update_open_failed
 import writeopia.application.core.resources.generated.resources.download_local_ai
 import writeopia.application.core.resources.generated.resources.email
+import writeopia.application.core.resources.generated.resources.email_or_username
 import writeopia.application.core.resources.generated.resources.error_loading_teams
 import writeopia.application.core.resources.generated.resources.error_loading_workspaces
 import writeopia.application.core.resources.generated.resources.error_model_download
@@ -137,6 +138,7 @@ import writeopia.application.core.resources.generated.resources.title
 import writeopia.application.core.resources.generated.resources.type_new_password
 import writeopia.application.core.resources.generated.resources.update_available
 import writeopia.application.core.resources.generated.resources.url
+import writeopia.application.core.resources.generated.resources.username
 import writeopia.application.core.resources.generated.resources.version
 import writeopia.application.core.resources.generated.resources.workspaceName
 import writeopia.application.core.resources.generated.resources.you_are_offline
@@ -426,6 +428,9 @@ object WrStrings {
     fun name() = stringResource(Res.string.name)
 
     @Composable
+    fun username() = stringResource(Res.string.username)
+
+    @Composable
     fun font() = stringResource(Res.string.font)
 
     @Composable
@@ -532,6 +537,9 @@ object WrStrings {
 
     @Composable
     fun email() = stringResource(Res.string.email)
+
+    @Composable
+    fun emailOrUsername() = stringResource(Res.string.email_or_username)
 
     @Composable
     fun company() = stringResource(Res.string.company)
