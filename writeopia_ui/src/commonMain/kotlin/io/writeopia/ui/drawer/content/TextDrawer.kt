@@ -120,6 +120,10 @@ class TextDrawer(
             )
         }
 
+        var previousInputText by remember {
+            mutableStateOf(inputText)
+        }
+
         var textLayoutResult by remember {
             mutableStateOf<TextLayoutResult?>(null)
         }
@@ -141,7 +145,9 @@ class TextDrawer(
             if (selection != null && selection.fromEnd && textLayoutResult != null) {
                 val newRange = selection.toTextRange(step.text ?: "", textLayoutResult)
                 if (inputText.selection != newRange) {
-                    inputText = inputText.copy(selection = newRange)
+                    val updatedInputText = inputText.copy(selection = newRange)
+                    inputText = updatedInputText
+                    previousInputText = updatedInputText
                 }
             }
         }
@@ -254,15 +260,18 @@ class TextDrawer(
                         textLayoutResult = it
                     },
                     onValueChange = { value ->
+                        val previousValue = previousInputText
+                        previousInputText = value
+
                         val start = value.selection.start
                         val end = value.selection.end
-                        val previousSelection = inputText.selection
-                        val sizeDifference = value.text.length - inputText.text.length
+                        val previousSelection = previousValue.selection
+                        val sizeDifference = value.text.length - previousValue.text.length
 
-                        if (abs(sizeDifference) > 0 || value.text != inputText.text) {
+                        if (abs(sizeDifference) > 0 || value.text != previousValue.text) {
                             spans = Spans.recalculateSpans(
                                 spans = spans,
-                                oldText = inputText.text,
+                                oldText = previousValue.text,
                                 newText = value.text,
                                 oldSelectionStart = previousSelection.start,
                                 oldSelectionEnd = previousSelection.end,
@@ -378,7 +387,10 @@ class TextDrawer(
                     position = drawInfo.position,
                     lineBreakByContent = lineBreakByContent,
                     onTextEdit = onTextEdit,
-                    onInputTextChange = { inputText = it },
+                    onInputTextChange = {
+                        inputText = it
+                        previousInputText = it
+                    },
                     onDismiss = {
                         showSlashCommandPopup = false
                         slashStartPosition = -1
