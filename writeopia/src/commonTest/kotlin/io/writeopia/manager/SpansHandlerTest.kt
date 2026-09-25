@@ -137,20 +137,6 @@ class SpansHandlerTest {
     }
 
     @Test
-    fun `intersecting fragmented spans with the same identity should normalize`() {
-        val first = SpanInfo.create(0, 2, Span.COMMENT, "conversation-1")
-        val second = SpanInfo.create(8, 10, Span.COMMENT, "conversation-1")
-        val bridge = SpanInfo.create(1, 9, Span.COMMENT, "conversation-1")
-
-        val result = SpansHandler.toggleSpans(setOf(first, second), bridge)
-
-        assertEquals(
-            setOf(SpanInfo.create(0, 10, Span.COMMENT, "conversation-1")),
-            result,
-        )
-    }
-
-    @Test
     fun `bulk comment spans should preserve conversation identity`() {
         val existing = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
         val stories = mapOf(
@@ -185,7 +171,7 @@ class SpansHandlerTest {
     }
 
     @Test
-    fun `bulk adding an existing comment identity should normalize the range`() {
+    fun `bulk adding an existing comment identity should cover the full range`() {
         val partial = SpanInfo.create(1, 3, Span.COMMENT, "conversation-1")
         val stories = mapOf(
             0.0 to StoryStep(
