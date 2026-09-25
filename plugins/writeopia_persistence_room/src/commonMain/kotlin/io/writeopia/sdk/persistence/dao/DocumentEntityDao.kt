@@ -11,8 +11,6 @@ import io.writeopia.sdk.models.CREATED_AT
 import io.writeopia.sdk.models.DOCUMENT_ENTITY
 import io.writeopia.sdk.models.LAST_UPDATED_AT
 import io.writeopia.sdk.models.TITLE
-import io.writeopia.sdk.persistence.entity.comment.COMMENT_ENTITY
-import io.writeopia.sdk.persistence.entity.comment.CommentEntity
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
 import io.writeopia.sdk.persistence.entity.story.STORY_UNIT_ENTITY
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
@@ -221,61 +219,11 @@ interface DocumentEntityDao {
     @Query("DELETE FROM $STORY_UNIT_ENTITY WHERE $STORY_UNIT_ENTITY.document_id IN (:documentIds)")
     suspend fun hardDeleteStoryStepsByDocumentIds(documentIds: List<String>)
 
-    @Query("DELETE FROM $COMMENT_ENTITY WHERE document_id IN (:documentIds)")
-    suspend fun hardDeleteCommentsByDocumentIds(documentIds: List<String>)
-
-    @Query(
-        "SELECT id FROM $DOCUMENT_ENTITY " +
-            "WHERE id IN (:ids) AND workspace_id = :workspaceId"
-    )
-    suspend fun loadOwnedDocumentIds(ids: List<String>, workspaceId: String): List<String>
-
-    @Query("SELECT id FROM $DOCUMENT_ENTITY WHERE workspace_id = :workspaceId")
-    suspend fun loadDocumentIdsByWorkspace(workspaceId: String): List<String>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertStoryStepsForDocument(vararg storySteps: StoryStepEntity)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertCommentsForDocument(vararg comments: CommentEntity)
-
-    @Transaction
-    suspend fun saveDocumentWithContent(
-        document: DocumentEntity,
-        storySteps: List<StoryStepEntity>,
-        comments: List<CommentEntity>,
-    ) {
-        insertDocuments(document)
-        hardDeleteStoryStepsByDocumentIds(listOf(document.id))
-        if (storySteps.isNotEmpty()) {
-            insertStoryStepsForDocument(*storySteps.toTypedArray())
-        }
-
-        hardDeleteCommentsByDocumentIds(listOf(document.id))
-        if (comments.isNotEmpty()) {
-            insertCommentsForDocument(*comments.toTypedArray())
-        }
-    }
-
-    @Transaction
-    suspend fun purgeDocumentsWithContentByWorkspace(workspaceId: String) {
-        val documentIds = loadDocumentIdsByWorkspace(workspaceId)
-        if (documentIds.isNotEmpty()) {
-            hardDeleteCommentsByDocumentIds(documentIds)
-            hardDeleteStoryStepsByDocumentIds(documentIds)
-        }
-        purgeDocumentsByUserId(workspaceId)
-    }
-
-    // Atomic hard delete: removes only documents owned by the requested workspace.
+    // Atomic hard delete: removes both documents and their story steps in a single transaction (scoped to workspace)
     @Transaction
     suspend fun hardDeleteDocumentsWithContentByIds(ids: List<String>, workspaceId: String) {
-        val ownedIds = loadOwnedDocumentIds(ids, workspaceId)
-        if (ownedIds.isEmpty()) return
-
-        hardDeleteCommentsByDocumentIds(ownedIds)
-        hardDeleteStoryStepsByDocumentIds(ownedIds)
-        hardDeleteDocumentByIds(ownedIds, workspaceId)
+        hardDeleteStoryStepsByDocumentIds(ids)
+        hardDeleteDocumentByIds(ids, workspaceId)
     }
 
     // Get soft-deleted documents for a workspace (for syncing deletions to backend)

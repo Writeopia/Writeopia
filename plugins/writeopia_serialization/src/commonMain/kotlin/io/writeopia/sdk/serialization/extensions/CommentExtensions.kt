@@ -24,3 +24,16 @@ fun CommentConversationApi.toModel(): CommentConversation = CommentConversation(
     id = id,
     comments = comments.map { it.toModel() },
 )
+
+fun Map<String, List<Comment>>.toApi(): List<CommentConversationApi> =
+    map { (conversationId, comments) ->
+        CommentConversationApi(
+            id = conversationId,
+            comments = comments.map { comment -> comment.toApi() },
+        )
+    }
+
+fun Iterable<CommentConversationApi>.toCommentMap(): Map<String, List<Comment>> =
+    associate { conversation ->
+        conversation.id to conversation.comments.map { comment -> comment.toModel() }
+    }
