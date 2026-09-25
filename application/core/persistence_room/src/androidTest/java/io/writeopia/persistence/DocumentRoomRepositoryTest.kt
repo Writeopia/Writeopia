@@ -51,6 +51,7 @@ class DocumentRoomRepositoryTest {
             documentEntityDao,
             storyUnitEntityDao,
             commentEntityDao,
+            database,
         )
         documentRepositoryTests = DocumentRepositoryTests(documentRepository)
     }
