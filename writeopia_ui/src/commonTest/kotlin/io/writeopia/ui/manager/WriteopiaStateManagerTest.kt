@@ -2067,4 +2067,36 @@ class WriteopiaStateManagerTest {
 
         assertEquals(updatedComments, currentDocument.commentConversations)
     }
+
+    @Test
+    fun forceRestartClearsCommentConversations() = runTest {
+        val now = Clock.System.now()
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+
+        manager.loadDocument(
+            Document(
+                content = MapStoryData.singleMessage(),
+                commentConversations = mapOf(
+                    "conversation-1" to listOf(
+                        Comment(id = "comment-1", text = "Old comment")
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+        manager.newDocument(forceRestart = true)
+
+        val currentDocument = manager.currentDocument.filterNotNull().first()
+
+        assertTrue(currentDocument.commentConversations.isEmpty())
+    }
+
 }
