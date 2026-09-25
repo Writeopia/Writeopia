@@ -128,6 +128,11 @@ class DocumentRoomRepositoryTest {
     }
 
     @Test
+    fun commentIdCannotMoveBetweenDocuments() = runTest {
+        documentRepositoryTests.commentIdCannotMoveBetweenDocuments()
+    }
+
+    @Test
     fun hardDeleteRemovesComments() = runTest {
         val document = documentRepositoryTests.saveDocumentWithComments()
 
