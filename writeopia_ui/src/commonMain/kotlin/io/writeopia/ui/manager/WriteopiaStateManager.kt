@@ -390,7 +390,7 @@ class WriteopiaStateManager(
     }
 
     fun getDocument(): Document =
-        parseDocument(_documentInfo.value, _currentStory.value)
+        parseDocument(_documentInfo.value, _currentStory.value, _commentConversations.value)
 
     fun liveSync(sharedEditionManager: SharedEditionManager) {
         coroutineScope.launch(dispatcher) {
