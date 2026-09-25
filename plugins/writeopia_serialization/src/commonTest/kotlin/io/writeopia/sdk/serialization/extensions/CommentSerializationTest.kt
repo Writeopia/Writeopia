@@ -72,13 +72,10 @@ class CommentSerializationTest {
                     )
                 )
             ),
-            commentConversations = listOf(
-                CommentConversation(
-                    id = "conversation-1",
-                    comments = listOf(
-                        Comment(id = "comment-1", text = "First"),
-                        Comment(id = "comment-2", text = "Second")
-                    )
+            commentConversations = mapOf(
+                "conversation-1" to listOf(
+                    Comment(id = "comment-1", text = "First"),
+                    Comment(id = "comment-2", text = "Second")
                 )
             ),
             createdAt = Instant.fromEpochMilliseconds(1),
