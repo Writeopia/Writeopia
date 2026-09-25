@@ -4,24 +4,24 @@ import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.repository.KeychainAuthRepository
 import io.writeopia.auth.core.token.TokenManager
-import io.writeopia.di.AppConnectionInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sql.WriteopiaDb
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
 
 actual class AuthCoreInjectionNeo(
     private val writeopiaDb: WriteopiaDb? = WriteopiaDbInjector.singleton()?.database,
-    private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
 ) {
 
     private val authRepository: AuthRepository by lazy {
         KeychainAuthRepository(writeopiaDb)
     }
 
-    // Use getBaseUrl() to avoid triggering singleton creation before bearer handler is set
+    // WriteopiaConnectionInjector's client authenticates requests with whatever bearer
+    // token handler is current at request time, so it's safe to use here even before
+    // setupBearerTokenHandler() has run.
     private val authApi: AuthApi by lazy {
         AuthApi(
-            client = appConnectionInjection.provideHttpClient(),
+            client = WriteopiaConnectionInjector.singleton().httpClient(),
             baseUrl = WriteopiaConnectionInjector.getBaseUrl()
         )
     }

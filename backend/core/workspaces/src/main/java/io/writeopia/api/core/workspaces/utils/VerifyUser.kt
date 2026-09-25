@@ -1,10 +1,10 @@
-package io.writeopia.api.core.auth.utils
+package io.writeopia.api.core.workspaces.utils
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
 import io.ktor.server.routing.RoutingContext
-import io.writeopia.api.core.auth.repository.isUserAdminInWorkspace
-import io.writeopia.api.core.auth.repository.isUserInWorkspace
+import io.writeopia.api.core.workspaces.repository.isUserAdminInWorkspace
+import io.writeopia.api.core.workspaces.repository.isUserInWorkspace
 import io.writeopia.sql.WriteopiaDbBackend
 import org.slf4j.LoggerFactory
 

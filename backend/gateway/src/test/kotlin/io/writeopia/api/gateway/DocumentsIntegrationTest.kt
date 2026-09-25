@@ -1299,7 +1299,7 @@ class DocumentationIntegrationTests {
             }
 
             val client = defaultClient()
-            val email = "favorite_test_${Random.nextInt()}@test.com"
+            val email = "favorite_test_${Random.nextInt(10000)}@test.com"
             val password = "testpassword123&"
 
             // Register a user to get a consistent user ID
@@ -1310,7 +1310,7 @@ class DocumentationIntegrationTests {
                         workspaceName = "Test Workspace",
                         name = "Test User",
                         email = email,
-                        username = email + "_user",
+                        username = email.substringBefore("@"),
                         password = password,
                     )
                 )

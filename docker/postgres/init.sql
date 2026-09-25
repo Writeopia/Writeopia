@@ -53,10 +53,11 @@ CREATE TABLE user_entity (
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
   salt TEXT NOT NULL,
-  enabled BOOLEAN NOT NULL,
   confirmation_code TEXT,
   confirmation_code_expiry BIGINT,
-  account_type TEXT NOT NULL DEFAULT 'FREE'
+  account_type TEXT NOT NULL DEFAULT 'FREE',
+  -- EMAIL_CONFIRMATION_PENDING | ACTIVE | DELETION_PENDING - see UserStatus in the app repo.
+  status TEXT NOT NULL DEFAULT 'EMAIL_CONFIRMATION_PENDING'
 );
 
 CREATE TABLE refresh_token_entity (
@@ -79,7 +80,8 @@ CREATE TABLE workspace_entity (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   icon TEXT,
-  icon_tint INTEGER
+  icon_tint INTEGER,
+  status TEXT NOT NULL DEFAULT 'ACTIVE'
 );
 
 CREATE TABLE folder_entity (
@@ -132,6 +134,40 @@ CREATE TABLE workspace_tutorial_status (
   PRIMARY KEY(workspace_id, user_id)
 );
 
+-- Account-deletion saga: transactional outbox. See backend/core/database/.../OutboxEvent.sq
+-- and WriteopiaScripts2/db-migrations/account_deletion_saga/ for the Debezium wiring.
+CREATE TABLE outbox_event (
+  id TEXT PRIMARY KEY,
+  aggregate_type TEXT NOT NULL,
+  aggregate_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  created_at BIGINT NOT NULL
+);
+
+-- Account-deletion saga: one row per deletion request, keyed by user_id. See AccountDeletion.sq.
+CREATE TABLE account_deletion (
+  user_id TEXT PRIMARY KEY,
+  user_email TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  status TEXT NOT NULL,
+  requested_at BIGINT NOT NULL,
+  workspaces_completed_at BIGINT,
+  media_completed_at BIGINT,
+  completed_at BIGINT
+);
+
+-- Account-deletion saga: one row per (user, workspace). See AccountDeletionWorkspace.sq.
+CREATE TABLE account_deletion_workspace (
+  user_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  completed BOOLEAN NOT NULL DEFAULT FALSE,
+  completed_at BIGINT,
+  PRIMARY KEY (user_id, workspace_id)
+);
+
 CREATE TABLE ai_usage (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -154,3 +190,5 @@ CREATE INDEX idx_workspace_to_user_user_id ON workspace_to_user(user_id);
 CREATE INDEX idx_sync_event_workspace_id ON sync_event(workspace_id);
 CREATE INDEX idx_ai_usage_user_id ON ai_usage(user_id);
 CREATE INDEX idx_ai_usage_created_at ON ai_usage(created_at);
+CREATE INDEX idx_account_deletion_status ON account_deletion(status);
+CREATE INDEX idx_account_deletion_workspace_user_id ON account_deletion_workspace(user_id);

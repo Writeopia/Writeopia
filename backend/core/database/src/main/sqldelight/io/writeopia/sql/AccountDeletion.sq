@@ -1,0 +1,63 @@
+-- One row per account-deletion request, keyed directly by user_id (there is at most one
+-- deletion ever, per user - no separate generated id needed). Snapshots email/name because
+-- user_entity is hard deleted before the completion email fires (see
+-- AccountDeletionEventsRouting / EmailService). workspaces_completed_at / media_completed_at
+-- are set independently by the two legs of the saga (documents module, media module); status
+-- only flips to COMPLETED once both are set, via the guarded tryFinalize below.
+CREATE TABLE account_deletion (
+  user_id TEXT PRIMARY KEY,
+  user_email TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  status TEXT NOT NULL,
+  requested_at BIGINT NOT NULL,
+  workspaces_completed_at BIGINT,
+  media_completed_at BIGINT,
+  completed_at BIGINT
+);
+
+CREATE INDEX idx_account_deletion_status ON account_deletion(status);
+
+-- Idempotent and atomic: ON CONFLICT DO NOTHING means this affects a row ONLY on the first
+-- insert for a given user_id - a racing/repeated call affects 0 rows. The caller
+-- (AccountDeletionService.requestDeletion) reads the affected-row count directly off this
+-- query's QueryResult.value (no separate existence check, no try/catch needed) and only
+-- proceeds to insert the outbox event when it's exactly this call that created the row.
+insert:
+INSERT INTO account_deletion(user_id, user_email, user_name, status, requested_at, workspaces_completed_at, media_completed_at, completed_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (user_id) DO NOTHING;
+
+selectByUserId:
+SELECT * FROM account_deletion WHERE user_id = ? LIMIT 1;
+
+-- Idempotent: a no-op UPDATE (0 rows affected) if this leg was already marked complete,
+-- so redelivered Pub/Sub messages are harmless.
+setWorkspacesCompleted:
+UPDATE account_deletion
+SET workspaces_completed_at = ?
+WHERE user_id = ? AND workspaces_completed_at IS NULL;
+
+setMediaCompleted:
+UPDATE account_deletion
+SET media_completed_at = ?
+WHERE user_id = ? AND media_completed_at IS NULL;
+
+-- Guarded finalize: flips to COMPLETED only once, and only once both legs are done. Safe
+-- under concurrent callers (the two completion push endpoints racing) - the WHERE clause
+-- means at most one caller's UPDATE affects a row; the other affects zero and must no-op.
+tryFinalize:
+UPDATE account_deletion
+SET status = 'COMPLETED', completed_at = ?
+WHERE user_id = ? AND status != 'COMPLETED'
+  AND workspaces_completed_at IS NOT NULL AND media_completed_at IS NOT NULL;
+
+-- For the weekly reconciliation job: deletions requested more than the grace period ago
+-- that still haven't completed.
+selectStuck:
+SELECT * FROM account_deletion
+WHERE status != 'COMPLETED' AND requested_at < ?;
+
+-- Test-only cleanup helper (see also outbox_event.deleteByAggregateId,
+-- account_deletion_workspace.deleteByUserId).
+deleteByUserId:
+DELETE FROM account_deletion WHERE user_id = ?;

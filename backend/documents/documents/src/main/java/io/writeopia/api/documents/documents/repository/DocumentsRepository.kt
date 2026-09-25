@@ -22,7 +22,7 @@ private fun WriteopiaDbBackend.getDocumentDaoFn(): DocumentSqlBeDao =
         }
     }
 
-suspend fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
+fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
     val dao = getDocumentDaoFn()
     documents.forEach(dao::insertDocumentWithContent)
 }

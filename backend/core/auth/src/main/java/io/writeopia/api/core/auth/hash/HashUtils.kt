@@ -10,6 +10,10 @@ const val KEY_LENGTH = 512
 const val SALT_LENGTH = 16
 
 object HashUtils {
+    // Pre-computed dummy salt and hash used to equalize execution time for unknown identifiers
+    val DUMMY_SALT_BASE64: String = generateSalt().toBase64()
+    val DUMMY_HASH_BASE64: String = hashPassword("dummy-password-writeopia", DUMMY_SALT_BASE64.base64ToBytes()).toBase64()
+
     fun generateSalt(): ByteArray {
         val salt = ByteArray(SALT_LENGTH)
         SecureRandom().nextBytes(salt)

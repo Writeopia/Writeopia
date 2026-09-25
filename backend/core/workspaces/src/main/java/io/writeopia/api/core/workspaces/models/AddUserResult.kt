@@ -1,4 +1,4 @@
-package io.writeopia.api.core.auth.models
+package io.writeopia.api.core.workspaces.models
 
 enum class AddUserResult {
     SUCCESS,

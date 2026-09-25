@@ -58,6 +58,7 @@ firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = 
 google-cloud-bom = { module = "com.google.cloud:libraries-bom", version.ref = "googleCloudBom" }
 google-cloud-storage = { module = "com.google.cloud:google-cloud-storage" }
 google-cloud-run = { module = "com.google.cloud:google-cloud-run" }
+google-cloud-pubsub = { module = "com.google.cloud:google-cloud-pubsub" }
 google-genai = { module = "com.google.genai:google-genai", version.ref = "googleGenai" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }

@@ -32,9 +32,11 @@ dependencies {
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
     implementation(project(":backend:core:auth"))
+    implementation(project(":backend:core:workspaces"))
     implementation(project(":backend:core:models"))
     implementation(project(":backend:core:buckets"))
     implementation(project(":backend:core:genai_service"))
+    implementation(project(":backend:core:pubsub"))
 
     //
 
@@ -42,4 +44,11 @@ dependencies {
 
     implementation(libs.ktor.server.auth)
     implementation(libs.ktor.server.auth.jwt)
+
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.database.embedded.postgres)
+    testImplementation(libs.database.hikaricp)
+    testImplementation(libs.database.postgresql)
 }
