@@ -432,6 +432,7 @@ class WriteopiaStateManager(
 
         _documentInfo.value = documentInfo
         _currentStory.value = withNextPositions
+        _commentConversations.value = emptyMap()
     }
 
     /**
