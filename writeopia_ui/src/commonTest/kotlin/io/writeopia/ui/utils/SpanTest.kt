@@ -228,4 +228,59 @@ class SpanTest {
 
         assertTrue(result.isEmpty())
     }
+
+    @Test
+    fun `inserting at the end of bold should extend the span`() {
+        val bold = SpanInfo.create(1, 4, Span.BOLD)
+
+        val result = Spans.recalculateSpans(
+            spans = setOf(bold),
+            oldText = "abcdef",
+            newText = "abcdXef",
+            oldSelectionStart = 4,
+            oldSelectionEnd = 4,
+            newSelectionStart = 5,
+        )
+
+        assertEquals(
+            setOf(SpanInfo.create(1, 5, Span.BOLD)),
+            result,
+        )
+    }
+
+    @Test
+    fun `inserting into a zero length bold span should grow it`() {
+        val bold = SpanInfo.create(2, 2, Span.BOLD)
+
+        val result = Spans.recalculateSpans(
+            spans = setOf(bold),
+            oldText = "abcd",
+            newText = "abXcd",
+            oldSelectionStart = 2,
+            oldSelectionEnd = 2,
+            newSelectionStart = 3,
+        )
+
+        assertEquals(
+            setOf(SpanInfo.create(2, 3, Span.BOLD)),
+            result,
+        )
+    }
+
+    @Test
+    fun `inserting at the end of a comment should not extend the comment`() {
+        val comment = SpanInfo.create(1, 4, Span.COMMENT, "conversation-1")
+
+        val result = Spans.recalculateSpans(
+            spans = setOf(comment),
+            oldText = "abcdef",
+            newText = "abcdXef",
+            oldSelectionStart = 4,
+            oldSelectionEnd = 4,
+            newSelectionStart = 5,
+        )
+
+        assertEquals(setOf(comment), result)
+    }
+
 }
