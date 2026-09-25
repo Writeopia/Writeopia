@@ -14,8 +14,10 @@ import io.writeopia.api.core.auth.routing.jwksRouting
 import io.writeopia.api.core.auth.routing.passwordResetRoute
 import io.writeopia.api.core.workspaces.routing.workspaceRoute
 import io.writeopia.api.core.workspaces.service.WorkspaceService
+import io.writeopia.api.documents.documents.TutorialsService
 import io.writeopia.connection.logger
 import io.writeopia.sql.WriteopiaDbBackend
+import kotlinx.coroutines.runBlocking
 
 fun Application.configureRouting(
     writeopiaDb: WriteopiaDbBackend?,
@@ -35,7 +37,10 @@ fun Application.configureRouting(
 
         // Version check endpoint
         get("/api/auth/version") {
-            call.respondText("Auth Service v0.80.0 - JWKS endpoint included", status = HttpStatusCode.OK)
+            call.respondText(
+                "Auth Service v0.80.0 - JWKS endpoint included",
+                status = HttpStatusCode.OK
+            )
         }
 
         appVersionRoute()
@@ -50,7 +55,19 @@ fun Application.configureRouting(
                 writeopiaDb,
                 debugMode,
                 provisionWorkspaceForNewUser = { db, workspaceId, workspaceName, userId ->
-                    WorkspaceService.createWorkspaceWithOwner(workspaceId, workspaceName, userId, db)
+                    WorkspaceService.createWorkspaceWithOwner(
+                        workspaceId,
+                        workspaceName,
+                        userId,
+                        db
+                    )
+                },
+                onWorkspaceProvisioned = { userId, workspaceId ->
+                    TutorialsService.initializeTutorialsForUser(
+                        userId = userId,
+                        workspaceId = workspaceId,
+                        writeopiaDb = writeopiaDb
+                    )
                 }
             )
 

@@ -46,6 +46,14 @@ import java.sql.SQLException
  * rolls back the whole transaction, so a workspace can never persist without its owner.
  * Workspace logic lives in the `backend:core:workspaces` module, which depends on this module for
  * user lookups, so this is injected from the composition root to avoid a circular dependency.
+ * @param onWorkspaceProvisioned Seeds the new workspace's tutorial documents, run inside the same
+ * transaction as [provisionWorkspaceForNewUser] (right after it) - a failure here also throws and
+ * rolls back the whole transaction, so a workspace can never persist without its tutorials either.
+ * Plain (non-suspend) on purpose so it can run inside the synchronous transaction block; the
+ * underlying TutorialsService call is `suspend` only because it *can* notify the AI hub, which
+ * never happens for tutorial seeding, so callers bridge it with `runBlocking` at the composition
+ * root. Injected for the same circular-dependency reason as `provisionWorkspaceForNewUser` above
+ * (tutorials live in `backend:documents:documents`).
  */
 fun Routing.authRoute(
     writeopiaDb: WriteopiaDbBackend,
@@ -55,7 +63,8 @@ fun Routing.authRoute(
         workspaceId: String,
         workspaceName: String,
         userId: String
-    ) -> Unit
+    ) -> Unit,
+    onWorkspaceProvisioned: (userId: String, workspaceId: String) -> Unit = { _, _ -> }
 ) {
     post("/api/auth/login") {
         val credentials = call.receive<LoginRequest>()
@@ -170,9 +179,10 @@ fun Routing.authRoute(
             val codeExpiry = EmailService.getCodeExpiry()
             val workspaceId = GenerateId.generate()
 
-            // Run user creation, confirmation code, workspace, and membership in one atomic transaction
+            // Run user creation, confirmation code, workspace, membership, and tutorial seeding
+            // in one atomic transaction: a failure anywhere here rolls everything back, so a
+            // user can never end up with a workspace missing its owner or its tutorials.
             val wUser = writeopiaDb.transactionWithResult {
-
                 val user = AuthService.createUser(
                     writeopiaDb,
                     request,
@@ -187,6 +197,8 @@ fun Routing.authRoute(
                     request.workspaceName,
                     user.id
                 )
+
+                onWorkspaceProvisioned(user.id, workspaceId)
 
                 user
             }
