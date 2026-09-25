@@ -222,8 +222,9 @@ interface DocumentEntityDao {
     // Atomic hard delete: removes both documents and their story steps in a single transaction (scoped to workspace)
     @Transaction
     suspend fun hardDeleteDocumentsWithContentByIds(ids: List<String>, workspaceId: String) {
-        hardDeleteStoryStepsByDocumentIds(ids)
-        hardDeleteDocumentByIds(ids, workspaceId)
+        val ownedIds = loadDocumentByIdsForWorkspace(ids, workspaceId).map { document -> document.id }
+        hardDeleteStoryStepsByDocumentIds(ownedIds)
+        hardDeleteDocumentByIds(ownedIds, workspaceId)
     }
 
     // Get soft-deleted documents for a workspace (for syncing deletions to backend)
