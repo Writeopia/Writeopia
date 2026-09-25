@@ -12,7 +12,6 @@ val MIGRATION_29_30 = object : Migration(29, 30) {
                 id TEXT NOT NULL PRIMARY KEY,
                 conversation_id TEXT NOT NULL,
                 document_id TEXT NOT NULL,
-                conversation_position INTEGER NOT NULL,
                 comment_position INTEGER NOT NULL,
                 text TEXT NOT NULL
             )

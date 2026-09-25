@@ -2,7 +2,6 @@ CREATE TABLE commentEntity (
   id TEXT PRIMARY KEY,
   conversation_id TEXT NOT NULL,
   document_id TEXT NOT NULL,
-  conversation_position INTEGER NOT NULL,
   comment_position INTEGER NOT NULL,
   text TEXT NOT NULL
 );
@@ -11,23 +10,21 @@ selectByDocumentId:
 SELECT *
 FROM commentEntity
 WHERE document_id = ?
-ORDER BY conversation_position, comment_position;
+ORDER BY conversation_id, comment_position;
 
 insert:
 INSERT INTO commentEntity(
   id,
   conversation_id,
   document_id,
-  conversation_position,
   comment_position,
   text
 )
-VALUES (?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET
   conversation_id = excluded.conversation_id,
   document_id = excluded.document_id,
-  conversation_position = excluded.conversation_position,
   comment_position = excluded.comment_position,
   text = excluded.text;
 
