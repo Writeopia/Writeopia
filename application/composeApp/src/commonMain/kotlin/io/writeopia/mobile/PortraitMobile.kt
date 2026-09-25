@@ -122,6 +122,7 @@ fun PortraitMobile(
                     route.startsWith(Destinations.AUTH_RESET_PASSWORD.id) ||
                     route.startsWith(Destinations.AUTH_LOGIN.id) ||
                     route.startsWith(Destinations.CHOOSE_WORKSPACE.id) ||
+                    route.startsWith(Destinations.WORKSPACE_TYPE_CHOICE.id) ||
                     route.startsWith(Destinations.START_APP.id)
             } ?: true
 
