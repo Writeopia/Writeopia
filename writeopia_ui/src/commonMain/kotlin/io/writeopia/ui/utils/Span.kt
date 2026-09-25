@@ -112,6 +112,14 @@ object Spans {
         val deletedSize = edit.end - edit.start
 
         if (deletedSize == 0) {
+            if (
+                edit.start == span.end &&
+                span.expandable() &&
+                span.span != Span.COMMENT
+            ) {
+                return setOf(span.copy(end = span.end + edit.insertedSize))
+            }
+
             if (edit.start <= span.start) return setOf(span.move(edit.insertedSize))
             if (edit.start >= span.end) return setOf(span)
 
