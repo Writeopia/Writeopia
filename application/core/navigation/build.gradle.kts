@@ -63,6 +63,11 @@ kotlin {
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:local_ai"))
+                implementation(project(":application:core:common_ui"))
+
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
             }
         }
     }

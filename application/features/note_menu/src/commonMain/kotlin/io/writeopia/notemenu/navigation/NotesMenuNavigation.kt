@@ -44,6 +44,8 @@ fun NavGraphBuilder.notesMenuNavigation(
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
     navigationBar: @Composable () -> Unit,
+    isWideLayout: Boolean = false,
+    sideMenuContent: @Composable () -> Unit = {},
 ) {
     composable(
         route = NoteMenuDestiny.noteMenu(),
@@ -92,6 +94,8 @@ fun NavGraphBuilder.notesMenuNavigation(
             nestedScrollConnection = nestedScrollConnection,
             isToolbarVisible = isToolbarVisible,
             navigationBar = navigationBar,
+            isWideLayout = isWideLayout,
+            sideMenuContent = sideMenuContent,
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
     }
@@ -122,6 +126,8 @@ fun NavGraphBuilder.notesMenuNavigation(
             nestedScrollConnection = nestedScrollConnection,
             isToolbarVisible = isToolbarVisible,
             navigationBar = navigationBar,
+            isWideLayout = isWideLayout,
+            sideMenuContent = sideMenuContent,
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
     }

@@ -35,8 +35,12 @@ actual fun NotesMenuScreen(
     nestedScrollConnection: NestedScrollConnection?,
     isToolbarVisible: Boolean,
     navigationBar: @Composable () -> Unit,
+    isWideLayout: Boolean,
+    sideMenuContent: @Composable () -> Unit,
     modifier: Modifier
 ) {
+    // Desktop/web already render their own permanent side menu via DesktopApp,
+    // so isWideLayout/sideMenuContent are not used here.
     DesktopNotesMenu(
         isDarkTheme = isDarkTheme,
         folderId = folderId,
