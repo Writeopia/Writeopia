@@ -7,22 +7,22 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import io.writeopia.sdk.serialization.json.SendDocumentsRequest
+import io.writeopia.api.documents.documents.repository.SyncEventType
 import io.writeopia.api.documents.documents.repository.addUserFavorite
 import io.writeopia.api.documents.documents.repository.createSyncEvent
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByFolderId
-import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
-import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByIds
 import io.writeopia.api.documents.documents.repository.deleteFolder
-import io.writeopia.api.documents.documents.repository.deleteStoryStepById
 import io.writeopia.api.documents.documents.repository.deleteStoryStepsByIds
+import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
+import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
 import io.writeopia.api.documents.documents.repository.getDocumentById
+import io.writeopia.api.documents.documents.repository.getDocumentByTitle
+import io.writeopia.api.documents.documents.repository.getDocumentWithContentById
 import io.writeopia.api.documents.documents.repository.getFolderById
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
 import io.writeopia.api.documents.documents.repository.getPublishedDocumentById
-import io.writeopia.api.documents.documents.repository.getStoryStepById
 import io.writeopia.api.documents.documents.repository.getStoryStepsAfterTime
 import io.writeopia.api.documents.documents.repository.getUserFavoriteDocumentIds
 import io.writeopia.api.documents.documents.repository.isDocumentPublished
@@ -30,15 +30,13 @@ import io.writeopia.api.documents.documents.repository.isUserFavorite
 import io.writeopia.api.documents.documents.repository.moveDocumentToFolder
 import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.removeUserFavorite
-import io.writeopia.api.documents.documents.repository.getDocumentByTitle
-import io.writeopia.api.documents.documents.repository.getDocumentWithContentById
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.documents.repository.setDocumentPublished
-import io.writeopia.api.documents.documents.repository.SyncEventType
 import io.writeopia.api.documents.documents.repository.updateDocumentTitle
 import io.writeopia.api.documents.documents.repository.upsertStoryStep
 import io.writeopia.api.documents.search.SearchDocument
+import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.connection.ResultData
 import io.writeopia.connection.Urls
 import io.writeopia.connection.wrWebClient
@@ -51,11 +49,11 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.request.DocumentSyncInfo
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import io.writeopia.sdk.serialization.response.UnsyncedDocumentInfo
-import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -462,7 +460,7 @@ object DocumentsService {
             .map { ensureTitleInSync(it) }
     }
 
-    private fun sendToAiHub(documents: List<Document>, workspaceId: String): Boolean {
+    private suspend fun sendToAiHub(documents: List<Document>, workspaceId: String): Boolean {
         val aiHubUrl = Urls.AI_HUB ?: return true
 
         return wrWebClient.post("$aiHubUrl/documents/") {
