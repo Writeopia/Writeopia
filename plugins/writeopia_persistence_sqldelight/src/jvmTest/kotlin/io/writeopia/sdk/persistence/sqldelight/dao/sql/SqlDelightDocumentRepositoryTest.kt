@@ -255,6 +255,11 @@ class SqlDelightDocumentRepositoryTest {
     }
 
     @Test
+    fun `comment id cannot move between documents`() = runTest {
+        DocumentRepositoryTests(documentRepository).commentIdCannotMoveBetweenDocuments()
+    }
+
+    @Test
     fun `hard delete removes comment rows in sqldelight`() = runTest {
         val now = Clock.System.now()
         val document = Document(

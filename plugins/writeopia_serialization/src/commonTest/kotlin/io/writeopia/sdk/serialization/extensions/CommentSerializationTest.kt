@@ -9,6 +9,7 @@ import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.serialization.data.CommentApi
 import io.writeopia.sdk.serialization.data.CommentConversationApi
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -47,6 +48,38 @@ class CommentSerializationTest {
     fun `empty comment conversation is rejected`() {
         assertFailsWith<IllegalArgumentException> {
             CommentConversation(id = "conversation-empty", comments = emptyList())
+        }
+    }
+
+    @Test
+    fun `empty comment map entry is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            Document(
+                commentConversations = mapOf("conversation-empty" to emptyList()),
+                createdAt = Instant.fromEpochMilliseconds(1),
+                lastUpdatedAt = Instant.fromEpochMilliseconds(2),
+                lastSyncedAt = null,
+                workspaceId = "workspace",
+                parentId = "root",
+            )
+        }
+    }
+
+    @Test
+    fun `duplicate conversation ids are rejected during api conversion`() {
+        val conversations = listOf(
+            CommentConversationApi(
+                id = "conversation-1",
+                comments = listOf(CommentApi(id = "comment-1", text = "First")),
+            ),
+            CommentConversationApi(
+                id = "conversation-1",
+                comments = listOf(CommentApi(id = "comment-2", text = "Second")),
+            ),
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            conversations.toCommentMap()
         }
     }
 

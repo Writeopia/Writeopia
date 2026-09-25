@@ -17,6 +17,7 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.random.Random
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
 class DocumentRepositoryTests(private val documentRepository: DocumentRepository) {
@@ -233,6 +234,44 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             .first { it.id == document.id }
 
         assertEquals(document.commentConversations, loadedDocument.commentConversations)
+    }
+
+    suspend fun commentIdCannotMoveBetweenDocuments() {
+        val now = now()
+
+        fun document(id: String, workspaceId: String, text: String) = Document(
+            id = id,
+            title = id,
+            commentConversations = mapOf(
+                "conversation-$id" to listOf(
+                    Comment(id = "shared-comment-id", text = text)
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = workspaceId,
+            parentId = "root",
+        )
+
+        val first = document("first-document", "workspace-a", "First")
+        val second = document("second-document", "workspace-b", "Second")
+
+        documentRepository.saveDocument(first)
+
+        var failed = false
+        try {
+            documentRepository.saveDocument(second)
+        } catch (_: Exception) {
+            failed = true
+        }
+
+        assertTrue(failed)
+        assertEquals(
+            first.commentConversations,
+            documentRepository.loadDocumentById(first.id, first.workspaceId)?.commentConversations,
+        )
+        assertEquals(null, documentRepository.loadDocumentById(second.id, second.workspaceId))
     }
 
     suspend fun commentPersistenceRespectsWorkspaceBoundaries() {

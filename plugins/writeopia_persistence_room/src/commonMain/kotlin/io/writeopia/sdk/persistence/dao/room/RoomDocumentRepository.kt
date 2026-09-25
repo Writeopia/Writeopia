@@ -2,6 +2,9 @@
 
 package io.writeopia.sdk.persistence.dao.room
 
+import androidx.room.RoomDatabase
+import androidx.room.immediateTransaction
+import androidx.room.useWriterConnection
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.info
 import io.writeopia.sdk.models.comment.Comment
@@ -32,6 +35,7 @@ class RoomDocumentRepository(
     private val documentEntityDao: DocumentEntityDao,
     private val storyUnitEntityDao: StoryUnitEntityDao? = null,
     private val commentEntityDao: CommentEntityDao,
+    private val database: RoomDatabase,
 ) : DocumentRepository, DocumentSearch {
 
     private val documentsState: MutableStateFlow<Map<String, List<Document>>> =
@@ -149,16 +153,18 @@ class RoomDocumentRepository(
             }
 
     override suspend fun saveDocument(document: Document) {
-        saveDocumentMetadata(document)
+        writeTransaction {
+            saveDocumentMetadata(document)
 
-        document.content.toEntity(document.id).let { data ->
-            storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
-            storyUnitEntityDao?.insertStoryUnits(*data.toTypedArray())
+            document.content.toEntity(document.id).let { data ->
+                storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
+                storyUnitEntityDao?.insertStoryUnits(*data.toTypedArray())
+            }
+
+            val comments = document.commentConversations.toCommentEntities(document.id)
+            commentEntityDao.deleteByDocumentId(document.id)
+            commentEntityDao.insertComments(*comments.toTypedArray())
         }
-
-        val comments = document.commentConversations.toCommentEntities(document.id)
-        commentEntityDao.deleteByDocumentId(document.id)
-        commentEntityDao.insertComments(*comments.toTypedArray())
     }
 
     override suspend fun saveDocumentMetadata(document: Document) {
@@ -189,13 +195,16 @@ class RoomDocumentRepository(
     }
 
     override suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
-        val ownedIds = documentEntityDao.loadDocumentByIds(ids.toList())
-            .filter { document -> document.workspaceId == workspaceId }
-            .map { document -> document.id }
+        writeTransaction {
+            val ownedIds = documentEntityDao.loadDocumentByIdsForWorkspace(
+                ids.toList(),
+                workspaceId,
+            ).map { document -> document.id }
 
-        commentEntityDao.deleteByDocumentIds(ownedIds)
-        storyUnitEntityDao?.deleteByDocumentIds(ownedIds)
-        documentEntityDao.hardDeleteDocumentByIds(ownedIds, workspaceId)
+            commentEntityDao.deleteByDocumentIds(ownedIds)
+            storyUnitEntityDao?.deleteByDocumentIds(ownedIds)
+            documentEntityDao.hardDeleteDocumentByIds(ownedIds, workspaceId)
+        }
     }
 
     override suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document> =
@@ -226,13 +235,15 @@ class RoomDocumentRepository(
     }
 
     override suspend fun deleteByWorkspace(userId: String) {
-        val documentIds = documentEntityDao.loadAllDocuments()
-            .filter { document -> document.workspaceId == userId }
-            .map { document -> document.id }
+        writeTransaction {
+            val documentIds = documentEntityDao.loadAllDocuments()
+                .filter { document -> document.workspaceId == userId }
+                .map { document -> document.id }
 
-        commentEntityDao.deleteByDocumentIds(documentIds)
-        storyUnitEntityDao?.deleteByDocumentIds(documentIds)
-        documentEntityDao.purgeDocumentsByUserId(userId)
+            commentEntityDao.deleteByDocumentIds(documentIds)
+            storyUnitEntityDao?.deleteByDocumentIds(documentIds)
+            documentEntityDao.purgeDocumentsByUserId(userId)
+        }
     }
 
     override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
@@ -283,6 +294,11 @@ class RoomDocumentRepository(
 
                 entity.toModel()
             }
+
+    private suspend fun <T> writeTransaction(block: suspend () -> T): T =
+        database.useWriterConnection { transactor ->
+            transactor.immediateTransaction { block() }
+        }
 
     private suspend fun loadCommentConversations(
         documentId: String,

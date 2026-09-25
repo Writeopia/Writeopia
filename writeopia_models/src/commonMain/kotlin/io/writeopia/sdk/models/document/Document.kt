@@ -23,4 +23,11 @@ data class Document(
     val deleted: Boolean = false,
     val published: Boolean = false,
     val commentConversations: Map<String, List<Comment>> = emptyMap(),
-) : MenuItem
+) : MenuItem {
+
+    init {
+        require(commentConversations.values.all { comments -> comments.isNotEmpty() }) {
+            "Comment conversations must contain at least one comment"
+        }
+    }
+}
