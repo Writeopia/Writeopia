@@ -649,15 +649,12 @@ class DocumentSqlDao(
      */
     suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
         val queries = documentQueries ?: return
-        val ownedIds = queries.selectIdsByIdsAndWorkspace(ids, workspaceId)
-            .awaitAsList()
-            .toSet()
 
-        // Use transaction from documentQueries (all queries share the same driver).
+        // Keep workspace ownership checks inside the transaction that removes child rows.
         queries.transaction {
-            commentQueries?.deleteByDocumentIds(ownedIds)
-            storyStepQueries?.deleteByDocumentIds(ownedIds)
-            queries.hardDeleteByIds(ownedIds, workspaceId)
+            commentQueries?.deleteByDocumentIdsForWorkspace(ids, workspaceId)
+            storyStepQueries?.deleteByDocumentIdsForWorkspace(ids, workspaceId)
+            queries.hardDeleteByIds(ids, workspaceId)
         }
     }
 
