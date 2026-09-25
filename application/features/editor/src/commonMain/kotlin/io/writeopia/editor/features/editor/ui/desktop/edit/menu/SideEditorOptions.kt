@@ -96,6 +96,7 @@ fun SideEditorOptions(
     onPresentationClick: () -> Unit,
     changeFontFamily: (Font) -> Unit,
     addImage: (String) -> Unit,
+    onImagePickRequest: (() -> Unit)? = null,
     exportJson: (String) -> Unit,
     exportMarkdown: (String) -> Unit,
     moveToRoot: () -> Unit,
@@ -178,6 +179,7 @@ fun SideEditorOptions(
                                 highLightBlockClick,
                                 cardBlockClick,
                                 addImage,
+                                onImagePickRequest,
                                 addPage,
                                 titleClick,
                                 onDrawingClick = {
@@ -936,6 +938,7 @@ private fun TextOptions(
     highLightBlockClick: () -> Unit,
     cardBlockClick: () -> Unit,
     addImage: (String) -> Unit,
+    onImagePickRequest: (() -> Unit)? = null,
     addPage: () -> Unit,
     titleClick: (Tag) -> Unit,
     onDrawingClick: () -> Unit,
@@ -999,7 +1002,11 @@ private fun TextOptions(
                 WrIcons.image,
                 modifier = Modifier.weight(1F)
             ) {
-                fileChooserLoad("")?.let(addImage)
+                if (onImagePickRequest != null) {
+                    onImagePickRequest()
+                } else {
+                    fileChooserLoad("")?.let(addImage)
+                }
             }
             IconAndText(
                 WrStrings.drawing(),

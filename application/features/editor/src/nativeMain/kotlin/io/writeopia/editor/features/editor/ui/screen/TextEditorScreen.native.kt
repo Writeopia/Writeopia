@@ -20,6 +20,7 @@ actual fun TextEditorScreen(
     onDrawingClick: (StoryStep, Double) -> Unit,
     nestedScrollConnection: NestedScrollConnection?,
     isToolbarVisible: Boolean,
+    isWideLayout: Boolean,
     modifier: Modifier
 ) {
     NoteEditorScreen(
@@ -34,6 +35,9 @@ actual fun TextEditorScreen(
         onDrawingClick = onDrawingClick,
         nestedScrollConnection = nestedScrollConnection,
         isToolbarVisible = isToolbarVisible,
+        isWideLayout = isWideLayout,
+        onPresentationClick = playPresentation,
+        onDocumentDelete = navigateBack,
         modifier = modifier
     )
 }

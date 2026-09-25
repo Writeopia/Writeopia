@@ -179,6 +179,7 @@ fun Navigation(
                 sharedTransitionScope = this@SharedTransitionLayout,
                 nestedScrollConnection = nestedScrollConnection,
                 isToolbarVisible = isToolbarVisible,
+                isWideLayout = notesMenuWideLayout,
                 navigateToNote = { id ->
                     navController.navigateToNote(id, title = "")
                 },
