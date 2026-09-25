@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":backend:core:workspaces"))
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
+    implementation(project(":backend:documents:documents"))
     implementation(project(":plugins:writeopia_serialization"))
     implementation(project(":common:endpoints"))
 

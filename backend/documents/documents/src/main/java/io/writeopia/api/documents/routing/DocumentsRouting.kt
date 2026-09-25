@@ -414,7 +414,6 @@ fun Routing.documentsRoute(
                     document = documentModel,
                     workspaceId = workspaceId,
                     writeopiaDb = writeopiaDb,
-                    useAi = useAi
                 )
 
                 call.respond(

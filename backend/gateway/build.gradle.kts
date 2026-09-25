@@ -50,5 +50,6 @@ dependencies {
 
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.kotlin.test)
+    testImplementation(project(":tutorials"))
 }
 

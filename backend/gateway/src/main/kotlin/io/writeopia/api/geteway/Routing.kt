@@ -17,6 +17,7 @@ import io.writeopia.api.documents.routing.documentsRoute
 import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.connection.logger
 import io.writeopia.sql.WriteopiaDbBackend
+import kotlinx.coroutines.runBlocking
 
 fun Application.configureRouting(
     writeopiaDb: WriteopiaDbBackend?,
@@ -35,7 +36,19 @@ fun Application.configureRouting(
                 writeopiaDb,
                 debugMode,
                 provisionWorkspaceForNewUser = { db, workspaceId, workspaceName, userId ->
-                    WorkspaceService.createWorkspaceWithOwner(workspaceId, workspaceName, userId, db)
+                    WorkspaceService.createWorkspaceWithOwner(
+                        workspaceId,
+                        workspaceName,
+                        userId,
+                        db
+                    )
+                },
+                onWorkspaceProvisioned = { userId, workspaceId ->
+                    TutorialsService.initializeTutorialsForUser(
+                        userId = userId,
+                        workspaceId = workspaceId,
+                        writeopiaDb = writeopiaDb
+                    )
                 }
             )
 
