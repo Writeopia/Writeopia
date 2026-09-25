@@ -33,7 +33,18 @@ fun Map<String, List<Comment>>.toApi(): List<CommentConversationApi> =
         )
     }
 
-fun Iterable<CommentConversationApi>.toCommentMap(): Map<String, List<Comment>> =
-    associate { conversation ->
-        conversation.id to conversation.comments.map { comment -> comment.toModel() }
+fun Iterable<CommentConversationApi>.toCommentMap(): Map<String, List<Comment>> {
+    val result = mutableMapOf<String, List<Comment>>()
+
+    for (conversation in this) {
+        require(conversation.comments.isNotEmpty()) {
+            "Comment conversations must contain at least one comment"
+        }
+        require(conversation.id !in result) {
+            "Duplicate comment conversation id: ${conversation.id}"
+        }
+        result[conversation.id] = conversation.comments.map { comment -> comment.toModel() }
     }
+
+    return result
+}
