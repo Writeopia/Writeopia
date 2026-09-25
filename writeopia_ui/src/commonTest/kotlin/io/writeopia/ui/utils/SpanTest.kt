@@ -282,5 +282,4 @@ class SpanTest {
 
         assertEquals(setOf(comment), result)
     }
-
 }
