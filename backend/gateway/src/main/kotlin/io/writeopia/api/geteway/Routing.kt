@@ -10,7 +10,8 @@ import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.cookieAuthRoute
 import io.writeopia.api.core.auth.routing.passwordResetRoute
-import io.writeopia.api.core.auth.routing.workspaceRoute
+import io.writeopia.api.core.workspaces.routing.workspaceRoute
+import io.writeopia.api.core.workspaces.service.WorkspaceService
 import io.writeopia.api.documents.documents.TutorialsService
 import io.writeopia.api.documents.routing.documentsRoute
 import io.writeopia.api.genai.service.GenAiService
@@ -30,7 +31,13 @@ fun Application.configureRouting(
         if (writeopiaDb != null) {
             documentsRoute(writeopiaDb, useAi, debugMode, genAiService = genAiService)
 
-            authRoute(writeopiaDb, debugMode)
+            authRoute(
+                writeopiaDb,
+                debugMode,
+                provisionWorkspaceForNewUser = { db, workspaceId, workspaceName, userId ->
+                    WorkspaceService.createWorkspaceWithOwner(workspaceId, workspaceName, userId, db)
+                }
+            )
 
             // Web-specific auth routes using HttpOnly cookies
             cookieAuthRoute(writeopiaDb, debugMode)

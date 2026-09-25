@@ -22,21 +22,20 @@ dependencies {
     implementation(project(":common:endpoints"))
     implementation(project(":application:core:models"))
 
-    implementation(libs.kotlinx.coroutines.core)
-    //
-
-    implementation(libs.ktor.server.auth)
-    implementation(libs.ktor.server.auth.jwt)
-
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
-    implementation(project(":backend:core:pubsub"))
+    implementation(project(":backend:core:auth"))
+
+    implementation(libs.kotlinx.coroutines.core)
+
+    implementation(libs.ktor.server.auth)
+
+    // Google Cloud BOM for version alignment
+    implementation(platform(libs.google.cloud.bom))
+    implementation(libs.google.cloud.run)
 
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.database.embedded.postgres)
-    testImplementation(libs.database.hikaricp)
-    testImplementation(libs.database.postgresql)
 }

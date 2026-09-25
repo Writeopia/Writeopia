@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":writeopia_models"))
 
     implementation(project(":backend:core:auth"))
+    implementation(project(":backend:core:workspaces"))
     implementation(project(":backend:core:ai"))
     implementation(project(":backend:core:genai_service"))
     implementation(project(":backend:core:database"))

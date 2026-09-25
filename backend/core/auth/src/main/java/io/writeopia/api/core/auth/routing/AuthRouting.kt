@@ -18,13 +18,11 @@ import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getUserById
-import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
 import io.writeopia.api.core.auth.service.AccountDeletionService
 import io.writeopia.api.core.auth.service.AuthService
 import io.writeopia.api.core.auth.service.EmailService
 import io.writeopia.api.core.auth.service.RefreshTokenService
-import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
 import io.writeopia.connection.logger
@@ -42,7 +40,23 @@ import io.writeopia.sql.WriteopiaDbBackend
 import java.sql.SQLException
 
 
-fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
+/**
+ * @param provisionWorkspaceForNewUser Creates the workspace for a newly registered user and adds
+ * them as its admin, run inside the same transaction as user creation - a failure here throws and
+ * rolls back the whole transaction, so a workspace can never persist without its owner.
+ * Workspace logic lives in the `backend:core:workspaces` module, which depends on this module for
+ * user lookups, so this is injected from the composition root to avoid a circular dependency.
+ */
+fun Routing.authRoute(
+    writeopiaDb: WriteopiaDbBackend,
+    debugMode: Boolean = false,
+    provisionWorkspaceForNewUser: (
+        writeopiaDb: WriteopiaDbBackend,
+        workspaceId: String,
+        workspaceName: String,
+        userId: String
+    ) -> Unit
+) {
     post("/api/auth/login") {
         val credentials = call.receive<LoginRequest>()
 
@@ -167,22 +181,12 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
 
                 writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
 
-                WorkspaceService.createWorkspace(
-                    workspaceId = workspaceId,
-                    workspaceName = request.workspaceName,
-                    writeopiaDb = writeopiaDb
-                )
-
-                val created = WorkspaceService.addUserToWorkspaceAdmin(
-                    request.email,
+                provisionWorkspaceForNewUser(
+                    writeopiaDb,
                     workspaceId,
-                    "ADMIN",
-                    writeopiaDb
+                    request.workspaceName,
+                    user.id
                 )
-
-                if (!created) {
-                    error("Failed to associate user with workspace")
-                }
 
                 user
             }

@@ -12,7 +12,8 @@ import io.writeopia.api.core.auth.routing.cookieAuthRoute
 import io.writeopia.api.core.auth.routing.emailRoute
 import io.writeopia.api.core.auth.routing.jwksRouting
 import io.writeopia.api.core.auth.routing.passwordResetRoute
-import io.writeopia.api.core.auth.routing.workspaceRoute
+import io.writeopia.api.core.workspaces.routing.workspaceRoute
+import io.writeopia.api.core.workspaces.service.WorkspaceService
 import io.writeopia.connection.logger
 import io.writeopia.sql.WriteopiaDbBackend
 
@@ -45,7 +46,13 @@ fun Application.configureRouting(
 
         if (writeopiaDb != null) {
             // Auth routes: login, register, password reset, account deletion, current user
-            authRoute(writeopiaDb, debugMode)
+            authRoute(
+                writeopiaDb,
+                debugMode,
+                provisionWorkspaceForNewUser = { db, workspaceId, workspaceName, userId ->
+                    WorkspaceService.createWorkspaceWithOwner(workspaceId, workspaceName, userId, db)
+                }
+            )
 
             // Web-specific auth routes using HttpOnly cookies
             cookieAuthRoute(writeopiaDb, debugMode)
