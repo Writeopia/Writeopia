@@ -51,7 +51,7 @@ class OnUpdateDocumentTrackerTest {
         val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
         job.cancel()
 
-        assertEquals(listOf(conversation), persisted.commentConversations)
+        assertEquals(mapOf(conversation.id to conversation.comments), persisted.commentConversations)
         assertEquals(sourceDocument.workspaceId, persisted.workspaceId)
     }
 
@@ -106,12 +106,14 @@ class OnUpdateDocumentTrackerTest {
 
         val reply = Comment(id = "comment-2", text = "reply")
         val updatedConversation = conversation.copy(comments = conversation.comments + reply)
-        commentConversationsFlow.value = listOf(updatedConversation)
+        commentConversationsFlow.value = mapOf(
+            updatedConversation.id to updatedConversation.comments
+        )
 
         val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
         job.cancel()
 
-        assertEquals(listOf(updatedConversation), persisted.commentConversations)
+        assertEquals(mapOf(updatedConversation.id to updatedConversation.comments), persisted.commentConversations)
         assertEquals(sourceDocument.workspaceId, persisted.workspaceId)
     }
 
@@ -143,7 +145,9 @@ class OnUpdateDocumentTrackerTest {
             lastSyncedAt = null,
             workspaceId = "workspace-1",
             parentId = "root",
-            commentConversations = conversations,
+            commentConversations = conversations.associate { conversation ->
+                conversation.id to conversation.comments
+            },
         )
     }
 
