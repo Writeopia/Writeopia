@@ -47,7 +47,9 @@ class DocumentLoadUseCase(
         val mergedDocument = documentMerger.merge(localDocument, backendDocument) ?: return
 
         // Step 4: Check if merge resulted in changes
-        val hasChanges = localDocument == null || mergedDocument.content != localDocument.content
+        val hasChanges = localDocument == null ||
+            mergedDocument.content != localDocument.content ||
+            mergedDocument.commentConversations != localDocument.commentConversations
 
         if (hasChanges) {
             // Step 5: Save merged result to database

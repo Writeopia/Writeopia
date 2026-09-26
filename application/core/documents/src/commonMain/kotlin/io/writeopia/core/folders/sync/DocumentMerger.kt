@@ -2,7 +2,9 @@
 
 package io.writeopia.core.folders.sync
 
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
 import kotlin.time.ExperimentalTime
 
@@ -43,23 +45,44 @@ class DocumentMerger {
             backendDocument
         }
 
-        val commentConversations =
-            if (
-                baseDocument === backendDocument &&
-                backendDocument.commentConversations.isEmpty() &&
-                localDocument.commentConversations.isNotEmpty()
-            ) {
-                localDocument.commentConversations
-            } else {
-                baseDocument.commentConversations
-            }
-
+        val fallbackDocument = if (baseDocument === localDocument) backendDocument else localDocument
+        val commentConversations = mergeCommentConversations(
+            mergedContent = mergedContent,
+            primary = baseDocument.commentConversations,
+            fallback = fallbackDocument.commentConversations,
+        )
         return baseDocument.copy(
             content = mergedContent,
             commentConversations = commentConversations,
         )
     }
 
+    private fun mergeCommentConversations(
+        mergedContent: Map<Double, StoryStep>,
+        primary: Map<String, List<Comment>>,
+        fallback: Map<String, List<Comment>>,
+    ): Map<String, List<Comment>> {
+        val referencedIds = mergedContent.values
+            .asSequence()
+            .flatMap { step -> step.referencedCommentConversationIds() }
+            .toSet()
+
+        return referencedIds.mapNotNull { conversationId ->
+            (primary[conversationId] ?: fallback[conversationId])
+                ?.let { comments -> conversationId to comments }
+        }.toMap()
+    }
+
+    private fun StoryStep.referencedCommentConversationIds(): Sequence<String> = sequence {
+        spans.asSequence()
+            .filter { span -> span.span == Span.COMMENT }
+            .mapNotNull { span -> span.extra }
+            .forEach { conversationId -> yield(conversationId) }
+
+        steps.forEach { child ->
+            yieldAll(child.referencedCommentConversationIds())
+        }
+    }
     private fun mergeContent(
         localContent: Map<Double, StoryStep>,
         backendContent: Map<Double, StoryStep>
