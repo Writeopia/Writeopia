@@ -10,35 +10,33 @@ object SpansHandler {
 
     fun toggleSpans(spanSet: Set<SpanInfo>, newSpan: SpanInfo): Set<SpanInfo> {
         return when {
-            spanSet.contains(newSpan) -> (spanSet - newSpan)
+            spanSet.contains(newSpan) -> spanSet - newSpan
 
-            !spanSet.any { it.span == newSpan.span } -> (spanSet + newSpan)
+            !spanSet.any { it.hasSameIdentity(newSpan) } -> spanSet + newSpan
 
             else -> {
-                val currentSpan = spanSet.first { it.span == newSpan.span }
+                val currentSpan = spanSet
+                    .filter { it.hasSameIdentity(newSpan) }
+                    .firstOrNull { it.intersection(newSpan) != Intersection.OUTSIDE }
+                    ?: return spanSet + newSpan
 
                 val intersection: Intersection = currentSpan.intersection(newSpan)
 
                 return when (intersection) {
                     Intersection.CONTAINING -> {
-                        val removed = (spanSet - currentSpan)
-
-                        val currentStart = currentSpan.start
-                        val currentEnd = currentSpan.end
-
-                        val newStart = newSpan.start
-                        val newEnd = newSpan.end
-
+                        val removed = spanSet - currentSpan
                         val splitSpans = setOf(
                             SpanInfo.create(
-                                currentStart,
-                                newStart,
-                                currentSpan.span
+                                currentSpan.start,
+                                newSpan.start,
+                                currentSpan.span,
+                                currentSpan.extra,
                             ),
                             SpanInfo.create(
-                                newEnd,
-                                currentEnd,
-                                currentSpan.span
+                                newSpan.end,
+                                currentSpan.end,
+                                currentSpan.span,
+                                currentSpan.extra,
                             ),
                         ).filter { it.size() > 0 }
 
@@ -46,19 +44,18 @@ object SpansHandler {
                     }
 
                     Intersection.INTERSECT -> {
-                        val removed = (spanSet - currentSpan)
-                        val expandedSpan = (currentSpan + newSpan)
-                        removed + expandedSpan
+                        val removed = spanSet - currentSpan
+                        removed + (currentSpan + newSpan)
                     }
 
                     Intersection.OUTSIDE -> spanSet + newSpan
 
                     Intersection.INSIDE -> {
-                        val removed = (spanSet - currentSpan)
+                        val removed = spanSet - currentSpan
                         removed + newSpan
                     }
 
-                    Intersection.MATCH -> (spanSet - currentSpan)
+                    Intersection.MATCH -> spanSet - currentSpan
                 }
             }
         }
@@ -66,19 +63,32 @@ object SpansHandler {
 
     fun toggleSpansForManyStories(
         storySteps: Map<Double, StoryStep>,
-        newSpan: Span
+        newSpan: Span,
+        extra: String? = null,
     ): Map<Double, StoryStep> =
-        if (storySteps.all { (_, story) -> story.spans.any { it.span == newSpan } }) {
+        if (
+            storySteps.all { (_, story) ->
+                story.spans.any { span -> span.span == newSpan && span.extra == extra }
+            }
+        ) {
             storySteps.mapValues { (_, story) ->
-                val removedSpans = story.spans.filterTo(mutableSetOf()) { it.span != newSpan }
+                val removedSpans = story.spans.filterTo(mutableSetOf()) { span ->
+                    span.span != newSpan || span.extra != extra
+                }
                 story.copy(spans = removedSpans, localId = GenerateId.generate())
             }
         } else {
             storySteps.mapValues { (_, story) ->
                 val text = story.text
                 if (text?.isNotEmpty() == true) {
-                    val newSpanInfo = SpanInfo.create(0, text.length, newSpan)
-                    story.copy(spans = story.spans + newSpanInfo, localId = GenerateId.generate())
+                    val newSpanInfo = SpanInfo.create(0, text.length, newSpan, extra)
+                    val otherSpans = story.spans.filterTo(mutableSetOf()) { span ->
+                        !span.hasSameIdentity(newSpanInfo)
+                    }
+                    story.copy(
+                        spans = otherSpans + newSpanInfo,
+                        localId = GenerateId.generate()
+                    )
                 } else {
                     story
                 }

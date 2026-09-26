@@ -2,16 +2,21 @@
 
 package io.writeopia.sdk.persistence.parse
 
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-fun DocumentEntity.toModel(content: Map<Double, StoryStep> = emptyMap()) = Document(
+fun DocumentEntity.toModel(
+    content: Map<Double, StoryStep> = emptyMap(),
+    commentConversations: Map<String, List<Comment>> = emptyMap(),
+) = Document(
     id = id,
     title = title,
     content = content,
+    commentConversations = commentConversations,
     createdAt = Instant.fromEpochMilliseconds(createdAt),
     lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
     workspaceId = workspaceId,

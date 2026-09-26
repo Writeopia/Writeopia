@@ -252,4 +252,9 @@
   <string name="model_tier_medium_description">Balanced performance for most use cases</string>
   <string name="model_tier_heavy">Heavy</string>
   <string name="model_tier_heavy_description">Maximum quality for complex tasks</string>
+  <string name="add_comment">Add comment</string>
+  <string name="comment">Comment</string>
+  <string name="comments_count">Comments (%1$d)</string>
+  <string name="delete_thread">Delete thread</string>
+  <string name="reply">Reply</string>
 </resources>

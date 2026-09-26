@@ -2,8 +2,12 @@
 
 package io.writeopia.libraries.dbtests
 
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.sorting.OrderBy
+import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
@@ -13,6 +17,7 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.random.Random
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
 class DocumentRepositoryTests(private val documentRepository: DocumentRepository) {
@@ -167,6 +172,241 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         documentRepository.unFavoriteDocumentByIds(setOf(id))
         val loadedDocument2 = documentRepository.loadDocumentById(id, workspaceId)
         assertEquals(loadedDocument2?.favorite, false)
+    }
+
+    suspend fun saveDocumentWithComments(): Document {
+        val now = now()
+        val conversationId = "conversation-1"
+        val document = Document(
+            id = GenerateId.generate(),
+            title = "Document with comments",
+            content = mapOf(
+                0.0 to StoryStep(
+                    type = StoryTypes.TEXT.type,
+                    text = "Commented text",
+                    spans = setOf(
+                        SpanInfo.create(0, 9, Span.COMMENT, conversationId),
+                        SpanInfo.create(10, 13, Span.COMMENT, "conversation-2"),
+                    ),
+                    dbPosition = 0.0,
+                )
+            ),
+            commentConversations = mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-1", text = "First"),
+                    Comment(id = "comment-2", text = "Second"),
+                ),
+                "conversation-2" to listOf(
+                    Comment(id = "comment-3", text = "Third"),
+                ),
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+            isLocked = false,
+        )
+
+        documentRepository.saveDocument(document)
+        return document
+    }
+
+    suspend fun saveAndLoadDocumentWithComments() {
+        val document = saveDocumentWithComments()
+        val loadedDocument = documentRepository.loadDocumentById(document.id, document.workspaceId)
+
+        assertEquals(document.id, loadedDocument?.id)
+        assertEquals(document.commentConversations, loadedDocument?.commentConversations)
+        assertEquals(
+            document.content.getValue(0.0).spans,
+            loadedDocument?.content?.get(0.0)?.spans,
+        )
+        assertEquals(
+            document.content.getValue(0.0).text,
+            loadedDocument?.content?.get(0.0)?.text,
+        )
+    }
+
+    suspend fun collectionLoadPreservesComments() {
+        val document = saveDocumentWithComments()
+        val loadedDocument = documentRepository.loadDocumentsWorkspace(document.workspaceId)
+            .first { it.id == document.id }
+
+        assertEquals(document.commentConversations, loadedDocument.commentConversations)
+    }
+
+    suspend fun deletedCommentTombstonePersists() {
+        val now = now()
+        val conversationId = "conversation-tombstone"
+        val document = Document(
+            id = GenerateId.generate(),
+            title = "Tombstone",
+            commentConversations = mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-active", text = "Keep"),
+                    Comment(id = "comment-deleted", text = "Deleted", deleted = true),
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+        )
+
+        documentRepository.saveDocument(document)
+
+        assertEquals(
+            document.commentConversations,
+            documentRepository.loadDocumentById(document.id, document.workspaceId)
+                ?.commentConversations,
+        )
+    }
+
+    suspend fun commentIdCannotMoveBetweenDocuments() {
+        val now = now()
+
+        fun document(id: String, workspaceId: String, text: String) = Document(
+            id = id,
+            title = id,
+            commentConversations = mapOf(
+                "conversation-$id" to listOf(
+                    Comment(id = "shared-comment-id", text = text)
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = workspaceId,
+            parentId = "root",
+        )
+
+        val first = document("first-document", "workspace-a", "First")
+        val second = document("second-document", "workspace-b", "Second")
+
+        documentRepository.saveDocument(first)
+
+        var failed = false
+        try {
+            documentRepository.saveDocument(second)
+        } catch (_: Exception) {
+            failed = true
+        }
+
+        assertTrue(failed)
+        assertEquals(
+            first.commentConversations,
+            documentRepository.loadDocumentById(first.id, first.workspaceId)?.commentConversations,
+        )
+        assertEquals(null, documentRepository.loadDocumentById(second.id, second.workspaceId))
+    }
+
+    suspend fun documentIdCannotMoveBetweenWorkspaces() {
+        val now = now()
+        val first = Document(
+            id = "shared-document-id",
+            title = "First",
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspace-a",
+            parentId = "root",
+        )
+        val second = first.copy(
+            title = "Second",
+            workspaceId = "workspace-b",
+        )
+
+        documentRepository.saveDocument(first)
+
+        var failed = false
+        try {
+            documentRepository.saveDocument(second)
+        } catch (_: Exception) {
+            failed = true
+        }
+
+        assertTrue(failed)
+        assertEquals(first, documentRepository.loadDocumentById(first.id, first.workspaceId))
+        assertEquals(null, documentRepository.loadDocumentById(second.id, second.workspaceId))
+    }
+
+    suspend fun commentPersistenceRespectsWorkspaceBoundaries() {
+        val now = now()
+
+        fun document(
+            id: String,
+            workspaceId: String,
+            conversationId: String,
+            commentId: String,
+        ) = Document(
+            id = id,
+            title = id,
+            content = mapOf(
+                0.0 to StoryStep(
+                    type = StoryTypes.TEXT.type,
+                    text = "Commented",
+                    spans = setOf(
+                        SpanInfo.create(0, 9, Span.COMMENT, conversationId)
+                    ),
+                    dbPosition = 0.0,
+                )
+            ),
+            commentConversations = mapOf(
+                conversationId to listOf(Comment(id = commentId, text = workspaceId))
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = workspaceId,
+            parentId = "root",
+        )
+
+        val first = document(
+            id = "workspace-a-document",
+            workspaceId = "workspace-a",
+            conversationId = "conversation-a",
+            commentId = "comment-a",
+        )
+        val second = document(
+            id = "workspace-b-document",
+            workspaceId = "workspace-b",
+            conversationId = "conversation-b",
+            commentId = "comment-b",
+        )
+
+        documentRepository.saveDocument(first)
+        documentRepository.saveDocument(second)
+
+        assertEquals(null, documentRepository.loadDocumentById(second.id, first.workspaceId))
+        assertEquals(
+            listOf(first.id),
+            documentRepository.loadDocumentByIds(
+                listOf(first.id, second.id),
+                first.workspaceId,
+            ).map { it.id },
+        )
+        assertEquals(
+            listOf(first.id),
+            documentRepository.loadDocumentsWithContentByIds(
+                listOf(first.id, second.id),
+                OrderBy.NAME.type,
+                first.workspaceId,
+            ).map { it.id },
+        )
+
+        documentRepository.hardDeleteDocumentByIds(
+            setOf(first.id, second.id),
+            first.workspaceId,
+        )
+
+        assertEquals(null, documentRepository.loadDocumentById(first.id, first.workspaceId))
+        assertEquals(
+            second.commentConversations,
+            documentRepository.loadDocumentById(second.id, second.workspaceId)
+                ?.commentConversations,
+        )
     }
 
     suspend fun saveSimpleDocumentAndLoadByParentId() {

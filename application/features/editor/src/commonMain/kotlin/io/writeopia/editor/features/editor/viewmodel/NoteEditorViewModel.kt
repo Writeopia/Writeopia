@@ -3,6 +3,9 @@ package io.writeopia.editor.features.editor.viewmodel
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
+import io.writeopia.sdk.model.story.Selection
+import io.writeopia.sdk.models.comment.Comment
+import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.Tag
@@ -62,6 +65,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val selectionMetadataState: StateFlow<Set<SelectionMetadata>>
 
+    val commentConversations: StateFlow<Map<String, List<Comment>>>
+
     val sideMenuTabState: StateFlow<SideMenuTab>
 
     val showPublishDialog: StateFlow<Boolean>
@@ -109,6 +114,20 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun onViewModelCleared()
 
     fun onAddSpanClick(span: Span)
+
+    fun createComment(text: String): CommentConversation?
+
+    fun createComment(text: String, target: Selection): CommentConversation?
+
+    fun addComment(conversationId: String, text: String): Comment?
+
+    fun getCommentConversationAtCursor(): CommentConversation?
+
+    fun getCommentConversationAtSelection(): CommentConversation?
+
+    fun deleteComment(conversationId: String, commentId: String): Boolean
+
+    fun deleteCommentConversation(conversationId: String): Boolean
 
     fun onAddCheckListClick()
 

@@ -2,7 +2,13 @@ package io.writeopia.sdk.manager
 
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.StoryState
+import io.writeopia.sdk.models.comment.Comment
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+
+class UnsupportedCommentConversationsException(message: String) : IllegalStateException(message)
 
 /**
  * Saves the document automatically based of content changes.
@@ -17,4 +23,29 @@ interface DocumentTracker {
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>
     )
+
+    suspend fun saveOnStoryChanges(
+        documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
+        workspaceIdFlow: Flow<String>,
+        commentConversationsFlow: StateFlow<Map<String, List<Comment>>>
+    ) {
+        coroutineScope {
+            val commentGuard = launch {
+                commentConversationsFlow.collect { conversations ->
+                    if (conversations.isNotEmpty()) {
+                        println(
+                            "This DocumentTracker does not persist comment conversations; " +
+                                "continuing story persistence without comment data."
+                        )
+                    }
+                }
+            }
+
+            try {
+                saveOnStoryChanges(documentEditionFlow, workspaceIdFlow)
+            } finally {
+                commentGuard.cancel()
+            }
+        }
+    }
 }

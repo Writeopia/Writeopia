@@ -63,6 +63,11 @@ DELETE
 FROM story_step_entity
 WHERE id IN ?;
 
+deleteByIdsForDocument:
+DELETE
+FROM story_step_entity
+WHERE document_id = ? AND id IN ?;
+
 selectByParentId:
 SELECT *
 FROM story_step_entity

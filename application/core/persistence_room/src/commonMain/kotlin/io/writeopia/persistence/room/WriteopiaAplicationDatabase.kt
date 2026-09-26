@@ -18,8 +18,10 @@ import io.writeopia.persistence.room.data.entities.UiConfigurationRoomEntity
 import io.writeopia.persistence.room.data.entities.UserEntity
 import io.writeopia.persistence.room.data.entities.WorkspaceEntity
 import io.writeopia.sdk.persistence.converter.IdListConverter
+import io.writeopia.sdk.persistence.dao.CommentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
 import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
+import io.writeopia.sdk.persistence.entity.comment.CommentEntity
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
 
@@ -33,6 +35,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
     entities = [
         DocumentEntity::class,
         StoryStepEntity::class,
+        CommentEntity::class,
         NotesConfigurationEntity::class,
         FolderEntity::class,
         UiConfigurationRoomEntity::class,
@@ -40,7 +43,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         TokenEntity::class,
         WorkspaceEntity::class
     ],
-    version = 29,
+    version = 31,
     exportSchema = false
 )
 @TypeConverters(IdListConverter::class)
@@ -50,6 +53,8 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
     abstract fun documentDao(): DocumentEntityDao
 
     abstract fun storyUnitDao(): StoryUnitEntityDao
+
+    abstract fun commentDao(): CommentEntityDao
 
     abstract fun notesConfigurationDao(): NotesConfigurationRoomDao
 
@@ -76,6 +81,7 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
         ): WriteopiaApplicationDatabase =
             databaseBuilder
 //                    .createFromAsset("WriteopiaDatabase.db")
+                .addMigrations(MIGRATION_29_30, MIGRATION_30_31)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
                 .also { database ->

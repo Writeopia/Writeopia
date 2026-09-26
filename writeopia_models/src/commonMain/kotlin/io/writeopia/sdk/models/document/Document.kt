@@ -2,6 +2,7 @@
 
 package io.writeopia.sdk.models.document
 
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import kotlin.time.ExperimentalTime
@@ -20,5 +21,13 @@ data class Document(
     override val icon: MenuItem.Icon? = null,
     val isLocked: Boolean = false,
     val deleted: Boolean = false,
-    val published: Boolean = false
-) : MenuItem
+    val published: Boolean = false,
+    val commentConversations: Map<String, List<Comment>> = emptyMap(),
+) : MenuItem {
+
+    init {
+        require(commentConversations.values.all { comments -> comments.isNotEmpty() }) {
+            "Comment conversations must contain at least one comment"
+        }
+    }
+}

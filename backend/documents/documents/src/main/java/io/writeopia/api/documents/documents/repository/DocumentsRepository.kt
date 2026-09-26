@@ -1,3 +1,4 @@
+
 package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
@@ -15,7 +16,8 @@ private fun WriteopiaDbBackend.getDocumentDaoFn(): DocumentSqlBeDao =
             documentEntityQueries,
             storyStepEntityQueries,
             folderEntityQueries,
-            userFavoriteEntityQueries
+            userFavoriteEntityQueries,
+            commentEntityQueries
         ).also {
             documentSqlDao = it
         }
@@ -24,6 +26,10 @@ private fun WriteopiaDbBackend.getDocumentDaoFn(): DocumentSqlBeDao =
 fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
     val dao = getDocumentDaoFn()
     documents.forEach(dao::insertDocumentWithContent)
+}
+
+internal fun WriteopiaDbBackend.saveDocumentInTransaction(document: Document) {
+    getDocumentDaoFn().insertDocumentWithContentInTransaction(document)
 }
 
 suspend fun WriteopiaDbBackend.saveFolder(vararg folders: Folder) {
@@ -54,8 +60,13 @@ suspend fun WriteopiaDbBackend.allFoldersByWorkspaceId(workspaceId: String): Lis
     return getDocumentDaoFn().loadAllFoldersByWorkspaceId(workspaceId)
 }
 
-fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
-    getDocumentDaoFn().loadDocumentByParentId(parentId)
+fun WriteopiaDbBackend.getDocumentsByParentId(
+    parentId: String = "root",
+    workspaceId: String,
+): List<Document> = getDocumentDaoFn().loadDocumentByParentId(parentId, workspaceId)
+
+fun WriteopiaDbBackend.getDocumentWorkspaceId(id: String): String? =
+    getDocumentDaoFn().loadDocumentWorkspaceId(id)
 
 suspend fun WriteopiaDbBackend.getDocumentById(
     id: String = "test",
@@ -73,11 +84,15 @@ suspend fun WriteopiaDbBackend.getDocumentByTitle(
 suspend fun WriteopiaDbBackend.getFolderById(id: String = "test", workspaceId: String): Folder? =
     getDocumentDaoFn().loadFolderById(id, workspaceId)
 
-suspend fun WriteopiaDbBackend.getIdsByParentId(parentId: String = "root"): List<String> =
-    getDocumentDaoFn().loadDocumentIdsByParentId(parentId)
+suspend fun WriteopiaDbBackend.getIdsByParentId(
+    parentId: String = "root",
+    workspaceId: String,
+): List<String> = getDocumentDaoFn().loadDocumentIdsByParentId(parentId, workspaceId)
 
-fun WriteopiaDbBackend.getFoldersByParentId(parentId: String = "root"): List<Folder> =
-    getDocumentDaoFn().loadFoldersByParentId(parentId)
+fun WriteopiaDbBackend.getFoldersByParentId(
+    parentId: String = "root",
+    workspaceId: String,
+): List<Folder> = getDocumentDaoFn().loadFoldersByParentId(parentId, workspaceId)
 
 suspend fun WriteopiaDbBackend.deleteDocumentById(vararg documentIds: String) {
     val dao = getDocumentDaoFn()
@@ -88,8 +103,8 @@ fun WriteopiaDbBackend.deleteFolder(folderId: String, workspaceId: String) {
     getDocumentDaoFn().deleteFolder(folderId, workspaceId)
 }
 
-fun WriteopiaDbBackend.deleteDocumentsByFolderId(folderId: String) {
-    getDocumentDaoFn().deleteDocumentsByFolderId(folderId)
+fun WriteopiaDbBackend.deleteDocumentsByFolderId(folderId: String, workspaceId: String) {
+    getDocumentDaoFn().deleteDocumentsByFolderId(folderId, workspaceId)
 }
 
 fun WriteopiaDbBackend.moveFolderToFolder(folderId: String, parentId: String) {
@@ -162,8 +177,8 @@ fun WriteopiaDbBackend.deleteStoryStepById(storyStepId: String) {
 /**
  * Deletes multiple StorySteps by their IDs.
  */
-fun WriteopiaDbBackend.deleteStoryStepsByIds(storyStepIds: List<String>) {
-    getDocumentDaoFn().deleteStoryStepsByIds(storyStepIds)
+fun WriteopiaDbBackend.deleteStoryStepsByIds(storyStepIds: List<String>, documentId: String) {
+    getDocumentDaoFn().deleteStoryStepsByIds(storyStepIds, documentId)
 }
 
 // Document Publishing Operations
@@ -200,4 +215,33 @@ fun WriteopiaDbBackend.getDocumentIdsByWorkspaceId(workspaceId: String): List<St
  */
 fun WriteopiaDbBackend.updateDocumentTitle(documentId: String, title: String) {
     getDocumentDaoFn().updateDocumentTitle(documentId, title)
+}
+
+fun WriteopiaDbBackend.replaceCommentConversations(
+    documentId: String,
+    conversations: Map<String, List<io.writeopia.sdk.models.comment.Comment>>,
+) {
+    getDocumentDaoFn().replaceCommentConversations(documentId, conversations)
+}
+
+fun WriteopiaDbBackend.applyCommentDelta(
+    documentId: String,
+    conversations: Map<String, List<io.writeopia.sdk.models.comment.Comment>>,
+    deletedConversationIds: List<String>,
+    deletedCommentIds: List<String>,
+) {
+    getDocumentDaoFn().applyCommentDelta(
+        documentId,
+        conversations,
+        deletedConversationIds,
+        deletedCommentIds,
+    )
+}
+
+fun WriteopiaDbBackend.touchDocument(
+    documentId: String,
+    workspaceId: String,
+    timestamp: Long,
+) {
+    getDocumentDaoFn().touchDocument(documentId, workspaceId, timestamp)
 }

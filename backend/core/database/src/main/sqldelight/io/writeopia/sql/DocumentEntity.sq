@@ -45,6 +45,12 @@ FROM document_entity
 WHERE document_entity.id = ? AND workspace_id = ? AND deleted = FALSE
 LIMIT 1;
 
+selectWorkspaceIdById:
+SELECT workspace_id
+FROM document_entity
+WHERE document_entity.id = ?
+LIMIT 1;
+
 selectWithContent:
 SELECT *
 FROM document_entity
@@ -105,13 +111,13 @@ selectWithContentByParentId:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE document_entity.parent_document_id = ? AND deleted = FALSE
+WHERE document_entity.parent_document_id = ? AND workspace_id = ? AND deleted = FALSE
 ORDER BY position;
 
 selectIdsByParentId:
 SELECT id
 FROM document_entity
-WHERE document_entity.parent_document_id = ? AND deleted = FALSE;
+WHERE document_entity.parent_document_id = ? AND workspace_id = ? AND deleted = FALSE;
 
 insert:
 INSERT INTO document_entity(id, title, created_at, last_updated_at, last_synced, workspace_id, favorite, parent_document_id, icon, icon_tint, is_locked, company_id, deleted, published)
@@ -148,7 +154,7 @@ UPDATE document_entity
 SET
     deleted = TRUE,
     last_updated_at = ?
-WHERE parent_document_id = ?;
+WHERE parent_document_id = ? AND workspace_id = ?;
 
 favoriteById:
 UPDATE document_entity SET favorite = 1 WHERE id = ?;
@@ -175,6 +181,11 @@ UPDATE document_entity SET published = ?, last_updated_at = ? WHERE id = ?;
 
 updateTitle:
 UPDATE document_entity SET title = ?, last_updated_at = ?, last_synced = ? WHERE id = ?;
+
+touch:
+UPDATE document_entity
+SET last_updated_at = ?, last_synced = ?
+WHERE id = ? AND workspace_id = ? AND deleted = FALSE;
 
 selectPublishedWithContentById:
 SELECT *
