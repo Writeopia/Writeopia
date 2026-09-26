@@ -49,7 +49,6 @@ class DocumentMergerTest {
         assertEquals(backendComments, merged?.commentConversations)
     }
 
-
     @Test
     fun `newer backend preserves local conversation referenced by retained local story`() {
         val localOnlyComments = listOf(
