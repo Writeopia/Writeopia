@@ -2,10 +2,15 @@
 
 package io.writeopia.sdk.persistence.sqldelight.dao.sql
 
+import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import io.writeopia.libraries.dbtests.DocumentRepositoryTests
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
@@ -33,6 +38,7 @@ class SqlDelightDocumentRepositoryTest {
     private val documentSqlDao: DocumentSqlDao = DocumentSqlDao(
         database.documentEntityQueries,
         database.storyStepEntityQueries,
+        database.commentEntityQueries,
     )
 
     private val documentRepository = SqlDelightDocumentRepository(documentSqlDao)
@@ -194,4 +200,117 @@ class SqlDelightDocumentRepositoryTest {
         assertEquals(1, newDocument.size)
         assertEquals(documentId, newDocument.first().id)
     }
+    @Test
+    fun `comments survive save and load in sqldelight`() = runTest {
+        val now = Clock.System.now()
+        val conversationId = "conversation-1"
+        val document = Document(
+            id = "document-with-comments",
+            title = "Comments",
+            content = mapOf(
+                0.0 to StoryStep(
+                    type = StoryTypes.TEXT.type,
+                    text = "Commented text",
+                    spans = setOf(
+                        SpanInfo.create(0, 9, Span.COMMENT, conversationId)
+                    ),
+                    dbPosition = 0.0,
+                )
+            ),
+            commentConversations = mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-1", text = "First"),
+                    Comment(id = "comment-2", text = "Second"),
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+        )
+
+        documentRepository.saveDocument(document)
+
+        val loadedDocument = documentRepository.loadDocumentById(document.id, document.workspaceId)
+        assertEquals(document.id, loadedDocument?.id)
+        assertEquals(document.commentConversations, loadedDocument?.commentConversations)
+        assertEquals(
+            document.content.getValue(0.0).spans,
+            loadedDocument?.content?.get(0.0)?.spans,
+        )
+        assertEquals(
+            document.content.getValue(0.0).text,
+            loadedDocument?.content?.get(0.0)?.text,
+        )
+
+        val loadedFromWorkspace = documentRepository.loadDocumentsWorkspace(document.workspaceId)
+            .first { it.id == document.id }
+        assertEquals(document.commentConversations, loadedFromWorkspace.commentConversations)
+    }
+
+    @Test
+    fun `deleted comment tombstone persists`() = runTest {
+        DocumentRepositoryTests(documentRepository).deletedCommentTombstonePersists()
+    }
+
+    @Test
+    fun `document id cannot move between workspaces`() = runTest {
+        DocumentRepositoryTests(documentRepository).documentIdCannotMoveBetweenWorkspaces()
+    }
+
+    @Test
+    fun `comment persistence respects workspace boundaries`() = runTest {
+        DocumentRepositoryTests(documentRepository).commentPersistenceRespectsWorkspaceBoundaries()
+    }
+
+    @Test
+    fun `comment id cannot move between documents`() = runTest {
+        DocumentRepositoryTests(documentRepository).commentIdCannotMoveBetweenDocuments()
+    }
+
+    @Test
+    fun `hard delete removes comment rows in sqldelight`() = runTest {
+        val now = Clock.System.now()
+        val document = Document(
+            id = "document-to-delete",
+            commentConversations = mapOf(
+                "conversation-delete" to listOf(
+                    Comment(id = "comment-delete", text = "Delete me")
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+        )
+
+        val retainedDocument = Document(
+            id = "document-to-keep",
+            commentConversations = mapOf(
+                "conversation-keep" to listOf(
+                    Comment(id = "comment-keep", text = "Keep me")
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = document.workspaceId,
+            parentId = "root",
+        )
+
+        documentRepository.saveDocument(document)
+        documentRepository.saveDocument(retainedDocument)
+        documentRepository.hardDeleteDocumentByIds(setOf(document.id), document.workspaceId)
+
+        assertTrue(database.commentEntityQueries.selectByDocumentId(document.id).awaitAsList().isEmpty())
+        assertTrue(
+            database.commentEntityQueries
+                .selectByDocumentId(retainedDocument.id)
+                .awaitAsList()
+                .isNotEmpty()
+        )
+    }
+
 }

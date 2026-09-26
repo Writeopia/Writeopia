@@ -280,14 +280,19 @@ class WriteopiaManager(
     fun expandItem(storyState: StoryState, position: Double): StoryState =
         contentHandler.expandItem(storyState.stories, position)
 
-    fun addSpanToStories(storyState: StoryState, positions: Set<Double>, span: Span): StoryState {
+    fun addSpanToStories(
+        storyState: StoryState,
+        positions: Set<Double>,
+        span: Span,
+        extra: String? = null,
+    ): StoryState {
         val newMap = positions.mapNotNull {
             val story = storyState.stories[it]
 
             if (story != null) it to story else null
         }.toMap()
             .let {
-                spanHandler.toggleSpansForManyStories(it, span)
+                spanHandler.toggleSpansForManyStories(it, span, extra)
             }
 
         val newStories = storyState.stories + newMap

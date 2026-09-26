@@ -20,5 +20,38 @@ data class DocumentApi(
     val isLocked: Boolean = false,
     val icon: IconApi? = null,
     val deleted: Boolean = false,
-    val published: Boolean = false
-)
+    val published: Boolean = false,
+    val commentConversations: List<CommentConversationApi> = emptyList(),
+) {
+    @Deprecated("Use primary constructor with commentConversations.")
+    constructor(
+        id: String,
+        title: String,
+        workspaceId: String,
+        content: List<StoryStepApi>,
+        createdAt: Long,
+        lastUpdatedAt: Long,
+        isFavorite: Boolean,
+        lastSyncedAt: Long?,
+        parentId: String?,
+        isLocked: Boolean,
+        icon: IconApi?,
+        deleted: Boolean,
+        published: Boolean,
+    ) : this(
+        id = id,
+        title = title,
+        workspaceId = workspaceId,
+        content = content,
+        createdAt = createdAt,
+        lastUpdatedAt = lastUpdatedAt,
+        isFavorite = isFavorite,
+        lastSyncedAt = lastSyncedAt,
+        parentId = parentId,
+        isLocked = isLocked,
+        icon = icon,
+        deleted = deleted,
+        published = published,
+        commentConversations = emptyList(),
+    )
+}

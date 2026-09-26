@@ -1,0 +1,18 @@
+package io.writeopia.sdk.models.comment
+
+import io.writeopia.sdk.models.id.GenerateId
+
+data class Comment(
+    val id: String = GenerateId.generate(),
+    val text: String,
+    val deleted: Boolean = false,
+)
+
+data class CommentConversation(
+    val id: String = GenerateId.generate(),
+    val comments: List<Comment>,
+) {
+    init {
+        require(comments.isNotEmpty()) { "A comment conversation must contain at least one comment." }
+    }
+}

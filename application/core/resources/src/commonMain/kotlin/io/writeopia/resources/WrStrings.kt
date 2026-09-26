@@ -232,6 +232,11 @@ import writeopia.application.core.resources.generated.resources.model_tier_mediu
 import writeopia.application.core.resources.generated.resources.model_tier_medium_description
 import writeopia.application.core.resources.generated.resources.model_tier_heavy
 import writeopia.application.core.resources.generated.resources.model_tier_heavy_description
+import writeopia.application.core.resources.generated.resources.add_comment
+import writeopia.application.core.resources.generated.resources.comment
+import writeopia.application.core.resources.generated.resources.comments_count
+import writeopia.application.core.resources.generated.resources.delete_thread
+import writeopia.application.core.resources.generated.resources.reply
 
 object WrStrings {
 
@@ -925,4 +930,19 @@ object WrStrings {
 
     @Composable
     fun modelTierHeavyDescription() = stringResource(Res.string.model_tier_heavy_description)
+
+    @Composable
+    fun addComment() = stringResource(Res.string.add_comment)
+
+    @Composable
+    fun comment() = stringResource(Res.string.comment)
+
+    @Composable
+    fun comments(count: Int) = stringResource(Res.string.comments_count, count)
+
+    @Composable
+    fun deleteThread() = stringResource(Res.string.delete_thread)
+
+    @Composable
+    fun reply() = stringResource(Res.string.reply)
 }
