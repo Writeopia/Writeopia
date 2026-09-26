@@ -8,11 +8,13 @@ import io.writeopia.sdk.serialization.data.CommentConversationApi
 fun Comment.toApi(): CommentApi = CommentApi(
     id = id,
     text = text,
+    deleted = deleted,
 )
 
 fun CommentApi.toModel(): Comment = Comment(
     id = id,
     text = text,
+    deleted = deleted,
 )
 
 fun CommentConversation.toApi(): CommentConversationApi = CommentConversationApi(

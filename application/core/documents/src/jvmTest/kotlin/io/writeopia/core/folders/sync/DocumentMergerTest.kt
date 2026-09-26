@@ -91,6 +91,41 @@ class DocumentMergerTest {
     }
 
     @Test
+    fun `deleted reply should suppress the older surviving copy`() {
+        val conversationId = "conversation-1"
+        val local = document(
+            lastUpdatedAt = 2,
+            comments = mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-1", text = "Keep"),
+                    Comment(id = "comment-2", text = "Deleted", deleted = true),
+                )
+            ),
+            content = mapOf(0.0 to step("step-1", 2, conversationId)),
+        )
+        val backend = document(
+            lastUpdatedAt = 1,
+            comments = mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-1", text = "Keep"),
+                    Comment(id = "comment-2", text = "Deleted"),
+                )
+            ),
+            content = mapOf(0.0 to step("step-1", 1, conversationId)),
+        )
+
+        val merged = merger.merge(local, backend)
+
+        assertEquals(
+            true,
+            merged?.commentConversations
+                ?.getValue(conversationId)
+                ?.single { comment -> comment.id == "comment-2" }
+                ?.deleted,
+        )
+    }
+
+    @Test
     fun `distinct referenced conversations from merged content should both survive`() {
         val localId = "conversation-local"
         val backendId = "conversation-backend"

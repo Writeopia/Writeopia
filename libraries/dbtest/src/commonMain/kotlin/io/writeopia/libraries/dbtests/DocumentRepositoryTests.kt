@@ -236,6 +236,34 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         assertEquals(document.commentConversations, loadedDocument.commentConversations)
     }
 
+    suspend fun deletedCommentTombstonePersists() {
+        val now = now()
+        val conversationId = "conversation-tombstone"
+        val document = Document(
+            id = GenerateId.generate(),
+            title = "Tombstone",
+            commentConversations = mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-active", text = "Keep"),
+                    Comment(id = "comment-deleted", text = "Deleted", deleted = true),
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+        )
+
+        documentRepository.saveDocument(document)
+
+        assertEquals(
+            document.commentConversations,
+            documentRepository.loadDocumentById(document.id, document.workspaceId)
+                ?.commentConversations,
+        )
+    }
+
     suspend fun commentIdCannotMoveBetweenDocuments() {
         val now = now()
 

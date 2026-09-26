@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class CommentApi(
     val id: String,
     val text: String = "",
+    val deleted: Boolean = false,
 )
 
 @Serializable
