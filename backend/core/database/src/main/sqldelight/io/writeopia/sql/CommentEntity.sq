@@ -3,7 +3,8 @@ CREATE TABLE comment_entity (
   conversation_id TEXT NOT NULL,
   document_id TEXT NOT NULL,
   comment_position BIGINT NOT NULL,
-  text TEXT NOT NULL
+  text TEXT NOT NULL,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX comment_entity_document_id_index ON comment_entity(document_id);
@@ -24,9 +25,10 @@ INSERT INTO comment_entity(
   conversation_id,
   document_id,
   comment_position,
-  text
+  text,
+  deleted
 )
-VALUES (?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET
   conversation_id = CASE
@@ -41,6 +43,10 @@ UPDATE SET
   text = CASE
     WHEN comment_entity.document_id = excluded.document_id THEN excluded.text
     ELSE comment_entity.text
+  END,
+  deleted = CASE
+    WHEN comment_entity.document_id = excluded.document_id THEN comment_entity.deleted OR excluded.deleted
+    ELSE comment_entity.deleted
   END;
 
 deleteByDocumentId:

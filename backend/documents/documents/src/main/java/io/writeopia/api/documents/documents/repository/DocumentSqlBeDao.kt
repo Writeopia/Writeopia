@@ -132,6 +132,7 @@ class DocumentSqlBeDao(
                     document_id = documentId,
                     comment_position = commentPosition.toLong(),
                     text = comment.text,
+                    deleted = comment.deleted,
                 )
             }
         }
@@ -168,6 +169,7 @@ class DocumentSqlBeDao(
                     document_id = documentId,
                     comment_position = commentPosition.toLong(),
                     text = comment.text,
+                    deleted = comment.deleted,
                 )
             }
         }
@@ -184,6 +186,7 @@ class DocumentSqlBeDao(
                         Comment(
                             id = row.id,
                             text = row.text,
+                            deleted = row.deleted,
                         )
                     }
             }

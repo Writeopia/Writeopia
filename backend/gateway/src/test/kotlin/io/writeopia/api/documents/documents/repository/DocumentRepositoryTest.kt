@@ -77,6 +77,54 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun `deleted comment tombstone survives reload and stale active update`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        val conversationId = GenerateId.generate()
+        val commentId = GenerateId.generate()
+
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+                commentConversations = mapOf(
+                    conversationId to listOf(Comment(id = commentId, text = "Active"))
+                ),
+            )
+        )
+
+        database.applyCommentDelta(
+            documentId = documentId,
+            conversations = mapOf(
+                conversationId to listOf(Comment(id = commentId, text = "Deleted", deleted = true))
+            ),
+            deletedConversationIds = emptyList(),
+            deletedCommentIds = emptyList(),
+        )
+        var loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
+        assertTrue(loaded.commentConversations.getValue(conversationId).single().deleted)
+
+        database.applyCommentDelta(
+            documentId = documentId,
+            conversations = mapOf(
+                conversationId to listOf(Comment(id = commentId, text = "Stale active"))
+            ),
+            deletedConversationIds = emptyList(),
+            deletedCommentIds = emptyList(),
+        )
+        loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
+        assertTrue(loaded.commentConversations.getValue(conversationId).single().deleted)
+
+        database.deleteDocumentById(documentId)
+    }
+
+    @Test
     fun `comment id collision should not move a comment between documents`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()
