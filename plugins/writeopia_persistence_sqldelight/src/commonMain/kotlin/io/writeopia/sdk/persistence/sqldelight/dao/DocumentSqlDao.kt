@@ -93,6 +93,7 @@ class DocumentSqlDao(
                         document.id,
                         commentPosition.toLong(),
                         comment.text,
+                        comment.deleted.toLong(),
                     )
                 }
             }
@@ -1046,6 +1047,7 @@ class DocumentSqlDao(
                     Comment(
                         id = entity.id,
                         text = entity.text,
+                        deleted = entity.deleted == 1L,
                     )
                 }
             }

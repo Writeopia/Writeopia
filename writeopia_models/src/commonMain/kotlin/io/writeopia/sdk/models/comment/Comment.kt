@@ -5,6 +5,7 @@ import io.writeopia.sdk.models.id.GenerateId
 data class Comment(
     val id: String = GenerateId.generate(),
     val text: String,
+    val deleted: Boolean = false,
 )
 
 data class CommentConversation(

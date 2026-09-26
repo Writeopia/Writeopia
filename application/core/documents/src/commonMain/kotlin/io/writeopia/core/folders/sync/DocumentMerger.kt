@@ -70,8 +70,22 @@ class DocumentMerger {
         return referencedIds.mapNotNull { conversationId ->
             val primaryComments = primary[conversationId].orEmpty()
             val fallbackComments = fallback[conversationId].orEmpty()
-            val mergedComments = (primaryComments + fallbackComments)
-                .distinctBy { comment -> comment.id }
+            val primaryById = primaryComments.associateBy { comment -> comment.id }
+            val fallbackById = fallbackComments.associateBy { comment -> comment.id }
+            val commentIds = (primaryComments + fallbackComments)
+                .map { comment -> comment.id }
+                .distinct()
+
+            val mergedComments = commentIds.mapNotNull { commentId ->
+                val primaryComment = primaryById[commentId]
+                val fallbackComment = fallbackById[commentId]
+                when {
+                    primaryComment?.deleted == true -> primaryComment
+                    fallbackComment?.deleted == true -> fallbackComment
+                    primaryComment != null -> primaryComment
+                    else -> fallbackComment
+                }
+            }
 
             mergedComments.takeIf { comments -> comments.isNotEmpty() }
                 ?.let { comments -> conversationId to comments }

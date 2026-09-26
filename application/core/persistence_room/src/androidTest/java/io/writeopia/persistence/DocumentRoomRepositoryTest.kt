@@ -123,6 +123,11 @@ class DocumentRoomRepositoryTest {
     }
 
     @Test
+    fun deletedCommentTombstonePersists() = runTest {
+        documentRepositoryTests.deletedCommentTombstonePersists()
+    }
+
+    @Test
     fun documentIdCannotMoveBetweenWorkspaces() = runTest {
         documentRepositoryTests.documentIdCannotMoveBetweenWorkspaces()
     }
