@@ -15,14 +15,19 @@ class DocumentMergerTest {
     private val merger = DocumentMerger()
 
     @Test
-    fun `backend document without comments should preserve local comments`() {
-        val localComments = mapOf(
-            "conversation-1" to listOf(
-                Comment(id = "comment-1", text = "Local comment")
-            )
+    fun `backend document without comment payload should preserve referenced local comments`() {
+        val conversationId = "conversation-1"
+        val localComments = commentMap(conversationId, "Local comment")
+        val local = document(
+            lastUpdatedAt = 1,
+            comments = localComments,
+            content = mapOf(0.0 to step("step-1", 1, conversationId)),
         )
-        val local = document(lastUpdatedAt = 1, comments = localComments)
-        val backend = document(lastUpdatedAt = 2, comments = emptyMap())
+        val backend = document(
+            lastUpdatedAt = 2,
+            comments = emptyMap(),
+            content = mapOf(0.0 to step("step-1", 2, conversationId)),
+        )
 
         val merged = merger.merge(local, backend)
 
@@ -30,19 +35,19 @@ class DocumentMergerTest {
     }
 
     @Test
-    fun `backend comments should win when newer backend provides them`() {
-        val localComments = mapOf(
-            "conversation-1" to listOf(
-                Comment(id = "comment-1", text = "Local comment")
-            )
+    fun `newer backend comments should win for the same referenced conversation`() {
+        val conversationId = "conversation-1"
+        val local = document(
+            lastUpdatedAt = 1,
+            comments = commentMap(conversationId, "Local comment"),
+            content = mapOf(0.0 to step("step-1", 1, conversationId)),
         )
-        val backendComments = mapOf(
-            "conversation-2" to listOf(
-                Comment(id = "comment-2", text = "Backend comment")
-            )
+        val backendComments = commentMap(conversationId, "Backend comment")
+        val backend = document(
+            lastUpdatedAt = 2,
+            comments = backendComments,
+            content = mapOf(0.0 to step("step-1", 2, conversationId)),
         )
-        val local = document(lastUpdatedAt = 1, comments = localComments)
-        val backend = document(lastUpdatedAt = 2, comments = backendComments)
 
         val merged = merger.merge(local, backend)
 
@@ -50,49 +55,76 @@ class DocumentMergerTest {
     }
 
     @Test
-    fun `newer backend preserves local conversation referenced by retained local story`() {
-        val localOnlyComments = listOf(
-            Comment(id = "local-comment", text = "Local")
-        )
-        val backendComments = listOf(
-            Comment(id = "backend-comment", text = "Backend")
-        )
+    fun `distinct referenced conversations from merged content should both survive`() {
+        val localId = "conversation-local"
+        val backendId = "conversation-backend"
+        val localComments = commentMap(localId, "Local comment")
+        val backendComments = commentMap(backendId, "Backend comment")
         val local = document(
             lastUpdatedAt = 1,
-            comments = mapOf(
-                "local-conversation" to localOnlyComments,
-                "shared-conversation" to listOf(
-                    Comment(id = "local-shared", text = "Local shared")
-                ),
-            ),
+            comments = localComments,
             content = mapOf(
-                0.0 to StoryStep(
-                    id = "local-step",
-                    type = StoryTypes.TEXT.type,
-                    text = "local",
-                    spans = setOf(
-                        SpanInfo.create(0, 5, Span.COMMENT, "local-conversation")
-                    ),
-                )
+                0.0 to step(
+                    id = "local-parent",
+                    updatedAt = 1,
+                    children = listOf(step("local-child", 1, localId)),
+                ),
             ),
         )
         val backend = document(
             lastUpdatedAt = 2,
-            comments = mapOf(
-                "shared-conversation" to backendComments,
-            ),
+            comments = backendComments,
+            content = mapOf(1.0 to step("backend-step", 2, backendId)),
         )
 
         val merged = merger.merge(local, backend)
 
-        assertEquals(localOnlyComments, merged?.commentConversations?.get("local-conversation"))
-        assertEquals(backendComments, merged?.commentConversations?.get("shared-conversation"))
+        assertEquals(localComments + backendComments, merged?.commentConversations)
     }
+
+    @Test
+    fun `conversation removed with the winning story step should not be resurrected`() {
+        val conversationId = "conversation-1"
+        val local = document(
+            lastUpdatedAt = 1,
+            comments = commentMap(conversationId, "Local comment"),
+            content = mapOf(0.0 to step("step-1", 1, conversationId)),
+        )
+        val backend = document(
+            lastUpdatedAt = 2,
+            comments = emptyMap(),
+            content = mapOf(0.0 to step("step-1", 2)),
+        )
+
+        val merged = merger.merge(local, backend)
+
+        assertEquals(emptyMap(), merged?.commentConversations)
+    }
+
+    private fun commentMap(id: String, text: String) = mapOf(
+        id to listOf(Comment(id = "$id-comment", text = text))
+    )
+
+    private fun step(
+        id: String,
+        updatedAt: Long,
+        conversationId: String? = null,
+        children: List<StoryStep> = emptyList(),
+    ) = StoryStep(
+        id = id,
+        type = StoryTypes.TEXT.type,
+        text = "Text",
+        steps = children,
+        spans = conversationId?.let { id ->
+            setOf(SpanInfo.create(0, 4, Span.COMMENT, id))
+        } ?: emptySet(),
+        lastUpdatedAt = updatedAt,
+    )
 
     private fun document(
         lastUpdatedAt: Long,
         comments: Map<String, List<Comment>>,
-        content: Map<Double, StoryStep> = emptyMap(),
+        content: Map<Double, StoryStep>,
     ) = Document(
         id = "document-1",
         title = "Document",
