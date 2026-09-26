@@ -1140,11 +1140,13 @@ class WriteopiaStateManager(
         }
     }
 
-    fun createComment(text: String): CommentConversation? {
+    fun createComment(text: String): CommentConversation? =
+        createComment(text, _currentStory.value.selection)
+
+    fun createComment(text: String, selection: Selection): CommentConversation? {
         if (!isEditable) return null
 
         val state = _currentStory.value
-        val selection = state.selection
         val (start, end) = selection.sortedPositions()
         if (start == end) return null
 
@@ -1356,14 +1358,27 @@ class WriteopiaStateManager(
         val missingConversationIds = referencedConversationIds - restored.keys
         if (missingConversationIds.isNotEmpty()) {
             val state = _currentStory.value
-            val stories = state.stories.mapValues { (_, story) ->
-                story.copy(
-                    spans = story.spans.filterNot { span ->
-                        span.span == Span.COMMENT && span.extra in missingConversationIds
-                    }.toSet()
+            val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
+            val stories = state.stories.mapValues { (position, story) ->
+                val spans = story.spans.filterNot { span ->
+                    span.span == Span.COMMENT && span.extra in missingConversationIds
+                }.toSet()
+
+                if (spans != story.spans) {
+                    story.copy(
+                        localId = GenerateId.generate(),
+                        spans = spans,
+                    ).also { changedSteps += position to it }
+                } else {
+                    story
+                }
+            }
+            if (changedSteps.isNotEmpty()) {
+                _currentStory.value = state.copy(
+                    stories = stories,
+                    lastEdit = LastEdit.BulkEdition(changedSteps),
                 )
             }
-            _currentStory.value = state.copy(stories = stories)
         }
 
         _commentConversations.update { current ->

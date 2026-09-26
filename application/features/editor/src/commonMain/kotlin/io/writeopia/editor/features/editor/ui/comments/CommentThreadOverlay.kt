@@ -23,9 +23,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.writeopia.resources.WrStrings
+import io.writeopia.sdk.model.story.Selection
 
 internal const val COMMENT_BUTTON_TAG = "CommentButton"
 internal const val COMMENT_PANEL_TAG = "CommentPanel"
@@ -35,19 +38,24 @@ internal const val COMMENT_INPUT_TAG = "CommentInput"
 internal fun CommentThreadOverlay(
     uiState: CommentUiState,
     editable: Boolean,
-    onCreateComment: (String) -> Boolean,
+    onCreateComment: (String, Selection) -> Boolean,
     onReply: (String, String) -> Boolean,
     onDeleteComment: (String, String) -> Unit,
     onDeleteConversation: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val conversation = uiState.activeConversation
-    val visible = conversation != null || (editable && uiState.canCreateComment)
     var expanded by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
+    var createTarget by remember { mutableStateOf<Selection?>(null) }
+    val visible =
+        conversation != null || (editable && (uiState.canCreateComment || createTarget != null))
 
     LaunchedEffect(visible, conversation?.id) {
         expanded = false
+        if (!visible || conversation != null) {
+            createTarget = null
+        }
         draft = ""
     }
 
@@ -58,8 +66,34 @@ internal fun CommentThreadOverlay(
         horizontalAlignment = Alignment.End,
     ) {
         FilledTonalButton(
-            modifier = Modifier.testTag(COMMENT_BUTTON_TAG),
-            onClick = { expanded = !expanded },
+            modifier = Modifier
+                .pointerInput(conversation?.id, uiState.createTarget) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            if (
+                                conversation == null &&
+                                event.changes.any { change ->
+                                    change.pressed && !change.previousPressed
+                                }
+                            ) {
+                                createTarget = uiState.createTarget ?: createTarget
+                            }
+                        }
+                    }
+                }
+                .testTag(COMMENT_BUTTON_TAG),
+            onClick = {
+                if (expanded) {
+                    expanded = false
+                    if (conversation == null) createTarget = null
+                } else {
+                    if (conversation == null) {
+                        createTarget = uiState.createTarget ?: createTarget
+                    }
+                    expanded = true
+                }
+            },
         ) {
             val label = when {
                 conversation == null -> WrStrings.addComment()
@@ -144,12 +178,14 @@ internal fun CommentThreadOverlay(
                             onClick = {
                                 val text = draft.trim()
                                 val saved = if (conversation == null) {
-                                    onCreateComment(text)
+                                    val target = createTarget ?: uiState.createTarget
+                                    target != null && onCreateComment(text, target)
                                 } else {
                                     onReply(conversation.id, text)
                                 }
                                 if (saved) {
                                     draft = ""
+                                    createTarget = null
                                 }
                             },
                         ) {

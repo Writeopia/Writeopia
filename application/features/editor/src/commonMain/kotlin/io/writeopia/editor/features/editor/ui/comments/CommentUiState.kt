@@ -1,5 +1,6 @@
 package io.writeopia.editor.features.editor.ui.comments
 
+import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.span.Span
@@ -9,6 +10,7 @@ internal data class CommentUiState(
     val activeConversation: CommentConversation? = null,
     val paragraphConversations: List<CommentConversation> = emptyList(),
     val canCreateComment: Boolean = false,
+    val createTarget: Selection? = null,
 )
 
 internal fun resolveCommentUiState(
@@ -60,9 +62,17 @@ internal fun resolveCommentUiState(
         selectedConversation ?: paragraphConversations.firstOrNull()
     }
 
+    val createTarget = if (canCreateComment && selection != null) {
+        val (start, end) = selection.sortedPositions()
+        Selection(start = start, end = end, position = selection.position)
+    } else {
+        null
+    }
+
     return CommentUiState(
         activeConversation = activeConversation,
         paragraphConversations = paragraphConversations,
         canCreateComment = canCreateComment,
+        createTarget = createTarget,
     )
 }

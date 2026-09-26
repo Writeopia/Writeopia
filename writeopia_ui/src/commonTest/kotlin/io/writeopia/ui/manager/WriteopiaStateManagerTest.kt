@@ -5,6 +5,7 @@ package io.writeopia.ui.manager
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.story.LastEdit
+import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
@@ -2135,6 +2136,48 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun createCommentShouldUseCapturedSelectionAfterEditorSelectionCollapses() {
+        val now = Clock.System.now()
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(text = "hello world", type = StoryTypes.TEXT.type)
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        val story = manager.currentStory.value.stories[0.0]!!
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = story,
+                position = 0.0,
+                selectionStart = 0,
+                selectionEnd = 0,
+            )
+        )
+
+        val conversation = manager.createComment(
+            "captured",
+            Selection(start = 0, end = 5, position = 0.0),
+        ) ?: fail("Comment was not created from captured selection")
+
+        assertEquals(
+            SpanInfo.create(0, 5, Span.COMMENT, conversation.id),
+            manager.currentStory.value.stories[0.0]!!.spans.single(),
+        )
+    }
+
+    @Test
     fun deletingTheLastCommentShouldRemoveConversationAndItsSpans() {
         val now = Clock.System.now()
         val conversation = CommentConversation(
@@ -2277,6 +2320,52 @@ class WriteopiaStateManagerTest {
                 story.spans.any { it.span == Span.COMMENT && it.extra == conversation.id }
             },
         )
+    }
+
+    @Test
+    fun undoShouldPersistRemovalOfMissingCommentSpans() = runTest {
+        val now = Clock.System.now()
+        val missingConversationId = "missing-conversation"
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "hello",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(
+                            SpanInfo.create(0, 5, Span.COMMENT, missingConversationId)
+                        ),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = emptyMap(),
+            )
+        )
+
+        val original = manager.currentStory.value.stories[0.0]!!
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = original.copy(text = "changed"),
+                position = 0.0,
+            )
+        )
+        manager.undo()
+        advanceUntilIdle()
+
+        val restored = manager.currentStory.value.stories[0.0]!!
+        assertTrue(restored.spans.isEmpty())
+        val lastEdit = manager.currentStory.value.lastEdit
+        assertTrue(lastEdit is LastEdit.BulkEdition)
+        assertEquals(restored, (lastEdit as LastEdit.BulkEdition).steps.single().second)
     }
 
     @Test
