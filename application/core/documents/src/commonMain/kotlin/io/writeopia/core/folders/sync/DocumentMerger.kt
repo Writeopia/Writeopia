@@ -102,6 +102,7 @@ class DocumentMerger {
             yieldAll(child.referencedCommentConversationIds())
         }
     }
+
     private fun mergeContent(
         localContent: Map<Double, StoryStep>,
         backendContent: Map<Double, StoryStep>

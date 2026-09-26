@@ -80,7 +80,7 @@ class DocumentSqlDao(
         val queries = documentQueries ?: return
 
         queries.transaction {
-            val existing = queries.selectById(document.id).executeAsOneOrNull()
+            val existing = queries.selectById(document.id).awaitAsOneOrNull()
             require(existing == null || existing.workspace_id == document.workspaceId) {
                 "Document does not belong to the requested workspace"
             }

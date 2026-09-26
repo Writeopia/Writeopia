@@ -332,6 +332,18 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun `delete documents should accept only unknown ids`() = runTest {
+        val database = configurePersistence()
+
+        DocumentsService.deleteDocuments(
+            documentIds = listOf("missing-document"),
+            workspaceId = GenerateId.generate(),
+            userId = "test-user",
+            writeopiaDb = database,
+        )
+    }
+
+    @Test
     fun `parent document loading should stay inside the requested workspace`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()
@@ -382,7 +394,7 @@ class DocumentRepositoryTest {
         val documentId = GenerateId.generate()
         val conversation = CommentConversation(
             id = GenerateId.generate(),
-            comments = listOf(Comment(id = GenerateId.generate(), text = "First")),
+            comments = listOf(Comment(id = GenerateId.generate(), text = "First", deleted = true)),
         )
         val original = Document(
             id = documentId,
@@ -416,6 +428,7 @@ class DocumentRepositoryTest {
         val clonedSpan = clone.content.values.single().spans.single { it.span == Span.COMMENT }
 
         assertEquals(conversation.comments.map { it.text }, clonedComments.map { it.text })
+        assertEquals(conversation.comments.map { it.deleted }, clonedComments.map { it.deleted })
         assertTrue(clonedConversationId != conversation.id)
         assertTrue(clonedComments.single().id != conversation.comments.single().id)
         assertEquals(clonedConversationId, clonedSpan.extra)

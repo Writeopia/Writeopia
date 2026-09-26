@@ -84,6 +84,7 @@ class AccountDeletionWorkspaceServiceTest {
             document_id = documentId,
             comment_position = 0,
             text = "Comment",
+            deleted = false,
         )
 
         // Workspace shared with another admin (user is themselves ADMIN, but not the sole one)

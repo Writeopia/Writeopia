@@ -227,6 +227,7 @@ object DocumentsService {
                     Comment(
                         id = GenerateId.generate(),
                         text = comment.text,
+                        deleted = comment.deleted,
                     )
                 }
             }.toMap()
@@ -342,6 +343,8 @@ object DocumentsService {
             }
             ownerWorkspaceId != null
         }
+
+        if (ownedIds.isEmpty()) return
 
         // Create DELETE_DOCUMENT events only for documents that exist in this workspace.
         ownedIds.forEach { documentId ->

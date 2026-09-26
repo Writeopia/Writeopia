@@ -41,7 +41,8 @@ CREATE TABLE comment_entity (
   conversation_id TEXT NOT NULL,
   document_id TEXT NOT NULL,
   comment_position BIGINT NOT NULL,
-  text TEXT NOT NULL
+  text TEXT NOT NULL,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE user_entity (
