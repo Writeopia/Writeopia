@@ -1,4 +1,3 @@
-import org.gradle.api.tasks.testing.Test
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -78,8 +77,4 @@ kotlin {
             }
         }
     }
-}
-
-tasks.withType<Test>().configureEach {
-    maxHeapSize = "1g"
 }
