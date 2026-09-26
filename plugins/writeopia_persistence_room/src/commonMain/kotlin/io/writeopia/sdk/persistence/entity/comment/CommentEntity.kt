@@ -17,4 +17,5 @@ data class CommentEntity(
     @ColumnInfo(name = "document_id") val documentId: String,
     @ColumnInfo(name = "comment_position") val commentPosition: Int,
     @ColumnInfo(name = "text") val text: String,
+    @ColumnInfo(name = "deleted") val deleted: Boolean = false,
 )
