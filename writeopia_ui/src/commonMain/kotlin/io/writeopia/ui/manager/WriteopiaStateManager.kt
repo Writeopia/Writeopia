@@ -1386,10 +1386,22 @@ class WriteopiaStateManager(
         val missingConversationIds = referencedConversationIds - restored.keys
         if (missingConversationIds.isNotEmpty()) {
             val state = _currentStory.value
-            val stories = state.stories.mapValues { (_, story) ->
-                story.removeCommentSpansRecursively(missingConversationIds)
+            val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
+            val stories = state.stories.mapValues { (position, story) ->
+                val updated = story.removeCommentSpansRecursively(missingConversationIds)
+                if (updated != story) {
+                    changedSteps += position to updated
+                    updated
+                } else {
+                    story
+                }
             }
-            _currentStory.value = state.copy(stories = stories)
+            if (changedSteps.isNotEmpty()) {
+                _currentStory.value = state.copy(
+                    stories = stories,
+                    lastEdit = LastEdit.BulkEdition(changedSteps),
+                )
+            }
         }
 
         _commentConversations.update { current ->

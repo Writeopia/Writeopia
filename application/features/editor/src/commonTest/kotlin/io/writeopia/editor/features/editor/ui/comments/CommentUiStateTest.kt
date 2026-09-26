@@ -44,6 +44,7 @@ class CommentUiStateTest {
         assertEquals(null, result.activeConversation)
         assertEquals(listOf(conversation), result.paragraphConversations)
         assertTrue(result.canCreateComment)
+        assertEquals(Selection(start = 10, end = 14, position = 1.0), result.createTarget)
     }
 
     @Test

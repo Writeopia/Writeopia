@@ -2367,6 +2367,52 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun undoShouldPersistRemovalOfMissingCommentSpans() = runTest {
+        val now = Clock.System.now()
+        val missingConversationId = "missing-conversation"
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "hello",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(
+                            SpanInfo.create(0, 5, Span.COMMENT, missingConversationId)
+                        ),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = emptyMap(),
+            )
+        )
+
+        val original = manager.currentStory.value.stories[0.0]!!
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = original.copy(text = "changed"),
+                position = 0.0,
+            )
+        )
+        manager.undo()
+        advanceUntilIdle()
+
+        val restored = manager.currentStory.value.stories[0.0]!!
+        assertTrue(restored.spans.isEmpty())
+        val lastEdit = manager.currentStory.value.lastEdit
+        assertTrue(lastEdit is LastEdit.BulkEdition)
+        assertEquals(restored, (lastEdit as LastEdit.BulkEdition).steps.single().second)
+    }
+
+    @Test
     fun undoAndRedoShouldRestoreCommentConversationLifecycle() = runTest {
         val now = Clock.System.now()
         val conversation = CommentConversation(
