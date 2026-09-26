@@ -7,14 +7,12 @@ import io.writeopia.auth.core.repository.RoomAuthRepository
 import io.writeopia.auth.core.repository.SecureTokenStorage
 import io.writeopia.auth.core.token.TokenManager
 import io.writeopia.common.utils.persistence.di.AppDaosInjection
-import io.writeopia.di.AppConnectionInjection
 import io.writeopia.persistence.room.injection.AppRoomDaosInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 
 actual class AuthCoreInjectionNeo(
     private val context: Context,
     private val appsDaosInjection: AppDaosInjection = AppRoomDaosInjection.singleton(),
-    private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
 ) {
 
     private val secureTokenStorage: SecureTokenStorage by lazy {
@@ -29,10 +27,12 @@ actual class AuthCoreInjectionNeo(
         )
     }
 
-    // Use getBaseUrl() to avoid triggering singleton creation before bearer handler is set
+    // WriteopiaConnectionInjector's client authenticates requests with whatever bearer
+    // token handler is current at request time, so it's safe to use here even before
+    // setupBearerTokenHandler() has run.
     private val authApi: AuthApi by lazy {
         AuthApi(
-            client = appConnectionInjection.provideHttpClient(),
+            client = WriteopiaConnectionInjector.singleton().httpClient(),
             baseUrl = WriteopiaConnectionInjector.getBaseUrl()
         )
     }

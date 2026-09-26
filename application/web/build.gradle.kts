@@ -51,6 +51,7 @@ kotlin {
 
                 implementation(project(":application:common_flows:wide_screen_common"))
                 implementation(project(":application:features:global_shell"))
+                implementation(project(":application:features:account"))
                 implementation(project(":application:features:note_menu"))
                 implementation(project(":application:features:editor"))
                 implementation(project(":application:features:auth"))

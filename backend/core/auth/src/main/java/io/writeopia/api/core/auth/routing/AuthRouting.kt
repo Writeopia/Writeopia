@@ -13,19 +13,16 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
-import io.writeopia.api.core.auth.hash.HashUtils
+import io.writeopia.api.core.auth.models.LoginResult
+import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.toApi
-import io.writeopia.api.core.auth.repository.deleteUserById
-import io.writeopia.api.core.auth.repository.getEnabledUserByEmail
-import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getUserById
-import io.writeopia.api.core.auth.repository.getWorkspaceById
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
+import io.writeopia.api.core.auth.service.AccountDeletionService
 import io.writeopia.api.core.auth.service.AuthService
 import io.writeopia.api.core.auth.service.EmailService
 import io.writeopia.api.core.auth.service.RefreshTokenService
-import io.writeopia.api.core.auth.service.WorkspaceService
 import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
 import io.writeopia.connection.logger
@@ -43,57 +40,63 @@ import io.writeopia.sql.WriteopiaDbBackend
 import java.sql.SQLException
 
 
-fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
+/**
+ * @param provisionWorkspaceForNewUser Creates the workspace for a newly registered user and adds
+ * them as its admin, run inside the same transaction as user creation - a failure here throws and
+ * rolls back the whole transaction, so a workspace can never persist without its owner.
+ * Workspace logic lives in the `backend:core:workspaces` module, which depends on this module for
+ * user lookups, so this is injected from the composition root to avoid a circular dependency.
+ * @param onWorkspaceProvisioned Seeds the new workspace's tutorial documents, run inside the same
+ * transaction as [provisionWorkspaceForNewUser] (right after it) - a failure here also throws and
+ * rolls back the whole transaction, so a workspace can never persist without its tutorials either.
+ * Plain (non-suspend) on purpose so it can run inside the synchronous transaction block; the
+ * underlying TutorialsService call is `suspend` only because it *can* notify the AI hub, which
+ * never happens for tutorial seeding, so callers bridge it with `runBlocking` at the composition
+ * root. Injected for the same circular-dependency reason as `provisionWorkspaceForNewUser` above
+ * (tutorials live in `backend:documents:documents`).
+ */
+fun Routing.authRoute(
+    writeopiaDb: WriteopiaDbBackend,
+    debugMode: Boolean = false,
+    provisionWorkspaceForNewUser: (
+        writeopiaDb: WriteopiaDbBackend,
+        workspaceId: String,
+        workspaceName: String,
+        userId: String
+    ) -> Unit,
+    onWorkspaceProvisioned: (userId: String, workspaceId: String) -> Unit = { _, _ -> }
+) {
     post("/api/auth/login") {
-        try {
-            val credentials = call.receive<LoginRequest>()
-            // Always get user by email first to check if they exist but are unconfirmed
-            val user = writeopiaDb.getUserByEmail(credentials.email)
+        val credentials = call.receive<LoginRequest>()
 
-            if (user != null) {
-                val hash = user.password
-                val salt = user.salt
-
-                val isVerified = HashUtils.verifyPassword(
-                    inputPassword = credentials.password,
-                    storedHashBase64 = hash,
-                    storedSaltBase64 = salt
+        when (val result = AuthService.authenticate(writeopiaDb, credentials, debugMode)) {
+            is LoginResult.Success -> call.respond(
+                HttpStatusCode.OK,
+                AuthResponse(
+                    accessToken = result.tokenPair.accessToken,
+                    refreshToken = result.tokenPair.refreshToken,
+                    writeopiaUser = result.user.toApi(),
+                    enabled = true
                 )
+            )
 
-                if (isVerified) {
-                    if (user.enabled || debugMode) {
-                        val tokenPair = with(RefreshTokenService) {
-                            writeopiaDb.generateAndStoreTokens(user.id)
-                        }
-                        call.respond(
-                            HttpStatusCode.OK,
-                            AuthResponse(
-                                accessToken = tokenPair.accessToken,
-                                refreshToken = tokenPair.refreshToken,
-                                writeopiaUser = user.toApi(),
-                                enabled = true
-                            )
-                        )
-                    } else {
-                        // User exists but email not confirmed
-                        call.respond(
-                            HttpStatusCode.OK,
-                            AuthResponse(
-                                accessToken = null,
-                                refreshToken = null,
-                                writeopiaUser = user.toApi(),
-                                enabled = false
-                            )
-                        )
-                    }
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
-                }
-            } else {
+            is LoginResult.NotConfirmed -> call.respond(
+                HttpStatusCode.OK,
+                AuthResponse(
+                    accessToken = null,
+                    refreshToken = null,
+                    writeopiaUser = result.user.toApi(),
+                    enabled = false
+                )
+            )
+
+            // Forbidden (not Unauthorized) so the client can tell this apart from
+            // invalid credentials and route the user to the account-deletion screen.
+            LoginResult.DeletionPending ->
+                call.respond(HttpStatusCode.Forbidden, "Account is being deleted")
+
+            LoginResult.InvalidCredentials ->
                 call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
-            }
-        } catch (e: Exception) {
-            throw e
         }
     }
 
@@ -160,7 +163,11 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
     post("/api/auth/register") {
         try {
             logger.info("register request received")
-            val request = call.receive<RegisterRequest>()
+            val rawRequest = call.receive<RegisterRequest>()
+            val request = rawRequest.copy(
+                email = rawRequest.email.trim().lowercase()
+            )
+            request.validate()
             // since we are not allowing email probing and we don't need user data in this case
             if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
                 logger.info("register request - user or workspace already exist")
@@ -172,29 +179,26 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             val codeExpiry = EmailService.getCodeExpiry()
             val workspaceId = GenerateId.generate()
 
-            // Run user creation, confirmation code, workspace, and membership in one atomic transaction
+            // Run user creation, confirmation code, workspace, membership, and tutorial seeding
+            // in one atomic transaction: a failure anywhere here rolls everything back, so a
+            // user can never end up with a workspace missing its owner or its tutorials.
             val wUser = writeopiaDb.transactionWithResult {
-                
-                val user = AuthService.createUser(writeopiaDb, request, enabled = false)
+                val user = AuthService.createUser(
+                    writeopiaDb,
+                    request,
+                    status = UserStatus.EMAIL_CONFIRMATION_PENDING
+                )
 
                 writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
-                
-                WorkspaceService.createWorkspace(
-                    workspaceId = workspaceId,
-                    workspaceName = request.workspaceName,
-                    writeopiaDb = writeopiaDb
-                )
 
-                val created = WorkspaceService.addUserToWorkspaceAdmin(
-                    request.email,
+                provisionWorkspaceForNewUser(
+                    writeopiaDb,
                     workspaceId,
-                    "ADMIN",
-                    writeopiaDb
+                    request.workspaceName,
+                    user.id
                 )
 
-                if (!created) {
-                    error("Failed to associate user with workspace")
-                }
+                onWorkspaceProvisioned(user.id, workspaceId)
 
                 user
             }
@@ -212,6 +216,9 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
                     emailConfirmationRequired = true
                 ),
             )
+        } catch (e: IllegalArgumentException) {
+            logger.warn("register request validation failed: ${e.message}")
+            call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
         } catch (e: Exception) {
             /*
             If we want to solve the concurrency issue between `.userExistsByUsernameOrEmail` and `.createUser`,
@@ -236,9 +243,15 @@ fun Routing.authRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = fals
             return@delete
         }
 
-        val rowsAffected = writeopiaDb.deleteUserById(id = userId)
-        if (rowsAffected > 0) {
-            call.respond(HttpStatusCode.OK, DeleteAccountResponse(true))
+        // Starts the account-deletion saga rather than deleting synchronously: flips
+        // user_entity.status to DELETION_PENDING and inserts an outbox event (atomically),
+        // which Debezium picks up and publishes to account-deletion-requested. The actual
+        // user_entity row is deleted later, once documents/media both confirm their legs are
+        // done - see AccountDeletionService. Idempotent: a repeated call for a user who
+        // already has a deletion in flight returns the existing one, not an error.
+        val deletion = AccountDeletionService.requestDeletion(userId, writeopiaDb)
+        if (deletion != null) {
+            call.respond(HttpStatusCode.Accepted, DeleteAccountResponse(true))
         } else {
             call.respond(HttpStatusCode.NotFound, "User not found")
         }
@@ -312,4 +325,26 @@ private fun Throwable.isUniqueViolation(): Boolean {
         current = current.cause
     }
     return false
+}
+
+private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+
+private fun RegisterRequest.validate() {
+    require(name.isNotBlank()) { "Name cannot be blank" }
+
+    require(workspaceName.isNotBlank()) { "Workspace name cannot be blank" }
+    require(workspaceName.length in 3..30) {
+        "Workspace name must be 3-30 characters"
+    }
+
+    require(username.length in 3..30) {
+        "Username must be 3-30 characters"
+    }
+    require(username.all { it.isLetterOrDigit() || it == '-' || it == '_' }) {
+        "Username can only contain letters, numbers, '-' and '_'"
+    }
+
+    require(password.length >= 8) { "Password must be at least 8 characters" }
+
+    require(EMAIL_REGEX.matches(email)) { "Invalid email address format" }
 }

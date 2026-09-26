@@ -1,0 +1,30 @@
+-- Transactional outbox: rows here are inserted in the SAME Postgres transaction as the
+-- domain state change they announce (e.g. user_entity.status -> DELETION_PENDING, or a
+-- user_entity hard-delete), which is what makes the pairing atomic. Debezium Server watches
+-- only this table (via a dedicated PUBLICATION, see WriteopiaScripts2/db-migrations/
+-- account_deletion_saga/) using its outbox-event-router transform: it routes each row to the
+-- Pub/Sub topic named by `topic`, keyed by `aggregate_id`, with `payload` as the message body.
+-- Nothing in this codebase reads this table back out - it exists purely for Debezium's CDC to
+-- observe on the write-ahead log.
+CREATE TABLE outbox_event (
+  id TEXT PRIMARY KEY,
+  aggregate_type TEXT NOT NULL,
+  aggregate_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  created_at BIGINT NOT NULL
+);
+
+insert:
+INSERT INTO outbox_event(id, aggregate_type, aggregate_id, event_type, topic, payload, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- Not used by application code (see the table doc above) - exists for tests to verify how
+-- many outbox rows a saga step actually produced (e.g. exactly one REQUESTED event even
+-- under a racing duplicate call), and for ops inspection.
+selectByAggregateId:
+SELECT * FROM outbox_event WHERE aggregate_id = ? ORDER BY created_at;
+
+deleteByAggregateId:
+DELETE FROM outbox_event WHERE aggregate_id = ?;

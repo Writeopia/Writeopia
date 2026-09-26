@@ -14,3 +14,21 @@ setTutorialStatus:
 INSERT INTO workspace_tutorial_status(workspace_id, user_id, tutorials_created, created_at)
 VALUES (?, ?, ?, ?)
 ON CONFLICT(workspace_id, user_id) DO UPDATE SET tutorials_created = excluded.tutorials_created;
+
+-- All users' tutorial-status rows in the workspace. Used when the whole workspace is
+-- torn down (account-deletion saga).
+deleteByWorkspace:
+DELETE FROM workspace_tutorial_status
+WHERE workspace_id = ?;
+
+-- Just this user's tutorial-status row in this one workspace. Used when the user is
+-- leaving a workspace that is NOT being deleted.
+deleteByWorkspaceAndUser:
+DELETE FROM workspace_tutorial_status
+WHERE workspace_id = ? AND user_id = ?;
+
+-- All of this user's tutorial-status rows, across every workspace. Used as the final
+-- sweep once the account-deletion saga has processed all of the user's workspaces.
+deleteByUser:
+DELETE FROM workspace_tutorial_status
+WHERE user_id = ?;
