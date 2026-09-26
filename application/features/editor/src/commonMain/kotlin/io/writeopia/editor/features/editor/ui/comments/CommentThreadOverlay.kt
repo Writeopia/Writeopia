@@ -50,11 +50,8 @@ internal fun CommentThreadOverlay(
         conversation != null || (editable && (uiState.canCreateComment || createTarget != null))
 
     LaunchedEffect(visible, conversation?.id) {
-        if (!visible) {
-            expanded = false
-            createTarget = null
-        }
-        if (conversation != null) {
+        expanded = false
+        if (!visible || conversation != null) {
             createTarget = null
         }
         draft = ""
