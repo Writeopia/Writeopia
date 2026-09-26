@@ -213,6 +213,11 @@ fun Navigation(
                         popUpTo(navController.graph.startDestinationId) { inclusive = true }
                     }
                 },
+                navigateToSpaceChoice = {
+                    navController.navigate(Destinations.WORKSPACE_TYPE_CHOICE.id) {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
+                },
                 resetPassword = {
                     navController.navigate(Destinations.AUTH_RESET_PASSWORD.id)
                 },

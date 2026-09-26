@@ -108,6 +108,7 @@ fun NavController.navigateToUserEdit(
 fun NavGraphBuilder.accountMenuNavigation(
     navigateToAuthMenu: () -> Unit,
     navigateToChooseWorkspace: () -> Unit,
+    navigateToSpaceChoice: () -> Unit,
     resetPassword: () -> Unit,
     navigationClick: () -> Unit,
     navigateToSettingsTeams: () -> Unit,
@@ -682,6 +683,7 @@ fun NavGraphBuilder.accountMenuNavigation(
                 workspacesState = accountMenuViewModel.availableWorkspaces,
                 exportWorkspaceState = accountMenuViewModel.exportWorkspaceState,
                 goToRegister = navigateToAuthMenu,
+                switchSpace = navigateToSpaceChoice,
                 changeWorkspace = {
                     accountMenuViewModel.changeWorkspace {
                         navigateToChooseWorkspace()
