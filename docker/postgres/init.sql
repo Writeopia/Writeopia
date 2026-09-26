@@ -40,7 +40,6 @@ CREATE TABLE comment_entity (
   id TEXT PRIMARY KEY,
   conversation_id TEXT NOT NULL,
   document_id TEXT NOT NULL,
-  conversation_position BIGINT NOT NULL,
   comment_position BIGINT NOT NULL,
   text TEXT NOT NULL
 );
