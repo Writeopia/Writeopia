@@ -12,6 +12,7 @@ fun Map<String, List<Comment>>.toCommentEntities(documentId: String): List<Comme
                 documentId = documentId,
                 commentPosition = commentPosition,
                 text = comment.text,
+                deleted = comment.deleted,
             )
         }
     }
@@ -20,6 +21,7 @@ fun CommentEntity.toModel(): Comment =
     Comment(
         id = id,
         text = text,
+        deleted = deleted,
     )
 
 fun Iterable<CommentEntity>.toCommentConversations(): Map<String, List<Comment>> =

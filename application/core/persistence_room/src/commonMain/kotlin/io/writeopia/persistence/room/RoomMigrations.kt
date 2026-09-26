@@ -23,3 +23,11 @@ val MIGRATION_29_30 = object : Migration(29, 30) {
         )
     }
 }
+
+val MIGRATION_30_31 = object : Migration(30, 31) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            "ALTER TABLE COMMENT_ENTITY_TABLE ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0"
+        )
+    }
+}

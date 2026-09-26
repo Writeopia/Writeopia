@@ -3,7 +3,8 @@ CREATE TABLE commentEntity (
   conversation_id TEXT NOT NULL,
   document_id TEXT NOT NULL,
   comment_position INTEGER NOT NULL,
-  text TEXT NOT NULL
+  text TEXT NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0
 );
 
 selectByDocumentId:
@@ -18,9 +19,10 @@ INSERT INTO commentEntity(
   conversation_id,
   document_id,
   comment_position,
-  text
+  text,
+  deleted
 )
-VALUES (?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?);
 
 deleteByDocumentId:
 DELETE FROM commentEntity
