@@ -16,7 +16,6 @@ import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.persistence.dao.CommentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
 import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
-import io.writeopia.sdk.persistence.entity.comment.CommentEntity
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
 import io.writeopia.sdk.persistence.parse.toCommentConversations
 import io.writeopia.sdk.persistence.parse.toCommentEntities
@@ -32,30 +31,12 @@ import kotlin.collections.component2
 import kotlin.collections.map
 import kotlin.time.ExperimentalTime
 
-private object LegacyCommentEntityDao : CommentEntityDao {
-    override suspend fun insertComments(vararg comments: CommentEntity) = Unit
-
-    override suspend fun loadByDocumentId(documentId: String): List<CommentEntity> = emptyList()
-
-    override suspend fun loadByDocumentIds(documentIds: List<String>): List<CommentEntity> = emptyList()
-
-    override suspend fun deleteByDocumentId(documentId: String) = Unit
-
-    override suspend fun deleteByDocumentIds(documentIds: List<String>) = Unit
-}
-
 class RoomDocumentRepository(
     private val documentEntityDao: DocumentEntityDao,
     private val storyUnitEntityDao: StoryUnitEntityDao? = null,
     private val commentEntityDao: CommentEntityDao,
     private val database: RoomDatabase,
 ) : DocumentRepository, DocumentSearch {
-
-    @Deprecated("Pass CommentEntityDao to preserve comment loading.")
-    constructor(
-        documentEntityDao: DocumentEntityDao,
-        storyUnitEntityDao: StoryUnitEntityDao? = null,
-    ) : this(documentEntityDao, storyUnitEntityDao, LegacyCommentEntityDao)
 
     private val documentsState: MutableStateFlow<Map<String, List<Document>>> =
         MutableStateFlow(emptyMap())
