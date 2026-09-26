@@ -62,6 +62,53 @@ class CommentUiStateTest {
     }
 
     @Test
+    fun `cursor at shared comment boundary selects the following conversation`() {
+        val first = conversation("conversation-1")
+        val second = conversation("conversation-2")
+        val state = drawState(
+            selection = Selection.fromPosition(7, 1.0),
+            spans = setOf(
+                SpanInfo.create(3, 7, Span.COMMENT, first.id),
+                SpanInfo.create(7, 11, Span.COMMENT, second.id),
+            ),
+        )
+
+        val result = resolveCommentUiState(
+            state,
+            mapOf(
+                first.id to first.comments,
+                second.id to second.comments,
+            ),
+        )
+
+        assertEquals(second, result.activeConversation)
+        assertFalse(result.canCreateComment)
+    }
+
+    @Test
+    fun `deleted replies are hidden from the active conversation`() {
+        val conversationId = "conversation-1"
+        val state = drawState(
+            selection = Selection.fromPosition(4, 1.0),
+            spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversationId)),
+        )
+        val result = resolveCommentUiState(
+            state,
+            mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-1", text = "Deleted", deleted = true),
+                    Comment(id = "comment-2", text = "Visible"),
+                )
+            ),
+        )
+
+        assertEquals(
+            listOf("comment-2"),
+            result.activeConversation?.comments?.map { comment -> comment.id },
+        )
+    }
+
+    @Test
     fun `selection overlapping a comment uses that conversation`() {
         val conversation = conversation("conversation-1")
         val state = drawState(

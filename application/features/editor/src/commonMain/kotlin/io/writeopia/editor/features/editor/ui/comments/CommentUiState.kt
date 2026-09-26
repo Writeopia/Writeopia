@@ -28,9 +28,12 @@ internal fun resolveCommentUiState(
         .sortedWith(compareBy({ it.start }, { it.end }))
 
     fun conversation(conversationId: String): CommentConversation? =
-        conversations[conversationId]?.let { comments ->
-            CommentConversation(id = conversationId, comments = comments)
-        }
+        conversations[conversationId]
+            ?.filterNot { comment -> comment.deleted }
+            ?.takeIf { comments -> comments.isNotEmpty() }
+            ?.let { comments ->
+                CommentConversation(id = conversationId, comments = comments)
+            }
 
     val paragraphConversations = commentSpans
         .mapNotNull { span -> span.extra }
