@@ -1172,9 +1172,11 @@ class WriteopiaStateManager(
         val comment = Comment(text = text)
         var updatedComments: List<Comment>? = null
         _commentConversations.update { conversations ->
+            updatedComments = null
             val comments = conversations[conversationId] ?: return@update conversations
-            updatedComments = comments + comment
-            conversations + (conversationId to updatedComments!!)
+            val nextComments = comments + comment
+            updatedComments = nextComments
+            conversations + (conversationId to nextComments)
         }
 
         val updated = updatedComments ?: return null
@@ -1199,9 +1201,12 @@ class WriteopiaStateManager(
             .firstOrNull()
             ?: return null
 
-        return _commentConversations.value[conversationId]?.let { comments ->
-            CommentConversation(id = conversationId, comments = comments)
-        }
+        return _commentConversations.value[conversationId]
+            ?.filterNot { comment -> comment.deleted }
+            ?.takeIf { comments -> comments.isNotEmpty() }
+            ?.let { comments ->
+                CommentConversation(id = conversationId, comments = comments)
+            }
     }
 
     fun getCommentConversationAtSelection(): CommentConversation? {
@@ -1225,9 +1230,12 @@ class WriteopiaStateManager(
             .firstOrNull()
             ?: return null
 
-        return _commentConversations.value[conversationId]?.let { comments ->
-            CommentConversation(id = conversationId, comments = comments)
-        }
+        return _commentConversations.value[conversationId]
+            ?.filterNot { comment -> comment.deleted }
+            ?.takeIf { comments -> comments.isNotEmpty() }
+            ?.let { comments ->
+                CommentConversation(id = conversationId, comments = comments)
+            }
     }
 
     fun deleteComment(conversationId: String, commentId: String): Boolean {
@@ -1242,15 +1250,20 @@ class WriteopiaStateManager(
             foundComment = false
 
             val comments = conversations[conversationId] ?: return@update conversations
-            if (comments.none { it.id == commentId }) {
+            if (comments.none { comment -> comment.id == commentId && !comment.deleted }) {
                 return@update conversations
             }
 
             foundComment = true
-            val remainingComments = comments.filterNot { it.id == commentId }
-            if (remainingComments.isNotEmpty()) {
-                updatedComments = remainingComments
-                conversations + (conversationId to remainingComments)
+            val hasActiveReply = comments.any { comment ->
+                comment.id != commentId && !comment.deleted
+            }
+            if (hasActiveReply) {
+                val commentsWithTombstone = comments.map { comment ->
+                    if (comment.id == commentId) comment.copy(deleted = true) else comment
+                }
+                updatedComments = commentsWithTombstone
+                conversations + (conversationId to commentsWithTombstone)
             } else {
                 removedConversation = true
                 conversations - conversationId
