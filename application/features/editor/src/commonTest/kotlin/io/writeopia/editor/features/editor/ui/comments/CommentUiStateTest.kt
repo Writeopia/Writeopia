@@ -54,7 +54,7 @@ class CommentUiStateTest {
             spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversation.id)),
         )
 
-        val result = resolveCommentUiState(state, listOf(conversation))
+        val result = resolveCommentUiState(state, mapOf(conversation.id to conversation.comments))
 
         assertEquals(null, result.activeConversation)
         assertTrue(result.canCreateComment)
