@@ -70,6 +70,35 @@ class DocumentLoadUseCaseTest {
         }
     }
 
+    @Test
+    fun `backend document with mismatched identity is ignored`() = runBlocking {
+        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+        val documentsApi = mockk<DocumentsApi>()
+        val authRepository = mockk<AuthRepository>(relaxed = true)
+        val backend = document(
+            lastUpdatedAt = 2,
+            content = emptyMap(),
+            commentText = "Backend comment",
+        ).copy(workspaceId = "other-workspace")
+
+        coEvery { documentRepository.loadDocumentById("document-1", "workspace-1") } returns null
+        coEvery { documentsApi.getDocumentById("document-1", "workspace-1") } returns
+            ResultData.Complete(backend)
+
+        val useCase = DocumentLoadUseCase(
+            documentRepository = documentRepository,
+            documentsApi = documentsApi,
+            documentMerger = DocumentMerger(),
+            authRepository = authRepository,
+        )
+
+        useCase.fetchAndMergeFromBackend("document-1", "workspace-1") {
+            error("Mismatched backend document must not be merged")
+        }
+
+        coVerify(exactly = 0) { documentRepository.saveDocument(any()) }
+    }
+
     private fun document(
         lastUpdatedAt: Long,
         content: Map<Double, StoryStep>,
