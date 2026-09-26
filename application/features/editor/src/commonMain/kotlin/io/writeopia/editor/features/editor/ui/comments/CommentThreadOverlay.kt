@@ -42,7 +42,7 @@ internal fun CommentThreadOverlay(
     modifier: Modifier = Modifier,
 ) {
     val conversation = uiState.activeConversation
-    val visible = conversation != null || uiState.canCreateComment
+    val visible = conversation != null || (editable && uiState.canCreateComment)
     var expanded by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
 

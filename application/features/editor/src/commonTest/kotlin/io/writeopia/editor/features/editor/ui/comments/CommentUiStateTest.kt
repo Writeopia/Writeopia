@@ -47,6 +47,44 @@ class CommentUiStateTest {
     }
 
     @Test
+    fun `selection adjacent to a comment can create a new conversation`() {
+        val conversation = conversation("conversation-1")
+        val state = drawState(
+            selection = Selection(start = 7, end = 10, position = 1.0),
+            spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversation.id)),
+        )
+
+        val result = resolveCommentUiState(state, mapOf(conversation.id to conversation.comments))
+
+        assertEquals(null, result.activeConversation)
+        assertTrue(result.canCreateComment)
+    }
+
+    @Test
+    fun `cursor at shared comment boundary selects the following conversation`() {
+        val first = conversation("conversation-1")
+        val second = conversation("conversation-2")
+        val state = drawState(
+            selection = Selection.fromPosition(7, 1.0),
+            spans = setOf(
+                SpanInfo.create(3, 7, Span.COMMENT, first.id),
+                SpanInfo.create(7, 11, Span.COMMENT, second.id),
+            ),
+        )
+
+        val result = resolveCommentUiState(
+            state,
+            mapOf(
+                first.id to first.comments,
+                second.id to second.comments,
+            ),
+        )
+
+        assertEquals(second, result.activeConversation)
+        assertFalse(result.canCreateComment)
+    }
+
+    @Test
     fun `selection overlapping a comment uses that conversation`() {
         val conversation = conversation("conversation-1")
         val state = drawState(
