@@ -40,7 +40,12 @@ class NotesUseCaseIntegrationTest {
 
         notesConfig = ConfigurationRoomRepository(database.notesConfigurationDao())
 
-        documentRepository = RoomDocumentRepository(database.documentDao(), database.storyUnitDao())
+        documentRepository = RoomDocumentRepository(
+            database.documentDao(),
+            database.storyUnitDao(),
+            database.commentDao(),
+            database,
+        )
         folderRepository = RoomFolderRepository(database.folderRoomDao())
 
         notesUseCase = NotesUseCase.singleton(

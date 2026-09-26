@@ -16,6 +16,7 @@ import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.command.CommandInfo
 import io.writeopia.sdk.models.command.CommandTrigger
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.command.TypeInfo
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.files.ExternalFile
@@ -221,6 +222,9 @@ class WriteopiaStateManager(
     private val _documentInfo: MutableStateFlow<DocumentInfo> =
         MutableStateFlow(DocumentInfo.empty())
 
+    private val _commentConversations: MutableStateFlow<Map<String, List<Comment>>> =
+        MutableStateFlow(emptyMap())
+
     private val isEditable: Boolean
         get() = !_documentInfo.value.isLocked
 
@@ -246,8 +250,8 @@ class WriteopiaStateManager(
         }
 
     val currentDocument: StateFlow<Document?> =
-        combine(_documentInfo, _currentStory) { info, state ->
-            parseDocument(info, state)
+        combine(_documentInfo, _currentStory, _commentConversations) { info, state, comments ->
+            parseDocument(info, state, comments)
         }.stateIn(coroutineScope, SharingStarted.Lazily, null)
 
     /**
@@ -386,7 +390,7 @@ class WriteopiaStateManager(
     }
 
     fun getDocument(): Document =
-        parseDocument(_documentInfo.value, _currentStory.value)
+        parseDocument(_documentInfo.value, _currentStory.value, _commentConversations.value)
 
     fun liveSync(sharedEditionManager: SharedEditionManager) {
         coroutineScope.launch(dispatcher) {
@@ -428,6 +432,7 @@ class WriteopiaStateManager(
 
         _documentInfo.value = documentInfo
         _currentStory.value = withNextPositions
+        _commentConversations.value = emptyMap()
     }
 
     /**
@@ -452,6 +457,7 @@ class WriteopiaStateManager(
 
         _currentStory.value = StoryState(withNextPositions, LastEdit.Nothing)
         _documentInfo.value = document.info()
+        _commentConversations.value = document.commentConversations
     }
 
     /**
@@ -467,6 +473,7 @@ class WriteopiaStateManager(
 
         _currentStory.value = StoryState(withNextPositions, LastEdit.Nothing)
         _documentInfo.value = document.info()
+        _commentConversations.value = document.commentConversations
         backStackManager.addState(_currentStory.value)
     }
 
@@ -718,7 +725,7 @@ class WriteopiaStateManager(
             writeopiaManager.changeStoryType(position, typeInfo, commandInfo, _currentStory.value)
 
         if (listTypes.contains(typeInfo.storyType.number)) {
-            coroutineScope.launch {
+            coroutineScope.launch(dispatcher) {
                 val nextPosition = getStory(position)?.nextPosition ?: (position + 1)
                 val newState = writeopiaManager.generateSuggestionsList(
                     storyState = { _currentStory.value },
@@ -1928,7 +1935,11 @@ class WriteopiaStateManager(
         _onEditPositions.value = getStories().keys - setOf(0.0)
     }
 
-    private fun parseDocument(info: DocumentInfo, state: StoryState): Document {
+    private fun parseDocument(
+        info: DocumentInfo,
+        state: StoryState,
+        commentConversations: Map<String, List<Comment>>,
+    ): Document {
         val titleFromContent = state.stories.values.firstOrNull { storyStep ->
             // Todo: Change the type of change to allow different types. The client code should decide what is a title
             // It is also interesting to inv
@@ -1939,6 +1950,7 @@ class WriteopiaStateManager(
             id = info.id,
             title = titleFromContent ?: info.title,
             content = state.stories,
+            commentConversations = commentConversations,
             createdAt = info.createdAt,
             lastUpdatedAt = info.lastUpdatedAt,
             lastSyncedAt = info.lastSyncedAt,

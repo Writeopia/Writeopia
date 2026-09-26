@@ -4,6 +4,7 @@ package io.writeopia.sdk.persistence.sqldelight.dao
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.link.DocumentLink
@@ -16,6 +17,7 @@ import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sdk.models.extensions.sortWithOrderBy
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.persistence.sqldelight.toLong
+import io.writeopia.sdk.sql.CommentEntityQueries
 import io.writeopia.sdk.sql.DocumentEntityQueries
 import io.writeopia.sdk.sql.StoryStepEntity
 import io.writeopia.sdk.sql.StoryStepEntityQueries
@@ -26,6 +28,7 @@ import kotlin.time.Instant
 class DocumentSqlDao(
     private val documentQueries: DocumentEntityQueries?,
     private val storyStepQueries: StoryStepEntityQueries?,
+    private val commentQueries: CommentEntityQueries?,
 ) : DocumentSearch {
 
     override suspend fun search(
@@ -68,12 +71,35 @@ class DocumentSqlDao(
             } ?: emptyList()
 
     suspend fun insertDocumentWithContent(document: Document) {
-        storyStepQueries?.deleteByDocumentId(document.id)
-        document.content.values.forEachIndexed { i, storyStep ->
-            insertStoryStep(storyStep, i.toDouble(), document.id)
-        }
+        val queries = documentQueries ?: return
 
-        insertDocument(document)
+        queries.transaction {
+            val existing = queries.selectById(document.id).executeAsOneOrNull()
+            require(existing == null || existing.workspace_id == document.workspaceId) {
+                "Document does not belong to the requested workspace"
+            }
+
+            storyStepQueries?.deleteByDocumentId(document.id)
+            document.content.values.forEachIndexed { i, storyStep ->
+                insertStoryStep(storyStep, i.toDouble(), document.id)
+            }
+
+            commentQueries?.deleteByDocumentId(document.id)
+            document.commentConversations.forEach { (conversationId, comments) ->
+                comments.forEachIndexed { commentPosition, comment ->
+                    commentQueries?.insert(
+                        comment.id,
+                        conversationId,
+                        document.id,
+                        commentPosition.toLong(),
+                        comment.text,
+                        comment.deleted.toLong(),
+                    )
+                }
+            }
+
+            insertDocument(document)
+        }
     }
 
     suspend fun insertDocument(document: Document) {
@@ -204,8 +230,11 @@ class DocumentSqlDao(
                 )
             }
 
-    suspend fun loadDocumentWithContentByIds(id: List<String>): List<Document> =
-        documentQueries?.selectWithContentByIds(id)
+    suspend fun loadDocumentWithContentByIds(
+        id: List<String>,
+        workspaceId: String,
+    ): List<Document> =
+        documentQueries?.selectWithContentByIds(id, workspaceId)
             ?.awaitAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -262,6 +291,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -341,6 +371,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -423,6 +454,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -505,6 +537,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -585,6 +618,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -620,10 +654,13 @@ class DocumentSqlDao(
      * Both document and story step deletions are performed atomically in a transaction.
      */
     suspend fun hardDeleteDocumentByIds(ids: Set<String>, workspaceId: String) {
-        // Use transaction from documentQueries (both queries share the same driver)
-        documentQueries?.transaction {
-            storyStepQueries?.deleteByDocumentIds(ids)
-            documentQueries.hardDeleteByIds(ids, workspaceId)
+        val queries = documentQueries ?: return
+
+        // Keep workspace ownership checks inside the transaction that removes child rows.
+        queries.transaction {
+            commentQueries?.deleteByDocumentIdsForWorkspace(ids, workspaceId)
+            storyStepQueries?.deleteByDocumentIdsForWorkspace(ids, workspaceId)
+            queries.hardDeleteByIds(ids, workspaceId)
         }
     }
 
@@ -708,6 +745,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -785,6 +823,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -865,6 +904,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -942,6 +982,7 @@ class DocumentSqlDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -993,6 +1034,24 @@ class DocumentSqlDao(
     suspend fun updateStoryStepUrl(url: String, id: String) {
         storyStepQueries?.updateUrl(url, id)
     }
+
+    private suspend fun loadCommentConversations(
+        documentId: String,
+    ): Map<String, List<Comment>> =
+        commentQueries
+            ?.selectByDocumentId(documentId)
+            ?.awaitAsList()
+            ?.groupBy { entity -> entity.conversation_id }
+            ?.mapValues { (_, entities) ->
+                entities.map { entity ->
+                    Comment(
+                        id = entity.id,
+                        text = entity.text,
+                        deleted = entity.deleted == 1L,
+                    )
+                }
+            }
+            ?: emptyMap()
 
     suspend fun queryUnsyncedImagesSteps(): List<StoryStep> {
         return storyStepQueries?.selectUnSyncedSteps()

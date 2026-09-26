@@ -8,10 +8,12 @@ fun SpanInfoApi.toModel() = SpanInfo.create(
     start = this.start,
     end = this.end,
     span = Span.textFromString(this.span),
+    extra = this.extra,
 )
 
 fun SpanInfo.toApi() = SpanInfoApi(
     start = this.start,
     end = this.end,
     span = this.span.label,
+    extra = this.extra,
 )
