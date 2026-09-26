@@ -7,6 +7,7 @@ import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateStoryStepSyncTracker
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
@@ -133,7 +134,9 @@ class DocumentSyncManager(
 
         // Start a new backend sync job in the global scope
         val job = scope.launch(dispatcher, start = CoroutineStart.UNDISPATCHED) {
-            val boundWorkspaceIdFlow = flowOf(workspaceIdFlow.first())
+            val workspaceId = workspaceIdFlow.first()
+            if (workspaceId == Workspace.disconnectedWorkspace().id) return@launch
+            val boundWorkspaceIdFlow = flowOf(workspaceId)
             storyStepSyncTracker.syncStorySteps(
                 documentEditionFlow,
                 boundWorkspaceIdFlow
