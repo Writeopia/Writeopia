@@ -32,7 +32,7 @@ import io.writeopia.api.documents.documents.repository.isUserFavorite
 import io.writeopia.api.documents.documents.repository.moveDocumentToFolder
 import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.removeUserFavorite
-import io.writeopia.api.documents.documents.repository.replaceCommentConversations
+import io.writeopia.api.documents.documents.repository.applyCommentDelta
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveDocumentInTransaction
 import io.writeopia.api.documents.documents.repository.saveFolder
@@ -665,9 +665,13 @@ object DocumentsService {
             null
         }
 
+        val hasCommentMutations =
+            request.commentConversations != null ||
+                request.deletedCommentConversationIds.isNotEmpty() ||
+                request.deletedCommentIds.isNotEmpty()
         val hasMutations =
             newDocument != null ||
-                request.commentConversations != null ||
+                hasCommentMutations ||
                 acceptedChanges.isNotEmpty() ||
                 deletionsToApply.isNotEmpty()
 
@@ -675,10 +679,14 @@ object DocumentsService {
             writeopiaDb.transaction {
                 newDocument?.let(writeopiaDb::saveDocumentInTransaction)
 
-                request.commentConversations?.let { conversations ->
-                    writeopiaDb.replaceCommentConversations(
+                if (hasCommentMutations) {
+                    writeopiaDb.applyCommentDelta(
                         documentId = documentId,
-                        conversations = conversations.toCommentMap(),
+                        conversations = request.commentConversations
+                            ?.toCommentMap()
+                            ?: emptyMap(),
+                        deletedConversationIds = request.deletedCommentConversationIds,
+                        deletedCommentIds = request.deletedCommentIds,
                     )
                 }
 

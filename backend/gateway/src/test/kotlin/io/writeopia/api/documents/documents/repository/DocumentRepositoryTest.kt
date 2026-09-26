@@ -431,6 +431,98 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun `stale comment delta should preserve unseen remote data and apply explicit deletions`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        val conversationA = "conversation-a"
+        val conversationB = "conversation-b"
+        val sharedId = "comment-shared"
+        val remoteReplyId = "comment-remote-reply"
+        val unseenId = "comment-unseen"
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+                commentConversations = mapOf(
+                    conversationA to listOf(
+                        Comment(id = sharedId, text = "Shared"),
+                        Comment(id = remoteReplyId, text = "Remote reply"),
+                    ),
+                    conversationB to listOf(
+                        Comment(id = unseenId, text = "Unseen thread"),
+                    ),
+                ),
+            )
+        )
+
+        DocumentsService.syncStorySteps(
+            documentId = documentId,
+            workspaceId = workspaceId,
+            request = StoryStepSyncRequest(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                lastSyncTimestamp = 0,
+                requestTimestamp = 10,
+                changes = emptyList(),
+                deletions = emptyList(),
+                commentConversations = listOf(
+                    CommentConversationApi(
+                        id = conversationA,
+                        comments = listOf(
+                            CommentApi(id = sharedId, text = "Shared edited"),
+                            CommentApi(id = "comment-local-reply", text = "Local reply"),
+                        ),
+                    )
+                ),
+            ),
+            writeopiaDb = database,
+        )
+
+        var loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
+        assertEquals(setOf(conversationA, conversationB), loaded.commentConversations.keys)
+        assertEquals(
+            setOf(sharedId, remoteReplyId, "comment-local-reply"),
+            loaded.commentConversations.getValue(conversationA).map { it.id }.toSet(),
+        )
+        assertEquals(
+            listOf(unseenId),
+            loaded.commentConversations.getValue(conversationB).map { it.id },
+        )
+
+        DocumentsService.syncStorySteps(
+            documentId = documentId,
+            workspaceId = workspaceId,
+            request = StoryStepSyncRequest(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                lastSyncTimestamp = 10,
+                requestTimestamp = 20,
+                changes = emptyList(),
+                deletions = emptyList(),
+                commentConversations = null,
+                deletedCommentConversationIds = listOf(conversationB),
+                deletedCommentIds = listOf(remoteReplyId),
+            ),
+            writeopiaDb = database,
+        )
+
+        loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
+        assertEquals(setOf(conversationA), loaded.commentConversations.keys)
+        assertEquals(
+            setOf(sharedId, "comment-local-reply"),
+            loaded.commentConversations.getValue(conversationA).map { it.id }.toSet(),
+        )
+
+        database.deleteDocumentById(documentId)
+    }
+
+    @Test
     fun `delete should reject document owned by another workspace`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()

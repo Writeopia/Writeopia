@@ -22,7 +22,12 @@ data class StoryStepSyncRequest(
     val requestTimestamp: Long,
     val changes: List<StoryStepChangeApi>,
     val deletions: List<String>,
+    /**
+     * Comment conversations to upsert. This is a delta, not a full document snapshot.
+     */
     val commentConversations: List<CommentConversationApi>? = null,
+    val deletedCommentConversationIds: List<String> = emptyList(),
+    val deletedCommentIds: List<String> = emptyList(),
 )
 
 /**

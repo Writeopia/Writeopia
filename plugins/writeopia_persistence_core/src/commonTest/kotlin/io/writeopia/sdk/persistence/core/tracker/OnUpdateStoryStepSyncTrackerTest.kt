@@ -101,6 +101,67 @@ class OnUpdateStoryStepSyncTrackerTest {
     }
 
     @Test
+    fun commentChangesShouldSendOnlyDeltaAndExplicitDeletions() = runTest {
+        val now = Clock.System.now()
+        val document = Document(
+            id = "document-delta",
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = now,
+            workspaceId = "workspace-1",
+            parentId = "root",
+        )
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(stories = emptyMap(), lastEdit = LastEdit.Nothing) to document.info()
+        )
+        val workspaceIdFlow = MutableStateFlow(document.workspaceId)
+        val initialComments = mapOf(
+            "conversation-a" to listOf(
+                Comment(id = "comment-1", text = "One"),
+                Comment(id = "comment-2", text = "Delete me"),
+            ),
+            "conversation-b" to listOf(
+                Comment(id = "comment-3", text = "Delete thread"),
+            ),
+        )
+        val commentsFlow = MutableStateFlow(initialComments)
+        val request = CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        val tracker = OnUpdateStoryStepSyncTracker(
+            syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
+            syncApi = { syncRequest ->
+                if (!request.isCompleted) request.complete(syncRequest)
+                StoryStepSyncResponse(
+                    serverTimestamp = syncRequest.requestTimestamp,
+                    updatedSteps = emptyList(),
+                    deletedIds = emptyList(),
+                )
+            },
+            commentConversationsFlow = commentsFlow,
+        )
+
+        val job = launch {
+            tracker.syncStorySteps(documentEditionFlow, workspaceIdFlow)
+        }
+        runCurrent()
+
+        commentsFlow.value = mapOf(
+            "conversation-a" to listOf(
+                Comment(id = "comment-1", text = "One"),
+                Comment(id = "comment-4", text = "New reply"),
+            )
+        )
+        advanceTimeBy(20)
+        runCurrent()
+
+        val synced = withTimeout(1_000) { request.await() }
+        job.cancel()
+
+        assertEquals(listOf("conversation-a"), synced.commentConversations?.map { it.id })
+        assertEquals(listOf("conversation-b"), synced.deletedCommentConversationIds)
+        assertEquals(listOf("comment-2"), synced.deletedCommentIds)
+    }
+
+    @Test
     fun commentChangeBeforeCollectorStartsShouldTriggerBackendSync() = runTest {
         val now = Clock.System.now()
         val document = Document(
@@ -298,7 +359,7 @@ class OnUpdateStoryStepSyncTrackerTest {
     }
 
     @Test
-    fun disconnectedWorkspaceShouldNotSendCommentsUntilWorkspaceBecomesOnline() = runTest {
+    fun disconnectedWorkspaceShouldNeverRebindPendingCommentsToAnotherWorkspace() = runTest {
         val now = Clock.System.now()
         val document = Document(
             id = "document-offline",
@@ -346,11 +407,8 @@ class OnUpdateStoryStepSyncTrackerTest {
         advanceTimeBy(30)
         runCurrent()
 
-        val synced = withTimeout(1_000) { request.await() }
+        assertFalse(request.isCompleted)
         job.cancel()
-
-        assertEquals("workspace-online", synced.workspaceId)
-        assertEquals(listOf(conversation.id), synced.commentConversations?.map { it.id })
     }
 
     @Test

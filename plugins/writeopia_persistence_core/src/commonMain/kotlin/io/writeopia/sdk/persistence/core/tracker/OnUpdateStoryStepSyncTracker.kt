@@ -23,7 +23,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -63,6 +62,14 @@ class OnUpdateStoryStepSyncTracker(
         )
     )
     private var lastSyncedCommentChangeVersion: Long = 0L
+    private var lastSyncedCommentConversations: Map<String, List<Comment>> =
+        commentConversationsFlow?.value ?: emptyMap()
+
+    private data class CommentDelta(
+        val changedConversations: Map<String, List<Comment>>,
+        val deletedConversationIds: List<String>,
+        val deletedCommentIds: List<String>,
+    )
 
     // Track last known content for each StoryStep to detect actual changes
     private val lastKnownContent = mutableMapOf<String, StoryStepContent>()
@@ -113,13 +120,8 @@ class OnUpdateStoryStepSyncTracker(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>
     ) {
-        // Combine flows to get both story state and workspace context
-        val combinedFlow = combine(
-            documentEditionFlow,
-            workspaceIdFlow
-        ) { (storyState, documentInfo), workspaceId ->
-            Triple(storyState, documentInfo, workspaceId)
-        }
+        val syncWorkspaceId = workspaceIdFlow.first()
+        if (syncWorkspaceId == Workspace.disconnectedWorkspace().id) return
 
         // Collect changes and add to buffer
         coroutineScope {
@@ -133,22 +135,19 @@ class OnUpdateStoryStepSyncTracker(
                             commentSnapshot.value.version > lastSyncedCommentChangeVersion
                         if (syncBuffer.hasPendingChanges() || commentsChanged) {
                             val (_, documentInfo) = documentEditionFlow.first()
-                            val workspaceId = workspaceIdFlow.first()
-                            performSync(documentInfo.id, workspaceId)
+                            performSync(documentInfo.id, syncWorkspaceId)
                         }
                     }
             }
 
-            // Launch a coroutine to process document changes
+            // Launch a coroutine to process document changes. The workspace is intentionally
+            // fixed for this tracker lifetime so pending edits can never migrate to another workspace.
             launch {
-                combinedFlow.collect { (storyState, documentInfo, workspaceId) ->
+                documentEditionFlow.collect { (storyState, documentInfo) ->
                     processLastEdit(storyState.lastEdit, documentInfo.id)
                     val commentsChanged =
                         commentSnapshot.value.version > lastSyncedCommentChangeVersion
-                    if (
-                        workspaceId != Workspace.disconnectedWorkspace().id &&
-                        (syncBuffer.hasPendingChanges() || commentsChanged)
-                    ) {
+                    if (syncBuffer.hasPendingChanges() || commentsChanged) {
                         syncBuffer.requestSync()
                     }
                 }
@@ -282,6 +281,32 @@ class OnUpdateStoryStepSyncTracker(
         }
     }
 
+    private fun commentDelta(
+        previous: Map<String, List<Comment>>,
+        current: Map<String, List<Comment>>,
+    ): CommentDelta {
+        val deletedConversationIds = (previous.keys - current.keys).toList()
+        val changedConversations = current.filter { (conversationId, comments) ->
+            previous[conversationId] != comments
+        }
+        val currentCommentIds = current.values
+            .flatten()
+            .mapTo(mutableSetOf()) { comment -> comment.id }
+        val deletedConversationIdSet = deletedConversationIds.toSet()
+        val deletedCommentIds = previous
+            .filterKeys { conversationId -> conversationId !in deletedConversationIdSet }
+            .values
+            .flatten()
+            .map { comment -> comment.id }
+            .filter { commentId -> commentId !in currentCommentIds }
+
+        return CommentDelta(
+            changedConversations = changedConversations,
+            deletedConversationIds = deletedConversationIds,
+            deletedCommentIds = deletedCommentIds,
+        )
+    }
+
     private suspend fun performSync(documentId: String, workspaceId: String) {
         if (workspaceId == Workspace.disconnectedWorkspace().id) return
 
@@ -290,6 +315,12 @@ class OnUpdateStoryStepSyncTracker(
         val currentComments = comments.conversations
         val commentVersion = comments.version
         val commentsChanged = commentVersion > lastSyncedCommentChangeVersion
+        val currentCommentMap = currentComments ?: emptyMap()
+        val commentDelta = if (commentsChanged) {
+            commentDelta(lastSyncedCommentConversations, currentCommentMap)
+        } else {
+            CommentDelta(emptyMap(), emptyList(), emptyList())
+        }
         if (batch.isEmpty && !commentsChanged) return
 
         val requestTimestamp = Clock.System.now().toEpochMilliseconds()
@@ -306,7 +337,13 @@ class OnUpdateStoryStepSyncTracker(
                 )
             },
             deletions = batch.deletions.toList(),
-            commentConversations = if (commentsChanged) currentComments?.toApi() else null,
+            commentConversations = if (commentDelta.changedConversations.isNotEmpty()) {
+                commentDelta.changedConversations.toApi()
+            } else {
+                null
+            },
+            deletedCommentConversationIds = commentDelta.deletedConversationIds,
+            deletedCommentIds = commentDelta.deletedCommentIds,
         )
 
         try {
@@ -316,6 +353,7 @@ class OnUpdateStoryStepSyncTracker(
             lastSyncTimestamp = response.serverTimestamp
             if (commentsChanged) {
                 lastSyncedCommentChangeVersion = commentVersion
+                lastSyncedCommentConversations = currentCommentMap
             }
             consecutiveFailures = 0
 

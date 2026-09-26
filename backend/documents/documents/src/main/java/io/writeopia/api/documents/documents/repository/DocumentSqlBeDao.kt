@@ -103,6 +103,40 @@ class DocumentSqlBeDao(
         replaceCommentConversationsUnchecked(documentId, conversations)
     }
 
+    fun applyCommentDelta(
+        documentId: String,
+        conversations: Map<String, List<Comment>>,
+        deletedConversationIds: List<String>,
+        deletedCommentIds: List<String>,
+    ) {
+        validateCommentConversations(documentId, conversations)
+        val incomingCommentIds = conversations.values.flatten().map { comment -> comment.id }.toSet()
+        require(incomingCommentIds.intersect(deletedCommentIds.toSet()).isEmpty()) {
+            "A comment cannot be upserted and deleted in the same request"
+        }
+        require(conversations.keys.intersect(deletedConversationIds.toSet()).isEmpty()) {
+            "A conversation cannot be upserted and deleted in the same request"
+        }
+
+        if (deletedConversationIds.isNotEmpty()) {
+            commentQueries?.deleteByConversationIdsForDocument(documentId, deletedConversationIds)
+        }
+        if (deletedCommentIds.isNotEmpty()) {
+            commentQueries?.deleteByIdsForDocument(documentId, deletedCommentIds)
+        }
+        conversations.forEach { (conversationId, comments) ->
+            comments.forEachIndexed { commentPosition, comment ->
+                commentQueries?.insert(
+                    id = comment.id,
+                    conversation_id = conversationId,
+                    document_id = documentId,
+                    comment_position = commentPosition.toLong(),
+                    text = comment.text,
+                )
+            }
+        }
+    }
+
     private fun validateCommentConversations(
         documentId: String,
         conversations: Map<String, List<Comment>>,

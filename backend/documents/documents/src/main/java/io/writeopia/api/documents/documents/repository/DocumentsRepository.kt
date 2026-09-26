@@ -224,6 +224,20 @@ fun WriteopiaDbBackend.replaceCommentConversations(
     getDocumentDaoFn().replaceCommentConversations(documentId, conversations)
 }
 
+fun WriteopiaDbBackend.applyCommentDelta(
+    documentId: String,
+    conversations: Map<String, List<io.writeopia.sdk.models.comment.Comment>>,
+    deletedConversationIds: List<String>,
+    deletedCommentIds: List<String>,
+) {
+    getDocumentDaoFn().applyCommentDelta(
+        documentId,
+        conversations,
+        deletedConversationIds,
+        deletedCommentIds,
+    )
+}
+
 fun WriteopiaDbBackend.touchDocument(
     documentId: String,
     workspaceId: String,

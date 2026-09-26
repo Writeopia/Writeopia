@@ -50,3 +50,11 @@ WHERE document_id = ?;
 deleteByDocumentIds:
 DELETE FROM comment_entity
 WHERE document_id IN ?;
+
+deleteByIdsForDocument:
+DELETE FROM comment_entity
+WHERE document_id = ? AND id IN ?;
+
+deleteByConversationIdsForDocument:
+DELETE FROM comment_entity
+WHERE document_id = ? AND conversation_id IN ?;
