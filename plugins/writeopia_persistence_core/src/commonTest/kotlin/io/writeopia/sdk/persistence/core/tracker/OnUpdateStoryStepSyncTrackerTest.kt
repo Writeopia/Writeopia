@@ -182,7 +182,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             id = "conversation-1",
             comments = listOf(Comment(id = "comment-1", text = "Already loaded")),
         )
-        val commentsFlow = MutableStateFlow(listOf(conversation))
+        val commentsFlow = MutableStateFlow(mapOf(conversation.id to conversation.comments))
         val request = CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
         val tracker = OnUpdateStoryStepSyncTracker(
             syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
