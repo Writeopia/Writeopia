@@ -246,7 +246,7 @@ class DocumentRepositoryTest {
         assertTrue(explicitModernPayload.commentConversations.isEmpty())
 
         assertEquals(
-            listOf(conversation),
+            commentMap(conversation),
             database.getDocumentWithContentById(documentId, workspaceId)?.commentConversations,
         )
 
