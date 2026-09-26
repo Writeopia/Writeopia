@@ -725,7 +725,7 @@ class WriteopiaStateManager(
             writeopiaManager.changeStoryType(position, typeInfo, commandInfo, _currentStory.value)
 
         if (listTypes.contains(typeInfo.storyType.number)) {
-            coroutineScope.launch {
+            coroutineScope.launch(dispatcher) {
                 val nextPosition = getStory(position)?.nextPosition ?: (position + 1)
                 val newState = writeopiaManager.generateSuggestionsList(
                     storyState = { _currentStory.value },
