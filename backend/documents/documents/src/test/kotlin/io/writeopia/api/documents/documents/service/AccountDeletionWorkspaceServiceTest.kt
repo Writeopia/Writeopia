@@ -32,6 +32,7 @@ class AccountDeletionWorkspaceServiceTest {
     private val sharedWorkspaceId = "workspace-shared-${UUID.randomUUID()}"
     private val editorWorkspaceId = "workspace-editor-${UUID.randomUUID()}"
     private val documentId = "document-${UUID.randomUUID()}"
+    private val commentId = "comment-${UUID.randomUUID()}"
     private val editorFavoriteDocumentId = "favorite-document-${UUID.randomUUID()}"
 
     @BeforeTest
@@ -77,6 +78,14 @@ class AccountDeletionWorkspaceServiceTest {
             published = false,
         )
 
+        db.commentEntityQueries.insert(
+            id = commentId,
+            conversation_id = "conversation-1",
+            document_id = documentId,
+            comment_position = 0,
+            text = "Comment",
+        )
+
         // Workspace shared with another admin (user is themselves ADMIN, but not the sole one)
         // - the user should just be removed as a member.
         db.workspaceEntityQueries.insert(id = sharedWorkspaceId, name = "Shared workspace", icon = null, icon_tint = null)
@@ -107,6 +116,7 @@ class AccountDeletionWorkspaceServiceTest {
     @AfterTest
     fun tearDown() {
         db.accountDeletionWorkspaceQueries.deleteByUserId(userId)
+        db.commentEntityQueries.deleteByDocumentId(documentId)
         db.documentEntityQueries.hardDeleteByWorkspaceId(soleAdminWorkspaceId)
         db.workspaceToUserQueries.deleteByWorkspaceId(soleAdminWorkspaceId)
         db.workspaceEntityQueries.delete(soleAdminWorkspaceId)
@@ -134,6 +144,7 @@ class AccountDeletionWorkspaceServiceTest {
         // Sole-admin workspace: gone entirely, including its documents.
         assertNull(db.workspaceEntityQueries.getWorkspaceById(soleAdminWorkspaceId).executeAsOneOrNull())
         assertTrue(db.documentEntityQueries.selectAllIdsByWorkspaceId(soleAdminWorkspaceId).executeAsList().isEmpty())
+        assertTrue(db.commentEntityQueries.selectByDocumentId(documentId).executeAsList().isEmpty())
 
         // Shared workspace (user was co-admin): still exists, other admin still a member, test
         // user is not.

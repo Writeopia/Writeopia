@@ -59,6 +59,7 @@ fun WriteopiaDbBackend.markAccountDeletionWorkspaceCompleted(userId: String, wor
 fun WriteopiaDbBackend.hardDeleteWorkspaceContents(workspaceId: String) {
     val documentIds = this.documentEntityQueries.selectAllIdsByWorkspaceId(workspaceId).executeAsList()
     if (documentIds.isNotEmpty()) {
+        this.commentEntityQueries.deleteByDocumentIds(documentIds)
         this.storyStepEntityQueries.deleteByDocumentIds(documentIds)
     }
     this.documentEntityQueries.hardDeleteByWorkspaceId(workspaceId)

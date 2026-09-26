@@ -9,12 +9,11 @@ val MIGRATION_29_30 = object : Migration(29, 30) {
         connection.execSQL(
             """
             CREATE TABLE IF NOT EXISTS COMMENT_ENTITY_TABLE (
-                id TEXT NOT NULL,
+                id TEXT NOT NULL PRIMARY KEY,
                 conversation_id TEXT NOT NULL,
                 document_id TEXT NOT NULL,
                 comment_position INTEGER NOT NULL,
-                text TEXT NOT NULL,
-                PRIMARY KEY(document_id, id)
+                text TEXT NOT NULL
             )
             """.trimIndent()
         )
