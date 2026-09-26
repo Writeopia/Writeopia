@@ -11,12 +11,15 @@ import io.writeopia.sdk.persistence.core.tracker.OnUpdateStoryStepSyncTracker
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 /**
@@ -59,11 +62,12 @@ class DocumentSyncManager(
     ) {
         activeSyncJobs[documentId]?.cancel()
 
-        val job = scope.launch(dispatcher) {
+        val job = scope.launch(dispatcher, start = CoroutineStart.UNDISPATCHED) {
+            val boundWorkspaceIdFlow = flowOf(workspaceIdFlow.first())
             try {
                 documentTracker.saveOnStoryChanges(
                     documentEditionFlow,
-                    workspaceIdFlow
+                    boundWorkspaceIdFlow
                 )
             } catch (error: UnsupportedCommentConversationsException) {
                 println("Document sync stopped for $documentId: ${error.message}")
@@ -84,11 +88,12 @@ class DocumentSyncManager(
         activeSyncJobs[documentId]?.cancel()
 
         // Start a new sync job in the global scope
-        val job = scope.launch(dispatcher) {
+        val job = scope.launch(dispatcher, start = CoroutineStart.UNDISPATCHED) {
+            val boundWorkspaceIdFlow = flowOf(workspaceIdFlow.first())
             try {
                 documentTracker.saveOnStoryChanges(
                     documentEditionFlow,
-                    workspaceIdFlow,
+                    boundWorkspaceIdFlow,
                     commentConversationsFlow
                 )
             } catch (error: UnsupportedCommentConversationsException) {
@@ -127,10 +132,11 @@ class DocumentSyncManager(
         )
 
         // Start a new backend sync job in the global scope
-        val job = scope.launch(dispatcher) {
+        val job = scope.launch(dispatcher, start = CoroutineStart.UNDISPATCHED) {
+            val boundWorkspaceIdFlow = flowOf(workspaceIdFlow.first())
             storyStepSyncTracker.syncStorySteps(
                 documentEditionFlow,
-                workspaceIdFlow
+                boundWorkspaceIdFlow
             )
         }
 
