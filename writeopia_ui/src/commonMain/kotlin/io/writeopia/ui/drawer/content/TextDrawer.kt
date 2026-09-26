@@ -261,6 +261,7 @@ class TextDrawer(
                     },
                     onValueChange = { value ->
                         val previousValue = previousInputText
+                        previousInputText = value
 
                         val start = value.selection.start
                         val end = value.selection.end
@@ -334,7 +335,6 @@ class TextDrawer(
                                 )
                             )
                             inputText = updatedInputText
-                            previousInputText = updatedInputText
                         }
 
                         if (!showSlashCommandPopup) {
