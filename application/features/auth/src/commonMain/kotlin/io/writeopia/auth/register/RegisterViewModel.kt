@@ -30,6 +30,9 @@ internal class RegisterViewModel(
     private val _name = MutableStateFlow("")
     val name = _name.asStateFlow()
 
+    private val _username = MutableStateFlow("")
+    val username = _username.asStateFlow()
+
     private val _workspace = MutableStateFlow("")
     val company = _workspace.asStateFlow()
 
@@ -52,11 +55,13 @@ internal class RegisterViewModel(
 
     val canRegister: StateFlow<Boolean> = combine(
         _name,
+        _username,
         _email,
         _workspace,
         passwordValidation
-    ) { name, email, workspace, validation ->
+    ) { name, username, email, workspace, validation ->
         name.isNotBlank() &&
+            username.isNotBlank() &&
             email.isNotBlank() &&
             workspace.isNotBlank() &&
             validation.strength == PasswordStrength.STRONG
@@ -68,6 +73,10 @@ internal class RegisterViewModel(
 
     fun nameChanged(name: String) {
         _name.value = name
+    }
+
+    fun usernameChanged(username: String) {
+        _username.value = username
     }
 
     fun workspaceChanged(company: String) {
@@ -92,7 +101,7 @@ internal class RegisterViewModel(
                     email = _email.value,
                     workspaceName = _workspace.value,
                     password = _password.value,
-                    username = _email.value, // to pass the test
+                    username = _username.value,
                 )
 
                 _register.value = when (result) {

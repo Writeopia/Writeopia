@@ -5,13 +5,14 @@ CREATE TABLE workspace_to_user (
     PRIMARY KEY(workspace_id, user_id)
 );
 
+CREATE INDEX idx_workspace_to_user_user_id ON workspace_to_user(user_id);
+
 getUsersInWorkspace:
 SELECT
   user_entity.id AS user_entity_id,
   user_entity.name AS user_name,
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
-  user_entity.enabled AS user_enabled,
   role
 FROM workspace_entity
 JOIN workspace_to_user
@@ -26,7 +27,6 @@ SELECT
   user_entity.name AS user_name,
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
-  user_entity.enabled AS user_enabled,
   role
 FROM workspace_entity
 JOIN workspace_to_user
@@ -48,7 +48,6 @@ SELECT
   user_entity.name AS user_name,
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
-  user_entity.enabled AS user_enabled,
   role
 FROM workspace_entity
 JOIN workspace_to_user
@@ -66,6 +65,12 @@ ON CONFLICT(workspace_id, user_id) DO UPDATE SET role = excluded.role;
 removeUserFromWorkspace:
 DELETE FROM workspace_to_user
 WHERE workspace_id = ? AND user_id = ?;
+
+-- Bulk delete, all members of the workspace. Used when the whole workspace is torn down
+-- (account-deletion saga), as opposed to removeUserFromWorkspace which removes one member.
+deleteByWorkspaceId:
+DELETE FROM workspace_to_user
+WHERE workspace_id = ?;
 
 changeRole:
 UPDATE workspace_to_user

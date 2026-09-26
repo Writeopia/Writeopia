@@ -191,6 +191,20 @@ SELECT id
 FROM document_entity
 WHERE workspace_id = ? AND deleted = FALSE;
 
+-- Unlike selectIdsByWorkspaceId, this does NOT filter deleted=FALSE: used by the
+-- account-deletion saga to hard-delete a workspace's story steps, which must include
+-- documents the user had already soft-deleted before requesting account deletion.
+selectAllIdsByWorkspaceId:
+SELECT id
+FROM document_entity
+WHERE workspace_id = ?;
+
+-- Unconditional hard delete of every document in the workspace, soft-deleted or not.
+-- Used only by the account-deletion saga when a whole workspace is being torn down.
+hardDeleteByWorkspaceId:
+DELETE FROM document_entity
+WHERE workspace_id = ?;
+
 updateHeaderImage:
 UPDATE document_entity
 SET 

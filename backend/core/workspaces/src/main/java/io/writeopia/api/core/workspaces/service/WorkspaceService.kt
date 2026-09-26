@@ -1,23 +1,23 @@
 @file:OptIn(ExperimentalTime::class)
 
-package io.writeopia.api.core.auth.service
+package io.writeopia.api.core.workspaces.service
 
 import com.google.cloud.run.v2.EnvVar
 import com.google.cloud.run.v2.JobName
 import com.google.cloud.run.v2.JobsClient
 import com.google.cloud.run.v2.RunJobRequest
-import io.writeopia.api.core.auth.models.AddUserResult
-import io.writeopia.api.core.auth.repository.countUsersInWorkspace
 import io.writeopia.api.core.auth.repository.getUserByEmail
-import io.writeopia.api.core.auth.repository.getUserInWorkspace
-import io.writeopia.api.core.auth.repository.getUsersInWorkspace
-import io.writeopia.api.core.auth.repository.getUsersInWorkspacePaginated
-import io.writeopia.api.core.auth.repository.getWorkspaceById
-import io.writeopia.api.core.auth.repository.getWorkspacesByUserId
-import io.writeopia.api.core.auth.repository.insertUserInWorkspace
-import io.writeopia.api.core.auth.repository.insertWorkspace
 import io.writeopia.api.core.auth.repository.getUserById
-import io.writeopia.api.core.auth.repository.removeUserFromWorkspace
+import io.writeopia.api.core.workspaces.models.AddUserResult
+import io.writeopia.api.core.workspaces.repository.countUsersInWorkspace
+import io.writeopia.api.core.workspaces.repository.getUserInWorkspace
+import io.writeopia.api.core.workspaces.repository.getUsersInWorkspace
+import io.writeopia.api.core.workspaces.repository.getUsersInWorkspacePaginated
+import io.writeopia.api.core.workspaces.repository.getWorkspaceById
+import io.writeopia.api.core.workspaces.repository.getWorkspacesByUserId
+import io.writeopia.api.core.workspaces.repository.insertUserInWorkspace
+import io.writeopia.api.core.workspaces.repository.insertWorkspace
+import io.writeopia.api.core.workspaces.repository.removeUserFromWorkspace
 import io.writeopia.connection.logger
 import io.writeopia.models.user.PaginatedWorkspaceUsers
 import io.writeopia.models.user.WorkspaceUser
@@ -78,23 +78,6 @@ object WorkspaceService {
         userEmail: String,
         writeopiaDb: WriteopiaDbBackend
     ): WorkspaceUser? = writeopiaDb.getUserInWorkspace(workspaceId, userEmail)
-
-    fun createWorkspace(
-        workspaceId: String,
-        workspaceName: String,
-        writeopiaDb: WriteopiaDbBackend
-    ) {
-        writeopiaDb.insertWorkspace(
-            Workspace(
-                id = workspaceId,
-                userId = "",
-                name = workspaceName,
-                lastSync = Instant.DISTANT_PAST,
-                selected = false,
-                role = ""
-            )
-        )
-    }
 
     /**
      * Creates a workspace and adds the user as admin in a single transaction.
