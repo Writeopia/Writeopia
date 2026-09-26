@@ -250,6 +250,11 @@ class SqlDelightDocumentRepositoryTest {
     }
 
     @Test
+    fun `document id cannot move between workspaces`() = runTest {
+        DocumentRepositoryTests(documentRepository).documentIdCannotMoveBetweenWorkspaces()
+    }
+
+    @Test
     fun `comment persistence respects workspace boundaries`() = runTest {
         DocumentRepositoryTests(documentRepository).commentPersistenceRespectsWorkspaceBoundaries()
     }
