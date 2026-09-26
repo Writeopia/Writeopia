@@ -65,4 +65,3 @@ class DocumentTrackerTest {
         job.cancel()
     }
 }
-

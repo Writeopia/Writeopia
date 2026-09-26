@@ -136,4 +136,3 @@ fun Folder.toApi(): FolderApi = FolderApi(
     icon = icon?.toApi(),
     itemCount = itemCount,
 )
-

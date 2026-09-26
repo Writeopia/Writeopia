@@ -409,4 +409,3 @@ class OnUpdateStoryStepSyncTrackerTest {
         assertEquals(listOf(conversation.id), synced.commentConversations?.map { it.id })
     }
 }
-

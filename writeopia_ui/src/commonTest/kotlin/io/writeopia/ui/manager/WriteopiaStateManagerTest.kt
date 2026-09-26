@@ -2614,4 +2614,3 @@ class WriteopiaStateManagerTest {
         assertTrue(manager.getDocument().commentConversations.isEmpty())
     }
 }
-

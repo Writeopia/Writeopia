@@ -227,4 +227,3 @@ class OnUpdateDocumentTrackerTest {
         override suspend fun deleteStoryStep(storyStepId: String, documentId: String) = Unit
     }
 }
-

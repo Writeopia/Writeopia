@@ -231,4 +231,3 @@ fun WriteopiaDbBackend.touchDocument(
 ) {
     getDocumentDaoFn().touchDocument(documentId, workspaceId, timestamp)
 }
-
