@@ -699,7 +699,7 @@ object DocumentsService {
                 }
 
                 if (deletionsToApply.isNotEmpty()) {
-                    writeopiaDb.deleteStoryStepsByIds(deletionsToApply)
+                    writeopiaDb.deleteStoryStepsByIds(deletionsToApply, documentId)
                 }
 
                 writeopiaDb.touchDocument(

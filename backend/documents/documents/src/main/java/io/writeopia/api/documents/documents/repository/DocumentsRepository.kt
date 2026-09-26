@@ -177,8 +177,8 @@ fun WriteopiaDbBackend.deleteStoryStepById(storyStepId: String) {
 /**
  * Deletes multiple StorySteps by their IDs.
  */
-fun WriteopiaDbBackend.deleteStoryStepsByIds(storyStepIds: List<String>) {
-    getDocumentDaoFn().deleteStoryStepsByIds(storyStepIds)
+fun WriteopiaDbBackend.deleteStoryStepsByIds(storyStepIds: List<String>, documentId: String) {
+    getDocumentDaoFn().deleteStoryStepsByIds(storyStepIds, documentId)
 }
 
 // Document Publishing Operations

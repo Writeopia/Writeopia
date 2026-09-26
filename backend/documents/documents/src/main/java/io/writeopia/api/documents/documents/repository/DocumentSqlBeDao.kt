@@ -1058,6 +1058,13 @@ class DocumentSqlBeDao(
      * Inserts or updates a StoryStep with a specific timestamp.
      */
     fun upsertStoryStep(storyStep: StoryStep, position: Double, documentId: String, lastUpdatedAt: Long) {
+        val existingDocumentId = storyStepQueries?.selectById(storyStep.id)
+            ?.executeAsOneOrNull()
+            ?.document_id
+        require(existingDocumentId == null || existingDocumentId == documentId) {
+            "StoryStep does not belong to the requested document"
+        }
+
         storyStep.run {
             storyStepQueries?.insert(
                 id = id,
@@ -1171,8 +1178,8 @@ class DocumentSqlBeDao(
     /**
      * Deletes multiple StorySteps by their IDs.
      */
-    fun deleteStoryStepsByIds(storyStepIds: List<String>) {
-        storyStepQueries?.deleteByIds(storyStepIds)
+    fun deleteStoryStepsByIds(storyStepIds: List<String>, documentId: String) {
+        storyStepQueries?.deleteByIdsForDocument(documentId, storyStepIds)
     }
 
     /**

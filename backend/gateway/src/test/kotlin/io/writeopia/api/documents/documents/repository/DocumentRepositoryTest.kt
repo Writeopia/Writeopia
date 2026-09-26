@@ -16,6 +16,8 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.data.CommentApi
 import io.writeopia.sdk.serialization.data.CommentConversationApi
 import io.writeopia.sdk.serialization.data.DocumentApi
+import io.writeopia.sdk.serialization.extensions.toApi
+import io.writeopia.sdk.serialization.request.StoryStepChangeApi
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import kotlinx.coroutines.test.runTest
 import kotlin.time.Clock
@@ -499,6 +501,111 @@ class DocumentRepositoryTest {
         assertEquals(null, database.getDocumentById(documentId, otherWorkspaceId))
 
         database.deleteDocumentById(documentId)
+    }
+
+    @Test
+    fun `step sync cannot move a step from another document`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val targetDocumentId = GenerateId.generate()
+        val victimDocumentId = GenerateId.generate()
+        val victimStep = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "victim",
+            lastUpdatedAt = 1,
+        )
+        database.saveDocument(Document(id = targetDocumentId, createdAt = now, lastUpdatedAt = now, lastSyncedAt = now, workspaceId = workspaceId, parentId = "root"))
+        database.saveDocument(
+            Document(
+                id = victimDocumentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+                content = mapOf(0.0 to victimStep),
+            )
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            DocumentsService.syncStorySteps(
+                documentId = targetDocumentId,
+                workspaceId = workspaceId,
+                request = StoryStepSyncRequest(
+                    documentId = targetDocumentId,
+                    workspaceId = workspaceId,
+                    lastSyncTimestamp = 0,
+                    requestTimestamp = 10,
+                    changes = listOf(
+                        StoryStepChangeApi(
+                            storyStep = victimStep.copy(text = "hijacked", lastUpdatedAt = 10).toApi(0.0),
+                            position = 0.0,
+                        )
+                    ),
+                    deletions = emptyList(),
+                    commentConversations = null,
+                ),
+                writeopiaDb = database,
+            )
+        }
+
+        val victimReloaded = database.getDocumentWithContentById(victimDocumentId, workspaceId)
+        val targetReloaded = database.getDocumentWithContentById(targetDocumentId, workspaceId)
+        assertEquals("victim", victimReloaded?.content?.get(0.0)?.text)
+        assertTrue(targetReloaded?.content?.values?.none { step -> step.id == victimStep.id } == true)
+
+        database.deleteDocumentById(targetDocumentId)
+        database.deleteDocumentById(victimDocumentId)
+    }
+
+    @Test
+    fun `step sync cannot delete a step from another document`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val targetDocumentId = GenerateId.generate()
+        val victimDocumentId = GenerateId.generate()
+        val victimStep = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "victim",
+            lastUpdatedAt = 1,
+        )
+        database.saveDocument(Document(id = targetDocumentId, createdAt = now, lastUpdatedAt = now, lastSyncedAt = now, workspaceId = workspaceId, parentId = "root"))
+        database.saveDocument(
+            Document(
+                id = victimDocumentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+                content = mapOf(0.0 to victimStep),
+            )
+        )
+
+        DocumentsService.syncStorySteps(
+            documentId = targetDocumentId,
+            workspaceId = workspaceId,
+            request = StoryStepSyncRequest(
+                documentId = targetDocumentId,
+                workspaceId = workspaceId,
+                lastSyncTimestamp = 0,
+                requestTimestamp = 10,
+                changes = emptyList(),
+                deletions = listOf(victimStep.id),
+                commentConversations = null,
+            ),
+            writeopiaDb = database,
+        )
+
+        val victimReloaded = database.getDocumentWithContentById(victimDocumentId, workspaceId)
+        assertEquals("victim", victimReloaded?.content?.get(0.0)?.text)
+
+        database.deleteDocumentById(targetDocumentId)
+        database.deleteDocumentById(victimDocumentId)
     }
 
     @Test
