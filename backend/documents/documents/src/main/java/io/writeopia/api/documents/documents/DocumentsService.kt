@@ -1,3 +1,5 @@
+[Reading 986 lines from start (total: 986 lines, 0 remaining)]
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.api.documents.documents
@@ -45,7 +47,6 @@ import io.writeopia.connection.ResultData
 import io.writeopia.connection.Urls
 import io.writeopia.connection.wrWebClient
 import io.writeopia.sdk.models.comment.Comment
-import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
@@ -59,6 +60,7 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.sdk.serialization.extensions.toCommentMap
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.request.DocumentSyncInfo
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
@@ -218,20 +220,17 @@ object DocumentsService {
             // Skip if document doesn't belong to the workspace
             if (originalDocument.workspaceId != workspaceId) continue
 
-            val conversationIdMap = originalDocument.commentConversations.associate { conversation ->
-                conversation.id to GenerateId.generate()
+            val conversationIdMap = originalDocument.commentConversations.keys.associateWith {
+                GenerateId.generate()
             }
-            val clonedComments = originalDocument.commentConversations.map { conversation ->
-                CommentConversation(
-                    id = conversationIdMap.getValue(conversation.id),
-                    comments = conversation.comments.map { comment ->
-                        Comment(
-                            id = GenerateId.generate(),
-                            text = comment.text,
-                        )
-                    },
-                )
-            }
+            val clonedComments = originalDocument.commentConversations.map { (conversationId, comments) ->
+                conversationIdMap.getValue(conversationId) to comments.map { comment ->
+                    Comment(
+                        id = GenerateId.generate(),
+                        text = comment.text,
+                    )
+                }
+            }.toMap()
 
             // Clone the content with new IDs for each StoryStep and remap comment span references.
             val clonedContent = originalDocument.content.mapValues { (_, storyStep) ->
@@ -680,7 +679,7 @@ object DocumentsService {
                 request.commentConversations?.let { conversations ->
                     writeopiaDb.replaceCommentConversations(
                         documentId = documentId,
-                        conversations = conversations.map { conversation -> conversation.toModel() },
+                        conversations = conversations.toCommentMap(),
                     )
                 }
 
@@ -984,3 +983,5 @@ object DocumentsService {
      */
     private const val MAX_COMBINED_TEXT_LENGTH = 100_000
 }
+
+[executed on device: DESKTOP-HJO2US6 (d972d8cd-06d7-4dea-9656-237da7d66e93)]

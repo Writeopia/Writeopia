@@ -1,9 +1,10 @@
+[Reading 1320 lines from start (total: 1320 lines, 0 remaining)]
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.comment.Comment
-import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
@@ -97,7 +98,7 @@ class DocumentSqlBeDao(
 
     fun replaceCommentConversations(
         documentId: String,
-        conversations: List<CommentConversation>,
+        conversations: Map<String, List<Comment>>,
     ) {
         validateCommentConversations(documentId, conversations)
         replaceCommentConversationsUnchecked(documentId, conversations)
@@ -105,14 +106,9 @@ class DocumentSqlBeDao(
 
     private fun validateCommentConversations(
         documentId: String,
-        conversations: List<CommentConversation>,
+        conversations: Map<String, List<Comment>>,
     ) {
-        val conversationIds = conversations.map { conversation -> conversation.id }
-        require(conversationIds.size == conversationIds.toSet().size) {
-            "Comment conversation IDs must be unique"
-        }
-
-        val comments = conversations.flatMap { conversation -> conversation.comments }
+        val comments = conversations.values.flatten()
         require(comments.size == comments.map { comment -> comment.id }.toSet().size) {
             "Comment IDs must be unique"
         }
@@ -128,16 +124,15 @@ class DocumentSqlBeDao(
 
     private fun replaceCommentConversationsUnchecked(
         documentId: String,
-        conversations: List<CommentConversation>,
+        conversations: Map<String, List<Comment>>,
     ) {
         commentQueries?.deleteByDocumentId(documentId)
-        conversations.forEachIndexed { conversationPosition, conversation ->
-            conversation.comments.forEachIndexed { commentPosition, comment ->
+        conversations.forEach { (conversationId, comments) ->
+            comments.forEachIndexed { commentPosition, comment ->
                 commentQueries?.insert(
                     id = comment.id,
-                    conversation_id = conversation.id,
+                    conversation_id = conversationId,
                     document_id = documentId,
-                    conversation_position = conversationPosition.toLong(),
                     comment_position = commentPosition.toLong(),
                     text = comment.text,
                 )
@@ -145,26 +140,21 @@ class DocumentSqlBeDao(
         }
     }
 
-    private fun loadCommentConversations(documentId: String): List<CommentConversation> =
+    private fun loadCommentConversations(documentId: String): Map<String, List<Comment>> =
         commentQueries?.selectByDocumentId(documentId)
             ?.executeAsList()
             ?.groupBy { it.conversation_id }
-            ?.values
-            ?.sortedBy { rows -> rows.minOf { it.conversation_position } }
-            ?.map { rows ->
-                CommentConversation(
-                    id = rows.first().conversation_id,
-                    comments = rows
-                        .sortedBy { it.comment_position }
-                        .map { row ->
-                            Comment(
-                                id = row.id,
-                                text = row.text,
-                            )
-                        },
-                )
+            ?.mapValues { (_, rows) ->
+                rows
+                    .sortedBy { it.comment_position }
+                    .map { row ->
+                        Comment(
+                            id = row.id,
+                            text = row.text,
+                        )
+                    }
             }
-            ?: emptyList()
+            ?: emptyMap()
 
     private fun insertDocument(document: Document) {
         documentQueries?.insert(
@@ -1318,3 +1308,5 @@ fun Folder_entity.toModel(count: Long) =
             null
         }
     )
+
+[executed on device: DESKTOP-HJO2US6 (d972d8cd-06d7-4dea-9656-237da7d66e93)]

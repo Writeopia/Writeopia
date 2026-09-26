@@ -65,7 +65,7 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val selectionMetadataState: StateFlow<Set<SelectionMetadata>>
 
-    val commentConversations: StateFlow<List<CommentConversation>>
+    val commentConversations: StateFlow<Map<String, List<Comment>>>
 
     val sideMenuTabState: StateFlow<SideMenuTab>
 

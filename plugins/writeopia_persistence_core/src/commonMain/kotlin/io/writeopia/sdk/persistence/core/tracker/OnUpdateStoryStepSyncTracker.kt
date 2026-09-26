@@ -1,3 +1,5 @@
+[Reading 351 lines from start (total: 351 lines, 0 remaining)]
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.sdk.persistence.core.tracker
@@ -6,7 +8,7 @@ import io.writeopia.sdk.manager.StoryStepSyncTracker
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.model.story.StoryState
-import io.writeopia.sdk.models.comment.CommentConversation
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.sync.StoryStepSyncBuffer
@@ -44,14 +46,14 @@ class OnUpdateStoryStepSyncTracker(
     private val syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse,
     private val onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> },
     private val maxRetries: Int = 3,
-    private val commentConversationsFlow: StateFlow<List<CommentConversation>>? = null,
+    private val commentConversationsFlow: StateFlow<Map<String, List<Comment>>>? = null,
 ) : StoryStepSyncTracker {
 
     private var lastSyncTimestamp: Long = 0L
     private var consecutiveFailures: Int = 0
 
     private data class CommentSnapshot(
-        val conversations: List<CommentConversation>?,
+        val conversations: Map<String, List<Comment>>?,
         val version: Long,
     )
 
@@ -305,7 +307,7 @@ class OnUpdateStoryStepSyncTracker(
                 )
             },
             deletions = batch.deletions.toList(),
-            commentConversations = if (commentsChanged) currentComments?.map { it.toApi() } else null,
+            commentConversations = if (commentsChanged) currentComments?.toApi() else null,
         )
 
         try {
@@ -349,3 +351,5 @@ class OnUpdateStoryStepSyncTracker(
         }
     }
 }
+
+[executed on device: DESKTOP-HJO2US6 (d972d8cd-06d7-4dea-9656-237da7d66e93)]

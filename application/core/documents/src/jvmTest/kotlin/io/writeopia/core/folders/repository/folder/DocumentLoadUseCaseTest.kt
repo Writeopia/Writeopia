@@ -1,3 +1,5 @@
+[Reading 86 lines from start (total: 86 lines, 0 remaining)]
+
 @file:OptIn(kotlin.time.ExperimentalTime::class)
 
 package io.writeopia.core.folders.repository.folder
@@ -8,7 +10,6 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.sync.DocumentMerger
 import io.writeopia.sdk.models.comment.Comment
-import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -40,11 +41,8 @@ class DocumentLoadUseCaseTest {
         val local = Document(
             id = documentId,
             content = content,
-            commentConversations = listOf(
-                CommentConversation(
-                    id = "conversation",
-                    comments = listOf(Comment(id = "old", text = "Old")),
-                )
+            commentConversations = mapOf(
+                "conversation" to listOf(Comment(id = "old", text = "Old"))
             ),
             createdAt = Instant.fromEpochMilliseconds(1),
             lastUpdatedAt = Instant.fromEpochMilliseconds(1),
@@ -53,11 +51,8 @@ class DocumentLoadUseCaseTest {
             parentId = "root",
         )
         val backend = local.copy(
-            commentConversations = listOf(
-                CommentConversation(
-                    id = "conversation",
-                    comments = listOf(Comment(id = "new", text = "New")),
-                )
+            commentConversations = mapOf(
+                "conversation" to listOf(Comment(id = "new", text = "New"))
             ),
             lastUpdatedAt = Instant.fromEpochMilliseconds(2),
             lastSyncedAt = Instant.fromEpochMilliseconds(2),
@@ -84,3 +79,5 @@ class DocumentLoadUseCaseTest {
         assertEquals(backend.commentConversations, mergedCallback?.commentConversations)
     }
 }
+
+[executed on device: DESKTOP-HJO2US6 (d972d8cd-06d7-4dea-9656-237da7d66e93)]

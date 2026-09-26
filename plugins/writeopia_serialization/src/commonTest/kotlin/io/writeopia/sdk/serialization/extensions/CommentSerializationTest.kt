@@ -9,6 +9,7 @@ import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.serialization.data.CommentApi
 import io.writeopia.sdk.serialization.data.CommentConversationApi
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -51,6 +52,38 @@ class CommentSerializationTest {
     }
 
     @Test
+    fun `empty comment map entry is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            Document(
+                commentConversations = mapOf("conversation-empty" to emptyList()),
+                createdAt = Instant.fromEpochMilliseconds(1),
+                lastUpdatedAt = Instant.fromEpochMilliseconds(2),
+                lastSyncedAt = null,
+                workspaceId = "workspace",
+                parentId = "root",
+            )
+        }
+    }
+
+    @Test
+    fun `duplicate conversation ids are rejected during api conversion`() {
+        val conversations = listOf(
+            CommentConversationApi(
+                id = "conversation-1",
+                comments = listOf(CommentApi(id = "comment-1", text = "First")),
+            ),
+            CommentConversationApi(
+                id = "conversation-1",
+                comments = listOf(CommentApi(id = "comment-2", text = "Second")),
+            ),
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            conversations.toCommentMap()
+        }
+    }
+
+    @Test
     fun `span extra survives api conversion`() {
         val span = SpanInfo.create(1, 4, Span.COMMENT, "conversation-1")
 
@@ -72,13 +105,10 @@ class CommentSerializationTest {
                     )
                 )
             ),
-            commentConversations = listOf(
-                CommentConversation(
-                    id = "conversation-1",
-                    comments = listOf(
-                        Comment(id = "comment-1", text = "First"),
-                        Comment(id = "comment-2", text = "Second")
-                    )
+            commentConversations = mapOf(
+                "conversation-1" to listOf(
+                    Comment(id = "comment-1", text = "First"),
+                    Comment(id = "comment-2", text = "Second")
                 )
             ),
             createdAt = Instant.fromEpochMilliseconds(1),

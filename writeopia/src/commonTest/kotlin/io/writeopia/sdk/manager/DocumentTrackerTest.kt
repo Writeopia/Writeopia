@@ -1,3 +1,5 @@
+[Reading 70 lines from start (total: 70 lines, 0 remaining)]
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.sdk.manager
@@ -6,7 +8,6 @@ import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.info
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.comment.Comment
-import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
@@ -37,7 +38,7 @@ class DocumentTrackerTest {
         )
         val editions = MutableSharedFlow<Pair<StoryState, DocumentInfo>>()
         val workspaceIds = MutableStateFlow(document.workspaceId)
-        val comments = MutableStateFlow<List<CommentConversation>>(emptyList())
+        val comments = MutableStateFlow<Map<String, List<Comment>>>(emptyMap())
         val storySaved = CompletableDeferred<Boolean>()
         val tracker = object : DocumentTracker {
             override suspend fun saveOnStoryChanges(
@@ -54,11 +55,8 @@ class DocumentTrackerTest {
         }
         runCurrent()
 
-        comments.value = listOf(
-            CommentConversation(
-                id = "conversation-1",
-                comments = listOf(Comment(id = "comment-1", text = "ignored")),
-            )
+        comments.value = mapOf(
+            "conversation-1" to listOf(Comment(id = "comment-1", text = "ignored"))
         )
         runCurrent()
         editions.emit(StoryState(stories = emptyMap()) to document.info())
@@ -68,3 +66,5 @@ class DocumentTrackerTest {
         job.cancel()
     }
 }
+
+[executed on device: DESKTOP-HJO2US6 (d972d8cd-06d7-4dea-9656-237da7d66e93)]

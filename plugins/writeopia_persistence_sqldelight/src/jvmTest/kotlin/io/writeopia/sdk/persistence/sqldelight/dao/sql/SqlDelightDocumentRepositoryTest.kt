@@ -7,7 +7,6 @@ import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.writeopia.libraries.dbtests.DocumentRepositoryTests
 import io.writeopia.sdk.models.comment.Comment
-import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.span.Span
@@ -218,13 +217,10 @@ class SqlDelightDocumentRepositoryTest {
                     dbPosition = 0.0,
                 )
             ),
-            commentConversations = listOf(
-                CommentConversation(
-                    id = conversationId,
-                    comments = listOf(
-                        Comment(id = "comment-1", text = "First"),
-                        Comment(id = "comment-2", text = "Second"),
-                    )
+            commentConversations = mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-1", text = "First"),
+                    Comment(id = "comment-2", text = "Second"),
                 )
             ),
             createdAt = now,
@@ -259,51 +255,8 @@ class SqlDelightDocumentRepositoryTest {
     }
 
     @Test
-    fun `same comment id can exist in different documents in sqldelight`() = runTest {
-        val now = Clock.System.now()
-        val sharedCommentId = "shared-comment-id"
-        val first = Document(
-            id = "comment-scope-first",
-            commentConversations = listOf(
-                CommentConversation(
-                    id = "conversation-first",
-                    comments = listOf(Comment(id = sharedCommentId, text = "first")),
-                )
-            ),
-            createdAt = now,
-            lastUpdatedAt = now,
-            lastSyncedAt = null,
-            workspaceId = "workspaceId",
-            parentId = "root",
-        )
-        val second = Document(
-            id = "comment-scope-second",
-            commentConversations = listOf(
-                CommentConversation(
-                    id = "conversation-second",
-                    comments = listOf(Comment(id = sharedCommentId, text = "second")),
-                )
-            ),
-            createdAt = now,
-            lastUpdatedAt = now,
-            lastSyncedAt = null,
-            workspaceId = "workspaceId",
-            parentId = "root",
-        )
-
-        documentRepository.saveDocument(first)
-        documentRepository.saveDocument(second)
-
-        assertEquals(
-            "first",
-            documentRepository.loadDocumentById(first.id, first.workspaceId)
-                ?.commentConversations?.single()?.comments?.single()?.text,
-        )
-        assertEquals(
-            "second",
-            documentRepository.loadDocumentById(second.id, second.workspaceId)
-                ?.commentConversations?.single()?.comments?.single()?.text,
-        )
+    fun `comment id cannot move between documents`() = runTest {
+        DocumentRepositoryTests(documentRepository).commentIdCannotMoveBetweenDocuments()
     }
 
     @Test
@@ -311,10 +264,9 @@ class SqlDelightDocumentRepositoryTest {
         val now = Clock.System.now()
         val document = Document(
             id = "document-to-delete",
-            commentConversations = listOf(
-                CommentConversation(
-                    id = "conversation-delete",
-                    comments = listOf(Comment(id = "comment-delete", text = "Delete me"))
+            commentConversations = mapOf(
+                "conversation-delete" to listOf(
+                    Comment(id = "comment-delete", text = "Delete me")
                 )
             ),
             createdAt = now,
@@ -326,10 +278,9 @@ class SqlDelightDocumentRepositoryTest {
 
         val retainedDocument = Document(
             id = "document-to-keep",
-            commentConversations = listOf(
-                CommentConversation(
-                    id = "conversation-keep",
-                    comments = listOf(Comment(id = "comment-keep", text = "Keep me"))
+            commentConversations = mapOf(
+                "conversation-keep" to listOf(
+                    Comment(id = "comment-keep", text = "Keep me")
                 )
             ),
             createdAt = now,

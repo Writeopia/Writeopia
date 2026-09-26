@@ -2,7 +2,7 @@ package io.writeopia.sdk.manager
 
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.StoryState
-import io.writeopia.sdk.models.comment.CommentConversation
+import io.writeopia.sdk.models.comment.Comment
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +27,7 @@ interface DocumentTracker {
     suspend fun saveOnStoryChanges(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
-        commentConversationsFlow: StateFlow<List<CommentConversation>>
+        commentConversationsFlow: StateFlow<Map<String, List<Comment>>>
     ) {
         coroutineScope {
             val commentGuard = launch {

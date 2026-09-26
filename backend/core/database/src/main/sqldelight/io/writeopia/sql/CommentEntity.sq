@@ -2,7 +2,6 @@ CREATE TABLE comment_entity (
   id TEXT PRIMARY KEY,
   conversation_id TEXT NOT NULL,
   document_id TEXT NOT NULL,
-  conversation_position BIGINT NOT NULL,
   comment_position BIGINT NOT NULL,
   text TEXT NOT NULL
 );
@@ -17,19 +16,17 @@ WHERE id = ?;
 selectByDocumentId:
 SELECT *
 FROM comment_entity
-WHERE document_id = ?
-ORDER BY conversation_position, comment_position;
+WHERE document_id = ?;
 
 insert:
 INSERT INTO comment_entity(
   id,
   conversation_id,
   document_id,
-  conversation_position,
   comment_position,
   text
 )
-VALUES (?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET
   conversation_id = CASE
@@ -37,10 +34,6 @@ UPDATE SET
     ELSE comment_entity.conversation_id
   END,
   document_id = comment_entity.document_id,
-  conversation_position = CASE
-    WHEN comment_entity.document_id = excluded.document_id THEN excluded.conversation_position
-    ELSE comment_entity.conversation_position
-  END,
   comment_position = CASE
     WHEN comment_entity.document_id = excluded.document_id THEN excluded.comment_position
     ELSE comment_entity.comment_position

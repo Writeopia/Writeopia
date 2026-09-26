@@ -1,7 +1,6 @@
 package io.writeopia.core.folders.sync
 
 import io.writeopia.sdk.models.comment.Comment
-import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,16 +12,13 @@ class DocumentMergerTest {
 
     @Test
     fun `backend document without comments should preserve local comments`() {
-        val localComments = listOf(
-            CommentConversation(
-                id = "conversation-1",
-                comments = listOf(
-                    Comment(id = "comment-1", text = "Local comment")
-                ),
+        val localComments = mapOf(
+            "conversation-1" to listOf(
+                Comment(id = "comment-1", text = "Local comment")
             )
         )
         val local = document(lastUpdatedAt = 1, comments = localComments)
-        val backend = document(lastUpdatedAt = 2, comments = emptyList())
+        val backend = document(lastUpdatedAt = 2, comments = emptyMap())
 
         val merged = merger.merge(local, backend)
 
@@ -31,20 +27,14 @@ class DocumentMergerTest {
 
     @Test
     fun `backend comments should win when newer backend provides them`() {
-        val localComments = listOf(
-            CommentConversation(
-                id = "conversation-1",
-                comments = listOf(
-                    Comment(id = "comment-1", text = "Local comment")
-                ),
+        val localComments = mapOf(
+            "conversation-1" to listOf(
+                Comment(id = "comment-1", text = "Local comment")
             )
         )
-        val backendComments = listOf(
-            CommentConversation(
-                id = "conversation-2",
-                comments = listOf(
-                    Comment(id = "comment-2", text = "Backend comment")
-                ),
+        val backendComments = mapOf(
+            "conversation-2" to listOf(
+                Comment(id = "comment-2", text = "Backend comment")
             )
         )
         val local = document(lastUpdatedAt = 1, comments = localComments)
@@ -57,7 +47,7 @@ class DocumentMergerTest {
 
     private fun document(
         lastUpdatedAt: Long,
-        comments: List<CommentConversation>,
+        comments: Map<String, List<Comment>>,
     ) = Document(
         id = "document-1",
         title = "Document",

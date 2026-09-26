@@ -1,3 +1,5 @@
+[Reading 232 lines from start (total: 232 lines, 0 remaining)]
+
 package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
@@ -218,7 +220,7 @@ fun WriteopiaDbBackend.updateDocumentTitle(documentId: String, title: String) {
 
 fun WriteopiaDbBackend.replaceCommentConversations(
     documentId: String,
-    conversations: List<io.writeopia.sdk.models.comment.CommentConversation>,
+    conversations: Map<String, List<io.writeopia.sdk.models.comment.Comment>>,
 ) {
     getDocumentDaoFn().replaceCommentConversations(documentId, conversations)
 }
@@ -230,3 +232,5 @@ fun WriteopiaDbBackend.touchDocument(
 ) {
     getDocumentDaoFn().touchDocument(documentId, workspaceId, timestamp)
 }
+
+[executed on device: DESKTOP-HJO2US6 (d972d8cd-06d7-4dea-9656-237da7d66e93)]

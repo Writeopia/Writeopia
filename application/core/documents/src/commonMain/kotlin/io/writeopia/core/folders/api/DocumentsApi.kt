@@ -15,7 +15,6 @@ import io.ktor.http.isSuccess
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
-import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.data.FolderApi
@@ -95,13 +94,6 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         documents: List<Document>,
         workspaceId: String
     ): ResultData<Unit> {
-        if (
-            workspaceId == Workspace.disconnectedWorkspace().id ||
-            documents.any { document -> document.workspaceId != workspaceId }
-        ) {
-            return ResultData.Error()
-        }
-
         val response = client.post("$baseUrl/api/docs/workspace/document") {
             contentType(ContentType.Application.Json)
             setBody(SendDocumentsRequest(documents.map { it.toApi() }, workspaceId))

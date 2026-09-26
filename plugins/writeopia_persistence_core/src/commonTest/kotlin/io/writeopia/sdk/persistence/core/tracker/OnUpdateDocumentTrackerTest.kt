@@ -1,3 +1,5 @@
+[Reading 228 lines from start (total: 228 lines, 0 remaining)]
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.sdk.persistence.core.tracker
@@ -51,7 +53,7 @@ class OnUpdateDocumentTrackerTest {
         val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
         job.cancel()
 
-        assertEquals(listOf(conversation), persisted.commentConversations)
+        assertEquals(mapOf(conversation.id to conversation.comments), persisted.commentConversations)
         assertEquals(sourceDocument.workspaceId, persisted.workspaceId)
     }
 
@@ -103,7 +105,7 @@ class OnUpdateDocumentTrackerTest {
             lastSyncedAt = null,
             workspaceId = "workspace-1",
             parentId = "root",
-            commentConversations = listOf(conversation),
+            commentConversations = mapOf(conversation.id to conversation.comments),
         )
         val recorder = RecordingDocumentUpdate()
         val tracker = OnUpdateDocumentTracker(recorder)
@@ -152,12 +154,14 @@ class OnUpdateDocumentTrackerTest {
 
         val reply = Comment(id = "comment-2", text = "reply")
         val updatedConversation = conversation.copy(comments = conversation.comments + reply)
-        commentConversationsFlow.value = listOf(updatedConversation)
+        commentConversationsFlow.value = mapOf(
+            updatedConversation.id to updatedConversation.comments
+        )
 
         val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
         job.cancel()
 
-        assertEquals(listOf(updatedConversation), persisted.commentConversations)
+        assertEquals(mapOf(updatedConversation.id to updatedConversation.comments), persisted.commentConversations)
         assertEquals(sourceDocument.workspaceId, persisted.workspaceId)
     }
 
@@ -189,7 +193,9 @@ class OnUpdateDocumentTrackerTest {
             lastSyncedAt = null,
             workspaceId = "workspace-1",
             parentId = "root",
-            commentConversations = conversations,
+            commentConversations = conversations.associate { conversation ->
+                conversation.id to conversation.comments
+            },
         )
     }
 
@@ -222,3 +228,5 @@ class OnUpdateDocumentTrackerTest {
         override suspend fun deleteStoryStep(storyStepId: String, documentId: String) = Unit
     }
 }
+
+[executed on device: DESKTOP-HJO2US6 (d972d8cd-06d7-4dea-9656-237da7d66e93)]

@@ -1,6 +1,7 @@
 package io.writeopia.editor.features.editor.ui.comments
 
 import io.writeopia.sdk.model.story.Selection
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.ui.model.DrawState
@@ -14,7 +15,7 @@ internal data class CommentUiState(
 
 internal fun resolveCommentUiState(
     drawState: DrawState,
-    conversations: List<CommentConversation>,
+    conversations: Map<String, List<Comment>>,
 ): CommentUiState {
     val activeStory = drawState.stories.firstOrNull { it.cursor != null }
         ?: drawState.focus?.let { focus ->
@@ -26,11 +27,15 @@ internal fun resolveCommentUiState(
         .filter { span -> span.span == Span.COMMENT && span.extra != null }
         .sortedWith(compareBy({ it.start }, { it.end }))
 
-    val conversationsById = conversations.associateBy { it.id }
+    fun conversation(conversationId: String): CommentConversation? =
+        conversations[conversationId]?.let { comments ->
+            CommentConversation(id = conversationId, comments = comments)
+        }
+
     val paragraphConversations = commentSpans
         .mapNotNull { span -> span.extra }
         .distinct()
-        .mapNotNull(conversationsById::get)
+        .mapNotNull(::conversation)
 
     val selection = activeStory.cursor
     val selectedConversation = selection?.let { cursor ->
@@ -44,7 +49,7 @@ internal fun resolveCommentUiState(
                 }
             }
             ?.extra
-            ?.let(conversationsById::get)
+            ?.let(::conversation)
     }
 
     val canCreateComment = selection?.let { cursor ->

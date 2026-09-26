@@ -12,16 +12,11 @@ val MIGRATION_29_30 = object : Migration(29, 30) {
                 id TEXT NOT NULL,
                 conversation_id TEXT NOT NULL,
                 document_id TEXT NOT NULL,
-                conversation_position INTEGER NOT NULL,
                 comment_position INTEGER NOT NULL,
                 text TEXT NOT NULL,
                 PRIMARY KEY(document_id, id)
             )
             """.trimIndent()
-        )
-        connection.execSQL(
-            "CREATE INDEX IF NOT EXISTS index_COMMENT_ENTITY_TABLE_document_id " +
-                "ON COMMENT_ENTITY_TABLE (document_id)"
         )
     }
 }

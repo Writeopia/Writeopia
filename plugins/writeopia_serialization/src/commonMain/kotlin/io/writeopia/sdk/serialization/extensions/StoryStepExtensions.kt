@@ -1,3 +1,5 @@
+[Reading 137 lines from start (total: 137 lines, 0 remaining)]
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.sdk.serialization.extensions
@@ -79,7 +81,7 @@ fun Document.toApi(): DocumentApi =
         id = id,
         title = title,
         content = content.map { (position, story) -> story.toApi(position) },
-        commentConversations = commentConversations.map { it.toApi() },
+        commentConversations = commentConversations.toApi(),
         createdAt = createdAt.toEpochMilliseconds(),
         lastUpdatedAt = lastUpdatedAt.toEpochMilliseconds(),
         lastSyncedAt = lastSyncedAt?.toEpochMilliseconds(),
@@ -99,7 +101,7 @@ fun DocumentApi.toModel(): Document =
         content = content
             .sortedBy { it.position }
             .associate { story -> story.position to story.toModel() },
-        commentConversations = commentConversations.orEmpty().map { it.toModel() },
+        commentConversations = commentConversations.orEmpty().toCommentMap(),
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
         lastSyncedAt = lastSyncedAt?.let { Instant.fromEpochMilliseconds(it) },
@@ -135,3 +137,5 @@ fun Folder.toApi(): FolderApi = FolderApi(
     icon = icon?.toApi(),
     itemCount = itemCount,
 )
+
+[executed on device: DESKTOP-HJO2US6 (d972d8cd-06d7-4dea-9656-237da7d66e93)]

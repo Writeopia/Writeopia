@@ -1,3 +1,5 @@
+[Reading 686 lines from start (total: 686 lines, 0 remaining)]
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.api.documents.documents.repository
@@ -55,13 +57,13 @@ class DocumentRepositoryTest {
                     ),
                 )
             ),
-            commentConversations = listOf(conversation),
+            commentConversations = commentMap(conversation),
         )
 
         database.saveDocument(document)
         val loaded = database.getDocumentWithContentById(documentId, workspaceId)
 
-        assertEquals(listOf(conversation), loaded?.commentConversations)
+        assertEquals(commentMap(conversation), loaded?.commentConversations)
         assertEquals(
             conversation.id,
             loaded?.content?.values?.firstOrNull()
@@ -91,7 +93,7 @@ class DocumentRepositoryTest {
                 lastSyncedAt = now,
                 workspaceId = firstWorkspaceId,
                 parentId = "root",
-                commentConversations = listOf(
+                commentConversations = commentMap(
                     CommentConversation(
                         id = GenerateId.generate(),
                         comments = listOf(Comment(id = sharedCommentId, text = "owner")),
@@ -109,7 +111,7 @@ class DocumentRepositoryTest {
                     lastSyncedAt = now,
                     workspaceId = secondWorkspaceId,
                     parentId = "root",
-                    commentConversations = listOf(
+                    commentConversations = commentMap(
                         CommentConversation(
                             id = GenerateId.generate(),
                             comments = listOf(Comment(id = sharedCommentId, text = "collision")),
@@ -120,44 +122,10 @@ class DocumentRepositoryTest {
         }
 
         val owner = database.getDocumentWithContentById(firstDocumentId, firstWorkspaceId)
-        assertEquals("owner", owner?.commentConversations?.single()?.comments?.single()?.text)
+        assertEquals("owner", owner?.commentConversations?.values?.single()?.single()?.text)
         assertEquals(null, database.getDocumentWithContentById(secondDocumentId, secondWorkspaceId))
 
         database.deleteDocumentById(firstDocumentId)
-    }
-
-    @Test
-    fun `duplicate conversation ids should be rejected before persistence`() = runTest {
-        val database = configurePersistence()
-        val now = Clock.System.now()
-        val workspaceId = GenerateId.generate()
-        val documentId = GenerateId.generate()
-        val conversationId = GenerateId.generate()
-
-        assertFailsWith<IllegalArgumentException> {
-            database.saveDocument(
-                Document(
-                    id = documentId,
-                    createdAt = now,
-                    lastUpdatedAt = now,
-                    lastSyncedAt = now,
-                    workspaceId = workspaceId,
-                    parentId = "root",
-                    commentConversations = listOf(
-                        CommentConversation(
-                            id = conversationId,
-                            comments = listOf(Comment(id = GenerateId.generate(), text = "first")),
-                        ),
-                        CommentConversation(
-                            id = conversationId,
-                            comments = listOf(Comment(id = GenerateId.generate(), text = "second")),
-                        ),
-                    ),
-                )
-            )
-        }
-
-        assertEquals(null, database.getDocumentById(documentId, workspaceId))
     }
 
     @Test
@@ -177,7 +145,7 @@ class DocumentRepositoryTest {
                     lastSyncedAt = now,
                     workspaceId = workspaceId,
                     parentId = "root",
-                    commentConversations = listOf(
+                    commentConversations = commentMap(
                         CommentConversation(
                             id = GenerateId.generate(),
                             comments = listOf(
@@ -250,7 +218,7 @@ class DocumentRepositoryTest {
                 lastSyncedAt = now,
                 workspaceId = workspaceId,
                 parentId = "root",
-                commentConversations = listOf(conversation),
+                commentConversations = commentMap(conversation),
             )
         )
 
@@ -343,7 +311,7 @@ class DocumentRepositoryTest {
                 lastSyncedAt = now,
                 workspaceId = otherWorkspaceId,
                 parentId = "root",
-                commentConversations = listOf(otherConversation),
+                commentConversations = commentMap(otherConversation),
             ),
         )
 
@@ -351,7 +319,7 @@ class DocumentRepositoryTest {
 
         assertTrue(loaded.any { it.id == ownDocumentId })
         assertTrue(loaded.none { it.id == otherDocumentId })
-        assertTrue(loaded.flatMap { it.commentConversations }.none { it.id == otherConversation.id })
+        assertTrue(loaded.none { it.commentConversations.containsKey(otherConversation.id) })
 
         database.deleteDocumentById(ownDocumentId)
         database.deleteDocumentById(otherDocumentId)
@@ -384,7 +352,7 @@ class DocumentRepositoryTest {
                     ),
                 )
             ),
-            commentConversations = listOf(conversation),
+            commentConversations = commentMap(conversation),
         )
 
         database.saveDocument(original)
@@ -395,13 +363,13 @@ class DocumentRepositoryTest {
             useAi = false,
         ).single()
 
-        val clonedConversation = clone.commentConversations.single()
+        val (clonedConversationId, clonedComments) = clone.commentConversations.entries.single()
         val clonedSpan = clone.content.values.single().spans.single { it.span == Span.COMMENT }
 
-        assertEquals(conversation.comments.map { it.text }, clonedConversation.comments.map { it.text })
-        assertTrue(clonedConversation.id != conversation.id)
-        assertTrue(clonedConversation.comments.single().id != conversation.comments.single().id)
-        assertEquals(clonedConversation.id, clonedSpan.extra)
+        assertEquals(conversation.comments.map { it.text }, clonedComments.map { it.text })
+        assertTrue(clonedConversationId != conversation.id)
+        assertTrue(clonedComments.single().id != conversation.comments.single().id)
+        assertEquals(clonedConversationId, clonedSpan.extra)
 
         database.deleteDocumentById(documentId)
         database.deleteDocumentById(clone.id)
@@ -455,7 +423,7 @@ class DocumentRepositoryTest {
         val changedDocuments = database.documentsDiffByWorkspace(workspaceId, 1)
         val changed = changedDocuments.single { it.id == documentId }
 
-        assertEquals(conversationId, changed.commentConversations.single().id)
+        assertEquals(conversationId, changed.commentConversations.keys.single())
         assertTrue(changed.lastSyncedAt!!.toEpochMilliseconds() > 1)
 
         database.deleteDocumentById(documentId)
@@ -618,7 +586,7 @@ class DocumentRepositoryTest {
                     steps = listOf(nestedStep),
                 )
             ),
-            commentConversations = listOf(conversation),
+            commentConversations = commentMap(conversation),
         )
 
         database.saveDocument(document)
@@ -683,4 +651,14 @@ class DocumentRepositoryTest {
 
         assertTrue(documentFromDb.isNotEmpty())
     }
+
+    private fun commentMap(
+        vararg conversations: CommentConversation,
+    ): Map<String, List<Comment>> =
+        conversations.associate { conversation ->
+            conversation.id to conversation.comments
+        }
+
 }
+
+[executed on device: DESKTOP-HJO2US6 (d972d8cd-06d7-4dea-9656-237da7d66e93)]

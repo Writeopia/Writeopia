@@ -1,3 +1,5 @@
+[Reading 410 lines from start (total: 410 lines, 0 remaining)]
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.sdk.persistence.core.tracker
@@ -53,7 +55,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             ) to document.info()
         )
         val workspaceIdFlow = MutableStateFlow(document.workspaceId)
-        val commentsFlow = MutableStateFlow<List<CommentConversation>>(emptyList())
+        val commentsFlow = MutableStateFlow<Map<String, List<Comment>>>(emptyMap())
         val request = CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
         val tracker = OnUpdateStoryStepSyncTracker(
             syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
@@ -79,7 +81,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             id = "conversation-1",
             comments = listOf(Comment(id = "comment-1", text = "Hello")),
         )
-        commentsFlow.value = listOf(conversation)
+        commentsFlow.value = mapOf(conversation.id to conversation.comments)
 
         advanceTimeBy(20)
         runCurrent()
@@ -117,7 +119,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             StoryState(stories = document.content, lastEdit = LastEdit.Nothing) to document.info()
         )
         val workspaceIdFlow = MutableStateFlow(document.workspaceId)
-        val commentsFlow = MutableStateFlow<List<CommentConversation>>(emptyList())
+        val commentsFlow = MutableStateFlow<Map<String, List<Comment>>>(emptyMap())
         val request = CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
         val tracker = OnUpdateStoryStepSyncTracker(
             syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
@@ -136,7 +138,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             comments = listOf(Comment(id = "comment-race", text = "Before collect")),
         )
 
-        commentsFlow.value = listOf(conversation)
+        commentsFlow.value = mapOf(conversation.id to conversation.comments)
         val job = launch {
             tracker.syncStorySteps(documentEditionFlow, workspaceIdFlow)
         }
@@ -248,7 +250,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             id = "conversation-1",
             comments = listOf(Comment(id = "comment-1", text = "Hello")),
         )
-        val commentsFlow = MutableStateFlow<List<CommentConversation>>(emptyList())
+        val commentsFlow = MutableStateFlow<Map<String, List<Comment>>>(emptyMap())
         val requests =
             mutableListOf<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
         val secondRequest =
@@ -274,7 +276,7 @@ class OnUpdateStoryStepSyncTrackerTest {
         }
         runCurrent()
 
-        commentsFlow.value = listOf(conversation)
+        commentsFlow.value = mapOf(conversation.id to conversation.comments)
         advanceTimeBy(20)
         runCurrent()
 
@@ -311,7 +313,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             StoryState(stories = emptyMap(), lastEdit = LastEdit.Nothing) to document.info()
         )
         val workspaceIdFlow = MutableStateFlow(Workspace.disconnectedWorkspace().id)
-        val commentsFlow = MutableStateFlow<List<CommentConversation>>(emptyList())
+        val commentsFlow = MutableStateFlow<Map<String, List<Comment>>>(emptyMap())
         val request = CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
         val tracker = OnUpdateStoryStepSyncTracker(
             syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
@@ -335,7 +337,7 @@ class OnUpdateStoryStepSyncTrackerTest {
         }
         runCurrent()
 
-        commentsFlow.value = listOf(conversation)
+        commentsFlow.value = mapOf(conversation.id to conversation.comments)
         advanceTimeBy(30)
         runCurrent()
 
@@ -367,7 +369,7 @@ class OnUpdateStoryStepSyncTrackerTest {
             StoryState(stories = emptyMap(), lastEdit = LastEdit.Nothing) to document.info()
         )
         val workspaceIdFlow = MutableStateFlow(document.workspaceId)
-        val commentsFlow = MutableStateFlow<List<CommentConversation>>(emptyList())
+        val commentsFlow = MutableStateFlow<Map<String, List<Comment>>>(emptyMap())
         var attempts = 0
         val success = CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
         val tracker = OnUpdateStoryStepSyncTracker(
@@ -397,7 +399,7 @@ class OnUpdateStoryStepSyncTrackerTest {
         }
         runCurrent()
 
-        commentsFlow.value = listOf(conversation)
+        commentsFlow.value = mapOf(conversation.id to conversation.comments)
         advanceTimeBy(120)
         runCurrent()
 
@@ -408,3 +410,5 @@ class OnUpdateStoryStepSyncTrackerTest {
         assertEquals(listOf(conversation.id), synced.commentConversations?.map { it.id })
     }
 }
+
+[executed on device: DESKTOP-HJO2US6 (d972d8cd-06d7-4dea-9656-237da7d66e93)]

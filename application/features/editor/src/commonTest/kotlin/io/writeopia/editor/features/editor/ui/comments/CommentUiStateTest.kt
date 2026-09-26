@@ -24,7 +24,7 @@ class CommentUiStateTest {
             spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversation.id)),
         )
 
-        val result = resolveCommentUiState(state, listOf(conversation))
+        val result = resolveCommentUiState(state, mapOf(conversation.id to conversation.comments))
 
         assertEquals(conversation, result.activeConversation)
         assertEquals(listOf(conversation), result.paragraphConversations)
@@ -39,7 +39,7 @@ class CommentUiStateTest {
             spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversation.id)),
         )
 
-        val result = resolveCommentUiState(state, listOf(conversation))
+        val result = resolveCommentUiState(state, mapOf(conversation.id to conversation.comments))
 
         assertEquals(null, result.activeConversation)
         assertEquals(listOf(conversation), result.paragraphConversations)
@@ -68,7 +68,7 @@ class CommentUiStateTest {
             spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversation.id)),
         )
 
-        val result = resolveCommentUiState(state, listOf(conversation))
+        val result = resolveCommentUiState(state, mapOf(conversation.id to conversation.comments))
 
         assertEquals(conversation, result.activeConversation)
         assertFalse(result.canCreateComment)
