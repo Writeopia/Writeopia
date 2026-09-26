@@ -261,7 +261,6 @@ class TextDrawer(
                     },
                     onValueChange = { value ->
                         val previousValue = previousInputText
-                        previousInputText = value
 
                         val start = value.selection.start
                         val end = value.selection.end
@@ -327,13 +326,15 @@ class TextDrawer(
                         }
 
                         val edit = {
-                            inputText = value.copy(
+                            val updatedInputText = value.copy(
                                 Spans.createStringWithSpans(
                                     value.text.replace("\n", ""),
                                     spans,
                                     isDarkTheme
                                 )
                             )
+                            inputText = updatedInputText
+                            previousInputText = updatedInputText
                         }
 
                         if (!showSlashCommandPopup) {
