@@ -123,6 +123,11 @@ class DocumentRoomRepositoryTest {
     }
 
     @Test
+    fun documentIdCannotMoveBetweenWorkspaces() = runTest {
+        documentRepositoryTests.documentIdCannotMoveBetweenWorkspaces()
+    }
+
+    @Test
     fun commentPersistenceRespectsWorkspaceBoundaries() = runTest {
         documentRepositoryTests.commentPersistenceRespectsWorkspaceBoundaries()
     }

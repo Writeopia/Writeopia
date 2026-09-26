@@ -154,6 +154,11 @@ class RoomDocumentRepository(
 
     override suspend fun saveDocument(document: Document) {
         writeTransaction {
+            val existing = documentEntityDao.loadDocumentById(document.id)
+            require(existing == null || existing.workspaceId == document.workspaceId) {
+                "Document does not belong to the requested workspace"
+            }
+
             saveDocumentMetadata(document)
 
             document.content.toEntity(document.id).let { data ->
@@ -236,9 +241,7 @@ class RoomDocumentRepository(
 
     override suspend fun deleteByWorkspace(userId: String) {
         writeTransaction {
-            val documentIds = documentEntityDao.loadAllDocuments()
-                .filter { document -> document.workspaceId == userId }
-                .map { document -> document.id }
+            val documentIds = documentEntityDao.loadDocumentIdsForWorkspace(userId)
 
             commentEntityDao.deleteByDocumentIds(documentIds)
             storyUnitEntityDao?.deleteByDocumentIds(documentIds)

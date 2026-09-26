@@ -55,6 +55,42 @@ class DocumentMergerTest {
     }
 
     @Test
+    fun `replies from both copies of a referenced conversation should survive`() {
+        val conversationId = "conversation-1"
+        val local = document(
+            lastUpdatedAt = 2,
+            comments = mapOf(
+                conversationId to listOf(
+                    Comment(id = "shared", text = "Local wins duplicate"),
+                    Comment(id = "local-reply", text = "Local reply"),
+                )
+            ),
+            content = mapOf(0.0 to step("step-1", 2, conversationId)),
+        )
+        val backend = document(
+            lastUpdatedAt = 1,
+            comments = mapOf(
+                conversationId to listOf(
+                    Comment(id = "shared", text = "Backend duplicate"),
+                    Comment(id = "backend-reply", text = "Backend reply"),
+                )
+            ),
+            content = mapOf(0.0 to step("step-1", 1, conversationId)),
+        )
+
+        val merged = merger.merge(local, backend)
+
+        assertEquals(
+            listOf(
+                Comment(id = "shared", text = "Local wins duplicate"),
+                Comment(id = "local-reply", text = "Local reply"),
+                Comment(id = "backend-reply", text = "Backend reply"),
+            ),
+            merged?.commentConversations?.get(conversationId),
+        )
+    }
+
+    @Test
     fun `distinct referenced conversations from merged content should both survive`() {
         val localId = "conversation-local"
         val backendId = "conversation-backend"

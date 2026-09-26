@@ -274,6 +274,36 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         assertEquals(null, documentRepository.loadDocumentById(second.id, second.workspaceId))
     }
 
+    suspend fun documentIdCannotMoveBetweenWorkspaces() {
+        val now = now()
+        val first = Document(
+            id = "shared-document-id",
+            title = "First",
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspace-a",
+            parentId = "root",
+        )
+        val second = first.copy(
+            title = "Second",
+            workspaceId = "workspace-b",
+        )
+
+        documentRepository.saveDocument(first)
+
+        var failed = false
+        try {
+            documentRepository.saveDocument(second)
+        } catch (_: Exception) {
+            failed = true
+        }
+
+        assertTrue(failed)
+        assertEquals(first, documentRepository.loadDocumentById(first.id, first.workspaceId))
+        assertEquals(null, documentRepository.loadDocumentById(second.id, second.workspaceId))
+    }
+
     suspend fun commentPersistenceRespectsWorkspaceBoundaries() {
         val now = now()
 
