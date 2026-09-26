@@ -1,4 +1,3 @@
-[Reading 1320 lines from start (total: 1320 lines, 0 remaining)]
 
 @file:OptIn(ExperimentalTime::class)
 

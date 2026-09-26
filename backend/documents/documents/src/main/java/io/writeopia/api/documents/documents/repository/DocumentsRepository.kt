@@ -1,4 +1,3 @@
-[Reading 232 lines from start (total: 232 lines, 0 remaining)]
 
 package io.writeopia.api.documents.documents.repository
 

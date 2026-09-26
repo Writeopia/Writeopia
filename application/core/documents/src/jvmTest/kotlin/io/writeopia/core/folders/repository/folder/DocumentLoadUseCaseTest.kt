@@ -1,4 +1,3 @@
-[Reading 86 lines from start (total: 86 lines, 0 remaining)]
 
 @file:OptIn(kotlin.time.ExperimentalTime::class)
 

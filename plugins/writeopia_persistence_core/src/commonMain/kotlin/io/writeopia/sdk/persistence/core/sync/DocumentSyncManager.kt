@@ -1,4 +1,3 @@
-[Reading 217 lines from start (total: 217 lines, 0 remaining)]
 
 package io.writeopia.sdk.persistence.core.sync
 
