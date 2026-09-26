@@ -335,6 +335,9 @@ class TextDrawer(
                                 )
                             )
                             inputText = updatedInputText
+                            if (previousInputText == value) {
+                                previousInputText = updatedInputText
+                            }
                         }
 
                         if (!showSlashCommandPopup) {
