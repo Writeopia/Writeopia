@@ -250,6 +250,11 @@ class SqlDelightDocumentRepositoryTest {
     }
 
     @Test
+    fun `deleted comment tombstone persists`() = runTest {
+        DocumentRepositoryTests(documentRepository).deletedCommentTombstonePersists()
+    }
+
+    @Test
     fun `document id cannot move between workspaces`() = runTest {
         DocumentRepositoryTests(documentRepository).documentIdCannotMoveBetweenWorkspaces()
     }
