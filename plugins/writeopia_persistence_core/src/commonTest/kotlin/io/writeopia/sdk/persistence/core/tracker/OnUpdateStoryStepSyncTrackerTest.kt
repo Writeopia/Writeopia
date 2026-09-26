@@ -410,4 +410,3 @@ class OnUpdateStoryStepSyncTrackerTest {
     }
 }
 
-[executed on device: DESKTOP-HJO2US6 (d972d8cd-06d7-4dea-9656-237da7d66e93)]
