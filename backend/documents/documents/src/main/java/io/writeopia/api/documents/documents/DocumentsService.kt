@@ -556,7 +556,7 @@ object DocumentsService {
 
     private fun Document.withoutEditorComments(): Document = copy(
         content = content.mapValues { (_, storyStep) -> storyStep.withoutEditorComments() },
-        commentConversations = emptyList(),
+        commentConversations = emptyMap(),
     )
 
     private fun StoryStep.withoutEditorComments(): StoryStep = copy(
