@@ -409,7 +409,8 @@ class DocumentRepositoryTest {
                     type = StoryTypes.TEXT.type,
                     text = "Commented text",
                     spans = setOf(
-                        SpanInfo.create(0, 7, Span.COMMENT, conversation.id)
+                        SpanInfo.create(0, 7, Span.COMMENT, conversation.id),
+                        SpanInfo.create(8, 9, Span.COMMENT, "missing-conversation"),
                     ),
                 )
             ),

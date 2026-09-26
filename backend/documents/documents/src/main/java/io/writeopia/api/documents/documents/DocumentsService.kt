@@ -263,14 +263,16 @@ object DocumentsService {
         storyStep: StoryStep,
         conversationIdMap: Map<String, String>,
     ): StoryStep {
-        val remappedSpans = storyStep.spans.map { span ->
+        val remappedSpans = storyStep.spans.mapNotNull { span ->
             if (span.span == Span.COMMENT && span.extra != null) {
-                SpanInfo.create(
-                    start = span.start,
-                    end = span.end,
-                    span = span.span,
-                    extra = conversationIdMap[span.extra] ?: span.extra,
-                )
+                conversationIdMap[span.extra]?.let { remappedConversationId ->
+                    SpanInfo.create(
+                        start = span.start,
+                        end = span.end,
+                        span = span.span,
+                        extra = remappedConversationId,
+                    )
+                }
             } else {
                 span
             }
