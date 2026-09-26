@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.date.formatCompactNumber
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.WrIcons
@@ -122,6 +123,7 @@ fun SettingsDialog(
     closeWizard: () -> Unit,
     selectProviderAndModel: (String, String) -> Unit,
     signIn: () -> Unit,
+    switchSpace: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
@@ -166,6 +168,7 @@ fun SettingsDialog(
                         logoutInProgress = logoutInProgress,
                         deleteAccountInProgress = deleteAccountInProgress,
                         signIn = signIn,
+                        switchSpace = switchSpace,
                         changeWorkspace = changeWorkspace,
                         resetPassword = resetPassword,
                         logout = logout,
@@ -418,6 +421,7 @@ private fun AccountScreen(
     logoutInProgress: StateFlow<Boolean>,
     deleteAccountInProgress: StateFlow<Boolean>,
     signIn: () -> Unit,
+    switchSpace: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
@@ -639,6 +643,14 @@ private fun AccountScreen(
 
             CommonButton(text = WrStrings.singIn()) {
                 signIn()
+            }
+
+            if (LocalPlatform.current != PlatformType.WEB) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                CommonButton(text = WrStrings.switchSpace()) {
+                    switchSpace()
+                }
             }
         }
     }

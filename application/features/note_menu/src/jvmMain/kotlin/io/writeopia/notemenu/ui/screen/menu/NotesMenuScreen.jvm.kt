@@ -51,8 +51,12 @@ actual fun NotesMenuScreen(
     nestedScrollConnection: NestedScrollConnection?,
     isToolbarVisible: Boolean,
     navigationBar: @Composable () -> Unit,
+    isWideLayout: Boolean,
+    sideMenuContent: @Composable () -> Unit,
     modifier: Modifier
 ) {
+    // Desktop already renders its own permanent side menu via DesktopApp,
+    // so isWideLayout/sideMenuContent are not used here.
     var onDropEvent by remember {
         mutableStateOf(false)
     }

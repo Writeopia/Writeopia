@@ -81,6 +81,7 @@ fun DesktopApp(
     navigateToRegister: () -> Unit,
     navigateToResetPassword: () -> Unit,
     navigateToChooseWorkspace: () -> Unit,
+    navigateToSpaceChoice: () -> Unit,
     navigateToAccountDeletionStarted: () -> Unit,
     modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
@@ -288,12 +289,17 @@ fun DesktopApp(
                                     closeWizard = globalShellViewModel::closeWizard,
                                     selectProviderAndModel = globalShellViewModel::selectProviderAndModel,
                                     signIn = navigateToRegister,
+                                    switchSpace = navigateToSpaceChoice,
                                     changeWorkspace = {
                                         globalShellViewModel.changeWorkspace(sideEffect = navigateToChooseWorkspace)
                                     },
                                     resetPassword = navigateToResetPassword,
                                     logout = {
-                                        globalShellViewModel.logout(onSuccessSideEffect = navigateToRegister)
+                                        // Resets the nav graph back to START_APP so the login-state
+                                        // check re-runs and can land on the space-choice screen.
+                                        globalShellViewModel.logout(
+                                            onSuccessSideEffect = navigateToChooseWorkspace
+                                        )
                                     },
                                     showDeleteConfirm = globalShellViewModel::showDeleteConfirm,
                                     dismissDeleteConfirm = globalShellViewModel::dismissDeleteConfirm,

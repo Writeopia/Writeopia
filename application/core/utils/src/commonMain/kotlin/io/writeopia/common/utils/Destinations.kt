@@ -31,6 +31,7 @@ enum class Destinations(val id: String, val root: String) {
     FORGOT_PASSWORD_NEW_PASSWORD("forgot_password_new_password", "Home"),
 
     CHOOSE_WORKSPACE("choose_workspace", "Home"),
+    WORKSPACE_TYPE_CHOICE("workspace_type_choice", "Home"),
     AUTH_MENU("auth_menu", "Home"),
     AUTH_LOGIN("auth_login", "Home"),
 

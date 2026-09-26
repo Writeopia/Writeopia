@@ -22,8 +22,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -96,6 +98,7 @@ fun SideEditorOptions(
     onPresentationClick: () -> Unit,
     changeFontFamily: (Font) -> Unit,
     addImage: (String) -> Unit,
+    onImagePickRequest: (() -> Unit)? = null,
     exportJson: (String) -> Unit,
     exportMarkdown: (String) -> Unit,
     moveToRoot: () -> Unit,
@@ -178,6 +181,7 @@ fun SideEditorOptions(
                                 highLightBlockClick,
                                 cardBlockClick,
                                 addImage,
+                                onImagePickRequest,
                                 addPage,
                                 titleClick,
                                 onDrawingClick = {
@@ -369,6 +373,7 @@ private fun PageOptions(
             MaterialTheme.shapes.medium
         ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
             .width(MENU_WIDTH.dp)
+            .verticalScroll(rememberScrollState())
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
         // Hide font options for web platform
@@ -936,6 +941,7 @@ private fun TextOptions(
     highLightBlockClick: () -> Unit,
     cardBlockClick: () -> Unit,
     addImage: (String) -> Unit,
+    onImagePickRequest: (() -> Unit)? = null,
     addPage: () -> Unit,
     titleClick: (Tag) -> Unit,
     onDrawingClick: () -> Unit,
@@ -948,6 +954,7 @@ private fun TextOptions(
             MaterialTheme.shapes.medium
         ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
             .width(MENU_WIDTH.dp)
+            .verticalScroll(rememberScrollState())
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
         val selectedMetadata by selectedMetadataState.collectAsState()
@@ -999,7 +1006,11 @@ private fun TextOptions(
                 WrIcons.image,
                 modifier = Modifier.weight(1F)
             ) {
-                fileChooserLoad("")?.let(addImage)
+                if (onImagePickRequest != null) {
+                    onImagePickRequest()
+                } else {
+                    fileChooserLoad("")?.let(addImage)
+                }
             }
             IconAndText(
                 WrStrings.drawing(),
@@ -1033,6 +1044,7 @@ private fun Actions(
             MaterialTheme.shapes.medium
         ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
             .width(MENU_WIDTH.dp)
+            .verticalScroll(rememberScrollState())
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
         // Hide export options for web platform
@@ -1114,6 +1126,7 @@ internal fun AiOptions(
             MaterialTheme.shapes.medium
         ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
             .width(MENU_WIDTH.dp)
+            .verticalScroll(rememberScrollState())
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
         Title(WrStrings.askAi())
@@ -1293,6 +1306,7 @@ private fun DrawingOptions(
             MaterialTheme.shapes.medium
         ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
             .width(MENU_WIDTH.dp)
+            .verticalScroll(rememberScrollState())
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
         Title(WrStrings.drawing())

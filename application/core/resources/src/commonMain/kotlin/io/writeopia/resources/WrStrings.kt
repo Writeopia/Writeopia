@@ -145,7 +145,16 @@ import writeopia.application.core.resources.generated.resources.username
 import writeopia.application.core.resources.generated.resources.version
 import writeopia.application.core.resources.generated.resources.workspaceName
 import writeopia.application.core.resources.generated.resources.you_are_offline
-import writeopia.application.core.resources.generated.resources.use_offline
+import writeopia.application.core.resources.generated.resources.choose_your_space
+import writeopia.application.core.resources.generated.resources.where_writing_today
+import writeopia.application.core.resources.generated.resources.private_space_label
+import writeopia.application.core.resources.generated.resources.private_space_title
+import writeopia.application.core.resources.generated.resources.private_space_description
+import writeopia.application.core.resources.generated.resources.open_space_label
+import writeopia.application.core.resources.generated.resources.open_space_title
+import writeopia.application.core.resources.generated.resources.open_space_description
+import writeopia.application.core.resources.generated.resources.enter_arrow
+import writeopia.application.core.resources.generated.resources.switch_space
 import writeopia.application.core.resources.generated.resources.user_email
 import writeopia.application.core.resources.generated.resources.your_teams
 import writeopia.application.core.resources.generated.resources.drawing
@@ -588,7 +597,34 @@ object WrStrings {
     fun writeYourAiModel() = stringResource(Res.string.choose_your_model)
 
     @Composable
-    fun useOffline() = stringResource(Res.string.use_offline)
+    fun chooseYourSpace() = stringResource(Res.string.choose_your_space)
+
+    @Composable
+    fun whereWritingToday() = stringResource(Res.string.where_writing_today)
+
+    @Composable
+    fun privateSpaceLabel() = stringResource(Res.string.private_space_label)
+
+    @Composable
+    fun privateSpaceTitle() = stringResource(Res.string.private_space_title)
+
+    @Composable
+    fun privateSpaceDescription() = stringResource(Res.string.private_space_description)
+
+    @Composable
+    fun openSpaceLabel() = stringResource(Res.string.open_space_label)
+
+    @Composable
+    fun openSpaceTitle() = stringResource(Res.string.open_space_title)
+
+    @Composable
+    fun openSpaceDescription() = stringResource(Res.string.open_space_description)
+
+    @Composable
+    fun enterArrow() = stringResource(Res.string.enter_arrow)
+
+    @Composable
+    fun switchSpace() = stringResource(Res.string.switch_space)
 
     @Composable
     fun aiExplanation() = stringResource(Res.string.ai_explanation)

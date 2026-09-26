@@ -2,8 +2,21 @@ package io.writeopia.navigation
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -19,6 +32,7 @@ import io.writeopia.account.navigation.navigateToUserEdit
 import io.writeopia.account.navigation.navigateToUserSearch
 import io.writeopia.account.navigation.navigateToWorkspaceUsers
 import io.writeopia.common.utils.Destinations
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.documents.graph.navigation.documentsGraphNavigation
 import io.writeopia.documents.graph.navigation.navigateToForceGraph
@@ -31,7 +45,9 @@ import io.writeopia.editor.navigation.editorNavigation
 import io.writeopia.features.notifications.navigation.notificationsNavigation
 import io.writeopia.features.search.di.SearchInjection
 import io.writeopia.features.search.navigation.searchNavigation
+import io.writeopia.global.shell.SideGlobalMenu
 import io.writeopia.global.shell.di.SideMenuKmpInjector
+import io.writeopia.global.shell.viewmodel.GlobalShellViewModel
 import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import kotlinx.coroutines.flow.StateFlow
@@ -40,7 +56,9 @@ import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNewNote
 import io.writeopia.navigation.notes.navigateToNote
 import io.writeopia.navigation.presentation.navigateToPresentation
+import io.writeopia.navigation.search.navigateToSearch
 import io.writeopia.notemenu.di.NotesMenuInjection
+import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.navigation.notesMenuNavigation
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -52,6 +70,7 @@ fun Navigation(
     notesMenuInjection: NotesMenuInjection,
     documentsGraphInjection: DocumentsGraphInjection? = null,
     sideMenuKmpInjector: SideMenuKmpInjector? = null,
+    notesMenuWideLayout: Boolean = false,
     editorInjector: TextEditorInjector,
     drawingInjection: DrawingInjection? = null,
     searchInjection: SearchInjection? = null,
@@ -66,6 +85,65 @@ fun Navigation(
     navigationBar: @Composable () -> Unit,
     builder: NavGraphBuilder.() -> Unit
 ) {
+    val wideNotesMenuShellViewModel: GlobalShellViewModel? =
+        if (notesMenuWideLayout && sideMenuKmpInjector != null) {
+            val globalShellViewModel = sideMenuKmpInjector.provideSideMenuViewModel()
+
+            LaunchedEffect("initGlobalShellViewModelForWideNotesMenu") {
+                globalShellViewModel.init()
+            }
+
+            globalShellViewModel
+        } else {
+            null
+        }
+
+    val notesMenuSideContent: @Composable () -> Unit = {
+        val globalShellViewModel = wideNotesMenuShellViewModel
+
+        if (globalShellViewModel != null) {
+            val density = LocalDensity.current
+            val sideMenuWidth by globalShellViewModel.showSideMenuState.collectAsState()
+
+            Box {
+                SideGlobalMenu(
+                    modifier = Modifier.fillMaxHeight(),
+                    foldersState = globalShellViewModel.sideMenuItems,
+                    width = density.run { sideMenuWidth.toDp() },
+                    homeClick = { navController.navigateToNotes(NotesNavigation.Root) },
+                    favoritesClick = { navController.navigateToNotes(NotesNavigation.Favorites) },
+                    settingsClick = { navController.navigateToAccount() },
+                    addFolder = globalShellViewModel::addFolder,
+                    editFolder = globalShellViewModel::editFolder,
+                    navigateToFolder = { id ->
+                        navController.navigateToNotes(NotesNavigation.Folder(id))
+                    },
+                    navigateToEditDocument = navController::navigateToNote,
+                    moveRequest = globalShellViewModel::moveToFolder,
+                    expandFolder = globalShellViewModel::expandFolder,
+                    searchClick = { navController.navigateToSearch() },
+                    highlightContent = {},
+                    changeIcon = globalShellViewModel::changeIcons,
+                    toggleMaxScreen = {}
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(10.dp)
+                        .align(Alignment.CenterEnd)
+                        .draggable(
+                            orientation = Orientation.Horizontal,
+                            state = rememberDraggableState { delta ->
+                                globalShellViewModel.moveSideMenu(sideMenuWidth + delta)
+                            },
+                            onDragStopped = { globalShellViewModel.saveMenuWidth() }
+                        )
+                )
+            }
+        }
+    }
+
     SharedTransitionLayout {
         NavHost(navController = navController, startDestination = startDestination) {
             notesMenuNavigation(
@@ -82,7 +160,9 @@ fun Navigation(
                 navigateToForceGraph = navController::navigateToForceGraph,
                 nestedScrollConnection = nestedScrollConnection,
                 isToolbarVisible = isToolbarVisible,
-                navigationBar = navigationBar
+                navigationBar = navigationBar,
+                isWideLayout = notesMenuWideLayout,
+                sideMenuContent = notesMenuSideContent
             )
 
             if (documentsGraphInjection != null) {
@@ -99,6 +179,7 @@ fun Navigation(
                 sharedTransitionScope = this@SharedTransitionLayout,
                 nestedScrollConnection = nestedScrollConnection,
                 isToolbarVisible = isToolbarVisible,
+                isWideLayout = notesMenuWideLayout,
                 navigateToNote = { id ->
                     navController.navigateToNote(id, title = "")
                 },
@@ -132,6 +213,11 @@ fun Navigation(
                         popUpTo(navController.graph.startDestinationId) { inclusive = true }
                     }
                 },
+                navigateToSpaceChoice = {
+                    navController.navigate(Destinations.WORKSPACE_TYPE_CHOICE.id) {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
+                },
                 resetPassword = {
                     navController.navigate(Destinations.AUTH_RESET_PASSWORD.id)
                 },
@@ -155,7 +241,8 @@ fun Navigation(
                 selectedColorTheme = selectedColorTheme,
                 selectedAccentColor = selectedAccentColor,
                 selectColorTheme = selectColorTheme,
-                selectAccentColor = selectAccentColor
+                selectAccentColor = selectAccentColor,
+                isToolbarVisible = isToolbarVisible
             )
 
             if (searchInjection != null) {

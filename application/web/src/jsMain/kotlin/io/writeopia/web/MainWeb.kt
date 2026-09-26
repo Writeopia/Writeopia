@@ -202,6 +202,13 @@ fun CreateAppInMemory() {
                                     }
                                 }
                             },
+                            navigateToSpaceChoice = {
+                                navigationController.navigate(Destinations.WORKSPACE_TYPE_CHOICE.id) {
+                                    popUpTo(navigationController.graph.startDestinationId) {
+                                        inclusive = true
+                                    }
+                                }
+                            },
                             navigateToAccountDeletionStarted = {
                                 navigationController.navigate(
                                     Destinations.ACCOUNT_DELETION_STARTED.id
