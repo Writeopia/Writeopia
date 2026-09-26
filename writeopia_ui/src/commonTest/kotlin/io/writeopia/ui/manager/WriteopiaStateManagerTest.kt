@@ -2255,7 +2255,13 @@ class WriteopiaStateManagerTest {
         )
 
         assertTrue(manager.deleteComment(conversation.id, "comment-1"))
-        assertEquals(1, manager.commentConversations.value.getValue(conversation.id).size)
+        val storedAfterFirstDelete = manager.commentConversations.value.getValue(conversation.id)
+        assertEquals(2, storedAfterFirstDelete.size)
+        assertTrue(storedAfterFirstDelete.single { it.id == "comment-1" }.deleted)
+        assertEquals(
+            listOf("comment-2"),
+            manager.getCommentConversationAtSelection()?.comments?.map { it.id },
+        )
         assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isNotEmpty())
 
         assertTrue(manager.deleteComment(conversation.id, "comment-2"))
