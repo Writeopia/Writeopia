@@ -251,7 +251,7 @@ internal fun NoteEditorScreen(
             if (isWideLayout) {
                 SideEditorOptions(
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 40.dp),
-                    alignment = Alignment.TopEnd,
+                    alignment = Alignment.CenterEnd,
                     isDarkTheme = isDarkTheme,
                     fontStyleSelected = { noteEditorViewModel.fontFamily },
                     currentModel = noteEditorViewModel.currentModel,
