@@ -10,6 +10,7 @@ import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,6 +58,42 @@ class DocumentSyncManagerTest {
     }
 
     @Test
+    fun backendSyncDoesNotStartForDisconnectedWorkspace() = runTest {
+        val now = Clock.System.now()
+        val document = Document(
+            id = "document-offline",
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = now,
+            workspaceId = Workspace.disconnectedWorkspace().id,
+            parentId = "root",
+        )
+        val requests =
+            mutableListOf<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        val manager = DocumentSyncManager(
+            dispatcher = StandardTestDispatcher(testScheduler),
+            scope = this,
+        )
+
+        manager.registerForBackendSync(
+            documentId = document.id,
+            documentEditionFlow = MutableStateFlow(StoryState(stories = emptyMap()) to document.info()),
+            workspaceIdFlow = MutableStateFlow(document.workspaceId),
+            syncApi = { request ->
+                requests += request
+                StoryStepSyncResponse(
+                    serverTimestamp = request.requestTimestamp,
+                    updatedSteps = emptyList(),
+                    deletedIds = emptyList(),
+                )
+            },
+        )
+        advanceUntilIdle()
+
+        assertTrue(requests.isEmpty())
+    }
+
+    @Test
     fun backendSyncStaysBoundToInitialWorkspace() = runTest {
         val now = Clock.System.now()
         val initialStep = StoryStep(
@@ -75,7 +112,6 @@ class DocumentSyncManagerTest {
         )
         val documentEditionFlow = MutableStateFlow(
             StoryState(
-
                 stories = document.content,
                 lastEdit = LastEdit.LineEdition(0.0, initialStep),
             ) to document.info()
@@ -98,7 +134,6 @@ class DocumentSyncManagerTest {
                     serverTimestamp = request.requestTimestamp,
                     updatedSteps = emptyList(),
                     deletedIds = emptyList(),
-
                 )
             },
         )
