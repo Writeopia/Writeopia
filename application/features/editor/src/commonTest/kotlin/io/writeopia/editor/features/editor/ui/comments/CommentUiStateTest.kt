@@ -86,6 +86,29 @@ class CommentUiStateTest {
     }
 
     @Test
+    fun `deleted replies are hidden from the active conversation`() {
+        val conversationId = "conversation-1"
+        val state = drawState(
+            selection = Selection.fromPosition(4, 1.0),
+            spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversationId)),
+        )
+        val result = resolveCommentUiState(
+            state,
+            mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-1", text = "Deleted", deleted = true),
+                    Comment(id = "comment-2", text = "Visible"),
+                )
+            ),
+        )
+
+        assertEquals(
+            listOf("comment-2"),
+            result.activeConversation?.comments?.map { comment -> comment.id },
+        )
+    }
+
+    @Test
     fun `selection overlapping a comment uses that conversation`() {
         val conversation = conversation("conversation-1")
         val state = drawState(
