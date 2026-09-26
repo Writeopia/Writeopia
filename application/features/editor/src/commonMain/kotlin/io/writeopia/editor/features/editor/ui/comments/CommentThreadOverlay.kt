@@ -47,9 +47,7 @@ internal fun CommentThreadOverlay(
     var draft by remember { mutableStateOf("") }
 
     LaunchedEffect(visible, conversation?.id) {
-        if (!visible) {
-            expanded = false
-        }
+        expanded = false
         draft = ""
     }
 
