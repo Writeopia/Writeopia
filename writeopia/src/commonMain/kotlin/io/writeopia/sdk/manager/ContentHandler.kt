@@ -8,6 +8,7 @@ import io.writeopia.sdk.models.command.CommandTrigger
 import io.writeopia.sdk.models.command.TypeInfo
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.link.DocumentLink
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
@@ -227,6 +228,9 @@ class ContentHandler(
         val carryOverTags = storyStep.tags.filterTo(mutableSetOf()) { it.tag.mustCarryOver() }
         val mutable = currentStory.toSortedMutableMap()
         val split = storyStep.text?.split("\n")
+        val splitSpans = split
+            ?.let { lines -> splitSpansByLines(lines, storyStep.spans) }
+            ?: listOf(storyStep.spans)
 
         val next = storyStep.nextPosition
         val nextPosition = if (next != null) (next + position) / 2 else position + 1
@@ -238,6 +242,7 @@ class ContentHandler(
         val updatedOriginalStep = if (split?.isNotEmpty() == true) {
             lineBreakInfo.storyStep.copy(
                 text = split[0],
+                spans = splitSpans.firstOrNull() ?: emptySet(),
                 localId = GenerateId.generate(),
                 nextPosition = nextPosition
             )
@@ -256,6 +261,7 @@ class ContentHandler(
                 type = lineBreakMap(storyStep.type),
                 text = split[1],
                 tags = carryOverTags,
+                spans = splitSpans.getOrElse(1) { emptySet() },
                 dbPosition = nextPosition,
                 previousPosition = position,
                 nextPosition = next
@@ -318,6 +324,7 @@ class ContentHandler(
                 type = lineBreakMap(storyStep.type),
                 text = text,
                 tags = carryOverTags,
+                spans = splitSpans.getOrElse(index + 1) { emptySet() },
                 dbPosition = newPos,
                 previousPosition = prevPos,
                 nextPosition = newNextPos
@@ -363,6 +370,35 @@ class ContentHandler(
             lastEdit = LastEdit.BulkEdition(changedSteps),
             focus = lastNewPosition
         )
+    }
+
+    private fun splitSpansByLines(
+        lines: List<String>,
+        spans: Set<SpanInfo>
+    ): List<Set<SpanInfo>> {
+        var lineStart = 0
+
+        return lines.map { line ->
+            val lineEnd = lineStart + line.length
+            val lineSpans = spans.mapNotNullTo(mutableSetOf()) { span ->
+                val overlapStart = maxOf(span.start, lineStart)
+                val overlapEnd = minOf(span.end, lineEnd)
+
+                if (overlapEnd > overlapStart) {
+                    SpanInfo.create(
+                        start = overlapStart - lineStart,
+                        end = overlapEnd - lineStart,
+                        span = span.span,
+                        extra = span.extra,
+                    )
+                } else {
+                    null
+                }
+            }
+
+            lineStart = lineEnd + 1
+            lineSpans
+        }
     }
 
     /**
@@ -456,8 +492,14 @@ class ContentHandler(
             mutableSteps[previousFocus]?.let { previous ->
                 // Update the previous story's nextPosition to skip the deleted story
                 // and merge the text from the deleted story
+                val previousText = previous.text.orEmpty()
+                val deletedText = deleteInfo.storyStep.text.orEmpty()
+                val shiftedSpans = deleteInfo.storyStep.spans
+                    .mapTo(mutableSetOf()) { span -> span.move(previousText.length) }
+
                 val updated = previous.copy(
-                    text = previous.text + deleteInfo.storyStep.text,
+                    text = previousText + deletedText,
+                    spans = previous.spans + shiftedSpans,
                     localId = GenerateId.generate(),
                     nextPosition = nextPos
                 )

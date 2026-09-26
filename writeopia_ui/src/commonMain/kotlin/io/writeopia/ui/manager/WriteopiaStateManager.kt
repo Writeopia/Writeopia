@@ -1123,7 +1123,7 @@ class WriteopiaStateManager(
 
             if (onEdit.isNotEmpty()) {
                 _currentStory.value =
-                    writeopiaManager.addSpanToStories(_currentStory.value, onEdit, span)
+                    writeopiaManager.addSpanToStories(_currentStory.value, onEdit, span, extra)
             } else {
                 val selection = currentStory.value.selection
                 val (start, end) = selection.sortedPositions()
@@ -1290,7 +1290,7 @@ class WriteopiaStateManager(
         val step = _currentStory.value.stories[position] ?: return
 
         if (lineBreakByContent && text.contains("\n")) {
-            val newStep = step.copy(text = text)
+            val newStep = step.copy(text = text, spans = input.spans)
             onLineBreak(Action.LineBreak(newStep, position), processCommands = processCommands)
         } else {
             val newText = text.replace("\n", "")

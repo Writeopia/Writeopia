@@ -8,6 +8,7 @@ import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
@@ -1165,6 +1166,61 @@ class WriteopiaStateManagerTest {
         repeat(3) { i ->
             assertEquals(stories[i.toDouble()]!!.spans.first().span, Span.BOLD)
         }
+    }
+
+    @Test
+    fun lineBreakTextInputShouldUseRecalculatedCommentSpans() = runTest {
+        val now = Clock.System.now()
+        val conversationId = "conversation-1"
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+
+        storyManager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        type = StoryTypes.TEXT.type,
+                        text = "helloworld",
+                        spans = setOf(
+                            SpanInfo.create(0, 10, Span.COMMENT, conversationId)
+                        ),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        storyManager.handleTextInput(
+            TextInput(
+                text = "hello\nworld",
+                start = 6,
+                end = 6,
+                spans = setOf(
+                    SpanInfo.create(0, 11, Span.COMMENT, conversationId)
+                ),
+            ),
+            position = 0.0,
+            lineBreakByContent = true,
+        )
+        advanceUntilIdle()
+
+        val stories = storyManager.currentStory.value.stories.entries.sortedBy { it.key }
+        assertEquals(2, stories.size)
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.COMMENT, conversationId)),
+            stories[0].value.spans,
+        )
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.COMMENT, conversationId)),
+            stories[1].value.spans,
+        )
     }
 
     @Test
