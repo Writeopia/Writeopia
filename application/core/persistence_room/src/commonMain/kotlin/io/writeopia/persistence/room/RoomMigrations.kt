@@ -17,5 +17,9 @@ val MIGRATION_29_30 = object : Migration(29, 30) {
             )
             """.trimIndent()
         )
+        connection.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_COMMENT_ENTITY_TABLE_document_id " +
+                "ON COMMENT_ENTITY_TABLE (document_id)"
+        )
     }
 }
