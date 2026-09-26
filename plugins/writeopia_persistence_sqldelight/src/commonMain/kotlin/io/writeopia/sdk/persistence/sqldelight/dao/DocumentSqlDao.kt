@@ -74,6 +74,11 @@ class DocumentSqlDao(
         val queries = documentQueries ?: return
 
         queries.transaction {
+            val existing = queries.selectById(document.id).executeAsOneOrNull()
+            require(existing == null || existing.workspace_id == document.workspaceId) {
+                "Document does not belong to the requested workspace"
+            }
+
             storyStepQueries?.deleteByDocumentId(document.id)
             document.content.values.forEachIndexed { i, storyStep ->
                 insertStoryStep(storyStep, i.toDouble(), document.id)

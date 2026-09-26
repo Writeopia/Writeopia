@@ -89,6 +89,9 @@ interface DocumentEntityDao {
     @Query("SELECT * FROM $DOCUMENT_ENTITY")
     suspend fun loadAllDocuments(): List<DocumentEntity>
 
+    @Query("SELECT id FROM $DOCUMENT_ENTITY WHERE workspace_id = :workspaceId")
+    suspend fun loadDocumentIdsForWorkspace(workspaceId: String): List<String>
+
     @Query("SELECT id FROM $DOCUMENT_ENTITY")
     suspend fun loadAllIds(): List<String>
 
