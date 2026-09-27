@@ -45,6 +45,7 @@ kotlin {
             implementation(project(":application:core:theme"))
             implementation(project(":application:core:utils"))
             implementation(project(":application:features:account"))
+            implementation(project(":application:core:local_ai_config"))
             implementation(project(":application:core:resources"))
         }
 

@@ -35,6 +35,7 @@ fun ComposeUiTest.startApp(
             navigateToRegister = {},
             navigateToResetPassword = {},
             navigateToChooseWorkspace = {},
+            navigateToSpaceChoice = {},
             navigateToAccountDeletionStarted = {}
         )
     }

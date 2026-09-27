@@ -49,9 +49,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.colors.ColorUtils
+import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
+import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
+import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.ui.mobile.MobileAiDialog
 import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
@@ -87,6 +90,9 @@ internal fun NoteEditorScreen(
     onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
+    isWideLayout: Boolean = false,
+    onPresentationClick: () -> Unit = {},
+    onDocumentDelete: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     if (documentId != null) {
@@ -105,6 +111,8 @@ internal fun NoteEditorScreen(
 
     var showAiDialog by remember { mutableStateOf(false) }
     var showSelectedLinesAiDialog by remember { mutableStateOf(false) }
+    var showFolderSelection by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier,
@@ -160,32 +168,102 @@ internal fun NoteEditorScreen(
                     onDrawingClick = onDrawingClick
                 )
 
-                BottomScreen(
-                    noteEditorViewModel.isEditState,
-                    metadataState = noteEditorViewModel.writeopiaManager.selectionMetadataState,
-                    isDarkTheme,
-                    noteEditorViewModel::undo,
-                    noteEditorViewModel::redo,
-                    noteEditorViewModel.canUndo,
-                    noteEditorViewModel.canRedo,
-                    noteEditorViewModel::onAddSpanClick,
-                    noteEditorViewModel::deleteSelection,
-                    noteEditorViewModel::copySelection,
-                    noteEditorViewModel::cutSelection,
-                    noteEditorViewModel::clearSelections,
-                    noteEditorViewModel::onAddCheckListClick,
-                    noteEditorViewModel::onAddListItemClick,
-                    noteEditorViewModel::onAddCodeBlockClick,
-                    noteEditorViewModel::addPage,
-                    noteEditorViewModel::titleClick,
+                if (!isWideLayout) {
+                    BottomScreen(
+                        noteEditorViewModel.isEditState,
+                        metadataState = noteEditorViewModel.writeopiaManager.selectionMetadataState,
+                        isDarkTheme,
+                        noteEditorViewModel::undo,
+                        noteEditorViewModel::redo,
+                        noteEditorViewModel.canUndo,
+                        noteEditorViewModel.canRedo,
+                        noteEditorViewModel::onAddSpanClick,
+                        noteEditorViewModel::deleteSelection,
+                        noteEditorViewModel::copySelection,
+                        noteEditorViewModel::cutSelection,
+                        noteEditorViewModel::clearSelections,
+                        noteEditorViewModel::onAddCheckListClick,
+                        noteEditorViewModel::onAddListItemClick,
+                        noteEditorViewModel::onAddCodeBlockClick,
+                        noteEditorViewModel::addPage,
+                        noteEditorViewModel::titleClick,
+                        onDrawingClick = onNewDrawingClick,
+                        onImageClick = launchImagePicker,
+                        onBoxClick = noteEditorViewModel::toggleHighLightBlock,
+                        onCardClick = noteEditorViewModel::toggleCardBlock,
+                        onAiClick = { showAiDialog = true },
+                        onSelectedLinesAiClick = { showSelectedLinesAiDialog = true },
+                        isWorkspaceOfflineState = noteEditorViewModel.isWorkspaceOffline
+                    )
+                }
+            }
+
+            if (isWideLayout) {
+                SideEditorOptions(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 40.dp),
+                    alignment = Alignment.CenterEnd,
+                    isDarkTheme = isDarkTheme,
+                    fontStyleSelected = { noteEditorViewModel.fontFamily },
+                    currentModel = noteEditorViewModel.currentModel,
+                    models = noteEditorViewModel.models,
+                    isEditableState = noteEditorViewModel.isEditable,
+                    isFavorite = noteEditorViewModel.notFavorite,
+                    selectedMetadataState = noteEditorViewModel.selectionMetadataState,
+                    sideMenuTabState = noteEditorViewModel.sideMenuTabState,
+                    hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
+                    boldClick = noteEditorViewModel::onAddSpanClick,
+                    setEditable = noteEditorViewModel::toggleEditable,
+                    checkItemClick = noteEditorViewModel::onAddCheckListClick,
+                    listItemClick = noteEditorViewModel::onAddListItemClick,
+                    codeBlockClick = noteEditorViewModel::onAddCodeBlockClick,
+                    spreadsheetClick = { noteEditorViewModel.onAddSpreadsheetClick(3) },
+                    highLightBlockClick = noteEditorViewModel::toggleHighLightBlock,
+                    cardBlockClick = noteEditorViewModel::toggleCardBlock,
+                    onPresentationClick = onPresentationClick,
+                    changeFontFamily = noteEditorViewModel::changeFontFamily,
+                    addImage = noteEditorViewModel::addImage,
+                    onImagePickRequest = launchImagePicker,
+                    exportMarkdown = noteEditorViewModel::exportMarkdown,
+                    exportJson = noteEditorViewModel::exportJson,
+                    moveToRoot = noteEditorViewModel::moveToRootFolder,
+                    moveToClick = { showFolderSelection = true },
+                    askAiWithMode = noteEditorViewModel::askAiWithMode,
+                    addPage = noteEditorViewModel::addPage,
+                    deleteDocument = { showDeleteConfirmation = true },
+                    toggleFavorite = noteEditorViewModel::toggleFavorite,
+                    aiSummary = noteEditorViewModel::aiSummary,
+                    aiActionPoints = noteEditorViewModel::aiActionPoints,
+                    aiFaq = noteEditorViewModel::aiFaq,
+                    aiTags = noteEditorViewModel::aiTags,
+                    selectModel = noteEditorViewModel::selectModel,
+                    changeSideMenuTab = noteEditorViewModel::changeSideMenu,
+                    titleClick = noteEditorViewModel::titleClick,
                     onDrawingClick = onNewDrawingClick,
-                    onImageClick = launchImagePicker,
-                    onBoxClick = noteEditorViewModel::toggleHighLightBlock,
-                    onCardClick = noteEditorViewModel::toggleCardBlock,
-                    onAiClick = { showAiDialog = true },
-                    onSelectedLinesAiClick = { showSelectedLinesAiDialog = true },
-                    isWorkspaceOfflineState = noteEditorViewModel.isWorkspaceOffline
+                    onPublishClick = noteEditorViewModel::showPublishDialog
                 )
+
+                if (showDeleteConfirmation) {
+                    DeleteConfirmationDialog(
+                        onConfirmation = {
+                            noteEditorViewModel.deleteDocument()
+                            showDeleteConfirmation = false
+                            onDocumentDelete()
+                        },
+                        onCancel = { showDeleteConfirmation = false }
+                    )
+                }
+
+                if (showFolderSelection) {
+                    FolderSelectionDialog(
+                        noteEditorViewModel.listenForFolders,
+                        selectedFolder = { folderId ->
+                            showFolderSelection = false
+                            noteEditorViewModel.moveToFolder(folderId)
+                        },
+                        expandFolder = noteEditorViewModel::expandFolder,
+                        onDismissRequest = { showFolderSelection = false }
+                    )
+                }
             }
 
             val headerEdition by noteEditorViewModel.editHeader.collectAsState()

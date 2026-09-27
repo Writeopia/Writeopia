@@ -1,7 +1,10 @@
 package io.writeopia.account.navigation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -105,6 +108,7 @@ fun NavController.navigateToUserEdit(
 fun NavGraphBuilder.accountMenuNavigation(
     navigateToAuthMenu: () -> Unit,
     navigateToChooseWorkspace: () -> Unit,
+    navigateToSpaceChoice: () -> Unit,
     resetPassword: () -> Unit,
     navigationClick: () -> Unit,
     navigateToSettingsTeams: () -> Unit,
@@ -121,6 +125,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     selectedAccentColor: StateFlow<AccentColor?>,
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
+    isToolbarVisible: Boolean = true,
 ) {
     composable(
         Destinations.ACCOUNT.id,
@@ -137,30 +142,36 @@ fun NavGraphBuilder.accountMenuNavigation(
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            WrStrings.settings(),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    navigationIcon = {
-                        Row(
-                            modifier = Modifier.fillMaxHeight(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .clickable(onClick = navigationClick)
-                                    .padding(10.dp),
-                                imageVector = WrIcons.backArrowMobile,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                AnimatedVisibility(
+                    visible = isToolbarVisible,
+                    enter = slideInVertically { -it },
+                    exit = slideOutVertically { -it }
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                WrStrings.settings(),
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
+                        },
+                        navigationIcon = {
+                            Row(
+                                modifier = Modifier.fillMaxHeight(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable(onClick = navigationClick)
+                                        .padding(10.dp),
+                                    imageVector = WrIcons.backArrowMobile,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             AccountMenuScreen(
@@ -192,30 +203,36 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            WrStrings.teams(),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    navigationIcon = {
-                        Row(
-                            modifier = Modifier.fillMaxHeight(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .clickable(onClick = navigationClick)
-                                    .padding(10.dp),
-                                imageVector = WrIcons.backArrowMobile,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                AnimatedVisibility(
+                    visible = isToolbarVisible,
+                    enter = slideInVertically { -it },
+                    exit = slideOutVertically { -it }
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                WrStrings.teams(),
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
+                        },
+                        navigationIcon = {
+                            Row(
+                                modifier = Modifier.fillMaxHeight(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable(onClick = navigationClick)
+                                        .padding(10.dp),
+                                    imageVector = WrIcons.backArrowMobile,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             SettingsTeamsScreen(
@@ -259,30 +276,36 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            WrStrings.teams(),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    navigationIcon = {
-                        Row(
-                            modifier = Modifier.fillMaxHeight(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .clickable(onClick = navigationClick)
-                                    .padding(10.dp),
-                                imageVector = WrIcons.backArrowMobile,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                AnimatedVisibility(
+                    visible = isToolbarVisible,
+                    enter = slideInVertically { -it },
+                    exit = slideOutVertically { -it }
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                WrStrings.teams(),
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
+                        },
+                        navigationIcon = {
+                            Row(
+                                modifier = Modifier.fillMaxHeight(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable(onClick = navigationClick)
+                                        .padding(10.dp),
+                                    imageVector = WrIcons.backArrowMobile,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             WorkspaceUsersScreen(
@@ -330,30 +353,36 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            "Search Users",
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    navigationIcon = {
-                        Row(
-                            modifier = Modifier.fillMaxHeight(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .clickable(onClick = navigationClick)
-                                    .padding(10.dp),
-                                imageVector = WrIcons.backArrowMobile,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                AnimatedVisibility(
+                    visible = isToolbarVisible,
+                    enter = slideInVertically { -it },
+                    exit = slideOutVertically { -it }
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                "Search Users",
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
+                        },
+                        navigationIcon = {
+                            Row(
+                                modifier = Modifier.fillMaxHeight(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable(onClick = navigationClick)
+                                        .padding(10.dp),
+                                    imageVector = WrIcons.backArrowMobile,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             UserSearchScreen(
@@ -405,30 +434,36 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            "Add User",
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    navigationIcon = {
-                        Row(
-                            modifier = Modifier.fillMaxHeight(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .clickable(onClick = navigationClick)
-                                    .padding(10.dp),
-                                imageVector = WrIcons.backArrowMobile,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                AnimatedVisibility(
+                    visible = isToolbarVisible,
+                    enter = slideInVertically { -it },
+                    exit = slideOutVertically { -it }
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                "Add User",
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
+                        },
+                        navigationIcon = {
+                            Row(
+                                modifier = Modifier.fillMaxHeight(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable(onClick = navigationClick)
+                                        .padding(10.dp),
+                                    imageVector = WrIcons.backArrowMobile,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             UserAddScreen(
@@ -482,30 +517,36 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            WrStrings.editUserRole(),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    navigationIcon = {
-                        Row(
-                            modifier = Modifier.fillMaxHeight(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .clickable(onClick = navigationClick)
-                                    .padding(10.dp),
-                                imageVector = WrIcons.backArrowMobile,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                AnimatedVisibility(
+                    visible = isToolbarVisible,
+                    enter = slideInVertically { -it },
+                    exit = slideOutVertically { -it }
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                WrStrings.editUserRole(),
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
+                        },
+                        navigationIcon = {
+                            Row(
+                                modifier = Modifier.fillMaxHeight(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable(onClick = navigationClick)
+                                        .padding(10.dp),
+                                    imageVector = WrIcons.backArrowMobile,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             UserEditScreen(
@@ -542,30 +583,36 @@ fun NavGraphBuilder.accountMenuNavigation(
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            WrStrings.appearance(),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    navigationIcon = {
-                        Row(
-                            modifier = Modifier.fillMaxHeight(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .clickable(onClick = navigationClick)
-                                    .padding(10.dp),
-                                imageVector = WrIcons.backArrowMobile,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                AnimatedVisibility(
+                    visible = isToolbarVisible,
+                    enter = slideInVertically { -it },
+                    exit = slideOutVertically { -it }
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                WrStrings.appearance(),
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
+                        },
+                        navigationIcon = {
+                            Row(
+                                modifier = Modifier.fillMaxHeight(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable(onClick = navigationClick)
+                                        .padding(10.dp),
+                                    imageVector = WrIcons.backArrowMobile,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             SettingsAppearanceScreen(
@@ -597,30 +644,36 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            WrStrings.account(),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    navigationIcon = {
-                        Row(
-                            modifier = Modifier.fillMaxHeight(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .clickable(onClick = navigationClick)
-                                    .padding(10.dp),
-                                imageVector = WrIcons.backArrowMobile,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                AnimatedVisibility(
+                    visible = isToolbarVisible,
+                    enter = slideInVertically { -it },
+                    exit = slideOutVertically { -it }
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                WrStrings.account(),
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
+                        },
+                        navigationIcon = {
+                            Row(
+                                modifier = Modifier.fillMaxHeight(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable(onClick = navigationClick)
+                                        .padding(10.dp),
+                                    imageVector = WrIcons.backArrowMobile,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             SettingsAccountScreen(
@@ -630,6 +683,7 @@ fun NavGraphBuilder.accountMenuNavigation(
                 workspacesState = accountMenuViewModel.availableWorkspaces,
                 exportWorkspaceState = accountMenuViewModel.exportWorkspaceState,
                 goToRegister = navigateToAuthMenu,
+                switchSpace = navigateToSpaceChoice,
                 changeWorkspace = {
                     accountMenuViewModel.changeWorkspace {
                         navigateToChooseWorkspace()
@@ -641,8 +695,10 @@ fun NavGraphBuilder.accountMenuNavigation(
                 resetExportState = accountMenuViewModel::resetExportState,
                 resetPassword = resetPassword,
                 logout = {
+                    // Resets the nav graph back to START_APP so the login-state
+                    // check re-runs and can land on the space-choice screen.
                     accountMenuViewModel.logout {
-                        navigateToAuthMenu()
+                        navigateToChooseWorkspace()
                     }
                 }
             )
@@ -665,30 +721,36 @@ fun NavGraphBuilder.accountMenuNavigation(
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            WrStrings.ai(),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    navigationIcon = {
-                        Row(
-                            modifier = Modifier.fillMaxHeight(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .clickable(onClick = navigationClick)
-                                    .padding(10.dp),
-                                imageVector = WrIcons.backArrowMobile,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                AnimatedVisibility(
+                    visible = isToolbarVisible,
+                    enter = slideInVertically { -it },
+                    exit = slideOutVertically { -it }
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                WrStrings.ai(),
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
+                        },
+                        navigationIcon = {
+                            Row(
+                                modifier = Modifier.fillMaxHeight(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable(onClick = navigationClick)
+                                        .padding(10.dp),
+                                    imageVector = WrIcons.backArrowMobile,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             SettingsAiScreen(
@@ -717,30 +779,36 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            WrStrings.cloudAi(),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    navigationIcon = {
-                        Row(
-                            modifier = Modifier.fillMaxHeight(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .clickable(onClick = navigationClick)
-                                    .padding(10.dp),
-                                imageVector = WrIcons.backArrowMobile,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                AnimatedVisibility(
+                    visible = isToolbarVisible,
+                    enter = slideInVertically { -it },
+                    exit = slideOutVertically { -it }
+                ) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                WrStrings.cloudAi(),
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
+                        },
+                        navigationIcon = {
+                            Row(
+                                modifier = Modifier.fillMaxHeight(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable(onClick = navigationClick)
+                                        .padding(10.dp),
+                                    imageVector = WrIcons.backArrowMobile,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             SettingsCloudAiScreen(

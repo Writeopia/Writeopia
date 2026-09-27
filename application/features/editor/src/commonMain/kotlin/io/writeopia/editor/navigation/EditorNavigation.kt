@@ -35,6 +35,7 @@ fun NavGraphBuilder.editorNavigation(
     navigateToPresentation: (String) -> Unit,
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
+    isWideLayout: Boolean = false,
     navigateToNewDrawing: (String) -> Unit = {},
     navigateToEditDrawing: (String, StoryStep) -> Unit = { _, _ -> },
     onImagePick: () -> Unit = {}
@@ -85,6 +86,7 @@ fun NavGraphBuilder.editorNavigation(
                     },
                     nestedScrollConnection = nestedScrollConnection,
                     isToolbarVisible = isToolbarVisible,
+                    isWideLayout = isWideLayout,
                     modifier = sharedModifier(this, noteId)
                 )
             } else {
@@ -121,6 +123,7 @@ fun NavGraphBuilder.editorNavigation(
                 },
                 nestedScrollConnection = nestedScrollConnection,
                 isToolbarVisible = isToolbarVisible,
+                isWideLayout = isWideLayout,
                 modifier = sharedModifier(this),
             )
         }

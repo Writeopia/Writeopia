@@ -67,6 +67,7 @@ kotlin {
                 implementation(project(":application:core:common_ui"))
                 implementation(project(":application:core:documents"))
                 implementation(project(":application:core:local_ai"))
+                implementation(project(":application:core:local_ai_config"))
 
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_serialization"))

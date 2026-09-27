@@ -20,5 +20,6 @@ expect fun TextEditorScreen(
     onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
+    isWideLayout: Boolean = false,
     modifier: Modifier = Modifier,
 )

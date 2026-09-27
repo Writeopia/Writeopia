@@ -34,6 +34,8 @@ actual fun NotesMenuScreen(
     nestedScrollConnection: NestedScrollConnection?,
     isToolbarVisible: Boolean,
     navigationBar: @Composable () -> Unit,
+    isWideLayout: Boolean,
+    sideMenuContent: @Composable () -> Unit,
     modifier: Modifier
 ) {
     ChooseNoteScreen(
@@ -48,6 +50,8 @@ actual fun NotesMenuScreen(
         nestedScrollConnection = nestedScrollConnection,
         isToolbarVisible = isToolbarVisible,
         navigationBar = navigationBar,
+        isWideLayout = isWideLayout,
+        sideMenuContent = sideMenuContent,
         modifier = modifier,
     )
 }
