@@ -1,5 +1,6 @@
 #if canImport(UIKit)
 import SwiftUI
+import WrDesign
 import Writeopia
 import WrModels
 
@@ -7,7 +8,8 @@ import WrModels
 public struct WriteopiaEditor: View {
     private let manager: WriteopiaStateManager
     private let customDrawers: [Int: CustomStepDrawer]
-    @State private var swipeSelection = SwipeSelectionCoordinator()
+    // Swipes don't start on the grip column, which belongs to the reorder drag.
+    @State private var swipeSelection = SwipeSelectionCoordinator(leadingExclusion: EditorLayout.gutter + 4)
     @State private var reorder = ReorderCoordinator()
 
     /// `customDrawers` draws step types the editor doesn't know, by type number.

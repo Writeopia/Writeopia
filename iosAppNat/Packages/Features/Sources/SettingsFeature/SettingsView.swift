@@ -72,7 +72,9 @@ private struct AccountHeader: View {
 
     private var subtitle: String {
         if session.isOnline {
-            return [session.user?.email, session.workspace?.name].compactMap { $0 }.joined(separator: " · ")
+            return [session.user?.email, session.user?.planName, session.workspace?.name]
+                .compactMap { $0 }
+                .joined(separator: " · ")
         }
         return "Your notes stay on this device"
     }

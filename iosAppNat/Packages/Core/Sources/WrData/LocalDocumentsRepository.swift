@@ -163,6 +163,108 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
         try hardDeleteDocument(id: id)
     }
 
+    // MARK: - Selection menu
+
+    public func duplicate(ids: [String]) async throws {
+        try duplicateReturningCopies(ids: ids)
+    }
+
+    /// Copies the documents and folders with new ids (steps too), keeping their titles like the
+    /// Compose app. Returns the new documents and folders, for the sync to send.
+    @discardableResult
+    public func duplicateReturningCopies(ids: [String]) throws -> (documents: [WrDocument], folders: [Folder]) {
+        var documents: [WrDocument] = []
+        var folders: [Folder] = []
+
+        func copyDocument(_ document: WrDocument, into parentId: String?) throws {
+            let now = Date.nowMillis
+            let copy = WrDocument(
+                id: UUID().uuidString,
+                title: document.title,
+                workspaceId: workspaceId,
+                content: document.content.map { step in
+                    StoryStep(
+                        id: UUID().uuidString, type: step.type, text: step.text, checked: step.checked, url: step.url,
+                        path: step.path, steps: step.steps, tags: step.tags, spans: step.spans, position: step.position,
+                        documentLink: step.documentLink, parentId: step.parentId, decoration: step.decoration, lastUpdatedAt: now
+                    )
+                },
+                createdAt: now,
+                lastUpdatedAt: now,
+                isFavorite: document.isFavorite,
+                parentId: parentId ?? document.parentId,
+                icon: document.icon
+            )
+            try store(copy)
+            documents.append(copy)
+        }
+
+        func copyFolder(_ folder: Folder, into parentId: String) throws {
+            let copy = Folder(
+                id: UUID().uuidString,
+                parentId: parentId,
+                title: folder.title,
+                workspaceId: workspaceId,
+                favorite: folder.favorite,
+                icon: folder.icon
+            )
+            try store(copy)
+            folders.append(copy)
+            for document in try storedDocuments(inFolder: folder.id) where !document.deleted {
+                try copyDocument(document, into: copy.id)
+            }
+            for inner in try storedFolders(inFolder: folder.id) where !inner.deleted {
+                try copyFolder(inner, into: copy.id)
+            }
+        }
+
+        for id in ids {
+            if let document = try storedDocument(id: id), !document.deleted {
+                try copyDocument(document, into: nil)
+            } else if let folder = try storedFolder(id: id), !folder.deleted {
+                try copyFolder(folder, into: folder.parentId)
+            }
+        }
+        return (documents, folders)
+    }
+
+    public func setFavorite(ids: [String], favorite: Bool) async throws {
+        let now = Date.nowMillis
+        try db.transaction {
+            for id in ids {
+                try db.run("UPDATE document SET favorite = ?, last_updated_at = ? WHERE id = ?", [.bool(favorite), .integer(now), .text(id)])
+                try db.run("UPDATE folder SET favorite = ?, last_updated_at = ? WHERE id = ?", [.bool(favorite), .integer(now), .text(id)])
+            }
+        }
+    }
+
+    /// The private space has nothing to sync, so everything is removed for good.
+    public func deleteItems(ids: [String]) async throws {
+        for id in ids {
+            if try storedDocument(id: id) != nil {
+                try hardDeleteDocument(id: id)
+            } else if try storedFolder(id: id) != nil {
+                try deleteFolderTree(id: id, soft: false)
+            }
+        }
+    }
+
+    /// Deletes a folder and everything inside it. Soft deletes keep the rows, marked, until the
+    /// backend confirms, like the Compose app.
+    public func deleteFolderTree(id: String, soft: Bool) throws {
+        for inner in try storedFolders(inFolder: id) {
+            try deleteFolderTree(id: inner.id, soft: soft)
+        }
+        for document in try storedDocuments(inFolder: id) {
+            if soft { try softDeleteDocument(id: document.id) } else { try hardDeleteDocument(id: document.id) }
+        }
+        if soft {
+            try db.run("UPDATE folder SET deleted = 1, last_updated_at = ? WHERE id = ?", [.integer(Date.nowMillis), .text(id)])
+        } else {
+            try hardDeleteFolder(id: id)
+        }
+    }
+
     /// Marks the document as deleted, like the Compose app, until the backend confirms it.
     public func softDeleteDocument(id: String) throws {
         try db.run("UPDATE document SET deleted = 1, last_updated_at = ? WHERE id = ?", [.integer(Date.nowMillis), .text(id)])

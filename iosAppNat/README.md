@@ -29,7 +29,8 @@ iosAppNat/
     └── Features/         Local package with the feature modules
         ├── AuthFeature       Space choice, login, register, email confirmation,
         │                     password recovery (email → code → new password), workspace choice
-        ├── DocumentsFeature  Folder/document grid (drag items onto a folder to move them),
+        ├── DocumentsFeature  Folder/document grid (drag items onto a folder to move them, slide
+        │                     cards to select them: copy, favorite, AI summary, delete),
         │                     new folder/document; documents open in the NoteEditor
         ├── SearchFeature     Debounced search (backend or local files)
         └── SettingsFeature   General (color theme), Teams, AI (cloud usage), Account
@@ -50,6 +51,10 @@ From Settings > Account, the private space offers **Sign in** and **Switch space
 ## Running
 
 Open `iosAppNat.xcodeproj` and run the `iosAppNat` scheme. To point the app at another gateway, set the `WRITEOPIA_BASE_URL` environment variable in the scheme.
+
+## Documents list
+
+- Slide a card sideways to select it, like the Compose notes list (`SwipeBox`); several can be selected. The selection menu mirrors `NotesSelectionMenu`: **Copy** (documents with new ids; folders with what's inside), **Favorite** (or remove from favorites when all are), **AI Summary** (open space: the selected documents as Markdown are sent to `/api/ai/summary` and the answer becomes a new document in the folder; the Compose app uses local AI for this), **Delete** (after confirmation; folders with their contents; synced like single deletions) and an "N selected ✕" chip.
 
 ## Editor
 

@@ -64,6 +64,23 @@ final class FakeLineTransport: LineStreamingTransport {
         }
     }
 
+    @Test func acceptsJsonSoErrorsAreNot406() async throws {
+        let lines = FakeLineTransport([(200, [#"data: {"response":"ok","done":true}"#])])
+        for try await _ in api(lines).stream(.summary, prompt: "text") {}
+
+        let accept = try #require(lines.requests.first?.value(forHTTPHeaderField: "Accept"))
+        #expect(accept.contains("text/event-stream"))
+        #expect(accept.contains("application/json"))
+    }
+
+    @Test func backendErrorMessagesAreShown() async {
+        let lines = FakeLineTransport([(403, [#"{"response":null,"done":false,"error":"Cloud AI requires a premium subscription"}"#])])
+
+        await #expect(throws: APIError.forbidden("Cloud AI requires a premium subscription")) {
+            for try await _ in api(lines).stream(.summary, prompt: "text") {}
+        }
+    }
+
     @Test func quotaExceededIsReported() async {
         let lines = FakeLineTransport([(429, [])])
 

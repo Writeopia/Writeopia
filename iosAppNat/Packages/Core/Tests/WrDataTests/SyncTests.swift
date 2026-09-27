@@ -107,6 +107,8 @@ final class FakeBackend: HTTPTransport {
     private(set) var sentFolders: [[String: Any]] = []
     private(set) var stepSyncBodies: [[String: Any]] = []
     private(set) var deletedIds: [String] = []
+    private(set) var deletedFolderIds: [String] = []
+    private(set) var favorites: [String: Bool] = [:]
     var deleteFails = false
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
@@ -120,6 +122,7 @@ final class FakeBackend: HTTPTransport {
             // Like the backend, deleted documents aren't returned.
             var contents = folderDiff
             contents.documents.removeAll { deletedIds.contains($0.id) }
+            contents.folders.removeAll { deletedFolderIds.contains($0.id) }
             response = try JSONEncoder().encode(contents)
         case "/api/docs/workspace/document":
             sentDocuments += body["documents"] as? [[String: Any]] ?? []
@@ -127,6 +130,15 @@ final class FakeBackend: HTTPTransport {
         case "/api/docs/workspace/folder":
             sentFolders += body["folders"] as? [[String: Any]] ?? []
             response = Data("Accepted".utf8)
+        case let path where request.httpMethod == "DELETE" && path.contains("/folder/"):
+            if deleteFails {
+                status = 500
+            } else {
+                deletedFolderIds.append(String(path.split(separator: "/").last ?? ""))
+            }
+        case let path where path.hasSuffix("/favorite"):
+            let id = path.split(separator: "/").dropLast().last.map(String.init) ?? ""
+            favorites[id] = body["favorite"] as? Bool
         case let path where path.hasSuffix("/document/delete"):
             if deleteFails {
                 status = 500
@@ -370,5 +382,142 @@ final class FakeBackend: HTTPTransport {
 
         #expect(backend.deletedIds == ["d"])
         #expect(try await repository.folderContents(folderId: "root").documents.isEmpty)
+    }
+}
+
+@Suite struct SelectionActionsTests {
+    private func makeRepository(_ backend: FakeBackend) -> SyncedDocumentsRepository {
+        let client = APIClient(transport: backend, tokenStore: InMemoryTokenStore(accessToken: "a"), baseURL: URL(string: "https://x.io")!)
+        return SyncedDocumentsRepository(
+            local: makeStore(),
+            remote: RemoteDocumentsRepository(client: client, workspaceId: "w"),
+            api: SyncAPI(client: client, workspaceId: "w")
+        )
+    }
+
+    @Test func duplicateCopiesDocumentsAndFoldersWithNewIds() async throws {
+        let store = makeStore()
+        let document = WrDocument(id: "d", title: "Notes", workspaceId: "w", content: [
+            StoryStep(id: "s", type: .text, text: "Hello", position: 0),
+        ], parentId: "root")
+        try store.store(document)
+        try store.store(Folder(id: "f", parentId: "root", title: "Projects", workspaceId: "w"))
+        try store.store(WrDocument(id: "inner", title: "Inside", workspaceId: "w", parentId: "f"))
+
+        try await store.duplicate(ids: ["d", "f"])
+
+        let root = try await store.folderContents(folderId: "root")
+        #expect(root.documents.filter { $0.title == "Notes" }.count == 2)
+        let copy = try #require(root.documents.first { $0.title == "Notes" && $0.id != "d" })
+        #expect(copy.content.map(\.text) == ["Hello"])
+        #expect(copy.content.first?.id != "s")
+
+        let folderCopy = try #require(root.folders.first { $0.title == "Projects" && $0.id != "f" })
+        #expect(try await store.folderContents(folderId: folderCopy.id).documents.map(\.title) == ["Inside"])
+    }
+
+    @Test func favoriteMarksDocumentsAndFolders() async throws {
+        let store = makeStore()
+        try store.store(WrDocument(id: "d", title: "", workspaceId: "w", parentId: "root"))
+        try store.store(Folder(id: "f", parentId: "root", title: "F", workspaceId: "w"))
+
+        try await store.setFavorite(ids: ["d", "f"], favorite: true)
+
+        #expect(try store.storedDocument(id: "d")?.isFavorite == true)
+        #expect(try store.storedFolder(id: "f")?.favorite == true)
+        #expect(try store.storedDocument(id: "d")?.isOutdated == true)
+    }
+
+    @Test func deletingAFolderDeletesWhatsInside() async throws {
+        let store = makeStore()
+        try store.store(Folder(id: "f", parentId: "root", title: "F", workspaceId: "w"))
+        try store.store(Folder(id: "g", parentId: "f", title: "G", workspaceId: "w"))
+        try store.store(WrDocument(id: "d", title: "", workspaceId: "w", parentId: "g"))
+
+        try await store.deleteItems(ids: ["f"])
+
+        #expect(try store.storedFolder(id: "f") == nil)
+        #expect(try store.storedFolder(id: "g") == nil)
+        #expect(try store.storedDocument(id: "d") == nil)
+    }
+
+    @Test func openSpaceSendsFavoritesAndDeletions() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "d", title: "", workspaceId: "w", parentId: "root"))
+        try repository.local.store(Folder(id: "f", parentId: "root", title: "F", workspaceId: "w"))
+
+        try await repository.setFavorite(ids: ["d"], favorite: true)
+        #expect(backend.favorites["d"] == true)
+
+        try await repository.deleteItems(ids: ["d", "f"])
+        #expect(backend.deletedIds == ["d"])
+        #expect(backend.deletedFolderIds == ["f"])
+        #expect(try repository.local.storedFolder(id: "f") == nil)
+    }
+
+    @Test func folderDeletionIsRetriedWithTheNextSync() async throws {
+        let backend = FakeBackend()
+        backend.deleteFails = true
+        let repository = makeRepository(backend)
+        let folder = Folder(id: "f", parentId: "root", title: "F", workspaceId: "w", lastSyncedAt: Date())
+        try repository.local.store(folder)
+
+        try await repository.deleteItems(ids: ["f"])
+        #expect(try await repository.folderContents(folderId: "root").folders.isEmpty)
+
+        backend.deleteFails = false
+        backend.folderDiff = FolderContents(folders: [folder])
+        try await repository.syncFolder("root")
+
+        #expect(backend.deletedFolderIds == ["f"])
+        #expect(try await repository.folderContents(folderId: "root").folders.isEmpty)
+    }
+}
+
+@Suite struct MarkdownToDocumentTests {
+    @Test func readsTheAiSummaryFormat() throws {
+        let markdown = """
+        # Weekly summary
+
+        ## Decisions
+        - Ship the iOS app
+        [] Review the sync
+        - [x] Write tests
+        Plain **bold** paragraph
+        """
+
+        let document = try #require(MarkdownToDocument.read(markdown, parentId: "folder", workspaceId: "w"))
+
+        #expect(document.title == "Weekly summary")
+        #expect(document.parentId == "folder")
+        #expect(document.content.map(\.type.number) == [11, 0, 16, 10, 10, 0])
+        #expect(document.content[1].headingLevel == 2)
+        #expect(document.content[3].text == "Review the sync")
+        #expect(document.content[4].checked == true)
+        #expect(document.content[5].text == "Plain bold paragraph")
+    }
+
+    @Test func withoutTitleUsesTheFallback() throws {
+        let document = try #require(MarkdownToDocument.read("Just text", parentId: "root", workspaceId: "w"))
+        #expect(document.title == "Summary")
+        #expect(MarkdownToDocument.read("   \n", parentId: "root", workspaceId: "w") == nil)
+    }
+}
+
+@Suite struct UserPlanTests {
+    @Test func planComesFromTheTier() throws {
+        let premium = try JSONDecoder().decode(User.self, from: Data(#"{"id":"u","email":"a@b.io","name":"Ana","tier":"PREMIUM"}"#.utf8))
+        #expect(premium.isPremium)
+        #expect(premium.planName == "Premium")
+
+        let free = try JSONDecoder().decode(User.self, from: Data(#"{"id":"u","email":"a@b.io","name":"Ana","tier":"FREE"}"#.utf8))
+        #expect(!free.isPremium)
+        #expect(free.planName == "Free")
+
+        // Backends older than the tier field.
+        let unknown = try JSONDecoder().decode(User.self, from: Data(#"{"id":"u","email":"a@b.io","name":"Ana"}"#.utf8))
+        #expect(unknown.planName == nil)
+        #expect(!unknown.isPremium)
     }
 }

@@ -118,6 +118,10 @@ struct AccountSettingsView: View {
         Section("Signed in as") {
             LabeledContent("Name", value: session.user?.name ?? "—")
             LabeledContent("Email", value: session.user?.email ?? "—")
+            LabeledContent("Plan") {
+                PlanBadge(user: session.user)
+            }
+            .accessibilityIdentifier("account.plan")
         }
 
         Section {
@@ -274,5 +278,28 @@ private struct ChangePasswordSheet: View {
             }
         }
         .presentationDetents([.medium])
+    }
+}
+
+/// Premium or free, like the tier shown in the Compose account screen.
+struct PlanBadge: View {
+    let user: User?
+
+    var body: some View {
+        if let plan = user?.planName {
+            let isPremium = user?.isPremium == true
+            Label(plan, systemImage: isPremium ? "crown.fill" : "person")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(isPremium ? WrColors.accent : .secondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(
+                    (isPremium ? WrColors.accent.opacity(0.15) : Color.secondary.opacity(0.12)),
+                    in: Capsule()
+                )
+        } else {
+            Text("Unknown")
+                .foregroundStyle(.secondary)
+        }
     }
 }

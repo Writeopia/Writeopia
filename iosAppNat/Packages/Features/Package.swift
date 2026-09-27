@@ -30,7 +30,10 @@ let package = Package(
         .target(name: "AuthFeature", dependencies: coreProducts, swiftSettings: mainActorByDefault),
         .target(
             name: "DocumentsFeature",
-            dependencies: coreProducts + [.product(name: "NoteEditor", package: "Editor")],
+            dependencies: coreProducts + [
+                .product(name: "NoteEditor", package: "Editor"),
+                .product(name: "Writeopia", package: "Editor"),
+            ],
             swiftSettings: mainActorByDefault
         ),
         .target(

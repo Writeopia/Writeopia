@@ -151,23 +151,33 @@ public final class APIClient {
         _ path: String,
         body: Body
     ) async throws -> AsyncThrowingStream<String, Error> {
-        var request = try makeRequest(method, path, query: [], body: body, authenticated: true)
-        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
-        var (status, lines) = try await lineTransport.lines(for: request)
+        func request() throws -> URLRequest {
+            var request = try makeRequest(method, path, query: [], body: body, authenticated: true)
+            // Errors come back as JSON, not as events. Accepting only `text/event-stream` makes
+            // Ktor answer 406 instead of the actual error (premium required, quota...).
+            request.setValue("text/event-stream, application/json", forHTTPHeaderField: "Accept")
+            return request
+        }
+
+        var (status, lines) = try await lineTransport.lines(for: try request())
 
         if status == 401 {
             guard await refreshSession() else {
                 onSessionExpired?()
                 throw APIError.unauthorized
             }
-            request = try makeRequest(method, path, query: [], body: body, authenticated: true)
-            request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
-            (status, lines) = try await lineTransport.lines(for: request)
+            (status, lines) = try await lineTransport.lines(for: try request())
         }
 
         guard (200..<300).contains(status) else {
             if status == 401 { onSessionExpired?() }
-            _ = try validate(Data(), status: status)
+            // Read the error body so its message reaches the user.
+            var errorBody = ""
+            for try await line in lines {
+                errorBody += line
+                if errorBody.count > 4_000 { break }
+            }
+            _ = try validate(Data(errorBody.utf8), status: status)
             throw APIError.unexpectedStatus(status)
         }
         return lines

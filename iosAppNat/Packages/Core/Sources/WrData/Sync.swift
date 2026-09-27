@@ -333,6 +333,45 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         try local.hardDeleteDocument(id: id)
     }
 
+    private func sendFolderDeletion(_ id: String) async throws {
+        try await remote.deleteFolder(id: id)
+        try local.deleteFolderTree(id: id, soft: false)
+    }
+
+    // MARK: - Selection menu
+
+    /// Copies are created here and sent right away; what can't be sent goes with the next sync.
+    public func duplicate(ids: [String]) async throws {
+        let copies = try local.duplicateReturningCopies(ids: ids)
+        if (try? await api.sendFolders(copies.folders)) != nil {
+            for var folder in copies.folders {
+                folder.lastSyncedAt = Date()
+                try local.store(folder)
+            }
+        }
+        try? await sendAndMarkSynced(copies.documents)
+    }
+
+    public func setFavorite(ids: [String], favorite: Bool) async throws {
+        try await local.setFavorite(ids: ids, favorite: favorite)
+        for id in ids where try local.storedDocument(id: id) != nil {
+            try? await remote.setFavorite(documentId: id, favorite: favorite)
+        }
+        // Folders are sent with the next sync of their parent (the favorite is part of them).
+    }
+
+    /// Hidden right away, deleted on the backend, and removed here once it's confirmed.
+    public func deleteItems(ids: [String]) async throws {
+        for id in ids {
+            if try local.storedDocument(id: id) != nil {
+                try await deleteDocument(id: id)
+            } else if try local.storedFolder(id: id) != nil {
+                try local.deleteFolderTree(id: id, soft: true)
+                try? await sendFolderDeletion(id)
+            }
+        }
+    }
+
     public func saveEdit(document: WrDocument, changedSteps: [StoryStep], deletedStepIds: [String]) throws {
         var document = document
         if let stored = try local.storedDocument(id: document.id) {
@@ -357,11 +396,18 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
                 deletedNow.insert(document.id)
             }
         }
+        var deletedFoldersNow: Set<String> = []
+        for folder in try local.storedFolders(inFolder: folderId) where folder.deleted {
+            if (try? await sendFolderDeletion(folder.id)) != nil {
+                deletedFoldersNow.insert(folder.id)
+            }
+        }
 
         // Like the Compose app, the whole folder is asked for (the backend doesn't return a sync
         // time to continue from), which also shows what was deleted or moved elsewhere.
         var remoteContents = try await api.folderDiff(folderId: folderId, lastSync: 0)
         remoteContents.documents.removeAll { deletedNow.contains($0.id) }
+        remoteContents.folders.removeAll { deletedFoldersNow.contains($0.id) }
 
         let storedDocuments = try local.storedDocuments(inFolder: folderId)
         let storedFolders = try local.storedFolders(inFolder: folderId)

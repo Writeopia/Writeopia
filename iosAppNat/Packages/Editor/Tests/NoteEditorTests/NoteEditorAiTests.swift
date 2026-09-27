@@ -38,6 +38,9 @@ final class OneDocumentRepository: DocumentsRepository {
     func moveFolder(id: String, toFolder folderId: String) async throws {}
     func save(_ document: WrDocument) async throws {}
     func deleteDocument(id: String) async throws {}
+    func duplicate(ids: [String]) async throws {}
+    func setFavorite(ids: [String], favorite: Bool) async throws {}
+    func deleteItems(ids: [String]) async throws {}
 }
 
 private let document = WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
@@ -321,6 +324,9 @@ final class CreatingRepository: DocumentsRepository {
     func moveFolder(id: String, toFolder folderId: String) async throws {}
     func save(_ document: WrDocument) async throws {}
     func deleteDocument(id: String) async throws {}
+    func duplicate(ids: [String]) async throws {}
+    func setFavorite(ids: [String], favorite: Bool) async throws {}
+    func deleteItems(ids: [String]) async throws {}
 }
 
 @Suite struct SelectionMenuTests {
@@ -473,6 +479,9 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
     }
     private(set) var deletedIds: [String] = []
     func deleteDocument(id: String) async throws { deletedIds.append(id) }
+    func duplicate(ids: [String]) async throws {}
+    func setFavorite(ids: [String], favorite: Bool) async throws {}
+    func deleteItems(ids: [String]) async throws {}
 
     private(set) var edits: [(changed: [String], deleted: [String])] = []
     func saveEdit(document: WrDocument, changedSteps: [StoryStep], deletedStepIds: [String]) throws {

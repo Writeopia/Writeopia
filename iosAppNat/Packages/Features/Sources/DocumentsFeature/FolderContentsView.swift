@@ -1,4 +1,5 @@
 import NoteEditor
+import Writeopia
 import Observation
 import SwiftUI
 import WrData
@@ -18,12 +19,105 @@ final class FolderContentsViewModel {
     private(set) var syncError: String?
     var actionError: String?
 
+    // Selection by sliding the cards, like the notes list of the Compose app.
+    private(set) var selectedIds: Set<String> = []
+    private(set) var isSummarizing = false
+    var summaryError: String?
+
     let folderId: String
     private let repository: DocumentsRepository
+    private let aiClient: AiStreaming?
 
-    init(folderId: String, repository: DocumentsRepository) {
+    init(folderId: String, repository: DocumentsRepository, aiClient: AiStreaming? = nil) {
         self.folderId = folderId
         self.repository = repository
+        self.aiClient = aiClient
+    }
+
+    var hasSelection: Bool { !selectedIds.isEmpty }
+    var canSummarize: Bool { aiClient != nil }
+
+    func toggleSelection(_ id: String) {
+        if selectedIds.contains(id) {
+            selectedIds.remove(id)
+        } else {
+            selectedIds.insert(id)
+        }
+    }
+
+    func isSelected(_ id: String) -> Bool { selectedIds.contains(id) }
+
+    func clearSelection() {
+        selectedIds.removeAll()
+    }
+
+    /// Whether every selected item is a favorite, so the button removes them from the favorites.
+    var selectionIsFavorite: Bool {
+        let selected = items.filter { selectedIds.contains($0.id) }
+        return !selected.isEmpty && selected.allSatisfy(\.isFavorite)
+    }
+
+    /// Copies the selected documents and folders, like "Copy" of the Compose selection menu.
+    func copySelected() async {
+        let ids = Array(selectedIds)
+        clearSelection()
+        await perform { try await self.repository.duplicate(ids: ids) }
+    }
+
+    /// Favorites the selection, or removes it from the favorites when it's all favorites already.
+    func favoriteSelected() async {
+        let ids = Array(selectedIds)
+        let favorite = !selectionIsFavorite
+        clearSelection()
+        await perform { try await self.repository.setFavorite(ids: ids, favorite: favorite) }
+    }
+
+    /// Deletes the selection (folders with everything inside).
+    func deleteSelected() async {
+        let ids = selectedIds
+        clearSelection()
+        folders.removeAll { ids.contains($0.id) }
+        documents.removeAll { ids.contains($0.id) }
+        await perform { try await self.repository.deleteItems(ids: Array(ids)) }
+    }
+
+    /// Summarizes the selected documents with the AI into a new document of this folder, like
+    /// "AI Summary" of the Compose selection menu (which uses local AI; here the cloud AI).
+    func summarizeSelected() async {
+        guard let aiClient, hasSelection else { return }
+        let ids = documents.map(\.id).filter { selectedIds.contains($0) }
+        clearSelection()
+        guard !ids.isEmpty else {
+            summaryError = "Select at least one document to summarize."
+            return
+        }
+
+        isSummarizing = true
+        defer { isSummarizing = false }
+
+        do {
+            var prompt = ""
+            for id in ids {
+                let document = try await repository.document(id: id)
+                prompt += "====================================================\n"
+                prompt += DocumentToMarkdown.parse(document.content)
+                prompt += "====================================================\n\n"
+            }
+
+            var answer = ""
+            for try await partial in aiClient.stream(.summary, prompt: prompt) {
+                answer = partial
+            }
+
+            guard let summary = MarkdownToDocument.read(answer, parentId: folderId, workspaceId: "") else {
+                summaryError = "The AI didn't return a summary."
+                return
+            }
+            try await repository.save(summary)
+            await load()
+        } catch {
+            summaryError = error.userMessage
+        }
     }
 
     var isEmpty: Bool { folders.isEmpty && documents.isEmpty }
@@ -150,6 +244,7 @@ public struct DocumentsRootView: View {
                 folderId: Folder.rootId,
                 title: session.workspace?.name ?? "Documents",
                 repository: session.documents,
+                aiClient: session.isOnline ? session.aiAPI : nil,
                 path: $path
             )
             .navigationDestination(for: DocumentsRoute.self) { route in
@@ -159,6 +254,7 @@ public struct DocumentsRootView: View {
                         folderId: folder.id,
                         title: folder.displayTitle,
                         repository: session.documents,
+                        aiClient: session.isOnline ? session.aiAPI : nil,
                         path: $path
                     )
                 case .document(let id, let title):
@@ -189,6 +285,7 @@ struct FolderContentsView: View {
     /// Folder currently under a drag, highlighted as the drop target.
     @State private var dropTargetId: String?
     @State private var movedCount = 0
+    @State private var swipeSelection = SwipeSelectionCoordinator()
     private let title: String
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 12)]
@@ -200,8 +297,14 @@ struct FolderContentsView: View {
         var id: String { rawValue }
     }
 
-    init(folderId: String, title: String, repository: DocumentsRepository, path: Binding<NavigationPath>) {
-        _viewModel = State(initialValue: FolderContentsViewModel(folderId: folderId, repository: repository))
+    init(
+        folderId: String,
+        title: String,
+        repository: DocumentsRepository,
+        aiClient: AiStreaming? = nil,
+        path: Binding<NavigationPath>
+    ) {
+        _viewModel = State(initialValue: FolderContentsViewModel(folderId: folderId, repository: repository, aiClient: aiClient))
         _path = path
         self.title = title
     }
@@ -211,11 +314,16 @@ struct FolderContentsView: View {
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(viewModel.items) { item in
                     NavigationLink(value: item.route) {
-                        ItemCard(item: item, isDropTarget: dropTargetId == item.id)
+                        ItemCard(item: item, isDropTarget: dropTargetId == item.id, isSelected: viewModel.isSelected(item.id))
                     }
                     .buttonStyle(.plain)
+                    // Slide a card sideways to select it, like the Compose notes list.
+                    .slideToSelect { viewModel.toggleSelection(item.id) }
+                    .accessibilityAction(named: viewModel.isSelected(item.id) ? "Unselect" : "Select") {
+                        viewModel.toggleSelection(item.id)
+                    }
                     .draggable(item.payload.rawValue) {
-                        ItemCard(item: item, isDropTarget: false)
+                        ItemCard(item: item, isDropTarget: false, isSelected: false)
                             .frame(width: 160)
                     }
                     .folderDropDestination(item) { payload, folder in
@@ -234,8 +342,41 @@ struct FolderContentsView: View {
                 }
             }
             .padding()
+            .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
+            .environment(\.swipeSelection, swipeSelection)
         }
         .background(WrColors.background)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if viewModel.hasSelection {
+                DocumentsSelectionMenu(
+                    count: viewModel.selectedIds.count,
+                    isFavorite: viewModel.selectionIsFavorite,
+                    showsSummary: viewModel.canSummarize,
+                    onCopy: { Task { await viewModel.copySelected() } },
+                    onFavorite: { Task { await viewModel.favoriteSelected() } },
+                    onSummary: { Task { await viewModel.summarizeSelected() } },
+                    onDelete: { Task { await viewModel.deleteSelected() } },
+                    onClose: { withAnimation(.snappy) { viewModel.clearSelection() } }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if viewModel.isSummarizing {
+                Label("Summarizing…", systemImage: "sparkles")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 16)
+                    .frame(height: 44)
+                    .background(.regularMaterial, in: Capsule())
+                    .padding(.bottom, 8)
+            }
+        }
+        .animation(.snappy, value: viewModel.hasSelection)
+        .alert(
+            "Could not summarize",
+            isPresented: Binding(get: { viewModel.summaryError != nil }, set: { if !$0 { viewModel.summaryError = nil } })
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.summaryError ?? "")
+        }
         .animation(.snappy, value: viewModel.items.map(\.id))
         .animation(.snappy, value: dropTargetId)
         .sensoryFeedback(.success, trigger: movedCount)
@@ -367,6 +508,13 @@ enum FolderItem: Identifiable {
         }
     }
 
+    var isFavorite: Bool {
+        switch self {
+        case .folder(let folder): folder.favorite
+        case .document(let document): document.isFavorite
+        }
+    }
+
     var route: DocumentsRoute {
         switch self {
         case .folder(let folder): .folder(folder)
@@ -379,6 +527,7 @@ enum FolderItem: Identifiable {
 struct ItemCard: View {
     let item: FolderItem
     let isDropTarget: Bool
+    var isSelected = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -417,13 +566,26 @@ struct ItemCard: View {
         .padding(14)
         .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
         .background(
-            isDropTarget ? WrColors.accent.opacity(0.15) : WrColors.surface,
+            isDropTarget || isSelected ? WrColors.accent.opacity(0.15) : WrColors.surface,
             in: RoundedRectangle(cornerRadius: 16)
         )
         .overlay {
             RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(isDropTarget ? WrColors.accent : WrColors.divider, lineWidth: isDropTarget ? 2 : 1)
+                .strokeBorder(
+                    isDropTarget || isSelected ? WrColors.accent : WrColors.divider,
+                    lineWidth: isDropTarget || isSelected ? 2 : 1
+                )
         }
+        .overlay(alignment: .topTrailing) {
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(WrColors.accent)
+                    .padding(8)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.snappy, value: isSelected)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .scaleEffect(isDropTarget ? 1.04 : 1)
         .contentShape(RoundedRectangle(cornerRadius: 16))
     }

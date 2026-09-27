@@ -15,6 +15,15 @@ public protocol DocumentsRepository: AnyObject {
     /// Stores the document as it is now in the editor.
     func save(_ document: WrDocument) async throws
     func deleteDocument(id: String) async throws
+
+    // Selection menu of the documents list (Compose `NotesSelectionMenu`).
+
+    /// Copies documents with new ids; folders are copied with what's inside them.
+    func duplicate(ids: [String]) async throws
+    /// Marks documents and folders as favorites, or removes them from the favorites.
+    func setFavorite(ids: [String], favorite: Bool) async throws
+    /// Deletes documents, and folders with everything inside them.
+    func deleteItems(ids: [String]) async throws
 }
 
 public enum MoveError: Error, Equatable {
@@ -86,9 +95,29 @@ public final class RemoteDocumentsRepository: DocumentsRepository {
     }
 
     public func deleteDocument(id: String) async throws {
-        struct Body: Encodable { let documentIds: [String] }
-        try await client.perform(.post, "\(base)/document/delete", body: Body(documentIds: [id]))
+        try await deleteDocuments(ids: [id])
     }
+
+    public func deleteDocuments(ids: [String]) async throws {
+        struct Body: Encodable { let documentIds: [String] }
+        try await client.perform(.post, "\(base)/document/delete", body: Body(documentIds: ids))
+    }
+
+    public func deleteFolder(id: String) async throws {
+        try await client.perform(.delete, "\(base)/folder/\(id)")
+    }
+
+    public func setFavorite(documentId: String, favorite: Bool) async throws {
+        struct Body: Encodable { let favorite: Bool }
+        try await client.perform(.post, "\(base)/document/\(documentId)/favorite", body: Body(favorite: favorite))
+    }
+
+    // Only the synced repository offers these; the remote one isn't used on its own.
+    public func duplicate(ids: [String]) async throws { throw APIError.notFound }
+    public func setFavorite(ids: [String], favorite: Bool) async throws {
+        for id in ids { try await setFavorite(documentId: id, favorite: favorite) }
+    }
+    public func deleteItems(ids: [String]) async throws { try await deleteDocuments(ids: ids) }
 
     public func save(_ document: WrDocument) async throws {
         struct Body: Encodable { let document: WrDocument }
