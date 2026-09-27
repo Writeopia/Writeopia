@@ -538,8 +538,10 @@ struct FolderContentsView: View {
     private var arrangedItems: some View {
         switch settings.arrangement {
         case .list:
-            LazyVStack(spacing: 8) {
-                ForEach(viewModel.items) { cell($0, style: .row) }
+            // Folders and documents in sections of their own, each in the order chosen.
+            LazyVStack(alignment: .leading, spacing: 8) {
+                listSection("Folders", items: viewModel.items.filter(\.isFolder))
+                listSection("Documents", items: viewModel.items.filter { !$0.isFolder })
             }
         case .grid:
             LazyVGrid(columns: columns, spacing: 12) {
@@ -552,6 +554,23 @@ struct FolderContentsView: View {
                         ForEach(column) { cell($0, style: .staggered) }
                     }
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func listSection(_ title: LocalizedStringKey, items: [FolderItem]) -> some View {
+        if !items.isEmpty {
+            Section {
+                ForEach(items) { cell($0, style: .row) }
+            } header: {
+                Text(title)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(WrColors.textLighter)
+                    .textCase(.uppercase)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 8)
+                    .accessibilityAddTraits(.isHeader)
             }
         }
     }
@@ -715,6 +734,10 @@ enum FolderItem: Identifiable {
         case .folder(let folder): Payload(kind: .folder, id: folder.id)
         case .document(let document): Payload(kind: .document, id: document.id)
         }
+    }
+
+    var isFolder: Bool {
+        if case .folder = self { true } else { false }
     }
 
     var isFavorite: Bool {

@@ -1363,6 +1363,16 @@
         }
       }
     },
+    "Folders" : {
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pastas"
+          }
+        }
+      }
+    },
     "Folders are deleted with everything inside them. This can't be undone." : {
       "extractionState" : "stale",
       "localizations" : {
