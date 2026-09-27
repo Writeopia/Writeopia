@@ -34,6 +34,21 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 
+private const val PREMIUM_REQUIRED = "Cloud AI requires a premium subscription"
+
+private fun isPremiumOrDebug(
+    userId: String?,
+    writeopiaDb: WriteopiaDbBackend?,
+    debugMode: Boolean
+): Boolean {
+    if (debugMode) return true
+    if (userId == null || writeopiaDb == null) return false
+
+    return writeopiaDb.userEntityQueries
+        .selectAccountTypeById(userId)
+        .executeAsOneOrNull() == AiConfig.ACCOUNT_TYPE_PREMIUM
+}
+
 fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend? = null) {
     // In production mode, database is required for premium/quota enforcement
     if (!debugMode && writeopiaDb == null) {
@@ -47,6 +62,12 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
 
     authenticate("auth-jwt", optional = debugMode) {
         get("/api/ai/status") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.getClaim("userId")?.asString()
+            if (!isPremiumOrDebug(userId, writeopiaDb, debugMode)) {
+                call.respond(HttpStatusCode.Forbidden, mapOf("error" to PREMIUM_REQUIRED))
+                return@get
+            }
+
             val available = genAiService.isAvailable()
             call.respond(
                 HttpStatusCode.OK,
@@ -64,6 +85,11 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
                     HttpStatusCode.Unauthorized,
                     mapOf("error" to "User not authenticated")
                 )
+                return@get
+            }
+
+            if (!isPremiumOrDebug(userId, writeopiaDb, debugMode)) {
+                call.respond(HttpStatusCode.Forbidden, mapOf("error" to PREMIUM_REQUIRED))
                 return@get
             }
 
