@@ -59,6 +59,17 @@ struct StoryStepDrawer: View {
             DraggableStep(step: step, position: draw.position, manager: manager) {
                 AiAnswerDrawer(step: step, manager: manager)
             }
+        case StoryType.image.number:
+            DraggableStep(step: step, position: draw.position, manager: manager) {
+                ImageDrawer(step: step, isUploading: manager.uploadingStepIds.contains(step.id))
+                    .contextMenu {
+                        if manager.isEditable {
+                            Button("Delete image", systemImage: "trash", role: .destructive) {
+                                manager.removeStep(stepId: step.id)
+                            }
+                        }
+                    }
+            }
         case StoryType.documentLink.number:
             DraggableStep(step: step, position: draw.position, manager: manager) {
                 DocumentLinkDrawer(step: step, manager: manager)

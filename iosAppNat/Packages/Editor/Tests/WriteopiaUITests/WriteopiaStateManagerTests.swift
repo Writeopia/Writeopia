@@ -48,11 +48,11 @@ private let sample = document([
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
             StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "img", type: .image, url: "https://x", position: 1),
+            StoryStep(id: "sheet", type: StoryType(name: "spreadsheet", number: 101), position: 1),
         ]))
 
-        #expect(!manager.toDraw.contains { $0.id == "img" })
-        #expect(manager.documentContent.map(\.id) == ["t", "img"])
+        #expect(!manager.toDraw.contains { $0.id == "sheet" })
+        #expect(manager.documentContent.map(\.id) == ["t", "sheet"])
     }
 }
 
@@ -235,5 +235,77 @@ private let sample = document([
         #expect(manager.selectedPositions == [1])
         manager.clearLineSelection()
         #expect(!manager.hasSelectedLines)
+    }
+}
+
+@Suite struct ImageStepTests {
+    private func manager() -> WriteopiaStateManager {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(document([
+            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
+            StoryStep(id: "a", type: .text, text: "Text", position: 1),
+            StoryStep(id: "e", type: .text, text: "", position: 2),
+        ]))
+        return manager
+    }
+
+    @Test func imageGoesAfterTheTitle() {
+        let manager = manager()
+        manager.onFocusChange(stepId: "t", hasFocus: true)
+
+        manager.addImage(path: "/tmp/a.jpg")
+
+        #expect(manager.currentStory.sortedStories.map(\.type.number) == [11, 2, 0, 0])
+    }
+
+    @Test func imageReplacesAnEmptyLine() {
+        let manager = manager()
+        manager.onFocusChange(stepId: "e", hasFocus: true)
+
+        manager.addImage(path: "/tmp/a.jpg")
+
+        #expect(manager.currentStory.sortedStories.map(\.type.number) == [11, 0, 2])
+        #expect(manager.currentStory.stories[2]?.path == "/tmp/a.jpg")
+    }
+
+    @Test func imageGoesAfterALineWithText() {
+        let manager = manager()
+        manager.onFocusChange(stepId: "a", hasFocus: true)
+
+        manager.addImage(path: "/tmp/a.jpg")
+
+        #expect(manager.currentStory.sortedStories.map(\.id)[1] == "a")
+        #expect(manager.currentStory.stories[2]?.type.number == StoryType.image.number)
+    }
+
+    @Test func withoutFocusTheImageGoesAtTheEnd() {
+        let manager = manager()
+
+        manager.addImage(path: "/tmp/a.jpg")
+
+        #expect(manager.currentStory.sortedStories.last?.type.number == StoryType.image.number)
+        #expect(manager.toDraw.contains { $0.storyStep.type.number == StoryType.image.number })
+    }
+
+    @Test func uploadSwapsThePathForTheUrl() throws {
+        let manager = manager()
+        let id = try #require(manager.addImage(path: "/tmp/a.jpg", uploading: true))
+        #expect(manager.uploadingStepIds.contains(id))
+
+        manager.imageUploadFinished(stepId: id, url: "https://cdn/x.jpg")
+
+        #expect(manager.step(withId: id)?.url == "https://cdn/x.jpg")
+        #expect(manager.step(withId: id)?.path == nil)
+        #expect(manager.uploadingStepIds.isEmpty)
+    }
+
+    @Test func failedUploadKeepsTheLocalImage() throws {
+        let manager = manager()
+        let id = try #require(manager.addImage(path: "/tmp/a.jpg", uploading: true))
+
+        manager.imageUploadFinished(stepId: id, url: nil)
+
+        #expect(manager.step(withId: id)?.path == "/tmp/a.jpg")
+        #expect(manager.uploadingStepIds.isEmpty)
     }
 }

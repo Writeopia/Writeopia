@@ -53,14 +53,15 @@ Open `iosAppNat.xcodeproj` and run the `iosAppNat` scheme. To point the app at a
 
 ## Editor
 
-Documents open in an editable editor. Supported step types: `TITLE`, `TEXT`, `CODE_BLOCK`, `CHECK_ITEM`, `UNORDERED_LIST_ITEM`, `DIVIDER`, `DOCUMENT_LINK`, `AI_ANSWER`, `LOADING`, `SPACE` and `ON_DRAG_SPACE`. Other types (images, spreadsheets...) are kept in the document but not drawn.
+Documents open in an editable editor. Supported step types: `TITLE`, `TEXT`, `CODE_BLOCK`, `IMAGE`, `CHECK_ITEM`, `UNORDERED_LIST_ITEM`, `DIVIDER`, `DOCUMENT_LINK`, `AI_ANSWER`, `LOADING`, `SPACE` and `ON_DRAG_SPACE`. Other types (spreadsheets, videos...) are kept in the document but not drawn.
 
 - Text is edited in place. Return splits a step (the title continues as a paragraph, lists and checklists continue as items, Return on an empty item leaves the list). Backspace at the start merges into the previous line, turns a list item into a paragraph, or removes a divider/link above.
 - Existing spans (bold, italic, underline, highlights, links) are drawn and follow the text as it's edited. Bold, italic, underline, highlights (yellow, green, red) and links can be applied to the selected text from the menu. Comments aren't supported.
 - Hold the grip on the left of a step and drop it on another step or space to reorder.
 - Slide a line sideways to select it (slide again to unselect), like the SDK's `SwipeBox`. Several lines can be selected. While lines are selected, the bottom menu becomes the selection menu of the SDK's `EditionScreen`: AI on the selected lines, bold/italic/underline, checkbox, list item, code block, Box/Card, Title/SubTitle/Header, link to a new page, copy (plain and rich text), cut, delete, and an "N selected ✕" chip that shows the count and clears the selection.
-- A bottom menu mirrors the Compose editor (AI, bold, italic, underline, highlight, link, drawing, image, spreadsheet, undo, redo). AI, the text formats and drawing work; image, spreadsheet, undo and redo are placeholders.
+- A bottom menu mirrors the Compose editor (AI, bold, italic, underline, highlight, link, drawing, image, undo, redo). Everything works except undo and redo, which are placeholders.
 - AI (open space only) opens a dialog to apply a command to the document or the line with the cursor: Prompt, Summary, Action Points, FAQ and Tags. The answer streams from `/api/ai/*` (Server-Sent Events) into an `AI_ANSWER` step, with a `LOADING` step until it starts.
+- **Image** opens the photo picker. The image is saved on the device as a JPEG (at most 2048 px) and added where the cursor is, like the SDK's `addImage`: after the title, in place of an empty line, or after the current line (at the end with no cursor). In the open space it's uploaded to `/api/media/upload` and the step switches from the local `path` to the returned `url`; if the upload fails it stays local. Long press an image to delete it.
 - **Drawing** opens a full screen canvas (pen, highlighter, eraser, 11 colors, 5 widths, undo, clear) like the Compose drawing feature. Saving adds a `DRAWING` step (type 100) at the end of the document with the strokes as JSON in its text, in the same format as Android. In the document the drawing is cropped to its strokes; tap it to edit, long press to delete.
 - The top right menu mirrors `NoteGlobalActionsMenu` of the Compose app:
   - **Lock document**: read-only mode (text, checkboxes, dragging, selection and the bottom menu are disabled); a lock shows next to the title.

@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import Testing
 import Drawing
 @testable import NoteEditor
@@ -361,5 +362,87 @@ final class CreatingRepository: DocumentsRepository {
         #expect(viewModel.writeopiaManager.currentStory.sortedStories.map { $0.text ?? "" } == ["Plan", "First idea", "Summary", "Second idea"])
         #expect(NoteEditorViewModel.commands(for: .selectedLines) == AiCommand.allCases)
         #expect(!AiTargetMode.pickable.contains(.selectedLines))
+    }
+}
+
+final class FakeUploader: ImageUploading {
+    var url: String? = "https://cdn.writeopia.io/img.jpg"
+    private(set) var uploads: [(Int, String, String)] = []
+
+    func uploadImage(_ data: Data, fileName: String, mimeType: String) async throws -> String {
+        uploads.append((data.count, fileName, mimeType))
+        guard let url else { throw APIError.unexpectedStatus(500) }
+        return url
+    }
+}
+
+private func pngData(width: CGFloat, height: CGFloat) -> Data {
+    UIGraphicsImageRenderer(size: CGSize(width: width, height: height)).pngData { context in
+        UIColor.systemPink.setFill()
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+    }
+}
+
+@Suite struct ImageFeatureTests {
+    private func viewModel(uploader: ImageUploading?) async -> NoteEditorViewModel {
+        let viewModel = NoteEditorViewModel(documentId: "d", repository: OneDocumentRepository(document), imageUploader: uploader)
+        await viewModel.loadDocument()
+        return viewModel
+    }
+
+    @Test func picturesBecomeJpegsNoLargerThan2048() throws {
+        let jpeg = try #require(ImageProcessing.jpeg(from: pngData(width: 4000, height: 1000)))
+        let image = try #require(UIImage(data: jpeg))
+
+        #expect(image.size == CGSize(width: 2048, height: 512))
+        #expect(jpeg.starts(with: [0xFF, 0xD8]))
+        #expect(ImageProcessing.jpeg(from: Data("not an image".utf8)) == nil)
+    }
+
+    @Test func openSpaceUploadsAndUsesTheUrl() async throws {
+        let uploader = FakeUploader()
+        let viewModel = await viewModel(uploader: uploader)
+
+        await viewModel.addImage(pngData(width: 100, height: 100))
+
+        let image = try #require(viewModel.writeopiaManager.currentStory.sortedStories.last)
+        #expect(image.type.number == StoryType.image.number)
+        #expect(image.url == "https://cdn.writeopia.io/img.jpg")
+        #expect(image.path == nil)
+        #expect(uploader.uploads.first?.2 == "image/jpeg")
+        #expect(uploader.uploads.first?.1.hasSuffix(".jpg") == true)
+    }
+
+    @Test func privateSpaceKeepsTheImageOnTheDevice() async throws {
+        let viewModel = await viewModel(uploader: nil)
+
+        await viewModel.addImage(pngData(width: 100, height: 100))
+
+        let image = try #require(viewModel.writeopiaManager.currentStory.sortedStories.last)
+        let path = try #require(image.path)
+        #expect(FileManager.default.fileExists(atPath: path))
+        #expect(image.url == nil)
+        #expect(viewModel.writeopiaManager.uploadingStepIds.isEmpty)
+    }
+
+    @Test func failedUploadFallsBackToTheLocalFile() async throws {
+        let uploader = FakeUploader()
+        uploader.url = nil
+        let viewModel = await viewModel(uploader: uploader)
+
+        await viewModel.addImage(pngData(width: 50, height: 50))
+
+        let image = try #require(viewModel.writeopiaManager.currentStory.sortedStories.last)
+        #expect(image.path != nil)
+        #expect(image.url == nil)
+    }
+
+    @Test func invalidDataShowsAnError() async {
+        let viewModel = await viewModel(uploader: nil)
+
+        await viewModel.addImage(Data("nope".utf8))
+
+        #expect(viewModel.imageError != nil)
+        #expect(viewModel.writeopiaManager.currentStory.stories.count == 3)
     }
 }

@@ -1,4 +1,5 @@
 #if canImport(UIKit)
+import PhotosUI
 import SwiftUI
 import Writeopia
 import WrModels
@@ -7,8 +8,7 @@ import WrData
 import WrDesign
 
 /// Menu under the editor, like `MobileInputScreen` of the Compose app when no text is
-/// selected. AI, the text formats and drawing work; image, spreadsheet, undo and redo are
-/// placeholders for now.
+/// selected. AI, the text formats, drawing and images work; undo and redo are placeholders.
 ///
 /// Drawn as a floating Liquid Glass capsule on iOS 26+, and as a material capsule before that.
 struct EditorBottomMenu: View {
@@ -17,7 +17,9 @@ struct EditorBottomMenu: View {
     let onAiClick: () -> Void
     let onLinkClick: () -> Void
     let onDrawingClick: () -> Void
+    let onImagePicked: (PhotosPickerItem) -> Void
     @State private var showsHighlightColors = false
+    @State private var pickedPhoto: PhotosPickerItem?
 
     var body: some View {
         VStack(spacing: 8) {
@@ -50,8 +52,17 @@ struct EditorBottomMenu: View {
                         .accessibilityIdentifier("editor.menu.link")
                     MenuButton(systemImage: "pencil.and.scribble", label: "Drawing", action: onDrawingClick)
                         .accessibilityIdentifier("editor.menu.drawing")
-                    MenuButton(systemImage: "photo", label: "Image")
-                    MenuButton(systemImage: "tablecells", label: "Spreadsheet")
+                    PhotosPicker(selection: $pickedPhoto, matching: .images, photoLibrary: .shared()) {
+                        MenuIcon(systemImage: "photo")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Image")
+                    .accessibilityIdentifier("editor.menu.image")
+                    .onChange(of: pickedPhoto) { _, item in
+                        guard let item else { return }
+                        onImagePicked(item)
+                        pickedPhoto = nil
+                    }
                     // No undo history yet, so they look disabled like in the Compose app.
                     MenuButton(systemImage: "arrow.uturn.backward", label: "Undo", isEnabled: false)
                     MenuButton(systemImage: "arrow.uturn.forward", label: "Redo", isEnabled: false)
@@ -283,6 +294,19 @@ private extension Span {
         case .highlightRed: "Red highlight"
         default: "Yellow highlight"
         }
+    }
+}
+
+/// The look of a menu button, for controls that aren't plain buttons (e.g. the photo picker).
+private struct MenuIcon: View {
+    let systemImage: String
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 17, weight: .medium))
+            .foregroundStyle(Color.primary)
+            .frame(width: 40, height: 40)
+            .contentShape(Circle())
     }
 }
 

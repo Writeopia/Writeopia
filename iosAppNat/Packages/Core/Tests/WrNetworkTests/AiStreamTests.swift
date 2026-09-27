@@ -100,3 +100,31 @@ final class PathTransport: HTTPTransport {
         ])
     }
 }
+
+final class UploadTransport: HTTPTransport {
+    private(set) var request: URLRequest?
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        self.request = request
+        return (Data(#"{"imageUrl":"https://cdn/x.jpg"}"#.utf8), HTTPURLResponse(url: request.url!, statusCode: 201, httpVersion: nil, headerFields: nil)!)
+    }
+}
+
+@Suite struct MediaAPITests {
+    @Test func uploadsTheImageAsMultipartForm() async throws {
+        let transport = UploadTransport()
+        let client = APIClient(transport: transport, tokenStore: InMemoryTokenStore(accessToken: "a"), baseURL: URL(string: "https://x.io")!)
+
+        let url = try await MediaAPI(client: client).uploadImage(Data([1, 2, 3]), fileName: "a.jpg", mimeType: "image/jpeg")
+
+        #expect(url == "https://cdn/x.jpg")
+        let request = try #require(transport.request)
+        #expect(request.url?.path() == "/api/media/upload")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer a")
+        let contentType = try #require(request.value(forHTTPHeaderField: "Content-Type"))
+        #expect(contentType.hasPrefix("multipart/form-data; boundary="))
+        let body = String(decoding: try #require(request.httpBody), as: UTF8.self)
+        #expect(body.contains(#"Content-Disposition: form-data; name="image"; filename="a.jpg""#))
+        #expect(body.contains("Content-Type: image/jpeg"))
+    }
+}

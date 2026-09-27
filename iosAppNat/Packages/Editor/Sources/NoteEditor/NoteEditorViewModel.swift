@@ -64,11 +64,13 @@ public final class NoteEditorViewModel {
     public private(set) var isPublishing = false
     public var publishError: String?
     public var linkError: String?
+    public var imageError: String?
 
     let documentId: String
     private let repository: DocumentsRepository
     @ObservationIgnored private let aiClient: AiStreaming?
     @ObservationIgnored private let publishing: DocumentPublishing?
+    @ObservationIgnored private let imageUploader: ImageUploading?
     @ObservationIgnored private let isPremium: Bool
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var aiTask: Task<Void, Never>?
@@ -82,6 +84,7 @@ public final class NoteEditorViewModel {
         repository: DocumentsRepository,
         aiClient: AiStreaming? = nil,
         publishing: DocumentPublishing? = nil,
+        imageUploader: ImageUploading? = nil,
         isPremium: Bool = false,
         defaults: UserDefaults = .standard,
         writeopiaManager: WriteopiaStateManager = WriteopiaStateManager()
@@ -90,6 +93,7 @@ public final class NoteEditorViewModel {
         self.repository = repository
         self.aiClient = aiClient
         self.publishing = publishing
+        self.imageUploader = imageUploader
         self.isPremium = isPremium
         self.defaults = defaults
         self.writeopiaManager = writeopiaManager
@@ -126,6 +130,37 @@ public final class NoteEditorViewModel {
         } catch {
             linkError = error.userMessage
         }
+    }
+
+    // MARK: - Images
+
+    /// Adds a picked image: it's saved on the device and shown right away, then uploaded in the
+    /// open space so other devices can see it, like `addImage` of the Compose app. When the
+    /// upload fails the image stays local.
+    public func addImage(_ data: Data) async {
+        guard writeopiaManager.isEditable else { return }
+
+        guard let jpeg = ImageProcessing.jpeg(from: data) else {
+            imageError = "This image can't be added."
+            return
+        }
+
+        let file: URL
+        do {
+            file = try ImageFiles.save(jpeg)
+        } catch {
+            imageError = "The image couldn't be saved on this device."
+            return
+        }
+
+        guard let stepId = writeopiaManager.addImage(
+            path: file.path(percentEncoded: false),
+            uploading: imageUploader != nil
+        ) else { return }
+
+        guard let imageUploader else { return }
+        let url = try? await imageUploader.uploadImage(jpeg, fileName: file.lastPathComponent, mimeType: "image/jpeg")
+        writeopiaManager.imageUploadFinished(stepId: stepId, url: url)
     }
 
     // MARK: - Drawing

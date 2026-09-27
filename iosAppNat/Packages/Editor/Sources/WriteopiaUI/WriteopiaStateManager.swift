@@ -323,6 +323,51 @@ public final class WriteopiaStateManager {
         changeCount += 1
     }
 
+    // MARK: - Images
+
+    /// Image steps whose upload is still running; their drawer shows a progress indicator.
+    public private(set) var uploadingStepIds: Set<String> = []
+
+    /// Adds an image where the cursor is, like `addImage` of the SDK: after the title, in place
+    /// of an empty line, after any other line, or at the end when nothing has the focus.
+    /// Returns the id of the image step.
+    @discardableResult
+    public func addImage(path: String?, url: String? = nil, uploading: Bool = false) -> String? {
+        guard isEditable else { return nil }
+        let image = StoryStep(type: .image, url: url, path: path, position: 0)
+
+        if let focus = currentStory.focus, let current = currentStory.stories[focus] {
+            if !current.isTitle, current.type.number == StoryType.text.number, (current.text ?? "").isEmpty {
+                var replaced = image
+                replaced.position = focus
+                currentStory.stories[focus] = replaced
+                currentStory.lastEdit = .whole
+            } else {
+                currentStory = writeopiaManager.addAtPosition(image, after: focus, state: currentStory)
+            }
+        } else {
+            currentStory = writeopiaManager.addAtPosition(image, after: lastPosition, state: currentStory)
+        }
+
+        currentStory.focus = nil
+        if uploading {
+            uploadingStepIds.insert(image.id)
+        }
+        changeCount += 1
+        return image.id
+    }
+
+    /// The upload of an image finished: it now points to `url` instead of the local file.
+    /// With a nil `url` (upload failed) the image keeps its local path, like the SDK.
+    public func imageUploadFinished(stepId: String, url: String?) {
+        uploadingStepIds.remove(stepId)
+        guard let url, var step = step(withId: stepId) else { return }
+        step.url = url
+        step.path = nil
+        currentStory = writeopiaManager.replaceStep(step, state: currentStory)
+        changeCount += 1
+    }
+
     /// Adds `step` at the end of the document, like new drawings in the SDK.
     public func addAtTheEnd(_ step: StoryStep) {
         guard isEditable else { return }

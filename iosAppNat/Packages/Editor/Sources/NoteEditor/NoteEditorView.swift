@@ -1,5 +1,6 @@
 #if canImport(UIKit)
 import Drawing
+import PhotosUI
 import SwiftUI
 import UIKit
 import Writeopia
@@ -30,6 +31,7 @@ public struct NoteEditorView: View {
         repository: DocumentsRepository,
         aiClient: AiStreaming? = nil,
         publishing: DocumentPublishing? = nil,
+        imageUploader: ImageUploading? = nil,
         isPremium: Bool = false,
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
@@ -38,6 +40,7 @@ public struct NoteEditorView: View {
             repository: repository,
             aiClient: aiClient,
             publishing: publishing,
+            imageUploader: imageUploader,
             isPremium: isPremium
         ))
         fallbackTitle = title
@@ -64,6 +67,17 @@ public struct NoteEditorView: View {
                 )
             },
         ]
+    }
+
+    private func addImage(_ item: PhotosPickerItem) {
+        Task {
+            do {
+                guard let data = try await item.loadTransferable(type: Data.self) else { return }
+                await viewModel.addImage(data)
+            } catch {
+                viewModel.imageError = "The image couldn't be loaded from the library."
+            }
+        }
     }
 
     /// Black ink on light backgrounds, white on dark ones.
@@ -116,7 +130,8 @@ public struct NoteEditorView: View {
                                 showsAi: viewModel.isAiAvailable,
                                 onAiClick: { showAiDialog = true },
                                 onLinkClick: linkClick,
-                                onDrawingClick: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) }
+                                onDrawingClick: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) },
+                                onImagePicked: addImage
                             )
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
@@ -187,6 +202,14 @@ public struct NoteEditorView: View {
             AiDialog(fixedMode: .selectedLines) { command, mode in
                 viewModel.runAi(command, mode: mode)
             }
+        }
+        .alert(
+            "Could not add the image",
+            isPresented: Binding(get: { viewModel.imageError != nil }, set: { if !$0 { viewModel.imageError = nil } })
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.imageError ?? "")
         }
         .alert(
             "Could not create the page",

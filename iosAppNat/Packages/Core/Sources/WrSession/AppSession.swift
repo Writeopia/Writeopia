@@ -80,6 +80,11 @@ public final class AppSession {
         return repository
     }
 
+    /// Image uploads; nil outside the open space, where images stay on the device.
+    public var imageUploader: ImageUploading? {
+        isOnline ? MediaAPI(client: client) : nil
+    }
+
     /// Publishing for documents of the current workspace; nil outside the open space.
     public var publishing: DocumentPublishing? {
         guard isOnline, let workspace, workspace.id != Workspace.localId else { return nil }

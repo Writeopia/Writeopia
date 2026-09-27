@@ -74,6 +74,17 @@ public final class APIClient {
         self.baseURL = baseURL
     }
 
+    /// Multipart form data with a single file field.
+    public static func multipartBody(field: String, fileName: String, mimeType: String, data: Data, boundary: String) -> Data {
+        var body = Data()
+        body.append(Data("--\(boundary)\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"\(field)\"; filename=\"\(fileName)\"\r\n".utf8))
+        body.append(Data("Content-Type: \(mimeType)\r\n\r\n".utf8))
+        body.append(data)
+        body.append(Data("\r\n--\(boundary)--\r\n".utf8))
+        return body
+    }
+
     public static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         return decoder
@@ -110,6 +121,27 @@ public final class APIClient {
         authenticated: Bool = true
     ) async throws {
         _ = try await send(method, path, query: [], body: body, authenticated: authenticated)
+    }
+
+    /// Sends a raw body (e.g. multipart form data) and returns the response body. An expired
+    /// session is refreshed once, like the JSON calls.
+    public func upload(_ path: String, body: Data, contentType: String) async throws -> Data {
+        func request() throws -> URLRequest {
+            var request = try makeRequest(.post, path, query: [], body: Optional<EmptyBody>.none, authenticated: true)
+            request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+            request.httpBody = body
+            return request
+        }
+
+        var (data, status) = try await execute(try request())
+        if status == 401 {
+            guard await refreshSession() else {
+                onSessionExpired?()
+                throw APIError.unauthorized
+            }
+            (data, status) = try await execute(try request())
+        }
+        return try validate(data, status: status)
     }
 
     /// Sends a request whose response is streamed line by line (Server-Sent Events). Like the

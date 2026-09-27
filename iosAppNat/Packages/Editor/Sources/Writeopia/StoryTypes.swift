@@ -14,6 +14,7 @@ public enum StoryTypes {
 
     /// Every type the editor draws. Other types are kept in the document but not shown.
     public static let supported: Set<Int> = textTypes.union([
+        StoryType.image.number,
         StoryType.divider.number,
         StoryType.documentLink.number,
         StoryType.loading.number,
