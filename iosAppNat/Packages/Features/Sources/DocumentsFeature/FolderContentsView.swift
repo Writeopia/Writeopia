@@ -24,15 +24,32 @@ final class FolderContentsViewModel {
     private(set) var isSummarizing = false
     var summaryError: String?
 
+    /// The folder shown, with its current title and icon; nil for the root.
+    private(set) var folder: Folder?
+    /// The folders from the root down to the parent of this one, for the breadcrumb.
+    private(set) var ancestors: [Folder] = []
+
     let folderId: String
-    private let repository: DocumentsRepository
+    let settings: FolderDisplaySettings
+    let repository: DocumentsRepository
     private let aiClient: AiStreaming?
 
-    init(folderId: String, repository: DocumentsRepository, aiClient: AiStreaming? = nil) {
+    init(
+        folderId: String,
+        folder: Folder? = nil,
+        repository: DocumentsRepository,
+        aiClient: AiStreaming? = nil,
+        settings: FolderDisplaySettings = FolderDisplaySettings(preferences: nil)
+    ) {
         self.folderId = folderId
+        // The folder that was opened, so its menu works before the stored copy is read.
+        self.folder = folder?.id == folderId ? folder : nil
         self.repository = repository
         self.aiClient = aiClient
+        self.settings = settings
     }
+
+    var isRoot: Bool { folderId == Folder.rootId }
 
     var hasSelection: Bool { !selectedIds.isEmpty }
     var canSummarize: Bool { aiClient != nil }
@@ -122,9 +139,9 @@ final class FolderContentsViewModel {
 
     var isEmpty: Bool { folders.isEmpty && documents.isEmpty }
 
-    /// Folders and documents shown together in one grid, folders first.
+    /// Folders and documents shown together, sorted as one list in the order chosen in the menu.
     var items: [FolderItem] {
-        folders.map(FolderItem.folder) + documents.map(FolderItem.document)
+        (folders.map(FolderItem.folder) + documents.map(FolderItem.document)).sorted(by: settings.order)
     }
 
     /// Shows what's on this device right away, then syncs the folder with the backend (open
@@ -155,6 +172,9 @@ final class FolderContentsViewModel {
             let contents = try await repository.folderContents(folderId: folderId)
             folders = contents.folders
             documents = contents.documents
+            if !isRoot {
+                setPath(try await repository.folderPath(to: folderId))
+            }
             errorMessage = nil
         } catch is CancellationError {
             return
@@ -211,6 +231,60 @@ final class FolderContentsViewModel {
         return false
     }
 
+    // MARK: - Edition menu of the folder
+
+    /// Renames the folder and changes its icon. An empty name keeps the current one.
+    func updateFolder(title: String, icon: IconInfo?) async {
+        guard var edited = folder else { return }
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { edited.title = trimmed }
+        edited.icon = icon
+
+        let previous = folder
+        folder = edited
+        do {
+            folder = try await repository.updateFolder(edited)
+        } catch {
+            folder = previous
+            actionError = error.userMessage
+        }
+    }
+
+    /// Moves this folder into `targetId`. Returns the folders from the root down to this one in
+    /// its new place, to rebuild the navigation, or nil when it couldn't be moved.
+    func moveFolder(to targetId: String) async -> [Folder]? {
+        guard let folder, targetId != folder.parentId else { return nil }
+        do {
+            try await repository.moveFolder(id: folder.id, toFolder: targetId)
+            let path = try await repository.folderPath(to: folder.id)
+            setPath(path)
+            return path
+        } catch let error as MoveError {
+            actionError = error.userMessage
+        } catch {
+            actionError = error.userMessage
+        }
+        return nil
+    }
+
+    /// Deletes this folder with everything inside it. Returns whether it was deleted.
+    func deleteFolder() async -> Bool {
+        guard !isRoot else { return false }
+        do {
+            try await repository.deleteItems(ids: [folderId])
+            return true
+        } catch {
+            actionError = error.userMessage
+            return false
+        }
+    }
+
+    private func setPath(_ path: [Folder]) {
+        guard let current = path.last, current.id == folderId else { return }
+        folder = current
+        ancestors = Array(path.dropLast())
+    }
+
     private func perform(_ operation: () async throws -> Void) async {
         do {
             try await operation()
@@ -234,46 +308,62 @@ public enum DocumentsRoute: Hashable {
 /// Documents tab: the folders and documents of the current workspace.
 public struct DocumentsRootView: View {
     @Environment(AppSession.self) private var session
-    @State private var path = NavigationPath()
 
     public init() {}
 
     public var body: some View {
+        DocumentsNavigation(session: session)
+            // A different workspace means a different tree: start again from its root.
+            .id(session.workspace?.id)
+    }
+}
+
+private struct DocumentsNavigation: View {
+    let session: AppSession
+    @State private var path = NavigationPath()
+    @State private var settings: FolderDisplaySettings
+
+    init(session: AppSession) {
+        self.session = session
+        _settings = State(initialValue: FolderDisplaySettings(preferences: session.preferences))
+    }
+
+    var body: some View {
+        let rootTitle = session.workspace?.name ?? String(localized: "Documents")
         NavigationStack(path: $path) {
-            FolderContentsView(
-                folderId: Folder.rootId,
-                title: session.workspace?.name ?? "Documents",
-                repository: session.documents,
-                aiClient: session.isOnline ? session.aiAPI : nil,
-                path: $path
-            )
-            .navigationDestination(for: DocumentsRoute.self) { route in
-                switch route {
-                case .folder(let folder):
-                    FolderContentsView(
-                        folderId: folder.id,
-                        title: folder.displayTitle,
-                        repository: session.documents,
-                        aiClient: session.isOnline ? session.aiAPI : nil,
-                        path: $path
-                    )
-                case .document(let id, let title):
-                    NoteEditorView(
-                        documentId: id,
-                        title: title,
-                        repository: session.documents,
-                        aiClient: session.isOnline ? session.aiAPI : nil,
-                        publishing: session.publishing,
-                        imageUploader: session.imageUploader,
-                        isPremium: session.user?.isPremium ?? false
-                    ) { link in
-                        path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
+            folderView(id: Folder.rootId, title: rootTitle, rootTitle: rootTitle)
+                .navigationDestination(for: DocumentsRoute.self) { route in
+                    switch route {
+                    case .folder(let folder):
+                        folderView(id: folder.id, folder: folder, title: folder.displayTitle, rootTitle: rootTitle)
+                    case .document(let id, let title):
+                        NoteEditorView(
+                            documentId: id,
+                            title: title,
+                            repository: session.documents,
+                            aiClient: session.isOnline ? session.aiAPI : nil,
+                            publishing: session.publishing,
+                            imageUploader: session.imageUploader,
+                            isPremium: session.user?.isPremium ?? false
+                        ) { link in
+                            path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
+                        }
                     }
                 }
-            }
         }
-        // A different workspace means a different tree: start again from its root.
-        .id(session.workspace?.id)
+    }
+
+    private func folderView(id: String, folder: Folder? = nil, title: String, rootTitle: String) -> FolderContentsView {
+        FolderContentsView(
+            folderId: id,
+            folder: folder,
+            title: title,
+            rootTitle: rootTitle,
+            repository: session.documents,
+            aiClient: session.isOnline ? session.aiAPI : nil,
+            settings: settings,
+            path: $path
+        )
     }
 }
 
@@ -286,7 +376,11 @@ struct FolderContentsView: View {
     @State private var dropTargetId: String?
     @State private var movedCount = 0
     @State private var swipeSelection = SwipeSelectionCoordinator()
+    @State private var folderSheet: FolderSheet?
+    @State private var confirmsFolderDeletion = false
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private let title: String
+    private let rootTitle: String
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 12)]
 
@@ -299,53 +393,46 @@ struct FolderContentsView: View {
 
     init(
         folderId: String,
+        folder: Folder? = nil,
         title: String,
+        rootTitle: String,
         repository: DocumentsRepository,
         aiClient: AiStreaming? = nil,
+        settings: FolderDisplaySettings,
         path: Binding<NavigationPath>
     ) {
-        _viewModel = State(initialValue: FolderContentsViewModel(folderId: folderId, repository: repository, aiClient: aiClient))
+        _viewModel = State(
+            initialValue: FolderContentsViewModel(folderId: folderId, folder: folder, repository: repository, aiClient: aiClient, settings: settings)
+        )
         _path = path
         self.title = title
+        self.rootTitle = rootTitle
     }
+
+    private var settings: FolderDisplaySettings { viewModel.settings }
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(viewModel.items) { item in
-                    NavigationLink(value: item.route) {
-                        ItemCard(item: item, isDropTarget: dropTargetId == item.id, isSelected: viewModel.isSelected(item.id))
-                    }
-                    .buttonStyle(.plain)
-                    // Slide a card sideways to select it, like the Compose notes list.
-                    .slideToSelect { viewModel.toggleSelection(item.id) }
-                    .accessibilityAction(named: viewModel.isSelected(item.id) ? "Unselect" : "Select") {
-                        viewModel.toggleSelection(item.id)
-                    }
-                    .draggable(item.payload.rawValue) {
-                        ItemCard(item: item, isDropTarget: false, isSelected: false)
-                            .frame(width: 160)
-                    }
-                    .folderDropDestination(item) { payload, folder in
-                        Task {
-                            if await viewModel.move(payload, into: folder) {
-                                movedCount += 1
-                            }
-                        }
-                    } isTargeted: { targeted in
-                        if targeted {
-                            dropTargetId = item.id
-                        } else if dropTargetId == item.id {
-                            dropTargetId = nil
-                        }
-                    }
-                }
+            // Inside the scroll view, not in a top inset: an inset hides the large title on iOS 26+.
+            if !viewModel.isRoot {
+                FolderBreadcrumb(
+                    rootTitle: rootTitle,
+                    ancestors: viewModel.ancestors,
+                    current: viewModel.folder?.displayTitle ?? title,
+                    onSelect: navigate(toAncestor:)
+                )
             }
-            .padding()
-            .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
-            .environment(\.swipeSelection, swipeSelection)
+            arrangedItems
+                .padding([.horizontal, .bottom])
+                .padding(.top, viewModel.isRoot ? 16 : 4)
+                .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
+                .environment(\.swipeSelection, swipeSelection)
         }
+        // On the scroll view only: applied to the whole screen, the sheets would inherit it and
+        // get a pull to refresh of their own.
+        .refreshable { await viewModel.load() }
         .background(WrColors.background)
+        .modifier(folderMenuPresentations)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if viewModel.hasSelection {
                 DocumentsSelectionMenu(
@@ -378,6 +465,7 @@ struct FolderContentsView: View {
             Text(viewModel.summaryError ?? "")
         }
         .animation(.snappy, value: viewModel.items.map(\.id))
+        .animation(.snappy, value: settings.arrangement)
         .animation(.snappy, value: dropTargetId)
         .sensoryFeedback(.success, trigger: movedCount)
         .overlay {
@@ -390,8 +478,11 @@ struct FolderContentsView: View {
                 retry: { Task { await viewModel.load() } }
             )
         }
-        .navigationTitle(title)
+        .navigationTitle(viewModel.folder?.displayTitle ?? title)
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                folderMenu
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 if viewModel.isSyncing {
                     ProgressView()
@@ -418,7 +509,6 @@ struct FolderContentsView: View {
             }
         }
         .task { await viewModel.load() }
-        .refreshable { await viewModel.load() }
         .alert(
             newItem?.rawValue ?? "",
             isPresented: Binding(get: { newItem != nil }, set: { if !$0 { newItem = nil } }),
@@ -439,6 +529,125 @@ struct FolderContentsView: View {
         } message: {
             Text(viewModel.actionError ?? "")
         }
+    }
+
+    // MARK: - Layouts
+
+    /// The items as a list, a grid or a staggered grid, like the arrangements of the Compose app.
+    @ViewBuilder
+    private var arrangedItems: some View {
+        switch settings.arrangement {
+        case .list:
+            LazyVStack(spacing: 8) {
+                ForEach(viewModel.items) { cell($0, style: .row) }
+            }
+        case .grid:
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(viewModel.items) { cell($0, style: .grid) }
+            }
+        case .staggeredGrid:
+            HStack(alignment: .top, spacing: 12) {
+                ForEach(Array(staggeredColumns.enumerated()), id: \.offset) { _, column in
+                    LazyVStack(spacing: 12) {
+                        ForEach(column) { cell($0, style: .staggered) }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Items spread over the columns of the staggered grid, each going to the shortest column so
+    /// they stay balanced.
+    private var staggeredColumns: [[FolderItem]] {
+        let count = horizontalSizeClass == .regular ? 3 : 2
+        var columns = Array(repeating: [FolderItem](), count: count)
+        var heights = Array(repeating: 0, count: count)
+        for item in viewModel.items {
+            let shortest = heights.indices.min { heights[$0] < heights[$1] } ?? 0
+            columns[shortest].append(item)
+            heights[shortest] += item.estimatedStaggeredHeight
+        }
+        return columns
+    }
+
+    private func cell(_ item: FolderItem, style: ItemCard.Style) -> some View {
+        NavigationLink(value: item.route) {
+            ItemCard(item: item, isDropTarget: dropTargetId == item.id, isSelected: viewModel.isSelected(item.id), style: style)
+        }
+        .buttonStyle(.plain)
+        // Slide a card sideways to select it, like the Compose notes list.
+        .slideToSelect { viewModel.toggleSelection(item.id) }
+        .accessibilityAction(named: viewModel.isSelected(item.id) ? "Unselect" : "Select") {
+            viewModel.toggleSelection(item.id)
+        }
+        .draggable(item.payload.rawValue) {
+            ItemCard(item: item, isDropTarget: false, isSelected: false)
+                .frame(width: 160)
+        }
+        .folderDropDestination(item) { payload, folder in
+            Task {
+                if await viewModel.move(payload, into: folder) {
+                    movedCount += 1
+                }
+            }
+        } isTargeted: { targeted in
+            if targeted {
+                dropTargetId = item.id
+            } else if dropTargetId == item.id {
+                dropTargetId = nil
+            }
+        }
+    }
+
+    // MARK: - Edition menu of the folder
+
+    /// Opens the bottom sheet with how the folder is shown and sorted and, inside a folder,
+    /// editing, moving and deleting it, like the edition menu of the Compose notes list.
+    private var folderMenu: some View {
+        Button {
+            folderSheet = .options
+        } label: {
+            Label("Folder options", systemImage: "ellipsis.circle")
+        }
+        .accessibilityIdentifier("documents.folderMenu")
+    }
+
+    private var folderMenuPresentations: FolderMenuPresentations {
+        FolderMenuPresentations(
+            isFolder: !viewModel.isRoot,
+            folderTitle: viewModel.folder?.displayTitle ?? title,
+            folder: viewModel.folder,
+            rootTitle: rootTitle,
+            settings: settings,
+            repository: viewModel.repository,
+            sheet: $folderSheet,
+            confirmsDeletion: $confirmsFolderDeletion,
+            onEdit: { title, icon in Task { await viewModel.updateFolder(title: title, icon: icon) } },
+            onMove: { targetId in
+                Task {
+                    if let newPath = await viewModel.moveFolder(to: targetId) {
+                        // The back button now goes through the folders it's in after the move.
+                        path = NavigationPath(newPath.map(DocumentsRoute.folder))
+                    }
+                }
+            },
+            onDelete: {
+                Task {
+                    if await viewModel.deleteFolder(), !path.isEmpty {
+                        path.removeLast()
+                    }
+                }
+            }
+        )
+    }
+
+    /// Goes back to a folder of the breadcrumb; nil is the root.
+    private func navigate(toAncestor folder: Folder?) {
+        guard let folder, let index = viewModel.ancestors.firstIndex(where: { $0.id == folder.id }) else {
+            path = NavigationPath()
+            return
+        }
+        path = NavigationPath(viewModel.ancestors.prefix(through: index).map(DocumentsRoute.folder))
     }
 
     private func present(_ item: NewItem) {
@@ -523,18 +732,59 @@ enum FolderItem: Identifiable {
     }
 }
 
-/// A folder or a document in the folder grid.
+/// A folder or a document in the folder grid, the staggered grid or the list.
 struct ItemCard: View {
+    enum Style {
+        case grid
+        case staggered
+        case row
+    }
+
     let item: FolderItem
     let isDropTarget: Bool
     var isSelected = false
+    var style: Style = .grid
 
     var body: some View {
+        Group {
+            if style == .row {
+                row
+            } else {
+                card
+            }
+        }
+        .background(
+            isDropTarget || isSelected ? WrColors.accent.opacity(0.15) : WrColors.surface,
+            in: RoundedRectangle(cornerRadius: cornerRadius)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .strokeBorder(
+                    isDropTarget || isSelected ? WrColors.accent : WrColors.divider,
+                    lineWidth: isDropTarget || isSelected ? 2 : 1
+                )
+        }
+        .overlay(alignment: style == .row ? .trailing : .topTrailing) {
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(WrColors.accent)
+                    .padding(style == .row ? 12 : 8)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.snappy, value: isSelected)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .scaleEffect(isDropTarget ? (style == .row ? 1.02 : 1.04) : 1)
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius))
+    }
+
+    private var cornerRadius: CGFloat { style == .row ? 12 : 16 }
+
+    private var card: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
-                Image(systemName: icon)
+                iconImage
                     .font(.title2)
-                    .foregroundStyle(isFolder ? WrColors.accent : WrColors.textLighter)
                 Spacer()
                 if isFavorite {
                     Image(systemName: "star.fill")
@@ -546,59 +796,75 @@ struct ItemCard: View {
             Text(title)
                 .font(.headline)
                 .foregroundStyle(WrColors.textLight)
-                .lineLimit(2)
+                .lineLimit(style == .staggered ? 4 : 2)
                 .multilineTextAlignment(.leading)
 
             if let preview, !preview.isEmpty {
                 Text(preview)
                     .font(.caption)
                     .foregroundStyle(WrColors.textLighter)
-                    .lineLimit(3)
+                    .lineLimit(style == .staggered ? 10 : 3)
                     .multilineTextAlignment(.leading)
             }
 
-            Spacer(minLength: 0)
+            if style == .grid {
+                Spacer(minLength: 0)
+            }
 
             footer
                 .font(.caption2)
                 .foregroundStyle(WrColors.textLighter)
         }
         .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
-        .background(
-            isDropTarget || isSelected ? WrColors.accent.opacity(0.15) : WrColors.surface,
-            in: RoundedRectangle(cornerRadius: 16)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(
-                    isDropTarget || isSelected ? WrColors.accent : WrColors.divider,
-                    lineWidth: isDropTarget || isSelected ? 2 : 1
-                )
-        }
-        .overlay(alignment: .topTrailing) {
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(WrColors.accent)
-                    .padding(8)
-                    .transition(.scale.combined(with: .opacity))
+        .frame(maxWidth: .infinity, minHeight: style == .grid ? 150 : nil, alignment: .topLeading)
+    }
+
+    private var row: some View {
+        HStack(spacing: 12) {
+            iconImage
+                .font(.title3)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(title)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(WrColors.textLight)
+                        .lineLimit(1)
+                    if isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.caption)
+                            .foregroundStyle(.yellow)
+                    }
+                }
+                if let preview, !preview.isEmpty {
+                    Text(preview)
+                        .font(.subheadline)
+                        .foregroundStyle(WrColors.textLighter)
+                        .lineLimit(1)
+                }
             }
+
+            Spacer(minLength: 8)
+
+            footer
+                .font(.caption)
+                .foregroundStyle(WrColors.textLighter)
+                .opacity(isSelected ? 0 : 1)
         }
-        .animation(.snappy, value: isSelected)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .scaleEffect(isDropTarget ? 1.04 : 1)
-        .contentShape(RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var isFolder: Bool {
-        if case .folder = item { true } else { false }
-    }
-
-    private var icon: String {
-        if isFolder {
-            isDropTarget ? "folder.fill.badge.plus" : "folder.fill"
-        } else {
-            "doc.text"
+    @ViewBuilder
+    private var iconImage: some View {
+        switch item {
+        case .folder(let folder):
+            FolderIconImage(icon: folder.icon, isDropTarget: isDropTarget)
+        case .document:
+            Image(systemName: "doc.text")
+                .foregroundStyle(WrColors.textLighter)
         }
     }
 
@@ -629,6 +895,61 @@ struct ItemCard: View {
             if document.lastUpdatedAt > 0 {
                 Text(document.lastUpdatedDate, format: .relative(presentation: .named))
             }
+        }
+    }
+}
+
+extension FolderItem {
+    var title: String {
+        switch self {
+        case .folder(let folder): folder.title
+        case .document(let document): document.title
+        }
+    }
+
+    /// Epoch milliseconds, the way documents keep their dates.
+    var createdAtMillis: Int64 {
+        switch self {
+        case .folder(let folder): folder.createdAt?.millis ?? 0
+        case .document(let document): document.createdAt
+        }
+    }
+
+    var lastUpdatedAtMillis: Int64 {
+        switch self {
+        case .folder(let folder): folder.lastUpdatedAt?.millis ?? 0
+        case .document(let document): document.lastUpdatedAt
+        }
+    }
+}
+
+extension [FolderItem] {
+    /// Folders and documents sorted together, like `sortedWithOrderBy` of the Compose app: the
+    /// newest first for dates, alphabetically for names. Ties keep a fixed order by id.
+    func sorted(by order: DocumentsOrder) -> [FolderItem] {
+        sorted { first, second in
+            switch order {
+            case .updated where first.lastUpdatedAtMillis != second.lastUpdatedAtMillis:
+                return first.lastUpdatedAtMillis > second.lastUpdatedAtMillis
+            case .created where first.createdAtMillis != second.createdAtMillis:
+                return first.createdAtMillis > second.createdAtMillis
+            case .name:
+                let comparison = first.title.localizedCaseInsensitiveCompare(second.title)
+                if comparison != .orderedSame { return comparison == .orderedAscending }
+            default:
+                break
+            }
+            return first.id < second.id
+        }
+    }
+}
+
+extension FolderItem {
+    /// Rough height of the card in the staggered grid, to balance its columns.
+    var estimatedStaggeredHeight: Int {
+        switch self {
+        case .folder: 100
+        case .document(let document): 100 + min(document.preview.count, 400) / 2
         }
     }
 }

@@ -163,6 +163,27 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
         try hardDeleteDocument(id: id)
     }
 
+    // MARK: - Edition menu
+
+    public func folder(id: String) async throws -> Folder? {
+        guard var folder = try storedFolder(id: id), !folder.deleted else { return nil }
+        folder.itemCount = (try? itemCount(of: folder.id)) ?? 0
+        return folder
+    }
+
+    /// Only the title and the icon are taken from `folder`; the rest is what's stored, so an edit
+    /// doesn't undo a move or a sync that happened meanwhile.
+    @discardableResult
+    public func updateFolder(_ folder: Folder) async throws -> Folder {
+        guard var stored = try storedFolder(id: folder.id), !stored.deleted else { throw APIError.notFound }
+        stored.title = folder.title
+        stored.icon = folder.icon
+        stored.lastUpdatedAt = Date()
+        try store(stored)
+        stored.itemCount = (try? itemCount(of: stored.id)) ?? 0
+        return stored
+    }
+
     // MARK: - Selection menu
 
     public func duplicate(ids: [String]) async throws {
