@@ -1,0 +1,7 @@
+CREATE TABLE commentEntity (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL,
+  document_id TEXT NOT NULL,
+  comment_position INTEGER NOT NULL,
+  text TEXT NOT NULL
+);

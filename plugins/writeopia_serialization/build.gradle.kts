@@ -87,6 +87,12 @@ kotlin {
                 implementation(libs.kotlinx.serialization.json)
             }
         }
+
+        val commonTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
     }
 }
 

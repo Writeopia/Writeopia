@@ -5,8 +5,40 @@ import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class SpanInfoTest {
+
+    @Test
+    fun `plus should preserve span identity`() {
+        val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(3, 10, Span.COMMENT, "conversation-1")
+
+        assertEquals(
+            SpanInfo.create(0, 10, Span.COMMENT, "conversation-1"),
+            first + second,
+        )
+    }
+
+    @Test
+    fun `plus should reject spans with different types`() {
+        val bold = SpanInfo.create(0, 5, Span.BOLD)
+        val italic = SpanInfo.create(3, 10, Span.ITALIC)
+
+        assertFailsWith<IllegalArgumentException> {
+            bold + italic
+        }
+    }
+
+    @Test
+    fun `plus should reject spans with different extras`() {
+        val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(3, 10, Span.COMMENT, "conversation-2")
+
+        assertFailsWith<IllegalArgumentException> {
+            first + second
+        }
+    }
 
     @Test
     fun `it should be possible to verify spans outside of each other`() {

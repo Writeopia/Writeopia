@@ -3,6 +3,7 @@ package io.writeopia.manager
 import io.writeopia.sdk.manager.SpansHandler
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
+import io.writeopia.sdk.models.story.StoryStep
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -84,6 +85,149 @@ class SpansHandlerTest {
         val newSpans = SpansHandler.toggleSpans(setOf(boldSpan), italicSpan)
 
         assertEquals(expected, newSpans)
+    }
+
+    @Test
+    fun `comment spans from different conversations should live together`() {
+        val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(2, 7, Span.COMMENT, "conversation-2")
+
+        val result = SpansHandler.toggleSpans(setOf(first), second)
+
+        assertEquals(setOf(first, second), result)
+    }
+
+    @Test
+    fun `removing one comment should not remove another conversation`() {
+        val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(0, 5, Span.COMMENT, "conversation-2")
+
+        val result = SpansHandler.toggleSpans(setOf(first, second), first)
+
+        assertEquals(setOf(second), result)
+    }
+
+    @Test
+    fun `splitting a comment span should preserve the conversation id`() {
+        val comment = SpanInfo.create(0, 10, Span.COMMENT, "conversation-1")
+        val selection = SpanInfo.create(2, 8, Span.COMMENT, "conversation-1")
+
+        val result = SpansHandler.toggleSpans(setOf(comment), selection)
+
+        assertEquals(
+            setOf(
+                SpanInfo.create(0, 2, Span.COMMENT, "conversation-1"),
+                SpanInfo.create(8, 10, Span.COMMENT, "conversation-1"),
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `intersecting comment spans with the same conversation should preserve identity`() {
+        val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(3, 10, Span.COMMENT, "conversation-1")
+
+        val result = SpansHandler.toggleSpans(setOf(first), second)
+
+        assertEquals(
+            setOf(SpanInfo.create(0, 10, Span.COMMENT, "conversation-1")),
+            result,
+        )
+    }
+
+    @Test
+    fun `bulk comment spans should preserve conversation identity`() {
+        val existing = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+        val stories = mapOf(
+            0.0 to StoryStep(
+                type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
+                text = "first",
+                spans = setOf(existing),
+            ),
+            1.0 to StoryStep(
+                type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
+                text = "second",
+            ),
+        )
+
+        val result = SpansHandler.toggleSpansForManyStories(
+            stories,
+            Span.COMMENT,
+            "conversation-2",
+        )
+
+        assertEquals(
+            setOf(
+                existing,
+                SpanInfo.create(0, 5, Span.COMMENT, "conversation-2"),
+            ),
+            result.getValue(0.0).spans,
+        )
+        assertEquals(
+            setOf(SpanInfo.create(0, 6, Span.COMMENT, "conversation-2")),
+            result.getValue(1.0).spans,
+        )
+    }
+
+    @Test
+    fun `bulk adding an existing comment identity should cover the full range`() {
+        val partial = SpanInfo.create(1, 3, Span.COMMENT, "conversation-1")
+        val stories = mapOf(
+            0.0 to StoryStep(
+                type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
+                text = "first",
+                spans = setOf(partial),
+            ),
+            1.0 to StoryStep(
+                type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
+                text = "second",
+            ),
+        )
+
+        val result = SpansHandler.toggleSpansForManyStories(
+            stories,
+            Span.COMMENT,
+            "conversation-1",
+        )
+
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")),
+            result.getValue(0.0).spans,
+        )
+        assertEquals(
+            setOf(SpanInfo.create(0, 6, Span.COMMENT, "conversation-1")),
+            result.getValue(1.0).spans,
+        )
+    }
+
+    @Test
+    fun `bulk removing one comment identity should preserve another`() {
+        val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+        val second = SpanInfo.create(0, 5, Span.COMMENT, "conversation-2")
+        val stories = mapOf(
+            0.0 to StoryStep(
+                type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
+                text = "first",
+                spans = setOf(first, second),
+            ),
+            1.0 to StoryStep(
+                type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
+                text = "second",
+                spans = setOf(
+                    SpanInfo.create(0, 6, Span.COMMENT, "conversation-2")
+                ),
+            ),
+        )
+
+        val result = SpansHandler.toggleSpansForManyStories(
+            stories,
+            Span.COMMENT,
+            "conversation-2",
+        )
+
+        assertEquals(setOf(first), result.getValue(0.0).spans)
+        assertTrue(result.getValue(1.0).spans.isEmpty())
     }
 
     @Test

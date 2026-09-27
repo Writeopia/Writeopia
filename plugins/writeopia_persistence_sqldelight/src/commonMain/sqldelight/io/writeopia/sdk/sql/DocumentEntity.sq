@@ -52,7 +52,7 @@ selectWithContentByIds:
 SELECT *
 FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
-WHERE documentEntity.id IN ? AND deleted = 0
+WHERE documentEntity.id IN ? AND documentEntity.workspace_id = ? AND deleted = 0
 ORDER BY position;
 
 selectWithContentByUserId:
@@ -116,6 +116,11 @@ selectIdsByParentId:
 SELECT id
 FROM documentEntity
 WHERE documentEntity.parent_document_id = ? AND deleted = 0;
+
+selectIdsByIdsAndWorkspace:
+SELECT id
+FROM documentEntity
+WHERE id IN ? AND workspace_id = ?;
 
 insert:
 INSERT INTO documentEntity(id, title, created_at, last_updated_at, last_synced_at, workspace_id, favorite, parent_document_id, icon, icon_tint, is_locked, deleted)

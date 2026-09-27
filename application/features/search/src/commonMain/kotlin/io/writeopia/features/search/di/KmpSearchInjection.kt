@@ -27,7 +27,8 @@ class KmpSearchInjection private constructor(
 
     private fun provideDocumentSqlDao() = DocumentSqlDao(
         writeopiaDb?.documentEntityQueries,
-        writeopiaDb?.storyStepEntityQueries
+        writeopiaDb?.storyStepEntityQueries,
+        writeopiaDb?.commentEntityQueries,
     )
 
     private fun provideSearchApi(): SearchApi =

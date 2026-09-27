@@ -2,7 +2,9 @@
 
 package io.writeopia.core.folders.sync
 
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
 import kotlin.time.ExperimentalTime
 
@@ -43,7 +45,62 @@ class DocumentMerger {
             backendDocument
         }
 
-        return baseDocument.copy(content = mergedContent)
+        val fallbackDocument = if (baseDocument === localDocument) backendDocument else localDocument
+        val commentConversations = mergeCommentConversations(
+            mergedContent = mergedContent,
+            primary = baseDocument.commentConversations,
+            fallback = fallbackDocument.commentConversations,
+        )
+        return baseDocument.copy(
+            content = mergedContent,
+            commentConversations = commentConversations,
+        )
+    }
+
+    private fun mergeCommentConversations(
+        mergedContent: Map<Double, StoryStep>,
+        primary: Map<String, List<Comment>>,
+        fallback: Map<String, List<Comment>>,
+    ): Map<String, List<Comment>> {
+        val referencedIds = mergedContent.values
+            .asSequence()
+            .flatMap { step -> step.referencedCommentConversationIds() }
+            .toSet()
+
+        return referencedIds.mapNotNull { conversationId ->
+            val primaryComments = primary[conversationId].orEmpty()
+            val fallbackComments = fallback[conversationId].orEmpty()
+            val primaryById = primaryComments.associateBy { comment -> comment.id }
+            val fallbackById = fallbackComments.associateBy { comment -> comment.id }
+            val commentIds = (primaryComments + fallbackComments)
+                .map { comment -> comment.id }
+                .distinct()
+
+            val mergedComments = commentIds.mapNotNull { commentId ->
+                val primaryComment = primaryById[commentId]
+                val fallbackComment = fallbackById[commentId]
+                when {
+                    primaryComment?.deleted == true -> primaryComment
+                    fallbackComment?.deleted == true -> fallbackComment
+                    primaryComment != null -> primaryComment
+                    else -> fallbackComment
+                }
+            }
+
+            mergedComments.takeIf { comments -> comments.isNotEmpty() }
+                ?.let { comments -> conversationId to comments }
+        }.toMap()
+    }
+
+    private fun StoryStep.referencedCommentConversationIds(): Sequence<String> = sequence {
+        spans.asSequence()
+            .filter { span -> span.span == Span.COMMENT }
+            .mapNotNull { span -> span.extra }
+            .forEach { conversationId -> yield(conversationId) }
+
+        steps.forEach { child ->
+            yieldAll(child.referencedCommentConversationIds())
+        }
     }
 
     private fun mergeContent(
