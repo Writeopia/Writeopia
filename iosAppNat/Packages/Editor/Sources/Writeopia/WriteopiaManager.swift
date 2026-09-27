@@ -75,6 +75,46 @@ public struct WriteopiaManager {
         }
     }
 
+    /// Whether the whole text of every step at `positions` has `span`. Empty steps are ignored.
+    public func isSpanOnSteps(_ span: Span, positions: [Double], state: StoryState) -> Bool {
+        let steps = positions.compactMap { state.stories[$0] }.filter { $0.isTextStep && !($0.text ?? "").isEmpty }
+        guard !steps.isEmpty else { return false }
+        return steps.allSatisfy { step in
+            SpansHandler.isFullyCovered(step.spans, span: span.rawValue, start: 0, end: step.text?.utf16.count ?? 0)
+        }
+    }
+
+    /// Toggles `span` on the whole text of the steps at `positions`, like the formatting buttons
+    /// of the SDK when lines are selected: if all of them have it, it's removed from all.
+    public func toggleSpanOnSteps(_ span: Span, positions: [Double], state: StoryState) -> StoryState {
+        let shouldRemove = isSpanOnSteps(span, positions: positions, state: state)
+        var newState = state
+
+        for position in positions {
+            guard var step = newState.stories[position], step.isTextStep else { continue }
+            let length = step.text?.utf16.count ?? 0
+            guard length > 0 else { continue }
+
+            if shouldRemove {
+                step.spans = SpansHandler.remove(span.rawValue, start: 0, end: length, from: step.spans)
+            } else {
+                if span.isHighlight {
+                    for other in Span.highlights where other != span {
+                        step.spans = SpansHandler.remove(other.rawValue, start: 0, end: length, from: step.spans)
+                    }
+                }
+                step.spans = SpansHandler.remove(span.rawValue, start: 0, end: length, from: step.spans) +
+                    [SpanInfo(start: 0, end: length, span: span.rawValue)]
+            }
+            newState.stories[position] = step
+        }
+
+        if newState != state {
+            newState.lastEdit = .whole
+        }
+        return newState
+    }
+
     /// Links `start..<end` of the step at `position` to `url`, or removes the link when `url` is nil.
     public func setLink(_ url: String?, at position: Double, start: Int, end: Int, state: StoryState) -> StoryState {
         updateSpans(at: position, start: start, end: end, state: state) { spans, start, end in

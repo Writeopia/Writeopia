@@ -89,6 +89,7 @@ struct DraggableStep<Content: View>: View {
             content
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .swipeToSelect(step, manager: manager)
     }
 
     private var showsGrip: Bool {

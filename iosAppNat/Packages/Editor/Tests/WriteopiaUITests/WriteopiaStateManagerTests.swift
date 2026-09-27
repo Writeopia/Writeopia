@@ -183,3 +183,57 @@ private let sample = document([
         #expect(manager.textSelection == nil)
     }
 }
+
+@Suite struct LineSelectionTests {
+    private func manager() -> WriteopiaStateManager {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(document([
+            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
+            StoryStep(id: "a", type: .text, text: "One", position: 1),
+            StoryStep(id: "b", type: .text, text: "Two", spans: [SpanInfo(start: 0, end: 3, span: "BOLD")], position: 2),
+            StoryStep(id: "c", type: .divider, position: 3),
+        ]))
+        return manager
+    }
+
+    @Test func slidingSelectsSeveralLinesButNotTheTitle() {
+        let manager = manager()
+
+        manager.toggleLineSelection(stepId: "a")
+        manager.toggleLineSelection(stepId: "b")
+        manager.toggleLineSelection(stepId: "t")
+
+        #expect(manager.selectedPositions == [1, 2])
+        manager.toggleLineSelection(stepId: "a")
+        #expect(manager.selectedPositions == [2])
+    }
+
+    @Test func spansApplyToAllSelectedLines() {
+        let manager = manager()
+        manager.onSelected(stepId: "a", isSelected: true)
+        manager.onSelected(stepId: "b", isSelected: true)
+        manager.onSelected(stepId: "c", isSelected: true)
+
+        // "Two" is already bold but "One" isn't, so bold is added to both.
+        #expect(!manager.isSpanActive(.bold))
+        manager.toggleSpan(.bold)
+        #expect(manager.currentStory.stories[1]?.spans == [SpanInfo(start: 0, end: 3, span: "BOLD")])
+        #expect(manager.currentStory.stories[2]?.spans == [SpanInfo(start: 0, end: 3, span: "BOLD")])
+        #expect(manager.isSpanActive(.bold))
+
+        manager.toggleSpan(.bold)
+        #expect(manager.currentStory.stories[1]?.spans.isEmpty == true)
+        #expect(manager.currentStory.stories[2]?.spans.isEmpty == true)
+    }
+
+    @Test func selectionFollowsTheStepsWhenTheyMove() {
+        let manager = manager()
+        manager.onSelected(stepId: "b", isSelected: true)
+
+        manager.moveRequest(payload: manager.dragPayload(for: manager.currentStory.stories[2]!), after: 0)
+
+        #expect(manager.selectedPositions == [1])
+        manager.clearLineSelection()
+        #expect(!manager.hasSelectedLines)
+    }
+}

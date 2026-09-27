@@ -26,6 +26,14 @@ struct EditorBottomMenu: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 2) {
+                    if manager.hasSelectedLines {
+                        SelectedLinesChip(count: manager.selectedPositions.count) {
+                            withAnimation(.snappy) { manager.clearLineSelection() }
+                        }
+                        Divider()
+                            .frame(height: 22)
+                            .padding(.horizontal, 4)
+                    }
                     if showsAi {
                         MenuButton(systemImage: "sparkles", label: "AI", tint: WrColors.accent, action: onAiClick)
                             .accessibilityIdentifier("editor.menu.ai")
@@ -67,6 +75,31 @@ struct EditorBottomMenu: View {
             manager.toggleSpan(span)
         }
         .accessibilityIdentifier("editor.menu.\(span.rawValue.lowercased())")
+    }
+}
+
+/// Shown while lines are selected by sliding them: how many, and a tap to unselect them all.
+private struct SelectedLinesChip: View {
+    let count: Int
+    let clear: () -> Void
+
+    var body: some View {
+        Button(action: clear) {
+            HStack(spacing: 6) {
+                Text("\(count) selected")
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.bold))
+            }
+            .foregroundStyle(WrColors.accent)
+            .padding(.horizontal, 12)
+            .frame(height: 32)
+            .background(WrColors.accent.opacity(0.15), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Unselect \(count) lines")
+        .accessibilityIdentifier("editor.menu.clearSelection")
     }
 }
 

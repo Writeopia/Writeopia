@@ -31,6 +31,8 @@ public final class WriteopiaStateManager {
     public private(set) var dragPosition: Double?
     public private(set) var isDragging = false
     public private(set) var focusRequest: FocusRequest?
+    /// Lines selected by sliding them sideways. Kept by id so they survive renumbering.
+    public private(set) var selectedStepIds: Set<String> = []
     /// Current selection of the focused text step. Drives the formatting buttons.
     public private(set) var textSelection: StepSelection?
     /// Increases on every change of the document, handy to observe edits.
@@ -112,8 +114,18 @@ public final class WriteopiaStateManager {
         }
     }
 
-    /// Toggles `span` on the selected text. Does nothing without a selection.
+    /// Toggles `span` on the selected lines when there are any, otherwise on the selected text.
     public func toggleSpan(_ span: Span) {
+        if !selectedPositions.isEmpty {
+            guard isEditable else { return }
+            let newState = writeopiaManager.toggleSpanOnSteps(span, positions: selectedPositions, state: currentStory)
+            if newState != currentStory {
+                currentStory = newState
+                changeCount += 1
+            }
+            return
+        }
+
         guard let selection = textSelection else { return }
         updateSelection(selection) { position, state in
             writeopiaManager.toggleSpan(span, at: position, start: selection.start, end: selection.end, state: state)
@@ -128,8 +140,12 @@ public final class WriteopiaStateManager {
         }
     }
 
-    /// Whether the whole selection already has `span`, to show its button as active.
+    /// Whether the selected lines, or else the selected text, already have `span`, to show its
+    /// button as active.
     public func isSpanActive(_ span: Span) -> Bool {
+        if !selectedPositions.isEmpty {
+            return writeopiaManager.isSpanOnSteps(span, positions: selectedPositions, state: currentStory)
+        }
         guard let selection = textSelection, !selection.isEmpty, let step = step(withId: selection.stepId) else {
             return false
         }
@@ -147,6 +163,40 @@ public final class WriteopiaStateManager {
         guard newState != currentStory else { return }
         currentStory = newState
         changeCount += 1
+    }
+
+    // MARK: - Line selection
+
+    public var hasSelectedLines: Bool { !selectedPositions.isEmpty }
+
+    /// Positions of the selected lines still in the document, in order.
+    public var selectedPositions: [Double] {
+        guard !selectedStepIds.isEmpty else { return [] }
+        return currentStory.sortedPositions.filter { position in
+            currentStory.stories[position].map { selectedStepIds.contains($0.id) } == true
+        }
+    }
+
+    public func isSelected(stepId: String) -> Bool {
+        selectedStepIds.contains(stepId)
+    }
+
+    /// Selects or unselects a line, like `onSelected` of the SDK. The title can't be selected.
+    public func onSelected(stepId: String, isSelected: Bool) {
+        guard isEditable, let step = step(withId: stepId), !step.isTitle else { return }
+        if isSelected {
+            selectedStepIds.insert(stepId)
+        } else {
+            selectedStepIds.remove(stepId)
+        }
+    }
+
+    public func toggleLineSelection(stepId: String) {
+        onSelected(stepId: stepId, isSelected: !isSelected(stepId: stepId))
+    }
+
+    public func clearLineSelection() {
+        selectedStepIds.removeAll()
     }
 
     public func onCheckedChange(stepId: String, checked: Bool) {
