@@ -1,43 +1,121 @@
 #if canImport(UIKit)
 import SwiftUI
+import Writeopia
+import WriteopiaUI
 import WrData
 import WrDesign
 
 /// Menu under the editor, like `MobileInputScreen` of the Compose app when no text is
-/// selected. Only the AI button works for now; the others are placeholders.
+/// selected. AI and the text formats work; drawing, image, spreadsheet, undo and redo are
+/// placeholders for now.
 ///
 /// Drawn as a floating Liquid Glass capsule on iOS 26+, and as a material capsule before that.
 struct EditorBottomMenu: View {
+    let manager: WriteopiaStateManager
     let showsAi: Bool
     let onAiClick: () -> Void
+    let onLinkClick: () -> Void
+    @State private var showsHighlightColors = false
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 2) {
-                if showsAi {
-                    MenuButton(systemImage: "sparkles", label: "AI", tint: WrColors.accent, action: onAiClick)
-                        .accessibilityIdentifier("editor.menu.ai")
-                    Divider()
-                        .frame(height: 22)
-                        .padding(.horizontal, 4)
-                }
-                MenuButton(systemImage: "bold", label: "Bold")
-                MenuButton(systemImage: "italic", label: "Italic")
-                MenuButton(systemImage: "underline", label: "Underline")
-                MenuButton(systemImage: "highlighter", label: "Highlight")
-                MenuButton(systemImage: "pencil.and.scribble", label: "Drawing")
-                MenuButton(systemImage: "photo", label: "Image")
-                MenuButton(systemImage: "tablecells", label: "Spreadsheet")
-                // No undo history yet, so they look disabled like in the Compose app.
-                MenuButton(systemImage: "arrow.uturn.backward", label: "Undo", isEnabled: false)
-                MenuButton(systemImage: "arrow.uturn.forward", label: "Redo", isEnabled: false)
+        VStack(spacing: 8) {
+            if showsHighlightColors {
+                HighlightColors(manager: manager)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            .padding(.horizontal, 10)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 2) {
+                    if showsAi {
+                        MenuButton(systemImage: "sparkles", label: "AI", tint: WrColors.accent, action: onAiClick)
+                            .accessibilityIdentifier("editor.menu.ai")
+                        Divider()
+                            .frame(height: 22)
+                            .padding(.horizontal, 4)
+                    }
+                    spanButton(.bold, systemImage: "bold", label: "Bold")
+                    spanButton(.italic, systemImage: "italic", label: "Italic")
+                    spanButton(.underline, systemImage: "underline", label: "Underline")
+                    MenuButton(
+                        systemImage: "highlighter",
+                        label: "Highlight",
+                        isActive: showsHighlightColors || manager.isHighlightActive
+                    ) {
+                        withAnimation(.snappy) { showsHighlightColors.toggle() }
+                    }
+                    .accessibilityIdentifier("editor.menu.highlight")
+                    MenuButton(systemImage: "link", label: "Link", isActive: manager.isSpanActive(.link), action: onLinkClick)
+                        .accessibilityIdentifier("editor.menu.link")
+                    MenuButton(systemImage: "pencil.and.scribble", label: "Drawing")
+                    MenuButton(systemImage: "photo", label: "Image")
+                    MenuButton(systemImage: "tablecells", label: "Spreadsheet")
+                    // No undo history yet, so they look disabled like in the Compose app.
+                    MenuButton(systemImage: "arrow.uturn.backward", label: "Undo", isEnabled: false)
+                    MenuButton(systemImage: "arrow.uturn.forward", label: "Redo", isEnabled: false)
+                }
+                .padding(.horizontal, 10)
+            }
+            .frame(height: 48)
+            .glassCapsule()
         }
-        .frame(height: 48)
-        .glassCapsule()
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
+    }
+
+    private func spanButton(_ span: Span, systemImage: String, label: String) -> some View {
+        MenuButton(systemImage: systemImage, label: label, isActive: manager.isSpanActive(span)) {
+            manager.toggleSpan(span)
+        }
+        .accessibilityIdentifier("editor.menu.\(span.rawValue.lowercased())")
+    }
+}
+
+/// The highlight colors, shown above the menu like the color row of the Compose app.
+private struct HighlightColors: View {
+    let manager: WriteopiaStateManager
+
+    var body: some View {
+        HStack(spacing: 14) {
+            ForEach(Span.highlights, id: \.self) { span in
+                let isActive = manager.isSpanActive(span)
+                Button {
+                    manager.toggleSpan(span)
+                } label: {
+                    Circle()
+                        .fill(span.color)
+                        .frame(width: 26, height: 26)
+                        .overlay {
+                            Circle().strokeBorder(Color.primary.opacity(isActive ? 0.8 : 0.15), lineWidth: isActive ? 2 : 1)
+                        }
+                        .padding(4)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(span.colorName)
+                .accessibilityAddTraits(isActive ? .isSelected : [])
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 44)
+        .glassCapsule()
+    }
+}
+
+private extension Span {
+    var color: Color {
+        switch self {
+        case .highlightGreen: .green.opacity(0.55)
+        case .highlightRed: .red.opacity(0.5)
+        default: .yellow.opacity(0.6)
+        }
+    }
+
+    var colorName: String {
+        switch self {
+        case .highlightGreen: "Green highlight"
+        case .highlightRed: "Red highlight"
+        default: "Yellow highlight"
+        }
     }
 }
 
@@ -46,19 +124,23 @@ private struct MenuButton: View {
     let label: String
     var tint: Color = .primary
     var isEnabled = true
+    var isActive = false
     var action: () -> Void = {}
 
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(isEnabled ? tint : Color.secondary.opacity(0.5))
+                .font(.system(size: 17, weight: isActive ? .bold : .medium))
+                .foregroundStyle(isActive ? WrColors.accent : isEnabled ? tint : Color.secondary.opacity(0.5))
                 .frame(width: 40, height: 40)
+                .background(Circle().fill(isActive ? WrColors.accent.opacity(0.15) : Color.clear))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
         .accessibilityLabel(label)
+        .accessibilityAddTraits(isActive ? .isSelected : [])
+        .animation(.easeInOut(duration: 0.15), value: isActive)
     }
 }
 

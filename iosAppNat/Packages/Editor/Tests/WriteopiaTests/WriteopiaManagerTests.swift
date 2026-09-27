@@ -207,3 +207,88 @@ private func texts(_ state: StoryState) -> [String] {
         #expect(again.focus == 2)
     }
 }
+
+@Suite struct ToggleSpanTests {
+    @Test func addsBoldToRange() {
+        let result = SpansHandler.toggle("BOLD", start: 2, end: 5, in: [])
+        #expect(result == [SpanInfo(start: 2, end: 5, span: "BOLD")])
+    }
+
+    @Test func mergesWithTouchingBoldSpans() {
+        let spans = [SpanInfo(start: 0, end: 3, span: "BOLD"), SpanInfo(start: 6, end: 8, span: "BOLD")]
+        let result = SpansHandler.toggle("BOLD", start: 3, end: 6, in: spans)
+        #expect(result == [SpanInfo(start: 0, end: 8, span: "BOLD")])
+    }
+
+    @Test func removesBoldWhenRangeIsAlreadyBold() {
+        let spans = [SpanInfo(start: 0, end: 10, span: "BOLD")]
+        let result = SpansHandler.toggle("BOLD", start: 3, end: 6, in: spans)
+        #expect(result == [SpanInfo(start: 0, end: 3, span: "BOLD"), SpanInfo(start: 6, end: 10, span: "BOLD")])
+    }
+
+    @Test func partiallyBoldRangeBecomesBold() {
+        let spans = [SpanInfo(start: 0, end: 4, span: "BOLD")]
+        let result = SpansHandler.toggle("BOLD", start: 2, end: 8, in: spans)
+        #expect(result == [SpanInfo(start: 0, end: 8, span: "BOLD")])
+    }
+
+    @Test func keepsOtherSpans() {
+        let italic = SpanInfo(start: 1, end: 4, span: "ITALIC")
+        let result = SpansHandler.toggle("BOLD", start: 1, end: 4, in: [italic])
+        #expect(result == [italic, SpanInfo(start: 1, end: 4, span: "BOLD")])
+    }
+
+    @Test func coverageAcrossAdjacentSpans() {
+        let spans = [SpanInfo(start: 0, end: 3, span: "BOLD"), SpanInfo(start: 3, end: 6, span: "BOLD")]
+        #expect(SpansHandler.isFullyCovered(spans, span: "BOLD", start: 1, end: 5))
+        #expect(!SpansHandler.isFullyCovered(spans, span: "BOLD", start: 1, end: 7))
+    }
+}
+
+@Suite struct SpanKindsTests {
+    let manager = WriteopiaManager()
+    let initial = StoryState(stories: ContentManager().renumber([
+        StoryStep(type: .title, text: "T", position: 0),
+        StoryStep(type: .text, text: "Hello world", position: 1),
+    ]))
+
+    @Test func italicAndUnderlineToggleLikeBold() {
+        var state = manager.toggleSpan(.italic, at: 1, start: 0, end: 5, state: initial)
+        state = manager.toggleSpan(.underline, at: 1, start: 6, end: 11, state: state)
+        #expect(state.stories[1]?.spans == [
+            SpanInfo(start: 0, end: 5, span: "ITALIC"),
+            SpanInfo(start: 6, end: 11, span: "UNDERLINE"),
+        ])
+
+        state = manager.toggleSpan(.italic, at: 1, start: 0, end: 5, state: state)
+        #expect(state.stories[1]?.spans == [SpanInfo(start: 6, end: 11, span: "UNDERLINE")])
+    }
+
+    @Test func highlightColorsReplaceEachOther() {
+        var state = manager.toggleSpan(.highlightYellow, at: 1, start: 0, end: 11, state: initial)
+        state = manager.toggleSpan(.highlightGreen, at: 1, start: 0, end: 5, state: state)
+
+        #expect(state.stories[1]?.spans.sorted { $0.start < $1.start } == [
+            SpanInfo(start: 0, end: 5, span: "HIGHLIGHT_GREEN"),
+            SpanInfo(start: 5, end: 11, span: "HIGHLIGHT"),
+        ])
+    }
+
+    @Test func linksAreSetReplacedAndRemoved() {
+        var state = manager.setLink("https://a.io", at: 1, start: 0, end: 5, state: initial)
+        #expect(state.stories[1]?.spans == [SpanInfo(start: 0, end: 5, span: "LINK", extra: "https://a.io")])
+
+        // A neighbouring link keeps its own URL instead of merging.
+        state = manager.setLink("https://b.io", at: 1, start: 5, end: 11, state: state)
+        #expect(state.stories[1]?.spans.count == 2)
+
+        state = manager.setLink(nil, at: 1, start: 0, end: 11, state: state)
+        #expect(state.stories[1]?.spans.isEmpty == true)
+    }
+
+    @Test func spansNeedASelection() {
+        #expect(manager.toggleSpan(.bold, at: 1, start: 3, end: 3, state: initial) == initial)
+        #expect(manager.toggleSpan(.bold, at: 0, start: 0, end: 50, state: initial).stories[0]?.spans
+            == [SpanInfo(start: 0, end: 1, span: "BOLD")])
+    }
+}

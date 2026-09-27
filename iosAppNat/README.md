@@ -54,9 +54,9 @@ Open `iosAppNat.xcodeproj` and run the `iosAppNat` scheme. To point the app at a
 Documents open in an editable editor. Supported step types: `TITLE`, `TEXT`, `CHECK_ITEM`, `UNORDERED_LIST_ITEM`, `DIVIDER`, `DOCUMENT_LINK`, `AI_ANSWER`, `LOADING`, `SPACE` and `ON_DRAG_SPACE`. Other types (images, spreadsheets...) are kept in the document but not drawn.
 
 - Text is edited in place. Return splits a step (the title continues as a paragraph, lists and checklists continue as items, Return on an empty item leaves the list). Backspace at the start merges into the previous line, turns a list item into a paragraph, or removes a divider/link above.
-- Existing spans (bold, italic, underline, highlights, links) are drawn and follow the text as it's edited. New spans can't be added.
+- Existing spans (bold, italic, underline, highlights, links) are drawn and follow the text as it's edited. Bold, italic, underline, highlights (yellow, green, red) and links can be applied to the selected text from the menu. Comments aren't supported.
 - Hold the grip on the left of a step and drop it on another step or space to reorder.
-- A bottom menu mirrors the Compose editor (AI, bold, italic, underline, highlight, drawing, image, spreadsheet, undo, redo). Only AI works for now; the rest are placeholders.
+- A bottom menu mirrors the Compose editor (AI, bold, italic, underline, highlight, link, drawing, image, spreadsheet, undo, redo). AI and the text formats work; drawing, image, spreadsheet, undo and redo are placeholders.
 - AI (open space only) opens a dialog to apply a command to the document or the line with the cursor: Prompt, Summary, Action Points, FAQ and Tags. The answer streams from `/api/ai/*` (Server-Sent Events) into an `AI_ANSWER` step, with a `LOADING` step until it starts.
 - Edits are kept in memory only: nothing is saved yet.
 

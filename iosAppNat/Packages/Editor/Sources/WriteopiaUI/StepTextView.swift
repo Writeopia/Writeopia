@@ -69,6 +69,8 @@ struct StepTextView: UIViewRepresentable {
     /// Updates the text view from the model without disturbing what the user is typing.
     fileprivate func render(_ step: StoryStep, in textView: StepUITextView, coordinator: Coordinator) {
         let text = step.text ?? ""
+        coordinator.isRendering = true
+        defer { coordinator.isRendering = false }
 
         // Skip only when both the model and the text on screen are already in sync. Comparing
         // the step alone isn't enough: on Return at the end of a line the model of this step
@@ -102,6 +104,9 @@ struct StepTextView: UIViewRepresentable {
         var parent: StepTextView
         var renderedStep: StoryStep?
         var appliedRequest: UUID?
+        /// Set while the model is written into the view, so those selection changes aren't
+        /// reported back as user selections during a SwiftUI update.
+        var isRendering = false
 
         init(parent: StepTextView) {
             self.parent = parent
@@ -129,6 +134,16 @@ struct StepTextView: UIViewRepresentable {
                let step = parent.manager.step(withId: parent.step.id) {
                 parent.render(step, in: textView, coordinator: self)
             }
+        }
+
+        func textViewDidChangeSelection(_ textView: UITextView) {
+            guard !isRendering, textView.isFirstResponder, textView.markedTextRange == nil else { return }
+            let range = textView.selectedRange
+            parent.manager.onSelectionChange(
+                stepId: parent.step.id,
+                start: range.location,
+                end: range.location + range.length
+            )
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {

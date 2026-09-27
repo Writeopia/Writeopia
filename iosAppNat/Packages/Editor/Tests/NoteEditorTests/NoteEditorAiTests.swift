@@ -116,3 +116,24 @@ private func waitForAi(_ viewModel: NoteEditorViewModel) async {
         #expect(viewModel.writeopiaManager.currentStory.stories.count == 3)
     }
 }
+
+@Suite struct LinkInputTests {
+    @Test func addsSchemeWhenMissing() {
+        #expect(NoteEditorView.normalizedURL(" writeopia.io ") == "https://writeopia.io")
+        #expect(NoteEditorView.normalizedURL("http://x.io") == "http://x.io")
+        #expect(NoteEditorView.normalizedURL("   ") == nil)
+    }
+
+    @Test func linkIsAppliedToTheSavedSelection() async {
+        let viewModel = await loadedViewModel(nil)
+        let manager = viewModel.writeopiaManager
+        manager.onSelectionChange(stepId: "a", start: 0, end: 5)
+        let selection = manager.textSelection!
+
+        // The alert takes the focus away, which clears the live selection.
+        manager.onFocusChange(stepId: "a", hasFocus: false)
+        manager.setLink("https://writeopia.io", for: selection)
+
+        #expect(manager.step(withId: "a")?.spans == [SpanInfo(start: 0, end: 5, span: "LINK", extra: "https://writeopia.io")])
+    }
+}

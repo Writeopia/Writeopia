@@ -60,6 +60,53 @@ public struct WriteopiaManager {
         contentManager.move(move, in: state.stories) ?? state
     }
 
+    /// Toggles an inline span on `start..<end` of the step at `position`. Highlights replace
+    /// each other: applying a color removes the other colors from the range.
+    public func toggleSpan(_ span: Span, at position: Double, start: Int, end: Int, state: StoryState) -> StoryState {
+        updateSpans(at: position, start: start, end: end, state: state) { spans, start, end in
+            var spans = spans
+            let isAdding = !SpansHandler.isFullyCovered(spans, span: span.rawValue, start: start, end: end)
+            if span.isHighlight, isAdding {
+                for other in Span.highlights where other != span {
+                    spans = SpansHandler.remove(other.rawValue, start: start, end: end, from: spans)
+                }
+            }
+            return SpansHandler.toggle(span.rawValue, start: start, end: end, in: spans)
+        }
+    }
+
+    /// Links `start..<end` of the step at `position` to `url`, or removes the link when `url` is nil.
+    public func setLink(_ url: String?, at position: Double, start: Int, end: Int, state: StoryState) -> StoryState {
+        updateSpans(at: position, start: start, end: end, state: state) { spans, start, end in
+            if let url {
+                SpansHandler.setLink(url, start: start, end: end, in: spans)
+            } else {
+                SpansHandler.remove(Span.link.rawValue, start: start, end: end, from: spans)
+            }
+        }
+    }
+
+    private func updateSpans(
+        at position: Double,
+        start: Int,
+        end: Int,
+        state: StoryState,
+        change: ([SpanInfo], Int, Int) -> [SpanInfo]
+    ) -> StoryState {
+        guard var step = state.stories[position], step.isTextStep else { return state }
+        let length = step.text?.utf16.count ?? 0
+        let clampedStart = max(0, min(start, length))
+        let clampedEnd = max(clampedStart, min(end, length))
+        guard clampedStart < clampedEnd else { return state }
+
+        step.spans = change(step.spans, clampedStart, clampedEnd)
+
+        var newState = state
+        newState.stories[position] = step
+        newState.lastEdit = .lineEdition(position: position, storyStep: step)
+        return newState
+    }
+
     public func checkItem(at position: Double, checked: Bool, state: StoryState) -> StoryState {
         guard var step = state.stories[position] else { return state }
         step.checked = checked

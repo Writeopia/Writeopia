@@ -145,3 +145,41 @@ private let sample = document([
         #expect(manager.currentStory.stories[1]?.text == "Hello")
     }
 }
+
+@Suite struct BoldTests {
+    @Test func boldTogglesOnTheSelection() {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(sample)
+
+        manager.onSelectionChange(stepId: "a", start: 1, end: 4)
+        #expect(!manager.isSpanActive(.bold))
+
+        manager.toggleSpan(.bold)
+        #expect(manager.currentStory.stories[1]?.spans == [SpanInfo(start: 1, end: 4, span: "BOLD")])
+        #expect(manager.isSpanActive(.bold))
+
+        manager.toggleSpan(.bold)
+        #expect(manager.currentStory.stories[1]?.spans.isEmpty == true)
+    }
+
+    @Test func boldWithoutSelectionDoesNothing() {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(sample)
+
+        manager.onSelectionChange(stepId: "a", start: 2, end: 2)
+        manager.toggleSpan(.bold)
+
+        #expect(manager.currentStory.stories[1]?.spans.isEmpty == true)
+    }
+
+    @Test func selectionIsClearedWhenTheStepLosesFocus() {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(sample)
+        manager.onFocusChange(stepId: "a", hasFocus: true)
+        manager.onSelectionChange(stepId: "a", start: 0, end: 5)
+
+        manager.onFocusChange(stepId: "a", hasFocus: false)
+
+        #expect(manager.textSelection == nil)
+    }
+}

@@ -10,6 +10,15 @@ public struct FocusRequest: Equatable {
     public let cursor: Int
 }
 
+/// Text selected (or the cursor, when `start == end`) inside a step. Offsets are UTF-16.
+public struct StepSelection: Equatable {
+    public let stepId: String
+    public let start: Int
+    public let end: Int
+
+    public var isEmpty: Bool { start == end }
+}
+
 /// Holds the document being edited and turns UI events into `WriteopiaManager` calls.
 /// Mirrors `WriteopiaStateManager` of the Kotlin SDK.
 @Observable
@@ -22,6 +31,8 @@ public final class WriteopiaStateManager {
     public private(set) var dragPosition: Double?
     public private(set) var isDragging = false
     public private(set) var focusRequest: FocusRequest?
+    /// Current selection of the focused text step. Drives the formatting buttons.
+    public private(set) var textSelection: StepSelection?
     /// Increases on every change of the document, handy to observe edits.
     public private(set) var changeCount = 0
 
@@ -88,7 +99,54 @@ public final class WriteopiaStateManager {
             currentStory.focus = position
         } else if currentStory.focus == position {
             currentStory.focus = nil
+            if textSelection?.stepId == stepId {
+                textSelection = nil
+            }
         }
+    }
+
+    public func onSelectionChange(stepId: String, start: Int, end: Int) {
+        let selection = StepSelection(stepId: stepId, start: min(start, end), end: max(start, end))
+        if textSelection != selection {
+            textSelection = selection
+        }
+    }
+
+    /// Toggles `span` on the selected text. Does nothing without a selection.
+    public func toggleSpan(_ span: Span) {
+        guard let selection = textSelection else { return }
+        updateSelection(selection) { position, state in
+            writeopiaManager.toggleSpan(span, at: position, start: selection.start, end: selection.end, state: state)
+        }
+    }
+
+    /// Links `selection` to `url`, or removes its link when `url` is nil. The selection is passed
+    /// in because asking for the URL takes the focus away from the text.
+    public func setLink(_ url: String?, for selection: StepSelection) {
+        updateSelection(selection) { position, state in
+            writeopiaManager.setLink(url, at: position, start: selection.start, end: selection.end, state: state)
+        }
+    }
+
+    /// Whether the whole selection already has `span`, to show its button as active.
+    public func isSpanActive(_ span: Span) -> Bool {
+        guard let selection = textSelection, !selection.isEmpty, let step = step(withId: selection.stepId) else {
+            return false
+        }
+        return SpansHandler.isFullyCovered(step.spans, span: span.rawValue, start: selection.start, end: selection.end)
+    }
+
+    /// Whether any highlight color covers the whole selection.
+    public var isHighlightActive: Bool {
+        Span.highlights.contains(where: isSpanActive)
+    }
+
+    private func updateSelection(_ selection: StepSelection, change: (Double, StoryState) -> StoryState) {
+        guard isEditable, !selection.isEmpty, let (position, _) = find(selection.stepId) else { return }
+        let newState = change(position, currentStory)
+        guard newState != currentStory else { return }
+        currentStory = newState
+        changeCount += 1
     }
 
     public func onCheckedChange(stepId: String, checked: Bool) {
