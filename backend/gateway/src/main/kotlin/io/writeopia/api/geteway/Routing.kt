@@ -9,6 +9,7 @@ import io.writeopia.api.ai.routing.localAiConfigRoute
 import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.cookieAuthRoute
+import io.writeopia.api.core.auth.routing.emailRoute
 import io.writeopia.api.core.auth.routing.passwordResetRoute
 import io.writeopia.api.core.workspaces.routing.workspaceRoute
 import io.writeopia.api.core.workspaces.service.WorkspaceService
@@ -67,6 +68,8 @@ fun Application.configureRouting(
                     )
                 }
             )
+
+            emailRoute(writeopiaDb)
 
             passwordResetRoute(writeopiaDb)
 
