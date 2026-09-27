@@ -33,6 +33,7 @@ fun Span.toSpanStyle(isDarkTheme: Boolean): SpanStyle =
 
         Span.NONE -> SpanStyle()
         Span.LINK -> SpanStyle()
+        Span.COMMENT -> SpanStyle()
     }
 
 fun Span.toSelectionMetadata(): SelectionMetadata? =
@@ -46,5 +47,6 @@ fun Span.toSelectionMetadata(): SelectionMetadata? =
         Span.HIGHLIGHT_GREEN,
         Span.HIGHLIGHT_RED,
         Span.LINK,
+        Span.COMMENT,
         Span.NONE -> null
     }

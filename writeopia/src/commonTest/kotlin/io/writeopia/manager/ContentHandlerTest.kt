@@ -6,6 +6,8 @@ import io.writeopia.sdk.models.command.CommandFactory
 import io.writeopia.sdk.models.command.CommandInfo
 import io.writeopia.sdk.models.command.CommandTrigger
 import io.writeopia.sdk.models.command.TypeInfo
+import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
@@ -83,6 +85,219 @@ class ContentHandlerTest {
         assertEquals("line2", sortedStories[1].value.text)
         assertEquals("line3", sortedStories[2].value.text)
         assertEquals("line4", sortedStories[3].value.text)
+    }
+
+    @Test
+    fun `line break should preserve regular formatting spans`() {
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val storyStep = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "bold1\nbold2",
+            spans = setOf(
+                SpanInfo.create(0, 11, Span.BOLD)
+            )
+        )
+
+        val (_, newState) = contentHandler.onLineBreak(
+            mapOf(0.0 to storyStep),
+            Action.LineBreak(storyStep, 0.0)
+        )
+
+        val sortedStories = newState.stories.entries.sortedBy { it.key }
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.BOLD)),
+            sortedStories[0].value.spans,
+        )
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.BOLD)),
+            sortedStories[1].value.spans,
+        )
+    }
+
+    @Test
+    fun `line break should preserve link extra on both lines`() {
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val url = "https://writeopia.io"
+        val storyStep = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "link1\nlink2",
+            spans = setOf(
+                SpanInfo.create(0, 11, Span.LINK, url)
+            )
+        )
+
+        val (_, newState) = contentHandler.onLineBreak(
+            mapOf(0.0 to storyStep),
+            Action.LineBreak(storyStep, 0.0)
+        )
+
+        val sortedStories = newState.stories.entries.sortedBy { it.key }
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.LINK, url)),
+            sortedStories[0].value.spans,
+        )
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.LINK, url)),
+            sortedStories[1].value.spans,
+        )
+    }
+
+    @Test
+    fun `line break should split comment span and preserve conversation id`() {
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val conversationId = "conversation-1"
+        val storyStep = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "line1\nline2",
+            spans = setOf(
+                SpanInfo.create(0, 11, Span.COMMENT, conversationId)
+            )
+        )
+
+        val (_, newState) = contentHandler.onLineBreak(
+            mapOf(0.0 to storyStep),
+            Action.LineBreak(storyStep, 0.0)
+        )
+
+        val sortedStories = newState.stories.entries.sortedBy { it.key }
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.COMMENT, conversationId)),
+            sortedStories[0].value.spans,
+        )
+        assertEquals(
+            setOf(SpanInfo.create(0, 5, Span.COMMENT, conversationId)),
+            sortedStories[1].value.spans,
+        )
+    }
+
+    @Test
+    fun `line break should split a partially covered comment range`() {
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val conversationId = "conversation-1"
+        val storyStep = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "hello\nworld",
+            spans = setOf(
+                SpanInfo.create(2, 9, Span.COMMENT, conversationId)
+            )
+        )
+
+        val (_, newState) = contentHandler.onLineBreak(
+            mapOf(0.0 to storyStep),
+            Action.LineBreak(storyStep, 0.0)
+        )
+
+        val sortedStories = newState.stories.entries.sortedBy { it.key }
+        assertEquals(
+            setOf(SpanInfo.create(2, 5, Span.COMMENT, conversationId)),
+            sortedStories[0].value.spans,
+        )
+        assertEquals(
+            setOf(SpanInfo.create(0, 3, Span.COMMENT, conversationId)),
+            sortedStories[1].value.spans,
+        )
+    }
+
+    @Test
+    fun `multiple line breaks should keep comment identity on every covered line`() {
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val conversationId = "conversation-1"
+        val storyStep = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "one\ntwo\nthree",
+            spans = setOf(
+                SpanInfo.create(0, 13, Span.COMMENT, conversationId)
+            )
+        )
+
+        val (_, newState) = contentHandler.onLineBreak(
+            mapOf(0.0 to storyStep),
+            Action.LineBreak(storyStep, 0.0)
+        )
+
+        val spans = newState.stories.entries
+            .sortedBy { it.key }
+            .map { it.value.spans.single() }
+
+        assertEquals(
+            listOf(
+                SpanInfo.create(0, 3, Span.COMMENT, conversationId),
+                SpanInfo.create(0, 3, Span.COMMENT, conversationId),
+                SpanInfo.create(0, 5, Span.COMMENT, conversationId),
+            ),
+            spans,
+        )
+    }
+
+    @Test
+    fun `erasing a line should preserve adjacent parts of the same comment`() {
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val conversationId = "conversation-1"
+        val first = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "hello",
+            spans = setOf(
+                SpanInfo.create(0, 5, Span.COMMENT, conversationId)
+            ),
+            nextPosition = 1.0,
+        )
+        val second = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "world",
+            spans = setOf(
+                SpanInfo.create(0, 5, Span.COMMENT, conversationId)
+            ),
+            previousPosition = 0.0,
+        )
+
+        val newState = contentHandler.eraseStory(
+            Action.EraseStory(second, 1.0),
+            mapOf(0.0 to first, 1.0 to second),
+        )
+
+        assertEquals(
+            setOf(
+                SpanInfo.create(0, 5, Span.COMMENT, conversationId),
+                SpanInfo.create(5, 10, Span.COMMENT, conversationId),
+            ),
+            newState.stories.getValue(0.0).spans,
+        )
+    }
+
+    @Test
+    fun `erasing a line should move its comment spans into the merged text`() {
+        val contentHandler = ContentHandler(stepsNormalizer = normalizer())
+        val first = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "hello",
+            spans = setOf(
+                SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
+            ),
+            nextPosition = 1.0,
+        )
+        val second = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = "world",
+            spans = setOf(
+                SpanInfo.create(0, 5, Span.COMMENT, "conversation-2")
+            ),
+            previousPosition = 0.0,
+        )
+
+        val newState = contentHandler.eraseStory(
+            Action.EraseStory(second, 1.0),
+            mapOf(0.0 to first, 1.0 to second),
+        )
+
+        val merged = newState.stories.getValue(0.0)
+        assertEquals("helloworld", merged.text)
+        assertEquals(
+            setOf(
+                SpanInfo.create(0, 5, Span.COMMENT, "conversation-1"),
+                SpanInfo.create(5, 10, Span.COMMENT, "conversation-2"),
+            ),
+            merged.spans,
+        )
     }
 
     @Test

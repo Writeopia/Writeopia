@@ -42,12 +42,15 @@ class DocumentLoadUseCase(
 
         // Step 2: Fetch from backend
         val backendDocument = fetchFromBackend(documentId, workspaceId) ?: return
+        if (backendDocument.id != documentId || backendDocument.workspaceId != workspaceId) return
 
         // Step 3: Merge documents
         val mergedDocument = documentMerger.merge(localDocument, backendDocument) ?: return
 
         // Step 4: Check if merge resulted in changes
-        val hasChanges = localDocument == null || mergedDocument.content != localDocument.content
+        val hasChanges = localDocument == null ||
+            mergedDocument.content != localDocument.content ||
+            mergedDocument.commentConversations != localDocument.commentConversations
 
         if (hasChanges) {
             // Step 5: Save merged result to database

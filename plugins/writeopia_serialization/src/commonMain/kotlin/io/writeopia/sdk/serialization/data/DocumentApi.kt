@@ -20,5 +20,6 @@ data class DocumentApi(
     val isLocked: Boolean = false,
     val icon: IconApi? = null,
     val deleted: Boolean = false,
-    val published: Boolean = false
+    val published: Boolean = false,
+    val commentConversations: List<CommentConversationApi> = emptyList(),
 )

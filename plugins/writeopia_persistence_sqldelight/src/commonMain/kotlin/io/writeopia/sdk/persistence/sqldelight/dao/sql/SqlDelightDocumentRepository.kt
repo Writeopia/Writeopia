@@ -106,7 +106,7 @@ class SqlDelightDocumentRepository(
         orderBy: String,
         workspaceId: String
     ): List<Document> =
-        documentSqlDao.loadDocumentWithContentByIds(ids)
+        documentSqlDao.loadDocumentWithContentByIds(ids, workspaceId)
 
     override suspend fun saveDocument(document: Document) {
         // Todo: Add company later
