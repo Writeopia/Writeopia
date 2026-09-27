@@ -4,76 +4,31 @@ import WrDesign
 import WrModels
 import WrNetwork
 import WrSession
-import WrStorage
 
 @Observable
 final class AiSettingsViewModel {
-    static let defaultOllamaUrl = "http://localhost:11434"
-
     private(set) var usage: AiUsage?
-    private(set) var isLoadingUsage = false
-    private(set) var usageError: String?
-
-    var localUrl: String
-    private(set) var models: [String] = []
-    private(set) var isLoadingModels = false
-    private(set) var modelsError: String?
-    var selectedModel: String {
-        didSet { preferences.set(selectedModel.isEmpty ? nil : selectedModel, for: .localAiModel) }
-    }
+    private(set) var isLoading = false
+    private(set) var errorMessage: String?
 
     let session: AppSession
-    private var preferences: Preferences { session.preferences }
 
     init(session: AppSession) {
         self.session = session
-        localUrl = session.preferences.string(.localAiUrl) ?? Self.defaultOllamaUrl
-        selectedModel = session.preferences.string(.localAiModel) ?? ""
     }
 
     func loadUsage() async {
         guard session.isOnline else { return }
 
-        isLoadingUsage = true
-        defer { isLoadingUsage = false }
+        isLoading = true
+        defer { isLoading = false }
 
         do {
             usage = try await session.aiAPI.usage()
-            usageError = nil
+            errorMessage = nil
         } catch {
-            usageError = error.userMessage
+            errorMessage = error.userMessage
         }
-    }
-
-    /// Saves the URL and lists the models installed on that server.
-    func connect() async {
-        let url = localUrl.trimmingCharacters(in: .whitespacesAndNewlines)
-        preferences.set(url.isEmpty ? nil : url, for: .localAiUrl)
-        guard !url.isEmpty else { return }
-
-        isLoadingModels = true
-        defer { isLoadingModels = false }
-
-        do {
-            models = try await session.ollamaAPI.models(baseURL: url)
-            modelsError = models.isEmpty ? "No models installed. Pull one with `ollama pull <model>`." : nil
-            if models.count == 1 || (!models.isEmpty && !models.contains(selectedModel)) {
-                selectedModel = models[0]
-            }
-        } catch {
-            models = []
-            modelsError = "Couldn't reach a local AI server at \(url)."
-        }
-    }
-
-    /// Uses the recommended defaults published by the backend.
-    func useRecommendedUrl() async {
-        if let config = try? await session.aiAPI.localAutoConfig() {
-            localUrl = config.ollamaUrl
-        } else {
-            localUrl = Self.defaultOllamaUrl
-        }
-        await connect()
     }
 }
 
@@ -85,25 +40,27 @@ struct AiSettingsView: View {
     }
 
     var body: some View {
-        Form {
-            cloudSection
-            localSection
+        Group {
+            if viewModel.session.isOnline {
+                Form {
+                    usageSection
+                }
+                .task { await viewModel.loadUsage() }
+                .refreshable { await viewModel.loadUsage() }
+            } else {
+                OfflineNotice(
+                    title: "AI needs an account",
+                    message: "Sign in to the open space to use AI in your documents."
+                )
+            }
         }
         .navigationTitle("AI")
-        .task {
-            await viewModel.loadUsage()
-            await viewModel.connect()
-        }
-        .refreshable { await viewModel.loadUsage() }
     }
 
     @ViewBuilder
-    private var cloudSection: some View {
+    private var usageSection: some View {
         Section {
-            if !viewModel.session.isOnline {
-                Text("Cloud AI is available in the open space. Sign in to use frontier models.")
-                    .foregroundStyle(.secondary)
-            } else if let usage = viewModel.usage {
+            if let usage = viewModel.usage {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("\(usage.totalTokens.compactFormatted) / \(usage.quota.compactFormatted)")
                         .font(.title2.bold())
@@ -122,61 +79,16 @@ struct AiSettingsView: View {
                 LabeledContent("Requests", value: "\(usage.requestCount)")
                 LabeledContent("Input tokens", value: usage.totalInputTokens.compactFormatted)
                 LabeledContent("Output tokens", value: usage.totalOutputTokens.compactFormatted)
-            } else if viewModel.isLoadingUsage {
+            } else if viewModel.isLoading {
                 HStack {
                     ProgressView()
                     Text("Loading usage…").foregroundStyle(.secondary)
                 }
-            } else if let error = viewModel.usageError {
+            } else if let error = viewModel.errorMessage {
                 Text(error).foregroundStyle(.red)
             }
         } header: {
             Text("Cloud AI")
-        }
-    }
-
-    @ViewBuilder
-    private var localSection: some View {
-        Section {
-            TextField("Server URL", text: $viewModel.localUrl)
-                .keyboardType(.URL)
-                .textContentType(.URL)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .onSubmit { Task { await viewModel.connect() } }
-
-            HStack {
-                Button("Connect") {
-                    Task { await viewModel.connect() }
-                }
-                Spacer()
-                Button("Use recommended") {
-                    Task { await viewModel.useRecommendedUrl() }
-                }
-                .font(.footnote)
-            }
-            .buttonStyle(.borderless)
-
-            if viewModel.isLoadingModels {
-                HStack {
-                    ProgressView()
-                    Text("Looking for models…").foregroundStyle(.secondary)
-                }
-            } else if !viewModel.models.isEmpty {
-                Picker("Model", selection: $viewModel.selectedModel) {
-                    ForEach(viewModel.models, id: \.self) { model in
-                        Text(model).tag(model)
-                    }
-                }
-            } else if let error = viewModel.modelsError {
-                Text(error)
-                    .font(.footnote)
-                    .foregroundStyle(.orange)
-            }
-        } header: {
-            Text("Local AI")
-        } footer: {
-            Text("Point Writeopia to an Ollama server, for example one running on your Mac in the same network. Requests never leave that machine.")
         }
     }
 }

@@ -24,11 +24,20 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Core"),
+        .package(path: "../Editor"),
     ],
     targets: [
         .target(name: "AuthFeature", dependencies: coreProducts, swiftSettings: mainActorByDefault),
-        .target(name: "DocumentsFeature", dependencies: coreProducts, swiftSettings: mainActorByDefault),
-        .target(name: "SearchFeature", dependencies: coreProducts + ["DocumentsFeature"], swiftSettings: mainActorByDefault),
+        .target(
+            name: "DocumentsFeature",
+            dependencies: coreProducts + [.product(name: "NoteEditor", package: "Editor")],
+            swiftSettings: mainActorByDefault
+        ),
+        .target(
+            name: "SearchFeature",
+            dependencies: coreProducts + ["DocumentsFeature", .product(name: "NoteEditor", package: "Editor")],
+            swiftSettings: mainActorByDefault
+        ),
         .target(name: "SettingsFeature", dependencies: coreProducts, swiftSettings: mainActorByDefault),
         .testTarget(
             name: "DocumentsFeatureTests",

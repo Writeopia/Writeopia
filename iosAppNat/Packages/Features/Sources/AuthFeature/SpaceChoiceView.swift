@@ -18,7 +18,7 @@ public struct SpaceChoiceView: View {
                     title: "Nothing ever leaves the room.",
                     description: "Your notes stay on this device. No account, no telemetry, no cloud.",
                     systemImage: "lock.shield",
-                    chips: ["llama3", "mistral", "deepseek-r1"],
+                    chips: [],
                     action: session.chooseOfflineSpace
                 )
                 .accessibilityIdentifier("space.private")
@@ -71,15 +71,8 @@ private struct SpaceCard: View {
                     .foregroundStyle(WrColors.textLighter)
                     .multilineTextAlignment(.leading)
 
-                HStack(spacing: 8) {
-                    ForEach(chips, id: \.self) { chip in
-                        Text(chip)
-                            .font(.caption.monospaced())
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(WrColors.divider.opacity(0.5), in: Capsule())
-                            .foregroundStyle(WrColors.textLight)
-                    }
+                if !chips.isEmpty {
+                    chipsRow
                 }
             }
             .padding(20)
@@ -91,5 +84,18 @@ private struct SpaceCard: View {
             }
         }
         .buttonStyle(.plain)
+    }
+
+    private var chipsRow: some View {
+        HStack(spacing: 8) {
+            ForEach(chips, id: \.self) { chip in
+                Text(chip)
+                    .font(.caption.monospaced())
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(WrColors.divider.opacity(0.5), in: Capsule())
+                    .foregroundStyle(WrColors.textLight)
+            }
+        }
     }
 }

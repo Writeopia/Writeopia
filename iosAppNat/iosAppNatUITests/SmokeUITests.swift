@@ -20,7 +20,13 @@ final class SmokeUITests: XCTestCase {
         let welcome = app.buttons.containing(.staticText, identifier: "Welcome to Writeopia").firstMatch
         XCTAssertTrue(welcome.waitForExistence(timeout: 5))
         welcome.tap()
-        XCTAssertTrue(app.staticTexts["Getting started"].waitForExistence(timeout: 5))
+        // The document opens in the editor: its steps are editable text views.
+        let heading = app.textViews.matching(NSPredicate(format: "value == %@", "Getting started")).firstMatch
+        XCTAssertTrue(heading.waitForExistence(timeout: 5))
+        heading.tap()
+        heading.typeText(" now")
+        let edited = app.textViews.matching(NSPredicate(format: "value == %@", "Getting started now")).firstMatch
+        XCTAssertTrue(edited.waitForExistence(timeout: 3))
         goBack()
 
         // Create a folder.
@@ -66,7 +72,7 @@ final class SmokeUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Teams need an account"].waitForExistence(timeout: 3))
         goBack()
         app.buttons["AI"].tap()
-        XCTAssertTrue(app.staticTexts["Local AI".uppercased()].exists || app.staticTexts["Local AI"].exists)
+        XCTAssertTrue(app.staticTexts["AI needs an account"].waitForExistence(timeout: 3))
         goBack()
 
         // Account: switch space goes back to the space choice.

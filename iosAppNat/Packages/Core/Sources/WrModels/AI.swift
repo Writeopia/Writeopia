@@ -33,19 +33,3 @@ public struct AiUsage: Codable, Equatable, Sendable {
         return min(max(Double(totalTokens) / Double(quota), 0), 1)
     }
 }
-
-public struct LocalAiAutoConfig: Codable, Equatable, Sendable {
-    public struct ModelTier: Codable, Equatable, Sendable {
-        public let type: String
-        public let modelName: String
-    }
-
-    public let ollamaUrl: String
-    public let llmmanUrl: String
-    public let modelTiers: [ModelTier]
-    public let defaultTierIndex: Int
-
-    public var defaultModel: String? {
-        modelTiers.indices.contains(defaultTierIndex) ? modelTiers[defaultTierIndex].modelName : nil
-    }
-}

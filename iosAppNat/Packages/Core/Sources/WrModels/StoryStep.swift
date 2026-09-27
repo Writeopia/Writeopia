@@ -78,11 +78,17 @@ public struct StoryType: Codable, Equatable, Hashable, Sendable {
     }
 
     public static let message = StoryType(name: "message", number: 0)
+    /// Same as `message`, named like `StoryTypes.TEXT` in the SDK.
+    public static let text = message
     public static let image = StoryType(name: "image", number: 2)
     public static let space = StoryType(name: "space", number: 7)
+    public static let lastSpace = StoryType(name: "last_space", number: 8)
     public static let checkItem = StoryType(name: "check_item", number: 10)
     public static let title = StoryType(name: "title", number: 11)
     public static let unorderedListItem = StoryType(name: "unordered_list_item", number: 16)
+    public static let onDragSpace = StoryType(name: "on_drag_space", number: 17)
+    public static let aiAnswer = StoryType(name: "ai_answer", number: 18)
+    public static let loading = StoryType(name: "loading", number: 19)
     public static let documentLink = StoryType(name: "document_link", number: 20)
     public static let divider = StoryType(name: "divider", number: 21)
     public static let codeBlock = StoryType(name: "code_block", number: 23)

@@ -33,7 +33,6 @@ public final class AppSession {
     public let authAPI: AuthAPI
     public let workspacesAPI: WorkspacesAPI
     public let aiAPI: AiAPI
-    public let ollamaAPI: OllamaAPI
     public let preferences: Preferences
     private let tokenStore: TokenStore
     private let localDocuments: LocalDocumentsRepository
@@ -54,7 +53,6 @@ public final class AppSession {
         authAPI = AuthAPI(client: client, tokenStore: tokenStore)
         workspacesAPI = WorkspacesAPI(client: client)
         aiAPI = AiAPI(client: client)
-        ollamaAPI = OllamaAPI(transport: transport)
 
         spaceType = preferences.string(.spaceType).flatMap(SpaceType.init(rawValue:))
         user = preferences.codable(User.self, .currentUser)

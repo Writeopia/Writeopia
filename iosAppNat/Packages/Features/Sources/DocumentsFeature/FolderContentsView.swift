@@ -1,3 +1,4 @@
+import NoteEditor
 import Observation
 import SwiftUI
 import WrData
@@ -138,7 +139,9 @@ public struct DocumentsRootView: View {
                         path: $path
                     )
                 case .document(let id, let title):
-                    DocumentView(documentId: id, title: title, repository: session.documents)
+                    NoteEditorView(documentId: id, title: title, repository: session.documents) { link in
+                        path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
+                    }
                 }
             }
         }

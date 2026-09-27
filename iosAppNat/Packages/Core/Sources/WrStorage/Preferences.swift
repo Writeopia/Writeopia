@@ -9,8 +9,6 @@ public final class Preferences {
         case colorTheme = "wr.colorTheme"
         case pendingEmail = "wr.pendingEmail"
         case passwordResetEmail = "wr.passwordResetEmail"
-        case localAiUrl = "wr.localAi.url"
-        case localAiModel = "wr.localAi.model"
     }
 
     private let defaults: UserDefaults

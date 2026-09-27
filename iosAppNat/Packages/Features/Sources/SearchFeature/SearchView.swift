@@ -1,4 +1,5 @@
 import DocumentsFeature
+import NoteEditor
 import Observation
 import SwiftUI
 import WrData
@@ -70,6 +71,7 @@ public struct SearchRootView: View {
 
 struct SearchView: View {
     @State private var viewModel: SearchViewModel
+    @State private var path: [DocumentsRoute] = []
     private let repository: DocumentsRepository
 
     init(repository: DocumentsRepository) {
@@ -78,7 +80,7 @@ struct SearchView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List(viewModel.results) { document in
                 NavigationLink(value: DocumentsRoute.document(id: document.id, title: document.displayTitle)) {
                     DocumentRow(document: document)
@@ -94,7 +96,9 @@ struct SearchView: View {
             .navigationDestination(for: DocumentsRoute.self) { route in
                 switch route {
                 case .document(let id, let title):
-                    DocumentView(documentId: id, title: title, repository: repository)
+                    NoteEditorView(documentId: id, title: title, repository: repository) { link in
+                        path.append(.document(id: link.id, title: link.title ?? "Untitled"))
+                    }
                 case .folder(let folder):
                     Text(folder.displayTitle)
                 }

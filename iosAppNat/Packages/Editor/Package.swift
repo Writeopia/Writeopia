@@ -1,0 +1,58 @@
+// swift-tools-version: 6.2
+
+import PackageDescription
+
+let mainActorByDefault: [SwiftSetting] = [.defaultIsolation(MainActor.self)]
+
+/// The text editor, split like the Kotlin SDK:
+/// - `Writeopia`: editing logic over the list of story steps (like the `writeopia` module).
+/// - `WriteopiaUI`: state manager and the drawers of each step type (like `writeopia_ui`).
+/// - `NoteEditor`: the editor screen of the app (like the `editor` feature).
+let package = Package(
+    name: "Editor",
+    platforms: [.iOS(.v17), .macOS(.v14)],
+    products: [
+        .library(name: "Writeopia", targets: ["Writeopia"]),
+        .library(name: "WriteopiaUI", targets: ["WriteopiaUI"]),
+        .library(name: "NoteEditor", targets: ["NoteEditor"]),
+    ],
+    dependencies: [
+        .package(path: "../Core"),
+    ],
+    targets: [
+        .target(
+            name: "Writeopia",
+            dependencies: [.product(name: "WrModels", package: "Core")]
+        ),
+        .target(
+            name: "WriteopiaUI",
+            dependencies: [
+                "Writeopia",
+                .product(name: "WrModels", package: "Core"),
+                .product(name: "WrDesign", package: "Core"),
+            ],
+            swiftSettings: mainActorByDefault
+        ),
+        .target(
+            name: "NoteEditor",
+            dependencies: [
+                "Writeopia",
+                "WriteopiaUI",
+                .product(name: "WrModels", package: "Core"),
+                .product(name: "WrData", package: "Core"),
+                .product(name: "WrNetwork", package: "Core"),
+                .product(name: "WrDesign", package: "Core"),
+            ],
+            swiftSettings: mainActorByDefault
+        ),
+        .testTarget(
+            name: "WriteopiaTests",
+            dependencies: ["Writeopia", .product(name: "WrModels", package: "Core")]
+        ),
+        .testTarget(
+            name: "WriteopiaUITests",
+            dependencies: ["WriteopiaUI", "Writeopia", .product(name: "WrModels", package: "Core")],
+            swiftSettings: mainActorByDefault
+        ),
+    ]
+)
