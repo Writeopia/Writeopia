@@ -31,9 +31,10 @@ struct StepTextView: UIViewRepresentable {
             textView.removeInteraction(dropInteraction)
         }
 
-        textView.attributedText = TextStyles.attributedText(for: step)
-        textView.typingAttributes = TextStyles.baseAttributes(for: step)
+        textView.attributedText = TextStyles.attributedText(for: step, family: manager.fontFamily)
+        textView.typingAttributes = TextStyles.baseAttributes(for: step, family: manager.fontFamily)
         context.coordinator.renderedStep = step
+        context.coordinator.renderedFont = manager.fontFamily
         return textView
     }
 
@@ -63,7 +64,7 @@ struct StepTextView: UIViewRepresentable {
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: StepUITextView, context: Context) -> CGSize? {
         let width = proposal.width ?? uiView.window?.bounds.width ?? 320
         let size = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
-        return CGSize(width: width, height: max(size.height, TextStyles.baseFont(for: step).lineHeight))
+        return CGSize(width: width, height: max(size.height, TextStyles.baseFont(for: step, family: manager.fontFamily).lineHeight))
     }
 
     /// Updates the text view from the model without disturbing what the user is typing.
@@ -75,15 +76,18 @@ struct StepTextView: UIViewRepresentable {
         // Skip only when both the model and the text on screen are already in sync. Comparing
         // the step alone isn't enough: on Return at the end of a line the model of this step
         // doesn't change, but the keyboard may have put the "\n" in the text view anyway.
-        guard coordinator.renderedStep != step || textView.text != text else { return }
+        guard coordinator.renderedStep != step || coordinator.renderedFont != manager.fontFamily || textView.text != text else {
+            return
+        }
         // Don't touch the text while the keyboard is composing (accents, CJK input...).
         guard textView.markedTextRange == nil else { return }
         coordinator.renderedStep = step
+        coordinator.renderedFont = manager.fontFamily
 
         if textView.text != text {
             // The model changed the text (merge, split): replace it and keep the cursor in range.
             let selection = textView.selectedRange
-            textView.attributedText = TextStyles.attributedText(for: step)
+            textView.attributedText = TextStyles.attributedText(for: step, family: manager.fontFamily)
             let length = (text as NSString).length
             textView.selectedRange = NSRange(location: min(selection.location, length), length: 0)
         } else {
@@ -91,12 +95,12 @@ struct StepTextView: UIViewRepresentable {
             let storage = textView.textStorage
             let fullRange = NSRange(location: 0, length: storage.length)
             storage.beginEditing()
-            storage.setAttributes(TextStyles.baseAttributes(for: step), range: fullRange)
-            TextStyles.applySpans(of: step, to: storage)
+            storage.setAttributes(TextStyles.baseAttributes(for: step, family: manager.fontFamily), range: fullRange)
+            TextStyles.applySpans(of: step, to: storage, family: manager.fontFamily)
             storage.endEditing()
         }
 
-        textView.typingAttributes = TextStyles.baseAttributes(for: step)
+        textView.typingAttributes = TextStyles.baseAttributes(for: step, family: manager.fontFamily)
         textView.invalidateIntrinsicContentSize()
     }
 
@@ -104,6 +108,7 @@ struct StepTextView: UIViewRepresentable {
         var parent: StepTextView
         var renderedStep: StoryStep?
         var appliedRequest: UUID?
+        var renderedFont: EditorFont = .system
         /// Set while the model is written into the view, so those selection changes aren't
         /// reported back as user selections during a SwiftUI update.
         var isRendering = false

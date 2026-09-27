@@ -143,7 +143,9 @@ public struct DocumentsRootView: View {
                         documentId: id,
                         title: title,
                         repository: session.documents,
-                        aiClient: session.isOnline ? session.aiAPI : nil
+                        aiClient: session.isOnline ? session.aiAPI : nil,
+                        publishing: session.publishing,
+                        isPremium: session.user?.isPremium ?? false
                     ) { link in
                         path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
                     }

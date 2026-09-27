@@ -292,3 +292,19 @@ private func texts(_ state: StoryState) -> [String] {
             == [SpanInfo(start: 0, end: 1, span: "BOLD")])
     }
 }
+
+@Suite struct MarkdownTests {
+    @Test func followsTheSdkFormat() {
+        let markdown = DocumentToMarkdown.parse([
+            StoryStep(type: .title, text: "Plan", position: 0),
+            StoryStep(type: .text, text: "Intro", position: 1),
+            StoryStep(type: .text, text: "Section", tags: [TagInfo(tag: "H2")], position: 2),
+            StoryStep(type: .checkItem, text: "Task", checked: true, position: 3),
+            StoryStep(type: .unorderedListItem, text: "Bullet", position: 4),
+            StoryStep(type: .divider, position: 5),
+            StoryStep(type: .aiAnswer, text: "Answer", position: 6),
+        ])
+
+        #expect(markdown == "# Plan\nIntro\n## Section\n[] Task\n- Bullet\nAnswer\n")
+    }
+}

@@ -137,3 +137,117 @@ private func waitForAi(_ viewModel: NoteEditorViewModel) async {
         #expect(manager.step(withId: "a")?.spans == [SpanInfo(start: 0, end: 5, span: "LINK", extra: "https://writeopia.io")])
     }
 }
+
+final class FakePublishing: DocumentPublishing {
+    var published = false
+    var error: Error?
+
+    func isPublished(documentId: String) async throws -> Bool { published }
+
+    func publish(documentId: String) async throws {
+        if let error { throw error }
+        published = true
+    }
+
+    func unpublish(documentId: String) async throws {
+        if let error { throw error }
+        published = false
+    }
+}
+
+@Suite struct NoteMenuTests {
+    private func viewModel(
+        publishing: DocumentPublishing? = nil,
+        isPremium: Bool = false,
+        defaults: UserDefaults = UserDefaults(suiteName: "menu.\(UUID().uuidString)")!
+    ) async -> NoteEditorViewModel {
+        let viewModel = NoteEditorViewModel(
+            documentId: "d",
+            repository: OneDocumentRepository(document),
+            publishing: publishing,
+            isPremium: isPremium,
+            defaults: defaults
+        )
+        await viewModel.loadDocument()
+        return viewModel
+    }
+
+    @Test func lockStopsEditing() async {
+        let viewModel = await viewModel()
+        viewModel.writeopiaManager.onSelected(stepId: "a", isSelected: true)
+
+        viewModel.toggleLock()
+        viewModel.writeopiaManager.handleTextInput("Changed", cursor: 7, stepId: "a")
+
+        #expect(viewModel.isLocked)
+        #expect(viewModel.writeopiaManager.step(withId: "a")?.text == "First idea")
+        #expect(!viewModel.writeopiaManager.hasSelectedLines)
+
+        viewModel.toggleLock()
+        #expect(!viewModel.isLocked)
+    }
+
+    @Test func fontIsRememberedForNextDocuments() async {
+        let defaults = UserDefaults(suiteName: "font.\(UUID().uuidString)")!
+        let first = await viewModel(defaults: defaults)
+
+        first.changeFontFamily(.serif)
+
+        #expect(first.writeopiaManager.fontFamily == .serif)
+        #expect(await viewModel(defaults: defaults).fontFamily == .serif)
+    }
+
+    @Test func jsonExportWrapsTheCurrentDocumentInData() async throws {
+        let viewModel = await viewModel()
+        viewModel.writeopiaManager.handleTextInput("First idea!", cursor: 11, stepId: "a")
+
+        let json = try JSONSerialization.jsonObject(with: Data(try viewModel.exportJson().utf8)) as! [String: Any]
+        let data = json["data"] as! [String: Any]
+        let content = data["content"] as! [[String: Any]]
+
+        #expect(data["id"] as? String == "d")
+        #expect(data["title"] as? String == "Plan")
+        #expect(content.map { $0["text"] as? String } == ["Plan", "First idea!", "Second idea"])
+    }
+
+    @Test func exportFilesAreNamedAfterTheTitle() async throws {
+        let viewModel = await viewModel()
+
+        let url = try viewModel.exportFile(.markdown)
+
+        #expect(url.lastPathComponent == "Plan.md")
+        #expect(try String(contentsOf: url, encoding: .utf8) == "# Plan\nFirst idea\nSecond idea\n")
+        #expect(NoteEditorViewModel.fileName(for: "My plan: v2") == "My_plan_v2")
+        #expect(NoteEditorViewModel.fileName(for: "  ") == "Untitled")
+    }
+
+    @Test func publishingNeedsPremiumAndABackend() async {
+        #expect(await viewModel().canPublish == false)
+        #expect(await viewModel(publishing: FakePublishing(), isPremium: false).canPublish == false)
+        #expect(await viewModel(publishing: FakePublishing(), isPremium: true).canPublish)
+    }
+
+    @Test func publishAndUnpublish() async {
+        let publishing = FakePublishing()
+        let viewModel = await viewModel(publishing: publishing, isPremium: true)
+
+        await viewModel.setPublished(true)
+        #expect(viewModel.isPublished)
+        #expect(publishing.published)
+        #expect(viewModel.siteURL.absoluteString == "https://app.writeopia.io/site/d")
+
+        await viewModel.setPublished(false)
+        #expect(!viewModel.isPublished)
+    }
+
+    @Test func publishErrorsAreShown() async {
+        let publishing = FakePublishing()
+        publishing.error = APIError.forbidden(nil)
+        let viewModel = await viewModel(publishing: publishing, isPremium: true)
+
+        await viewModel.setPublished(true)
+
+        #expect(!viewModel.isPublished)
+        #expect(viewModel.publishError != nil)
+    }
+}

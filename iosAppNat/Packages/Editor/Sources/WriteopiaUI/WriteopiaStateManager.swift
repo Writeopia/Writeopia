@@ -26,7 +26,9 @@ public final class WriteopiaStateManager {
     public static let dragPayloadPrefix = "writeopia-step:"
 
     public private(set) var currentStory: StoryState = .empty
+    /// False while the document is locked: text, checkboxes, dragging and selection are disabled.
     public var isEditable = true
+    public var fontFamily: EditorFont = .system
     /// Position after which a dragged step would be dropped.
     public private(set) var dragPosition: Double?
     public private(set) var isDragging = false

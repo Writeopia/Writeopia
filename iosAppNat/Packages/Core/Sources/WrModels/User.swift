@@ -4,12 +4,18 @@ public struct User: Codable, Equatable, Hashable, Sendable {
     public let id: String
     public let email: String
     public let name: String
+    /// "FREE" or "PREMIUM", like `Tier` of the Kotlin models. The backend doesn't send it yet,
+    /// so users count as free, as in the Compose app.
+    public let tier: String?
 
-    public init(id: String, email: String, name: String) {
+    public init(id: String, email: String, name: String, tier: String? = nil) {
         self.id = id
         self.email = email
         self.name = name
+        self.tier = tier
     }
+
+    public var isPremium: Bool { tier?.uppercased() == "PREMIUM" }
 }
 
 /// Where the user keeps their notes. Mirrors the "Choose your space" screen of the Compose app.

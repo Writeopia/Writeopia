@@ -93,7 +93,7 @@ struct DraggableStep<Content: View>: View {
     }
 
     private var showsGrip: Bool {
-        manager.currentStory.focus == position
+        manager.isEditable && manager.currentStory.focus == position
     }
 }
 
@@ -110,7 +110,7 @@ struct TitleDrawer: View {
             .overlay(alignment: .topLeading) {
                 if (step.text ?? "").isEmpty {
                     Text("Untitled")
-                        .font(.system(size: 34, weight: .bold))
+                        .font(manager.fontFamily.font(size: 34, weight: .bold))
                         .foregroundStyle(.quaternary)
                         .allowsHitTesting(false)
                 }
@@ -134,6 +134,7 @@ struct CheckItemDrawer: View {
                     .imageScale(.large)
             }
             .buttonStyle(.plain)
+            .disabled(!manager.isEditable)
             .accessibilityLabel(step.checked == true ? "Checked" : "Unchecked")
 
             StepTextView(step: step, manager: manager)

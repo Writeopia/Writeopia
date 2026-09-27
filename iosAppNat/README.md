@@ -59,6 +59,11 @@ Documents open in an editable editor. Supported step types: `TITLE`, `TEXT`, `CH
 - Slide a line sideways to select it (slide again to unselect), like the SDK's `SwipeBox`. Several lines can be selected; the format buttons then apply to all of them, and the menu shows how many are selected with a button to clear them.
 - A bottom menu mirrors the Compose editor (AI, bold, italic, underline, highlight, link, drawing, image, spreadsheet, undo, redo). AI and the text formats work; drawing, image, spreadsheet, undo and redo are placeholders.
 - AI (open space only) opens a dialog to apply a command to the document or the line with the cursor: Prompt, Summary, Action Points, FAQ and Tags. The answer streams from `/api/ai/*` (Server-Sent Events) into an `AI_ANSWER` step, with a `LOADING` step until it starts.
+- The top right menu mirrors `NoteGlobalActionsMenu` of the Compose app:
+  - **Lock document**: read-only mode (text, checkboxes, dragging, selection and the bottom menu are disabled); a lock shows next to the title.
+  - **Font**: System, Serif, Monospace or Cursive, remembered for every document.
+  - **Export as Json / Markdown**: writes `{"data": <document>}` or the SDK's Markdown to a file and opens the share sheet.
+  - **Publish to Web**: for premium users in the open space, publish/unpublish (`/document/{id}/publish`, `/unpublish`, `/published`) and copy the `https://app.writeopia.io/site/<id>` link. Others see the "Premium Feature" dialog, as in the Compose app. The backend doesn't send the user tier yet, so everyone currently counts as free.
 - Edits are kept in memory only: nothing is saved yet.
 
 ## Tests

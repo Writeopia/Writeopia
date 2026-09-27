@@ -64,7 +64,12 @@ public struct SearchRootView: View {
     public init() {}
 
     public var body: some View {
-        SearchView(repository: session.documents, aiClient: session.isOnline ? session.aiAPI : nil)
+        SearchView(
+            repository: session.documents,
+            aiClient: session.isOnline ? session.aiAPI : nil,
+            publishing: session.publishing,
+            isPremium: session.user?.isPremium ?? false
+        )
             .id(session.workspace?.id)
     }
 }
@@ -74,10 +79,14 @@ struct SearchView: View {
     @State private var path: [DocumentsRoute] = []
     private let repository: DocumentsRepository
     private let aiClient: AiStreaming?
+    private let publishing: DocumentPublishing?
+    private let isPremium: Bool
 
-    init(repository: DocumentsRepository, aiClient: AiStreaming?) {
+    init(repository: DocumentsRepository, aiClient: AiStreaming?, publishing: DocumentPublishing?, isPremium: Bool) {
         self.repository = repository
         self.aiClient = aiClient
+        self.publishing = publishing
+        self.isPremium = isPremium
         _viewModel = State(initialValue: SearchViewModel(repository: repository))
     }
 
@@ -98,7 +107,14 @@ struct SearchView: View {
             .navigationDestination(for: DocumentsRoute.self) { route in
                 switch route {
                 case .document(let id, let title):
-                    NoteEditorView(documentId: id, title: title, repository: repository, aiClient: aiClient) { link in
+                    NoteEditorView(
+                        documentId: id,
+                        title: title,
+                        repository: repository,
+                        aiClient: aiClient,
+                        publishing: publishing,
+                        isPremium: isPremium
+                    ) { link in
                         path.append(.document(id: link.id, title: link.title ?? "Untitled"))
                     }
                 case .folder(let folder):

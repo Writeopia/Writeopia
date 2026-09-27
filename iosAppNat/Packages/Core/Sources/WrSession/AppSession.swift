@@ -80,6 +80,12 @@ public final class AppSession {
         return repository
     }
 
+    /// Publishing for documents of the current workspace; nil outside the open space.
+    public var publishing: DocumentPublishing? {
+        guard isOnline, let workspace, workspace.id != Workspace.localId else { return nil }
+        return PublishingAPI(client: client, workspaceId: workspace.id)
+    }
+
     // MARK: - Space
 
     public func chooseOfflineSpace() {

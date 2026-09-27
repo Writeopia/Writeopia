@@ -72,3 +72,31 @@ final class FakeLineTransport: LineStreamingTransport {
         }
     }
 }
+
+final class PathTransport: HTTPTransport {
+    private(set) var requests: [URLRequest] = []
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        requests.append(request)
+        let body = request.url!.path().hasSuffix("/published") ? #"{"published":true}"# : "Document published"
+        return (Data(body.utf8), HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+    }
+}
+
+@Suite struct PublishingAPITests {
+    @Test func callsThePublishEndpoints() async throws {
+        let transport = PathTransport()
+        let client = APIClient(transport: transport, tokenStore: InMemoryTokenStore(accessToken: "a"), baseURL: URL(string: "https://x.io")!)
+        let api = PublishingAPI(client: client, workspaceId: "w1")
+
+        #expect(try await api.isPublished(documentId: "d1"))
+        try await api.publish(documentId: "d1")
+        try await api.unpublish(documentId: "d1")
+
+        #expect(transport.requests.map { "\($0.httpMethod!) \($0.url!.path())" } == [
+            "GET /api/docs/workspace/w1/document/d1/published",
+            "POST /api/docs/workspace/w1/document/d1/publish",
+            "POST /api/docs/workspace/w1/document/d1/unpublish",
+        ])
+    }
+}
