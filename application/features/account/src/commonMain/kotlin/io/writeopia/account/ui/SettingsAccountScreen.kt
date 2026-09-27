@@ -30,6 +30,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
@@ -44,6 +46,7 @@ fun SettingsAccountScreen(
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
     exportWorkspaceState: StateFlow<ResultData<Unit>>,
     goToRegister: () -> Unit,
+    switchSpace: () -> Unit,
     changeWorkspace: () -> Unit,
     exportWorkspace: (String) -> Unit,
     resetExportState: () -> Unit,
@@ -76,6 +79,16 @@ fun SettingsAccountScreen(
                 icon = WrIcons.person,
                 onClick = goToRegister
             )
+
+            if (LocalPlatform.current != PlatformType.WEB) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                AccountMenuItem(
+                    title = WrStrings.switchSpace(),
+                    icon = WrIcons.group,
+                    onClick = switchSpace
+                )
+            }
         } else {
             AccountMenuItem(
                 title = WrStrings.changeWorkspace(),

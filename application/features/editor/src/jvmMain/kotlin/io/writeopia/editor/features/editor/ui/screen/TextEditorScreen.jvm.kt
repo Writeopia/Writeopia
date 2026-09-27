@@ -22,8 +22,10 @@ actual fun TextEditorScreen(
     onDrawingClick: (StoryStep, Double) -> Unit,
     nestedScrollConnection: NestedScrollConnection?,
     isToolbarVisible: Boolean,
+    isWideLayout: Boolean,
     modifier: Modifier,
 ) {
+    // Desktop always shows SideEditorOptions regardless of window shape, so isWideLayout is unused here.
     DesktopNoteEditorScreen(
         isDarkTheme = isDarkTheme,
         documentId = documentId,
