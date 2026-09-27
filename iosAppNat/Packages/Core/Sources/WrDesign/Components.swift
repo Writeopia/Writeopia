@@ -1,0 +1,205 @@
+import SwiftUI
+
+/// Full width call to action used across the auth screens.
+public struct WrPrimaryButton: View {
+    private let title: String
+    private let isLoading: Bool
+    private let action: () -> Void
+
+    public init(_ title: String, isLoading: Bool = false, action: @escaping () -> Void) {
+        self.title = title
+        self.isLoading = isLoading
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: action) {
+            ZStack {
+                Text(title)
+                    .font(.headline)
+                    .opacity(isLoading ? 0 : 1)
+
+                if isLoading {
+                    ProgressView()
+                        .tint(.white)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 28)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+        .tint(WrColors.accent)
+        .disabled(isLoading)
+    }
+}
+
+/// Rounded text field with a leading icon.
+public struct WrTextField: View {
+    public enum Kind {
+        case plain
+        case email
+        case password
+        case newPassword
+        case name
+        case code
+    }
+
+    private let title: String
+    private let systemImage: String
+    private let kind: Kind
+    @Binding private var text: String
+
+    public init(_ title: String, text: Binding<String>, systemImage: String, kind: Kind = .plain) {
+        self.title = title
+        self._text = text
+        self.systemImage = systemImage
+        self.kind = kind
+    }
+
+    public var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .foregroundStyle(WrColors.textLighter)
+                .frame(width: 20)
+
+            field
+                .autocorrectionDisabled()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(WrColors.surface, in: RoundedRectangle(cornerRadius: 12))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(WrColors.divider)
+        }
+    }
+
+    @ViewBuilder
+    private var field: some View {
+        switch kind {
+        case .password:
+            SecureField(title, text: $text)
+                .textContentType(.password)
+        case .newPassword:
+            SecureField(title, text: $text)
+                .textContentType(.newPassword)
+        case .email:
+            TextField(title, text: $text)
+                .textContentType(.emailAddress)
+                #if os(iOS)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                #endif
+        case .name:
+            TextField(title, text: $text)
+                .textContentType(.name)
+        case .code:
+            TextField(title, text: $text)
+                .textContentType(.oneTimeCode)
+                #if os(iOS)
+                .keyboardType(.numberPad)
+                #endif
+        case .plain:
+            TextField(title, text: $text)
+        }
+    }
+}
+
+/// Inline error text shown under forms.
+public struct WrErrorText: View {
+    private let message: String?
+
+    public init(_ message: String?) {
+        self.message = message
+    }
+
+    public var body: some View {
+        if let message {
+            Label(message, systemImage: "exclamationmark.circle")
+                .font(.footnote)
+                .foregroundStyle(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .transition(.opacity)
+        }
+    }
+}
+
+/// Header used on top of the auth screens.
+public struct WrScreenHeader: View {
+    private let eyebrow: String?
+    private let title: String
+    private let subtitle: String?
+
+    public init(eyebrow: String? = nil, title: String, subtitle: String? = nil) {
+        self.eyebrow = eyebrow
+        self.title = title
+        self.subtitle = subtitle
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let eyebrow {
+                Text(eyebrow.uppercased())
+                    .font(.caption.weight(.bold))
+                    .kerning(2)
+                    .foregroundStyle(WrColors.textLighter)
+            }
+
+            Text(title)
+                .font(.largeTitle.bold())
+                .foregroundStyle(WrColors.textLight)
+
+            if let subtitle {
+                Text(subtitle)
+                    .font(.callout)
+                    .foregroundStyle(WrColors.textLighter)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Loading / error / empty wrapper for screens that fetch content.
+public struct WrStateOverlay: View {
+    private let isLoading: Bool
+    private let isEmpty: Bool
+    private let errorMessage: String?
+    private let emptyTitle: String
+    private let emptyImage: String
+    private let retry: (() -> Void)?
+
+    public init(
+        isLoading: Bool,
+        isEmpty: Bool,
+        errorMessage: String?,
+        emptyTitle: String,
+        emptyImage: String,
+        retry: (() -> Void)? = nil
+    ) {
+        self.isLoading = isLoading
+        self.isEmpty = isEmpty
+        self.errorMessage = errorMessage
+        self.emptyTitle = emptyTitle
+        self.emptyImage = emptyImage
+        self.retry = retry
+    }
+
+    public var body: some View {
+        if isLoading && isEmpty {
+            ProgressView()
+                .controlSize(.large)
+        } else if let errorMessage, isEmpty {
+            ContentUnavailableView {
+                Label("Something went wrong", systemImage: "exclamationmark.triangle")
+            } description: {
+                Text(errorMessage)
+            } actions: {
+                if let retry {
+                    Button("Try again", action: retry)
+                }
+            }
+        } else if !isLoading && isEmpty {
+            ContentUnavailableView(emptyTitle, systemImage: emptyImage)
+        }
+    }
+}
