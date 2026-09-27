@@ -158,6 +158,16 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
         try store(document)
     }
 
+    /// The private space has nothing to sync, so the document is removed for good.
+    public func deleteDocument(id: String) async throws {
+        try hardDeleteDocument(id: id)
+    }
+
+    /// Marks the document as deleted, like the Compose app, until the backend confirms it.
+    public func softDeleteDocument(id: String) throws {
+        try db.run("UPDATE document SET deleted = 1, last_updated_at = ? WHERE id = ?", [.integer(Date.nowMillis), .text(id)])
+    }
+
     // MARK: - StepStore
 
     public func saveEdit(document: WrDocument, changedSteps: [StoryStep], deletedStepIds: [String]) throws {

@@ -37,6 +37,7 @@ final class OneDocumentRepository: DocumentsRepository {
     func moveDocument(id: String, toFolder folderId: String) async throws {}
     func moveFolder(id: String, toFolder folderId: String) async throws {}
     func save(_ document: WrDocument) async throws {}
+    func deleteDocument(id: String) async throws {}
 }
 
 private let document = WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
@@ -319,6 +320,7 @@ final class CreatingRepository: DocumentsRepository {
     func moveDocument(id: String, toFolder folderId: String) async throws {}
     func moveFolder(id: String, toFolder folderId: String) async throws {}
     func save(_ document: WrDocument) async throws {}
+    func deleteDocument(id: String) async throws {}
 }
 
 @Suite struct SelectionMenuTests {
@@ -469,6 +471,8 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
         saves.append(document)
         stored = document
     }
+    private(set) var deletedIds: [String] = []
+    func deleteDocument(id: String) async throws { deletedIds.append(id) }
 
     private(set) var edits: [(changed: [String], deleted: [String])] = []
     func saveEdit(document: WrDocument, changedSteps: [StoryStep], deletedStepIds: [String]) throws {
@@ -608,5 +612,24 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
         await viewModel.flush()
 
         #expect(repository.saves.last?.isLocked == true)
+    }
+}
+
+@Suite struct DeleteFromEditorTests {
+    @Test func deletingStopsSavingAndSending() async throws {
+        let repository = SyncingRepository(WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
+            StoryStep(id: "t", type: .title, text: "Plan", position: 0),
+        ]))
+        let viewModel = NoteEditorViewModel(documentId: "d", repository: repository)
+        await viewModel.loadDocument()
+
+        #expect(await viewModel.deleteDocument())
+        #expect(repository.deletedIds == ["d"])
+
+        // Leaving the editor after deleting must not write the document back.
+        viewModel.writeopiaManager.handleTextInput("Plan!", cursor: 5, stepId: "t")
+        await viewModel.flush()
+        #expect(repository.saves.isEmpty)
+        #expect(repository.pushes.isEmpty)
     }
 }

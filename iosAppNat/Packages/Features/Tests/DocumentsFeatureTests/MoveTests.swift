@@ -29,6 +29,7 @@ final class FakeDocumentsRepository: DocumentsRepository {
     }
 
     func save(_ document: WrDocument) async throws {}
+    func deleteDocument(id: String) async throws {}
 }
 
 @Suite struct FolderMoveTests {

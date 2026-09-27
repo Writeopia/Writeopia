@@ -106,6 +106,8 @@ final class FakeBackend: HTTPTransport {
     private(set) var sentDocuments: [[String: Any]] = []
     private(set) var sentFolders: [[String: Any]] = []
     private(set) var stepSyncBodies: [[String: Any]] = []
+    private(set) var deletedIds: [String] = []
+    var deleteFails = false
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         let path = request.url!.path()
@@ -115,13 +117,23 @@ final class FakeBackend: HTTPTransport {
 
         switch path {
         case "/api/docs/workspace/document/folder/diff":
-            response = try JSONEncoder().encode(folderDiff)
+            // Like the backend, deleted documents aren't returned.
+            var contents = folderDiff
+            contents.documents.removeAll { deletedIds.contains($0.id) }
+            response = try JSONEncoder().encode(contents)
         case "/api/docs/workspace/document":
             sentDocuments += body["documents"] as? [[String: Any]] ?? []
             response = Data("Accepted".utf8)
         case "/api/docs/workspace/folder":
             sentFolders += body["folders"] as? [[String: Any]] ?? []
             response = Data("Accepted".utf8)
+        case let path where path.hasSuffix("/document/delete"):
+            if deleteFails {
+                status = 500
+            } else {
+                deletedIds += body["documentIds"] as? [String] ?? []
+                response = Data("Deleted".utf8)
+            }
         case let path where path.hasSuffix("/steps/sync"):
             stepSyncBodies.append(body)
             response = Data(#"{"serverTimestamp":777,"updatedSteps":[],"deletedIds":[]}"#.utf8)
@@ -305,5 +317,58 @@ final class FakeBackend: HTTPTransport {
         #expect(contents.folders.map(\.id) == ["f"])
         #expect(FileManager.default.fileExists(atPath: directory.appending(path: "imported-json/From a file_old.wrdoc.json").path(percentEncoded: false)))
         #expect(!FileManager.default.fileExists(atPath: directory.appending(path: "From a file_old.wrdoc.json").path(percentEncoded: false)))
+    }
+}
+
+@Suite struct DeleteDocumentTests {
+    private func makeRepository(_ backend: FakeBackend) -> SyncedDocumentsRepository {
+        let client = APIClient(transport: backend, tokenStore: InMemoryTokenStore(accessToken: "a"), baseURL: URL(string: "https://x.io")!)
+        return SyncedDocumentsRepository(
+            local: makeStore(),
+            remote: RemoteDocumentsRepository(client: client, workspaceId: "w"),
+            api: SyncAPI(client: client, workspaceId: "w")
+        )
+    }
+
+    @Test func privateSpaceRemovesTheDocument() async throws {
+        let store = makeStore()
+        let document = try await store.createDocument(title: "Bye", parentId: Folder.rootId)
+
+        try await store.deleteDocument(id: document.id)
+
+        #expect(try store.storedDocument(id: document.id) == nil)
+        #expect(try await store.folderContents(folderId: Folder.rootId).documents.isEmpty)
+    }
+
+    @Test func openSpaceDeletesOnTheBackendAndHere() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "d", title: "Bye", workspaceId: "w", parentId: "root", lastSyncedAt: Date.nowMillis))
+
+        try await repository.deleteDocument(id: "d")
+
+        #expect(backend.deletedIds == ["d"])
+        #expect(try repository.local.storedDocument(id: "d") == nil)
+    }
+
+    @Test func offlineDeletionIsHiddenAndSentWithTheNextSync() async throws {
+        let backend = FakeBackend()
+        backend.deleteFails = true
+        let repository = makeRepository(backend)
+        let document = WrDocument(id: "d", title: "Bye", workspaceId: "w", parentId: "root", lastSyncedAt: Date.nowMillis)
+        try repository.local.store(document)
+
+        try await repository.deleteDocument(id: "d")
+
+        #expect(try repository.local.storedDocument(id: "d")?.deleted == true)
+        #expect(try await repository.folderContents(folderId: "root").documents.isEmpty)
+
+        // The backend still has it: the sync must neither bring it back nor lose the deletion.
+        backend.deleteFails = false
+        backend.folderDiff = FolderContents(documents: [document])
+        try await repository.syncFolder("root")
+
+        #expect(backend.deletedIds == ["d"])
+        #expect(try await repository.folderContents(folderId: "root").documents.isEmpty)
     }
 }

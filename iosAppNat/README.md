@@ -78,6 +78,7 @@ Mirrors the Compose app (`DocumentLoadUseCase`, `DocumentMerger`, `FolderSync`, 
 - **Opening a document** shows the local copy, then merges the backend copy (`GET .../document/{id}`): steps matched by id, the newest wins, steps from both sides kept. The merge replaces what's shown only if nothing was typed yet.
 - **Editing** saves on the device on every change (only the changed steps, like the Compose app's `OnUpdateDocumentTracker`), and sends the changed and deleted steps with `POST .../document/{id}/steps/sync` after 2 s without typing, and when leaving the editor. When a push fails, the document stays outdated and the next folder sync sends it whole.
 - New documents and folders are created locally with their final id and sent right away when possible.
+- **Deleting** a document (editor menu > Delete document) removes it for good in the private space. In the open space it's marked deleted locally (so no sync brings it back), deleted on the backend with `POST .../document/delete`, then removed; when the backend can't be reached, the deletion is sent first thing in the next sync of its folder.
 
 Differences with the Compose app: steps are stamped with their own `lastUpdatedAt` (so merges pick the newest copy of each step instead of always the local one), and a successful `steps/sync` marks the document as synced.
 

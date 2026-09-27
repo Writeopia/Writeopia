@@ -14,6 +14,7 @@ public protocol DocumentsRepository: AnyObject {
     func moveFolder(id: String, toFolder folderId: String) async throws
     /// Stores the document as it is now in the editor.
     func save(_ document: WrDocument) async throws
+    func deleteDocument(id: String) async throws
 }
 
 public enum MoveError: Error, Equatable {
@@ -82,6 +83,11 @@ public final class RemoteDocumentsRepository: DocumentsRepository {
 
     public func moveDocument(id: String, toFolder folderId: String) async throws {
         try await client.perform(.post, "\(base)/document/\(id)/move", body: MoveBody(targetParentId: folderId))
+    }
+
+    public func deleteDocument(id: String) async throws {
+        struct Body: Encodable { let documentIds: [String] }
+        try await client.perform(.post, "\(base)/document/delete", body: Body(documentIds: [id]))
     }
 
     public func save(_ document: WrDocument) async throws {

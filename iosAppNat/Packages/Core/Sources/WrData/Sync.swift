@@ -320,6 +320,19 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         try local.store(document)
     }
 
+    /// Hidden right away and deleted on the backend; when the backend can't be reached the
+    /// deletion is sent with the next sync of the folder. Documents deleted here are never
+    /// brought back by a sync.
+    public func deleteDocument(id: String) async throws {
+        try local.softDeleteDocument(id: id)
+        try? await sendDeletion(id)
+    }
+
+    private func sendDeletion(_ id: String) async throws {
+        try await remote.deleteDocument(id: id)
+        try local.hardDeleteDocument(id: id)
+    }
+
     public func saveEdit(document: WrDocument, changedSteps: [StoryStep], deletedStepIds: [String]) throws {
         var document = document
         if let stored = try local.storedDocument(id: document.id) {
@@ -336,9 +349,19 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         // Opening the same folder again right away doesn't need another sync.
         if let last = lastFolderSync[folderId], Date().timeIntervalSince(last) < 2 { return }
 
+        // Deletions that couldn't be sent before go first, so the backend doesn't send those
+        // documents back.
+        var deletedNow: Set<String> = []
+        for document in try local.storedDocuments(inFolder: folderId) where document.deleted {
+            if (try? await sendDeletion(document.id)) != nil {
+                deletedNow.insert(document.id)
+            }
+        }
+
         // Like the Compose app, the whole folder is asked for (the backend doesn't return a sync
         // time to continue from), which also shows what was deleted or moved elsewhere.
-        let remoteContents = try await api.folderDiff(folderId: folderId, lastSync: 0)
+        var remoteContents = try await api.folderDiff(folderId: folderId, lastSync: 0)
+        remoteContents.documents.removeAll { deletedNow.contains($0.id) }
 
         let storedDocuments = try local.storedDocuments(inFolder: folderId)
         let storedFolders = try local.storedFolders(inFolder: folderId)

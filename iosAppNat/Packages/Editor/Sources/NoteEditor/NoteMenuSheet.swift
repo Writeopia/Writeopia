@@ -10,6 +10,8 @@ import WrDesign
 struct NoteMenuSheet: View {
     @Bindable var viewModel: NoteEditorViewModel
     let onPublishClick: () -> Void
+    let onDelete: () -> Void
+    @State private var confirmsDelete = false
     @State private var exportedFile: ExportedFile?
     @State private var exportError: String?
     @Environment(\.dismiss) private var dismiss
@@ -59,6 +61,27 @@ struct NoteMenuSheet: View {
                         }
                     }
                     .accessibilityIdentifier("menu.publish")
+                }
+
+                Section {
+                    Button(role: .destructive) {
+                        confirmsDelete = true
+                    } label: {
+                        Label("Delete document", systemImage: "trash")
+                    }
+                    .accessibilityIdentifier("menu.delete")
+                    .confirmationDialog(
+                        "Delete this document?",
+                        isPresented: $confirmsDelete,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Delete document", role: .destructive) {
+                            dismiss()
+                            onDelete()
+                        }
+                    } message: {
+                        Text("It will be removed from every device. This can't be undone.")
+                    }
                 }
             }
             .navigationTitle("Document")

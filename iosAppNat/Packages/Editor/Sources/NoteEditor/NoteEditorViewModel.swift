@@ -87,6 +87,9 @@ public final class NoteEditorViewModel {
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private var pushTask: Task<Void, Never>?
     public private(set) var isSyncing = false
+    /// Set once the document is deleted: nothing is saved or sent anymore.
+    public private(set) var isDeleted = false
+    public var deleteError: String?
     public private(set) var lastSyncFailed = false
 
     /// Delay after the last edit before sending to the backend. Saving on the device happens on
@@ -189,6 +192,23 @@ public final class NoteEditorViewModel {
             writeopiaManager.updateText(drawing.toJson(), stepId: stepId)
         } else if !drawing.isEmpty {
             writeopiaManager.addAtTheEnd(StoryStep(type: .drawing, text: drawing.toJson(), position: 0))
+        }
+    }
+
+    // MARK: - Delete
+
+    /// Deletes the document, like "Delete" of the Compose editor. Returns true when it's gone so
+    /// the editor can close.
+    public func deleteDocument() async -> Bool {
+        pushTask?.cancel()
+        aiTask?.cancel()
+        do {
+            try await repository.deleteDocument(id: documentId)
+            isDeleted = true
+            return true
+        } catch {
+            deleteError = error.userMessage
+            return false
         }
     }
 
@@ -438,7 +458,7 @@ public final class NoteEditorViewModel {
     /// Writes the edit to the device. With a `StepStore` (SQLite) only the changed steps are
     /// written, like `OnUpdateDocumentTracker`; other repositories get the whole document.
     func saveNow() {
-        guard hasLoaded else { return }
+        guard hasLoaded, !isDeleted else { return }
         let (document, changed) = documentToSave()
         guard changed else { return }
 
@@ -465,7 +485,7 @@ public final class NoteEditorViewModel {
 
     /// Sends the steps changed and deleted since the last push, like `OnUpdateStoryStepSyncTracker`.
     func pushNow() async {
-        guard hasLoaded, let syncing, let document = loadedDocument else { return }
+        guard hasLoaded, !isDeleted, let syncing, let document = loadedDocument else { return }
 
         let current = document.content
         let changes = current.filter { step in

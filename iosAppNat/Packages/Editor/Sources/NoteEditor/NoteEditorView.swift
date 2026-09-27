@@ -19,6 +19,7 @@ public struct NoteEditorView: View {
     @State private var showPremium = false
     @State private var drawingTarget: DrawingTarget?
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dismiss) private var dismiss
     /// Selection waiting for a URL. Kept here because the alert takes the focus from the text.
     @State private var linkSelection: StepSelection?
     @State private var linkURL = ""
@@ -180,6 +181,12 @@ public struct NoteEditorView: View {
                 } else {
                     showPremium = true
                 }
+            } onDelete: {
+                Task {
+                    if await viewModel.deleteDocument() {
+                        dismiss()
+                    }
+                }
             }
         }
         .sheet(isPresented: $showPublish) {
@@ -202,6 +209,14 @@ public struct NoteEditorView: View {
             AiDialog(fixedMode: .selectedLines) { command, mode in
                 viewModel.runAi(command, mode: mode)
             }
+        }
+        .alert(
+            "Could not delete the document",
+            isPresented: Binding(get: { viewModel.deleteError != nil }, set: { if !$0 { viewModel.deleteError = nil } })
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.deleteError ?? "")
         }
         .alert(
             "Could not add the image",
