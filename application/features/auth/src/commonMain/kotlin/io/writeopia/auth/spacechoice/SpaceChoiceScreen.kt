@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -25,7 +26,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -78,7 +81,8 @@ fun SpaceChoiceScreen(
                 .widthIn(max = 1000.dp)
                 .fillMaxSize()
                 .padding(WindowInsets.systemBars.asPaddingValues())
-                .padding(24.dp),
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
         ) {
             Text(
                 text = WrStrings.chooseYourSpace().uppercase(),
@@ -101,7 +105,7 @@ fun SpaceChoiceScreen(
 
             if (isWide) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     SpaceCard(
@@ -126,11 +130,11 @@ fun SpaceChoiceScreen(
                 }
             } else {
                 Column(
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     SpaceCard(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         label = WrStrings.privateSpaceLabel(),
                         title = WrStrings.privateSpaceTitle(),
                         description = WrStrings.privateSpaceDescription(),
@@ -140,7 +144,7 @@ fun SpaceChoiceScreen(
                     )
 
                     SpaceCard(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         label = WrStrings.openSpaceLabel(),
                         title = WrStrings.openSpaceTitle(),
                         description = WrStrings.openSpaceDescription(),

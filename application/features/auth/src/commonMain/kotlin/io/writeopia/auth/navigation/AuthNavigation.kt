@@ -11,7 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
@@ -168,6 +170,9 @@ fun NavGraphBuilder.authNavigation(
         val authMenuViewModel: AuthMenuViewModel = authInjection.provideAuthMenuViewModel()
         val colorTheme by colorThemeOption.collectAsState()
         val platform = LocalPlatform.current
+        // Guards against a fast double-tap firing useOffline()/navigate() twice before this
+        // composable leaves composition, which would push a duplicate back stack entry.
+        var offlineSelectionInProgress by remember { mutableStateOf(false) }
 
         WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
             SpaceChoiceScreen(
@@ -175,14 +180,18 @@ fun NavGraphBuilder.authNavigation(
                     .fillMaxSize()
                     .background(WriteopiaTheme.colorScheme.globalBackground),
                 onOfflineSelected = {
-                    // On desktop, offer local AI setup right away instead of leaving it
-                    // buried in Settings - mobile/web keep going straight to the app.
-                    if (platform == PlatformType.DESKTOP) {
-                        authMenuViewModel.useOffline {
-                            navController.navigate(Destinations.LOCAL_AI_SETUP.id)
+                    if (!offlineSelectionInProgress) {
+                        offlineSelectionInProgress = true
+
+                        // On desktop, offer local AI setup right away instead of leaving it
+                        // buried in Settings - mobile/web keep going straight to the app.
+                        if (platform == PlatformType.DESKTOP) {
+                            authMenuViewModel.useOffline {
+                                navController.navigate(Destinations.LOCAL_AI_SETUP.id)
+                            }
+                        } else {
+                            authMenuViewModel.useOffline(toAppNavigation)
                         }
-                    } else {
-                        authMenuViewModel.useOffline(toAppNavigation)
                     }
                 },
                 onOnlineSelected = {
