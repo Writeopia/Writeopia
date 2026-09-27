@@ -15,7 +15,7 @@ kotlin {
     jvmToolchain(21)
 
     androidLibrary {
-        namespace = "io.writeopia.account"
+        namespace = "io.writeopia.core.local_ai_config"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
 
@@ -28,10 +28,12 @@ kotlin {
 
     js {
         browser()
+        binaries.library()
     }
 
     wasmJs {
         browser()
+        binaries.library()
     }
 
     listOf(
@@ -39,7 +41,7 @@ kotlin {
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "WriteopiaFeaturesAccount"
+            baseName = "WriteopiaCoreLocalAiConfig"
             isStatic = true
         }
     }
@@ -47,38 +49,26 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":writeopia_models"))
                 implementation(project(":writeopia"))
-                implementation(project(":plugins:writeopia_serialization"))
-                implementation(project(":application:core:utils"))
-                implementation(project(":application:core:auth_core"))
-                implementation(project(":common:endpoints"))
-                implementation(project(":application:core:theme"))
-                implementation(project(":application:core:common_ui"))
-                implementation(project(":application:core:local_ai"))
-                implementation(project(":application:core:local_ai_config"))
-                implementation(project(":application:core:resources"))
-                implementation(project(":application:core:documents"))
-                implementation(project(":application:core:genai"))
+                implementation(project(":writeopia_models"))
 
-                //
+                implementation(project(":application:core:local_ai"))
+                implementation(project(":application:core:utils"))
+                implementation(project(":application:core:theme"))
+                implementation(project(":application:core:resources"))
+                implementation(project(":application:core:common_ui"))
+
+                implementation(project(":plugins:writeopia_network"))
+                implementation(project(":plugins:writeopia_serialization"))
+
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.lifecycle.viewmodel.compose)
+                implementation(libs.ktor.client.core)
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
-                @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-                implementation(libs.compose.navigation)
-                implementation(libs.lifecycle.viewmodel.compose)
-            }
-        }
-
-        val androidMain by getting {
-            dependencies {
-            }
-        }
-
-        val jvmMain by getting {
-            dependencies {
+                implementation(compose.ui)
             }
         }
     }

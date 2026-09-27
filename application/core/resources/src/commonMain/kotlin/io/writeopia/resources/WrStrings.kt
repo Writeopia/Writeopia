@@ -107,6 +107,9 @@ import writeopia.application.core.resources.generated.resources.notes_will_be_de
 import writeopia.application.core.resources.generated.resources.ok
 import writeopia.application.core.resources.generated.resources.local_ai
 import writeopia.application.core.resources.generated.resources.local_ai_configuration_complete
+import writeopia.application.core.resources.generated.resources.local_ai_setup_description
+import writeopia.application.core.resources.generated.resources.local_ai_setup_title
+import writeopia.application.core.resources.generated.resources.continue_to_app
 import writeopia.application.core.resources.generated.resources.onboarding_explain1
 import writeopia.application.core.resources.generated.resources.onboarding_hello
 import writeopia.application.core.resources.generated.resources.onboarding_select_ai
@@ -601,6 +604,15 @@ object WrStrings {
 
     @Composable
     fun whereWritingToday() = stringResource(Res.string.where_writing_today)
+
+    @Composable
+    fun localAiSetupTitle() = stringResource(Res.string.local_ai_setup_title)
+
+    @Composable
+    fun localAiSetupDescription() = stringResource(Res.string.local_ai_setup_description)
+
+    @Composable
+    fun continueToApp() = stringResource(Res.string.continue_to_app)
 
     @Composable
     fun privateSpaceLabel() = stringResource(Res.string.private_space_label)
