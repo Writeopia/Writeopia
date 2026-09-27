@@ -62,7 +62,9 @@ final class SwipeSelectionCoordinator: NSObject, UIGestureRecognizerDelegate {
     }
 
     private var anchors: [ObjectIdentifier: WeakAnchor] = [:]
-    private weak var scrollView: UIScrollView?
+    private(set) weak var scrollView: UIScrollView?
+    /// Called when the scroll view is found, so the reorder drag can auto scroll it.
+    var onScrollViewFound: ((UIScrollView) -> Void)?
     private var pan: UIPanGestureRecognizer?
     private weak var activeTracker: SwipeTracker?
 
@@ -88,6 +90,7 @@ final class SwipeSelectionCoordinator: NSObject, UIGestureRecognizerDelegate {
         scrollView.addGestureRecognizer(pan)
         self.pan = pan
         self.scrollView = scrollView
+        onScrollViewFound?(scrollView)
     }
 
     @objc private func handlePan(_ pan: UIPanGestureRecognizer) {
@@ -133,7 +136,10 @@ final class SwipeSelectionCoordinator: NSObject, UIGestureRecognizerDelegate {
     private func anchor(at location: CGPoint) -> SwipeAnchorView? {
         guard let scrollView else { return nil }
         return anchors.values.compactMap(\.view).first { anchor in
-            anchor.window != nil && anchor.convert(anchor.bounds, to: scrollView).contains(location)
+            guard anchor.window != nil else { return false }
+            let frame = anchor.convert(anchor.bounds, to: scrollView)
+            // The grip column belongs to the reorder drag.
+            return frame.contains(location) && location.x > frame.minX + EditorLayout.gutter + 4
         }
     }
 }

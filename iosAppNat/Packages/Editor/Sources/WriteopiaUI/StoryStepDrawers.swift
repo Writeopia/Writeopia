@@ -27,11 +27,21 @@ struct StoryStepDrawer: View {
 
     private var step: StoryStep { draw.storyStep }
 
+    @Environment(\.reorderCoordinator) private var reorder
+
+    private var isSpace: Bool {
+        [StoryType.space.number, StoryType.onDragSpace.number, StoryType.lastSpace.number]
+            .contains(step.type.number)
+    }
+
     var body: some View {
-        content
-            // Dropping on a step places the dragged step right after it, like hovering a
-            // step in the SDK highlights the space below it.
-            .modifier(StepDropTarget(draw: draw, manager: manager))
+        if isSpace {
+            content
+        } else {
+            content
+                .reorderFrame(stepId: step.id)
+                .opacity(reorder?.active?.stepId == step.id ? 0.35 : 1)
+        }
     }
 
     @ViewBuilder
@@ -106,16 +116,7 @@ struct DraggableStep<Content: View>: View {
 
     var body: some View {
         HStack(alignment: alignment, spacing: 4) {
-            Image(systemName: "line.3.horizontal")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .frame(width: EditorLayout.gutter, height: 24)
-                .contentShape(Rectangle())
-                .draggable(manager.dragPayload(for: step)) {
-                    DragPreview(step: step)
-                }
-                .accessibilityLabel("Reorder")
-                .accessibilityIdentifier("drag.\(step.id)")
+            ReorderGrip(step: step)
                 .opacity(showsGrip ? 1 : 0)
                 .allowsHitTesting(showsGrip)
                 .accessibilityHidden(!showsGrip)
@@ -309,7 +310,6 @@ struct SpaceDrawer: View {
             .padding(.vertical, isTarget ? 2 : 3)
             .padding(.leading, EditorLayout.gutter)
             .contentShape(Rectangle().inset(by: -6))
-            .stepDropDestination(after: draw.position, manager: manager)
             .animation(.easeOut(duration: 0.15), value: isTarget)
     }
 }
@@ -332,12 +332,11 @@ struct LastSpaceDrawer: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { manager.clickAtTheEnd() }
-        .stepDropDestination(after: draw.position, manager: manager)
         .accessibilityIdentifier("editor.end")
     }
 }
 
-private struct DragPreview: View {
+struct DragPreview: View {
     let step: StoryStep
 
     var body: some View {
@@ -356,35 +355,4 @@ private struct DragPreview: View {
     }
 }
 
-private struct StepDropTarget: ViewModifier {
-    let draw: DrawStory
-    let manager: WriteopiaStateManager
-
-    func body(content: Content) -> some View {
-        let isSpace = [StoryType.space.number, StoryType.onDragSpace.number, StoryType.lastSpace.number]
-            .contains(draw.storyStep.type.number)
-
-        if isSpace {
-            content
-        } else {
-            content.stepDropDestination(after: draw.position, manager: manager)
-        }
-    }
-}
-
-extension View {
-    /// Accepts steps dropped here, moving them after the step at `position`.
-    func stepDropDestination(after position: Double, manager: WriteopiaStateManager) -> some View {
-        dropDestination(for: String.self) { payloads, _ in
-            guard let payload = payloads.first else { return false }
-            return manager.moveRequest(payload: payload, after: position)
-        } isTargeted: { targeted in
-            if targeted {
-                manager.onDragHover(position)
-            } else if manager.dragPosition == position {
-                manager.onDragHover(nil)
-            }
-        }
-    }
-}
 #endif

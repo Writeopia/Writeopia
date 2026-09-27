@@ -405,6 +405,11 @@ public final class WriteopiaStateManager {
         isDragging = false
     }
 
+    /// Moves the step with `stepId` right after the step at `position`, from the reorder drag.
+    public func moveStep(stepId: String, after position: Double) {
+        _ = moveRequest(payload: dragPayload(for: StoryStep(id: stepId, type: .text, position: 0)), after: position)
+    }
+
     /// Moves the dragged step right after the step at `position`. Returns false for payloads
     /// that aren't steps of this document.
     @discardableResult
