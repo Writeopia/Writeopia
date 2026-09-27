@@ -2,18 +2,25 @@ package io.writeopia.sdk.persistence.core.sync
 
 import io.writeopia.sdk.manager.DocumentTracker
 import io.writeopia.sdk.manager.StoryStepSyncTracker
+import io.writeopia.sdk.manager.UnsupportedCommentConversationsException
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.StoryState
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateStoryStepSyncTracker
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 /**
@@ -45,6 +52,7 @@ class DocumentSyncManager(
      * @param documentId The unique identifier of the document to sync
      * @param documentEditionFlow Flow emitting the document state and info on each change
      * @param workspaceIdFlow Flow emitting the current workspace ID
+     * @param commentConversationsFlow Current document-level comment conversations
      * @param documentTracker The tracker responsible for saving document changes
      */
     fun registerForDbSync(
@@ -53,15 +61,45 @@ class DocumentSyncManager(
         workspaceIdFlow: Flow<String>,
         documentTracker: DocumentTracker
     ) {
+        activeSyncJobs[documentId]?.cancel()
+
+        val job = scope.launch(dispatcher, start = CoroutineStart.UNDISPATCHED) {
+            val boundWorkspaceIdFlow = flowOf(workspaceIdFlow.first())
+            try {
+                documentTracker.saveOnStoryChanges(
+                    documentEditionFlow,
+                    boundWorkspaceIdFlow
+                )
+            } catch (error: UnsupportedCommentConversationsException) {
+                println("Document sync stopped for $documentId: ${error.message}")
+            }
+        }
+
+        activeSyncJobs[documentId] = job
+    }
+
+    fun registerForDbSync(
+        documentId: String,
+        documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
+        workspaceIdFlow: Flow<String>,
+        commentConversationsFlow: StateFlow<Map<String, List<Comment>>>,
+        documentTracker: DocumentTracker
+    ) {
         // Cancel any existing sync for this document
         activeSyncJobs[documentId]?.cancel()
 
         // Start a new sync job in the global scope
-        val job = scope.launch(dispatcher) {
-            documentTracker.saveOnStoryChanges(
-                documentEditionFlow,
-                workspaceIdFlow
-            )
+        val job = scope.launch(dispatcher, start = CoroutineStart.UNDISPATCHED) {
+            val boundWorkspaceIdFlow = flowOf(workspaceIdFlow.first())
+            try {
+                documentTracker.saveOnStoryChanges(
+                    documentEditionFlow,
+                    boundWorkspaceIdFlow,
+                    commentConversationsFlow
+                )
+            } catch (error: UnsupportedCommentConversationsException) {
+                println("Document sync stopped for $documentId: ${error.message}")
+            }
         }
 
         activeSyncJobs[documentId] = job
@@ -95,10 +133,13 @@ class DocumentSyncManager(
         )
 
         // Start a new backend sync job in the global scope
-        val job = scope.launch(dispatcher) {
+        val job = scope.launch(dispatcher, start = CoroutineStart.UNDISPATCHED) {
+            val workspaceId = workspaceIdFlow.first()
+            if (workspaceId == Workspace.disconnectedWorkspace().id) return@launch
+            val boundWorkspaceIdFlow = flowOf(workspaceId)
             storyStepSyncTracker.syncStorySteps(
                 documentEditionFlow,
-                workspaceIdFlow
+                boundWorkspaceIdFlow
             )
         }
 
