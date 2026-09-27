@@ -3,9 +3,9 @@
 package io.writeopia.core.folders.api
 
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.utils.ResultData
-import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertIs
@@ -17,7 +17,7 @@ class DocumentsApiTest {
     @Test
     fun `sendDocuments rejects documents from another workspace`() = runTest {
         val api = DocumentsApi(
-            client = mockk<HttpClient>(relaxed = true),
+            client = HttpClient(MockEngine { error("HTTP request should not be sent") }),
             baseUrl = "https://api.example.com"
         )
         val document = Document(
