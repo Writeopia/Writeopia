@@ -31,6 +31,11 @@ let package = Package(
         .target(name: "SearchFeature", dependencies: coreProducts + ["DocumentsFeature"], swiftSettings: mainActorByDefault),
         .target(name: "SettingsFeature", dependencies: coreProducts, swiftSettings: mainActorByDefault),
         .testTarget(
+            name: "DocumentsFeatureTests",
+            dependencies: ["DocumentsFeature"] + coreProducts,
+            swiftSettings: mainActorByDefault
+        ),
+        .testTarget(
             name: "AuthFeatureTests",
             dependencies: ["AuthFeature"] + coreProducts,
             swiftSettings: mainActorByDefault

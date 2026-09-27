@@ -22,7 +22,8 @@ iosAppNat/
     └── Features/         Local package with the feature modules
         ├── AuthFeature       Space choice, login, register, email confirmation,
         │                     password recovery (email → code → new password), workspace choice
-        ├── DocumentsFeature  Folder/document browser, new folder/document, document viewer
+        ├── DocumentsFeature  Folder/document grid (drag items onto a folder to move them),
+        │                     new folder/document, document viewer
         ├── SearchFeature     Debounced search (backend or local files)
         └── SettingsFeature   General (color theme), Teams, AI (cloud usage + local Ollama), Account
 ```
@@ -52,6 +53,6 @@ cd Packages/Core && swift test
 # Features (iOS only)
 cd Packages/Features && xcodebuild test -scheme Features-Package -destination 'platform=iOS Simulator,name=iPhone 17'
 
-# UI smoke tests
+# UI smoke tests (they expect a fresh private space: uninstall the app from the simulator first)
 xcodebuild test -project iosAppNat.xcodeproj -scheme iosAppNat -destination 'platform=iOS Simulator,name=iPhone 17'
 ```

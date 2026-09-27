@@ -4,7 +4,7 @@ public struct Folder: Codable, Identifiable, Equatable, Hashable, Sendable {
     public static let rootId = "root"
 
     public let id: String
-    public let parentId: String
+    public var parentId: String
     public var title: String
     public let workspaceId: String
     public var favorite: Bool

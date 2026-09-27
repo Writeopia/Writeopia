@@ -2,6 +2,8 @@ import Foundation
 import Testing
 @testable import WrData
 import WrModels
+import WrNetwork
+import WrStorage
 
 @Suite struct LocalDocumentsRepositoryTests {
     let directory = FileManager.default.temporaryDirectory
@@ -42,6 +44,66 @@ import WrModels
         #expect(try await repository.search(query: "grocer").map(\.title) == ["Groceries"])
         #expect(try await repository.search(query: "private space").map(\.title) == ["Welcome to Writeopia"])
         #expect(try await repository.search(query: "  ").isEmpty)
+    }
+}
+
+@Suite struct MoveTests {
+    let directory = FileManager.default.temporaryDirectory
+        .appending(path: "wr move \(UUID().uuidString)", directoryHint: .isDirectory)
+
+    @Test func movesDocumentIntoFolder() async throws {
+        let repository = LocalDocumentsRepository(directory: directory)
+        let folder = try await repository.createFolder(title: "Ideas", parentId: Folder.rootId)
+        let document = try await repository.createDocument(title: "Draft", parentId: Folder.rootId)
+
+        try await repository.moveDocument(id: document.id, toFolder: folder.id)
+
+        let root = try await repository.folderContents(folderId: Folder.rootId)
+        #expect(!root.documents.contains { $0.id == document.id })
+        #expect(root.folders.first { $0.id == folder.id }?.itemCount == 1)
+        #expect(try await repository.folderContents(folderId: folder.id).documents.map(\.id) == [document.id])
+    }
+
+    @Test func movesFolderAndRejectsCycles() async throws {
+        let repository = LocalDocumentsRepository(directory: directory)
+        let parent = try await repository.createFolder(title: "Parent", parentId: Folder.rootId)
+        let child = try await repository.createFolder(title: "Child", parentId: Folder.rootId)
+
+        try await repository.moveFolder(id: child.id, toFolder: parent.id)
+        #expect(try await repository.folderContents(folderId: parent.id).folders.map(\.id) == [child.id])
+
+        await #expect(throws: MoveError.folderIntoItself) {
+            try await repository.moveFolder(id: parent.id, toFolder: child.id)
+        }
+        await #expect(throws: MoveError.folderIntoItself) {
+            try await repository.moveFolder(id: parent.id, toFolder: parent.id)
+        }
+        #expect(try await repository.folderContents(folderId: Folder.rootId).folders.map(\.id) == [parent.id])
+    }
+
+    @Test func remoteMoveCallsEndpoints() async throws {
+        let transport = RecordingTransport()
+        let client = APIClient(transport: transport, tokenStore: InMemoryTokenStore(accessToken: "a"), baseURL: URL(string: "https://x.io")!)
+        let repository = RemoteDocumentsRepository(client: client, workspaceId: "w1")
+
+        try await repository.moveDocument(id: "d1", toFolder: "f1")
+        try await repository.moveFolder(id: "f2", toFolder: "f1")
+
+        #expect(transport.requests.map { $0.url!.path() } == [
+            "/api/docs/workspace/w1/document/d1/move",
+            "/api/docs/workspace/w1/folder/f2/move",
+        ])
+        #expect(transport.requests.allSatisfy { $0.httpMethod == "POST" })
+        #expect(String(data: transport.requests[0].httpBody!, encoding: .utf8) == #"{"targetParentId":"f1"}"#)
+    }
+}
+
+final class RecordingTransport: HTTPTransport {
+    private(set) var requests: [URLRequest] = []
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        requests.append(request)
+        return (Data("Document moved successfully".utf8), HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
     }
 }
 

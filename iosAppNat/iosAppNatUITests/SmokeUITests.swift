@@ -32,6 +32,19 @@ final class SmokeUITests: XCTestCase {
         app.alerts.buttons["Create"].tap()
         XCTAssertTrue(app.staticTexts["Ideas"].waitForExistence(timeout: 5))
 
+        // Drag the welcome document onto the folder.
+        let folderCard = app.buttons.containing(.staticText, identifier: "Ideas").firstMatch
+        let documentCard = app.buttons.containing(.staticText, identifier: "Welcome to Writeopia").firstMatch
+        // A slow drag with a hold over the folder, so the drop session picks it up.
+        documentCard.press(forDuration: 1.5, thenDragTo: folderCard, withVelocity: .slow, thenHoldForDuration: 1)
+        XCTAssertTrue(documentCard.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["1 item"].waitForExistence(timeout: 5))
+
+        // The document is now inside the folder.
+        folderCard.tap()
+        XCTAssertTrue(app.staticTexts["Welcome to Writeopia"].waitForExistence(timeout: 5))
+        goBack()
+
         // Search.
         app.tabBars.buttons["Search"].tap()
         let searchField = app.searchFields.firstMatch

@@ -26,7 +26,7 @@ let package = Package(
             swiftSettings: mainActorByDefault
         ),
         .target(name: "WrDesign", dependencies: ["WrModels"], swiftSettings: mainActorByDefault),
-        .testTarget(name: "WrDataTests", dependencies: ["WrData", "WrModels", "WrNetwork"], swiftSettings: mainActorByDefault),
+        .testTarget(name: "WrDataTests", dependencies: ["WrData", "WrModels", "WrNetwork", "WrStorage"], swiftSettings: mainActorByDefault),
         .testTarget(name: "WrNetworkTests", dependencies: ["WrNetwork", "WrModels", "WrStorage"], swiftSettings: mainActorByDefault),
     ]
 )

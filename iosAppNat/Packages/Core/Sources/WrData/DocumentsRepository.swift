@@ -10,6 +10,19 @@ public protocol DocumentsRepository: AnyObject {
     func search(query: String) async throws -> [WrDocument]
     func createFolder(title: String, parentId: String) async throws -> Folder
     func createDocument(title: String, parentId: String) async throws -> WrDocument
+    func moveDocument(id: String, toFolder folderId: String) async throws
+    func moveFolder(id: String, toFolder folderId: String) async throws
+}
+
+public enum MoveError: Error, Equatable {
+    /// A folder can't be moved into itself or into one of its subfolders.
+    case folderIntoItself
+
+    public var userMessage: String {
+        switch self {
+        case .folderIntoItself: "A folder can't be moved into itself."
+        }
+    }
 }
 
 extension DocumentsRepository {
@@ -63,6 +76,25 @@ public final class RemoteDocumentsRepository: DocumentsRepository {
         struct Body: Encodable { let document: WrDocument }
         let document = newDocument(title: title, parentId: parentId, workspaceId: workspaceId)
         return try await client.send(.post, "\(base)/document/upsert", body: Body(document: document))
+    }
+
+    public func moveDocument(id: String, toFolder folderId: String) async throws {
+        try await client.perform(.post, "\(base)/document/\(id)/move", body: MoveBody(targetParentId: folderId))
+    }
+
+    public func moveFolder(id: String, toFolder folderId: String) async throws {
+        guard id != folderId else { throw MoveError.folderIntoItself }
+
+        do {
+            try await client.perform(.post, "\(base)/folder/\(id)/move", body: MoveBody(targetParentId: folderId))
+        } catch APIError.badRequest {
+            // The backend answers 400 when the target is inside the moved folder.
+            throw MoveError.folderIntoItself
+        }
+    }
+
+    private struct MoveBody: Encodable {
+        let targetParentId: String
     }
 }
 
@@ -131,8 +163,18 @@ public final class LocalDocumentsRepository: DocumentsRepository {
     public func createFolder(title: String, parentId: String) async throws -> Folder {
         try seedIfNeeded()
         let folder = Folder(id: UUID().uuidString, parentId: parentId, title: title, workspaceId: Workspace.localId)
-        try write(folder, name: fileName(title: title, id: folder.id, suffix: "wrfolder"))
+        try save(folder)
         return folder
+    }
+
+    private func save(_ folder: Folder) throws {
+        for url in try files(suffix: "wrfolder") where url.lastPathComponent.contains(folder.id) {
+            try fileManager.removeItem(at: url)
+        }
+        // The item count is derived when listing, so it isn't stored.
+        var stored = folder
+        stored.itemCount = 0
+        try write(stored, name: fileName(title: folder.title, id: folder.id, suffix: "wrfolder"))
     }
 
     public func createDocument(title: String, parentId: String) async throws -> WrDocument {
@@ -140,6 +182,28 @@ public final class LocalDocumentsRepository: DocumentsRepository {
         let document = newDocument(title: title, parentId: parentId, workspaceId: Workspace.localId)
         try save(document)
         return document
+    }
+
+    public func moveDocument(id: String, toFolder folderId: String) async throws {
+        var document = try await document(id: id)
+        document.parentId = folderId
+        document.lastUpdatedAt = Date.nowMillis
+        try save(document)
+    }
+
+    public func moveFolder(id: String, toFolder folderId: String) async throws {
+        let folders = try allFolders()
+        guard var folder = folders.first(where: { $0.id == id }) else { throw APIError.notFound }
+
+        // Walk up from the target: reaching the moved folder means the target is inside it.
+        var ancestor: String? = folderId
+        while let current = ancestor, current != Folder.rootId {
+            if current == id { throw MoveError.folderIntoItself }
+            ancestor = folders.first(where: { $0.id == current })?.parentId
+        }
+
+        folder.parentId = folderId
+        try save(folder)
     }
 
     public func save(_ document: WrDocument) throws {

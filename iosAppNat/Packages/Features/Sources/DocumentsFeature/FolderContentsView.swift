@@ -62,6 +62,37 @@ final class FolderContentsViewModel {
         return created
     }
 
+    /// Moves the dragged item into `folder`. The item leaves the grid right away and the folder
+    /// is reloaded afterwards, so its item count reflects the move.
+    func move(_ payload: String, into folder: Folder) async -> Bool {
+        guard let dragged = FolderItem.Payload(payload), dragged.id != folder.id else { return false }
+
+        let previousFolders = folders
+        let previousDocuments = documents
+        switch dragged.kind {
+        case .folder: folders.removeAll { $0.id == dragged.id }
+        case .document: documents.removeAll { $0.id == dragged.id }
+        }
+
+        do {
+            switch dragged.kind {
+            case .folder: try await repository.moveFolder(id: dragged.id, toFolder: folder.id)
+            case .document: try await repository.moveDocument(id: dragged.id, toFolder: folder.id)
+            }
+            await load()
+            return true
+        } catch let error as MoveError {
+            folders = previousFolders
+            documents = previousDocuments
+            actionError = error.userMessage
+        } catch {
+            folders = previousFolders
+            documents = previousDocuments
+            actionError = error.userMessage
+        }
+        return false
+    }
+
     private func perform(_ operation: () async throws -> Void) async {
         do {
             try await operation()
@@ -121,6 +152,9 @@ struct FolderContentsView: View {
     @Binding private var path: NavigationPath
     @State private var newItem: NewItem?
     @State private var newItemTitle = ""
+    /// Folder currently under a drag, highlighted as the drop target.
+    @State private var dropTargetId: String?
+    @State private var movedCount = 0
     private let title: String
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 12)]
@@ -143,14 +177,34 @@ struct FolderContentsView: View {
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(viewModel.items) { item in
                     NavigationLink(value: item.route) {
-                        ItemCard(item: item)
+                        ItemCard(item: item, isDropTarget: dropTargetId == item.id)
                     }
                     .buttonStyle(.plain)
+                    .draggable(item.payload.rawValue) {
+                        ItemCard(item: item, isDropTarget: false)
+                            .frame(width: 160)
+                    }
+                    .folderDropDestination(item) { payload, folder in
+                        Task {
+                            if await viewModel.move(payload, into: folder) {
+                                movedCount += 1
+                            }
+                        }
+                    } isTargeted: { targeted in
+                        if targeted {
+                            dropTargetId = item.id
+                        } else if dropTargetId == item.id {
+                            dropTargetId = nil
+                        }
+                    }
                 }
             }
             .padding()
         }
         .background(WrColors.background)
+        .animation(.snappy, value: viewModel.items.map(\.id))
+        .animation(.snappy, value: dropTargetId)
+        .sensoryFeedback(.success, trigger: movedCount)
         .overlay {
             WrStateOverlay(
                 isLoading: viewModel.isLoading,
@@ -231,8 +285,44 @@ enum FolderItem: Identifiable {
 
     var id: String {
         switch self {
-        case .folder(let folder): "folder-\(folder.id)"
-        case .document(let document): "document-\(document.id)"
+        case .folder(let folder): folder.id
+        case .document(let document): document.id
+        }
+    }
+
+    /// What is carried while dragging an item around the grid.
+    struct Payload: Equatable {
+        enum Kind: String {
+            case folder
+            case document
+        }
+
+        private static let prefix = "writeopia-item"
+
+        let kind: Kind
+        let id: String
+
+        init(kind: Kind, id: String) {
+            self.kind = kind
+            self.id = id
+        }
+
+        /// Parses a dropped string. Text dragged from other apps is ignored.
+        init?(_ rawValue: String) {
+            let parts = rawValue.split(separator: ":", maxSplits: 2).map(String.init)
+            guard parts.count == 3, parts[0] == Self.prefix, let kind = Kind(rawValue: parts[1]), !parts[2].isEmpty else {
+                return nil
+            }
+            self.init(kind: kind, id: parts[2])
+        }
+
+        var rawValue: String { "\(Self.prefix):\(kind.rawValue):\(id)" }
+    }
+
+    var payload: Payload {
+        switch self {
+        case .folder(let folder): Payload(kind: .folder, id: folder.id)
+        case .document(let document): Payload(kind: .document, id: document.id)
         }
     }
 
@@ -247,6 +337,7 @@ enum FolderItem: Identifiable {
 /// A folder or a document in the folder grid.
 struct ItemCard: View {
     let item: FolderItem
+    let isDropTarget: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -284,11 +375,15 @@ struct ItemCard: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
-        .background(WrColors.surface, in: RoundedRectangle(cornerRadius: 16))
+        .background(
+            isDropTarget ? WrColors.accent.opacity(0.15) : WrColors.surface,
+            in: RoundedRectangle(cornerRadius: 16)
+        )
         .overlay {
             RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(WrColors.divider)
+                .strokeBorder(isDropTarget ? WrColors.accent : WrColors.divider, lineWidth: isDropTarget ? 2 : 1)
         }
+        .scaleEffect(isDropTarget ? 1.04 : 1)
         .contentShape(RoundedRectangle(cornerRadius: 16))
     }
 
@@ -297,7 +392,11 @@ struct ItemCard: View {
     }
 
     private var icon: String {
-        isFolder ? "folder.fill" : "doc.text"
+        if isFolder {
+            isDropTarget ? "folder.fill.badge.plus" : "folder.fill"
+        } else {
+            "doc.text"
+        }
     }
 
     private var title: String {
@@ -327,6 +426,32 @@ struct ItemCard: View {
             if document.lastUpdatedAt > 0 {
                 Text(document.lastUpdatedDate, format: .relative(presentation: .named))
             }
+        }
+    }
+}
+
+extension View {
+    /// Makes folder cards accept dragged items. Documents are not drop targets.
+    @ViewBuilder
+    func folderDropDestination(
+        _ item: FolderItem,
+        onDrop: @escaping (String, Folder) -> Void,
+        isTargeted: @escaping (Bool) -> Void
+    ) -> some View {
+        if case .folder(let folder) = item {
+            dropDestination(for: String.self) { payloads, _ in
+                guard let payload = payloads.first,
+                      let dragged = FolderItem.Payload(payload),
+                      dragged.id != folder.id
+                else { return false }
+
+                onDrop(payload, folder)
+                return true
+            } isTargeted: { targeted in
+                isTargeted(targeted)
+            }
+        } else {
+            self
         }
     }
 }
