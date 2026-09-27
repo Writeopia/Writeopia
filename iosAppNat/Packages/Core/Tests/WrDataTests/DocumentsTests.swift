@@ -143,7 +143,10 @@ final class RecordingTransport: HTTPTransport {
         )
 
         let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(document)) as! [String: Any]
-        let allowed: Set = ["id", "title", "workspaceId", "content", "createdAt", "lastUpdatedAt", "isFavorite", "parentId"]
+        let allowed: Set = [
+            "id", "title", "workspaceId", "content", "createdAt", "lastUpdatedAt", "isFavorite", "parentId",
+            "lastSyncedAt", "isLocked", "published", "deleted", "icon",
+        ]
         #expect(Set(object.keys).isSubset(of: allowed))
 
         let step = (object["content"] as! [[String: Any]])[0]

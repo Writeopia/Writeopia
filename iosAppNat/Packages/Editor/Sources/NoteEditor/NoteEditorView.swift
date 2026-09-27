@@ -240,11 +240,19 @@ public struct NoteEditorView: View {
                 viewModel.saveDrawing(drawing, stepId: target.stepId)
             }
         }
-        .onDisappear { viewModel.cancelAi() }
+        .onDisappear {
+            viewModel.cancelAi()
+            // Save and send what's pending before leaving.
+            Task { await viewModel.flush() }
+        }
         .task {
             viewModel.writeopiaManager.onDocumentLinkClick = openDocumentLink
             await viewModel.loadDocument()
+            await viewModel.mergeFromBackend()
             await viewModel.loadPublishState()
+        }
+        .onChange(of: viewModel.writeopiaManager.changeCount) {
+            viewModel.documentChanged()
         }
     }
 }

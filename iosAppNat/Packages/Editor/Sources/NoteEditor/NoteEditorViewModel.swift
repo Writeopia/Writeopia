@@ -76,6 +76,23 @@ public final class NoteEditorViewModel {
     @ObservationIgnored private var aiTask: Task<Void, Never>?
     @ObservationIgnored private var loadedDocument: WrDocument?
 
+    // Persistence and sync, like `registerForSync` of the Compose editor.
+    @ObservationIgnored private var syncing: DocumentSyncing? { repository as? DocumentSyncing }
+    /// Steps as last saved on the device, to find what an edit changed.
+    @ObservationIgnored private var savedSteps: [String: StoryStep] = [:]
+    /// Steps as last sent to the backend.
+    @ObservationIgnored private var pushedSteps: [String: StoryStep] = [:]
+    @ObservationIgnored private var lastSyncTimestamp: Int64 = 0
+    @ObservationIgnored private var changeCountAtLoad = 0
+    @ObservationIgnored private var saveTask: Task<Void, Never>?
+    @ObservationIgnored private var pushTask: Task<Void, Never>?
+    public private(set) var isSyncing = false
+    public private(set) var lastSyncFailed = false
+
+    /// Delay after the last edit before saving on the device, and before sending to the backend.
+    public var saveDelay: Duration = .milliseconds(500)
+    public var pushDelay: Duration = .seconds(2)
+
     static let fontKey = "wr.editor.font"
 
     /// `aiClient` and `publishing` are nil in the private space, where there's no backend.
@@ -185,6 +202,7 @@ public final class NoteEditorViewModel {
         if isLocked {
             writeopiaManager.clearLineSelection()
         }
+        documentChanged()
     }
 
     public var fontFamily: EditorFont { writeopiaManager.fontFamily }
@@ -332,11 +350,145 @@ public final class NoteEditorViewModel {
         aiTask?.cancel()
     }
 
+    // MARK: - Persistence and sync
+
+    private func show(_ document: WrDocument) {
+        loadedDocument = document
+        writeopiaManager.loadDocument(document)
+        changeCountAtLoad = writeopiaManager.changeCount
+        savedSteps = Dictionary(writeopiaManager.documentContent.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    /// Merges the backend copy into the one shown, like `fetchAndMergeFromBackend`. The merge is
+    /// only shown when nothing was typed yet, so no edit is lost; otherwise the local edits win
+    /// and are sent with the next sync.
+    public func mergeFromBackend() async {
+        guard let syncing else { return }
+        isSyncing = true
+        defer { isSyncing = false }
+
+        do {
+            guard let merged = try await syncing.fetchAndMerge(documentId: documentId) else {
+                lastSyncFailed = false
+                return
+            }
+            lastSyncFailed = false
+            if writeopiaManager.changeCount == changeCountAtLoad {
+                show(merged)
+                pushedSteps = savedSteps
+            }
+        } catch {
+            lastSyncFailed = true
+        }
+    }
+
+    /// Called on every change of the document: it's saved on the device shortly after, and sent
+    /// to the backend after a pause in the typing.
+    public func documentChanged() {
+        guard hasLoaded else { return }
+
+        saveTask?.cancel()
+        saveTask = Task { [weak self, saveDelay] in
+            try? await Task.sleep(for: saveDelay)
+            guard !Task.isCancelled else { return }
+            await self?.saveNow()
+        }
+
+        guard syncing != nil else { return }
+        pushTask?.cancel()
+        pushTask = Task { [weak self, pushDelay] in
+            try? await Task.sleep(for: pushDelay)
+            guard !Task.isCancelled else { return }
+            await self?.pushNow()
+        }
+    }
+
+    /// Saves and sends what's pending right away, e.g. when leaving the editor.
+    public func flush() async {
+        saveTask?.cancel()
+        pushTask?.cancel()
+        await saveNow()
+        await pushNow()
+    }
+
+    /// The document as it is in the editor, with the steps changed since the last save stamped
+    /// with the current time (so merges pick the newest copy of each step).
+    private func documentToSave() -> (document: WrDocument, changed: Bool) {
+        let now = Date.nowMillis
+        var changed = false
+        let steps = writeopiaManager.documentContent.map { step -> StoryStep in
+            var step = step
+            if let saved = savedSteps[step.id], saved.hasSameContent(as: step) {
+                step.lastUpdatedAt = saved.lastUpdatedAt
+                if saved.position != step.position { changed = true }
+            } else {
+                step.lastUpdatedAt = now
+                changed = true
+            }
+            return step
+        }
+        if Set(steps.map(\.id)) != Set(savedSteps.keys) { changed = true }
+
+        let base = loadedDocument ?? WrDocument(id: documentId, title: "", workspaceId: "")
+        let title = writeopiaManager.title
+        if title != base.title || isLocked != base.isLocked { changed = true }
+
+        var document = base
+        document.title = title
+        document.content = steps
+        document.isLocked = isLocked
+        if changed { document.lastUpdatedAt = now }
+        return (document, changed)
+    }
+
+    func saveNow() async {
+        guard hasLoaded else { return }
+        let (document, changed) = documentToSave()
+        guard changed else { return }
+
+        do {
+            try await repository.save(document)
+            loadedDocument = document
+            savedSteps = Dictionary(document.content.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        } catch {
+            errorMessage = "The document couldn't be saved on this device."
+        }
+    }
+
+    /// Sends the steps changed and deleted since the last push, like `OnUpdateStoryStepSyncTracker`.
+    func pushNow() async {
+        guard hasLoaded, let syncing, let document = loadedDocument else { return }
+
+        let current = document.content
+        let changes = current.filter { step in
+            guard let pushed = pushedSteps[step.id] else { return true }
+            return !pushed.hasSameContent(as: step) || pushed.position != step.position
+        }
+        let currentIds = Set(current.map(\.id))
+        let deletions = pushedSteps.keys.filter { !currentIds.contains($0) }
+        guard !changes.isEmpty || !deletions.isEmpty else { return }
+
+        isSyncing = true
+        defer { isSyncing = false }
+        do {
+            lastSyncTimestamp = try await syncing.pushSteps(
+                document: document,
+                changes: changes,
+                deletions: deletions,
+                lastSyncTimestamp: lastSyncTimestamp
+            )
+            pushedSteps = Dictionary(current.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            lastSyncFailed = false
+        } catch {
+            // Kept for the next push, or the next sync of the folder sends the whole document.
+            lastSyncFailed = true
+        }
+    }
+
     /// Title as it is being typed.
     public var title: String { writeopiaManager.title }
 
     public func loadDocument() async {
-        // Reloading would throw away the edits, which are only in memory.
         guard !hasLoaded else { return }
 
         isLoading = true
@@ -344,10 +496,11 @@ public final class NoteEditorViewModel {
 
         do {
             let document = try await repository.document(id: documentId)
-            loadedDocument = document
-            writeopiaManager.loadDocument(document)
+            show(document)
             hasLoaded = true
             errorMessage = nil
+            lastSyncTimestamp = document.lastSyncedAt ?? 0
+            pushedSteps = savedSteps
         } catch is CancellationError {
             return
         } catch {

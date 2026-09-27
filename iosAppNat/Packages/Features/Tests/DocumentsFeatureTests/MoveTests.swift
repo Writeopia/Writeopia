@@ -27,6 +27,8 @@ final class FakeDocumentsRepository: DocumentsRepository {
         moves.append("folder \(id) -> \(folderId)")
         contents.folders.removeAll { $0.id == id }
     }
+
+    func save(_ document: WrDocument) async throws {}
 }
 
 @Suite struct FolderMoveTests {

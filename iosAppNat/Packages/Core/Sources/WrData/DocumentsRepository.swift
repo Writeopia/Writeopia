@@ -12,6 +12,8 @@ public protocol DocumentsRepository: AnyObject {
     func createDocument(title: String, parentId: String) async throws -> WrDocument
     func moveDocument(id: String, toFolder folderId: String) async throws
     func moveFolder(id: String, toFolder folderId: String) async throws
+    /// Stores the document as it is now in the editor.
+    func save(_ document: WrDocument) async throws
 }
 
 public enum MoveError: Error, Equatable {
@@ -82,6 +84,11 @@ public final class RemoteDocumentsRepository: DocumentsRepository {
         try await client.perform(.post, "\(base)/document/\(id)/move", body: MoveBody(targetParentId: folderId))
     }
 
+    public func save(_ document: WrDocument) async throws {
+        struct Body: Encodable { let document: WrDocument }
+        try await client.perform(.post, "\(base)/document/upsert", body: Body(document: document))
+    }
+
     public func moveFolder(id: String, toFolder folderId: String) async throws {
         guard id != folderId else { throw MoveError.folderIntoItself }
 
@@ -98,10 +105,13 @@ public final class RemoteDocumentsRepository: DocumentsRepository {
     }
 }
 
-/// Stores the private space on disk as JSON, one file per folder and document, using the same
-/// `.wrdoc.json` / `.wrfolder.json` naming as the desktop app.
+/// Stores documents and folders on disk as JSON, one file per folder and document, using the
+/// same `.wrdoc.json` / `.wrfolder.json` naming as the desktop app. It's the whole storage of
+/// the private space, and the local cache of each workspace of the open space.
 public final class LocalDocumentsRepository: DocumentsRepository {
     private let directory: URL
+    private let workspaceId: String
+    private let seedsWelcome: Bool
     private let fileManager = FileManager.default
     private let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
@@ -109,18 +119,33 @@ public final class LocalDocumentsRepository: DocumentsRepository {
         return encoder
     }()
 
-    public init(directory: URL = LocalDocumentsRepository.defaultDirectory) {
+    public init(
+        directory: URL = LocalDocumentsRepository.defaultDirectory,
+        workspaceId: String = Workspace.localId,
+        seedsWelcome: Bool = true
+    ) {
         self.directory = directory
+        self.workspaceId = workspaceId
+        self.seedsWelcome = seedsWelcome
     }
 
     public static var defaultDirectory: URL {
         URL.applicationSupportDirectory.appending(path: "Writeopia/PrivateSpace", directoryHint: .isDirectory)
     }
 
+    /// Local cache of a workspace of the open space.
+    public static func cache(forWorkspace workspaceId: String) -> LocalDocumentsRepository {
+        LocalDocumentsRepository(
+            directory: URL.applicationSupportDirectory.appending(path: "Writeopia/Workspaces/\(workspaceId)", directoryHint: .isDirectory),
+            workspaceId: workspaceId,
+            seedsWelcome: false
+        )
+    }
+
     public func folderContents(folderId: String) async throws -> FolderContents {
         try seedIfNeeded()
-        let folders = try allFolders()
-        let documents = try allDocuments()
+        let folders = try allFolders().filter { !$0.deleted }
+        let documents = try allDocuments().filter { !$0.deleted }
 
         let childFolders = folders
             .filter { $0.parentId == folderId }
@@ -133,7 +158,7 @@ public final class LocalDocumentsRepository: DocumentsRepository {
             .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
 
         let childDocuments = documents
-            .filter { ($0.parentId ?? Folder.rootId) == folderId }
+            .filter { Self.folderId(of: $0) == folderId }
             .sorted { $0.lastUpdatedAt > $1.lastUpdatedAt }
 
         return FolderContents(folders: childFolders, documents: childDocuments)
@@ -141,7 +166,7 @@ public final class LocalDocumentsRepository: DocumentsRepository {
 
     public func document(id: String) async throws -> WrDocument {
         try seedIfNeeded()
-        guard let document = try allDocuments().first(where: { $0.id == id }) else {
+        guard let document = try storedDocument(id: id), !document.deleted else {
             throw APIError.notFound
         }
         return document
@@ -153,34 +178,28 @@ public final class LocalDocumentsRepository: DocumentsRepository {
         try seedIfNeeded()
 
         return try allDocuments()
+            .filter { !$0.deleted }
             .filter { document in
                 document.title.localizedCaseInsensitiveContains(trimmed) ||
-                    document.content.contains { $0.text?.localizedCaseInsensitiveContains(trimmed) == true }
+                    document.content.contains { step in
+                        step.type.number != StoryType.drawing.number &&
+                            step.text?.localizedCaseInsensitiveContains(trimmed) == true
+                    }
             }
             .sorted { $0.lastUpdatedAt > $1.lastUpdatedAt }
     }
 
     public func createFolder(title: String, parentId: String) async throws -> Folder {
         try seedIfNeeded()
-        let folder = Folder(id: UUID().uuidString, parentId: parentId, title: title, workspaceId: Workspace.localId)
-        try save(folder)
+        let folder = Folder(id: UUID().uuidString, parentId: parentId, title: title, workspaceId: workspaceId)
+        try store(folder)
         return folder
-    }
-
-    private func save(_ folder: Folder) throws {
-        for url in try files(suffix: "wrfolder") where url.lastPathComponent.contains(folder.id) {
-            try fileManager.removeItem(at: url)
-        }
-        // The item count is derived when listing, so it isn't stored.
-        var stored = folder
-        stored.itemCount = 0
-        try write(stored, name: fileName(title: folder.title, id: folder.id, suffix: "wrfolder"))
     }
 
     public func createDocument(title: String, parentId: String) async throws -> WrDocument {
         try seedIfNeeded()
-        let document = newDocument(title: title, parentId: parentId, workspaceId: Workspace.localId)
-        try save(document)
+        let document = newDocument(title: title, parentId: parentId, workspaceId: workspaceId)
+        try store(document)
         return document
     }
 
@@ -188,7 +207,7 @@ public final class LocalDocumentsRepository: DocumentsRepository {
         var document = try await document(id: id)
         document.parentId = folderId
         document.lastUpdatedAt = Date.nowMillis
-        try save(document)
+        try store(document)
     }
 
     public func moveFolder(id: String, toFolder folderId: String) async throws {
@@ -203,14 +222,78 @@ public final class LocalDocumentsRepository: DocumentsRepository {
         }
 
         folder.parentId = folderId
-        try save(folder)
+        folder.lastUpdatedAt = Date()
+        try store(folder)
     }
 
-    public func save(_ document: WrDocument) throws {
-        for url in try files(suffix: "wrdoc") where url.lastPathComponent.contains(document.id) {
+    public func save(_ document: WrDocument) async throws {
+        try store(document)
+    }
+
+    // MARK: - Direct access, used by the sync
+
+    /// The document with `id`, including soft deleted ones.
+    public func storedDocument(id: String) throws -> WrDocument? {
+        try files(suffix: "wrdoc")
+            .first { Self.matches($0, id: id, suffix: "wrdoc") }
+            .flatMap { try? JSONDecoder().decode(WrDocument.self, from: Data(contentsOf: $0)) }
+            .flatMap { $0.id == id ? $0 : nil }
+            ?? allDocuments().first { $0.id == id }
+    }
+
+    public func storedFolder(id: String) throws -> Folder? {
+        try allFolders().first { $0.id == id }
+    }
+
+    /// Documents directly inside `folderId`, soft deleted ones included.
+    public func storedDocuments(inFolder folderId: String) throws -> [WrDocument] {
+        try allDocuments().filter { Self.folderId(of: $0) == folderId }
+    }
+
+    /// Folders directly inside `folderId`, soft deleted ones included.
+    public func storedFolders(inFolder folderId: String) throws -> [Folder] {
+        try allFolders().filter { $0.parentId == folderId }
+    }
+
+    public func store(_ document: WrDocument) throws {
+        for url in try files(suffix: "wrdoc") where Self.matches(url, id: document.id, suffix: "wrdoc") {
             try fileManager.removeItem(at: url)
         }
         try write(document, name: fileName(title: document.title, id: document.id, suffix: "wrdoc"))
+    }
+
+    public func store(_ folder: Folder) throws {
+        for url in try files(suffix: "wrfolder") where Self.matches(url, id: folder.id, suffix: "wrfolder") {
+            try fileManager.removeItem(at: url)
+        }
+        // The item count is derived when listing, so it isn't stored.
+        var stored = folder
+        stored.itemCount = 0
+        try write(stored, name: fileName(title: folder.title, id: folder.id, suffix: "wrfolder"))
+    }
+
+    /// Removes the document from this device for good (it was deleted elsewhere).
+    public func hardDeleteDocument(id: String) throws {
+        for url in try files(suffix: "wrdoc") where Self.matches(url, id: id, suffix: "wrdoc") {
+            try fileManager.removeItem(at: url)
+        }
+    }
+
+    public func hardDeleteFolder(id: String) throws {
+        for url in try files(suffix: "wrfolder") where Self.matches(url, id: id, suffix: "wrfolder") {
+            try fileManager.removeItem(at: url)
+        }
+    }
+
+    /// Files are named `{Title}_{id}.{suffix}.json`.
+    private static func matches(_ url: URL, id: String, suffix: String) -> Bool {
+        url.lastPathComponent.hasSuffix("_\(id).\(suffix).json")
+    }
+
+    /// Top level documents may come with no parent from the backend.
+    static func folderId(of document: WrDocument) -> String {
+        guard let parentId = document.parentId, !parentId.isEmpty else { return Folder.rootId }
+        return parentId
     }
 
     // MARK: - Files
@@ -245,7 +328,7 @@ public final class LocalDocumentsRepository: DocumentsRepository {
 
     /// Gives a brand new private space something to look at.
     private func seedIfNeeded() throws {
-        guard !fileManager.fileExists(atPath: directory.path(percentEncoded: false)) else { return }
+        guard seedsWelcome, !fileManager.fileExists(atPath: directory.path(percentEncoded: false)) else { return }
 
         let welcome = WrDocument(
             id: UUID().uuidString,
@@ -269,6 +352,6 @@ public final class LocalDocumentsRepository: DocumentsRepository {
             ],
             parentId: Folder.rootId
         )
-        try save(welcome)
+        try store(welcome)
     }
 }

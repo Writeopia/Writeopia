@@ -12,7 +12,10 @@ final class FolderContentsViewModel {
     private(set) var folders: [Folder] = []
     private(set) var documents: [WrDocument] = []
     private(set) var isLoading = false
+    private(set) var isSyncing = false
     private(set) var errorMessage: String?
+    /// Last sync failure; the local documents are shown anyway.
+    private(set) var syncError: String?
     var actionError: String?
 
     let folderId: String
@@ -30,10 +33,30 @@ final class FolderContentsViewModel {
         folders.map(FolderItem.folder) + documents.map(FolderItem.document)
     }
 
+    /// Shows what's on this device right away, then syncs the folder with the backend (open
+    /// space) and shows the result, like the notes list of the Compose app.
     func load() async {
         isLoading = true
         defer { isLoading = false }
 
+        await loadLocal()
+
+        guard let syncing = repository as? DocumentSyncing else { return }
+        isSyncing = true
+        defer { isSyncing = false }
+        do {
+            try await syncing.syncFolder(folderId)
+            syncError = nil
+            await loadLocal()
+        } catch is CancellationError {
+            return
+        } catch {
+            // Offline or the backend failed: what's on the device is still shown.
+            syncError = error.userMessage
+        }
+    }
+
+    private func loadLocal() async {
         do {
             let contents = try await repository.folderContents(folderId: folderId)
             folders = contents.folders
@@ -228,6 +251,17 @@ struct FolderContentsView: View {
         }
         .navigationTitle(title)
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if viewModel.isSyncing {
+                    ProgressView()
+                        .controlSize(.small)
+                        .accessibilityLabel("Syncing")
+                } else if viewModel.syncError != nil {
+                    Image(systemName: "icloud.slash")
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Not synced")
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button {

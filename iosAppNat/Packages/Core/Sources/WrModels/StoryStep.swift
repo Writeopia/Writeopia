@@ -13,6 +13,11 @@ public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
     public var spans: [SpanInfo]
     public var position: Double
     public var documentLink: DocumentLink?
+    /// Group this step belongs to, if any.
+    public var parentId: String?
+    public var decoration: Decoration?
+    /// Epoch milliseconds of the last change of this step, used to merge copies of a document.
+    public var lastUpdatedAt: Int64?
 
     public init(
         id: String = UUID().uuidString,
@@ -25,7 +30,10 @@ public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
         tags: [TagInfo] = [],
         spans: [SpanInfo] = [],
         position: Double,
-        documentLink: DocumentLink? = nil
+        documentLink: DocumentLink? = nil,
+        parentId: String? = nil,
+        decoration: Decoration? = nil,
+        lastUpdatedAt: Int64? = nil
     ) {
         self.id = id
         self.type = type
@@ -38,6 +46,9 @@ public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
         self.spans = spans
         self.position = position
         self.documentLink = documentLink
+        self.parentId = parentId
+        self.decoration = decoration
+        self.lastUpdatedAt = lastUpdatedAt
     }
 
     public init(from decoder: Decoder) throws {
@@ -53,6 +64,21 @@ public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
         spans = try container.decodeIfPresent([SpanInfo].self, forKey: .spans) ?? []
         position = try container.decodeIfPresent(Double.self, forKey: .position) ?? 0
         documentLink = try container.decodeIfPresent(DocumentLink.self, forKey: .documentLink)
+        parentId = try container.decodeIfPresent(String.self, forKey: .parentId)
+        decoration = try container.decodeIfPresent(Decoration.self, forKey: .decoration)
+        lastUpdatedAt = try container.decodeIfPresent(Int64.self, forKey: .lastUpdatedAt)
+    }
+
+    /// Same content, ignoring the position and the timestamp. Used to find the steps changed by
+    /// an edit.
+    public func hasSameContent(as other: StoryStep) -> Bool {
+        var this = self
+        var that = other
+        this.position = 0
+        that.position = 0
+        this.lastUpdatedAt = nil
+        that.lastUpdatedAt = nil
+        return this == that
     }
 
     public func hasTag(_ tag: String) -> Bool {
@@ -117,6 +143,14 @@ public struct SpanInfo: Codable, Equatable, Hashable, Sendable {
         self.end = end
         self.span = span
         self.extra = extra
+    }
+}
+
+public struct Decoration: Codable, Equatable, Hashable, Sendable {
+    public let backgroundColor: Int?
+
+    public init(backgroundColor: Int? = nil) {
+        self.backgroundColor = backgroundColor
     }
 }
 

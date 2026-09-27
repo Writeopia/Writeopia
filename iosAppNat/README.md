@@ -68,7 +68,18 @@ Documents open in an editable editor. Supported step types: `TITLE`, `TEXT`, `CO
   - **Font**: System, Serif, Monospace or Cursive, remembered for every document.
   - **Export as Json / Markdown**: writes `{"data": <document>}` or the SDK's Markdown to a file and opens the share sheet.
   - **Publish to Web**: for premium users in the open space, publish/unpublish (`/document/{id}/publish`, `/unpublish`, `/published`) and copy the `https://app.writeopia.io/site/<id>` link. Others see the "Premium Feature" dialog, as in the Compose app. The backend doesn't send the user tier yet, so everyone currently counts as free.
-- Edits are kept in memory only: nothing is saved yet.
+
+## Persistence and sync
+
+Mirrors the Compose app (`DocumentLoadUseCase`, `DocumentMerger`, `FolderSync`, the conflict handlers and `OnUpdateStoryStepSyncTracker`).
+
+- **Storage**: every document and folder is a JSON file (`{Title}_{id}.wrdoc.json` / `.wrfolder.json`). The private space lives in `Application Support/Writeopia/PrivateSpace`; each workspace of the open space has a local cache in `Application Support/Writeopia/Workspaces/<id>`. Documents keep `lastUpdatedAt` / `lastSyncedAt`, and steps their own `lastUpdatedAt`.
+- **Opening a folder** shows the cache right away, then syncs it: `POST /api/docs/workspace/document/folder/diff`, conflicts settled like the Compose app (the copy updated last wins, documents deleted on this device aren't brought back), local changes sent with `POST /api/docs/workspace/document` and `/folder`, and the result shown. Synced items the backend no longer has in the folder are removed (deleted or moved on another device). Pull to refresh syncs again.
+- **Opening a document** shows the local copy, then merges the backend copy (`GET .../document/{id}`): steps matched by id, the newest wins, steps from both sides kept. The merge replaces what's shown only if nothing was typed yet.
+- **Editing** saves on the device 0.5 s after the last change, and sends the changed and deleted steps with `POST .../document/{id}/steps/sync` after 2 s without typing, and when leaving the editor. When a push fails, the document stays outdated and the next folder sync sends it whole.
+- New documents and folders are created locally with their final id and sent right away when possible.
+
+Differences with the Compose app: steps are stamped with their own `lastUpdatedAt` (so merges pick the newest copy of each step instead of always the local one), and a successful `steps/sync` marks the document as synced.
 
 ## Tests
 

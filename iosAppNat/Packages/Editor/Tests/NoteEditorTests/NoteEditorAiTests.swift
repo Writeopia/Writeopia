@@ -36,6 +36,7 @@ final class OneDocumentRepository: DocumentsRepository {
     func createDocument(title: String, parentId: String) async throws -> WrDocument { throw APIError.notFound }
     func moveDocument(id: String, toFolder folderId: String) async throws {}
     func moveFolder(id: String, toFolder folderId: String) async throws {}
+    func save(_ document: WrDocument) async throws {}
 }
 
 private let document = WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
@@ -317,6 +318,7 @@ final class CreatingRepository: DocumentsRepository {
     }
     func moveDocument(id: String, toFolder folderId: String) async throws {}
     func moveFolder(id: String, toFolder folderId: String) async throws {}
+    func save(_ document: WrDocument) async throws {}
 }
 
 @Suite struct SelectionMenuTests {
@@ -444,5 +446,153 @@ private func pngData(width: CGFloat, height: CGFloat) -> Data {
 
         #expect(viewModel.imageError != nil)
         #expect(viewModel.writeopiaManager.currentStory.stories.count == 3)
+    }
+}
+
+final class SyncingRepository: DocumentsRepository, DocumentSyncing {
+    var stored: WrDocument
+    var merged: WrDocument?
+    private(set) var saves: [WrDocument] = []
+    private(set) var pushes: [(changes: [String], deletions: [String], lastSync: Int64)] = []
+    var pushError: Error?
+
+    init(_ document: WrDocument) { stored = document }
+
+    func folderContents(folderId: String) async throws -> FolderContents { FolderContents() }
+    func document(id: String) async throws -> WrDocument { stored }
+    func search(query: String) async throws -> [WrDocument] { [] }
+    func createFolder(title: String, parentId: String) async throws -> Folder { throw APIError.notFound }
+    func createDocument(title: String, parentId: String) async throws -> WrDocument { throw APIError.notFound }
+    func moveDocument(id: String, toFolder folderId: String) async throws {}
+    func moveFolder(id: String, toFolder folderId: String) async throws {}
+    func save(_ document: WrDocument) async throws {
+        saves.append(document)
+        stored = document
+    }
+
+    func syncFolder(_ folderId: String) async throws {}
+    func fetchAndMerge(documentId: String) async throws -> WrDocument? { merged }
+    func pushSteps(document: WrDocument, changes: [StoryStep], deletions: [String], lastSyncTimestamp: Int64) async throws -> Int64 {
+        if let pushError { throw pushError }
+        pushes.append((changes.map(\.id), deletions, lastSyncTimestamp))
+        return 1000 + Int64(pushes.count)
+    }
+}
+
+@Suite struct PersistenceTests {
+    private let synced = WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
+        StoryStep(id: "t", type: .title, text: "Plan", position: 0, lastUpdatedAt: 10),
+        StoryStep(id: "a", type: .text, text: "First idea", position: 1, lastUpdatedAt: 10),
+        StoryStep(id: "b", type: .text, text: "Second idea", position: 2, lastUpdatedAt: 10),
+    ], lastUpdatedAt: 10, lastSyncedAt: 50)
+
+    private func viewModel(_ repository: SyncingRepository) async -> NoteEditorViewModel {
+        let viewModel = NoteEditorViewModel(documentId: "d", repository: repository)
+        viewModel.saveDelay = .milliseconds(10)
+        viewModel.pushDelay = .milliseconds(30)
+        await viewModel.loadDocument()
+        return viewModel
+    }
+
+    @Test func editsAreSavedWithTheChangedStepsStamped() async throws {
+        let repository = SyncingRepository(synced)
+        let viewModel = await viewModel(repository)
+
+        viewModel.writeopiaManager.handleTextInput("First idea!", cursor: 11, stepId: "a")
+        await viewModel.flush()
+
+        let saved = try #require(repository.saves.last)
+        #expect(saved.content.first { $0.id == "a" }?.text == "First idea!")
+        #expect((saved.content.first { $0.id == "a" }?.lastUpdatedAt ?? 0) > 10)
+        #expect(saved.content.first { $0.id == "b" }?.lastUpdatedAt == 10)
+        #expect(saved.lastUpdatedAt > 10)
+    }
+
+    @Test func nothingIsSavedWithoutChanges() async {
+        let repository = SyncingRepository(synced)
+        let viewModel = await viewModel(repository)
+
+        await viewModel.flush()
+
+        #expect(repository.saves.isEmpty)
+        #expect(repository.pushes.isEmpty)
+    }
+
+    @Test func onlyChangedAndDeletedStepsArePushed() async throws {
+        let repository = SyncingRepository(synced)
+        let viewModel = await viewModel(repository)
+
+        viewModel.writeopiaManager.handleTextInput("First idea!", cursor: 11, stepId: "a")
+        viewModel.writeopiaManager.onSelected(stepId: "b", isSelected: true)
+        viewModel.writeopiaManager.deleteSelectedLines()
+        await viewModel.flush()
+
+        let push = try #require(repository.pushes.first)
+        #expect(push.changes == ["a"])
+        #expect(push.deletions == ["b"])
+        #expect(push.lastSync == 50)
+
+        // The next push continues from the server time and sends nothing already sent.
+        viewModel.writeopiaManager.handleTextInput("First idea!!", cursor: 12, stepId: "a")
+        await viewModel.flush()
+        #expect(repository.pushes.last?.lastSync == 1001)
+        #expect(repository.pushes.last?.changes == ["a"])
+        #expect(repository.pushes.last?.deletions.isEmpty == true)
+    }
+
+    @Test func editingSchedulesSaveAndPush() async throws {
+        let repository = SyncingRepository(synced)
+        let viewModel = await viewModel(repository)
+
+        viewModel.writeopiaManager.handleTextInput("Typed", cursor: 5, stepId: "b")
+        viewModel.documentChanged()
+        try await Task.sleep(for: .milliseconds(200))
+
+        #expect(repository.saves.count == 1)
+        #expect(repository.pushes.count == 1)
+    }
+
+    @Test func failedPushIsRetried() async throws {
+        let repository = SyncingRepository(synced)
+        repository.pushError = APIError.offline
+        let viewModel = await viewModel(repository)
+
+        viewModel.writeopiaManager.handleTextInput("Offline edit", cursor: 12, stepId: "a")
+        await viewModel.flush()
+        #expect(viewModel.lastSyncFailed)
+
+        repository.pushError = nil
+        await viewModel.flush()
+        #expect(repository.pushes.first?.changes == ["a"])
+        #expect(!viewModel.lastSyncFailed)
+    }
+
+    @Test func backendMergeIsShownOnlyBeforeTyping() async throws {
+        var remote = synced
+        remote.content.append(StoryStep(id: "c", type: .text, text: "From another device", position: 3, lastUpdatedAt: 99))
+
+        let untouched = SyncingRepository(synced)
+        untouched.merged = remote
+        let first = await viewModel(untouched)
+        await first.mergeFromBackend()
+        #expect(first.writeopiaManager.step(withId: "c")?.text == "From another device")
+
+        let edited = SyncingRepository(synced)
+        edited.merged = remote
+        let second = await viewModel(edited)
+        second.writeopiaManager.handleTextInput("Typing", cursor: 6, stepId: "a")
+        await second.mergeFromBackend()
+        #expect(second.writeopiaManager.step(withId: "c") == nil)
+        #expect(second.writeopiaManager.step(withId: "a")?.text == "Typing")
+    }
+
+    @Test func lockingIsSaved() async throws {
+        let repository = SyncingRepository(synced)
+        let viewModel = await viewModel(repository)
+
+        viewModel.toggleLock()
+        await viewModel.flush()
+
+        #expect(repository.saves.last?.isLocked == true)
     }
 }

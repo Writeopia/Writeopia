@@ -1,0 +1,238 @@
+import Foundation
+import Testing
+@testable import WrData
+import WrModels
+import WrNetwork
+import WrStorage
+
+private func step(_ id: String, _ text: String, at position: Double, updated: Int64?) -> StoryStep {
+    StoryStep(id: id, type: .text, text: text, position: position, lastUpdatedAt: updated)
+}
+
+@Suite struct DocumentMergerTests {
+    @Test func newerStepWinsAndStepsFromBothSidesAreKept() throws {
+        let local = WrDocument(id: "d", title: "Local", workspaceId: "w", content: [
+            step("a", "local a", at: 0, updated: 100),
+            step("b", "local b", at: 1, updated: 300),
+            step("only-local", "L", at: 3, updated: 10),
+        ], lastUpdatedAt: 500)
+        let remote = WrDocument(id: "d", title: "Remote", workspaceId: "w", content: [
+            step("a", "remote a", at: 0, updated: 200),
+            step("b", "remote b", at: 1, updated: 250),
+            step("only-remote", "R", at: 2, updated: 10),
+        ], lastUpdatedAt: 400)
+
+        let merged = try #require(DocumentMerger.merge(local: local, remote: remote))
+
+        #expect(merged.content.map(\.text) == ["remote a", "local b", "R", "L"])
+        // Metadata from the copy updated last.
+        #expect(merged.title == "Local")
+    }
+
+    @Test func localWinsWhenTimesAreMissingOrEqual() throws {
+        let local = WrDocument(id: "d", title: "", workspaceId: "w", content: [step("a", "local", at: 0, updated: nil)])
+        let remote = WrDocument(id: "d", title: "", workspaceId: "w", content: [step("a", "remote", at: 0, updated: 999)])
+        #expect(DocumentMerger.merge(local: local, remote: remote)?.content.first?.text == "local")
+
+        let tieLocal = WrDocument(id: "d", title: "", workspaceId: "w", content: [step("a", "local", at: 0, updated: 5)])
+        let tieRemote = WrDocument(id: "d", title: "", workspaceId: "w", content: [step("a", "remote", at: 0, updated: 5)])
+        #expect(DocumentMerger.merge(local: tieLocal, remote: tieRemote)?.content.first?.text == "local")
+    }
+
+    @Test func oneMissingSideReturnsTheOther() {
+        let document = WrDocument(id: "d", title: "", workspaceId: "w")
+        #expect(DocumentMerger.merge(local: nil, remote: document) == document)
+        #expect(DocumentMerger.merge(local: document, remote: nil) == document)
+        #expect(DocumentMerger.merge(local: nil, remote: nil) == nil)
+    }
+}
+
+private func makeStore() -> LocalDocumentsRepository {
+    LocalDocumentsRepository(
+        directory: FileManager.default.temporaryDirectory.appending(path: "sync \(UUID().uuidString)", directoryHint: .isDirectory),
+        workspaceId: "w",
+        seedsWelcome: false
+    )
+}
+
+@Suite struct ConflictHandlerTests {
+    @Test func newestDocumentWinsAndLocalWinnersAreSent() throws {
+        let store = makeStore()
+        let localNewer = WrDocument(id: "a", title: "mine", workspaceId: "w", lastUpdatedAt: 200, parentId: "root")
+        let remoteOlder = WrDocument(id: "a", title: "theirs", workspaceId: "w", lastUpdatedAt: 100, parentId: "root")
+        let remoteOnly = WrDocument(id: "b", title: "new there", workspaceId: "w", lastUpdatedAt: 50, parentId: "root")
+        let localOnly = WrDocument(id: "c", title: "new here", workspaceId: "w", lastUpdatedAt: 50, parentId: "root")
+
+        let toSend = try DocumentConflictHandler.handle(local: [localNewer, localOnly], remote: [remoteOlder, remoteOnly], store: store)
+
+        #expect(Set(toSend.map(\.id)) == ["a", "c"])
+        #expect(try store.storedDocument(id: "a")?.title == "mine")
+        let received = try #require(try store.storedDocument(id: "b"))
+        #expect(received.title == "new there")
+        #expect(!received.isOutdated)
+    }
+
+    @Test func documentsDeletedHereAreNotBroughtBack() throws {
+        let store = makeStore()
+        try store.store(WrDocument(id: "a", title: "gone", workspaceId: "w", lastUpdatedAt: 300, deleted: true))
+
+        _ = try DocumentConflictHandler.handle(
+            local: [],
+            remote: [WrDocument(id: "a", title: "still there", workspaceId: "w", lastUpdatedAt: 100)],
+            store: store
+        )
+
+        #expect(try store.storedDocument(id: "a")?.deleted == true)
+    }
+
+    @Test func foldersFollowTheSameRules() throws {
+        let store = makeStore()
+        let mine = Folder(id: "f", parentId: "root", title: "Mine", workspaceId: "w", lastUpdatedAt: Date(millis: 200))
+        let theirs = Folder(id: "f", parentId: "root", title: "Theirs", workspaceId: "w", lastUpdatedAt: Date(millis: 100))
+        let newThere = Folder(id: "g", parentId: "root", title: "New", workspaceId: "w", lastUpdatedAt: Date(millis: 100))
+
+        let toSend = try FolderConflictHandler.handle(local: [mine], remote: [theirs, newThere], store: store)
+
+        #expect(toSend.map(\.id) == ["f"])
+        #expect(try store.storedFolder(id: "g")?.title == "New")
+        #expect(try store.storedFolder(id: "g")?.lastSyncedAt != nil)
+    }
+}
+
+/// Answers the sync endpoints from an in-memory backend.
+final class FakeBackend: HTTPTransport {
+    var folderDiff: FolderContents = FolderContents()
+    var remoteDocument: WrDocument?
+    private(set) var sentDocuments: [[String: Any]] = []
+    private(set) var sentFolders: [[String: Any]] = []
+    private(set) var stepSyncBodies: [[String: Any]] = []
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let path = request.url!.path()
+        let body = request.httpBody.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
+        var status = 200
+        var response = Data()
+
+        switch path {
+        case "/api/docs/workspace/document/folder/diff":
+            response = try JSONEncoder().encode(folderDiff)
+        case "/api/docs/workspace/document":
+            sentDocuments += body["documents"] as? [[String: Any]] ?? []
+            response = Data("Accepted".utf8)
+        case "/api/docs/workspace/folder":
+            sentFolders += body["folders"] as? [[String: Any]] ?? []
+            response = Data("Accepted".utf8)
+        case let path where path.hasSuffix("/steps/sync"):
+            stepSyncBodies.append(body)
+            response = Data(#"{"serverTimestamp":777,"updatedSteps":[],"deletedIds":[]}"#.utf8)
+        case let path where path.hasPrefix("/api/docs/workspace/w/document/"):
+            if let remoteDocument {
+                response = try JSONEncoder().encode(remoteDocument)
+            } else {
+                status = 404
+            }
+        default:
+            status = 404
+        }
+        return (response, HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
+    }
+}
+
+@Suite struct SyncedRepositoryTests {
+    private func makeRepository(_ backend: FakeBackend) -> SyncedDocumentsRepository {
+        let client = APIClient(transport: backend, tokenStore: InMemoryTokenStore(accessToken: "a"), baseURL: URL(string: "https://x.io")!)
+        return SyncedDocumentsRepository(
+            local: makeStore(),
+            remote: RemoteDocumentsRepository(client: client, workspaceId: "w"),
+            api: SyncAPI(client: client, workspaceId: "w")
+        )
+    }
+
+    @Test func folderSyncDownloadsSendsAndMarksSynced() async throws {
+        let backend = FakeBackend()
+        backend.folderDiff = FolderContents(
+            folders: [Folder(id: "f", parentId: "root", title: "Remote folder", workspaceId: "w")],
+            documents: [WrDocument(id: "remote", title: "From the backend", workspaceId: "w", parentId: "root")]
+        )
+        let repository = makeRepository(backend)
+        let draft = WrDocument(id: "draft", title: "Written offline", workspaceId: "w", parentId: "root")
+        try repository.local.store(draft)
+
+        try await repository.syncFolder("root")
+
+        let contents = try await repository.folderContents(folderId: "root")
+        #expect(Set(contents.documents.map(\.id)) == ["remote", "draft"])
+        #expect(contents.folders.map(\.title) == ["Remote folder"])
+        #expect(backend.sentDocuments.map { $0["id"] as? String } == ["draft"])
+        #expect(try repository.local.storedDocument(id: "draft")?.isOutdated == false)
+    }
+
+    @Test func documentsDeletedElsewhereLeaveThisDevice() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "old", title: "Synced", workspaceId: "w", lastUpdatedAt: 10, parentId: "root", lastSyncedAt: 20))
+
+        try await repository.syncFolder("root")
+
+        #expect(try repository.local.storedDocument(id: "old") == nil)
+    }
+
+    @Test func foldersAreSentInTheBackendFormat() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+
+        let folder = try await repository.createFolder(title: "Ideas", parentId: "root")
+
+        let sent = try #require(backend.sentFolders.first)
+        #expect(sent["id"] as? String == folder.id)
+        #expect(Set(sent.keys) == ["id", "parentId", "title", "createdAt", "lastUpdatedAt", "workspaceId", "favorite", "itemCount"])
+        #expect((sent["createdAt"] as? String)?.hasSuffix("Z") == true)
+        #expect(try repository.local.storedFolder(id: folder.id)?.lastSyncedAt != nil)
+    }
+
+    @Test func openingMergesTheBackendCopy() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            step("a", "local a", at: 0, updated: 100),
+        ], lastUpdatedAt: 100, parentId: "root", lastSyncedAt: 100))
+        backend.remoteDocument = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            step("a", "edited elsewhere", at: 0, updated: 200),
+            step("b", "added elsewhere", at: 1, updated: 200),
+        ], lastUpdatedAt: 200, parentId: "root")
+
+        let merged = try #require(try await repository.fetchAndMerge(documentId: "d"))
+
+        #expect(merged.content.map(\.text) == ["edited elsewhere", "added elsewhere"])
+        #expect(try repository.local.storedDocument(id: "d")?.content.count == 2)
+        // Nothing new the second time.
+        #expect(try await repository.fetchAndMerge(documentId: "d") == nil)
+    }
+
+    @Test func pushingStepsSendsChangesAndMarksTheDocument() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        let document = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [step("a", "hi", at: 0, updated: 5)], lastUpdatedAt: 5, parentId: "root")
+        try repository.local.store(document)
+
+        let serverTime = try await repository.pushSteps(document: document, changes: document.content, deletions: ["gone"], lastSyncTimestamp: 1)
+
+        #expect(serverTime == 777)
+        let body = try #require(backend.stepSyncBodies.first)
+        #expect(body["documentId"] as? String == "d")
+        #expect(body["lastSyncTimestamp"] as? Int == 1)
+        #expect(body["deletions"] as? [String] == ["gone"])
+        let change = try #require((body["changes"] as? [[String: Any]])?.first)
+        #expect((change["storyStep"] as? [String: Any])?["id"] as? String == "a")
+        #expect(try repository.local.storedDocument(id: "d")?.isOutdated == false)
+    }
+
+    @Test func folderDatesReadBothFormats() throws {
+        let iso = try JSONDecoder().decode(Folder.self, from: Data(#"{"id":"f","parentId":"root","title":"T","workspaceId":"w","createdAt":"2026-01-02T10:00:00Z","lastUpdatedAt":"2026-01-02T10:00:00.250Z","itemCount":1}"#.utf8))
+        #expect(iso.createdAt != nil)
+        #expect(iso.lastUpdatedAt?.timeIntervalSince1970.truncatingRemainder(dividingBy: 1) == 0.25)
+
+        let millis = try JSONDecoder().decode(Folder.self, from: Data(#"{"id":"f","parentId":"root","title":"T","workspaceId":"w","createdAt":1700000000000}"#.utf8))
+        #expect(millis.createdAt == Date(millis: 1_700_000_000_000))
+    }
+}

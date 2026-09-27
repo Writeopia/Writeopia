@@ -36,7 +36,7 @@ public final class AppSession {
     public let preferences: Preferences
     private let tokenStore: TokenStore
     private let localDocuments: LocalDocumentsRepository
-    @ObservationIgnored private var remoteDocuments: RemoteDocumentsRepository?
+    @ObservationIgnored private var syncedDocuments: SyncedDocumentsRepository?
 
     public init(
         tokenStore: TokenStore = KeychainTokenStore(),
@@ -68,15 +68,20 @@ public final class AppSession {
 
     public var isOnline: Bool { spaceType == .online && tokenStore.accessToken != nil }
 
-    /// Documents of the current workspace, from the backend or from the device.
+    /// Documents of the current workspace. The private space lives on the device; the open space
+    /// is kept in a local cache per workspace and synced with the backend.
     public var documents: DocumentsRepository {
-        guard spaceType == .online, let workspace else { return localDocuments }
+        guard spaceType == .online, let workspace, workspace.id != Workspace.localId else { return localDocuments }
 
-        if let remoteDocuments, remoteDocuments.workspaceId == workspace.id {
-            return remoteDocuments
+        if let syncedDocuments, syncedDocuments.workspaceId == workspace.id {
+            return syncedDocuments
         }
-        let repository = RemoteDocumentsRepository(client: client, workspaceId: workspace.id)
-        remoteDocuments = repository
+        let repository = SyncedDocumentsRepository(
+            local: .cache(forWorkspace: workspace.id),
+            remote: RemoteDocumentsRepository(client: client, workspaceId: workspace.id),
+            api: SyncAPI(client: client, workspaceId: workspace.id)
+        )
+        syncedDocuments = repository
         return repository
     }
 
@@ -154,14 +159,17 @@ public final class AppSession {
         setUser(user)
     }
 
+    /// Signing out goes back to "Choose your space", like after the first launch.
     public func logout() async {
         await authAPI.logout()
         clearOnlineSession()
+        switchSpace()
     }
 
     public func deleteAccount() async throws {
         try await authAPI.deleteAccount()
         clearOnlineSession()
+        switchSpace()
     }
 
     // MARK: - Private
@@ -175,7 +183,7 @@ public final class AppSession {
     private func clearOnlineSession() {
         setUser(nil)
         workspace = nil
-        remoteDocuments = nil
+        syncedDocuments = nil
         preferences.remove(.selectedWorkspace)
         phase = spaceType == .online ? .signedOut : resolvePhase()
     }

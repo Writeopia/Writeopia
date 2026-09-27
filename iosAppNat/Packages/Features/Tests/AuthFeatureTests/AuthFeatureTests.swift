@@ -220,6 +220,7 @@ private func makeSession(
 
         await session.logout()
         #expect(tokens.accessToken == nil)
-        #expect(session.phase == .signedOut)
+        #expect(session.phase == .spaceChoice)
+        #expect(session.spaceType == nil)
     }
 }
