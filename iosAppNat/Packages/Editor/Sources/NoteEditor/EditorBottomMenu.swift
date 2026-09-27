@@ -76,7 +76,7 @@ struct EditorBottomMenu: View {
         .padding(.bottom, 8)
     }
 
-    private func spanButton(_ span: Span, systemImage: String, label: String) -> some View {
+    private func spanButton(_ span: Span, systemImage: String, label: LocalizedStringKey) -> some View {
         MenuButton(systemImage: systemImage, label: label, isActive: manager.isSpanActive(span)) {
             manager.toggleSpan(span)
         }
@@ -106,14 +106,14 @@ struct SelectionMenu: View {
             switch panel {
             case .boxCard:
                 optionsRow([
-                    ("Box", manager.selectedLinesHave(.box), { manager.toggleTagOfSelectedLines(.box) }),
-                    ("Card", manager.selectedLinesHave(.card), { manager.toggleTagOfSelectedLines(.card) }),
+                    (String(localized: "Box"), manager.selectedLinesHave(.box), { manager.toggleTagOfSelectedLines(.box) }),
+                    (String(localized: "Card"), manager.selectedLinesHave(.card), { manager.toggleTagOfSelectedLines(.card) }),
                 ])
             case .headings:
                 optionsRow([
-                    ("Title", manager.selectedLinesHave(.h1), { manager.toggleHeadingOfSelectedLines(.h1) }),
-                    ("SubTitle", manager.selectedLinesHave(.h2), { manager.toggleHeadingOfSelectedLines(.h2) }),
-                    ("Header", manager.selectedLinesHave(.h3), { manager.toggleHeadingOfSelectedLines(.h3) }),
+                    (String(localized: "Title"), manager.selectedLinesHave(.h1), { manager.toggleHeadingOfSelectedLines(.h1) }),
+                    (String(localized: "SubTitle"), manager.selectedLinesHave(.h2), { manager.toggleHeadingOfSelectedLines(.h2) }),
+                    (String(localized: "Header"), manager.selectedLinesHave(.h3), { manager.toggleHeadingOfSelectedLines(.h3) }),
                 ])
             case nil:
                 EmptyView()
@@ -184,13 +184,13 @@ struct SelectionMenu: View {
         panel = panel == newPanel ? nil : newPanel
     }
 
-    private func spanButton(_ span: Span, systemImage: String, label: String) -> some View {
+    private func spanButton(_ span: Span, systemImage: String, label: LocalizedStringKey) -> some View {
         MenuButton(systemImage: systemImage, label: label, isActive: manager.isSpanActive(span)) {
             manager.toggleSpan(span)
         }
     }
 
-    private func typeButton(_ type: StoryType, systemImage: String, label: String) -> some View {
+    private func typeButton(_ type: StoryType, systemImage: String, label: LocalizedStringKey) -> some View {
         MenuButton(systemImage: systemImage, label: label, isActive: manager.selectedLinesAre(type)) {
             manager.toggleTypeOfSelectedLines(type)
         }
@@ -243,7 +243,7 @@ private struct SelectedLinesChip: View {
             .animation(.snappy, value: count)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Unselect \(count) lines")
+        .accessibilityLabel(Text("Unselect \(count) lines"))
         .accessibilityIdentifier("selection.close")
     }
 }
@@ -290,9 +290,9 @@ private extension Span {
 
     var colorName: String {
         switch self {
-        case .highlightGreen: "Green highlight"
-        case .highlightRed: "Red highlight"
-        default: "Yellow highlight"
+        case .highlightGreen: String(localized: "Green highlight")
+        case .highlightRed: String(localized: "Red highlight")
+        default: String(localized: "Yellow highlight")
         }
     }
 }
@@ -312,7 +312,7 @@ private struct MenuIcon: View {
 
 private struct MenuButton: View {
     let systemImage: String
-    let label: String
+    let label: LocalizedStringKey
     var tint: Color = .primary
     var isEnabled = true
     var isActive = false
@@ -408,11 +408,11 @@ struct AiDialog: View {
 extension AiCommand {
     var title: String {
         switch self {
-        case .prompt: "Prompt"
-        case .summary: "Summary"
-        case .actionPoints: "Action Points"
-        case .faq: "FAQ"
-        case .tags: "Tags"
+        case .prompt: String(localized: "Prompt")
+        case .summary: String(localized: "Summary")
+        case .actionPoints: String(localized: "Action Points")
+        case .faq: String(localized: "FAQ")
+        case .tags: String(localized: "Tags")
         }
     }
 

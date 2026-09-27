@@ -27,7 +27,7 @@ struct GeneralSettingsView: View {
 
             Section("About") {
                 LabeledContent("Version", value: Bundle.main.appVersion)
-                LabeledContent("Space", value: session.spaceType == .online ? "Open space" : "Private space")
+                LabeledContent("Space", value: session.spaceType == .online ? String(localized: "Open space") : String(localized: "Private space"))
             }
         }
         .navigationTitle("General")

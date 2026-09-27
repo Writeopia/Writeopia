@@ -252,8 +252,8 @@ struct ShareSheet: UIViewControllerRepresentable {
 extension ExportFormat {
     var title: String {
         switch self {
-        case .json: "Export as Json"
-        case .markdown: "Export as Markdown"
+        case .json: String(localized: "Export as Json")
+        case .markdown: String(localized: "Export as Markdown")
         }
     }
 

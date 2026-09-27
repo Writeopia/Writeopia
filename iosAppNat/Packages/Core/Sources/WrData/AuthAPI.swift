@@ -53,9 +53,9 @@ public enum AuthError: Error, Equatable {
 
     public var userMessage: String {
         switch self {
-        case .invalidCredentials: "Wrong email or password."
-        case .accountDeletionPending: "This account is being deleted."
-        case .invalidCode: "The code is invalid or has expired."
+        case .invalidCredentials: String(localized: "Wrong email or password.")
+        case .accountDeletionPending: String(localized: "This account is being deleted.")
+        case .invalidCode: String(localized: "The code is invalid or has expired.")
         case .server(let message): message
         }
     }
@@ -121,7 +121,7 @@ public final class AuthAPI {
                 authenticated: false
             )
         } catch APIError.conflict {
-            throw AuthError.server("An account with this email or username already exists.")
+            throw AuthError.server(String(localized: "An account with this email or username already exists."))
         }
     }
 
@@ -157,7 +157,7 @@ public final class AuthAPI {
             .post, "api/auth/password/forgot", body: Body(email: email), authenticated: false
         )
         if !response.success {
-            throw AuthError.server(response.message ?? "Could not send the reset code.")
+            throw AuthError.server(response.message ?? String(localized: "Could not send the reset code."))
         }
     }
 

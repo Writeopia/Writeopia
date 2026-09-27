@@ -19,8 +19,8 @@ public struct User: Codable, Equatable, Hashable, Sendable {
     /// "Premium", "Free", or nil when the backend didn't say (older versions don't send it).
     public var planName: String? {
         switch tier?.uppercased() {
-        case "PREMIUM": "Premium"
-        case "FREE": "Free"
+        case "PREMIUM": String(localized: "Premium")
+        case "FREE": String(localized: "Free")
         default: nil
         }
     }
@@ -43,9 +43,9 @@ public enum ColorTheme: String, Codable, CaseIterable, Identifiable, Sendable {
 
     public var title: String {
         switch self {
-        case .light: "Light"
-        case .dark: "Dark"
-        case .system: "System"
+        case .light: String(localized: "Light")
+        case .dark: String(localized: "Dark")
+        case .system: String(localized: "System")
         }
     }
 }

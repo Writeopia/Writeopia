@@ -32,7 +32,7 @@ public enum MoveError: Error, Equatable {
 
     public var userMessage: String {
         switch self {
-        case .folderIntoItself: "A folder can't be moved into itself."
+        case .folderIntoItself: String(localized: "A folder can't be moved into itself.")
         }
     }
 }

@@ -11,6 +11,7 @@ let mainActorByDefault: [SwiftSetting] = [.defaultIsolation(MainActor.self)]
 /// - `NoteEditor`: the editor screen of the app (like the `editor` feature).
 let package = Package(
     name: "Editor",
+    defaultLocalization: "en",
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "Writeopia", targets: ["Writeopia"]),

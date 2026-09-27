@@ -15,6 +15,7 @@ let coreProducts: [Target.Dependency] = [
 
 let package = Package(
     name: "Features",
+    defaultLocalization: "en",
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "AuthFeature", targets: ["AuthFeature"]),

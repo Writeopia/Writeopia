@@ -60,7 +60,7 @@ private struct AccountHeader: View {
                 .foregroundStyle(WrColors.accent)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(session.isOnline ? (session.user?.name ?? "Signed in") : "Private space")
+                Text(session.isOnline ? (session.user?.name ?? String(localized: "Signed in")) : String(localized: "Private space"))
                     .font(.headline)
                 Text(subtitle)
                     .font(.subheadline)
@@ -76,16 +76,16 @@ private struct AccountHeader: View {
                 .compactMap { $0 }
                 .joined(separator: " · ")
         }
-        return "Your notes stay on this device"
+        return String(localized: "Your notes stay on this device")
     }
 }
 
 struct SettingsLabel: View {
-    let title: String
+    let title: LocalizedStringKey
     let systemImage: String
     let color: Color
 
-    init(_ title: String, systemImage: String, color: Color) {
+    init(_ title: LocalizedStringKey, systemImage: String, color: Color) {
         self.title = title
         self.systemImage = systemImage
         self.color = color
@@ -107,8 +107,8 @@ struct SettingsLabel: View {
 /// Shown on screens that only make sense in the open space.
 struct OfflineNotice: View {
     @Environment(AppSession.self) private var session
-    let title: String
-    let message: String
+    let title: LocalizedStringKey
+    let message: LocalizedStringKey
 
     var body: some View {
         ContentUnavailableView {

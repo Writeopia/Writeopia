@@ -42,9 +42,9 @@ public struct SpaceChoiceView: View {
 }
 
 private struct SpaceCard: View {
-    let label: String
-    let title: String
-    let description: String
+    let label: LocalizedStringKey
+    let title: LocalizedStringKey
+    let description: LocalizedStringKey
     let systemImage: String
     let chips: [String]
     let action: () -> Void
@@ -53,7 +53,8 @@ private struct SpaceCard: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Label(label.uppercased(), systemImage: systemImage)
+                    Label(label, systemImage: systemImage)
+                        .textCase(.uppercase)
                         .font(.caption.weight(.bold))
                         .foregroundStyle(WrColors.accent)
                     Spacer()

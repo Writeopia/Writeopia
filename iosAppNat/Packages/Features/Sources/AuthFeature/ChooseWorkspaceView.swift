@@ -46,7 +46,7 @@ final class ChooseWorkspaceViewModel {
     func create(name: String) async -> Bool {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard FieldValidator.isValidWorkspaceName(trimmed) else {
-            createError = "The name must have between 3 and 30 characters."
+            createError = String(localized: "The name must have between 3 and 30 characters.")
             return false
         }
 

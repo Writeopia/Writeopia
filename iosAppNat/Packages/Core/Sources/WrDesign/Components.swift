@@ -2,11 +2,11 @@ import SwiftUI
 
 /// Full width call to action used across the auth screens.
 public struct WrPrimaryButton: View {
-    private let title: String
+    private let title: LocalizedStringKey
     private let isLoading: Bool
     private let action: () -> Void
 
-    public init(_ title: String, isLoading: Bool = false, action: @escaping () -> Void) {
+    public init(_ title: LocalizedStringKey, isLoading: Bool = false, action: @escaping () -> Void) {
         self.title = title
         self.isLoading = isLoading
         self.action = action
@@ -44,12 +44,12 @@ public struct WrTextField: View {
         case code
     }
 
-    private let title: String
+    private let title: LocalizedStringKey
     private let systemImage: String
     private let kind: Kind
     @Binding private var text: String
 
-    public init(_ title: String, text: Binding<String>, systemImage: String, kind: Kind = .plain) {
+    public init(_ title: LocalizedStringKey, text: Binding<String>, systemImage: String, kind: Kind = .plain) {
         self.title = title
         self._text = text
         self.systemImage = systemImage
@@ -126,11 +126,11 @@ public struct WrErrorText: View {
 
 /// Header used on top of the auth screens.
 public struct WrScreenHeader: View {
-    private let eyebrow: String?
-    private let title: String
-    private let subtitle: String?
+    private let eyebrow: LocalizedStringKey?
+    private let title: LocalizedStringKey
+    private let subtitle: LocalizedStringKey?
 
-    public init(eyebrow: String? = nil, title: String, subtitle: String? = nil) {
+    public init(eyebrow: LocalizedStringKey? = nil, title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil) {
         self.eyebrow = eyebrow
         self.title = title
         self.subtitle = subtitle
@@ -139,7 +139,8 @@ public struct WrScreenHeader: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let eyebrow {
-                Text(eyebrow.uppercased())
+                Text(eyebrow)
+                    .textCase(.uppercase)
                     .font(.caption.weight(.bold))
                     .kerning(2)
                     .foregroundStyle(WrColors.textLighter)
@@ -164,7 +165,7 @@ public struct WrStateOverlay: View {
     private let isLoading: Bool
     private let isEmpty: Bool
     private let errorMessage: String?
-    private let emptyTitle: String
+    private let emptyTitle: LocalizedStringKey
     private let emptyImage: String
     private let retry: (() -> Void)?
 
@@ -172,7 +173,7 @@ public struct WrStateOverlay: View {
         isLoading: Bool,
         isEmpty: Bool,
         errorMessage: String?,
-        emptyTitle: String,
+        emptyTitle: LocalizedStringKey,
         emptyImage: String,
         retry: (() -> Void)? = nil
     ) {

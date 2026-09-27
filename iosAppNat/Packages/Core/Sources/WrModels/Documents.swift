@@ -93,7 +93,7 @@ public struct Folder: Codable, Identifiable, Equatable, Hashable, Sendable {
         )
     }
 
-    public var displayTitle: String { title.isEmpty ? "Untitled folder" : title }
+    public var displayTitle: String { title.isEmpty ? String(localized: "Untitled folder") : title }
 }
 
 public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
@@ -167,7 +167,7 @@ public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
         return lastUpdatedAt > lastSyncedAt
     }
 
-    public var displayTitle: String { title.isEmpty ? "Untitled" : title }
+    public var displayTitle: String { title.isEmpty ? String(localized: "Untitled") : title }
 
     public var lastUpdatedDate: Date {
         Date(timeIntervalSince1970: TimeInterval(lastUpdatedAt) / 1000)

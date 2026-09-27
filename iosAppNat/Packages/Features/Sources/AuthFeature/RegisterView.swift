@@ -25,12 +25,12 @@ final class RegisterViewModel {
 
     var usernameHint: String? {
         guard !username.isEmpty, !FieldValidator.isValidUsername(username) else { return nil }
-        return "3 to 30 letters, numbers, - or _"
+        return String(localized: "3 to 30 letters, numbers, - or _")
     }
 
     var workspaceHint: String? {
         guard !workspaceName.isEmpty, !FieldValidator.isValidWorkspaceName(workspaceName) else { return nil }
-        return "Between 3 and 30 characters"
+        return String(localized: "Between 3 and 30 characters")
     }
 
     var canRegister: Bool {
@@ -162,7 +162,7 @@ struct PasswordStrengthView: View {
         }
     }
 
-    private func requirement(_ text: String, met: Bool) -> some View {
+    private func requirement(_ text: LocalizedStringKey, met: Bool) -> some View {
         Label(text, systemImage: met ? "checkmark.circle.fill" : "circle")
             .font(.caption)
             .foregroundStyle(met ? .green : WrColors.textLighter)

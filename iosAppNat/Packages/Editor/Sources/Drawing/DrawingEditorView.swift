@@ -140,7 +140,7 @@ public struct DrawingEditorView: View {
                         .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Width \(Int(width))")
+                .accessibilityLabel(Text("Width \(Int(width))"))
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
         }
@@ -154,7 +154,7 @@ public struct DrawingEditorView: View {
         openPanel = openPanel == panel ? nil : panel
     }
 
-    private func toolButton(_ tool: DrawingTool, systemImage: String, label: String) -> some View {
+    private func toolButton(_ tool: DrawingTool, systemImage: String, label: LocalizedStringKey) -> some View {
         let isSelected = viewModel.currentTool == tool
         return Button {
             viewModel.currentTool = tool
@@ -170,7 +170,7 @@ public struct DrawingEditorView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private func iconButton(_ systemImage: String, label: String, action: @escaping () -> Void) -> some View {
+    private func iconButton(_ systemImage: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 17, weight: .medium))

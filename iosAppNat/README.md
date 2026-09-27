@@ -87,6 +87,15 @@ Mirrors the Compose app (`DocumentLoadUseCase`, `DocumentMerger`, `FolderSync`, 
 
 Differences with the Compose app: steps are stamped with their own `lastUpdatedAt` (so merges pick the newest copy of each step instead of always the local one), and a successful `steps/sync` marks the document as synced.
 
+## Translations
+
+The app is in English and Portuguese (`pt`). All the strings are in one String Catalog, `iosAppNat/Localizable.xcstrings`; code in the packages looks them up in the app bundle too.
+
+- In views, literals are translated automatically (`Text("Settings")`, `Button("Save")`, and the `WrDesign` components, which take `LocalizedStringKey`). Text built outside views uses `String(localized:)` (errors, enum titles, the welcome document).
+- Counts use plural variations (`"%lld items"` → "1 item" / "3 itens").
+- To find new strings, build with `SWIFT_EMIT_LOC_STRINGS=YES`: the compiler writes a `.stringsdata` file per source file (packages included, they set `defaultLocalization: "en"`) with every key and its format specifiers. Add the missing keys and their Portuguese to the catalog.
+- To see the app in Portuguese: `xcrun simctl launch <device> io.writeopia.WriteopiaNative -AppleLanguages "(pt)"`, or pick Portuguese in the scheme's App Language.
+
 ## Tests
 
 ```bash

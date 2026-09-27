@@ -158,7 +158,7 @@ struct ForgotPasswordNewPasswordView: View {
             WrTextField("Repeat password", text: $viewModel.repeatPassword, systemImage: "lock.rotation", kind: .newPassword)
 
             if !viewModel.repeatPassword.isEmpty && !viewModel.passwordsMatch {
-                WrErrorText("The passwords don't match.")
+                WrErrorText(String(localized: "The passwords don't match."))
             }
 
             WrErrorText(viewModel.errorMessage)
@@ -182,7 +182,13 @@ struct ResendButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(cooldown > 0 ? "Resend code in \(cooldown)s" : "Resend code", action: action)
+        Button(action: action) {
+            if cooldown > 0 {
+                Text("Resend code in \(cooldown)s")
+            } else {
+                Text("Resend code")
+            }
+        }
             .font(.callout.weight(.semibold))
             .tint(WrColors.accent)
             .disabled(cooldown > 0)
@@ -191,8 +197,8 @@ struct ResendButton: View {
 }
 
 struct AuthFormContainer<Content: View>: View {
-    let title: String
-    let subtitle: String?
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey?
     @ViewBuilder let content: Content
 
     var body: some View {

@@ -51,7 +51,7 @@ final class EmailConfirmationViewModel {
         errorMessage = nil
         do {
             try await session.authAPI.resendConfirmation(email: email)
-            infoMessage = "We sent a new code to \(email)."
+            infoMessage = String(localized: "We sent a new code to \(email).")
             startCooldown()
         } catch {
             errorMessage = error.userMessage

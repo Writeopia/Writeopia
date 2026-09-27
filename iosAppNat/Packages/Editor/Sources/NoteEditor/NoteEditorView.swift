@@ -76,7 +76,7 @@ public struct NoteEditorView: View {
                 guard let data = try await item.loadTransferable(type: Data.self) else { return }
                 await viewModel.addImage(data)
             } catch {
-                viewModel.imageError = "The image couldn't be loaded from the library."
+                viewModel.imageError = String(localized: "The image couldn't be loaded from the library.")
             }
         }
     }

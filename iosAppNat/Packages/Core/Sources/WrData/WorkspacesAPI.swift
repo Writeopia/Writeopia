@@ -46,9 +46,9 @@ public final class WorkspacesAPI {
                 body: Body(email: email.trimmingCharacters(in: .whitespaces).lowercased(), workspaceId: workspaceId, role: role.rawValue)
             )
         } catch APIError.notFound {
-            throw APIError.badRequest("There's no Writeopia user with this email.")
+            throw APIError.badRequest(String(localized: "There's no Writeopia user with this email."))
         } catch APIError.conflict {
-            throw APIError.badRequest("This user is already in the team.")
+            throw APIError.badRequest(String(localized: "This user is already in the team."))
         }
     }
 
@@ -64,7 +64,7 @@ public final class WorkspacesAPI {
                 .put, "api/workspace/role", body: Body(workspaceId: workspaceId, userId: userId, newRole: role.rawValue)
             )
         } catch APIError.conflict {
-            throw APIError.badRequest("A team needs at least one admin.")
+            throw APIError.badRequest(String(localized: "A team needs at least one admin."))
         }
     }
 

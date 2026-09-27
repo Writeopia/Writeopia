@@ -200,7 +200,7 @@ struct TeamDetailView: View {
         Form {
             Section {
                 LabeledContent("Name", value: viewModel.workspace.name)
-                LabeledContent("Your role", value: viewModel.workspace.isAdmin ? "Admin" : "Member")
+                LabeledContent("Your role", value: viewModel.workspace.isAdmin ? String(localized: "Admin") : String(localized: "Member"))
                 LabeledContent("Documents", value: "\(viewModel.workspace.documentCount)")
             }
 
@@ -255,7 +255,7 @@ struct TeamDetailView: View {
                                     Button {
                                         Task { await viewModel.changeRole(of: member, to: role) }
                                     } label: {
-                                        Label("Make \(role.title.lowercased())", systemImage: role == .admin ? "crown" : "person")
+                                        Label(role == .admin ? "Make admin" : "Make member", systemImage: role == .admin ? "crown" : "person")
                                     }
                                     .disabled(member.role.uppercased() == role.rawValue)
                                 }
@@ -303,7 +303,7 @@ private struct MemberRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(isCurrentUser ? "\(member.name) (you)" : member.name)
+                Text(isCurrentUser ? String(localized: "\(member.name) (you)") : member.name)
                 Text(member.email)
                     .font(.caption)
                     .foregroundStyle(.secondary)

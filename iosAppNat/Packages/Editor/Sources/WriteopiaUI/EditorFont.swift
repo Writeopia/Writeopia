@@ -12,7 +12,14 @@ public enum EditorFont: String, CaseIterable, Identifiable, Sendable {
 
     public var id: String { rawValue }
 
-    public var title: String { rawValue }
+    public var title: String {
+        switch self {
+        case .system: String(localized: "System")
+        case .serif: String(localized: "Serif")
+        case .monospace: String(localized: "Monospace")
+        case .cursive: String(localized: "Cursive")
+        }
+    }
 
     /// SwiftUI font of this family, used for previews of the option.
     public func font(size: CGFloat, weight: Font.Weight = .regular) -> Font {

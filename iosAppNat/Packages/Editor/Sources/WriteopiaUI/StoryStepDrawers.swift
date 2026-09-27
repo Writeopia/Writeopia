@@ -250,7 +250,7 @@ struct DocumentLinkDrawer: View {
     let manager: WriteopiaStateManager
 
     private var title: String {
-        step.documentLink?.title ?? step.text ?? "Linked document"
+        step.documentLink?.title ?? step.text ?? String(localized: "Linked document")
     }
 
     var body: some View {
@@ -349,9 +349,9 @@ struct DragPreview: View {
     }
 
     private var previewText: String {
-        if step.type.number == StoryType.divider.number { return "Divider" }
+        if step.type.number == StoryType.divider.number { return String(localized: "Divider") }
         let text = step.documentLink?.title ?? step.text ?? ""
-        return text.isEmpty ? "Empty line" : text
+        return text.isEmpty ? String(localized: "Empty line") : text
     }
 }
 

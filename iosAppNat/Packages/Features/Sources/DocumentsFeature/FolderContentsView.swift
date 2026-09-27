@@ -88,7 +88,7 @@ final class FolderContentsViewModel {
         let ids = documents.map(\.id).filter { selectedIds.contains($0) }
         clearSelection()
         guard !ids.isEmpty else {
-            summaryError = "Select at least one document to summarize."
+            summaryError = String(localized: "Select at least one document to summarize.")
             return
         }
 
@@ -110,7 +110,7 @@ final class FolderContentsViewModel {
             }
 
             guard let summary = MarkdownToDocument.read(answer, parentId: folderId, workspaceId: "") else {
-                summaryError = "The AI didn't return a summary."
+                summaryError = String(localized: "The AI didn't return a summary.")
                 return
             }
             try await repository.save(summary)
@@ -624,7 +624,7 @@ struct ItemCard: View {
     private var footer: some View {
         switch item {
         case .folder(let folder):
-            Text(folder.itemCount == 1 ? "1 item" : "\(folder.itemCount) items")
+            Text("\(folder.itemCount) items")
         case .document(let document):
             if document.lastUpdatedAt > 0 {
                 Text(document.lastUpdatedDate, format: .relative(presentation: .named))

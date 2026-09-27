@@ -5,7 +5,7 @@ import WrModels
 /// app: the first `# ` line is the title, `##`..`####` are headings, `- ` bullets, `[] ` /
 /// `- [ ] ` / `- [x] ` checklists, and every other non empty line a paragraph.
 public enum MarkdownToDocument {
-    public static func read(_ markdown: String, parentId: String, workspaceId: String, fallbackTitle: String = "Summary") -> WrDocument? {
+    public static func read(_ markdown: String, parentId: String, workspaceId: String, fallbackTitle: String = String(localized: "Summary")) -> WrDocument? {
         var title: String?
         var steps: [StoryStep] = []
 

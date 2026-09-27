@@ -17,15 +17,15 @@ struct DocumentsSelectionMenu: View {
 
     var body: some View {
         HStack(spacing: 2) {
-            button("doc.on.doc", label: "Copy", action: onCopy)
-            button(isFavorite ? "star.slash" : "star", label: isFavorite ? "Remove from favorites" : "Favorite", action: onFavorite)
+            button("doc.on.doc", label: "Copy", id: "copy", action: onCopy)
+            button(isFavorite ? "star.slash" : "star", label: isFavorite ? "Remove from favorites" : "Favorite", id: "favorite", action: onFavorite)
             if showsSummary {
-                button("sparkles", label: "AI Summary", tint: WrColors.accent, action: onSummary)
+                button("sparkles", label: "AI Summary", id: "summary", tint: WrColors.accent, action: onSummary)
             }
-            button("trash", label: "Delete", tint: .red) { confirmsDelete = true }
+            button("trash", label: "Delete", id: "delete", tint: .red) { confirmsDelete = true }
                 // Attached to the button so the confirmation shows right above it.
                 .confirmationDialog(
-                    count == 1 ? "Delete this item?" : "Delete \(count) items?",
+                    count == 1 ? String(localized: "Delete this item?") : String(localized: "Delete \(count) items?"),
                     isPresented: $confirmsDelete,
                     titleVisibility: .visible
                 ) {
@@ -54,7 +54,7 @@ struct DocumentsSelectionMenu: View {
                 .animation(.snappy, value: count)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Unselect \(count) items")
+            .accessibilityLabel(Text("Unselect \(count) items"))
             .accessibilityIdentifier("documents.selection.close")
         }
         .padding(.horizontal, 10)
@@ -64,7 +64,13 @@ struct DocumentsSelectionMenu: View {
         .padding(.bottom, 8)
     }
 
-    private func button(_ systemImage: String, label: String, tint: Color = .primary, action: @escaping () -> Void) -> some View {
+    private func button(
+        _ systemImage: String,
+        label: LocalizedStringKey,
+        id: String,
+        tint: Color = .primary,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 17, weight: .medium))
@@ -74,7 +80,7 @@ struct DocumentsSelectionMenu: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
-        .accessibilityIdentifier("documents.selection.\(label)")
+        .accessibilityIdentifier("documents.selection.\(id)")
     }
 }
 

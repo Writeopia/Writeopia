@@ -553,21 +553,21 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
 
         let welcome = WrDocument(
             id: UUID().uuidString,
-            title: "Welcome to Writeopia",
+            title: String(localized: "Welcome to Writeopia"),
             workspaceId: workspaceId,
             content: [
-                StoryStep(type: .title, text: "Welcome to Writeopia", position: 0),
+                StoryStep(type: .title, text: String(localized: "Welcome to Writeopia"), position: 0),
                 StoryStep(
                     type: .message,
-                    text: "This is your private space. Everything you write here stays on this device.",
+                    text: String(localized: "This is your private space. Everything you write here stays on this device."),
                     position: 1
                 ),
-                StoryStep(type: .message, text: "Getting started", tags: [TagInfo(tag: "H2")], position: 2),
-                StoryStep(type: .checkItem, text: "Create a folder to organise your notes", checked: false, position: 3),
-                StoryStep(type: .checkItem, text: "Create your first document", checked: false, position: 4),
+                StoryStep(type: .message, text: String(localized: "Getting started"), tags: [TagInfo(tag: "H2")], position: 2),
+                StoryStep(type: .checkItem, text: String(localized: "Create a folder to organise your notes"), checked: false, position: 3),
+                StoryStep(type: .checkItem, text: String(localized: "Create your first document"), checked: false, position: 4),
                 StoryStep(
                     type: .unorderedListItem,
-                    text: "Sign in from Settings > Account to sync your notes",
+                    text: String(localized: "Sign in from Settings > Account to sync your notes"),
                     position: 5
                 ),
             ],

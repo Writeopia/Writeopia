@@ -29,7 +29,7 @@ public struct Workspace: Codable, Identifiable, Equatable, Hashable, Sendable {
     public var isAdmin: Bool { role.uppercased() == "ADMIN" }
 
     /// The workspace used by the private (offline) space.
-    public static let local = Workspace(id: localId, userId: "", name: "Private space", role: "ADMIN")
+    public static let local = Workspace(id: localId, userId: "", name: String(localized: "Private space"), role: "ADMIN")
 }
 
 public struct WorkspaceUser: Codable, Identifiable, Equatable, Hashable, Sendable {
@@ -56,8 +56,8 @@ public enum WorkspaceRole: String, CaseIterable, Identifiable, Sendable {
 
     public var title: String {
         switch self {
-        case .admin: "Admin"
-        case .user: "Member"
+        case .admin: String(localized: "Admin")
+        case .user: String(localized: "Member")
         }
     }
 }

@@ -42,9 +42,9 @@ public enum AiTargetMode: String, CaseIterable, Identifiable {
 
     public var title: String {
         switch self {
-        case .document: "Document"
-        case .cursor: "Cursor"
-        case .selectedLines: "Selected lines"
+        case .document: String(localized: "Document")
+        case .cursor: String(localized: "Cursor")
+        case .selectedLines: String(localized: "Selected lines")
         }
     }
 }
@@ -161,7 +161,7 @@ public final class NoteEditorViewModel {
         guard writeopiaManager.isEditable else { return }
 
         guard let jpeg = ImageProcessing.jpeg(from: data) else {
-            imageError = "This image can't be added."
+            imageError = String(localized: "This image can't be added.")
             return
         }
 
@@ -169,7 +169,7 @@ public final class NoteEditorViewModel {
         do {
             file = try ImageFiles.save(jpeg)
         } catch {
-            imageError = "The image couldn't be saved on this device."
+            imageError = String(localized: "The image couldn't be saved on this device.")
             return
         }
 
@@ -358,9 +358,9 @@ public final class NoteEditorViewModel {
             } catch is CancellationError {
                 if !receivedAnswer { self?.writeopiaManager.removeStep(stepId: answerId) }
             } catch let error as AiStreamError {
-                self?.writeopiaManager.showAiAnswer("Error. Message: \(error.message)", stepId: answerId)
+                self?.writeopiaManager.showAiAnswer(String(localized: "Error. Message: \(error.message)"), stepId: answerId)
             } catch {
-                self?.writeopiaManager.showAiAnswer("Error. Message: \(error.userMessage)", stepId: answerId)
+                self?.writeopiaManager.showAiAnswer(String(localized: "Error. Message: \(error.userMessage)"), stepId: answerId)
             }
             self?.isAiRunning = false
         }
@@ -479,7 +479,7 @@ public final class NoteEditorViewModel {
             loadedDocument = document
             savedSteps = Dictionary(document.content.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         } catch {
-            errorMessage = "The document couldn't be saved on this device."
+            errorMessage = String(localized: "The document couldn't be saved on this device.")
         }
     }
 
