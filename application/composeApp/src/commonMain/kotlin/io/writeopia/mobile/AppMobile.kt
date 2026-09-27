@@ -12,6 +12,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import io.writeopia.account.ui.AccountDeletionStartedScreen
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.auth.navigation.startScreen
 import io.writeopia.common.utils.ALLOW_BACKEND
@@ -204,6 +205,21 @@ fun AppMobile(
                     },
                     navigateToChooseWorkspace = {
                         navController.navigate(Destinations.START_APP.id) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
+                    },
+                    navigateToAccountDeletionStarted = {
+                        navController.navigate(Destinations.ACCOUNT_DELETION_STARTED.id) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(route = Destinations.ACCOUNT_DELETION_STARTED.id) {
+                AccountDeletionStartedScreen(
+                    logout = {
+                        navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id) {
                             popUpTo(navController.graph.startDestinationId) { inclusive = true }
                         }
                     }

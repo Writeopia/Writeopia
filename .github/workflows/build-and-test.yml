@@ -223,7 +223,16 @@ jobs:
       - name: Build backend
         run: ./gradlew :backend:gateway:assemble
       - name: Test backend
-        run: ./gradlew :backend:gateway:test
+        run: >-
+          ./gradlew
+          :backend:gateway:test
+          :backend:core:ai:test
+          :backend:core:auth:test
+          :backend:core:genai_service:test
+          :backend:documents:documents:test
+          :backend:editor:api_editor_socket:test
+          :backend:micro:auth:test
+          :backend:micro:media:test
       - name: Upload test reports
         uses: actions/upload-artifact@v7
         if: always()

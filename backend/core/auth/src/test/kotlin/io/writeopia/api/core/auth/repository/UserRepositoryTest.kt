@@ -1,6 +1,7 @@
 package io.writeopia.api.core.auth.repository
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
@@ -55,7 +56,7 @@ class UserRepositoryTest {
             email = testEmail,
             password = password,
             salt = salt,
-            enabled = true
+            status = UserStatus.ACTIVE
         )
 
         // Then: user should be retrievable from database
@@ -67,7 +68,7 @@ class UserRepositoryTest {
         assertEquals(testEmail, retrievedUser.email)
         assertEquals(password, retrievedUser.password)
         assertEquals(salt, retrievedUser.salt)
-        assertEquals(true, retrievedUser.enabled)
+        assertEquals(UserStatus.ACTIVE, retrievedUser.status)
     }
 
     @Test
@@ -80,7 +81,7 @@ class UserRepositoryTest {
             email = testEmail,
             password = "hashedPassword123",
             salt = "randomSalt123",
-            enabled = true
+            status = UserStatus.ACTIVE
         )
 
         // Verify user exists
@@ -127,7 +128,7 @@ class UserRepositoryTest {
             email = email,
             password = "password",
             salt = "salt",
-            enabled = true
+            status = UserStatus.ACTIVE
         )
 
         // Verify user was created
@@ -157,7 +158,7 @@ class UserRepositoryTest {
             email = testEmail,
             password = "password",
             salt = "salt",
-            enabled = true
+            status = UserStatus.ACTIVE
         )
 
         // When: retrieving user by email

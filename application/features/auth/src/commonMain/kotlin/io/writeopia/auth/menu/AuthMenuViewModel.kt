@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
 import io.writeopia.api.LocalAiApi
+import io.writeopia.auth.core.data.AccountDeletionPendingException
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.LoginStatus
@@ -55,6 +56,9 @@ class AuthMenuViewModel(
 
     private val _emailConfirmationRequired = MutableStateFlow(false)
     val emailConfirmationRequired = _emailConfirmationRequired.asStateFlow()
+
+    private val _accountDeletionPending = MutableStateFlow(false)
+    val accountDeletionPending = _accountDeletionPending.asStateFlow()
 
     fun emailChanged(name: String) {
         _email.value = name
@@ -149,6 +153,7 @@ class AuthMenuViewModel(
 
     fun onLoginRequest() {
         _loginState.value = ResultData.Loading()
+        _accountDeletionPending.value = false
 
         viewModelScope.launch {
             try {
@@ -165,13 +170,13 @@ class AuthMenuViewModel(
                         // Check if user is enabled (email confirmed)
                         if (!result.data.enabled) {
                             // User exists but email not confirmed
-                            authRepository.savePendingConfirmationEmail(_email.value)
+                            authRepository.savePendingConfirmationEmail(user.email)
                             _emailConfirmationRequired.value = true
                             result.map { true }
                         } else {
                             _emailConfirmationRequired.value = false
                             EnvUtils.getAdminKey()?.let { adminKey ->
-                                authApi.enableUser(_email.value, adminKey)
+                                authApi.enableUser(user.email, adminKey)
                             }
 
                             authRepository.unselectAllUsers()
@@ -198,6 +203,7 @@ class AuthMenuViewModel(
 
                     is ResultData.Error -> {
                         delay(300)
+                        _accountDeletionPending.value = result.exception is AccountDeletionPendingException
                         result.map { false }
                     }
 

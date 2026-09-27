@@ -35,10 +35,10 @@ class AiAuthorizationTest {
             email = testEmail,
             password = "hashedpassword",
             salt = "salt",
-            enabled = true,
             confirmation_code = null,
             confirmation_code_expiry = null,
-            account_type = "FREE"
+            account_type = "FREE",
+            status = "ACTIVE"
         )
     }
 
@@ -183,10 +183,10 @@ class AiAuthorizationTest {
             email = otherEmail,
             password = "hashedpassword",
             salt = "salt",
-            enabled = true,
             confirmation_code = null,
             confirmation_code_expiry = null,
-            account_type = "PREMIUM"
+            account_type = "PREMIUM",
+            status = "ACTIVE"
         )
 
         try {

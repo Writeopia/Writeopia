@@ -121,6 +121,11 @@ fun CreateAppInMemory() {
                     popUpTo(navigationController.graph.startDestinationId) { inclusive = true }
                 }
             },
+            navigateToAccountDeletionStarted = {
+                navigationController.navigate(Destinations.ACCOUNT_DELETION_STARTED.id) {
+                    popUpTo(navigationController.graph.startDestinationId) { inclusive = true }
+                }
+            },
             notesMenuInjection = NotesMenuWebInjection.singleton(),
             sideMenuInjector = SideMenuKmpInjector(
                 useBackendOnly = true,

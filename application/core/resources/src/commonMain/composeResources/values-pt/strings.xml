@@ -15,6 +15,7 @@
   <string name="last_updated">Atualização</string>
   <string name="last_created">Criação</string>
   <string name="name">Nome</string>
+  <string name="username">Nome de usuário</string>
   <string name="add_note">Adicionar nota</string>
   <string name="back">Voltar</string>
   <string name="copy_note">Copiar documento</string>
@@ -29,6 +30,7 @@
   <string name="offline_workspace">Área de trabalho Offline</string>
   <string name="disconnected">Desconectado</string>
   <string name="email">Email</string>
+  <string name="email_or_username">Email ou nome de usuário</string>
   <string name="password">Senha</string>
   <string name="enter">Enter</string>
   <string name="content_description_visibility_on">Visivel</string>
@@ -122,6 +124,8 @@
   <string name="are_you_sure">Tem certeza?</string>
   <string name="notes_will_be_deleted">Suas notas serão deletadas.</string>
   <string name="email_to_confirm">Escreva seu email para confirmar</string>
+  <string name="account_deletion_started_title">Exclusão de conta iniciada</string>
+  <string name="account_deletion_started_description">Iniciamos a exclusão da sua conta e de todas as suas notas. Isso pode levar alguns minutos. Você já pode sair com segurança.</string>
   <string name="dismiss">Fechar</string>
   <string name="confirm">Confirmar</string>
   <string name="download_model">Baixar modelo</string>

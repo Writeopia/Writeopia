@@ -99,6 +99,10 @@ class GlobalShellKmpViewModel(
     private val _logoutInProgress = MutableStateFlow(false)
     override val logoutInProgress: StateFlow<Boolean> = _logoutInProgress.asStateFlow()
 
+    private val _deleteAccountInProgress = MutableStateFlow(false)
+    override val deleteAccountInProgress: StateFlow<Boolean> =
+        _deleteAccountInProgress.asStateFlow()
+
     override val workspaceLocalPath: StateFlow<String> = workspaceHandler.workspaceLocalPath
 
     private val retryModels = MutableStateFlow(0)
@@ -786,31 +790,37 @@ class GlobalShellKmpViewModel(
 
     override fun deleteAccount(sideEffect: () -> Unit) {
         viewModelScope.launch {
-            val id = authRepository.getUser().id
+            _deleteAccountInProgress.value = true
 
-            if (id != WriteopiaUser.DISCONNECTED) {
-                // Capture refresh token before any cleanup (for logout call)
-                val refreshToken = authRepository.getRefreshToken()
+            try {
+                val id = authRepository.getUser().id
 
-                val result = authApi.deleteAccount()
+                if (id != WriteopiaUser.DISCONNECTED) {
+                    // Capture refresh token before any cleanup (for logout call)
+                    val refreshToken = authRepository.getRefreshToken()
 
-                if (result is ResultData.Complete && result.data) {
-                    // Revoke refresh token on backend
-                    refreshToken?.let { authApi.logout(it) }
+                    val result = authApi.deleteAccount()
 
-                    // Clear local state
-                    authRepository.unselectAllWorkspaces()
-                    authRepository.clearTokens()
-                    authRepository.logout()
+                    if (result is ResultData.Complete && result.data) {
+                        // Revoke refresh token on backend
+                        refreshToken?.let { authApi.logout(it) }
 
-                    // Clear singletons that cache API instances with old HttpClient
-                    WriteopiaConnectionInjector.clearInstance()
-                    FolderStateController.clearInstance()
+                        // Clear local state
+                        authRepository.unselectAllWorkspaces()
+                        authRepository.clearTokens()
+                        authRepository.logout()
 
-                    loginStateTrigger.value = GenerateId.generate()
-                    dismissDeleteConfirm()
-                    sideEffect()
+                        // Clear singletons that cache API instances with old HttpClient
+                        WriteopiaConnectionInjector.clearInstance()
+                        FolderStateController.clearInstance()
+
+                        loginStateTrigger.value = GenerateId.generate()
+                        dismissDeleteConfirm()
+                        sideEffect()
+                    }
                 }
+            } finally {
+                _deleteAccountInProgress.value = false
             }
         }
     }

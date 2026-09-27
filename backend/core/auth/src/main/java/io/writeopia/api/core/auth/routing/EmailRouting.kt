@@ -5,9 +5,9 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
+import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.toApi
-import io.writeopia.api.core.auth.repository.clearConfirmationCode
-import io.writeopia.api.core.auth.repository.enableUserByEmail
+import io.writeopia.api.core.auth.repository.confirmEmailIfNotPendingDeletion
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.isCodeValid
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
@@ -29,11 +29,19 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
             val isValid = writeopiaDb.isCodeValid(request.email, request.code)
 
             if (isValid) {
-                writeopiaDb.enableUserByEmail(request.email)
-                writeopiaDb.clearConfirmationCode(request.email)
+                val confirmed = writeopiaDb.confirmEmailIfNotPendingDeletion(request.email)
 
-                // Get the user and generate tokens
+                if (!confirmed) {
+                    logger.warn("Email confirmation rejected, account is being deleted: ${request.email}")
+                    call.respond(
+                        HttpStatusCode.Conflict,
+                        EmailConfirmResponse(success = false, message = "Account is being deleted")
+                    )
+                    return@post
+                }
+
                 val user = writeopiaDb.getUserByEmail(request.email)
+
                 if (user != null) {
                     val tokenPair = with(RefreshTokenService) {
                         writeopiaDb.generateAndStoreTokens(user.id)
@@ -59,7 +67,10 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
                 logger.warn("Invalid or expired confirmation code for: ${request.email}")
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    EmailConfirmResponse(success = false, message = "Invalid or expired confirmation code")
+                    EmailConfirmResponse(
+                        success = false,
+                        message = "Invalid or expired confirmation code"
+                    )
                 )
             }
         } catch (e: Exception) {
@@ -88,11 +99,20 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
                 return@post
             }
 
-            if (user.enabled) {
+            if (user.status == UserStatus.ACTIVE) {
                 logger.info("User already confirmed: ${request.email}")
                 call.respond(
                     HttpStatusCode.OK,
                     EmailConfirmResponse(success = true, message = "Email already confirmed")
+                )
+                return@post
+            }
+
+            if (user.status == UserStatus.DELETION_PENDING) {
+                logger.warn("Resend confirmation rejected, account is being deleted: ${request.email}")
+                call.respond(
+                    HttpStatusCode.Conflict,
+                    EmailConfirmResponse(success = false, message = "Account is being deleted")
                 )
                 return@post
             }

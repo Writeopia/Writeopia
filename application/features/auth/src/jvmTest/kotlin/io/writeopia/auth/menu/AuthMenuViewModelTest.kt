@@ -205,4 +205,41 @@ class AuthMenuViewModelTest {
         // Then - saveTokens should not be called
         coVerify(exactly = 0) { authRepository.saveTokens(any(), any(), any(), any()) }
     }
+
+    @Test
+    fun `onLoginRequest should support logging in with username and save user email if unconfirmed`() = runTest {
+        // Given
+        val testUser = WriteopiaUserApi(
+            id = "user-username-123",
+            name = "Username User",
+            email = "realemail@example.com"
+        )
+        val authResponse = AuthResponse(
+            writeopiaUser = testUser,
+            accessToken = null,
+            refreshToken = null,
+            enabled = false
+        )
+
+        coEvery { authApi.login(any(), any()) } returns ResultData.Complete(authResponse)
+        coEvery { authRepository.savePendingConfirmationEmail(any()) } just Runs
+
+        val viewModel = AuthMenuViewModel(
+            authRepository = authRepository,
+            authApi = authApi,
+            configRepository = configRepository,
+            notesUseCase = notesUseCase,
+            localAiRepository = localAiRepository
+        )
+        viewModel.emailChanged("my_username")
+        viewModel.passwordChanged("password123")
+
+        // When
+        viewModel.onLoginRequest()
+        advanceUntilIdle()
+
+        // Then - verify login was called with username and real email was saved
+        coVerify { authApi.login("my_username", "password123") }
+        coVerify { authRepository.savePendingConfirmationEmail("realemail@example.com") }
+    }
 }

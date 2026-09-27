@@ -2,6 +2,7 @@ package io.writeopia.buckets
 
 import com.google.cloud.storage.BlobId
 import com.google.cloud.storage.BlobInfo
+import com.google.cloud.storage.Storage
 import io.ktor.http.content.*
 import io.writeopia.backend.models.ImageStorageService
 import kotlinx.coroutines.Dispatchers
@@ -58,6 +59,20 @@ object GcpBucketImageStorageService : ImageStorageService {
             }
 
             uploadedUrl
+        }
+
+    /**
+     * Deletes every object under [prefix] in [bucketName] (e.g. "uploads/$userId/" - see
+     * uploadImage's fileName convention). Used by the account-deletion saga: media is stored
+     * per-user, not per-workspace, so a single prefix delete covers everything regardless of
+     * how many workspaces the user was in. Idempotent - a retry after a partial failure just
+     * finds fewer (or no) objects left to delete.
+     */
+    suspend fun deleteAllUnderPrefix(bucketName: String, prefix: String): Unit =
+        withContext(Dispatchers.IO) {
+            storage.list(bucketName, Storage.BlobListOption.prefix(prefix))
+                .iterateAll()
+                .forEach { blob -> blob.delete() }
         }
 
     /**

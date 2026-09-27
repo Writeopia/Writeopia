@@ -20,6 +20,7 @@ import androidx.navigation.bindToBrowserNavigation
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import io.writeopia.account.ui.AccountDeletionStartedScreen
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.auth.navigation.startScreen
 import io.writeopia.common.utils.ALLOW_BACKEND
@@ -201,11 +202,34 @@ fun CreateAppInMemory() {
                                     }
                                 }
                             },
+                            navigateToAccountDeletionStarted = {
+                                navigationController.navigate(
+                                    Destinations.ACCOUNT_DELETION_STARTED.id
+                                ) {
+                                    popUpTo(navigationController.graph.startDestinationId) {
+                                        inclusive = true
+                                    }
+                                }
+                            },
                             notesMenuInjection = NotesMenuWebInjection.singleton(),
                             sideMenuInjector = SideMenuKmpInjector(
                                 useBackendOnly = true,
                                 menuItemsRepository = NotesMenuWebInjection.singleton().provideMenuItemsRepository()
                             ),
+                        )
+                    }
+
+                    composable(route = Destinations.ACCOUNT_DELETION_STARTED.id) {
+                        AccountDeletionStartedScreen(
+                            logout = {
+                                navigationController.navigate(
+                                    Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                                ) {
+                                    popUpTo(navigationController.graph.startDestinationId) {
+                                        inclusive = true
+                                    }
+                                }
+                            }
                         )
                     }
 

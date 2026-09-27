@@ -15,6 +15,7 @@
   <string name="last_updated">Last updated</string>
   <string name="last_created">Create</string>
   <string name="name">Name</string>
+  <string name="username">Username</string>
   <string name="add_note">Add note</string>
   <string name="back">Back</string>
   <string name="copy_note">Copy document</string>
@@ -29,6 +30,7 @@
   <string name="offline_workspace">Offline Workspace</string>
   <string name="disconnected">Disconnected</string>
   <string name="email">Email</string>
+  <string name="email_or_username">Email or username</string>
   <string name="password">Password</string>
   <string name="enter">Enter</string>
   <string name="content_description_visibility_on">Visible</string>
@@ -128,6 +130,8 @@
   <string name="are_you_sure">Are you sure?</string>
   <string name="notes_will_be_deleted">All your notes will be deleted.</string>
   <string name="email_to_confirm">Type your email to confirm</string>
+  <string name="account_deletion_started_title">Account deletion started</string>
+  <string name="account_deletion_started_description">We have started deleting your account and all your notes. This may take a few minutes. You can safely log out now.</string>
   <string name="dismiss">Dismiss</string>
   <string name="confirm">Confirm</string>
   <string name="download_model">Download model</string>

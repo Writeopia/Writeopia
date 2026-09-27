@@ -1,4 +1,4 @@
-package io.writeopia.api.core.auth.utils
+package io.writeopia.api.core.workspaces.utils
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
@@ -10,8 +10,8 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import io.writeopia.api.core.auth.repository.isUserAdminInWorkspace
-import io.writeopia.api.core.auth.repository.isUserInWorkspace
+import io.writeopia.api.core.workspaces.repository.isUserAdminInWorkspace
+import io.writeopia.api.core.workspaces.repository.isUserInWorkspace
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -61,6 +61,7 @@ class VerifyUserTest {
         } returns listOf(
             mockk {
                 every { workspace_id } returns "workspace456"
+                every { workspace_status } returns "ACTIVE"
             }
         )
 
@@ -166,6 +167,7 @@ class VerifyUserTest {
         } returns listOf(
             mockk {
                 every { workspace_id } returns "workspace456"
+                every { workspace_status } returns "ACTIVE"
             }
         )
 
@@ -236,6 +238,7 @@ class VerifyUserTest {
         } returns listOf(
             mockk {
                 every { workspace_id } returns "workspace456"
+                every { workspace_status } returns "ACTIVE"
             }
         )
 

@@ -25,7 +25,7 @@ object TutorialsService {
      * @param writeopiaDb The database instance
      * @return true if tutorials were created, false if they already existed
      */
-    suspend fun initializeTutorialsForUser(
+    fun initializeTutorialsForUser(
         userId: String,
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend,
@@ -61,7 +61,6 @@ object TutorialsService {
                     document = documentWithWorkspace,
                     workspaceId = workspaceId,
                     writeopiaDb = writeopiaDb,
-                    useAi = false
                 )
             }
 

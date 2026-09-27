@@ -66,6 +66,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 fun RegisterScreen(
     modifier: Modifier = Modifier,
     nameState: StateFlow<String>,
+    usernameState: StateFlow<String>,
     emailState: StateFlow<String>,
     companyState: StateFlow<String>,
     passwordState: StateFlow<String>,
@@ -73,6 +74,7 @@ fun RegisterScreen(
     passwordValidationState: StateFlow<PasswordValidationResult>,
     canRegisterState: StateFlow<Boolean>,
     nameChanged: (String) -> Unit,
+    usernameChanged: (String) -> Unit,
     companyChanged: (String) -> Unit,
     emailChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
@@ -99,12 +101,14 @@ fun RegisterScreen(
         val registerScreen = @Composable { modifier: Modifier ->
             RegisterContent(
                 nameState,
+                usernameState,
                 emailState,
                 companyState,
                 passwordState,
                 passwordValidationState,
                 canRegisterState,
                 nameChanged,
+                usernameChanged,
                 emailChanged,
                 companyChanged,
                 passwordChanged,
@@ -165,12 +169,14 @@ fun RegisterScreen(
 @Composable
 private fun BoxScope.RegisterContent(
     nameState: StateFlow<String>,
+    usernameState: StateFlow<String>,
     emailState: StateFlow<String>,
     companyState: StateFlow<String>,
     passwordState: StateFlow<String>,
     passwordValidationState: StateFlow<PasswordValidationResult>,
     canRegisterState: StateFlow<Boolean>,
     nameChanged: (String) -> Unit,
+    usernameChanged: (String) -> Unit,
     emailChanged: (String) -> Unit,
     companyChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
@@ -178,6 +184,7 @@ private fun BoxScope.RegisterContent(
     modifier: Modifier = Modifier,
 ) {
     val name by nameState.collectAsState()
+    val username by usernameState.collectAsState()
     val company by companyState.collectAsState()
     val email by emailState.collectAsState()
     val password by passwordState.collectAsState()
@@ -220,8 +227,22 @@ private fun BoxScope.RegisterContent(
             shape = shape,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
-            placeholder = {
+            label = {
                 Text(WrStrings.name())
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            username,
+            onValueChange = usernameChanged,
+            shape = shape,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            singleLine = true,
+            label = {
+                Text(WrStrings.username())
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         )
@@ -234,7 +255,7 @@ private fun BoxScope.RegisterContent(
             shape = shape,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
-            placeholder = {
+            label = {
                 Text(WrStrings.email())
             },
             keyboardOptions = KeyboardOptions(
@@ -251,7 +272,7 @@ private fun BoxScope.RegisterContent(
             shape = shape,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             singleLine = true,
-            placeholder = {
+            label = {
                 Text(WrStrings.workspaceName())
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -286,7 +307,7 @@ private fun BoxScope.RegisterContent(
             } else {
                 PasswordVisualTransformation()
             },
-            placeholder = {
+            label = {
                 Text(WrStrings.password())
             },
             trailingIcon = {
@@ -353,6 +374,7 @@ private fun BoxScope.RegisterContent(
 fun AuthScreenPreview() {
     RegisterScreen(
         nameState = MutableStateFlow(""),
+        usernameState = MutableStateFlow(""),
         emailState = MutableStateFlow(""),
         companyState = MutableStateFlow(""),
         passwordState = MutableStateFlow(""),
@@ -360,6 +382,7 @@ fun AuthScreenPreview() {
         passwordValidationState = MutableStateFlow(PasswordValidator.validate("")),
         canRegisterState = MutableStateFlow(false),
         nameChanged = {},
+        usernameChanged = {},
         companyChanged = {},
         emailChanged = {},
         passwordChanged = {},

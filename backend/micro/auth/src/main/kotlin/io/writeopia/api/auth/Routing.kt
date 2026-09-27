@@ -5,13 +5,16 @@ import io.ktor.server.application.Application
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import io.writeopia.api.core.auth.routing.accountDeletionEventsRoute
 import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.cookieAuthRoute
 import io.writeopia.api.core.auth.routing.emailRoute
 import io.writeopia.api.core.auth.routing.jwksRouting
 import io.writeopia.api.core.auth.routing.passwordResetRoute
-import io.writeopia.api.core.auth.routing.workspaceRoute
+import io.writeopia.api.core.workspaces.routing.workspaceRoute
+import io.writeopia.api.core.workspaces.service.WorkspaceService
+import io.writeopia.api.documents.documents.TutorialsService
 import io.writeopia.connection.logger
 import io.writeopia.sql.WriteopiaDbBackend
 
@@ -33,7 +36,10 @@ fun Application.configureRouting(
 
         // Version check endpoint
         get("/api/auth/version") {
-            call.respondText("Auth Service v0.80.0 - JWKS endpoint included", status = HttpStatusCode.OK)
+            call.respondText(
+                "Auth Service v0.80.0 - JWKS endpoint included",
+                status = HttpStatusCode.OK
+            )
         }
 
         appVersionRoute()
@@ -44,7 +50,25 @@ fun Application.configureRouting(
 
         if (writeopiaDb != null) {
             // Auth routes: login, register, password reset, account deletion, current user
-            authRoute(writeopiaDb, debugMode)
+            authRoute(
+                writeopiaDb,
+                debugMode,
+                provisionWorkspaceForNewUser = { db, workspaceId, workspaceName, userId ->
+                    WorkspaceService.createWorkspaceWithOwner(
+                        workspaceId,
+                        workspaceName,
+                        userId,
+                        db
+                    )
+                },
+                onWorkspaceProvisioned = { userId, workspaceId ->
+                    TutorialsService.initializeTutorialsForUser(
+                        userId = userId,
+                        workspaceId = workspaceId,
+                        writeopiaDb = writeopiaDb
+                    )
+                }
+            )
 
             // Web-specific auth routes using HttpOnly cookies
             cookieAuthRoute(writeopiaDb, debugMode)
@@ -63,6 +87,10 @@ fun Application.configureRouting(
             emailRoute(writeopiaDb)
 
             passwordResetRoute(writeopiaDb)
+
+            // Account-deletion saga: internal Pub/Sub-push + Cloud-Scheduler endpoints.
+            // Deliberately not mounted in the gateway (see accountDeletionEventsRoute's doc).
+            accountDeletionEventsRoute(writeopiaDb)
         }
 
         // Root endpoint

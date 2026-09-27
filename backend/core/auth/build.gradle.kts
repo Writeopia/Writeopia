@@ -30,13 +30,13 @@ dependencies {
 
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
-
-    // Google Cloud BOM for version alignment
-    implementation(platform(libs.google.cloud.bom))
-    implementation(libs.google.cloud.run)
+    implementation(project(":backend:core:pubsub"))
 
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.database.embedded.postgres)
+    testImplementation(libs.database.hikaricp)
+    testImplementation(libs.database.postgresql)
 }

@@ -81,6 +81,7 @@ fun DesktopApp(
     navigateToRegister: () -> Unit,
     navigateToResetPassword: () -> Unit,
     navigateToChooseWorkspace: () -> Unit,
+    navigateToAccountDeletionStarted: () -> Unit,
     modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
     startDestination: String = startDestination(),
@@ -268,6 +269,8 @@ fun DesktopApp(
                                     isAutoSyncEnabled = globalShellViewModel.isAutoSyncEnabled,
                                     workspaceToEdit = globalShellViewModel.workspaceToEdit,
                                     logoutInProgress = globalShellViewModel.logoutInProgress,
+                                    deleteAccountInProgress =
+                                        globalShellViewModel.deleteAccountInProgress,
                                     onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
                                     selectAccentColor = selectAccentColor,
@@ -296,7 +299,7 @@ fun DesktopApp(
                                     dismissDeleteConfirm = globalShellViewModel::dismissDeleteConfirm,
                                     deleteAccount = {
                                         globalShellViewModel.deleteAccount(
-                                            sideEffect = navigateToRegister
+                                            sideEffect = navigateToAccountDeletionStarted
                                         )
                                     },
                                     syncWorkspace = globalShellViewModel::syncWorkspace,

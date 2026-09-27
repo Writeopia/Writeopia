@@ -5,6 +5,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
+import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.repository.clearConfirmationCode
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.isCodeValid
@@ -26,7 +27,7 @@ fun Routing.passwordResetRoute(writeopiaDb: WriteopiaDbBackend) {
 
             val user = writeopiaDb.getUserByEmail(request.email)
 
-            if (user != null && user.enabled) {
+            if (user != null && user.status == UserStatus.ACTIVE) {
                 val code = EmailService.generateConfirmationCode()
                 val codeExpiry = EmailService.getCodeExpiry()
 

@@ -46,7 +46,7 @@ class CookieAuthIntegrationTest {
                     workspaceName = "Test Workspace",
                     name = "Test User",
                     email = testEmail,
-                    username = testEmail + "_user",
+                    username = testEmail.substringBefore("@") + "_user",
                     password = testPassword,
                 )
             )

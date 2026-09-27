@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
+import io.writeopia.account.ui.AccountDeletionStartedScreen
 import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.auth.navigation.startScreen
@@ -293,6 +294,29 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                     },
                                     navigateToChooseWorkspace = {
                                         navigationController.navigate(Destinations.START_APP.id) {
+                                            popUpTo(navigationController.graph.startDestinationId) {
+                                                inclusive = true
+                                            }
+                                        }
+                                    },
+                                    navigateToAccountDeletionStarted = {
+                                        navigationController.navigate(
+                                            Destinations.ACCOUNT_DELETION_STARTED.id
+                                        ) {
+                                            popUpTo(navigationController.graph.startDestinationId) {
+                                                inclusive = true
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+
+                            composable(route = Destinations.ACCOUNT_DELETION_STARTED.id) {
+                                AccountDeletionStartedScreen(
+                                    logout = {
+                                        navigationController.navigate(
+                                            Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                                        ) {
                                             popUpTo(navigationController.graph.startDestinationId) {
                                                 inclusive = true
                                             }
