@@ -1,12 +1,13 @@
 #if canImport(UIKit)
 import SwiftUI
 import Writeopia
+import WrModels
 import WriteopiaUI
 import WrData
 import WrDesign
 
 /// Menu under the editor, like `MobileInputScreen` of the Compose app when no text is
-/// selected. AI and the text formats work; drawing, image, spreadsheet, undo and redo are
+/// selected. AI, the text formats and drawing work; image, spreadsheet, undo and redo are
 /// placeholders for now.
 ///
 /// Drawn as a floating Liquid Glass capsule on iOS 26+, and as a material capsule before that.
@@ -15,6 +16,7 @@ struct EditorBottomMenu: View {
     let showsAi: Bool
     let onAiClick: () -> Void
     let onLinkClick: () -> Void
+    let onDrawingClick: () -> Void
     @State private var showsHighlightColors = false
 
     var body: some View {
@@ -26,14 +28,6 @@ struct EditorBottomMenu: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 2) {
-                    if manager.hasSelectedLines {
-                        SelectedLinesChip(count: manager.selectedPositions.count) {
-                            withAnimation(.snappy) { manager.clearLineSelection() }
-                        }
-                        Divider()
-                            .frame(height: 22)
-                            .padding(.horizontal, 4)
-                    }
                     if showsAi {
                         MenuButton(systemImage: "sparkles", label: "AI", tint: WrColors.accent, action: onAiClick)
                             .accessibilityIdentifier("editor.menu.ai")
@@ -54,7 +48,8 @@ struct EditorBottomMenu: View {
                     .accessibilityIdentifier("editor.menu.highlight")
                     MenuButton(systemImage: "link", label: "Link", isActive: manager.isSpanActive(.link), action: onLinkClick)
                         .accessibilityIdentifier("editor.menu.link")
-                    MenuButton(systemImage: "pencil.and.scribble", label: "Drawing")
+                    MenuButton(systemImage: "pencil.and.scribble", label: "Drawing", action: onDrawingClick)
+                        .accessibilityIdentifier("editor.menu.drawing")
                     MenuButton(systemImage: "photo", label: "Image")
                     MenuButton(systemImage: "tablecells", label: "Spreadsheet")
                     // No undo history yet, so they look disabled like in the Compose app.
@@ -78,7 +73,144 @@ struct EditorBottomMenu: View {
     }
 }
 
-/// Shown while lines are selected by sliding them: how many, and a tap to unselect them all.
+/// Menu shown while lines are selected by sliding them, replacing the regular one like
+/// `EditionScreen` of the Kotlin SDK: formats, line types, box/card, headings, link to a new
+/// page, copy, cut, delete and close.
+struct SelectionMenu: View {
+    let manager: WriteopiaStateManager
+    let showsAi: Bool
+    let onAiClick: () -> Void
+    let onLinkToPage: () -> Void
+    let onCopy: () -> Void
+    let onCut: () -> Void
+    @State private var panel: Panel?
+
+    private enum Panel {
+        case boxCard
+        case headings
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            switch panel {
+            case .boxCard:
+                optionsRow([
+                    ("Box", manager.selectedLinesHave(.box), { manager.toggleTagOfSelectedLines(.box) }),
+                    ("Card", manager.selectedLinesHave(.card), { manager.toggleTagOfSelectedLines(.card) }),
+                ])
+            case .headings:
+                optionsRow([
+                    ("Title", manager.selectedLinesHave(.h1), { manager.toggleHeadingOfSelectedLines(.h1) }),
+                    ("SubTitle", manager.selectedLinesHave(.h2), { manager.toggleHeadingOfSelectedLines(.h2) }),
+                    ("Header", manager.selectedLinesHave(.h3), { manager.toggleHeadingOfSelectedLines(.h3) }),
+                ])
+            case nil:
+                EmptyView()
+            }
+
+            HStack(spacing: 0) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 2) {
+                        if showsAi {
+                            MenuButton(systemImage: "sparkles", label: "AI", tint: WrColors.accent, action: onAiClick)
+                                .accessibilityIdentifier("selection.ai")
+                            separator
+                        }
+                        spanButton(.bold, systemImage: "bold", label: "Bold")
+                        spanButton(.italic, systemImage: "italic", label: "Italic")
+                        spanButton(.underline, systemImage: "underline", label: "Underline")
+                        separator
+                        typeButton(.checkItem, systemImage: "checkmark.square", label: "Checkbox")
+                        typeButton(.unorderedListItem, systemImage: "list.bullet", label: "List item")
+                        typeButton(.codeBlock, systemImage: "chevron.left.forwardslash.chevron.right", label: "Code block")
+                        MenuButton(
+                            systemImage: "square.dashed.inset.filled",
+                            label: "Box/Card",
+                            isActive: panel == .boxCard || manager.selectedLinesHave(.box) || manager.selectedLinesHave(.card)
+                        ) { toggle(.boxCard) }
+                        MenuButton(
+                            systemImage: "textformat.size",
+                            label: "Font Options",
+                            isActive: panel == .headings || BlockTag.headings.contains(where: manager.selectedLinesHave)
+                        ) { toggle(.headings) }
+                        separator
+                        MenuButton(systemImage: "doc.badge.plus", label: "Link to page", action: onLinkToPage)
+                            .accessibilityIdentifier("selection.linkPage")
+                        MenuButton(systemImage: "doc.on.doc", label: "Copy", action: onCopy)
+                            .accessibilityIdentifier("selection.copy")
+                        MenuButton(systemImage: "scissors", label: "Cut", action: onCut)
+                            .accessibilityIdentifier("selection.cut")
+                        MenuButton(systemImage: "trash", label: "Delete", tint: .red) {
+                            withAnimation(.snappy) { manager.deleteSelectedLines() }
+                        }
+                        .accessibilityIdentifier("selection.delete")
+                    }
+                    .padding(.leading, 10)
+                }
+
+                separator
+                // Close, showing how many lines are selected.
+                SelectedLinesChip(count: manager.selectedPositions.count) {
+                    withAnimation(.snappy) { manager.clearLineSelection() }
+                }
+                .padding(.trailing, 8)
+            }
+            .frame(height: 48)
+            .glassCapsule()
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+        .animation(.snappy, value: panel)
+    }
+
+    private var separator: some View {
+        Divider()
+            .frame(height: 22)
+            .padding(.horizontal, 4)
+    }
+
+    private func toggle(_ newPanel: Panel) {
+        panel = panel == newPanel ? nil : newPanel
+    }
+
+    private func spanButton(_ span: Span, systemImage: String, label: String) -> some View {
+        MenuButton(systemImage: systemImage, label: label, isActive: manager.isSpanActive(span)) {
+            manager.toggleSpan(span)
+        }
+    }
+
+    private func typeButton(_ type: StoryType, systemImage: String, label: String) -> some View {
+        MenuButton(systemImage: systemImage, label: label, isActive: manager.selectedLinesAre(type)) {
+            manager.toggleTypeOfSelectedLines(type)
+        }
+        .accessibilityIdentifier("selection.\(type.name)")
+    }
+
+    private func optionsRow(_ options: [(title: String, isActive: Bool, action: () -> Void)]) -> some View {
+        HStack(spacing: 8) {
+            ForEach(options, id: \.title) { option in
+                Button(action: option.action) {
+                    Text(option.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(option.isActive ? WrColors.accent : .primary)
+                        .frame(maxWidth: .infinity, minHeight: 34)
+                        .background(
+                            Capsule().fill(option.isActive ? WrColors.accent.opacity(0.15) : Color.clear)
+                        )
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(option.isActive ? .isSelected : [])
+            }
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 44)
+        .glassCapsule()
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+}
+
+/// How many lines are selected; tapping it unselects them all.
 private struct SelectedLinesChip: View {
     let count: Int
     let clear: () -> Void
@@ -89,6 +221,7 @@ private struct SelectedLinesChip: View {
                 Text("\(count) selected")
                     .font(.subheadline.weight(.semibold))
                     .monospacedDigit()
+                    .contentTransition(.numericText())
                 Image(systemName: "xmark")
                     .font(.caption.weight(.bold))
             }
@@ -96,10 +229,11 @@ private struct SelectedLinesChip: View {
             .padding(.horizontal, 12)
             .frame(height: 32)
             .background(WrColors.accent.opacity(0.15), in: Capsule())
+            .animation(.snappy, value: count)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Unselect \(count) lines")
-        .accessibilityIdentifier("editor.menu.clearSelection")
+        .accessibilityIdentifier("selection.close")
     }
 }
 
@@ -193,23 +327,33 @@ private extension View {
 /// Picks what the AI should do, like `MobileAiDialog` of the Compose app. Picking a command
 /// closes the dialog so the answer can be seen streaming into the document.
 struct AiDialog: View {
+    /// When set, the dialog works on this target and doesn't offer the picker, like the dialog
+    /// the Compose app opens for selected lines.
+    var fixedMode: AiTargetMode?
     let onCommand: (AiCommand, AiTargetMode) -> Void
-    @State private var mode: AiTargetMode = .document
+    @State private var pickedMode: AiTargetMode = .document
     @Environment(\.dismiss) private var dismiss
+
+    private var mode: AiTargetMode { fixedMode ?? pickedMode }
 
     var body: some View {
         NavigationStack {
             List {
                 Section("Apply to:") {
-                    Picker("Apply to", selection: $mode) {
-                        ForEach(AiTargetMode.allCases) { mode in
-                            Text(mode.title).tag(mode)
+                    if let fixedMode {
+                        Text(fixedMode.title)
+                            .font(.headline)
+                    } else {
+                        Picker("Apply to", selection: $pickedMode) {
+                            ForEach(AiTargetMode.pickable) { mode in
+                                Text(mode.title).tag(mode)
+                            }
                         }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
                     }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
                 }
 
                 Section {

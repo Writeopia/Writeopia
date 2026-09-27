@@ -308,3 +308,55 @@ private func texts(_ state: StoryState) -> [String] {
         #expect(markdown == "# Plan\nIntro\n## Section\n[] Task\n- Bullet\nAnswer\n")
     }
 }
+
+@Suite struct SelectedLinesTests {
+    let manager = WriteopiaManager()
+    let initial = StoryState(stories: ContentManager().renumber([
+        StoryStep(id: "t", type: .title, text: "T", position: 0),
+        StoryStep(id: "a", type: .text, text: "One", position: 1),
+        StoryStep(id: "b", type: .checkItem, text: "Two", checked: true, position: 2),
+        StoryStep(id: "c", type: .divider, position: 3),
+    ]))
+
+    @Test func typeTogglesPerLineLikeTheSdk() {
+        let state = manager.toggleType(.checkItem, positions: [0, 1, 2, 3], state: initial)
+
+        #expect(state.stories[0]?.type.number == StoryType.title.number)
+        #expect(state.stories[1]?.type.number == StoryType.checkItem.number)
+        #expect(state.stories[1]?.checked == false)
+        #expect(state.stories[2]?.type.number == StoryType.text.number)
+        #expect(state.stories[2]?.checked == nil)
+        #expect(state.stories[3]?.type.number == StoryType.divider.number)
+    }
+
+    @Test func boxAndCardTagsToggle() {
+        var state = manager.toggleTag(.box, positions: [1, 2], state: initial)
+        #expect(state.stories[1]?.hasTag("HIGH_LIGHT_BLOCK") == true)
+        state = manager.toggleTag(.box, positions: [1], state: state)
+        #expect(state.stories[1]?.hasTag("HIGH_LIGHT_BLOCK") == false)
+        #expect(state.stories[2]?.hasTag("HIGH_LIGHT_BLOCK") == true)
+    }
+
+    @Test func headingsReplaceEachOther() {
+        var state = manager.toggleHeading(.h1, positions: [1], state: initial)
+        #expect(state.stories[1]?.headingLevel == 1)
+        state = manager.toggleHeading(.h3, positions: [1], state: state)
+        #expect(state.stories[1]?.headingLevel == 3)
+        #expect(state.stories[1]?.tags.count == 1)
+        state = manager.toggleHeading(.h3, positions: [1], state: state)
+        #expect(state.stories[1]?.headingLevel == nil)
+    }
+
+    @Test func deleteKeepsTheTitle() {
+        let state = manager.deleteSteps([0, 1, 3], state: initial)
+        #expect(state.sortedStories.map(\.id) == ["t", "b"])
+    }
+
+    @Test func textAndDocumentLinks() {
+        #expect(manager.text(of: [2, 1, 3], state: initial) == "One\nTwo")
+
+        let state = manager.addDocumentLink(after: 1, documentId: "p", title: "One", state: initial)
+        #expect(state.stories[2]?.type.number == StoryType.documentLink.number)
+        #expect(state.stories[2]?.documentLink == DocumentLink(id: "p", title: "One"))
+    }
+}

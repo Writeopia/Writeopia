@@ -5,9 +5,25 @@ import WrDesign
 import WrModels
 
 /// Draws one `DrawStory`, picking the drawer of its type like the drawers map of the SDK.
+/// Drawers the app provides for step types the editor doesn't know, like the drawers map the
+/// Compose app merges into the SDK drawers (e.g. `DrawingPreviewDrawer`).
+public typealias CustomStepDrawer = (StoryStep) -> AnyView
+
+struct CustomStepDrawersKey: EnvironmentKey {
+    static let defaultValue: [Int: CustomStepDrawer] = [:]
+}
+
+extension EnvironmentValues {
+    var customStepDrawers: [Int: CustomStepDrawer] {
+        get { self[CustomStepDrawersKey.self] }
+        set { self[CustomStepDrawersKey.self] = newValue }
+    }
+}
+
 struct StoryStepDrawer: View {
     let draw: DrawStory
     let manager: WriteopiaStateManager
+    @Environment(\.customStepDrawers) private var customDrawers
 
     private var step: StoryStep { draw.storyStep }
 
@@ -35,6 +51,10 @@ struct StoryStepDrawer: View {
             DraggableStep(step: step, position: draw.position, manager: manager) {
                 UnorderedListItemDrawer(step: step, manager: manager)
             }
+        case StoryType.codeBlock.number:
+            DraggableStep(step: step, position: draw.position, manager: manager) {
+                CodeBlockDrawer(step: step, manager: manager)
+            }
         case StoryType.aiAnswer.number:
             DraggableStep(step: step, position: draw.position, manager: manager) {
                 AiAnswerDrawer(step: step, manager: manager)
@@ -54,7 +74,11 @@ struct StoryStepDrawer: View {
         case StoryType.lastSpace.number:
             LastSpaceDrawer(draw: draw, manager: manager)
         default:
-            EmptyView()
+            if let custom = customDrawers[step.type.number] {
+                DraggableStep(step: step, position: draw.position, manager: manager) {
+                    custom(step)
+                }
+            }
         }
     }
 }
@@ -88,6 +112,7 @@ struct DraggableStep<Content: View>: View {
 
             content
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .blockDecoration(step)
         }
         .swipeToSelect(step, manager: manager)
     }
@@ -120,12 +145,46 @@ struct TitleDrawer: View {
     }
 }
 
+/// Monospaced text on a tinted background, like `CodeBlockDrawer` of the SDK.
+struct CodeBlockDrawer: View {
+    let step: StoryStep
+    let manager: WriteopiaStateManager
+
+    var body: some View {
+        StepTextView(step: step, manager: manager)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color(uiColor: .secondarySystemFill), in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+extension View {
+    /// Box (`HIGH_LIGHT_BLOCK`) and card (`CARD_BLOCK`) decorations of a step.
+    @ViewBuilder
+    func blockDecoration(_ step: StoryStep) -> some View {
+        if step.hasTag(BlockTag.box.rawValue) {
+            padding(10)
+                .background(WrColors.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(WrColors.accent.opacity(0.35))
+                }
+        } else if step.hasTag(BlockTag.card.rawValue) {
+            padding(12)
+                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+        } else {
+            self
+        }
+    }
+}
+
 struct CheckItemDrawer: View {
     let step: StoryStep
     let manager: WriteopiaStateManager
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        HStack(alignment: .center, spacing: 8) {
             Button {
                 manager.onCheckedChange(stepId: step.id, checked: !(step.checked ?? false))
             } label: {

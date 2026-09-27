@@ -115,6 +115,94 @@ public struct WriteopiaManager {
         return newState
     }
 
+    // MARK: - Selected lines (the SDK's edition menu)
+
+    /// Changes each step at `positions` to `type`, or back to a paragraph when it already is of
+    /// that type, like `toggleStateForStories` of the SDK. The title never changes.
+    public func toggleType(_ type: StoryType, positions: [Double], state: StoryState) -> StoryState {
+        mapSteps(positions, state: state) { step in
+            guard step.isTextStep else { return step }
+            var step = step
+            step.type = step.type.number == type.number ? .text : type
+            step.checked = step.type.number == StoryType.checkItem.number ? (step.checked ?? false) : nil
+            return step
+        }
+    }
+
+    /// Adds `tag` to each step at `positions`, or removes it from the steps that have it, like
+    /// `toggleTagForStories` of the SDK.
+    public func toggleTag(_ tag: BlockTag, positions: [Double], state: StoryState) -> StoryState {
+        mapSteps(positions, state: state) { step in
+            var step = step
+            if step.hasTag(tag.rawValue) {
+                step.tags.removeAll { $0.tag == tag.rawValue }
+            } else {
+                step.tags.append(TagInfo(tag: tag.rawValue))
+            }
+            return step
+        }
+    }
+
+    /// Makes each step at `positions` a heading of `tag`'s level, replacing other levels, or a
+    /// regular paragraph when it already is. Mirrors `addTitle` of the SDK.
+    public func toggleHeading(_ tag: BlockTag, positions: [Double], state: StoryState) -> StoryState {
+        guard tag.isHeading else { return state }
+        return mapSteps(positions, state: state) { step in
+            guard step.isTextStep else { return step }
+            var step = step
+            let shouldRemove = step.hasTag(tag.rawValue)
+            step.tags.removeAll { info in BlockTag(rawValue: info.tag)?.isHeading == true }
+            if !shouldRemove {
+                step.tags.append(TagInfo(tag: tag.rawValue))
+            }
+            return step
+        }
+    }
+
+    /// Deletes the steps at `positions`, except the title.
+    public func deleteSteps(_ positions: [Double], state: StoryState) -> StoryState {
+        let toDelete = Set(positions)
+        let remaining = state.sortedPositions
+            .filter { position in !toDelete.contains(position) || state.stories[position]?.isTitle == true }
+            .compactMap { state.stories[$0] }
+        guard remaining.count != state.stories.count else { return state }
+        return StoryState(stories: contentManager.renumber(remaining), lastEdit: .whole, focus: nil)
+    }
+
+    /// Text of the steps at `positions`, one per line, like `copySelection` of the SDK.
+    public func text(of positions: [Double], state: StoryState) -> String {
+        positions.sorted()
+            .compactMap { state.stories[$0] }
+            .filter { $0.isTextStep || $0.type.number == StoryType.documentLink.number }
+            .compactMap(\.text)
+            .joined(separator: "\n")
+    }
+
+    /// Adds a link to the document `documentId` right after `position`.
+    public func addDocumentLink(after position: Double, documentId: String, title: String, state: StoryState) -> StoryState {
+        let link = StoryStep(
+            type: .documentLink,
+            text: title,
+            position: 0,
+            documentLink: DocumentLink(id: documentId, title: title)
+        )
+        var newState = contentManager.add(link, after: position, in: state.stories)
+        newState.focus = nil
+        return newState
+    }
+
+    private func mapSteps(_ positions: [Double], state: StoryState, change: (StoryStep) -> StoryStep) -> StoryState {
+        var newState = state
+        for position in positions {
+            guard let step = newState.stories[position], !step.isTitle else { continue }
+            newState.stories[position] = change(step)
+        }
+        if newState != state {
+            newState.lastEdit = .whole
+        }
+        return newState
+    }
+
     /// Links `start..<end` of the step at `position` to `url`, or removes the link when `url` is nil.
     public func setLink(_ url: String?, at position: Double, start: Int, end: Int, state: StoryState) -> StoryState {
         updateSpans(at: position, start: start, end: end, state: state) { spans, start, end in

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import Drawing
 @testable import NoteEditor
 import Writeopia
 import WriteopiaUI
@@ -249,5 +250,116 @@ final class FakePublishing: DocumentPublishing {
 
         #expect(!viewModel.isPublished)
         #expect(viewModel.publishError != nil)
+    }
+}
+
+@Suite struct DrawingStepTests {
+    @Test func newDrawingGoesToTheEndAndIsDrawn() async throws {
+        let viewModel = await loadedViewModel(nil)
+        let drawing = DrawingData(id: "x", strokes: [Stroke(points: [DrawPoint(x: 1, y: 1)])])
+
+        viewModel.saveDrawing(drawing, stepId: nil)
+
+        let last = try #require(viewModel.writeopiaManager.currentStory.sortedStories.last)
+        #expect(last.type.number == StoryType.drawing.number)
+        #expect(DrawingData.fromJson(last.text) == drawing)
+        #expect(viewModel.writeopiaManager.toDraw.contains { $0.id == last.id })
+        #expect(viewModel.writeopiaManager.documentContent.count == 4)
+    }
+
+    @Test func editedDrawingReplacesItsStrokes() async throws {
+        let viewModel = await loadedViewModel(nil)
+        viewModel.saveDrawing(DrawingData(id: "x", strokes: [Stroke(id: "a", points: [DrawPoint(x: 1, y: 1)])]), stepId: nil)
+        let stepId = try #require(viewModel.writeopiaManager.currentStory.sortedStories.last?.id)
+
+        viewModel.saveDrawing(DrawingData(id: "x", strokes: [Stroke(id: "b", points: [DrawPoint(x: 2, y: 2)])]), stepId: stepId)
+
+        let step = try #require(viewModel.writeopiaManager.step(withId: stepId))
+        #expect(DrawingData.fromJson(step.text)?.strokes.map(\.id) == ["b"])
+        #expect(viewModel.writeopiaManager.currentStory.stories.count == 4)
+    }
+
+    @Test func emptyNewDrawingIsDropped() async {
+        let viewModel = await loadedViewModel(nil)
+
+        viewModel.saveDrawing(DrawingData(), stepId: nil)
+
+        #expect(viewModel.writeopiaManager.currentStory.stories.count == 3)
+    }
+
+    @Test func drawingsStayOutOfMarkdownAndPreviews() async {
+        let viewModel = await loadedViewModel(nil)
+        viewModel.saveDrawing(DrawingData(strokes: [Stroke(points: [DrawPoint(x: 1, y: 1)])]), stepId: nil)
+
+        #expect(!viewModel.exportMarkdown().contains("strokes"))
+        #expect(!viewModel.currentDocument.preview.contains("strokes"))
+    }
+}
+
+final class FakeClipboard: LineClipboard {
+    private(set) var copied: [StoryStep] = []
+    func copy(_ lines: [StoryStep]) { copied = lines }
+}
+
+final class CreatingRepository: DocumentsRepository {
+    private(set) var created: [(String, String)] = []
+
+    func folderContents(folderId: String) async throws -> FolderContents { FolderContents() }
+    func document(id: String) async throws -> WrDocument {
+        WrDocument(id: "d", title: "Plan", workspaceId: "w", content: NoteEditorTests.document.content, parentId: "folder-1")
+    }
+    func search(query: String) async throws -> [WrDocument] { [] }
+    func createFolder(title: String, parentId: String) async throws -> Folder { throw APIError.notFound }
+    func createDocument(title: String, parentId: String) async throws -> WrDocument {
+        created.append((title, parentId))
+        return WrDocument(id: "new-page", title: title, workspaceId: "w", parentId: parentId)
+    }
+    func moveDocument(id: String, toFolder folderId: String) async throws {}
+    func moveFolder(id: String, toFolder folderId: String) async throws {}
+}
+
+@Suite struct SelectionMenuTests {
+    @Test func copyAndCutSelectedLines() async {
+        let viewModel = await loadedViewModel(nil)
+        let clipboard = FakeClipboard()
+        viewModel.writeopiaManager.onSelected(stepId: "a", isSelected: true)
+        viewModel.writeopiaManager.onSelected(stepId: "b", isSelected: true)
+
+        viewModel.copySelectedLines(to: clipboard)
+        #expect(clipboard.copied.map(\.id) == ["a", "b"])
+        #expect(viewModel.writeopiaManager.hasSelectedLines)
+
+        viewModel.cutSelectedLines(to: clipboard)
+        #expect(viewModel.writeopiaManager.currentStory.sortedStories.map(\.id) == ["t"])
+        #expect(!viewModel.writeopiaManager.hasSelectedLines)
+    }
+
+    @Test func linkToPageCreatesADocumentAndLinksIt() async {
+        let repository = CreatingRepository()
+        let viewModel = NoteEditorViewModel(documentId: "d", repository: repository)
+        await viewModel.loadDocument()
+        viewModel.writeopiaManager.onSelected(stepId: "a", isSelected: true)
+
+        await viewModel.linkSelectionToNewPage()
+
+        #expect(repository.created.first?.0 == "First idea")
+        #expect(repository.created.first?.1 == "folder-1")
+        let link = viewModel.writeopiaManager.currentStory.sortedStories[2]
+        #expect(link.documentLink == DocumentLink(id: "new-page", title: "First idea"))
+    }
+
+    @Test func aiOnSelectedLinesAnswersAfterTheLastOne() async {
+        let ai = FakeAi()
+        ai.answers = ["Summary"]
+        let viewModel = await loadedViewModel(ai)
+        viewModel.writeopiaManager.onSelected(stepId: "a", isSelected: true)
+
+        viewModel.runAi(.summary, mode: .selectedLines)
+        await waitForAi(viewModel)
+
+        #expect(ai.requests.first?.1 == "First idea")
+        #expect(viewModel.writeopiaManager.currentStory.sortedStories.map { $0.text ?? "" } == ["Plan", "First idea", "Summary", "Second idea"])
+        #expect(NoteEditorViewModel.commands(for: .selectedLines) == AiCommand.allCases)
+        #expect(!AiTargetMode.pickable.contains(.selectedLines))
     }
 }

@@ -1,4 +1,5 @@
 #if canImport(UIKit)
+import Drawing
 import SwiftUI
 import UIKit
 import Writeopia
@@ -11,9 +12,12 @@ import WrModels
 public struct NoteEditorView: View {
     @State private var viewModel: NoteEditorViewModel
     @State private var showAiDialog = false
+    @State private var showSelectedLinesAiDialog = false
     @State private var showMenu = false
     @State private var showPublish = false
     @State private var showPremium = false
+    @State private var drawingTarget: DrawingTarget?
+    @Environment(\.colorScheme) private var colorScheme
     /// Selection waiting for a URL. Kept here because the alert takes the focus from the text.
     @State private var linkSelection: StepSelection?
     @State private var linkURL = ""
@@ -40,6 +44,33 @@ public struct NoteEditorView: View {
         self.openDocumentLink = openDocumentLink
     }
 
+    /// Drawings in the document, like `DrawingPreviewDrawer` of the Compose app: tap to edit,
+    /// long press to delete.
+    private var customDrawers: [Int: CustomStepDrawer] {
+        [
+            StoryType.drawing.number: { step in
+                AnyView(
+                    DrawingPreview(json: step.text) {
+                        guard !viewModel.isLocked else { return }
+                        drawingTarget = DrawingTarget(stepId: step.id, drawing: DrawingData.fromJson(step.text))
+                    }
+                    .contextMenu {
+                        if !viewModel.isLocked {
+                            Button("Delete drawing", systemImage: "trash", role: .destructive) {
+                                viewModel.writeopiaManager.removeStep(stepId: step.id)
+                            }
+                        }
+                    }
+                )
+            },
+        ]
+    }
+
+    /// Black ink on light backgrounds, white on dark ones.
+    private var defaultDrawingColor: Int {
+        colorScheme == .dark ? DrawingColor.argb(0xFFFF_FFFF) : Stroke.black
+    }
+
     /// Asks for a URL for the selected text, or removes the link when it already has one.
     private func linkClick() {
         let manager = viewModel.writeopiaManager
@@ -63,15 +94,29 @@ public struct NoteEditorView: View {
     public var body: some View {
         Group {
             if viewModel.hasLoaded {
-                WriteopiaEditor(manager: viewModel.writeopiaManager)
+                WriteopiaEditor(manager: viewModel.writeopiaManager, customDrawers: customDrawers)
                     .safeAreaInset(edge: .bottom, spacing: 0) {
-                        // A locked document can't be edited, so its menu is hidden.
-                        if !viewModel.isLocked {
+                        // A locked document can't be edited, so its menu is hidden. While lines are
+                        // selected, the selection menu takes the place of the regular one.
+                        if viewModel.isLocked {
+                            EmptyView()
+                        } else if viewModel.writeopiaManager.hasSelectedLines {
+                            SelectionMenu(
+                                manager: viewModel.writeopiaManager,
+                                showsAi: viewModel.isAiAvailable,
+                                onAiClick: { showSelectedLinesAiDialog = true },
+                                onLinkToPage: { Task { await viewModel.linkSelectionToNewPage() } },
+                                onCopy: { viewModel.copySelectedLines(to: SystemLinePasteboard()) },
+                                onCut: { withAnimation(.snappy) { viewModel.cutSelectedLines(to: SystemLinePasteboard()) } }
+                            )
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        } else {
                             EditorBottomMenu(
                                 manager: viewModel.writeopiaManager,
                                 showsAi: viewModel.isAiAvailable,
                                 onAiClick: { showAiDialog = true },
-                                onLinkClick: linkClick
+                                onLinkClick: linkClick,
+                                onDrawingClick: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) }
                             )
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
@@ -138,6 +183,20 @@ public struct NoteEditorView: View {
                 viewModel.runAi(command, mode: mode)
             }
         }
+        .sheet(isPresented: $showSelectedLinesAiDialog) {
+            AiDialog(fixedMode: .selectedLines) { command, mode in
+                viewModel.runAi(command, mode: mode)
+            }
+        }
+        .alert(
+            "Could not create the page",
+            isPresented: Binding(get: { viewModel.linkError != nil }, set: { if !$0 { viewModel.linkError = nil } })
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.linkError ?? "")
+        }
+        .animation(.snappy, value: viewModel.writeopiaManager.hasSelectedLines)
         .alert(
             "Add link",
             isPresented: Binding(get: { linkSelection != nil }, set: { if !$0 { linkSelection = nil } })
@@ -153,6 +212,11 @@ public struct NoteEditorView: View {
                 }
             }
         }
+        .fullScreenCover(item: $drawingTarget) { target in
+            DrawingEditorView(drawing: target.drawing, defaultColor: defaultDrawingColor) { drawing in
+                viewModel.saveDrawing(drawing, stepId: target.stepId)
+            }
+        }
         .onDisappear { viewModel.cancelAi() }
         .task {
             viewModel.writeopiaManager.onDocumentLinkClick = openDocumentLink
@@ -161,6 +225,13 @@ public struct NoteEditorView: View {
         }
     }
 }
+/// A drawing being created (`stepId == nil`) or edited.
+private struct DrawingTarget: Identifiable {
+    let id = UUID()
+    let stepId: String?
+    let drawing: DrawingData?
+}
+
 /// Title of the navigation bar, with the lock and published marks of the Compose top bar.
 private struct TitleView: View {
     let title: String

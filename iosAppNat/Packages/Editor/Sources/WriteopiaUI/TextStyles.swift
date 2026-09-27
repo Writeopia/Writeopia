@@ -9,6 +9,9 @@ enum TextStyles {
         if step.isTitle {
             return scaled(family.uiFont(size: 34, weight: .bold), style: .largeTitle)
         }
+        if step.type.number == StoryType.codeBlock.number {
+            return scaled(.monospacedSystemFont(ofSize: 15, weight: .regular), style: .body)
+        }
 
         switch step.headingLevel {
         case 1: return scaled(family.uiFont(size: 32, weight: .bold), style: .title1)
@@ -95,6 +98,12 @@ enum TextStyles {
 
     private static func scaled(_ font: UIFont, style: UIFont.TextStyle) -> UIFont {
         UIFontMetrics(forTextStyle: style).scaledFont(for: font)
+    }
+}
+/// Styled text of a step, for places outside the editor (e.g. the clipboard).
+public enum StepText {
+    public static func attributedText(for step: StoryStep, font: EditorFont = .system) -> NSAttributedString {
+        TextStyles.attributedText(for: step, family: font)
     }
 }
 #endif

@@ -23,6 +23,8 @@ iosAppNat/
     │   │                 erase, delete, move), FocusHandler, SpansHandler, WriteopiaManager
     │   ├── WriteopiaUI   WriteopiaStateManager (observable state), StepsModifier (SPACE /
     │   │                 ON_DRAG_SPACE between steps), drawers per step type, WriteopiaEditor
+    │   ├── Drawing       Free drawing: DrawingData/Stroke models (same JSON as Android),
+    │   │                 canvas, drawing editor and the preview shown in documents
     │   └── NoteEditor    NoteEditorViewModel (counterpart of NoteEditorKmpViewModel) and screen
     └── Features/         Local package with the feature modules
         ├── AuthFeature       Space choice, login, register, email confirmation,
@@ -51,14 +53,15 @@ Open `iosAppNat.xcodeproj` and run the `iosAppNat` scheme. To point the app at a
 
 ## Editor
 
-Documents open in an editable editor. Supported step types: `TITLE`, `TEXT`, `CHECK_ITEM`, `UNORDERED_LIST_ITEM`, `DIVIDER`, `DOCUMENT_LINK`, `AI_ANSWER`, `LOADING`, `SPACE` and `ON_DRAG_SPACE`. Other types (images, spreadsheets...) are kept in the document but not drawn.
+Documents open in an editable editor. Supported step types: `TITLE`, `TEXT`, `CODE_BLOCK`, `CHECK_ITEM`, `UNORDERED_LIST_ITEM`, `DIVIDER`, `DOCUMENT_LINK`, `AI_ANSWER`, `LOADING`, `SPACE` and `ON_DRAG_SPACE`. Other types (images, spreadsheets...) are kept in the document but not drawn.
 
 - Text is edited in place. Return splits a step (the title continues as a paragraph, lists and checklists continue as items, Return on an empty item leaves the list). Backspace at the start merges into the previous line, turns a list item into a paragraph, or removes a divider/link above.
 - Existing spans (bold, italic, underline, highlights, links) are drawn and follow the text as it's edited. Bold, italic, underline, highlights (yellow, green, red) and links can be applied to the selected text from the menu. Comments aren't supported.
 - Hold the grip on the left of a step and drop it on another step or space to reorder.
-- Slide a line sideways to select it (slide again to unselect), like the SDK's `SwipeBox`. Several lines can be selected; the format buttons then apply to all of them, and the menu shows how many are selected with a button to clear them.
-- A bottom menu mirrors the Compose editor (AI, bold, italic, underline, highlight, link, drawing, image, spreadsheet, undo, redo). AI and the text formats work; drawing, image, spreadsheet, undo and redo are placeholders.
+- Slide a line sideways to select it (slide again to unselect), like the SDK's `SwipeBox`. Several lines can be selected. While lines are selected, the bottom menu becomes the selection menu of the SDK's `EditionScreen`: AI on the selected lines, bold/italic/underline, checkbox, list item, code block, Box/Card, Title/SubTitle/Header, link to a new page, copy (plain and rich text), cut, delete, and an "N selected ✕" chip that shows the count and clears the selection.
+- A bottom menu mirrors the Compose editor (AI, bold, italic, underline, highlight, link, drawing, image, spreadsheet, undo, redo). AI, the text formats and drawing work; image, spreadsheet, undo and redo are placeholders.
 - AI (open space only) opens a dialog to apply a command to the document or the line with the cursor: Prompt, Summary, Action Points, FAQ and Tags. The answer streams from `/api/ai/*` (Server-Sent Events) into an `AI_ANSWER` step, with a `LOADING` step until it starts.
+- **Drawing** opens a full screen canvas (pen, highlighter, eraser, 11 colors, 5 widths, undo, clear) like the Compose drawing feature. Saving adds a `DRAWING` step (type 100) at the end of the document with the strokes as JSON in its text, in the same format as Android. In the document the drawing is cropped to its strokes; tap it to edit, long press to delete.
 - The top right menu mirrors `NoteGlobalActionsMenu` of the Compose app:
   - **Lock document**: read-only mode (text, checkboxes, dragging, selection and the bottom menu are disabled); a lock shows next to the title.
   - **Font**: System, Serif, Monospace or Cursive, remembered for every document.

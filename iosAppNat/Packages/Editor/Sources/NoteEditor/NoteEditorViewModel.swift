@@ -1,3 +1,4 @@
+import Drawing
 import Foundation
 import Observation
 import Writeopia
@@ -5,6 +6,11 @@ import WriteopiaUI
 import WrData
 import WrModels
 import WrNetwork
+
+/// Where copied lines go; the system pasteboard in the app, a fake in tests.
+public protocol LineClipboard {
+    func copy(_ lines: [StoryStep])
+}
 
 public enum ExportFormat: String, CaseIterable, Identifiable {
     case json
@@ -25,13 +31,20 @@ public enum ExportFormat: String, CaseIterable, Identifiable {
 public enum AiTargetMode: String, CaseIterable, Identifiable {
     case document
     case cursor
+    /// The lines selected by sliding them. Only offered from the selection menu, like the
+    /// Compose app does on mobile.
+    case selectedLines
 
     public var id: String { rawValue }
+
+    /// Targets the user can pick in the AI dialog opened from the regular menu.
+    public static let pickable: [AiTargetMode] = [.document, .cursor]
 
     public var title: String {
         switch self {
         case .document: "Document"
         case .cursor: "Cursor"
+        case .selectedLines: "Selected lines"
         }
     }
 }
@@ -50,6 +63,7 @@ public final class NoteEditorViewModel {
     public private(set) var isPublished = false
     public private(set) var isPublishing = false
     public var publishError: String?
+    public var linkError: String?
 
     let documentId: String
     private let repository: DocumentsRepository
@@ -80,6 +94,50 @@ public final class NoteEditorViewModel {
         self.defaults = defaults
         self.writeopiaManager = writeopiaManager
         writeopiaManager.fontFamily = defaults.string(forKey: Self.fontKey).flatMap(EditorFont.init(rawValue:)) ?? .system
+        writeopiaManager.customDrawableTypes = [StoryType.drawing.number]
+    }
+
+    // MARK: - Selected lines
+
+    /// Copies the selected lines, with their formatting, like `copySelection` of the Compose app.
+    public func copySelectedLines(to pasteboard: LineClipboard) {
+        let lines = writeopiaManager.selectedLines.filter { $0.text != nil }
+        guard !lines.isEmpty else { return }
+        pasteboard.copy(lines)
+    }
+
+    public func cutSelectedLines(to pasteboard: LineClipboard) {
+        copySelectedLines(to: pasteboard)
+        writeopiaManager.deleteSelectedLines()
+    }
+
+    /// Creates a document named after the last selected line and links it right below, like
+    /// "Link to page" of the Compose selection menu.
+    public func linkSelectionToNewPage() async {
+        guard writeopiaManager.isEditable, let last = writeopiaManager.selectedLines.last else { return }
+        let title = (last.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        do {
+            let page = try await repository.createDocument(
+                title: title.isEmpty ? "Untitled" : title,
+                parentId: loadedDocument?.parentId ?? Folder.rootId
+            )
+            writeopiaManager.addDocumentLinkAfterSelection(documentId: page.id, title: page.displayTitle)
+        } catch {
+            linkError = error.userMessage
+        }
+    }
+
+    // MARK: - Drawing
+
+    /// Stores a drawing from the drawing editor: a new `DRAWING` step at the end of the document,
+    /// or the updated strokes of the step with `stepId`. Empty new drawings are dropped.
+    public func saveDrawing(_ drawing: DrawingData, stepId: String?) {
+        if let stepId {
+            writeopiaManager.updateText(drawing.toJson(), stepId: stepId)
+        } else if !drawing.isEmpty {
+            writeopiaManager.addAtTheEnd(StoryStep(type: .drawing, text: drawing.toJson(), position: 0))
+        }
     }
 
     // MARK: - Menu
@@ -189,7 +247,7 @@ public final class NoteEditorViewModel {
     /// only supports a free prompt.
     public static func commands(for mode: AiTargetMode) -> [AiCommand] {
         switch mode {
-        case .document: AiCommand.allCases
+        case .document, .selectedLines: AiCommand.allCases
         case .cursor: [.prompt]
         }
     }
@@ -205,6 +263,8 @@ public final class NoteEditorViewModel {
             input = (writeopiaManager.documentText, writeopiaManager.lastPosition)
         case .cursor:
             input = writeopiaManager.currentTextStep.map { ($0.step.text ?? "", $0.position) }
+        case .selectedLines:
+            input = (writeopiaManager.selectedLinesText, writeopiaManager.selectedPositions.last)
         }
 
         guard let input, !input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }

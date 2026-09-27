@@ -47,9 +47,12 @@ public final class WriteopiaStateManager {
         self.writeopiaManager = writeopiaManager
     }
 
+    /// Step types drawn by the app through `CustomStepDrawers` (drawings, for instance).
+    public var customDrawableTypes: Set<Int> = []
+
     /// What the editor draws, spaces included.
     public var toDraw: [DrawStory] {
-        StepsModifier.modify(currentStory, dragPosition: dragPosition)
+        StepsModifier.modify(currentStory, dragPosition: dragPosition, extraTypes: customDrawableTypes)
     }
 
     public var title: String { writeopiaManager.title(currentStory) }
@@ -201,6 +204,68 @@ public final class WriteopiaStateManager {
         selectedStepIds.removeAll()
     }
 
+    /// Checkbox, list item and code block buttons of the selection menu.
+    public func toggleTypeOfSelectedLines(_ type: StoryType) {
+        applyToSelectedLines { writeopiaManager.toggleType(type, positions: $0, state: $1) }
+    }
+
+    /// Box and card buttons of the selection menu.
+    public func toggleTagOfSelectedLines(_ tag: BlockTag) {
+        applyToSelectedLines { writeopiaManager.toggleTag(tag, positions: $0, state: $1) }
+    }
+
+    /// Title, subtitle and header buttons of the selection menu.
+    public func toggleHeadingOfSelectedLines(_ tag: BlockTag) {
+        applyToSelectedLines { writeopiaManager.toggleHeading(tag, positions: $0, state: $1) }
+    }
+
+    /// Whether every selected line is of `type`, to show the button as active.
+    public func selectedLinesAre(_ type: StoryType) -> Bool {
+        let steps = selectedPositions.compactMap { currentStory.stories[$0] }
+        return !steps.isEmpty && steps.allSatisfy { $0.type.number == type.number }
+    }
+
+    /// Whether every selected line has `tag`, to show the button as active.
+    public func selectedLinesHave(_ tag: BlockTag) -> Bool {
+        let steps = selectedPositions.compactMap { currentStory.stories[$0] }
+        return !steps.isEmpty && steps.allSatisfy { $0.hasTag(tag.rawValue) }
+    }
+
+    /// Text of the selected lines, one per line.
+    public var selectedLinesText: String {
+        writeopiaManager.text(of: selectedPositions, state: currentStory)
+    }
+
+    /// The selected lines with their text and spans, for the clipboard.
+    public var selectedLines: [StoryStep] {
+        selectedPositions.compactMap { currentStory.stories[$0] }
+    }
+
+    /// Deletes the selected lines and clears the selection, like `deleteSelection` of the SDK.
+    public func deleteSelectedLines() {
+        guard isEditable else { return }
+        let newState = writeopiaManager.deleteSteps(selectedPositions, state: currentStory)
+        selectedStepIds.removeAll()
+        guard newState != currentStory else { return }
+        currentStory = newState
+        changeCount += 1
+    }
+
+    /// Adds a link to another document right after the last selected line.
+    public func addDocumentLinkAfterSelection(documentId: String, title: String) {
+        guard isEditable, let position = selectedPositions.last else { return }
+        currentStory = writeopiaManager.addDocumentLink(after: position, documentId: documentId, title: title, state: currentStory)
+        changeCount += 1
+    }
+
+    private func applyToSelectedLines(_ change: ([Double], StoryState) -> StoryState) {
+        guard isEditable, !selectedPositions.isEmpty else { return }
+        let newState = change(selectedPositions, currentStory)
+        guard newState != currentStory else { return }
+        currentStory = newState
+        changeCount += 1
+    }
+
     public func onCheckedChange(stepId: String, checked: Bool) {
         guard isEditable, let (position, _) = find(stepId) else { return }
         currentStory = writeopiaManager.checkItem(at: position, checked: checked, state: currentStory)
@@ -254,6 +319,22 @@ public final class WriteopiaStateManager {
         step.type = .aiAnswer
         step.text = text
         step.spans = []
+        currentStory = writeopiaManager.replaceStep(step, state: currentStory)
+        changeCount += 1
+    }
+
+    /// Adds `step` at the end of the document, like new drawings in the SDK.
+    public func addAtTheEnd(_ step: StoryStep) {
+        guard isEditable else { return }
+        currentStory = writeopiaManager.addAtPosition(step, after: lastPosition, state: currentStory)
+        currentStory.focus = nil
+        changeCount += 1
+    }
+
+    /// Replaces the text of a step, keeping its type and position (e.g. an edited drawing).
+    public func updateText(_ text: String, stepId: String) {
+        guard isEditable, var step = step(withId: stepId) else { return }
+        step.text = text
         currentStory = writeopiaManager.replaceStep(step, state: currentStory)
         changeCount += 1
     }

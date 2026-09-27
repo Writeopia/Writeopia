@@ -96,9 +96,15 @@ public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
             .filter { $0.type.number != StoryType.title.number }
     }
 
-    /// Plain text preview of the document body.
+    /// Plain text preview of the document body. Only steps that hold readable text are used
+    /// (a drawing, for instance, keeps JSON in its text).
     public var preview: String {
-        bodySteps
+        let textTypes: Set<Int> = [
+            StoryType.text.number, StoryType.checkItem.number,
+            StoryType.unorderedListItem.number, StoryType.aiAnswer.number,
+        ]
+        return bodySteps
+            .filter { textTypes.contains($0.type.number) }
             .compactMap { $0.text?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
             .prefix(3)

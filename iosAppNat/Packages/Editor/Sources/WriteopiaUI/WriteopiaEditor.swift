@@ -6,10 +6,13 @@ import WrModels
 /// The editor: every step of the document drawn in order, editable in place.
 public struct WriteopiaEditor: View {
     private let manager: WriteopiaStateManager
+    private let customDrawers: [Int: CustomStepDrawer]
     @State private var swipeSelection = SwipeSelectionCoordinator()
 
-    public init(manager: WriteopiaStateManager) {
+    /// `customDrawers` draws step types the editor doesn't know, by type number.
+    public init(manager: WriteopiaStateManager, customDrawers: [Int: CustomStepDrawer] = [:]) {
         self.manager = manager
+        self.customDrawers = customDrawers
     }
 
     public var body: some View {
@@ -25,6 +28,7 @@ public struct WriteopiaEditor: View {
                 .padding(.top, 8)
                 .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
                 .environment(\.swipeSelection, swipeSelection)
+                .environment(\.customStepDrawers, customDrawers)
                 .frame(maxWidth: 760)
                 .frame(maxWidth: .infinity)
             }

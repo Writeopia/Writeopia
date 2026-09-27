@@ -92,6 +92,8 @@ public struct StoryType: Codable, Equatable, Hashable, Sendable {
     public static let documentLink = StoryType(name: "document_link", number: 20)
     public static let divider = StoryType(name: "divider", number: 21)
     public static let codeBlock = StoryType(name: "code_block", number: 23)
+    /// Free drawing; the strokes are stored as JSON in the text of the step.
+    public static let drawing = StoryType(name: "drawing", number: 100)
 }
 
 public struct TagInfo: Codable, Equatable, Hashable, Sendable {

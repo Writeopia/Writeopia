@@ -21,6 +21,9 @@ public enum DocumentToMarkdown {
             return textWithTags(step).map { "[] \($0)" }
         case StoryType.unorderedListItem.number:
             return textWithTags(step).map { "- \($0)" }
+        case StoryType.drawing.number:
+            // The text of a drawing is its JSON, not something to read.
+            return nil
         default:
             return step.text
         }

@@ -21,7 +21,8 @@ public struct DrawStory: Identifiable, Equatable {
 /// before every step (except the title, nothing can be dropped above it), the one under a drag
 /// becomes an `ON_DRAG_SPACE`, and a `LAST_SPACE` closes the document.
 public enum StepsModifier {
-    public static func modify(_ state: StoryState, dragPosition: Double?) -> [DrawStory] {
+    /// `extraTypes` are the step types the app draws itself (see `CustomStepDrawers`).
+    public static func modify(_ state: StoryState, dragPosition: Double?, extraTypes: Set<Int> = []) -> [DrawStory] {
         var result: [DrawStory] = []
         var previousPosition: Double?
 
@@ -32,7 +33,7 @@ public enum StepsModifier {
                 result.append(space(id: "space-\(step.id)", after: previousPosition, dragPosition: dragPosition, type: .space))
             }
 
-            if StoryTypes.supported.contains(step.type.number) {
+            if StoryTypes.supported.contains(step.type.number) || extraTypes.contains(step.type.number) {
                 result.append(DrawStory(id: step.id, storyStep: step, position: position))
             }
             previousPosition = position
