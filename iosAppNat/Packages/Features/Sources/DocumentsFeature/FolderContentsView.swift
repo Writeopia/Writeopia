@@ -256,10 +256,6 @@ struct FolderContentsView: View {
                     ProgressView()
                         .controlSize(.small)
                         .accessibilityLabel("Syncing")
-                } else if viewModel.syncError != nil {
-                    Image(systemName: "icloud.slash")
-                        .foregroundStyle(.secondary)
-                        .accessibilityLabel("Not synced")
                 }
             }
             ToolbarItem(placement: .primaryAction) {

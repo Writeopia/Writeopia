@@ -236,3 +236,74 @@ final class FakeBackend: HTTPTransport {
         #expect(millis.createdAt == Date(millis: 1_700_000_000_000))
     }
 }
+
+@Suite struct SQLiteStoreTests {
+    private let directory = FileManager.default.temporaryDirectory.appending(path: "sqlite \(UUID().uuidString)", directoryHint: .isDirectory)
+
+    @Test func documentsSurviveReopeningTheDatabase() async throws {
+        let first = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
+        let document = try await first.createDocument(title: "Kept", parentId: Folder.rootId)
+        let folder = try await first.createFolder(title: "Folder", parentId: Folder.rootId)
+
+        let reopened = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
+
+        #expect(try await reopened.document(id: document.id).title == "Kept")
+        #expect(try await reopened.folderContents(folderId: Folder.rootId).folders.map(\.id) == [folder.id])
+    }
+
+    @Test func editsWriteOnlyTheChangedSteps() async throws {
+        let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
+        var document = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            StoryStep(id: "a", type: .text, text: "one", position: 0),
+            StoryStep(id: "b", type: .text, text: "two", position: 1),
+            StoryStep(id: "c", type: .text, text: "three", position: 2),
+        ], parentId: Folder.rootId)
+        try store.store(document)
+
+        document.title = "Renamed"
+        var edited = document.content[0]
+        edited.text = "one!"
+        try store.saveEdit(document: document, changedSteps: [edited], deletedStepIds: ["c"])
+
+        let saved = try #require(try store.storedDocument(id: "d"))
+        #expect(saved.title == "Renamed")
+        #expect(saved.content.map(\.text) == ["one!", "two"])
+    }
+
+    @Test func stepsKeepTheirContent() throws {
+        let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
+        let rich = StoryStep(
+            id: "s",
+            type: .checkItem,
+            text: "Link",
+            checked: true,
+            tags: [TagInfo(tag: "H2")],
+            spans: [SpanInfo(start: 0, end: 4, span: "LINK", extra: "https://x.io")],
+            position: 3.5,
+            documentLink: DocumentLink(id: "other", title: "Other"),
+            lastUpdatedAt: 42
+        )
+        try store.store(WrDocument(id: "d", title: "", workspaceId: "w", content: [rich], parentId: Folder.rootId))
+
+        #expect(try store.storedDocument(id: "d")?.content == [rich])
+    }
+
+    @Test func oldJsonFilesAreImportedOnce() async throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let old = WrDocument(id: "old", title: "From a file", workspaceId: "local", content: [
+            StoryStep(id: "t", type: .title, text: "From a file", position: 0),
+        ], parentId: Folder.rootId)
+        try JSONEncoder().encode(old).write(to: directory.appending(path: "From a file_old.wrdoc.json"))
+        let folder = Folder(id: "f", parentId: Folder.rootId, title: "Old folder", workspaceId: "local")
+        try JSONEncoder().encode(folder).write(to: directory.appending(path: "Old folder_f.wrfolder.json"))
+
+        let store = LocalDocumentsRepository(directory: directory)
+
+        let contents = try await store.folderContents(folderId: Folder.rootId)
+        // The welcome document isn't added to a space that already had documents.
+        #expect(contents.documents.map(\.id) == ["old"])
+        #expect(contents.folders.map(\.id) == ["f"])
+        #expect(FileManager.default.fileExists(atPath: directory.appending(path: "imported-json/From a file_old.wrdoc.json").path(percentEncoded: false)))
+        #expect(!FileManager.default.fileExists(atPath: directory.appending(path: "From a file_old.wrdoc.json").path(percentEncoded: false)))
+    }
+}

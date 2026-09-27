@@ -89,8 +89,8 @@ public final class NoteEditorViewModel {
     public private(set) var isSyncing = false
     public private(set) var lastSyncFailed = false
 
-    /// Delay after the last edit before saving on the device, and before sending to the backend.
-    public var saveDelay: Duration = .milliseconds(500)
+    /// Delay after the last edit before sending to the backend. Saving on the device happens on
+    /// every edit, like the Compose app.
     public var pushDelay: Duration = .seconds(2)
 
     static let fontKey = "wr.editor.font"
@@ -382,17 +382,12 @@ public final class NoteEditorViewModel {
         }
     }
 
-    /// Called on every change of the document: it's saved on the device shortly after, and sent
-    /// to the backend after a pause in the typing.
+    /// Called on every change of the document: it's saved on the device right away, and sent to
+    /// the backend after a pause in the typing.
     public func documentChanged() {
         guard hasLoaded else { return }
 
-        saveTask?.cancel()
-        saveTask = Task { [weak self, saveDelay] in
-            try? await Task.sleep(for: saveDelay)
-            guard !Task.isCancelled else { return }
-            await self?.saveNow()
-        }
+        saveNow()
 
         guard syncing != nil else { return }
         pushTask?.cancel()
@@ -403,11 +398,10 @@ public final class NoteEditorViewModel {
         }
     }
 
-    /// Saves and sends what's pending right away, e.g. when leaving the editor.
+    /// Sends what's pending right away, e.g. when leaving the editor.
     public func flush() async {
-        saveTask?.cancel()
         pushTask?.cancel()
-        await saveNow()
+        saveNow()
         await pushNow()
     }
 
@@ -441,13 +435,27 @@ public final class NoteEditorViewModel {
         return (document, changed)
     }
 
-    func saveNow() async {
+    /// Writes the edit to the device. With a `StepStore` (SQLite) only the changed steps are
+    /// written, like `OnUpdateDocumentTracker`; other repositories get the whole document.
+    func saveNow() {
         guard hasLoaded else { return }
         let (document, changed) = documentToSave()
         guard changed else { return }
 
+        let changedSteps = document.content.filter { step in
+            guard let saved = savedSteps[step.id] else { return true }
+            return saved != step
+        }
+        let currentIds = Set(document.content.map(\.id))
+        let deletedIds = savedSteps.keys.filter { !currentIds.contains($0) }
+
         do {
-            try await repository.save(document)
+            if let store = repository as? StepStore {
+                try store.saveEdit(document: document, changedSteps: changedSteps, deletedStepIds: deletedIds)
+            } else {
+                let repository = repository
+                Task { try? await repository.save(document) }
+            }
             loadedDocument = document
             savedSteps = Dictionary(document.content.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         } catch {

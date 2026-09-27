@@ -229,7 +229,7 @@ public protocol DocumentSyncing: AnyObject {
 
 /// The open space: everything is read from and written to the local cache first, then synced
 /// with the backend.
-public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSyncing {
+public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSyncing, StepStore {
     public let local: LocalDocumentsRepository
     private let remote: RemoteDocumentsRepository
     private let api: SyncAPI
@@ -318,6 +318,16 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         }
         document.workspaceId = workspaceId
         try local.store(document)
+    }
+
+    public func saveEdit(document: WrDocument, changedSteps: [StoryStep], deletedStepIds: [String]) throws {
+        var document = document
+        if let stored = try local.storedDocument(id: document.id) {
+            document.lastSyncedAt = max(stored.lastSyncedAt ?? 0, document.lastSyncedAt ?? 0)
+            document.deleted = stored.deleted
+        }
+        document.workspaceId = workspaceId
+        try local.saveEdit(document: document, changedSteps: changedSteps, deletedStepIds: deletedStepIds)
     }
 
     // MARK: - DocumentSyncing

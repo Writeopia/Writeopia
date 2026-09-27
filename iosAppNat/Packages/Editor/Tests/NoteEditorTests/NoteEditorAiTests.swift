@@ -449,7 +449,7 @@ private func pngData(width: CGFloat, height: CGFloat) -> Data {
     }
 }
 
-final class SyncingRepository: DocumentsRepository, DocumentSyncing {
+final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
     var stored: WrDocument
     var merged: WrDocument?
     private(set) var saves: [WrDocument] = []
@@ -466,6 +466,13 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing {
     func moveDocument(id: String, toFolder folderId: String) async throws {}
     func moveFolder(id: String, toFolder folderId: String) async throws {}
     func save(_ document: WrDocument) async throws {
+        saves.append(document)
+        stored = document
+    }
+
+    private(set) var edits: [(changed: [String], deleted: [String])] = []
+    func saveEdit(document: WrDocument, changedSteps: [StoryStep], deletedStepIds: [String]) throws {
+        edits.append((changedSteps.map(\.id), deletedStepIds))
         saves.append(document)
         stored = document
     }
@@ -488,18 +495,21 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing {
 
     private func viewModel(_ repository: SyncingRepository) async -> NoteEditorViewModel {
         let viewModel = NoteEditorViewModel(documentId: "d", repository: repository)
-        viewModel.saveDelay = .milliseconds(10)
         viewModel.pushDelay = .milliseconds(30)
         await viewModel.loadDocument()
         return viewModel
     }
 
-    @Test func editsAreSavedWithTheChangedStepsStamped() async throws {
+    @Test func everyEditIsSavedRightAwayWithOnlyTheChangedSteps() async throws {
         let repository = SyncingRepository(synced)
         let viewModel = await viewModel(repository)
 
         viewModel.writeopiaManager.handleTextInput("First idea!", cursor: 11, stepId: "a")
-        await viewModel.flush()
+        viewModel.documentChanged()
+
+        #expect(repository.edits.count == 1)
+        #expect(repository.edits.first?.changed == ["a"])
+        #expect(repository.edits.first?.deleted.isEmpty == true)
 
         let saved = try #require(repository.saves.last)
         #expect(saved.content.first { $0.id == "a" }?.text == "First idea!")
@@ -546,9 +556,13 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing {
 
         viewModel.writeopiaManager.handleTextInput("Typed", cursor: 5, stepId: "b")
         viewModel.documentChanged()
-        try await Task.sleep(for: .milliseconds(200))
 
+        // Saved right away, pushed after the pause.
         #expect(repository.saves.count == 1)
+        #expect(repository.pushes.isEmpty)
+        for _ in 0..<200 where repository.pushes.isEmpty {
+            try await Task.sleep(for: .milliseconds(10))
+        }
         #expect(repository.pushes.count == 1)
     }
 
