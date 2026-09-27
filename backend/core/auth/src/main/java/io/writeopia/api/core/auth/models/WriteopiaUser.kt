@@ -60,7 +60,8 @@ fun WriteopiaBeUser.toApi() =
     WriteopiaUserApi(
         id = id,
         email = email,
-        name = name
+        name = name,
+        tier = tier.name,
     )
 
 fun WriteopiaUserApi.toModel() =
@@ -68,4 +69,5 @@ fun WriteopiaUserApi.toModel() =
         id = id,
         email = email,
         name = name,
+        tier = Tier.fromName(tier),
     )

@@ -4,6 +4,7 @@ package io.writeopia.api.core.auth.repository
 
 import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.WriteopiaBeUser
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlin.time.Clock
 import java.util.UUID
@@ -23,8 +24,8 @@ fun WriteopiaDbBackend.getUserByEmail(email: String): WriteopiaBeUser? =
                 salt = userEntity.salt,
                 confirmationCode = userEntity.confirmation_code,
                 confirmationCodeExpiry = userEntity.confirmation_code_expiry,
-                status = UserStatus.fromString(userEntity.status)
-
+                status = UserStatus.fromString(userEntity.status),
+                tier = Tier.fromName(userEntity.account_type),
             )
         }
 
@@ -42,7 +43,8 @@ fun WriteopiaDbBackend.getUserByUsernameOrEmail(identifier: String): WriteopiaBe
                 salt = userEntity.salt,
                 confirmationCode = userEntity.confirmation_code,
                 confirmationCodeExpiry = userEntity.confirmation_code_expiry,
-                status = UserStatus.fromString(userEntity.status)
+                status = UserStatus.fromString(userEntity.status),
+                tier = Tier.fromName(userEntity.account_type),
             )
         }
 
@@ -60,7 +62,8 @@ fun WriteopiaDbBackend.getUserById(id: String): WriteopiaBeUser? =
                 salt = userEntity.salt,
                 confirmationCode = userEntity.confirmation_code,
                 confirmationCodeExpiry = userEntity.confirmation_code_expiry,
-                status = UserStatus.fromString(userEntity.status)
+                status = UserStatus.fromString(userEntity.status),
+                tier = Tier.fromName(userEntity.account_type),
             )
         }
 
