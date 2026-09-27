@@ -50,6 +50,16 @@ let package = Package(
             dependencies: ["Writeopia", .product(name: "WrModels", package: "Core")]
         ),
         .testTarget(
+            name: "NoteEditorTests",
+            dependencies: [
+                "NoteEditor", "WriteopiaUI", "Writeopia",
+                .product(name: "WrModels", package: "Core"),
+                .product(name: "WrData", package: "Core"),
+                .product(name: "WrNetwork", package: "Core"),
+            ],
+            swiftSettings: mainActorByDefault
+        ),
+        .testTarget(
             name: "WriteopiaUITests",
             dependencies: ["WriteopiaUI", "Writeopia", .product(name: "WrModels", package: "Core")],
             swiftSettings: mainActorByDefault

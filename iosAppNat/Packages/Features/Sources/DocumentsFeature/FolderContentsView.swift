@@ -139,7 +139,12 @@ public struct DocumentsRootView: View {
                         path: $path
                     )
                 case .document(let id, let title):
-                    NoteEditorView(documentId: id, title: title, repository: session.documents) { link in
+                    NoteEditorView(
+                        documentId: id,
+                        title: title,
+                        repository: session.documents,
+                        aiClient: session.isOnline ? session.aiAPI : nil
+                    ) { link in
                         path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
                     }
                 }

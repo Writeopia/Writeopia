@@ -7,6 +7,7 @@ public enum APIError: Error, Equatable {
     case notFound
     case conflict(String?)
     case badRequest(String?)
+    case quotaExceeded
     case unexpectedStatus(Int)
     case decoding
     case offline
@@ -18,6 +19,7 @@ public enum APIError: Error, Equatable {
         case .notFound: "We couldn't find what you were looking for."
         case .conflict(let message): message ?? "This already exists."
         case .badRequest(let message): message ?? "The request was not valid."
+        case .quotaExceeded: "You reached your AI quota for this month."
         case .unexpectedStatus(let code): "The server answered with an error (\(code))."
         case .decoding: "We couldn't read the server response."
         case .offline: "You seem to be offline. Check your connection and try again."

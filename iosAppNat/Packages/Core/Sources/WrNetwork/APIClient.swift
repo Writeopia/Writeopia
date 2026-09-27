@@ -12,6 +12,33 @@ extension URLSession: HTTPTransport {
     }
 }
 
+/// Opens a streaming HTTP request and returns its status code and body lines, used for the
+/// Server-Sent Events of the AI endpoints. Abstracted so it can be replaced in tests.
+public protocol LineStreamingTransport {
+    func lines(for request: URLRequest) async throws -> (status: Int, lines: AsyncThrowingStream<String, Error>)
+}
+
+extension URLSession: LineStreamingTransport {
+    public func lines(for request: URLRequest) async throws -> (status: Int, lines: AsyncThrowingStream<String, Error>) {
+        let (bytes, response) = try await bytes(for: request, delegate: nil)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let stream = AsyncThrowingStream<String, Error> { continuation in
+            let task = Task {
+                do {
+                    for try await line in bytes.lines {
+                        continuation.yield(line)
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+        return (status, stream)
+    }
+}
+
 public struct EmptyBody: Codable, Sendable {
     public init() {}
 }
@@ -27,6 +54,7 @@ public final class APIClient {
     }
 
     private let transport: HTTPTransport
+    private let lineTransport: LineStreamingTransport
     private let tokenStore: TokenStore
     private let baseURL: URL
     private var refreshTask: Task<Bool, Never>?
@@ -36,10 +64,12 @@ public final class APIClient {
 
     public init(
         transport: HTTPTransport = URLSession.shared,
+        lineTransport: LineStreamingTransport = URLSession.shared,
         tokenStore: TokenStore,
         baseURL: URL = APIConfig.baseURL
     ) {
         self.transport = transport
+        self.lineTransport = lineTransport
         self.tokenStore = tokenStore
         self.baseURL = baseURL
     }
@@ -80,6 +110,35 @@ public final class APIClient {
         authenticated: Bool = true
     ) async throws {
         _ = try await send(method, path, query: [], body: body, authenticated: authenticated)
+    }
+
+    /// Sends a request whose response is streamed line by line (Server-Sent Events). Like the
+    /// other calls, an expired session is refreshed once before giving up.
+    public func streamLines<Body: Encodable>(
+        _ method: Method,
+        _ path: String,
+        body: Body
+    ) async throws -> AsyncThrowingStream<String, Error> {
+        var request = try makeRequest(method, path, query: [], body: body, authenticated: true)
+        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        var (status, lines) = try await lineTransport.lines(for: request)
+
+        if status == 401 {
+            guard await refreshSession() else {
+                onSessionExpired?()
+                throw APIError.unauthorized
+            }
+            request = try makeRequest(method, path, query: [], body: body, authenticated: true)
+            request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+            (status, lines) = try await lineTransport.lines(for: request)
+        }
+
+        guard (200..<300).contains(status) else {
+            if status == 401 { onSessionExpired?() }
+            _ = try validate(Data(), status: status)
+            throw APIError.unexpectedStatus(status)
+        }
+        return lines
     }
 
     // MARK: - Internals
@@ -152,6 +211,7 @@ public final class APIClient {
         case 403: throw APIError.forbidden(Self.serverMessage(data))
         case 404: throw APIError.notFound
         case 409: throw APIError.conflict(Self.serverMessage(data))
+        case 429: throw APIError.quotaExceeded
         default: throw APIError.unexpectedStatus(status)
         }
     }

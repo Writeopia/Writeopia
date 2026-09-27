@@ -95,9 +95,36 @@ public struct WriteopiaManager {
         return contentManager.add(StoryStep(type: .text, text: "", position: 0), after: lastPosition, in: state.stories)
     }
 
-    /// Shows a loading step after `position`, like the SDK does while waiting for AI content.
-    public func loadingAtPosition(_ position: Double, state: StoryState) -> StoryState {
-        contentManager.add(StoryStep(type: .loading, position: 0), after: position, in: state.stories)
+    /// Adds `step` right after `position`, or at the end when `position` is nil.
+    public func addAtPosition(_ step: StoryStep, after position: Double?, state: StoryState) -> StoryState {
+        contentManager.add(step, after: position, in: state.stories)
+    }
+
+    /// Replaces the step with the same id as `step`, keeping its position.
+    public func replaceStep(_ step: StoryStep, state: StoryState) -> StoryState {
+        guard let position = state.stories.first(where: { $0.value.id == step.id })?.key else { return state }
+        var newState = state
+        var updated = step
+        updated.position = position
+        newState.stories[position] = updated
+        newState.lastEdit = .lineEdition(position: position, storyStep: updated)
+        return newState
+    }
+
+    public func removeStep(id: String, state: StoryState) -> StoryState {
+        guard let position = state.stories.first(where: { $0.value.id == id })?.key else { return state }
+        var newState = contentManager.onDelete(Action.DeleteStory(position: position), in: state.stories)
+        newState.focus = nil
+        return newState
+    }
+
+    /// Text of every text step, one per line. Used as the input of AI commands on the document.
+    public func documentText(_ state: StoryState) -> String {
+        state.sortedStories
+            .filter(\.isTextStep)
+            .compactMap(\.text)
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
     }
 
     /// The steps that make the document content: sorted, without ephemeral steps.

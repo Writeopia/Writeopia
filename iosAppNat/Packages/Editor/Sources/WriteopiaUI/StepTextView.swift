@@ -67,13 +67,17 @@ struct StepTextView: UIViewRepresentable {
     }
 
     /// Updates the text view from the model without disturbing what the user is typing.
-    private func render(_ step: StoryStep, in textView: StepUITextView, coordinator: Coordinator) {
-        guard coordinator.renderedStep != step else { return }
+    fileprivate func render(_ step: StoryStep, in textView: StepUITextView, coordinator: Coordinator) {
+        let text = step.text ?? ""
+
+        // Skip only when both the model and the text on screen are already in sync. Comparing
+        // the step alone isn't enough: on Return at the end of a line the model of this step
+        // doesn't change, but the keyboard may have put the "\n" in the text view anyway.
+        guard coordinator.renderedStep != step || textView.text != text else { return }
         // Don't touch the text while the keyboard is composing (accents, CJK input...).
         guard textView.markedTextRange == nil else { return }
         coordinator.renderedStep = step
 
-        let text = step.text ?? ""
         if textView.text != text {
             // The model changed the text (merge, split): replace it and keep the cursor in range.
             let selection = textView.selectedRange
@@ -114,7 +118,17 @@ struct StepTextView: UIViewRepresentable {
         }
 
         func textViewDidChange(_ textView: UITextView) {
-            parent.manager.handleTextInput(textView.text, cursor: textView.selectedRange.location, stepId: parent.step.id)
+            let text = textView.text ?? ""
+            parent.manager.handleTextInput(text, cursor: textView.selectedRange.location, stepId: parent.step.id)
+
+            // Some input paths (e.g. a hardware keyboard) put the "\n" in the text view without
+            // asking `shouldChangeTextIn`. The model already split the step; bring this view back
+            // to its first line right away, since SwiftUI won't update a step that didn't change.
+            if text.contains("\n"),
+               let textView = textView as? StepUITextView,
+               let step = parent.manager.step(withId: parent.step.id) {
+                parent.render(step, in: textView, coordinator: self)
+            }
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {

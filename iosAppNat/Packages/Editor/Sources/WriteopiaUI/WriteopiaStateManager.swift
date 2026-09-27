@@ -109,6 +109,50 @@ public final class WriteopiaStateManager {
         }
     }
 
+    // MARK: - Content added by the app (AI answers)
+
+    /// Text of the whole document, used by AI commands on the document.
+    public var documentText: String { writeopiaManager.documentText(currentStory) }
+
+    /// Position of the last step.
+    public var lastPosition: Double? { currentStory.sortedPositions.last }
+
+    /// The step with the cursor, or the last text step when nothing has the focus.
+    public var currentTextStep: (position: Double, step: StoryStep)? {
+        if let focus = currentStory.focus, let step = currentStory.stories[focus], step.isTextStep {
+            return (focus, step)
+        }
+        return currentStory.sortedPositions.reversed()
+            .compactMap { position in currentStory.stories[position].map { (position, $0) } }
+            .first { $0.1.isTextStep && !$0.1.isTitle && !($0.1.text ?? "").isEmpty }
+    }
+
+    /// Adds a loading step after `position` and returns its id, so it can later become the
+    /// answer. Mirrors `loadingAtPosition` of the SDK.
+    @discardableResult
+    public func loadingAtPosition(_ position: Double?) -> String {
+        let loading = StoryStep(type: .loading, position: 0)
+        currentStory = writeopiaManager.addAtPosition(loading, after: position, state: currentStory)
+        currentStory.focus = nil
+        changeCount += 1
+        return loading.id
+    }
+
+    /// Shows `text` as an AI answer in the step with `stepId` (the loading step at first).
+    public func showAiAnswer(_ text: String, stepId: String) {
+        guard var step = step(withId: stepId) else { return }
+        step.type = .aiAnswer
+        step.text = text
+        step.spans = []
+        currentStory = writeopiaManager.replaceStep(step, state: currentStory)
+        changeCount += 1
+    }
+
+    public func removeStep(stepId: String) {
+        currentStory = writeopiaManager.removeStep(id: stepId, state: currentStory)
+        changeCount += 1
+    }
+
     // MARK: - Drag and drop
 
     public func dragPayload(for step: StoryStep) -> String {
@@ -144,6 +188,11 @@ public final class WriteopiaStateManager {
         currentStory = moved
         changeCount += 1
         return true
+    }
+
+    /// The current state of the step with `stepId`, if it's still in the document.
+    public func step(withId stepId: String) -> StoryStep? {
+        find(stepId)?.1
     }
 
     // MARK: - Private
