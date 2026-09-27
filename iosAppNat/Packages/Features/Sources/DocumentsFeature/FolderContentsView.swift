@@ -24,6 +24,11 @@ final class FolderContentsViewModel {
 
     var isEmpty: Bool { folders.isEmpty && documents.isEmpty }
 
+    /// Folders and documents shown together in one grid, folders first.
+    var items: [FolderItem] {
+        folders.map(FolderItem.folder) + documents.map(FolderItem.document)
+    }
+
     func load() async {
         isLoading = true
         defer { isLoading = false }
@@ -118,6 +123,8 @@ struct FolderContentsView: View {
     @State private var newItemTitle = ""
     private let title: String
 
+    private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 12)]
+
     private enum NewItem: String, Identifiable {
         case folder = "New folder"
         case document = "New document"
@@ -132,27 +139,18 @@ struct FolderContentsView: View {
     }
 
     var body: some View {
-        List {
-            if !viewModel.folders.isEmpty {
-                Section("Folders") {
-                    ForEach(viewModel.folders) { folder in
-                        NavigationLink(value: DocumentsRoute.folder(folder)) {
-                            FolderRow(folder: folder)
-                        }
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(viewModel.items) { item in
+                    NavigationLink(value: item.route) {
+                        ItemCard(item: item)
                     }
+                    .buttonStyle(.plain)
                 }
             }
-
-            if !viewModel.documents.isEmpty {
-                Section("Documents") {
-                    ForEach(viewModel.documents) { document in
-                        NavigationLink(value: DocumentsRoute.document(id: document.id, title: document.displayTitle)) {
-                            DocumentRow(document: document)
-                        }
-                    }
-                }
-            }
+            .padding()
         }
+        .background(WrColors.background)
         .overlay {
             WrStateOverlay(
                 isLoading: viewModel.isLoading,
@@ -227,20 +225,107 @@ struct FolderContentsView: View {
     }
 }
 
-struct FolderRow: View {
-    let folder: Folder
+enum FolderItem: Identifiable {
+    case folder(Folder)
+    case document(WrDocument)
+
+    var id: String {
+        switch self {
+        case .folder(let folder): "folder-\(folder.id)"
+        case .document(let document): "document-\(document.id)"
+        }
+    }
+
+    var route: DocumentsRoute {
+        switch self {
+        case .folder(let folder): .folder(folder)
+        case .document(let document): .document(id: document.id, title: document.displayTitle)
+        }
+    }
+}
+
+/// A folder or a document in the folder grid.
+struct ItemCard: View {
+    let item: FolderItem
 
     var body: some View {
-        LabeledContent {
-            Text("\(folder.itemCount)")
-                .monospacedDigit()
-        } label: {
-            Label {
-                Text(folder.displayTitle)
-                    .foregroundStyle(WrColors.textLight)
-            } icon: {
-                Image(systemName: folder.favorite ? "star.square.on.square" : "folder.fill")
-                    .foregroundStyle(WrColors.accent)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(isFolder ? WrColors.accent : WrColors.textLighter)
+                Spacer()
+                if isFavorite {
+                    Image(systemName: "star.fill")
+                        .font(.caption)
+                        .foregroundStyle(.yellow)
+                }
+            }
+
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(WrColors.textLight)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+
+            if let preview, !preview.isEmpty {
+                Text(preview)
+                    .font(.caption)
+                    .foregroundStyle(WrColors.textLighter)
+                    .lineLimit(3)
+                    .multilineTextAlignment(.leading)
+            }
+
+            Spacer(minLength: 0)
+
+            footer
+                .font(.caption2)
+                .foregroundStyle(WrColors.textLighter)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+        .background(WrColors.surface, in: RoundedRectangle(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(WrColors.divider)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var isFolder: Bool {
+        if case .folder = item { true } else { false }
+    }
+
+    private var icon: String {
+        isFolder ? "folder.fill" : "doc.text"
+    }
+
+    private var title: String {
+        switch item {
+        case .folder(let folder): folder.displayTitle
+        case .document(let document): document.displayTitle
+        }
+    }
+
+    private var isFavorite: Bool {
+        switch item {
+        case .folder(let folder): folder.favorite
+        case .document(let document): document.isFavorite
+        }
+    }
+
+    private var preview: String? {
+        if case .document(let document) = item { document.preview } else { nil }
+    }
+
+    @ViewBuilder
+    private var footer: some View {
+        switch item {
+        case .folder(let folder):
+            Text(folder.itemCount == 1 ? "1 item" : "\(folder.itemCount) items")
+        case .document(let document):
+            if document.lastUpdatedAt > 0 {
+                Text(document.lastUpdatedDate, format: .relative(presentation: .named))
             }
         }
     }
