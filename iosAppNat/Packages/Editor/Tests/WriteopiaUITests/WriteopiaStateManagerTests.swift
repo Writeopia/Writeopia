@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import WriteopiaUI
 import Writeopia
@@ -307,5 +308,82 @@ private let sample = document([
 
         #expect(manager.step(withId: id)?.path == "/tmp/a.jpg")
         #expect(manager.uploadingStepIds.isEmpty)
+    }
+}
+
+@Suite struct ReorderDragTests {
+    /// Title and three lines, each 40pt tall, stacked from y = 0.
+    private func setUp() -> (WriteopiaStateManager, ReorderCoordinator) {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(document([
+            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
+            StoryStep(id: "a", type: .text, text: "A", position: 1),
+            StoryStep(id: "b", type: .text, text: "B", position: 2),
+            StoryStep(id: "c", type: .text, text: "C", position: 3),
+        ]))
+        let reorder = ReorderCoordinator()
+        reorder.manager = manager
+        for (index, id) in ["t", "a", "b", "c"].enumerated() {
+            reorder.setFrame(CGRect(x: 0, y: Double(index) * 40, width: 300, height: 40), for: id)
+        }
+        return (manager, reorder)
+    }
+
+    private func drag(_ id: String, y: Double) -> ReorderCoordinator.ActiveDrag {
+        ReorderCoordinator.ActiveDrag(stepId: id, location: CGPoint(x: 100, y: y))
+    }
+
+    @Test func lowerHalfDropsBelowTheStep() {
+        let (manager, reorder) = setUp()
+        defer { withExtendedLifetime(manager) {} }
+        // Over the lower half of "b": after b.
+        #expect(reorder.dropPosition(for: drag("a", y: 110)) == 2)
+    }
+
+    @Test func upperHalfDropsAboveTheStep() {
+        let (manager, reorder) = setUp()
+        defer { withExtendedLifetime(manager) {} }
+        // Over the upper half of "c": after b, so above c.
+        #expect(reorder.dropPosition(for: drag("a", y: 125)) == 2)
+        // Over the upper half of "b" while dragging "c": after a.
+        #expect(reorder.dropPosition(for: drag("c", y: 85)) == 1)
+    }
+
+    @Test func nothingGoesAboveTheTitle() {
+        let (manager, reorder) = setUp()
+        defer { withExtendedLifetime(manager) {} }
+        #expect(reorder.dropPosition(for: drag("c", y: 5)) == 0)
+    }
+
+    @Test func belowEverythingDropsAtTheEnd() {
+        let (manager, reorder) = setUp()
+        defer { withExtendedLifetime(manager) {} }
+        #expect(reorder.dropPosition(for: drag("a", y: 500)) == 3)
+    }
+
+    @Test func dropsThatWouldNotMoveShowNoFeedback() {
+        let (manager, reorder) = setUp()
+        defer { withExtendedLifetime(manager) {} }
+        // "b" over the lower half of the step above it, its own lower half, or the upper
+        // half of the step below it: it would land where it already is.
+        #expect(reorder.dropPosition(for: drag("b", y: 70)) == nil)
+        #expect(reorder.dropPosition(for: drag("b", y: 110)) == nil)
+        #expect(reorder.dropPosition(for: drag("b", y: 125)) == nil)
+        // Over the upper half of "a" it really moves above "a".
+        #expect(reorder.dropPosition(for: drag("b", y: 50)) == 0)
+    }
+
+    @Test func releasingMovesTheStepAndClearsTheFeedback() {
+        let (manager, reorder) = setUp()
+
+        reorder.dragChanged(stepId: "a", location: CGPoint(x: 100, y: 150))
+        #expect(manager.dragPosition == 3)
+        #expect(manager.toDraw.contains { $0.storyStep.type.number == StoryType.onDragSpace.number })
+
+        reorder.dragEnded()
+
+        #expect(manager.currentStory.sortedStories.map(\.id) == ["t", "b", "c", "a"])
+        #expect(manager.dragPosition == nil)
+        #expect(reorder.active == nil)
     }
 }
