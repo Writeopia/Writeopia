@@ -101,7 +101,7 @@ class OnUpdateStoryStepSyncTrackerTest {
     }
 
     @Test
-    fun commentChangesShouldSendOnlyDeltaAndExplicitDeletions() = runTest {
+    fun commentChangesShouldSendTombstoneDeltaAfterInitialResync() = runTest {
         val now = Clock.System.now()
         val document = Document(
             id = "document-delta",
@@ -125,11 +125,16 @@ class OnUpdateStoryStepSyncTrackerTest {
             ),
         )
         val commentsFlow = MutableStateFlow(initialComments)
-        val request = CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        val requests = mutableListOf<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        val secondRequest =
+            CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
         val tracker = OnUpdateStoryStepSyncTracker(
             syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
             syncApi = { syncRequest ->
-                if (!request.isCompleted) request.complete(syncRequest)
+                requests += syncRequest
+                if (requests.size == 2 && !secondRequest.isCompleted) {
+                    secondRequest.complete(syncRequest)
+                }
                 StoryStepSyncResponse(
                     serverTimestamp = syncRequest.requestTimestamp,
                     updatedSteps = emptyList(),
@@ -143,22 +148,38 @@ class OnUpdateStoryStepSyncTrackerTest {
             tracker.syncStorySteps(documentEditionFlow, workspaceIdFlow)
         }
         runCurrent()
+        advanceTimeBy(20)
+        runCurrent()
 
         commentsFlow.value = mapOf(
             "conversation-a" to listOf(
                 Comment(id = "comment-1", text = "One"),
+                Comment(id = "comment-2", text = "Delete me", deleted = true),
                 Comment(id = "comment-4", text = "New reply"),
-            )
+            ),
+            "conversation-b" to listOf(
+                Comment(id = "comment-3", text = "Delete thread", deleted = true),
+            ),
         )
         advanceTimeBy(20)
         runCurrent()
 
-        val synced = withTimeout(1_000) { request.await() }
+        val synced = withTimeout(1_000) { secondRequest.await() }
         job.cancel()
 
-        assertEquals(listOf("conversation-a"), synced.commentConversations?.map { it.id })
-        assertEquals(listOf("conversation-b"), synced.deletedCommentConversationIds)
-        assertEquals(listOf("comment-2"), synced.deletedCommentIds)
+        assertEquals(2, requests.size)
+        assertEquals(
+            setOf("conversation-a", "conversation-b"),
+            synced.commentConversations?.map { it.id }?.toSet(),
+        )
+        assertTrue(synced.deletedCommentConversationIds.isEmpty())
+        assertTrue(synced.deletedCommentIds.isEmpty())
+        assertTrue(
+            synced.commentConversations
+                ?.single { it.id == "conversation-b" }
+                ?.comments
+                ?.all { it.deleted } == true
+        )
     }
 
     @Test
