@@ -1143,10 +1143,11 @@ class WriteopiaStateManager(
     fun createComment(text: String): CommentConversation? =
         createComment(text, _currentStory.value.selection)
 
-    fun createComment(text: String, selection: Selection): CommentConversation? {
+    fun createComment(text: String, target: Selection): CommentConversation? {
         if (!isEditable) return null
 
         val state = _currentStory.value
+        val selection = target
         val (start, end) = selection.sortedPositions()
         if (start == end) return null
 
@@ -1222,7 +1223,7 @@ class WriteopiaStateManager(
             .filter { span ->
                 span.span == Span.COMMENT &&
                     if (start == end) {
-                        span.isInside(start)
+                        start >= span.start && start < span.end
                     } else {
                         span.start < end && span.end > start
                     }
@@ -1306,15 +1307,11 @@ class WriteopiaStateManager(
         val state = _currentStory.value
         val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
         val stories = state.stories.mapValues { (position, story) ->
-            val spans = story.spans.filterNot { span ->
-                span.span == Span.COMMENT && span.extra == conversationId
-            }.toSet()
+            val updated = story.removeCommentSpansRecursively(setOf(conversationId))
 
-            if (spans != story.spans) {
-                story.copy(
-                    localId = GenerateId.generate(),
-                    spans = spans
-                ).also { changedSteps += position to it }
+            if (updated != story) {
+                changedSteps += position to updated
+                updated
             } else {
                 story
             }
@@ -1325,6 +1322,27 @@ class WriteopiaStateManager(
                 stories = stories,
                 lastEdit = LastEdit.BulkEdition(changedSteps)
             )
+        }
+    }
+
+    private fun StoryStep.removeCommentSpansRecursively(
+        conversationIds: Set<String>,
+    ): StoryStep {
+        val updatedSpans = spans.filterNot { span ->
+            span.span == Span.COMMENT && span.extra in conversationIds
+        }.toSet()
+        val updatedSteps = steps.map { step ->
+            step.removeCommentSpansRecursively(conversationIds)
+        }
+
+        return if (updatedSpans != spans || updatedSteps != steps) {
+            copy(
+                localId = GenerateId.generate(),
+                spans = updatedSpans,
+                steps = updatedSteps,
+            )
+        } else {
+            this
         }
     }
 
@@ -1343,10 +1361,20 @@ class WriteopiaStateManager(
     private fun referencedCommentConversationIds(): Set<String> =
         _currentStory.value.stories.values
             .asSequence()
-            .flatMap { it.spans.asSequence() }
-            .filter { it.span == Span.COMMENT }
-            .mapNotNull { it.extra }
+            .flatMap { it.commentConversationIdsRecursively() }
             .toSet()
+
+    private fun StoryStep.commentConversationIdsRecursively(): Sequence<String> =
+        sequence {
+            spans.asSequence()
+                .filter { it.span == Span.COMMENT }
+                .mapNotNull { it.extra }
+                .forEach { yield(it) }
+
+            steps.forEach { step ->
+                yieldAll(step.commentConversationIdsRecursively())
+            }
+        }
 
     private fun replaceCommentConversationArchive(conversations: Map<String, List<Comment>>) {
         commentConversationArchive.value = conversations
@@ -1373,15 +1401,10 @@ class WriteopiaStateManager(
             val state = _currentStory.value
             val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
             val stories = state.stories.mapValues { (position, story) ->
-                val spans = story.spans.filterNot { span ->
-                    span.span == Span.COMMENT && span.extra in missingConversationIds
-                }.toSet()
-
-                if (spans != story.spans) {
-                    story.copy(
-                        localId = GenerateId.generate(),
-                        spans = spans,
-                    ).also { changedSteps += position to it }
+                val updated = story.removeCommentSpansRecursively(missingConversationIds)
+                if (updated != story) {
+                    changedSteps += position to updated
+                    updated
                 } else {
                     story
                 }

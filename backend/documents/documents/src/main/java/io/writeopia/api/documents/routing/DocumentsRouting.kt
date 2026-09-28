@@ -332,9 +332,7 @@ fun Routing.documentsRoute(
     post<SendDocumentsRequest>("/api/docs/workspace/document") { request ->
         val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@post
         val workspaceId = request.workspaceId
-        val documentList = request.documents.map { document ->
-            document.copy(workspaceId = workspaceId)
-        }
+        val documentList = request.documents
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
             try {
@@ -988,6 +986,11 @@ fun Routing.documentsRoute(
                     status = HttpStatusCode.OK,
                     message = response
                 )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "${e.message}"
+                )
             } catch (e: Exception) {
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
@@ -1025,11 +1028,6 @@ fun Routing.documentsRoute(
                 call.respond(
                     status = HttpStatusCode.OK,
                     message = response
-                )
-            } catch (e: IllegalArgumentException) {
-                call.respond(
-                    status = HttpStatusCode.BadRequest,
-                    message = "${e.message}"
                 )
             } catch (e: Exception) {
                 call.respond(

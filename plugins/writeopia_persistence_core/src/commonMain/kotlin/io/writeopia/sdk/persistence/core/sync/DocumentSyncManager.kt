@@ -1,3 +1,4 @@
+
 package io.writeopia.sdk.persistence.core.sync
 
 import io.writeopia.sdk.manager.DocumentTracker

@@ -48,7 +48,7 @@ class CommentUiStateTest {
     }
 
     @Test
-    fun `selection adjacent to a comment can create a new conversation`() {
+    fun `selection touching the end of a comment can create a new conversation`() {
         val conversation = conversation("conversation-1")
         val state = drawState(
             selection = Selection(start = 7, end = 10, position = 1.0),
