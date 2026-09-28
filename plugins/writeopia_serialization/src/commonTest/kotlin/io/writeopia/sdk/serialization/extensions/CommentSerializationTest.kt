@@ -136,31 +136,6 @@ class CommentSerializationTest {
     }
 
     @Test
-    fun `legacy copy signature preserves comment conversations`() {
-        val api = DocumentApi(
-            id = "document-copy",
-            title = "Original",
-            workspaceId = "workspace-1",
-            commentConversations = listOf(
-                CommentConversationApi(
-                    id = "conversation-copy",
-                    comments = listOf(
-                        io.writeopia.sdk.serialization.data.CommentApi(
-                            id = "comment-copy",
-                            text = "Keep me",
-                        )
-                    ),
-                )
-            ),
-        )
-
-        val copied = api.copy(title = "Copied")
-
-        assertEquals("Copied", copied.title)
-        assertEquals(api.commentConversations, copied.commentConversations)
-    }
-
-    @Test
     fun `old document without comments remains readable`() {
         val json = """
             {
@@ -174,10 +149,8 @@ class CommentSerializationTest {
             }
         """.trimIndent()
 
-        val api = writeopiaJson.decodeFromString(DocumentApi.serializer(), json)
-        val decoded = api.toModel()
+        val decoded = writeopiaJson.decodeFromString(DocumentApi.serializer(), json).toModel()
 
-        assertEquals(null, api.commentConversations)
         assertTrue(decoded.commentConversations.isEmpty())
     }
 }

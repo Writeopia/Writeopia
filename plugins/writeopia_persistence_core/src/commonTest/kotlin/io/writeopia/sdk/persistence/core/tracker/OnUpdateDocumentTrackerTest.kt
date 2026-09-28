@@ -1,4 +1,3 @@
-
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.sdk.persistence.core.tracker
@@ -72,52 +71,6 @@ class OnUpdateDocumentTrackerTest {
                     ) to sourceDocument.info()
                 ),
                 MutableStateFlow(sourceDocument.workspaceId),
-            )
-        }
-
-        assertFalse(recorder.savedDocument.isCompleted)
-    }
-
-    @Test
-    fun legacySaveShouldRejectNestedCommentSpansBeforePersisting() = runTest {
-        val now = Clock.System.now()
-        val conversation = conversation()
-        val document = Document(
-            id = "document-nested",
-            content = mapOf(
-                0.0 to StoryStep(
-                    text = "parent",
-                    type = StoryTypes.TEXT.type,
-                    steps = listOf(
-                        StoryStep(
-                            text = "nested",
-                            type = StoryTypes.TEXT.type,
-                            spans = setOf(
-                                SpanInfo.create(0, 6, Span.COMMENT, conversation.id)
-                            ),
-                        )
-                    ),
-                )
-            ),
-            createdAt = now,
-            lastUpdatedAt = now,
-            lastSyncedAt = null,
-            workspaceId = "workspace-1",
-            parentId = "root",
-            commentConversations = mapOf(conversation.id to conversation.comments),
-        )
-        val recorder = RecordingDocumentUpdate()
-        val tracker = OnUpdateDocumentTracker(recorder)
-
-        assertFailsWith<IllegalStateException> {
-            tracker.saveOnStoryChanges(
-                MutableStateFlow(
-                    StoryState(
-                        stories = document.content,
-                        lastEdit = LastEdit.Whole,
-                    ) to document.info()
-                ),
-                MutableStateFlow(document.workspaceId),
             )
         }
 

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -69,6 +70,8 @@ internal fun MobileChooseNoteScreen(
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
     navigationBar: @Composable () -> Unit,
+    isWideLayout: Boolean = false,
+    sideMenuContent: @Composable () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(key1 = "refresh", block = {
@@ -146,6 +149,8 @@ internal fun MobileChooseNoteScreen(
                     paddingValues = adjustedPaddingValues,
                     newNote = newNote,
                     navigateToNotes = navigateToNotes,
+                    isWideLayout = isWideLayout,
+                    sideMenuContent = sideMenuContent,
                 )
 
                 val selected = chooseNoteViewModel.notesArrangement.toNumberDesktop()
@@ -328,30 +333,42 @@ private fun Content(
     newNote: () -> Unit,
     navigateToNotes: (NotesNavigation) -> Unit,
     paddingValues: PaddingValues,
+    isWideLayout: Boolean,
+    sideMenuContent: @Composable () -> Unit,
 ) {
-    NotesCardsScreen(
-        isDarkTheme = isDarkTheme,
-        documents = chooseNoteViewModel.documentsState.collectAsState().value,
-        showAddMenuState = chooseNoteViewModel.showAddMenuState,
-        animatedVisibilityScope = animatedVisibilityScope,
-        sharedTransitionScope = sharedTransitionScope,
-        loadNote = loadNote,
-        selectionListener = selectionListener,
-        hideShowMenu = chooseNoteViewModel::hideAddMenu,
-        folderClick = { id ->
-            val handled = chooseNoteViewModel.handleMenuItemTap(id)
-            if (!handled) {
-                navigateToNotes(NotesNavigation.Folder(id))
-            }
-        },
-        changeIcon = chooseNoteViewModel::changeIcons,
-        moveRequest = chooseNoteViewModel::moveToFolder,
-        onSelection = {},
-        newNote = newNote,
-        newFolder = chooseNoteViewModel::newFolder,
-        editFolder = chooseNoteViewModel::editFolder,
+    Row(
         modifier = Modifier
             .padding(paddingValues)
             .fillMaxSize()
-    )
+    ) {
+        if (isWideLayout) {
+            sideMenuContent()
+        }
+
+        NotesCardsScreen(
+            isDarkTheme = isDarkTheme,
+            documents = chooseNoteViewModel.documentsState.collectAsState().value,
+            showAddMenuState = chooseNoteViewModel.showAddMenuState,
+            animatedVisibilityScope = animatedVisibilityScope,
+            sharedTransitionScope = sharedTransitionScope,
+            loadNote = loadNote,
+            selectionListener = selectionListener,
+            hideShowMenu = chooseNoteViewModel::hideAddMenu,
+            folderClick = { id ->
+                val handled = chooseNoteViewModel.handleMenuItemTap(id)
+                if (!handled) {
+                    navigateToNotes(NotesNavigation.Folder(id))
+                }
+            },
+            changeIcon = chooseNoteViewModel::changeIcons,
+            moveRequest = chooseNoteViewModel::moveToFolder,
+            onSelection = {},
+            newNote = newNote,
+            newFolder = chooseNoteViewModel::newFolder,
+            editFolder = chooseNoteViewModel::editFolder,
+            modifier = Modifier
+                .weight(1F)
+                .fillMaxHeight()
+        )
+    }
 }

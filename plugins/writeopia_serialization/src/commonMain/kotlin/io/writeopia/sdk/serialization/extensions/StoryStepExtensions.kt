@@ -1,4 +1,3 @@
-
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.sdk.serialization.extensions
@@ -100,7 +99,7 @@ fun DocumentApi.toModel(): Document =
         content = content
             .sortedBy { it.position }
             .associate { story -> story.position to story.toModel() },
-        commentConversations = commentConversations.orEmpty().toCommentMap(),
+        commentConversations = commentConversations.toCommentMap(),
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
         lastSyncedAt = lastSyncedAt?.let { Instant.fromEpochMilliseconds(it) },

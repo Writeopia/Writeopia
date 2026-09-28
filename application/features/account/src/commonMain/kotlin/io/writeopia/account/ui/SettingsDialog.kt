@@ -8,12 +8,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -29,11 +27,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +37,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -52,33 +47,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.withLink
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.date.formatCompactNumber
-import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SettingsPanel
 import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
+import io.writeopia.controller.LocalAiConfigController
+import io.writeopia.localaiconfig.ui.LocalAiConfigScreen
 import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
-import io.writeopia.model.LocalAiWizardState
-import io.writeopia.ui.LocalAiWizardDialog
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
-import io.writeopia.sdk.models.utils.toBoolean
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.Flow
@@ -92,12 +79,8 @@ fun SettingsDialog(
     workplacePathState: StateFlow<String>,
     selectedColorTheme: StateFlow<ColorThemeOption?>,
     selectedAccentColor: StateFlow<AccentColor?>,
-    localAiUrlState: StateFlow<String>,
-    localAiAvailableModels: Flow<ResultData<List<String>>>,
-    localAiSelectedModel: StateFlow<String>,
-    downloadModelState: StateFlow<ResultData<DownloadState>>,
+    localAiConfigController: LocalAiConfigController,
     cloudAiUsageState: StateFlow<CloudAiUsageState>,
-    autoConfigureState: StateFlow<ResultData<Unit>>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
     syncWorkspaceState: StateFlow<ResultData<String>>,
@@ -110,18 +93,9 @@ fun SettingsDialog(
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
     selectWorkplacePath: (String) -> Unit,
-    localAiUrlChange: (String) -> Unit,
-    localAiModelChange: (String) -> Unit,
-    localAiModelsRetry: () -> Unit,
-    downloadModel: (String) -> Unit,
-    deleteModel: (String) -> Unit,
     loadCloudAiUsage: () -> Unit,
-    autoConfigureLocalAi: () -> Unit,
-    wizardState: StateFlow<LocalAiWizardState>,
-    openWizard: () -> Unit,
-    closeWizard: () -> Unit,
-    selectProviderAndModel: (String, String) -> Unit,
     signIn: () -> Unit,
+    switchSpace: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
@@ -137,8 +111,6 @@ fun SettingsDialog(
     onExportWorkspace: (String) -> Unit,
     onResetExportState: () -> Unit,
 ) {
-    val localAiUrl by localAiUrlState.collectAsState()
-
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -166,6 +138,7 @@ fun SettingsDialog(
                         logoutInProgress = logoutInProgress,
                         deleteAccountInProgress = deleteAccountInProgress,
                         signIn = signIn,
+                        switchSpace = switchSpace,
                         changeWorkspace = changeWorkspace,
                         resetPassword = resetPassword,
                         logout = logout,
@@ -205,20 +178,9 @@ fun SettingsDialog(
                 },
                 aiScreen = {
                     AiSection(
-                        localAiUrl,
-                        localAiAvailableModels,
-                        localAiSelectedModel,
-                        downloadModelState,
-                        cloudAiUsageState,
-                        autoConfigureState,
-                        localAiUrlChange,
-                        localAiModelChange,
-                        localAiModelsRetry,
-                        downloadModel,
-                        deleteModel,
-                        loadCloudAiUsage,
-                        autoConfigureLocalAi,
-                        openWizard
+                        cloudAiUsageState = cloudAiUsageState,
+                        loadCloudAiUsage = loadCloudAiUsage,
+                        localAiConfigController = localAiConfigController,
                     )
                 },
                 teamsScreen = {
@@ -233,180 +195,6 @@ fun SettingsDialog(
             )
         }
     }
-
-    // Wizard Dialog
-    LocalAiWizardDialog(
-        wizardState = wizardState,
-        onClose = closeWizard,
-        onSelectProviderAndModel = selectProviderAndModel,
-        onRetry = openWizard
-    )
-}
-
-@Composable
-fun SettingsScreen(
-    showPath: Boolean = true,
-    showLocalAiConfig: Boolean,
-    selectedColorTheme: StateFlow<ColorThemeOption?>,
-    selectedAccentColor: StateFlow<AccentColor?>,
-    workplacePathState: StateFlow<String>,
-    syncWorkspaceState: StateFlow<ResultData<String>>,
-    isAutoSyncEnabled: StateFlow<Boolean>,
-    localAiUrl: String,
-    localAiAvailableModels: Flow<ResultData<List<String>>>,
-    localAiSelectedModel: StateFlow<String>,
-    downloadModelState: StateFlow<ResultData<DownloadState>>,
-    cloudAiUsageState: StateFlow<CloudAiUsageState>,
-    autoConfigureState: StateFlow<ResultData<Unit>>,
-    selectColorTheme: (ColorThemeOption) -> Unit,
-    selectAccentColor: (AccentColor) -> Unit,
-    selectWorkplacePath: (String) -> Unit,
-    localAiUrlChange: (String) -> Unit,
-    localAiModelChange: (String) -> Unit,
-    localAiModelsRetry: () -> Unit,
-    downloadModel: (String) -> Unit,
-    deleteModel: (String) -> Unit,
-    loadCloudAiUsage: () -> Unit,
-    autoConfigureLocalAi: () -> Unit,
-    syncWorkspace: () -> Unit,
-    onAutoSyncToggle: (Boolean) -> Unit,
-    workspacesState: StateFlow<ResultData<List<Workspace>>>,
-    selectedWorkspaceState: Flow<Workspace?>,
-    selectWorkspace: (String) -> Unit,
-    addUserToTeam: (String) -> Unit,
-    usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
-    isLoggedInState: StateFlow<ResultData<Boolean>>,
-    goToRegister: () -> Unit,
-    changeWorkspace: () -> Unit,
-    resetPassword: () -> Unit,
-    logout: () -> Unit,
-) {
-    TeamsSection(
-        workspacesState = workspacesState,
-        selectedWorkspaceState = selectedWorkspaceState,
-        selectWorkspace = selectWorkspace,
-        addUserToTeam = addUserToTeam,
-        usersInSelectedWorkspace = usersInSelectedWorkspace,
-    )
-
-    Spacer(modifier = Modifier.height(20.dp))
-
-    ColorThemeOptions(
-        selectedColorTheme = selectedColorTheme,
-        selectColorTheme = selectColorTheme
-    )
-
-    Spacer(modifier = Modifier.height(20.dp))
-
-    AccentColorOptions(
-        selectedAccentColor = selectedAccentColor,
-        selectAccentColor = selectAccentColor
-    )
-
-    Spacer(modifier = Modifier.height(20.dp))
-
-    Connect(isLoggedInState, goToRegister, changeWorkspace, resetPassword, logout)
-
-    val isLoggedIn = isLoggedInState.collectAsState().value.toBoolean()
-
-    Spacer(modifier = Modifier.height(16.dp))
-
-    WorkspaceSection(
-        workplacePathState = workplacePathState,
-        syncWorkspaceState = syncWorkspaceState,
-        showPath = showPath,
-        isOnline = isLoggedIn,
-        selectWorkplacePath = selectWorkplacePath,
-        syncWorkspace = syncWorkspace,
-        isAutoSyncEnabled = isAutoSyncEnabled,
-        onAutoSyncToggle = onAutoSyncToggle
-    )
-
-    Spacer(modifier = Modifier.height(20.dp))
-
-    if (showLocalAiConfig) {
-        AiSection(
-            localAiUrl = localAiUrl,
-            localAiAvailableModels,
-            localAiSelectedModel,
-            downloadModelState,
-            cloudAiUsageState,
-            autoConfigureState,
-            localAiUrlChange,
-            localAiModelChange,
-            localAiModelsRetry,
-            downloadModel,
-            deleteModel,
-            loadCloudAiUsage,
-            autoConfigureLocalAi,
-            openWizard = {} // SettingsScreen is not used, but keeping it for consistency
-        )
-    }
-
-    Spacer(modifier = Modifier.height(30.dp))
-}
-
-@Composable
-private fun Connect(
-    isLoggedInState: StateFlow<ResultData<Boolean>>,
-    goToRegister: () -> Unit,
-    changeWorkspace: () -> Unit,
-    resetPassword: () -> Unit,
-    logout: () -> Unit,
-) {
-    val isLoggedIn = isLoggedInState.collectAsState().value.toBoolean()
-
-    val titleStyle = MaterialTheme.typography.titleLarge
-    val titleColor = MaterialTheme.colorScheme.onBackground
-
-    Text(WrStrings.account(), style = titleStyle, color = titleColor)
-
-    if (!isLoggedIn) {
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            modifier = Modifier,
-            text = WrStrings.youAreOffline(),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold,
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        CommonButton(text = WrStrings.singIn()) {
-            goToRegister()
-        }
-    } else {
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Column(modifier = Modifier.width(IntrinsicSize.Max)) {
-            CommonButton(
-                text = WrStrings.changeWorkspace(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                changeWorkspace()
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            CommonButton(
-                text = WrStrings.resetPassword(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                resetPassword()
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            CommonButton(
-                text = WrStrings.logout(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                logout()
-            }
-        }
-    }
 }
 
 @Composable
@@ -418,6 +206,7 @@ private fun AccountScreen(
     logoutInProgress: StateFlow<Boolean>,
     deleteAccountInProgress: StateFlow<Boolean>,
     signIn: () -> Unit,
+    switchSpace: () -> Unit,
     changeWorkspace: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
@@ -640,6 +429,14 @@ private fun AccountScreen(
             CommonButton(text = WrStrings.singIn()) {
                 signIn()
             }
+
+            if (LocalPlatform.current != PlatformType.WEB) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                CommonButton(text = WrStrings.switchSpace()) {
+                    switchSpace()
+                }
+            }
         }
     }
 }
@@ -820,20 +617,9 @@ private fun WorkspaceSection(
 
 @Composable
 private fun AiSection(
-    localAiUrl: String,
-    localAiAvailableModels: Flow<ResultData<List<String>>>,
-    localAiSelectedModel: StateFlow<String>,
-    downloadModelState: StateFlow<ResultData<DownloadState>>,
     cloudAiUsageState: StateFlow<CloudAiUsageState>,
-    autoConfigureState: StateFlow<ResultData<Unit>>,
-    localAiUrlChange: (String) -> Unit,
-    localAiModelChange: (String) -> Unit,
-    localAiModelsRetry: () -> Unit,
-    downloadModel: (String) -> Unit,
-    deleteModel: (String) -> Unit,
     loadCloudAiUsage: () -> Unit,
-    autoConfigureLocalAi: () -> Unit,
-    openWizard: () -> Unit,
+    localAiConfigController: LocalAiConfigController,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -848,121 +634,8 @@ private fun AiSection(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Local AI Section
-        Text(WrStrings.localAi(), style = titleStyle, color = titleColor)
-
-        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-
-        // Configuration status indicator
-        val availableModelsState by localAiAvailableModels.collectAsState(ResultData.Idle())
-        val selectedModel by localAiSelectedModel.collectAsState()
-
-        // AI is considered configured if we can successfully fetch models and a model is selected
-        val isConfigured = availableModelsState is ResultData.Complete &&
-            (availableModelsState as? ResultData.Complete)?.data?.isNotEmpty() == true &&
-            selectedModel.isNotBlank()
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 8.dp)
-        ) {
-            Icon(
-                imageVector = if (isConfigured) WrIcons.check else WrIcons.close,
-                contentDescription = null,
-                tint = if (isConfigured) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = if (isConfigured) WrStrings.aiConfigured() else WrStrings.aiNotConfigured(),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isConfigured) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-            )
-        }
-
-        // Wizard trigger button
-        CommonButton(
-            text = WrStrings.autoConfigureLocalAi(),
-            clickListener = openWizard
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Collapsible Manual Configuration Section
-        var manualConfigExpanded by remember { mutableStateOf(false) }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(MaterialTheme.shapes.medium)
-                .clickable { manualConfigExpanded = !manualConfigExpanded }
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                WrStrings.manualConfiguration(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = titleColor,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Icon(
-                imageVector = if (manualConfigExpanded) WrIcons.smallArrowUp else WrIcons.smallArrowDown,
-                contentDescription = if (manualConfigExpanded) "Collapse" else "Expand",
-                tint = titleColor
-            )
-        }
-
-        AnimatedVisibility(visible = manualConfigExpanded) {
-            Column {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(WrStrings.url(), style = MaterialTheme.typography.bodyMedium, color = titleColor)
-
-                Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
-
-                BasicTextField(
-                    modifier = Modifier.border(
-                        1.dp,
-                        MaterialTheme.colorScheme.onSurfaceVariant,
-                        MaterialTheme.shapes.medium
-                    ).padding(10.dp)
-                        .fillMaxWidth(),
-                    value = localAiUrl,
-                    onValueChange = localAiUrlChange,
-                    textStyle = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onBackground
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onBackground)
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    WrStrings.availableModels(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = titleColor
-                )
-
-                SelectModels(
-                    localAiAvailableModels,
-                    localAiSelectedModel,
-                    localAiModelChange,
-                    localAiModelsRetry,
-                    deleteModel
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    WrStrings.downloadModels(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = titleColor
-                )
-
-                DownloadModels(downloadModelState, downloadModel)
-            }
-        }
+        // Local AI Section - shared with the offline space's first-run setup screen
+        LocalAiConfigScreen(controller = localAiConfigController)
     }
 }
 
@@ -1066,296 +739,6 @@ private fun CloudAiUsageSection(
     }
 }
 
-@Composable
-private fun AutoConfigureLocalAi(
-    autoConfigureState: StateFlow<ResultData<Unit>>,
-    autoConfigureLocalAi: () -> Unit,
-) {
-    val state by autoConfigureState.collectAsState()
-    val titleColor = MaterialTheme.colorScheme.onBackground
-
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        CommonButton(
-            text = WrStrings.autoConfigureLocalAi(),
-            clickListener = autoConfigureLocalAi
-        )
-
-        if (state is ResultData.Loading) {
-            Spacer(modifier = Modifier.width(8.dp))
-
-            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-        }
-    }
-
-    when (val currentState = state) {
-        is ResultData.Complete -> {
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                WrStrings.autoConfigureLocalAiSuccess(),
-                style = MaterialTheme.typography.bodySmall,
-                color = titleColor
-            )
-        }
-
-        is ResultData.Error -> {
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                WrStrings.autoConfigureLocalAiError(),
-                style = MaterialTheme.typography.bodySmall,
-                color = titleColor
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            CommonButton(text = WrStrings.retry(), clickListener = autoConfigureLocalAi)
-        }
-
-        else -> {}
-    }
-}
-
-@Composable
-private fun SelectModels(
-    localAiAvailableModels: Flow<ResultData<List<String>>>,
-    localAiSelectedModel: StateFlow<String>,
-    localAiModelChange: (String) -> Unit,
-    localAiModelsRetry: () -> Unit,
-    deleteModel: (String) -> Unit,
-) {
-    val modelsResult = localAiAvailableModels.collectAsState(ResultData.Idle()).value
-    val localAiSelected by localAiSelectedModel.collectAsState()
-
-    Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
-
-    when (modelsResult) {
-        is ResultData.Complete -> {
-            modelsResult.data.forEachIndexed { i, model ->
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clip(MaterialTheme.shapes.large)
-                        .clickable {
-                            localAiModelChange(model)
-                        }
-                        .let { modifierLet ->
-                            if (model == localAiSelected) {
-                                modifierLet.background(WriteopiaTheme.colorScheme.highlight)
-                            } else {
-                                modifierLet
-                            }
-                        }
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        modifier = Modifier.weight(1F),
-                        text = model,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-
-                    if (!model.startsWith("No models")) {
-                        Spacer(modifier = Modifier.width(6.dp))
-
-                        Icon(
-                            modifier = Modifier.clip(CircleShape)
-                                .clickable {
-                                    deleteModel(model)
-                                }
-                                .padding(4.dp)
-                                .size(20.dp),
-                            imageVector = WrIcons.delete,
-                            contentDescription = "Trash can",
-                            tint = Color.Red
-                        )
-                    }
-                }
-
-                if (i != modelsResult.data.lastIndex) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                }
-            }
-        }
-
-        is ResultData.Error -> {
-            val errorText = buildAnnotatedString {
-                append(WrStrings.errorRequestingModels())
-                withLink(LinkAnnotation.Url("https://ollama.com")) {
-                    withStyle(style = SpanStyle(color = WriteopiaTheme.colorScheme.linkColor)) {
-                        append("https://ollama.com")
-                    }
-                }
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    modifier = Modifier
-                        .clip(MaterialTheme.shapes.medium)
-                        .padding(8.dp)
-                        .weight(1F),
-                    text = errorText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-
-                Text(
-                    modifier = Modifier
-                        .clip(MaterialTheme.shapes.medium)
-                        .clickable(onClick = localAiModelsRetry)
-                        .background(
-                            WriteopiaTheme.colorScheme.highlight,
-                            MaterialTheme.shapes.medium
-                        )
-                        .padding(4.dp),
-                    text = WrStrings.retry(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-        }
-
-        is ResultData.Idle -> {}
-        is ResultData.Loading, is ResultData.InProgress -> {
-            CircularProgressIndicator()
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DownloadModels(
-    downloadModelState: StateFlow<ResultData<DownloadState>>,
-    downloadModel: (String) -> Unit,
-) {
-    Spacer(modifier = Modifier.height(SPACE_AFTER_SUB_TITLE.dp))
-
-    var modelToDownload by remember {
-        mutableStateOf("")
-    }
-
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text = WrStrings.suggestions(), style = MaterialTheme.typography.bodySmall)
-
-        Spacer(modifier = Modifier.width(6.dp))
-
-        listOf("deepseek-r1:7b", "llama3.2").forEach { model ->
-            Text(
-                modifier = Modifier
-                    .padding(horizontal = 1.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .clickable {
-                        downloadModel(model)
-                    }
-                    .padding(8.dp),
-                text = model,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
-    }
-
-    Spacer(modifier = Modifier.height(6.dp))
-
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        val interactionSource = remember { MutableInteractionSource() }
-
-        BasicTextField(
-            modifier = Modifier.border(
-                1.dp,
-                MaterialTheme.colorScheme.onSurfaceVariant,
-                MaterialTheme.shapes.medium
-            )
-                .padding(10.dp)
-                .weight(1F),
-            value = modelToDownload,
-            onValueChange = { value ->
-                modelToDownload = value
-            },
-            textStyle = MaterialTheme.typography.bodySmall.copy(
-                color = MaterialTheme.colorScheme.onBackground
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.onBackground),
-            decorationBox = @Composable { innerTextField ->
-                TextFieldDefaults.DecorationBox(
-                    value = modelToDownload,
-                    innerTextField = innerTextField,
-                    enabled = true,
-                    singleLine = false,
-                    visualTransformation = VisualTransformation.None,
-                    interactionSource = interactionSource,
-                    placeholder = {
-                        Text(
-                            text = WrStrings.writeYourAiModel(),
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        )
-                    },
-                    colors = transparentTextInputColors(),
-                    contentPadding = PaddingValues(0.dp)
-                )
-            }
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Icon(
-            modifier = Modifier.size(34.dp)
-                .clip(CircleShape)
-                .clickable {
-                    downloadModel(modelToDownload)
-                }.padding(6.dp),
-            imageVector = WrIcons.download,
-            contentDescription = WrStrings.downloadModel(),
-            //            stringResource(R.string.note_list),
-            tint = MaterialTheme.colorScheme.onBackground
-        )
-    }
-
-    when (val downloadState = downloadModelState.collectAsState().value) {
-        is ResultData.Complete -> {}
-        is ResultData.Error -> {
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                "${WrStrings.errorModelDownload()} ${downloadState.exception?.message}",
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        is ResultData.Idle -> {}
-        is ResultData.InProgress -> {
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val download = downloadState.data
-                Text(
-                    download.title,
-                    modifier = Modifier.weight(1F),
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    download.info,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            LinearProgressIndicator(
-                progress = { downloadState.data.percentage },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        is ResultData.Loading -> {
-            CircularProgressIndicator()
-        }
-    }
-}
-
-//
 @Composable
 private fun TeamsSection(
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
@@ -1822,17 +1205,6 @@ private fun RowScope.AccentColorOption(
         }
     }
 }
-
-@Composable
-private fun transparentTextInputColors() =
-    TextFieldDefaults.colors(
-        focusedIndicatorColor = Color.Transparent,
-        focusedContainerColor = Color.Transparent,
-        unfocusedContainerColor = Color.Transparent,
-        unfocusedIndicatorColor = Color.Transparent,
-        disabledIndicatorColor = Color.Transparent,
-        cursorColor = MaterialTheme.colorScheme.primary
-    )
 
 @Composable
 private fun SigningOutDialog() {

@@ -11,6 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
@@ -27,10 +30,16 @@ import io.writeopia.auth.menu.AuthMenuScreen
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterPasswordScreen
 import io.writeopia.auth.register.RegisterScreen
+import io.writeopia.auth.spacechoice.LocalAiSetupScreen
+import io.writeopia.auth.spacechoice.SpaceChoiceScreen
 import io.writeopia.auth.workspace.ChooseWorkspace
 import io.writeopia.common.utils.Destinations
+import io.writeopia.common.utils.configuration.LocalPlatform
+import io.writeopia.common.utils.configuration.PlatformType
+import io.writeopia.localaiconfig.di.LocalAiConfigKmpInjector
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
@@ -60,7 +69,11 @@ fun NavGraphBuilder.startScreen(
                 }
 
                 val destination = when (effectiveStatus) {
-                    LoginStatus.OFFLINE_NOT_CHOSEN -> Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                    LoginStatus.OFFLINE_NOT_CHOSEN -> if (isWeb) {
+                        Destinations.AUTH_MENU_INNER_NAVIGATION.id
+                    } else {
+                        Destinations.WORKSPACE_TYPE_CHOICE.id
+                    }
                     LoginStatus.CHOOSE_WORKSPACE -> Destinations.CHOOSE_WORKSPACE.id
                     LoginStatus.EMAIL_NOT_CONFIRMED -> Destinations.EMAIL_CONFIRM.id
                     LoginStatus.ONLINE, LoginStatus.OFFLINE_CHOSEN -> Destinations.MAIN_APP.id
@@ -152,6 +165,58 @@ fun NavGraphBuilder.authNavigation(
         }
     }
 
+    // Space choice screen - placed outside nested navigation for direct access from StartUp
+    composable(Destinations.WORKSPACE_TYPE_CHOICE.id) {
+        val authMenuViewModel: AuthMenuViewModel = authInjection.provideAuthMenuViewModel()
+        val colorTheme by colorThemeOption.collectAsState()
+        val platform = LocalPlatform.current
+        // Guards against a fast double-tap firing useOffline()/navigate() twice before this
+        // composable leaves composition, which would push a duplicate back stack entry.
+        var offlineSelectionInProgress by remember { mutableStateOf(false) }
+
+        WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+            SpaceChoiceScreen(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(WriteopiaTheme.colorScheme.globalBackground),
+                onOfflineSelected = {
+                    if (!offlineSelectionInProgress) {
+                        offlineSelectionInProgress = true
+
+                        // On desktop, offer local AI setup right away instead of leaving it
+                        // buried in Settings - mobile/web keep going straight to the app.
+                        if (platform == PlatformType.DESKTOP) {
+                            authMenuViewModel.useOffline {
+                                navController.navigate(Destinations.LOCAL_AI_SETUP.id)
+                            }
+                        } else {
+                            authMenuViewModel.useOffline(toAppNavigation)
+                        }
+                    }
+                },
+                onOnlineSelected = {
+                    navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
+                }
+            )
+        }
+    }
+
+    // Local AI first-run setup - desktop only, shown right after choosing the offline space.
+    composable(Destinations.LOCAL_AI_SETUP.id) {
+        val colorTheme by colorThemeOption.collectAsState()
+        val localAiConfigInjector = remember {
+            LocalAiConfigKmpInjector(userId = WriteopiaUser.DISCONNECTED)
+        }
+        val localAiConfigController = localAiConfigInjector.provideLocalAiConfigController()
+
+        WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+            LocalAiSetupScreen(
+                controller = localAiConfigController,
+                onContinueClick = toAppNavigation
+            )
+        }
+    }
+
     navigation(
         startDestination = Destinations.AUTH_MENU.id,
         route = Destinations.AUTH_MENU_INNER_NAVIGATION.id
@@ -173,10 +238,6 @@ fun NavGraphBuilder.authNavigation(
                     onLoginRequest = authMenuViewModel::onLoginRequest,
                     navigateToRegister = navController::navigateAuthRegister,
                     navigateToForgotPassword = navController::navigateToForgotPasswordEmail,
-                    offlineUsage = {
-                        authMenuViewModel.useOffline(toAppNavigation)
-                    },
-                    showOfflineOption = !isWeb,
                     navigateUp = navController::navigateUp,
                     navigateNext = {
                         if (emailConfirmationRequired) {

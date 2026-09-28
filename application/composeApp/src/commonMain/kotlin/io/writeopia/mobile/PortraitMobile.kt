@@ -2,7 +2,7 @@ package io.writeopia.mobile
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,6 +36,7 @@ import io.writeopia.commonui.rememberScrollAwareState
 import io.writeopia.drawing.di.DrawingInjection
 import io.writeopia.editor.di.TextEditorInjector
 import io.writeopia.features.search.di.SearchInjection
+import io.writeopia.global.shell.di.SideMenuKmpInjector
 import io.writeopia.model.AccentColor
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.NavItemName
@@ -70,6 +72,7 @@ fun PortraitMobile(
     val accentColorState = uiConfigViewModel.listenForAccentColor { "disconnected_user" }
     val accentColor by accentColorState.collectAsState()
     val scrollAwareState = rememberScrollAwareState()
+    val sideMenuKmpInjector = remember { SideMenuKmpInjector() }
 
     LaunchedEffect(navController) {
         navController.currentBackStackEntryFlow.collect { navEntry ->
@@ -88,11 +91,15 @@ fun PortraitMobile(
         darkTheme = colorTheme.isDarkTheme(),
         accentColor = accentColor ?: AccentColor.PURPLE
     ) {
-        Box(modifier = modifier.fillMaxSize()) {
+        BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+            val isWideScreen = maxWidth > maxHeight
+
             Navigation(
                 isDarkTheme = colorTheme.isDarkTheme(),
                 startDestination = startDestination,
                 notesMenuInjection = notesMenuInjection,
+                sideMenuKmpInjector = sideMenuKmpInjector,
+                notesMenuWideLayout = isWideScreen,
                 navController = navController,
                 editorInjector = editorInjector,
                 drawingInjection = drawingInjection,
@@ -103,7 +110,7 @@ fun PortraitMobile(
                 onDrawingSaved = onDrawingSaved,
                 searchInjection = searchInjector,
                 nestedScrollConnection = scrollAwareState.nestedScrollConnection,
-                isToolbarVisible = scrollAwareState.isVisible,
+                isToolbarVisible = scrollAwareState.isVisible && !isWideScreen,
                 navigationBar = {},
                 builder = builder
             )
@@ -122,16 +129,20 @@ fun PortraitMobile(
                     route.startsWith(Destinations.AUTH_RESET_PASSWORD.id) ||
                     route.startsWith(Destinations.AUTH_LOGIN.id) ||
                     route.startsWith(Destinations.CHOOSE_WORKSPACE.id) ||
+                    route.startsWith(Destinations.WORKSPACE_TYPE_CHOICE.id) ||
                     route.startsWith(Destinations.START_APP.id)
             } ?: true
 
+            // Hide the bottom navigation bar for every screen while in landscape (wide) mode.
+            val showBottomBar = !isAuthScreen && !isWideScreen
+
             val offsetY by animateDpAsState(
-                targetValue = if (scrollAwareState.isVisible && !isAuthScreen) 0.dp else 100.dp,
+                targetValue = if (scrollAwareState.isVisible && showBottomBar) 0.dp else 100.dp,
                 animationSpec = tween(durationMillis = 300),
                 label = "navBarOffset"
             )
 
-            if (!isAuthScreen) {
+            if (showBottomBar) {
                 NavigationBar(
                     containerColor = WriteopiaTheme.colorScheme.lightBackground,
                     modifier = Modifier

@@ -98,10 +98,6 @@ class StoryStepSyncBuffer(
      */
     fun hasPendingChanges(): Boolean = pendingChanges.isNotEmpty() || pendingDeletions.isNotEmpty()
 
-    fun requestSync() {
-        _syncTrigger.tryEmit(Unit)
-    }
-
     /**
      * Flow that emits when changes are added to the buffer.
      * Use with debounce to trigger syncing after a period of inactivity.

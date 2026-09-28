@@ -25,4 +25,10 @@ enum class Tier {
             FREE -> "FREE"
             PREMIUM -> "PREMIUM"
         }
+
+    companion object {
+        /** Unknown values (and a missing tier) count as [FREE]. */
+        fun fromName(name: String?): Tier =
+            entries.find { it.name.equals(name, ignoreCase = true) } ?: FREE
+    }
 }

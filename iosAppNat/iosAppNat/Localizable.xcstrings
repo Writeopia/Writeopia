@@ -1,0 +1,3516 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ · %lld documents" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$@ · %2$lld document"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$@ · %2$lld documents"
+                }
+              }
+            }
+          }
+        },
+        "pt" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$@ · %2$lld documento"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$@ · %2$lld documentos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%@ (you)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (você)"
+          }
+        }
+      }
+    },
+    "%@ / %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ / %2$@"
+          }
+        }
+      }
+    },
+    "%@ font" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fonte %@"
+          }
+        }
+      }
+    },
+    "%lld items" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld item"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld items"
+                }
+              }
+            }
+          }
+        },
+        "pt" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld item"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld itens"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld selected" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld selected"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld selected"
+                }
+              }
+            }
+          }
+        },
+        "pt" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld selecionado"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld selecionados"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "3 to 30 letters, numbers, - or _" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De 3 a 30 letras, números, - ou _"
+          }
+        }
+      }
+    },
+    "A folder can't be moved into itself." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma pasta não pode ser movida para dentro dela mesma."
+          }
+        }
+      }
+    },
+    "A team needs at least one admin." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um time precisa de pelo menos um administrador."
+          }
+        }
+      }
+    },
+    "About" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobre"
+          }
+        }
+      }
+    },
+    "Account" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conta"
+          }
+        }
+      }
+    },
+    "Action Points" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acionáveis"
+          }
+        }
+      }
+    },
+    "Actions" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ações"
+          }
+        }
+      }
+    },
+    "Add" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar"
+          }
+        }
+      }
+    },
+    "Add link" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar link"
+          }
+        }
+      }
+    },
+    "Add to team" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar ao time"
+          }
+        }
+      }
+    },
+    "Admin" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Administrador"
+          }
+        }
+      }
+    },
+    "AI" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IA"
+          }
+        }
+      }
+    },
+    "AI needs an account" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA precisa de uma conta"
+          }
+        }
+      }
+    },
+    "AI Summary" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumo com IA"
+          }
+        }
+      }
+    },
+    "All your documents in the open space will be deleted." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos os seus documentos do espaço aberto serão deletados."
+          }
+        }
+      }
+    },
+    "An account with this email or username already exists." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Já existe uma conta com este email ou nome de usuário."
+          }
+        }
+      }
+    },
+    "Anyone with the link can read this document." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualquer pessoa com o link pode ler este documento."
+          }
+        }
+      }
+    },
+    "Apply to" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicar em"
+          }
+        }
+      }
+    },
+    "Apply to:" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicar em:"
+          }
+        }
+      }
+    },
+    "Are you sure?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tem certeza?"
+          }
+        }
+      }
+    },
+    "Ask AI" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pergunte à IA"
+          }
+        }
+      }
+    },
+    "At least %lld characters" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pelo menos %lld caracteres"
+          }
+        }
+      }
+    },
+    "At least 8 characters." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pelo menos 8 caracteres."
+          }
+        }
+      }
+    },
+    "Back to sign in" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voltar para o login"
+          }
+        }
+      }
+    },
+    "Between 3 and 30 characters" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entre 3 e 30 caracteres"
+          }
+        }
+      }
+    },
+    "Bold" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Negrito"
+          }
+        }
+      }
+    },
+    "Box" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caixa"
+          }
+        }
+      }
+    },
+    "Box/Card" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caixa/Cartão"
+          }
+        }
+      }
+    },
+    "Bring in the big brains." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chame os grandes cérebros."
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        }
+      }
+    },
+    "Card" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartão"
+          }
+        }
+      }
+    },
+    "Change password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mudar a senha"
+          }
+        }
+      }
+    },
+    "Change workspace" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trocar área de trabalho"
+          }
+        }
+      }
+    },
+    "Check your inbox" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confira sua caixa de entrada"
+          }
+        }
+      }
+    },
+    "Checkbox" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caixa de seleção"
+          }
+        }
+      }
+    },
+    "Checked" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcado"
+          }
+        }
+      }
+    },
+    "Choose a new password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha uma nova senha"
+          }
+        }
+      }
+    },
+    "Choose a workspace" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha a área de trabalho"
+          }
+        }
+      }
+    },
+    "Choose space" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher espaço"
+          }
+        }
+      }
+    },
+    "Choose your space" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha seu espaço"
+          }
+        }
+      }
+    },
+    "Clear" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpar"
+          }
+        }
+      }
+    },
+    "Cloud AI" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IA na Nuvem"
+          }
+        }
+      }
+    },
+    "Code" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código"
+          }
+        }
+      }
+    },
+    "Code block" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloco de código"
+          }
+        }
+      }
+    },
+    "Color" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cor"
+          }
+        }
+      }
+    },
+    "Color theme" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tema de cor"
+          }
+        }
+      }
+    },
+    "Confirm" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmar"
+          }
+        }
+      }
+    },
+    "Confirm your email" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirme seu email"
+          }
+        }
+      }
+    },
+    "Confirmation code" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código de confirmação"
+          }
+        }
+      }
+    },
+    "Copy" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar"
+          }
+        }
+      }
+    },
+    "Copy Link" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar Link"
+          }
+        }
+      }
+    },
+    "Could not add the image" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível adicionar a imagem"
+          }
+        }
+      }
+    },
+    "Could not create the page" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível criar a página"
+          }
+        }
+      }
+    },
+    "Could not create the workspace" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível criar a área de trabalho"
+          }
+        }
+      }
+    },
+    "Could not delete the document" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível deletar o documento"
+          }
+        }
+      }
+    },
+    "Could not export" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível exportar"
+          }
+        }
+      }
+    },
+    "Could not send the reset code." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível enviar o código de redefinição."
+          }
+        }
+      }
+    },
+    "Could not summarize" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível resumir"
+          }
+        }
+      }
+    },
+    "Create" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar"
+          }
+        }
+      }
+    },
+    "Create a folder to organise your notes" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crie uma pasta para organizar suas notas"
+          }
+        }
+      }
+    },
+    "Create a team workspace and invite people to it from Settings." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crie uma área de trabalho de time e convide pessoas pelas Configurações."
+          }
+        }
+      }
+    },
+    "Create account" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar conta"
+          }
+        }
+      }
+    },
+    "Create an account" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar uma conta"
+          }
+        }
+      }
+    },
+    "Create your account" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crie sua conta"
+          }
+        }
+      }
+    },
+    "Create your first document" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crie seu primeiro documento"
+          }
+        }
+      }
+    },
+    "Creation date" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data de criação"
+          }
+        }
+      }
+    },
+    "Current" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atual"
+          }
+        }
+      }
+    },
+    "Cursive" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cursiva"
+          }
+        }
+      }
+    },
+    "Cursor" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cursor"
+          }
+        }
+      }
+    },
+    "Cut" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recortar"
+          }
+        }
+      }
+    },
+    "Danger zone" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zona de perigo"
+          }
+        }
+      }
+    },
+    "Dark" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escuro"
+          }
+        }
+      }
+    },
+    "Default color" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cor padrão"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletar"
+          }
+        }
+      }
+    },
+    "Delete %@?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletar %@?"
+          }
+        }
+      }
+    },
+    "Delete %lld items?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete %lld item?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete %lld items?"
+                }
+              }
+            }
+          }
+        },
+        "pt" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Deletar %lld item?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Deletar %lld itens?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Delete account" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletar conta"
+          }
+        }
+      }
+    },
+    "Delete document" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletar documento"
+          }
+        }
+      }
+    },
+    "Delete drawing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletar desenho"
+          }
+        }
+      }
+    },
+    "Delete folder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletar pasta"
+          }
+        }
+      }
+    },
+    "Delete image" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletar imagem"
+          }
+        }
+      }
+    },
+    "Delete my account" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletar minha conta"
+          }
+        }
+      }
+    },
+    "Delete this document?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletar este documento?"
+          }
+        }
+      }
+    },
+    "Delete this item?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletar este item?"
+          }
+        }
+      }
+    },
+    "Divider" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Divisor"
+          }
+        }
+      }
+    },
+    "Document" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documento"
+          }
+        }
+      }
+    },
+    "Documents" : {
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documentos"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "Drawing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desenho"
+          }
+        }
+      }
+    },
+    "Drawing canvas" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tela de desenho"
+          }
+        }
+      }
+    },
+    "Edit folder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar pasta"
+          }
+        }
+      }
+    },
+    "Email" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Email"
+          }
+        }
+      }
+    },
+    "Empty drawing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desenho vazio"
+          }
+        }
+      }
+    },
+    "Empty line" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linha vazia"
+          }
+        }
+      }
+    },
+    "Enter the code we sent to %@." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite o código que enviamos para %@."
+          }
+        }
+      }
+    },
+    "Enter the email of your account and we'll send you a code." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite o email da sua conta e enviaremos um código."
+          }
+        }
+      }
+    },
+    "Eraser" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borracha"
+          }
+        }
+      }
+    },
+    "Error. Message: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erro. Mensagem: %@"
+          }
+        }
+      }
+    },
+    "Export" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportar"
+          }
+        }
+      }
+    },
+    "Export as Json" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportar como JSON"
+          }
+        }
+      }
+    },
+    "Export as Markdown" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportar como Markdown"
+          }
+        }
+      }
+    },
+    "FAQ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perguntas frequentes"
+          }
+        }
+      }
+    },
+    "Favorite" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorito"
+          }
+        }
+      }
+    },
+    "Find documents by their title or content." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre documentos pelo título ou conteúdo."
+          }
+        }
+      }
+    },
+    "Folder name" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nome da pasta"
+          }
+        }
+      }
+    },
+    "Folder options" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opções da pasta"
+          }
+        }
+      }
+    },
+    "Folder path" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caminho da pasta"
+          }
+        }
+      }
+    },
+    "Folders" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pastas"
+          }
+        }
+      }
+    },
+    "Folders are deleted with everything inside them. This can't be undone." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As pastas são deletadas com tudo o que está dentro delas. Isso não pode ser desfeito."
+          }
+        }
+      }
+    },
+    "Font" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fonte"
+          }
+        }
+      }
+    },
+    "Font Options" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opções de fonte"
+          }
+        }
+      }
+    },
+    "Forgot password?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esqueceu a senha?"
+          }
+        }
+      }
+    },
+    "Free" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratuito"
+          }
+        }
+      }
+    },
+    "General" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geral"
+          }
+        }
+      }
+    },
+    "Getting started" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Primeiros passos"
+          }
+        }
+      }
+    },
+    "Green highlight" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destaque verde"
+          }
+        }
+      }
+    },
+    "Grid" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grade"
+          }
+        }
+      }
+    },
+    "Header" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cabeçalho"
+          }
+        }
+      }
+    },
+    "Highlight" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marca texto"
+          }
+        }
+      }
+    },
+    "Highlighter" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marca texto"
+          }
+        }
+      }
+    },
+    "Icon" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ícone"
+          }
+        }
+      }
+    },
+    "If %@ has an account, we sent a code to it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se %@ tiver uma conta, enviamos um código para esse email."
+          }
+        }
+      }
+    },
+    "Image" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imagem"
+          }
+        }
+      }
+    },
+    "Image not available" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imagem indisponível"
+          }
+        }
+      }
+    },
+    "Input tokens" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens de entrada"
+          }
+        }
+      }
+    },
+    "Invite someone" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convidar alguém"
+          }
+        }
+      }
+    },
+    "It will be removed from every device. This can't be undone." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ele será removido de todos os dispositivos. Isso não pode ser desfeito."
+          }
+        }
+      }
+    },
+    "It's already here" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Já está aqui"
+          }
+        }
+      }
+    },
+    "Italic" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Itálico"
+          }
+        }
+      }
+    },
+    "Last updated" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Última atualização"
+          }
+        }
+      }
+    },
+    "Light" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claro"
+          }
+        }
+      }
+    },
+    "Link" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link"
+          }
+        }
+      }
+    },
+    "Link copied!" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link copiado!"
+          }
+        }
+      }
+    },
+    "Link to page" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link para página"
+          }
+        }
+      }
+    },
+    "Linked document" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documento vinculado"
+          }
+        }
+      }
+    },
+    "List" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista"
+          }
+        }
+      }
+    },
+    "List item" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item de lista"
+          }
+        }
+      }
+    },
+    "Loading usage…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carregando uso…"
+          }
+        }
+      }
+    },
+    "Lock document" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquear edição"
+          }
+        }
+      }
+    },
+    "Locked" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueado"
+          }
+        }
+      }
+    },
+    "Make admin" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tornar administrador"
+          }
+        }
+      }
+    },
+    "Make member" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tornar membro"
+          }
+        }
+      }
+    },
+    "Member" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membro"
+          }
+        }
+      }
+    },
+    "Members" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membros"
+          }
+        }
+      }
+    },
+    "Monospace" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monoespaçada"
+          }
+        }
+      }
+    },
+    "More" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais"
+          }
+        }
+      }
+    },
+    "Move here" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover para cá"
+          }
+        }
+      }
+    },
+    "Move to…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover para…"
+          }
+        }
+      }
+    },
+    "Name" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nome"
+          }
+        }
+      }
+    },
+    "New document" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novo documento"
+          }
+        }
+      }
+    },
+    "New folder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova pasta"
+          }
+        }
+      }
+    },
+    "New password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senha nova"
+          }
+        }
+      }
+    },
+    "New to Writeopia?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novo no Writeopia?"
+          }
+        }
+      }
+    },
+    "New workspace" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova área de trabalho"
+          }
+        }
+      }
+    },
+    "No folders here" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma pasta aqui"
+          }
+        }
+      }
+    },
+    "No teams" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum time"
+          }
+        }
+      }
+    },
+    "Not published" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não publicado"
+          }
+        }
+      }
+    },
+    "Nothing ever leaves the room." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada sai daqui."
+          }
+        }
+      }
+    },
+    "OK" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "One special character" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um caractere especial"
+          }
+        }
+      }
+    },
+    "Only admins can see and manage the members of this team." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apenas administradores podem ver e gerenciar os membros deste time."
+          }
+        }
+      }
+    },
+    "Open a folder to edit, move or delete it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abra uma pasta para editá-la, movê-la ou deletá-la."
+          }
+        }
+      }
+    },
+    "Open in Safari" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir no Safari"
+          }
+        }
+      }
+    },
+    "Open space" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espaço aberto"
+          }
+        }
+      }
+    },
+    "Open space — connected" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espaço aberto — conectado"
+          }
+        }
+      }
+    },
+    "Opens the drawing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre o desenho"
+          }
+        }
+      }
+    },
+    "Output tokens" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens de saída"
+          }
+        }
+      }
+    },
+    "Password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senha"
+          }
+        }
+      }
+    },
+    "Password changed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senha alterada"
+          }
+        }
+      }
+    },
+    "Password recovery" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recuperação de senha"
+          }
+        }
+      }
+    },
+    "Pen" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caneta"
+          }
+        }
+      }
+    },
+    "Plan" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plano"
+          }
+        }
+      }
+    },
+    "Premium" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
+          }
+        }
+      }
+    },
+    "Premium Feature" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recurso Premium"
+          }
+        }
+      }
+    },
+    "Private space" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espaço privado"
+          }
+        }
+      }
+    },
+    "Private space — offline" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espaço privado — offline"
+          }
+        }
+      }
+    },
+    "Prompt" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prompt"
+          }
+        }
+      }
+    },
+    "Publish" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Publicar"
+          }
+        }
+      }
+    },
+    "Publish to share a read-only version of this document on the web." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Publique para compartilhar uma versão somente leitura deste documento na web."
+          }
+        }
+      }
+    },
+    "Publish to Web" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Publicar na Web"
+          }
+        }
+      }
+    },
+    "Published" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Publicado"
+          }
+        }
+      }
+    },
+    "Red highlight" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destaque vermelho"
+          }
+        }
+      }
+    },
+    "Redo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refazer"
+          }
+        }
+      }
+    },
+    "Register" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrar"
+          }
+        }
+      }
+    },
+    "Remove" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover"
+          }
+        }
+      }
+    },
+    "Remove from favorites" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover dos favoritos"
+          }
+        }
+      }
+    },
+    "Rename" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renomear"
+          }
+        }
+      }
+    },
+    "Rename team" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renomear time"
+          }
+        }
+      }
+    },
+    "Reorder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reordenar"
+          }
+        }
+      }
+    },
+    "Repeat password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repita a senha"
+          }
+        }
+      }
+    },
+    "Requests" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requisições"
+          }
+        }
+      }
+    },
+    "Resend code" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reenviar código"
+          }
+        }
+      }
+    },
+    "Resend code in %llds" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reenviar código em %lld s"
+          }
+        }
+      }
+    },
+    "Reset password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinir senha"
+          }
+        }
+      }
+    },
+    "Reset your password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefina sua senha"
+          }
+        }
+      }
+    },
+    "Role" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Função"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar"
+          }
+        }
+      }
+    },
+    "Search" : {
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar"
+          }
+        }
+      }
+    },
+    "Search documents" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar documentos"
+          }
+        }
+      }
+    },
+    "Search failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A pesquisa falhou"
+          }
+        }
+      }
+    },
+    "Search your documents" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquise seus documentos"
+          }
+        }
+      }
+    },
+    "Select" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecionar"
+          }
+        }
+      }
+    },
+    "Select at least one document to summarize." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecione pelo menos um documento para resumir."
+          }
+        }
+      }
+    },
+    "Select line" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecionar linha"
+          }
+        }
+      }
+    },
+    "Selected lines" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linhas selecionadas"
+          }
+        }
+      }
+    },
+    "Send code" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar código"
+          }
+        }
+      }
+    },
+    "Serif" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serifada"
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configurações"
+          }
+        }
+      }
+    },
+    "Sign in" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrar"
+          }
+        }
+      }
+    },
+    "Sign in from Settings > Account to sync your notes" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entre em Configurações > Conta para sincronizar suas notas"
+          }
+        }
+      }
+    },
+    "Sign in to sync your documents across devices." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entre para sincronizar seus documentos entre dispositivos."
+          }
+        }
+      }
+    },
+    "Sign in to the open space to create teams and share documents with other people." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entre no espaço aberto para criar times e compartilhar documentos com outras pessoas."
+          }
+        }
+      }
+    },
+    "Sign in to the open space to use AI in your documents." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entre no espaço aberto para usar IA nos seus documentos."
+          }
+        }
+      }
+    },
+    "Sign out" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sair"
+          }
+        }
+      }
+    },
+    "Sign out of Writeopia?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sair do Writeopia?"
+          }
+        }
+      }
+    },
+    "Signed in" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado"
+          }
+        }
+      }
+    },
+    "Signed in as" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado como"
+          }
+        }
+      }
+    },
+    "Something went wrong" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algo deu errado"
+          }
+        }
+      }
+    },
+    "Something went wrong. Please try again." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algo deu errado. Tente novamente."
+          }
+        }
+      }
+    },
+    "Sort by" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordenar por"
+          }
+        }
+      }
+    },
+    "Space" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espaço"
+          }
+        }
+      }
+    },
+    "Staggered grid" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grade escalonada"
+          }
+        }
+      }
+    },
+    "Stroke width" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espessura do traço"
+          }
+        }
+      }
+    },
+    "SubTitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtítulo"
+          }
+        }
+      }
+    },
+    "Summarizing…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumindo…"
+          }
+        }
+      }
+    },
+    "Summary" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumo"
+          }
+        }
+      }
+    },
+    "Switch space" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trocar de espaço"
+          }
+        }
+      }
+    },
+    "Sync your notes, work with your team and use frontier models for the drafts that deserve them." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronize suas notas, trabalhe com seu time e use os modelos mais avançados nos rascunhos que merecem."
+          }
+        }
+      }
+    },
+    "Syncing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizando"
+          }
+        }
+      }
+    },
+    "System" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistema"
+          }
+        }
+      }
+    },
+    "System follows the appearance of your device." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistema segue a aparência do seu dispositivo."
+          }
+        }
+      }
+    },
+    "Tags" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tags"
+          }
+        }
+      }
+    },
+    "Team workspace name" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nome da área de trabalho do time"
+          }
+        }
+      }
+    },
+    "Teams" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Times"
+          }
+        }
+      }
+    },
+    "Teams need an account" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Times precisam de uma conta"
+          }
+        }
+      }
+    },
+    "The AI didn't return a summary." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA não retornou um resumo."
+          }
+        }
+      }
+    },
+    "The code is invalid or has expired." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O código é inválido ou expirou."
+          }
+        }
+      }
+    },
+    "The document couldn't be saved on this device." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível salvar o documento neste dispositivo."
+          }
+        }
+      }
+    },
+    "The image couldn't be loaded from the library." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível carregar a imagem da biblioteca."
+          }
+        }
+      }
+    },
+    "The image couldn't be saved on this device." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível salvar a imagem neste dispositivo."
+          }
+        }
+      }
+    },
+    "The name must have between 3 and 30 characters." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O nome deve ter entre 3 e 30 caracteres."
+          }
+        }
+      }
+    },
+    "The passwords don't match." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As senhas não coincidem."
+          }
+        }
+      }
+    },
+    "The request was not valid." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A requisição não é válida."
+          }
+        }
+      }
+    },
+    "The server answered with an error (%lld)." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O servidor respondeu com um erro (%lld)."
+          }
+        }
+      }
+    },
+    "There's no Writeopia user with this email." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não há usuário do Writeopia com este email."
+          }
+        }
+      }
+    },
+    "They need to have a Writeopia account." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A pessoa precisa ter uma conta no Writeopia."
+          }
+        }
+      }
+    },
+    "This account is being deleted." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta conta está sendo deletada."
+          }
+        }
+      }
+    },
+    "This already exists." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isso já existe."
+          }
+        }
+      }
+    },
+    "This can't be undone. Your account and all your notes in the open space will be deleted." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isso não pode ser desfeito. Sua conta e todas as suas notas do espaço aberto serão deletadas."
+          }
+        }
+      }
+    },
+    "This feature is only available for premium users using an online workspace" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este recurso está disponível apenas para usuários premium usando uma área de trabalho online"
+          }
+        }
+      }
+    },
+    "This folder is empty" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta pasta está vazia"
+          }
+        }
+      }
+    },
+    "This image can't be added." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta imagem não pode ser adicionada."
+          }
+        }
+      }
+    },
+    "This is your private space. Everything you write here stays on this device." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este é o seu espaço privado. Tudo o que você escreve aqui fica neste dispositivo."
+          }
+        }
+      }
+    },
+    "This user is already in the team." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este usuário já está no time."
+          }
+        }
+      }
+    },
+    "Title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Título"
+          }
+        }
+      }
+    },
+    "Tokens used this month" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens usados neste mês"
+          }
+        }
+      }
+    },
+    "Try again" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tentar novamente"
+          }
+        }
+      }
+    },
+    "Type %@ to confirm." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite %@ para confirmar."
+          }
+        }
+      }
+    },
+    "Unchecked" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desmarcado"
+          }
+        }
+      }
+    },
+    "Underline" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sublinhado"
+          }
+        }
+      }
+    },
+    "Undo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desfazer"
+          }
+        }
+      }
+    },
+    "Unknown" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desconhecido"
+          }
+        }
+      }
+    },
+    "Unpublish" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Despublicar"
+          }
+        }
+      }
+    },
+    "Unselect" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desmarcar"
+          }
+        }
+      }
+    },
+    "Unselect %lld items" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Unselect %lld item"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Unselect %lld items"
+                }
+              }
+            }
+          }
+        },
+        "pt" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Desmarcar %lld item"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Desmarcar %lld itens"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Unselect %lld lines" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Unselect %lld line"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Unselect %lld lines"
+                }
+              }
+            }
+          }
+        },
+        "pt" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Desmarcar %lld linha"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Desmarcar %lld linhas"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Unselect line" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desmarcar linha"
+          }
+        }
+      }
+    },
+    "Untitled" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem título"
+          }
+        }
+      }
+    },
+    "Untitled folder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasta sem título"
+          }
+        }
+      }
+    },
+    "Uploading image" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviando imagem"
+          }
+        }
+      }
+    },
+    "Username" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nome de usuário"
+          }
+        }
+      }
+    },
+    "Verify code" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verificar código"
+          }
+        }
+      }
+    },
+    "Version" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versão"
+          }
+        }
+      }
+    },
+    "View as" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exibir como"
+          }
+        }
+      }
+    },
+    "We couldn't find what you were looking for." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não encontramos o que você procurava."
+          }
+        }
+      }
+    },
+    "We couldn't read the server response." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não conseguimos ler a resposta do servidor."
+          }
+        }
+      }
+    },
+    "We sent a new code to %@." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviamos um novo código para %@."
+          }
+        }
+      }
+    },
+    "Welcome back" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bem-vindo de volta"
+          }
+        }
+      }
+    },
+    "Welcome to Writeopia" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bem-vindo ao Writeopia"
+          }
+        }
+      }
+    },
+    "Where are you writing today?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Onde você vai escrever hoje?"
+          }
+        }
+      }
+    },
+    "Width %lld" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espessura %lld"
+          }
+        }
+      }
+    },
+    "Workspace" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Área de trabalho"
+          }
+        }
+      }
+    },
+    "Wrong email or password." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Email ou senha incorretos."
+          }
+        }
+      }
+    },
+    "Yellow highlight" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destaque amarelo"
+          }
+        }
+      }
+    },
+    "You are offline" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você está offline"
+          }
+        }
+      }
+    },
+    "You can now sign in with your new password." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora você pode entrar com sua nova senha."
+          }
+        }
+      }
+    },
+    "You don't have permission to do that." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você não tem permissão para fazer isso."
+          }
+        }
+      }
+    },
+    "You reached your AI quota for this month." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você atingiu sua cota de IA deste mês."
+          }
+        }
+      }
+    },
+    "You seem to be offline. Check your connection and try again." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parece que você está offline. Verifique sua conexão e tente novamente."
+          }
+        }
+      }
+    },
+    "You're not in any team yet" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você ainda não está em nenhum time"
+          }
+        }
+      }
+    },
+    "You're using the private space. Your notes are stored only on this device." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você está usando o espaço privado. Suas notas ficam guardadas apenas neste dispositivo."
+          }
+        }
+      }
+    },
+    "Your account comes with a team workspace you can invite people to." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua conta vem com uma área de trabalho de time para a qual você pode convidar pessoas."
+          }
+        }
+      }
+    },
+    "Your notes stay on this device" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suas notas ficam neste dispositivo"
+          }
+        }
+      }
+    },
+    "Your notes stay on this device. No account, no telemetry, no cloud." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suas notas ficam neste dispositivo. Sem conta, sem telemetria, sem nuvem."
+          }
+        }
+      }
+    },
+    "Your role" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua função"
+          }
+        }
+      }
+    },
+    "Your session has expired. Please sign in again." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua sessão expirou. Entre novamente."
+          }
+        }
+      }
+    },
+    "Your teams" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus times"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

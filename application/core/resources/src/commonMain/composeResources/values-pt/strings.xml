@@ -130,7 +130,16 @@
   <string name="confirm">Confirmar</string>
   <string name="download_model">Baixar modelo</string>
   <string name="choose_your_model">Escolhe seu modelo de IA</string>
-  <string name="use_offline">Usar offline</string>
+  <string name="choose_your_space">Escolha seu espaço</string>
+  <string name="where_writing_today">Onde você vai escrever hoje?</string>
+  <string name="private_space_label">Espaço privado — offline</string>
+  <string name="private_space_title">Nada sai desta sala.</string>
+  <string name="private_space_description">O Ollama roda no seu hardware. Sem requisições, sem telemetria, sem nuvem. Desconecte o cabo de rede e ele continua escrevendo.</string>
+  <string name="open_space_label">Espaço aberto — conectado</string>
+  <string name="open_space_title">Traga os grandes modelos.</string>
+  <string name="open_space_description">Modelos de ponta para os rascunhos que merecem. Use sua própria chave, troque de provedor no meio do documento, nunca fique preso a um só fornecedor.</string>
+  <string name="enter_arrow">Entrar →</string>
+  <string name="switch_space">Trocar de espaço</string>
   <string name="ai_explanation">[Tab - aceitar; Esc - remover]</string>
   <string name="ai_model">Modelo IA</string>
   <string name="title">Título</string>

@@ -56,6 +56,7 @@ kotlin {
                 implementation(project(":application:core:theme"))
                 implementation(project(":application:core:common_ui"))
                 implementation(project(":application:core:local_ai"))
+                implementation(project(":application:core:local_ai_config"))
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:documents"))
                 implementation(project(":application:core:genai"))

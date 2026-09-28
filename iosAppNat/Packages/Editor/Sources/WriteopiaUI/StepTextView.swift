@@ -1,0 +1,176 @@
+#if canImport(UIKit)
+import SwiftUI
+import UIKit
+import Writeopia
+import WrModels
+
+/// Editable text of a step. A `UITextView` is used instead of a SwiftUI `TextField` because
+/// the editor needs to show spans, split the step on Return and merge it on backspace at the
+/// start, none of which `TextField` exposes.
+struct StepTextView: UIViewRepresentable {
+    let step: StoryStep
+    let manager: WriteopiaStateManager
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIView(context: Context) -> StepUITextView {
+        let textView = StepUITextView()
+        textView.delegate = context.coordinator
+        textView.isScrollEnabled = false
+        textView.backgroundColor = .clear
+        textView.textContainerInset = .zero
+        textView.textContainer.lineFragmentPadding = 0
+        textView.adjustsFontForContentSizeCategory = true
+        textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textView.accessibilityIdentifier = "step.\(step.type.name)"
+
+        // Steps are reordered with SwiftUI drag and drop; the text view would swallow those drops.
+        if let dropInteraction = textView.textDropInteraction {
+            textView.removeInteraction(dropInteraction)
+        }
+
+        textView.attributedText = TextStyles.attributedText(for: step, family: manager.fontFamily)
+        textView.typingAttributes = TextStyles.baseAttributes(for: step, family: manager.fontFamily)
+        context.coordinator.renderedStep = step
+        context.coordinator.renderedFont = manager.fontFamily
+        return textView
+    }
+
+    func updateUIView(_ textView: StepUITextView, context: Context) {
+        let coordinator = context.coordinator
+        coordinator.parent = self
+        textView.isEditable = manager.isEditable
+        textView.onEraseAtStart = { [weak manager, stepId = step.id] in
+            manager?.onErase(stepId: stepId)
+        }
+
+        render(step, in: textView, coordinator: coordinator)
+
+        if let request = manager.focusRequest, request.stepId == step.id, coordinator.appliedRequest != request.id {
+            coordinator.appliedRequest = request.id
+            DispatchQueue.main.async { [weak manager] in
+                manager?.focusRequestHandled(request)
+                if !textView.isFirstResponder {
+                    textView.becomeFirstResponder()
+                }
+                let length = (textView.text as NSString).length
+                textView.selectedRange = NSRange(location: min(request.cursor, length), length: 0)
+            }
+        }
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: StepUITextView, context: Context) -> CGSize? {
+        let width = proposal.width ?? uiView.window?.bounds.width ?? 320
+        let size = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        return CGSize(width: width, height: max(size.height, TextStyles.baseFont(for: step, family: manager.fontFamily).lineHeight))
+    }
+
+    /// Updates the text view from the model without disturbing what the user is typing.
+    fileprivate func render(_ step: StoryStep, in textView: StepUITextView, coordinator: Coordinator) {
+        let text = step.text ?? ""
+        coordinator.isRendering = true
+        defer { coordinator.isRendering = false }
+
+        // Skip only when both the model and the text on screen are already in sync. Comparing
+        // the step alone isn't enough: on Return at the end of a line the model of this step
+        // doesn't change, but the keyboard may have put the "\n" in the text view anyway.
+        guard coordinator.renderedStep != step || coordinator.renderedFont != manager.fontFamily || textView.text != text else {
+            return
+        }
+        // Don't touch the text while the keyboard is composing (accents, CJK input...).
+        guard textView.markedTextRange == nil else { return }
+        coordinator.renderedStep = step
+        coordinator.renderedFont = manager.fontFamily
+
+        if textView.text != text {
+            // The model changed the text (merge, split): replace it and keep the cursor in range.
+            let selection = textView.selectedRange
+            textView.attributedText = TextStyles.attributedText(for: step, family: manager.fontFamily)
+            let length = (text as NSString).length
+            textView.selectedRange = NSRange(location: min(selection.location, length), length: 0)
+        } else {
+            // Same text: restyle in place, which keeps autocorrect and the selection intact.
+            let storage = textView.textStorage
+            let fullRange = NSRange(location: 0, length: storage.length)
+            storage.beginEditing()
+            storage.setAttributes(TextStyles.baseAttributes(for: step, family: manager.fontFamily), range: fullRange)
+            TextStyles.applySpans(of: step, to: storage, family: manager.fontFamily)
+            storage.endEditing()
+        }
+
+        textView.typingAttributes = TextStyles.baseAttributes(for: step, family: manager.fontFamily)
+        textView.invalidateIntrinsicContentSize()
+    }
+
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var parent: StepTextView
+        var renderedStep: StoryStep?
+        var appliedRequest: UUID?
+        var renderedFont: EditorFont = .system
+        /// Set while the model is written into the view, so those selection changes aren't
+        /// reported back as user selections during a SwiftUI update.
+        var isRendering = false
+
+        init(parent: StepTextView) {
+            self.parent = parent
+        }
+
+        func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+            guard text.contains("\n") else { return true }
+
+            // Return (or pasting several lines) splits the step. The model decides the new layout.
+            let newText = (textView.text as NSString).replacingCharacters(in: range, with: text)
+            let cursor = range.location + (text as NSString).length
+            parent.manager.handleTextInput(newText, cursor: cursor, stepId: parent.step.id)
+            return false
+        }
+
+        func textViewDidChange(_ textView: UITextView) {
+            let text = textView.text ?? ""
+            parent.manager.handleTextInput(text, cursor: textView.selectedRange.location, stepId: parent.step.id)
+
+            // Some input paths (e.g. a hardware keyboard) put the "\n" in the text view without
+            // asking `shouldChangeTextIn`. The model already split the step; bring this view back
+            // to its first line right away, since SwiftUI won't update a step that didn't change.
+            if text.contains("\n"),
+               let textView = textView as? StepUITextView,
+               let step = parent.manager.step(withId: parent.step.id) {
+                parent.render(step, in: textView, coordinator: self)
+            }
+        }
+
+        func textViewDidChangeSelection(_ textView: UITextView) {
+            guard !isRendering, textView.isFirstResponder, textView.markedTextRange == nil else { return }
+            let range = textView.selectedRange
+            parent.manager.onSelectionChange(
+                stepId: parent.step.id,
+                start: range.location,
+                end: range.location + range.length
+            )
+        }
+
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            parent.manager.onFocusChange(stepId: parent.step.id, hasFocus: true)
+        }
+
+        func textViewDidEndEditing(_ textView: UITextView) {
+            parent.manager.onFocusChange(stepId: parent.step.id, hasFocus: false)
+        }
+    }
+}
+
+/// Reports backspace when the cursor is at the very start, which `UITextViewDelegate` doesn't.
+final class StepUITextView: UITextView {
+    var onEraseAtStart: (() -> Void)?
+
+    override func deleteBackward() {
+        if selectedRange.location == 0, selectedRange.length == 0 {
+            onEraseAtStart?()
+            return
+        }
+        super.deleteBackward()
+    }
+}
+#endif

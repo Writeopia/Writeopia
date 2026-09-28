@@ -34,5 +34,7 @@ expect fun NotesMenuScreen(
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
     navigationBar: @Composable () -> Unit,
+    isWideLayout: Boolean = false,
+    sideMenuContent: @Composable () -> Unit = {},
     modifier: Modifier = Modifier,
 )
