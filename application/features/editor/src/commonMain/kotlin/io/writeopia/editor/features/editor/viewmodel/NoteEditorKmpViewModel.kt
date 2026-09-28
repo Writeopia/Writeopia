@@ -935,6 +935,7 @@ class NoteEditorKmpViewModel(
     override fun deleteDocument() {
         viewModelScope.launch(Dispatchers.Default) {
             val document = writeopiaManager.getDocument()
+            documentSyncManager.unregisterFromSync(document.id)
             documentRepository.deleteDocument(document, document.workspaceId)
         }
     }
