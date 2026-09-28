@@ -154,9 +154,9 @@ internal class ChooseNoteKmpViewModel(
     override val currentFolder: StateFlow<Folder?> by lazy {
         when (notesNavigation) {
             is NotesNavigation.Folder ->
-                menuItemsPerFolderId
-                    .map { notesUseCase.getFolderById(notesNavigation.id) }
-                    .stateIn(viewModelScope, SharingStarted.Lazily, null)
+                combine(menuItemsPerFolderId, folderController.folderChanges) { _, _ ->
+                    notesUseCase.getFolderById(notesNavigation.id)
+                }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
             NotesNavigation.Root, NotesNavigation.Favorites -> MutableStateFlow(null)
         }
