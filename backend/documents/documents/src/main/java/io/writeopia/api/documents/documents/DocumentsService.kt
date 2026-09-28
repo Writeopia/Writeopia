@@ -91,13 +91,6 @@ object DocumentsService {
             null
         }
 
-        if (scopedDocument.commentConversations == null) {
-
-            require(existing?.commentConversations.isNullOrEmpty()) {
-                "This document contains comments. Update the client before modifying it."
-            }
-        }
-
         return scopedDocument.toModel()
     }
 
