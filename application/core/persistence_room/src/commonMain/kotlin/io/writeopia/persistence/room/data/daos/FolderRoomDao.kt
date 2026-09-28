@@ -27,7 +27,7 @@ interface FolderRoomDao {
     suspend fun getLastUpdated(): List<FolderEntity>
 
     @Query("SELECT * FROM $FOLDER_ENTITY WHERE workspace_id = :workspaceId AND deleted = 0")
-    fun getFoldersByWorkspaceId(workspaceId: String): List<FolderEntity>
+    suspend fun getFoldersByWorkspaceId(workspaceId: String): List<FolderEntity>
 
     @Query("SELECT * FROM $FOLDER_ENTITY WHERE parent_id = :id AND deleted = 0")
     suspend fun getFolderByParentId(id: String): List<FolderEntity>

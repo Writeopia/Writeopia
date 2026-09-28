@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
@@ -43,6 +44,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,6 +54,8 @@ import io.writeopia.theme.WriteopiaTheme
 
 private val OFFLINE_MODELS = listOf("llama3", "mistral", "deepseek-r1")
 private val ONLINE_MODELS = listOf("claude", "gemini", "gpt")
+private val PAGE_PADDING = 24.dp
+private val CARDS_SPACING = 16.dp
 
 @Composable
 fun SpaceChoiceScreen(
@@ -74,84 +79,106 @@ fun SpaceChoiceScreen(
 
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(animatedBackground)) {
         val isWide = maxWidth > maxHeight
+        val density = LocalDensity.current
+        var headerHeight by remember { mutableStateOf(0.dp) }
 
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .align(Alignment.Center)
                 .widthIn(max = 1000.dp)
                 .fillMaxSize()
                 .padding(WindowInsets.systemBars.asPaddingValues())
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
         ) {
-            Text(
-                text = WrStrings.chooseYourSpace().uppercase(),
-                color = WriteopiaTheme.colorScheme.textLighter,
-                style = MaterialTheme.typography.labelMedium,
-                letterSpacing = 2.sp,
-                fontWeight = FontWeight.Bold
-            )
+            // The page scrolls, so the cards can't just fill the height: they get at least the
+            // height left under the header and grow past it when their content needs more.
+            val cardsMinHeight = (maxHeight - PAGE_PADDING * 2 - headerHeight).coerceAtLeast(0.dp)
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = WrStrings.whereWritingToday(),
-                color = WriteopiaTheme.colorScheme.textLight,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            if (isWide) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    SpaceCard(
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
-                        label = WrStrings.privateSpaceLabel(),
-                        title = WrStrings.privateSpaceTitle(),
-                        description = WrStrings.privateSpaceDescription(),
-                        chips = OFFLINE_MODELS,
-                        onHoveredChange = { isPrivateHovered = it },
-                        onClick = onOfflineSelected
-                    )
-
-                    SpaceCard(
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
-                        label = WrStrings.openSpaceLabel(),
-                        title = WrStrings.openSpaceTitle(),
-                        description = WrStrings.openSpaceDescription(),
-                        chips = ONLINE_MODELS,
-                        onHoveredChange = { isOpenHovered = it },
-                        onClick = onOnlineSelected
-                    )
-                }
-            } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(PAGE_PADDING),
+            ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.onSizeChanged { size ->
+                        headerHeight = with(density) { size.height.toDp() }
+                    }
                 ) {
-                    SpaceCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        label = WrStrings.privateSpaceLabel(),
-                        title = WrStrings.privateSpaceTitle(),
-                        description = WrStrings.privateSpaceDescription(),
-                        chips = OFFLINE_MODELS,
-                        onHoveredChange = { isPrivateHovered = it },
-                        onClick = onOfflineSelected
+                    Text(
+                        text = WrStrings.chooseYourSpace().uppercase(),
+                        color = WriteopiaTheme.colorScheme.textLighter,
+                        style = MaterialTheme.typography.labelMedium,
+                        letterSpacing = 2.sp,
+                        fontWeight = FontWeight.Bold
                     )
 
-                    SpaceCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        label = WrStrings.openSpaceLabel(),
-                        title = WrStrings.openSpaceTitle(),
-                        description = WrStrings.openSpaceDescription(),
-                        chips = ONLINE_MODELS,
-                        onHoveredChange = { isOpenHovered = it },
-                        onClick = onOnlineSelected
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = WrStrings.whereWritingToday(),
+                        color = WriteopiaTheme.colorScheme.textLight,
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold
                     )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
+
+                if (isWide) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = cardsMinHeight)
+                            .height(IntrinsicSize.Max),
+                        horizontalArrangement = Arrangement.spacedBy(CARDS_SPACING)
+                    ) {
+                        SpaceCard(
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            label = WrStrings.privateSpaceLabel(),
+                            title = WrStrings.privateSpaceTitle(),
+                            description = WrStrings.privateSpaceDescription(),
+                            chips = OFFLINE_MODELS,
+                            onHoveredChange = { isPrivateHovered = it },
+                            onClick = onOfflineSelected
+                        )
+
+                        SpaceCard(
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            label = WrStrings.openSpaceLabel(),
+                            title = WrStrings.openSpaceTitle(),
+                            description = WrStrings.openSpaceDescription(),
+                            chips = ONLINE_MODELS,
+                            onHoveredChange = { isOpenHovered = it },
+                            onClick = onOnlineSelected
+                        )
+                    }
+                } else {
+                    val cardMinHeight = ((cardsMinHeight - CARDS_SPACING) / 2).coerceAtLeast(0.dp)
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(CARDS_SPACING)
+                    ) {
+                        SpaceCard(
+                            modifier = Modifier.fillMaxWidth().heightIn(min = cardMinHeight),
+                            label = WrStrings.privateSpaceLabel(),
+                            title = WrStrings.privateSpaceTitle(),
+                            description = WrStrings.privateSpaceDescription(),
+                            chips = OFFLINE_MODELS,
+                            onHoveredChange = { isPrivateHovered = it },
+                            onClick = onOfflineSelected
+                        )
+
+                        SpaceCard(
+                            modifier = Modifier.fillMaxWidth().heightIn(min = cardMinHeight),
+                            label = WrStrings.openSpaceLabel(),
+                            title = WrStrings.openSpaceTitle(),
+                            description = WrStrings.openSpaceDescription(),
+                            chips = ONLINE_MODELS,
+                            onHoveredChange = { isOpenHovered = it },
+                            onClick = onOnlineSelected
+                        )
+                    }
                 }
             }
         }

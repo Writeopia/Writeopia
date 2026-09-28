@@ -48,6 +48,12 @@ interface LocalAiConfigController {
 
     /**
      * Saves the selected provider URL and model, then initiates the download process.
+     * [onDownloadStarted] is called on the main thread once the download is queued as an AI task,
+     * so it's safe to leave the screen then.
      */
-    fun selectProviderAndModel(providerUrl: String, modelName: String)
+    fun selectProviderAndModel(
+        providerUrl: String,
+        modelName: String,
+        onDownloadStarted: () -> Unit = {},
+    )
 }

@@ -65,7 +65,9 @@ fun LocalAiSetupScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            LocalAiConfigScreen(controller = controller)
+            // Once the model picked in the wizard is downloading, go to the app: the download
+            // goes on there as an AI task, with its progress next to the other AI tasks.
+            LocalAiConfigScreen(controller = controller, onDownloadStarted = onContinueClick)
 
             Spacer(modifier = Modifier.height(32.dp))
 

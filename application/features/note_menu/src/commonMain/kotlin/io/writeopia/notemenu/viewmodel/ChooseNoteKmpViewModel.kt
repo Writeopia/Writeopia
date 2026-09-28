@@ -22,7 +22,6 @@ import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
-import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.export.DocumentToJson
 import io.writeopia.sdk.export.DocumentToMarkdown
 import io.writeopia.sdk.export.DocumentToTxt
@@ -86,11 +85,6 @@ internal class ChooseNoteKmpViewModel(
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
     private val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
 ) : ChooseNoteViewModel, ViewModel(), FolderController by folderController {
-
-    private val _showOnboardingState =
-        MutableStateFlow(OnboardingState.CONFIGURATION)
-    override val showOnboardingState: StateFlow<OnboardingState> =
-        _showOnboardingState.asStateFlow()
 
     override val hasSelectedNotes: StateFlow<Boolean> by lazy {
         selectedNotes.map { selectedIds ->
@@ -273,14 +267,6 @@ internal class ChooseNoteKmpViewModel(
             // Sync delete/move events from server before loading documents
             // This ensures local state reflects any deletions/moves from other devices
             syncEventsOnStartup()
-
-            val onboarded = notesConfig.isOnboarded()
-
-            _showOnboardingState.value = if (onboarded) {
-                OnboardingState.COMPLETE
-            } else {
-                OnboardingState.CONFIGURATION
-            }
 
             keyboardEventFlow.collect { event ->
                 when (event) {
@@ -675,36 +661,6 @@ internal class ChooseNoteKmpViewModel(
 
     override fun cancelDeletion() {
         askToDelete.value = false
-    }
-
-    override fun requestInitFlow(flow: () -> Unit) {
-        val onboarding = _showOnboardingState.value
-
-        if (onboarding == OnboardingState.HIDDEN) {
-            _showOnboardingState.value = OnboardingState.CONFIGURATION
-        } else {
-            flow()
-        }
-    }
-
-    override fun hideOnboarding() {
-        _showOnboardingState.value = OnboardingState.HIDDEN
-    }
-
-    override fun completeOnboarding() {
-        viewModelScope.launch(Dispatchers.Default) {
-            notesConfig.setOnboarded()
-            _showOnboardingState.value = OnboardingState.CONGRATULATION
-            delay(3000)
-            _showOnboardingState.value = OnboardingState.COMPLETE
-        }
-    }
-
-    override fun closeOnboardingPermanently() {
-        viewModelScope.launch(Dispatchers.Default) {
-            notesConfig.setOnboarded()
-            _showOnboardingState.value = OnboardingState.COMPLETE
-        }
     }
 
     override fun syncFolderWithCloud() {

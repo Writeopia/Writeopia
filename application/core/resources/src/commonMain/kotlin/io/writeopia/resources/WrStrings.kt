@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.accent_color
-import writeopia.application.core.resources.generated.resources.access_local_ai_site
 import writeopia.application.core.resources.generated.resources.account
 import writeopia.application.core.resources.generated.resources.account_deletion_started_description
 import writeopia.application.core.resources.generated.resources.account_deletion_started_title
@@ -55,13 +54,11 @@ import writeopia.application.core.resources.generated.resources.delete
 import writeopia.application.core.resources.generated.resources.delete_account
 import writeopia.application.core.resources.generated.resources.dismiss
 import writeopia.application.core.resources.generated.resources.document
-import writeopia.application.core.resources.generated.resources.dont_show_again
 import writeopia.application.core.resources.generated.resources.download_model
 import writeopia.application.core.resources.generated.resources.download_models
 import writeopia.application.core.resources.generated.resources.download_update
 import writeopia.application.core.resources.generated.resources.update_check_failed
 import writeopia.application.core.resources.generated.resources.update_open_failed
-import writeopia.application.core.resources.generated.resources.download_local_ai
 import writeopia.application.core.resources.generated.resources.email
 import writeopia.application.core.resources.generated.resources.email_or_username
 import writeopia.application.core.resources.generated.resources.email_to_confirm
@@ -106,18 +103,13 @@ import writeopia.application.core.resources.generated.resources.no_models
 import writeopia.application.core.resources.generated.resources.notes_will_be_deleted
 import writeopia.application.core.resources.generated.resources.ok
 import writeopia.application.core.resources.generated.resources.local_ai
-import writeopia.application.core.resources.generated.resources.local_ai_configuration_complete
 import writeopia.application.core.resources.generated.resources.local_ai_setup_description
 import writeopia.application.core.resources.generated.resources.local_ai_setup_title
 import writeopia.application.core.resources.generated.resources.continue_to_app
-import writeopia.application.core.resources.generated.resources.onboarding_explain1
-import writeopia.application.core.resources.generated.resources.onboarding_hello
-import writeopia.application.core.resources.generated.resources.onboarding_select_ai
 import writeopia.application.core.resources.generated.resources.or_word
 import writeopia.application.core.resources.generated.resources.page
 import writeopia.application.core.resources.generated.resources.password
 import writeopia.application.core.resources.generated.resources.reset_password
-import writeopia.application.core.resources.generated.resources.private_ai_enabled
 import writeopia.application.core.resources.generated.resources.recent
 import writeopia.application.core.resources.generated.resources.repeat_password
 import writeopia.application.core.resources.generated.resources.retry
@@ -126,7 +118,6 @@ import writeopia.application.core.resources.generated.resources.search_no_result
 import writeopia.application.core.resources.generated.resources.settings
 import writeopia.application.core.resources.generated.resources.sign_in
 import writeopia.application.core.resources.generated.resources.sign_in_account
-import writeopia.application.core.resources.generated.resources.small_robot
 import writeopia.application.core.resources.generated.resources.sort_by_creation
 import writeopia.application.core.resources.generated.resources.sort_by_name
 import writeopia.application.core.resources.generated.resources.sort_by_update
@@ -457,31 +448,7 @@ object WrStrings {
     fun actions() = stringResource(Res.string.actions)
 
     @Composable
-    fun onboardingHello() = stringResource(Res.string.onboarding_hello)
-
-    @Composable
-    fun onboardingTutorialExplain() = stringResource(Res.string.onboarding_explain1)
-
-    @Composable
-    fun onboardingChooseAi() = stringResource(Res.string.onboarding_select_ai)
-
-    @Composable
     fun close() = stringResource(Res.string.close)
-
-    @Composable
-    fun downloadLocalAi() = stringResource(Res.string.download_local_ai)
-
-    @Composable
-    fun accessLocalAiSite() = stringResource(Res.string.access_local_ai_site)
-
-    @Composable
-    fun localAiConfigComplete() = stringResource(Res.string.local_ai_configuration_complete)
-
-    @Composable
-    fun privateAiEnabled() = stringResource(Res.string.private_ai_enabled)
-
-    @Composable
-    fun smallRobot() = stringResource(Res.string.small_robot)
 
     @Composable
     fun copyDocument() = stringResource(Res.string.copy_note)
@@ -657,9 +624,6 @@ object WrStrings {
 
     @Composable
     fun heading() = stringResource(Res.string.heading)
-
-    @Composable
-    fun dontShowAgain() = stringResource(Res.string.dont_show_again)
 
     @Composable
     fun manageTeams() = stringResource(Res.string.manage_teams)

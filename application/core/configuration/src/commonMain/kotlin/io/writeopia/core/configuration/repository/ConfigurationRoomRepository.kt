@@ -83,8 +83,4 @@ class ConfigurationRoomRepository(
 
         configurationDao.saveConfiguration(configEntity)
     }
-
-    override suspend fun isOnboarded(): Boolean = false
-
-    override suspend fun setOnboarded() { }
 }

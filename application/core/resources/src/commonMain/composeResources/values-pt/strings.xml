@@ -87,15 +87,10 @@
   <string name="tap_to_start">Click aqui para <font fgcolor='#FFFF3B30'>escrever</font> sua próxima grande idéia</string>
   <string name="font">Fonte</string>
   <string name="actions">Ações</string>
-  <string name="onboarding_hello">Bem vindo!</string>
-  <string name="onboarding_explain1">Siga o nosso tutorial para configurar o uso de AI de maneira privada.</string>
-  <string name="onboarding_select_ai">Selecione a AI que você gostaria de usar</string>
   <string name="close">Close</string>
   <string name="download_ollama">Para usar IA, baixe o Ollama</string>
   <string name="access_ollama_site">Acesse ollama.com</string>
   <string name="ollama_configuration_complete">Configuração completa!</string>
-  <string name="private_ai_enabled">Agora você pode usar IA de maneira privada</string>
-  <string name="small_robot">Pequeno robô</string>
   <string name="document">Documento</string>
   <string name="confirmation_delete_multiple_items">Você tem certeza que quer deletar os documentos selecionados?</string>
   <string name="cancel">Cancelar</string>
@@ -145,7 +140,6 @@
   <string name="title">Título</string>
   <string name="subtitle">Subtítulo</string>
   <string name="heading">Cabeçalho</string>
-  <string name="dont_show_again">Não mostrar novamente</string>
   <string name="manage_teams">Gerenciar times</string>
   <string name="error_loading_teams">Error ao carregar times</string>
   <string name="error_loading_workspaces">Erro ao carregar workspaces</string>

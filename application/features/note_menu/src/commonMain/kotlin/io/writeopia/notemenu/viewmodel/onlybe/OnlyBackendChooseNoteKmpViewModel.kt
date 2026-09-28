@@ -22,7 +22,6 @@ import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.notemenu.viewmodel.FolderDestination
 import io.writeopia.notemenu.viewmodel.SyncState
 import io.writeopia.notemenu.viewmodel.UserState
-import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
@@ -114,10 +113,6 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     private val _titlesToDelete = MutableStateFlow<List<String>>(emptyList())
     override val titlesToDelete: StateFlow<List<String>> = _titlesToDelete.asStateFlow()
-
-    private val _showOnboardingState = MutableStateFlow(OnboardingState.COMPLETE)
-    override val showOnboardingState: StateFlow<OnboardingState> =
-        _showOnboardingState.asStateFlow()
 
     private val _showAddMenuState = MutableStateFlow(false)
     override val showAddMenuState: StateFlow<Boolean> = _showAddMenuState.asStateFlow()
@@ -662,21 +657,5 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun confirmWorkplacePath() {
         // Not supported
-    }
-
-    override fun requestInitFlow(flow: () -> Unit) {
-        flow()
-    }
-
-    override fun hideOnboarding() {
-        _showOnboardingState.value = OnboardingState.HIDDEN
-    }
-
-    override fun closeOnboardingPermanently() {
-        _showOnboardingState.value = OnboardingState.COMPLETE
-    }
-
-    override fun completeOnboarding() {
-        _showOnboardingState.value = OnboardingState.COMPLETE
     }
 }
