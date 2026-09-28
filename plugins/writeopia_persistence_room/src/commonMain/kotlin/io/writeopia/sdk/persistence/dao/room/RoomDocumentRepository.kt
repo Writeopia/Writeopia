@@ -158,6 +158,7 @@ class RoomDocumentRepository(
             require(existing == null || existing.workspaceId == document.workspaceId) {
                 "Document does not belong to the requested workspace"
             }
+            if (existing?.isDeleted == true && !document.deleted) return@writeTransaction
 
             saveDocumentMetadata(document)
 
@@ -173,6 +174,12 @@ class RoomDocumentRepository(
     }
 
     override suspend fun saveDocumentMetadata(document: Document) {
+        val existing = documentEntityDao.loadDocumentById(document.id)
+        require(existing == null || existing.workspaceId == document.workspaceId) {
+            "Document does not belong to the requested workspace"
+        }
+        if (existing?.isDeleted == true && !document.deleted) return
+
         documentEntityDao.insertDocuments(document.toEntity())
     }
 
