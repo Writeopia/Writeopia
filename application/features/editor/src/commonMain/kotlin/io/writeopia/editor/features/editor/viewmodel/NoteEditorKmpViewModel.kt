@@ -31,6 +31,7 @@ import io.writeopia.sdk.export.DocumentToJson
 import io.writeopia.sdk.export.DocumentToMarkdown
 import io.writeopia.sdk.export.DocumentWriter
 import io.writeopia.sdk.model.action.Action
+import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
@@ -719,6 +720,9 @@ class NoteEditorKmpViewModel(
 
     override fun createComment(text: String): CommentConversation? =
         writeopiaManager.createComment(text)
+
+    override fun createComment(text: String, target: Selection): CommentConversation? =
+        writeopiaManager.createComment(text, target)
 
     override fun addComment(conversationId: String, text: String): Comment? =
         writeopiaManager.addComment(conversationId, text)
