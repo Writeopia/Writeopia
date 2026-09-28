@@ -540,7 +540,9 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             val workspace = authRepository.getWorkspace() ?: return@launch
 
-            documentsApi.deleteFolder(id, workspace.id)
+            // On failure the folder stays, and so does the dialog that asked to delete it.
+            if (documentsApi.deleteFolder(id, workspace.id) !is ResultData.Complete) return@launch
+
             stopEditingFolder()
             withContext(Dispatchers.Main) { onDeleted() }
             loadFolderContents()
