@@ -1,6 +1,8 @@
 package io.writeopia.editor.features.editor.ui
 
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -10,12 +12,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.drawing.ui.drawer.DrawingPreviewDrawer
 import io.writeopia.editor.configuration.ui.DrawConfigFactory
+import io.writeopia.editor.features.editor.ui.comments.CommentThreadOverlay
+import io.writeopia.editor.features.editor.ui.comments.resolveCommentUiState
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
@@ -42,6 +47,7 @@ internal fun TextEditor(
     val storyState by noteEditorViewModel.toDrawWithDecoration.collectAsState()
     val editable by noteEditorViewModel.isEditable.collectAsState()
     val position by noteEditorViewModel.scrollToPosition.collectAsState()
+    val commentConversations by noteEditorViewModel.commentConversations.collectAsState()
 
     if (position != null) {
         LaunchedEffect(position, block = {
@@ -80,28 +86,54 @@ internal fun TextEditor(
         )
     }
 
-    WriteopiaEditor(
-        modifier = modifier.widthIn(max = 850.dp),
-        editable = editable,
-        listState = listState,
-        keyFn = keyFn,
-        drawers = drawersFactory.create(
-            noteEditorViewModel.writeopiaManager,
-            onHeaderClick = noteEditorViewModel::onHeaderClick,
-            editable = isEditable,
-            aiExplanation = WrStrings.aiExplanation(),
-            isDarkTheme = isDarkTheme,
-            drawConfig = drawConfig,
-            fontFamily = fontFamily,
-            generateSection = noteEditorViewModel::aiSection,
-            receiveExternalFile = noteEditorViewModel::receiveExternalFile,
-            onDocumentLinkClick = onDocumentLinkClick,
-            linkLeadingIcon = WrIcons.pageStyle,
-            equationToImageUrl = "https://latex.codecogs.com/png.latex?\\Large&space;x=",
-            customDrawers = mapOf(
-                StoryTypes.DRAWING.type.number to drawingPreviewDrawer
-            )
-        ),
-        storyState = storyState,
-    )
+    val commentUiState = remember(storyState, commentConversations) {
+        resolveCommentUiState(storyState, commentConversations)
+    }
+
+    Box {
+        WriteopiaEditor(
+            modifier = modifier.widthIn(max = 850.dp),
+            editable = editable,
+            listState = listState,
+            keyFn = keyFn,
+            drawers = drawersFactory.create(
+                noteEditorViewModel.writeopiaManager,
+                onHeaderClick = noteEditorViewModel::onHeaderClick,
+                editable = isEditable,
+                aiExplanation = WrStrings.aiExplanation(),
+                isDarkTheme = isDarkTheme,
+                drawConfig = drawConfig,
+                fontFamily = fontFamily,
+                generateSection = noteEditorViewModel::aiSection,
+                receiveExternalFile = noteEditorViewModel::receiveExternalFile,
+                onDocumentLinkClick = onDocumentLinkClick,
+                linkLeadingIcon = WrIcons.pageStyle,
+                equationToImageUrl = "https://latex.codecogs.com/png.latex?\\Large&space;x=",
+                customDrawers = mapOf(
+                    StoryTypes.DRAWING.type.number to drawingPreviewDrawer
+                )
+            ),
+            storyState = storyState,
+        )
+
+        CommentThreadOverlay(
+            uiState = commentUiState,
+            editable = editable,
+            onCreateComment = { text, target ->
+                noteEditorViewModel.createComment(text, target) != null
+            },
+            onReply = { conversationId, text ->
+                noteEditorViewModel.addComment(conversationId, text) != null
+            },
+            onDeleteComment = { conversationId, commentId ->
+                noteEditorViewModel.deleteComment(conversationId, commentId)
+            },
+            onDeleteConversation = { conversationId ->
+                noteEditorViewModel.deleteCommentConversation(conversationId)
+            },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 8.dp, end = 8.dp),
+        )
+    }
 }

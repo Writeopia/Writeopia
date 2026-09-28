@@ -130,6 +130,8 @@ fun Routing.documentsRoute(
             val parentId = call.pathParameters["parentId"]!!
             val documentList = writeopiaDb.getDocumentsByParentId(parentId)
 
+            logger.info("Documents by parent - parentId: $parentId, returning ${documentList.size} documents")
+
             if (documentList.isNotEmpty()) {
                 call.respond(
                     status = HttpStatusCode.OK,
@@ -237,6 +239,11 @@ fun Routing.documentsRoute(
                     doc.copy(favorite = isFavorite)
                 }
 
+                logger.info(
+                    "Folder contents - folderId: $folderId, workspaceId: $workspaceId, " +
+                        "returning ${folders.size} subfolders and ${documentsWithFavorites.size} documents"
+                )
+
                 call.respond(
                     status = HttpStatusCode.OK,
                     message = FolderContentResponse(
@@ -245,6 +252,7 @@ fun Routing.documentsRoute(
                     )
                 )
             } catch (e: Exception) {
+                logger.error("Error loading folder contents - folderId: $folderId, workspaceId: $workspaceId", e)
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
                     message = "${e.message}"
@@ -431,7 +439,7 @@ fun Routing.documentsRoute(
                     )
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                logger.error("Error receiving folders for workspace $workspaceId", e)
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
                     message = "${e.message}"
@@ -446,10 +454,12 @@ fun Routing.documentsRoute(
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
             try {
-                println("loading folder diff")
-                println("user id: $userId")
-                println("last sync: ${Instant.fromEpochMilliseconds(folderDiff.lastFolderSync)}")
-                println("orderBy: ${folderDiff.orderBy}")
+                logger.info(
+                    "Folder diff request - folderId: ${folderDiff.folderId}, userId: $userId, " +
+                        "workspaceId: $workspaceId, " +
+                        "lastSync: ${Instant.fromEpochMilliseconds(folderDiff.lastFolderSync)}, " +
+                        "orderBy: ${folderDiff.orderBy}"
+                )
 
                 val documents =
                     DocumentsService.getDocumentsDiffByFolder(
@@ -473,6 +483,12 @@ fun Routing.documentsRoute(
                     doc.copy(favorite = userFavoriteIds.contains(doc.id))
                 }
 
+                logger.info(
+                    "Folder diff - folderId: ${folderDiff.folderId}, returning ${subfolders.size} subfolders " +
+                        "and ${documentsWithFavorites.size} documents " +
+                        "(${userFavoriteIds.size} user favorites)"
+                )
+
                 call.respond(
                     status = HttpStatusCode.OK,
                     message = FolderContentResponse(
@@ -481,6 +497,10 @@ fun Routing.documentsRoute(
                     )
                 )
             } catch (e: Exception) {
+                logger.error(
+                    "Error loading folder diff - folderId: ${folderDiff.folderId}, workspaceId: $workspaceId",
+                    e
+                )
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
                     message = "${e.message}"
@@ -495,10 +515,11 @@ fun Routing.documentsRoute(
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
             try {
-                println("loading workspace diff")
-                println("user id: $userId")
-                println("last sync: ${Instant.fromEpochMilliseconds(workspaceDiff.lastSync)}")
-                println("orderBy: ${workspaceDiff.orderBy}")
+                logger.info(
+                    "Workspace diff request - userId: $userId, workspaceId: $workspaceId, " +
+                        "lastSync: ${Instant.fromEpochMilliseconds(workspaceDiff.lastSync)}, " +
+                        "orderBy: ${workspaceDiff.orderBy}"
+                )
 
                 val documents = DocumentsService.getDocumentsDiffByWorkspace(
                     workspaceDiff.workspaceId,
@@ -508,7 +529,10 @@ fun Routing.documentsRoute(
                 )
                 val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceDiff.workspaceId)
 
-                println("returning ${documents.count()} documents and ${folders.count()} folders")
+                logger.info(
+                    "Workspace diff - workspaceId: $workspaceId, returning ${documents.size} documents " +
+                        "and ${folders.size} folders"
+                )
 
                 call.respond(
                     status = HttpStatusCode.OK,
@@ -518,6 +542,7 @@ fun Routing.documentsRoute(
                     )
                 )
             } catch (e: Exception) {
+                logger.error("Error loading workspace diff - workspaceId: $workspaceId", e)
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
                     message = "${e.message}"
