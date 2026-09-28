@@ -89,8 +89,6 @@ private func makeLocal() -> LocalDocumentsRepository {
         backend.folderDiff = FolderContents(folders: [folder])
 
         backend.folderSendFails = true
-        // Edited after the creation was marked as synced.
-        try await Task.sleep(for: .milliseconds(5))
         folder.title = "Job"
         try await repository.updateFolder(folder)
         #expect(try repository.local.storedFolder(id: folder.id)?.isOutdated == true)
@@ -111,12 +109,50 @@ private func makeLocal() -> LocalDocumentsRepository {
         // The backend can't be reached for the move (the fake answers 404), so it still has the
         // folder in the root.
         backend.folderDiff = FolderContents(folders: [moved, target])
-        try await Task.sleep(for: .milliseconds(5))
         try await repository.moveFolder(id: moved.id, toFolder: target.id)
 
         try await repository.syncFolder(Folder.rootId)
 
         #expect(try repository.local.storedFolder(id: moved.id)?.parentId == target.id)
         #expect(backend.sentFolders.last?["parentId"] as? String == target.id)
+    }
+
+    @Test func changeRightAfterASyncIsStillSent() async throws {
+        let local = makeLocal()
+        let now = Date()
+        // Synced a moment in the future (another device's clock, or the same millisecond).
+        try local.store(Folder(id: "f", parentId: "root", title: "Work", workspaceId: "w",
+                               lastUpdatedAt: now, lastSyncedAt: now.addingTimeInterval(1)))
+
+        var edited = try #require(try local.storedFolder(id: "f"))
+        edited.title = "Job"
+        try await local.updateFolder(edited)
+        #expect(try local.storedFolder(id: "f")?.isOutdated == true)
+
+        try local.store(Folder(id: "g", parentId: "root", title: "Other", workspaceId: "w",
+                               lastUpdatedAt: now, lastSyncedAt: now.addingTimeInterval(1)))
+        try await local.moveFolder(id: "g", toFolder: "f")
+        #expect(try local.storedFolder(id: "g")?.isOutdated == true)
+    }
+
+    @Test func editMadeWhileSendingStaysOutdated() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        let folder = try await repository.createFolder(title: "Work", parentId: Folder.rootId)
+        backend.onFolderSend = {
+            // Another edit lands while the first one is on its way.
+            var newer = try! repository.local.storedFolder(id: folder.id)!
+            newer.title = "Newer"
+            newer.lastUpdatedAt = Date().addingTimeInterval(10)
+            try! repository.local.store(newer)
+        }
+
+        var edited = folder
+        edited.title = "Job"
+        try await repository.updateFolder(edited)
+
+        let stored = try #require(try repository.local.storedFolder(id: folder.id))
+        #expect(stored.title == "Newer")
+        #expect(stored.isOutdated)
     }
 }

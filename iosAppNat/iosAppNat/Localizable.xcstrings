@@ -1364,6 +1364,7 @@
       }
     },
     "Folders" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt" : {
           "stringUnit" : {

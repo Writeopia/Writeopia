@@ -112,6 +112,8 @@ final class FakeBackend: HTTPTransport {
     var deleteFails = false
     /// Folders sent while this is set are refused, like when the backend can't be reached.
     var folderSendFails = false
+    /// Runs while folders are being sent, before the backend answers.
+    var onFolderSend: (() -> Void)?
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         let path = request.url!.path()
@@ -133,6 +135,7 @@ final class FakeBackend: HTTPTransport {
             if folderSendFails {
                 status = 500
             } else {
+                onFolderSend?()
                 sentFolders += body["folders"] as? [[String: Any]] ?? []
                 response = Data("Accepted".utf8)
             }

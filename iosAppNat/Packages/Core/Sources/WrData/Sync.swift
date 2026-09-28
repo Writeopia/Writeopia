@@ -304,9 +304,10 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
 
     public func moveFolder(id: String, toFolder folderId: String) async throws {
         try await local.moveFolder(id: id, toFolder: folderId)
+        let moved = try local.storedFolder(id: id)
         do {
             try await remote.moveFolder(id: id, toFolder: folderId)
-            try markSynced(folderId: id)
+            if let moved { try markSynced(moved) }
         } catch MoveError.folderIntoItself {
             throw MoveError.folderIntoItself
         } catch {
@@ -324,15 +325,19 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
     public func updateFolder(_ folder: Folder) async throws -> Folder {
         let updated = try await local.updateFolder(folder)
         if (try? await api.sendFolders([updated])) != nil {
-            try markSynced(folderId: updated.id)
+            try markSynced(updated)
         }
         return try await local.folder(id: updated.id) ?? updated
     }
 
-    private func markSynced(folderId: String) throws {
-        guard var folder = try local.storedFolder(id: folderId) else { return }
-        folder.lastSyncedAt = max(Date(), folder.lastUpdatedAt ?? .distantPast)
-        try local.store(folder)
+    /// Marks the folder as synced when what's stored is still the version that was sent; a
+    /// change made while it was being sent stays outdated, to be sent with the next sync.
+    private func markSynced(_ sent: Folder) throws {
+        guard var stored = try local.storedFolder(id: sent.id) else { return }
+        let storedTime = stored.lastUpdatedAt?.millis ?? 0
+        guard storedTime <= (sent.lastUpdatedAt?.millis ?? 0) else { return }
+        stored.lastSyncedAt = max(Date(), Date(millis: storedTime))
+        try local.store(stored)
     }
 
     /// Saves the editor's copy. The sync time and deleted flag are the ones stored, since the
@@ -465,9 +470,8 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
 
         try await sendAndMarkSynced(documentsToSend)
         try await api.sendFolders(foldersToSend)
-        for var folder in foldersToSend {
-            folder.lastSyncedAt = Date()
-            try local.store(folder)
+        for folder in foldersToSend {
+            try markSynced(folder)
         }
 
         lastFolderSync[folderId] = Date()
