@@ -84,6 +84,7 @@ class DocumentSqlDao(
             require(existing == null || existing.workspace_id == document.workspaceId) {
                 "Document does not belong to the requested workspace"
             }
+            if (existing?.deleted == 1L && !document.deleted) return@transaction
 
             storyStepQueries?.deleteByDocumentId(document.id)
             document.content.values.forEachIndexed { i, storyStep ->
@@ -109,6 +110,12 @@ class DocumentSqlDao(
     }
 
     suspend fun insertDocument(document: Document) {
+        val existing = documentQueries?.selectById(document.id)?.awaitAsOneOrNull()
+        require(existing == null || existing.workspace_id == document.workspaceId) {
+            "Document does not belong to the requested workspace"
+        }
+        if (existing?.deleted == 1L && !document.deleted) return
+
         documentQueries?.insert(
             id = document.id,
             title = document.title,
