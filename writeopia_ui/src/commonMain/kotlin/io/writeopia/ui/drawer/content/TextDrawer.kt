@@ -129,10 +129,10 @@ class TextDrawer(
 
         var inputText by remember {
             val text = step.text
+            val selection = drawInfo.selection?.toTextRange(text ?: "")
+                ?: TextRange.Zero
 
             mutableStateOf(
-                val selection = drawInfo.selection?.toTextRange(text ?: "")
-                    ?: TextRange.Zero
                 TextFieldValue(
                     displayText(text, selection),
                     selection = selection,
