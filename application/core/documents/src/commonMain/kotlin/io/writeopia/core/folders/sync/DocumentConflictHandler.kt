@@ -31,14 +31,6 @@ class DocumentConflictHandler(
             val winner = documents.maxByOrNull { it.lastUpdatedAt }
                 ?: throw IllegalStateException("Document list for ID cannot be empty.")
 
-            if (documents.size > 1) {
-                val winnerSource = if (externalDocuments.any { it === winner }) "backend" else "local"
-                syncLog(
-                    "Document conflict for $id: ${documents.size} versions " +
-                        "(lastUpdatedAt: ${documents.map { it.lastUpdatedAt }}). Winner: $winnerSource"
-                )
-            }
-
             // Keep the winner as-is. Don't update lastSyncedAt with client time.
             // - If winner is from server, it already has the correct server lastSyncedAt
             // - If winner is local, it will get server lastSyncedAt when sent to server
@@ -52,13 +44,7 @@ class DocumentConflictHandler(
             // Only save if document doesn't exist locally OR it's not soft-deleted
             // A soft-deleted document should never be recreated from backend data
             if (existingDoc == null || !existingDoc.deleted) {
-                syncLog(
-                    "Persisting document locally (${if (existingDoc == null) "new" else "update"}): " +
-                        document.syncDescription()
-                )
                 documentRepository.saveDocument(document)
-            } else {
-                syncLog("Skipping document ${document.id}: soft-deleted locally")
             }
         }
 

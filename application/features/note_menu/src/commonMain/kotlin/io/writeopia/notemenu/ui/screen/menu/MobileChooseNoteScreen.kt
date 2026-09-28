@@ -99,10 +99,10 @@ internal fun MobileChooseNoteScreen(
         currentFolderDialog = dialog
     }
 
+    // Leaves the folder only once it's deleted locally: leaving first could cancel the deletion.
     val deleteCurrentFolder = { folderId: String ->
         currentFolderDialog = null
-        chooseNoteViewModel.deleteFolder(folderId)
-        onCurrentFolderDeleted()
+        chooseNoteViewModel.deleteFolder(folderId, onCurrentFolderDeleted)
     }
 
     val showFab by derivedStateOf { !editState && !hasSelectedNotes }

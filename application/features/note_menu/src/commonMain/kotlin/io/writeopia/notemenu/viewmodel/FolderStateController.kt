@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -69,7 +70,7 @@ class FolderStateController private constructor(
         }
     }
 
-    override fun deleteFolder(id: String) {
+    override fun deleteFolder(id: String, onDeleted: () -> Unit) {
         coroutineScope.launch(Dispatchers.Default) {
             val workspaceId = authRepository.getWorkspace()?.id
                 ?: Workspace.disconnectedWorkspace().id
@@ -77,6 +78,7 @@ class FolderStateController private constructor(
             // Soft delete locally first (optimistic delete - folder disappears from UI)
             notesUseCase.deleteFolderById(id, workspaceId)
             stopEditingFolder()
+            withContext(Dispatchers.Main) { onDeleted() }
 
             // Try to sync folder deletion to backend
             val syncSuccess = syncFolderDeletionToBackend(id)

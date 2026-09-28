@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -535,12 +536,13 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         }
     }
 
-    override fun deleteFolder(id: String) {
+    override fun deleteFolder(id: String, onDeleted: () -> Unit) {
         viewModelScope.launch(Dispatchers.Default) {
             val workspace = authRepository.getWorkspace() ?: return@launch
 
             documentsApi.deleteFolder(id, workspace.id)
             stopEditingFolder()
+            withContext(Dispatchers.Main) { onDeleted() }
             loadFolderContents()
         }
     }
