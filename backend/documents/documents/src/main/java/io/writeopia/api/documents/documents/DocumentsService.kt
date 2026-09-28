@@ -83,8 +83,16 @@ object DocumentsService {
             "Document does not belong to the requested workspace"
         }
 
+        val existing = if (existingWorkspaceId != null) {
+            requireNotNull(writeopiaDb.getDocumentWithContentById(scopedDocument.id, workspaceId)) {
+                "Deleted documents cannot be recreated by a normal write"
+            }
+        } else {
+            null
+        }
+
         if (scopedDocument.commentConversations == null) {
-            val existing = writeopiaDb.getDocumentWithContentById(scopedDocument.id, workspaceId)
+
             require(existing?.commentConversations.isNullOrEmpty()) {
                 "This document contains comments. Update the client before modifying it."
             }
@@ -615,6 +623,9 @@ object DocumentsService {
 
         val serverTimestamp = Clock.System.now().toEpochMilliseconds()
         val existingDocument = writeopiaDb.getDocumentById(documentId, workspaceId)
+        require(documentWorkspaceId == null || existingDocument != null) {
+            "Deleted documents cannot be recreated by step sync"
+        }
 
         // Read the server state before applying this request so conflict resolution uses one baseline.
         val serverUpdatedSteps = writeopiaDb.getStoryStepsAfterTime(
