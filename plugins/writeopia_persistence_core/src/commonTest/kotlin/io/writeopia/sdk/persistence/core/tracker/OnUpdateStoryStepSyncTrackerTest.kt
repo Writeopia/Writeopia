@@ -216,16 +216,17 @@ class OnUpdateStoryStepSyncTrackerTest {
     }
 
     @Test
-    fun initialCommentsShouldNotBeSentWithFirstStoryOnlySync() = runTest {
+    fun initialPersistedCommentsShouldResyncWithoutUserEdit() = runTest {
         val now = Clock.System.now()
-        val initialStep = StoryStep(
-            id = "step-1",
-            type = StoryTypes.TEXT.type,
-            text = "Text",
-        )
         val document = Document(
             id = "document-1",
-            content = mapOf(0.0 to initialStep),
+            content = mapOf(
+                0.0 to StoryStep(
+                    id = "step-1",
+                    type = StoryTypes.TEXT.type,
+                    text = "Text",
+                )
+            ),
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = now,
@@ -241,16 +242,14 @@ class OnUpdateStoryStepSyncTrackerTest {
         val workspaceIdFlow = MutableStateFlow(document.workspaceId)
         val conversation = CommentConversation(
             id = "conversation-1",
-            comments = listOf(Comment(id = "comment-1", text = "Already loaded")),
+            comments = listOf(Comment(id = "comment-1", text = "Persisted locally")),
         )
         val commentsFlow = MutableStateFlow(mapOf(conversation.id to conversation.comments))
         val request = CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
         val tracker = OnUpdateStoryStepSyncTracker(
             syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
             syncApi = { syncRequest ->
-                if (!request.isCompleted) {
-                    request.complete(syncRequest)
-                }
+                if (!request.isCompleted) request.complete(syncRequest)
                 StoryStepSyncResponse(
                     serverTimestamp = syncRequest.requestTimestamp,
                     updatedSteps = emptyList(),
@@ -264,22 +263,18 @@ class OnUpdateStoryStepSyncTrackerTest {
             tracker.syncStorySteps(documentEditionFlow, workspaceIdFlow)
         }
         runCurrent()
-
-        val changedStep = initialStep.copy(text = "Updated")
-        documentEditionFlow.value =
-            StoryState(
-                stories = mapOf(0.0 to changedStep),
-                lastEdit = LastEdit.LineEdition(0.0, changedStep),
-            ) to document.info()
-
         advanceTimeBy(20)
         runCurrent()
 
         val synced = withTimeout(1_000) { request.await() }
         job.cancel()
 
-        assertEquals(null, synced.commentConversations)
-        assertEquals(listOf("Updated"), synced.changes.map { it.storyStep.text })
+        assertTrue(synced.changes.isEmpty())
+        assertTrue(synced.deletions.isEmpty())
+        assertEquals(
+            listOf(conversation.id),
+            synced.commentConversations?.map { it.id },
+        )
     }
 
     @Test
