@@ -11,7 +11,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -24,11 +26,13 @@ import io.writeopia.editor.features.editor.ui.comments.resolveCommentUiState
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
+import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.ui.WriteopiaEditor
 import io.writeopia.ui.drawer.factory.DrawersFactory
 import io.writeopia.ui.model.DrawStory
+import io.writeopia.ui.model.PERSISTENT_SELECTION_EXTRA
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -48,6 +52,47 @@ internal fun TextEditor(
     val editable by noteEditorViewModel.isEditable.collectAsState()
     val position by noteEditorViewModel.scrollToPosition.collectAsState()
     val commentConversations by noteEditorViewModel.commentConversations.collectAsState()
+    var pendingCommentTarget by remember { mutableStateOf<Selection?>(null) }
+    var pendingCommentText by remember { mutableStateOf<String?>(null) }
+
+    fun selectedText(target: Selection): String? {
+        val story = storyState.stories.firstOrNull { drawStory ->
+            drawStory.position == target.position
+        }?.storyStep ?: return null
+        val text = story.text ?: return null
+        val (start, end) = target.sortedPositions()
+        if (start < 0 || end > text.length || start == end) return null
+        return text.substring(start, end)
+    }
+
+    LaunchedEffect(storyState, pendingCommentTarget, pendingCommentText) {
+        val target = pendingCommentTarget ?: return@LaunchedEffect
+        val expectedText = pendingCommentText ?: return@LaunchedEffect
+        if (selectedText(target) != expectedText) {
+            pendingCommentTarget = null
+            pendingCommentText = null
+        }
+    }
+
+    val displayStoryState = remember(storyState, pendingCommentTarget) {
+        val target = pendingCommentTarget
+        if (target == null) {
+            storyState
+        } else {
+            storyState.copy(
+                stories = storyState.stories.map { drawStory ->
+                    if (drawStory.position == target.position) {
+                        drawStory.copy(
+                            cursor = target,
+                            extraInfo = drawStory.extraInfo + (PERSISTENT_SELECTION_EXTRA to true),
+                        )
+                    } else {
+                        drawStory
+                    }
+                }
+            )
+        }
+    }
 
     if (position != null) {
         LaunchedEffect(position, block = {
@@ -113,14 +158,28 @@ internal fun TextEditor(
                     StoryTypes.DRAWING.type.number to drawingPreviewDrawer
                 )
             ),
-            storyState = storyState,
+            storyState = displayStoryState,
         )
 
         CommentThreadOverlay(
             uiState = commentUiState,
             editable = editable,
+            createTarget = pendingCommentTarget,
+            onCreateTargetChange = { target ->
+                pendingCommentTarget = target
+                pendingCommentText = target?.let(::selectedText)
+            },
             onCreateComment = { text, target ->
-                noteEditorViewModel.createComment(text, target) != null
+                val expectedText = pendingCommentText
+                val targetStillValid =
+                    expectedText != null && selectedText(target) == expectedText
+                if (targetStillValid) {
+                    noteEditorViewModel.createComment(text, target) != null
+                } else {
+                    pendingCommentTarget = null
+                    pendingCommentText = null
+                    false
+                }
             },
             onReply = { conversationId, text ->
                 noteEditorViewModel.addComment(conversationId, text) != null
