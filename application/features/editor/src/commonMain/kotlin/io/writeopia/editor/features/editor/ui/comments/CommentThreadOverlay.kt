@@ -38,6 +38,8 @@ internal const val COMMENT_INPUT_TAG = "CommentInput"
 internal fun CommentThreadOverlay(
     uiState: CommentUiState,
     editable: Boolean,
+    createTarget: Selection?,
+    onCreateTargetChange: (Selection?) -> Unit,
     onCreateComment: (String, Selection) -> Boolean,
     onReply: (String, String) -> Boolean,
     onDeleteComment: (String, String) -> Unit,
@@ -47,14 +49,13 @@ internal fun CommentThreadOverlay(
     val conversation = uiState.activeConversation
     var expanded by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
-    var createTarget by remember { mutableStateOf<Selection?>(null) }
     val visible =
         conversation != null || (editable && (uiState.canCreateComment || createTarget != null))
 
     LaunchedEffect(visible, conversation?.id) {
         expanded = false
         if (!visible || conversation != null) {
-            createTarget = null
+            onCreateTargetChange(null)
         }
         draft = ""
     }
@@ -77,7 +78,7 @@ internal fun CommentThreadOverlay(
                                     change.pressed && !change.previousPressed
                                 }
                             ) {
-                                createTarget = uiState.createTarget ?: createTarget
+                                onCreateTargetChange(uiState.createTarget ?: createTarget)
                             }
                         }
                     }
@@ -86,10 +87,10 @@ internal fun CommentThreadOverlay(
             onClick = {
                 if (expanded) {
                     expanded = false
-                    if (conversation == null) createTarget = null
+                    if (conversation == null) onCreateTargetChange(null)
                 } else {
                     if (conversation == null) {
-                        createTarget = uiState.createTarget ?: createTarget
+                        onCreateTargetChange(uiState.createTarget ?: createTarget)
                     }
                     expanded = true
                 }
@@ -185,7 +186,7 @@ internal fun CommentThreadOverlay(
                                 }
                                 if (saved) {
                                     draft = ""
-                                    createTarget = null
+                                    onCreateTargetChange(null)
                                 }
                             },
                         ) {
