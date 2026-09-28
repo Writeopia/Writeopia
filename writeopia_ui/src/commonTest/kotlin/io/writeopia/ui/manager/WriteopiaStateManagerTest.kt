@@ -2265,7 +2265,10 @@ class WriteopiaStateManagerTest {
         assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isNotEmpty())
 
         assertTrue(manager.deleteComment(conversation.id, "comment-2"))
-        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
         assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isEmpty())
     }
 
@@ -2318,7 +2321,10 @@ class WriteopiaStateManagerTest {
                 1.0,
             )
         )
-        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
     }
 
     @Test
@@ -2455,7 +2461,10 @@ class WriteopiaStateManagerTest {
                 position = 0.0,
             )
         )
-        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
 
         manager.undo()
         advanceUntilIdle()
@@ -2472,7 +2481,10 @@ class WriteopiaStateManagerTest {
         manager.redo()
         advanceUntilIdle()
 
-        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
         assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isEmpty())
     }
 
@@ -2525,7 +2537,10 @@ class WriteopiaStateManagerTest {
 
         val updatedNested = manager.currentStory.value.stories.getValue(0.0).steps.single()
         assertTrue(updatedNested.spans.none { it.span == Span.COMMENT })
-        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
     }
 
     @Test
@@ -2568,7 +2583,10 @@ class WriteopiaStateManagerTest {
 
         assertTrue(manager.deleteCommentConversation(conversation.id))
 
-        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
         assertTrue(
             manager.currentStory.value.stories.values.all { story ->
                 story.spans.none { span ->
@@ -2620,7 +2638,11 @@ class WriteopiaStateManagerTest {
 
         assertTrue(manager.deleteComment(first.id, "comment-1"))
 
-        assertEquals(mapOf(second.id to second.comments), manager.commentConversations.value)
+        assertTrue(
+            manager.commentConversations.value.getValue(first.id)
+                .all { comment -> comment.deleted }
+        )
+        assertEquals(second.comments, manager.commentConversations.value.getValue(second.id))
         assertEquals(
             setOf(SpanInfo.create(6, 11, Span.COMMENT, second.id)),
             manager.currentStory.value.stories[0.0]!!.spans,
@@ -2662,7 +2684,13 @@ class WriteopiaStateManagerTest {
 
         manager.removeAtPosition(0.0)
 
-        assertTrue(manager.commentConversations.value.isEmpty())
-        assertTrue(manager.getDocument().commentConversations.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
+        assertTrue(
+            manager.getDocument().commentConversations.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
     }
 }
