@@ -219,6 +219,16 @@ internal fun MobileChooseNoteScreen(
                     }
                 }
 
+                val showCreateFolderDialog by chooseNoteViewModel.showCreateFolderDialogState.collectAsState()
+
+                if (showCreateFolderDialog) {
+                    CreateFolderDialog(
+                        onDismissRequest = chooseNoteViewModel::hideCreateFolderDialog,
+                        onCreate = chooseNoteViewModel::createFolderWithDetails,
+                        colorSize = TOUCH_COLOR_SIZE,
+                    )
+                }
+
                 val titlesToDelete by chooseNoteViewModel.titlesToDelete.collectAsState()
 
                 if (titlesToDelete.isNotEmpty()) {

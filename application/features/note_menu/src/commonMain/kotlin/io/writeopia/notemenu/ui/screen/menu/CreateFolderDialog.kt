@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import io.writeopia.commonui.IconsPicker
@@ -29,6 +30,7 @@ fun CreateFolderDialog(
     onDismissRequest: () -> Unit,
     onCreate: (String, MenuItem.Icon?) -> Unit,
     modifier: Modifier = Modifier,
+    colorSize: Dp = 12.dp,
 ) {
     Dialog(onDismissRequest = onDismissRequest) {
         Card(modifier = modifier) {
@@ -60,6 +62,7 @@ fun CreateFolderDialog(
 
                 IconsPicker(
                     modifier = Modifier.height(150.dp),
+                    colorSize = colorSize,
                     iconSelect = { icon, tint ->
                         selectedIcon = icon
                         selectedTint = tint

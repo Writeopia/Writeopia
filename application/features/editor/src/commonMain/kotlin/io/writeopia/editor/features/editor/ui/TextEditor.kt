@@ -85,12 +85,12 @@ internal fun TextEditor(
             onDragStop = noteEditorViewModel.writeopiaManager::onDragStop
         )
     }
+//
+//    val commentUiState = remember(storyState, commentConversations) {
+//        resolveCommentUiState(storyState, commentConversations)
+//    }
 
-    val commentUiState = remember(storyState, commentConversations) {
-        resolveCommentUiState(storyState, commentConversations)
-    }
-
-    Box {
+//    Box {
         WriteopiaEditor(
             modifier = modifier.widthIn(max = 850.dp),
             editable = editable,
@@ -116,24 +116,24 @@ internal fun TextEditor(
             storyState = storyState,
         )
 
-        CommentThreadOverlay(
-            uiState = commentUiState,
-            editable = editable,
-            onCreateComment = { text, target ->
-                noteEditorViewModel.createComment(text, target) != null
-            },
-            onReply = { conversationId, text ->
-                noteEditorViewModel.addComment(conversationId, text) != null
-            },
-            onDeleteComment = { conversationId, commentId ->
-                noteEditorViewModel.deleteComment(conversationId, commentId)
-            },
-            onDeleteConversation = { conversationId ->
-                noteEditorViewModel.deleteCommentConversation(conversationId)
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 8.dp, end = 8.dp),
-        )
-    }
+//        CommentThreadOverlay(
+//            uiState = commentUiState,
+//            editable = editable,
+//            onCreateComment = { text, target ->
+//                noteEditorViewModel.createComment(text, target) != null
+//            },
+//            onReply = { conversationId, text ->
+//                noteEditorViewModel.addComment(conversationId, text) != null
+//            },
+//            onDeleteComment = { conversationId, commentId ->
+//                noteEditorViewModel.deleteComment(conversationId, commentId)
+//            },
+//            onDeleteConversation = { conversationId ->
+//                noteEditorViewModel.deleteCommentConversation(conversationId)
+//            },
+//            modifier = Modifier
+//                .align(Alignment.TopEnd)
+//                .padding(top = 8.dp, end = 8.dp),
+//        )
+//    }
 }
