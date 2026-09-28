@@ -61,6 +61,16 @@ deleteByIdsForDocument:
 DELETE FROM comment_entity
 WHERE document_id = ? AND id IN ?;
 
+markDeletedByIdsForDocument:
+UPDATE comment_entity
+SET deleted = TRUE
+WHERE document_id = ? AND id IN ?;
+
 deleteByConversationIdsForDocument:
 DELETE FROM comment_entity
+WHERE document_id = ? AND conversation_id IN ?;
+
+markConversationDeletedForDocument:
+UPDATE comment_entity
+SET deleted = TRUE
 WHERE document_id = ? AND conversation_id IN ?;
