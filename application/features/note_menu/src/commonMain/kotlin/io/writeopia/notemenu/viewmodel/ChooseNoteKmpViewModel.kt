@@ -138,6 +138,19 @@ internal class ChooseNoteKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, UserState.Idle())
     }
 
+    override val currentFolderTitle: StateFlow<String?> by lazy {
+        when (notesNavigation) {
+            NotesNavigation.Root -> MutableStateFlow(null)
+
+            NotesNavigation.Favorites -> MutableStateFlow("Favorites")
+
+            is NotesNavigation.Folder ->
+                menuItemsPerFolderId
+                    .map { notesUseCase.getFolderById(notesNavigation.id)?.title ?: "" }
+                    .stateIn(viewModelScope, SharingStarted.Lazily, "")
+        }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override val notesArrangement: StateFlow<NotesArrangement> by lazy {
         authRepository.listenForUser()

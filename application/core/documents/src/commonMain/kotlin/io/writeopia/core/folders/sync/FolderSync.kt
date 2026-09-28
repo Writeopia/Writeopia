@@ -40,12 +40,24 @@ class FolderSync(
         orderBy: String = "last_updated_at"
     ) {
         try {
-            if (workspaceId == Workspace.disconnectedWorkspace().id) return
+            if (workspaceId == Workspace.disconnectedWorkspace().id) {
+                syncLog("Skipping sync of folder $folderId: disconnected workspace")
+                return
+            }
 
             val now = Clock.System.now()
-            if (!force && now - lastSuccessfulSync < minSyncInternal) return
+            if (!force && now - lastSuccessfulSync < minSyncInternal) {
+                syncLog(
+                    "Skipping sync of folder $folderId: last successful sync was at $lastSuccessfulSync " +
+                        "(min interval: $minSyncInternal)"
+                )
+                return
+            }
+
+            syncLog("===== Sync start - folderId: $folderId, workspaceId: $workspaceId, force: $force, orderBy: $orderBy")
 
             val existingFolder = folderRepository.getFolderById(folderId)
+            syncLog("Local folder being synced: ${existingFolder?.syncDescription()}")
 
             // Use the existing folder's lastSyncedAt, or DISTANT_PAST if folder doesn't exist
             // We don't create a fallback folder to avoid creating unwanted "root" folders
@@ -59,14 +71,20 @@ class FolderSync(
                 orderBy
             )
 
+            syncLog("Requested backend diff with lastSync: ${lastSync ?: Instant.DISTANT_PAST}")
+
             val folderContent = if (response is ResultData.Complete) {
                 response.data
             } else {
+                syncLog("Aborting sync: backend request failed. Response: $response")
                 return
             }
 
             val newDocuments = folderContent.documents.map { it.toModel() }
             val newFolders = folderContent.folders.map { it.toModel() }
+
+            logDocuments("Documents received from backend", newDocuments)
+            logFolders("Folders received from backend", newFolders)
 
             // Then, load the outdated documents.
             // These documents were updated locally, but were not sent to the backend yet
@@ -78,6 +96,10 @@ class FolderSync(
                 val syncedAt = folder.lastSyncedAt
                 syncedAt == null || folder.lastUpdatedAt > syncedAt
             }
+
+            logDocuments("Local outdated documents (not sent yet)", localOutdatedDocs)
+            logFolders("All local subfolders", allLocalFolders)
+            logFolders("Local outdated subfolders (not sent yet)", localOutdatedFolders)
 
             // Resolve conflicts of documents that were updated both locally and in the backend.
             // Documents will be saved locally by documentConflictHandler.handleConflict
@@ -93,11 +115,16 @@ class FolderSync(
             documentRepository.refreshDocuments()
             folderRepository.refreshFolders()
 
+            logDocuments("Documents to send to backend", documentsNotSent)
+            logFolders("Folders to send to backend", foldersNotSent)
+
             // Send documents to backend
             val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent, workspaceId)
+            syncLog("Send documents result: $resultSendDocuments")
 
             // Send subfolders to backend
             val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId)
+            syncLog("Send folders result: $resultSendFolders")
 
             if (resultSendDocuments is ResultData.Complete && resultSendFolders is ResultData.Complete) {
                 // Documents and folders were sent successfully.
@@ -120,9 +147,20 @@ class FolderSync(
                 folderRepository.refreshFolders()
 
                 lastSuccessfulSync = syncTime
+
+                syncLog(
+                    "===== Sync success - folderId: $folderId. Marked ${documentsNotSent.size} documents and " +
+                        "${foldersNotSent.size} folders with lastSyncedAt: $syncTime. " +
+                        "Note: lastSyncedAt of folder $folderId itself was not updated " +
+                        "(still ${existingFolder?.lastSyncedAt})"
+                )
+            } else {
+                syncLog("===== Sync incomplete - folderId: $folderId. lastSyncedAt was not updated")
             }
         } catch (e: Exception) {
             // Sync failed, will retry on next sync
+            syncLog("===== Sync failed with exception - folderId: $folderId: ${e.message}")
+            e.printStackTrace()
         }
     }
 }

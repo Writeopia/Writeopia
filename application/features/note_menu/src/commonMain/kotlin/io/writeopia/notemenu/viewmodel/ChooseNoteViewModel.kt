@@ -16,6 +16,11 @@ interface ChooseNoteViewModel : FolderController {
 
     val userName: StateFlow<UserState<String>>
 
+    /**
+     * Title of the folder currently being displayed. Null when in the root of the workspace.
+     */
+    val currentFolderTitle: StateFlow<String?>
+
     val documentsState: StateFlow<ResultData<NotesUi>>
 
     val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>>

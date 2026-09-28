@@ -40,6 +40,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.NotesNavigation
@@ -110,6 +111,7 @@ internal fun MobileChooseNoteScreen(
                 ) {
                     TopBar(
                         titleState = chooseNoteViewModel.userName,
+                        folderTitleState = chooseNoteViewModel.currentFolderTitle,
                         accountClick = navigateToAccount,
                         menuClick = chooseNoteViewModel::showEditMenu
                     )
@@ -212,41 +214,52 @@ internal fun MobileChooseNoteScreen(
 @Composable
 private fun TopBar(
     titleState: StateFlow<UserState<String>> = MutableStateFlow(UserState.ConnectedUser("Title")),
+    folderTitleState: StateFlow<String?> = MutableStateFlow(null),
     accountClick: () -> Unit = {},
     menuClick: () -> Unit = {}
 ) {
     val title = titleState.collectAsState().value
+    val folderTitle = folderTitleState.collectAsState().value
 
     TopAppBar(
         title = {
-            Row(
-                modifier = Modifier.clickable(onClick = accountClick),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary)
-                        .clickable(onClick = accountClick),
-                    contentAlignment = Alignment.Center
+            if (folderTitle != null) {
+                Text(
+                    text = folderTitle,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else {
+                Row(
+                    modifier = Modifier.clickable(onClick = accountClick),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondary)
+                            .clickable(onClick = accountClick),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = getUserInitials(title),
+                            color = MaterialTheme.colorScheme.onSecondary,
+                            style = MaterialTheme.typography.labelLarge,
+                            maxLines = 1
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
                     Text(
-                        text = getUserInitials(title),
-                        color = MaterialTheme.colorScheme.onSecondary,
-                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier,
+                        text = getUserName(title),
+                        color = MaterialTheme.colorScheme.onPrimary,
                         maxLines = 1
                     )
                 }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Text(
-                    modifier = Modifier,
-                    text = getUserName(title),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    maxLines = 1
-                )
             }
         },
         actions = {

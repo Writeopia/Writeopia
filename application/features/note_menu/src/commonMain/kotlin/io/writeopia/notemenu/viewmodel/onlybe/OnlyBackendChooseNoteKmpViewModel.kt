@@ -85,6 +85,10 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     private val _userName = MutableStateFlow<UserState<String>>(UserState.Idle())
     override val userName: StateFlow<UserState<String>> = _userName.asStateFlow()
 
+    override val currentFolderTitle: StateFlow<String?> = MutableStateFlow(
+        if (notesNavigation == NotesNavigation.Favorites) "Favorites" else null
+    )
+
     private val _notesArrangement = MutableStateFlow(NotesArrangement.GRID)
     override val notesArrangement: StateFlow<NotesArrangement> = _notesArrangement.asStateFlow()
 

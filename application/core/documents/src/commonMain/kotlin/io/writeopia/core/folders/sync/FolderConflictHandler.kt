@@ -34,11 +34,16 @@ class FolderConflictHandler(
             val existingFolder = folderRepository.getFolderById(externalFolder.id)
             if (existingFolder?.deleted == true) {
                 // Folder is soft-deleted locally, skip it to prevent resurrection
+                syncLog("Skipping folder ${externalFolder.id}: soft-deleted locally")
                 return@forEach
             }
 
             if (localFolder == null) {
                 // Folder doesn't exist locally - create it with server's lastSyncedAt
+                syncLog(
+                    "Persisting folder locally via createFolder (not in local outdated list, " +
+                        "exists locally: ${existingFolder != null}): ${externalFolder.syncDescription()}"
+                )
                 folderRepository.createFolder(externalFolder)
             } else {
                 // Folder exists both locally and externally - resolve conflict (most recent wins)
@@ -50,6 +55,12 @@ class FolderConflictHandler(
                     // External folder wins - keep its lastSyncedAt from server
                     externalFolder
                 }
+                syncLog(
+                    "Folder conflict for ${externalFolder.id}: local lastUpdatedAt=${localFolder.lastUpdatedAt}, " +
+                        "backend lastUpdatedAt=${externalFolder.lastUpdatedAt}. " +
+                        "Winner: ${if (winner === localFolder) "local" else "backend"}. " +
+                        "Persisting: ${winner.syncDescription()}"
+                )
                 folderRepository.updateFolder(winner)
             }
         }
