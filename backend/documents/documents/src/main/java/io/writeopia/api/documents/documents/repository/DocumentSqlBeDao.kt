@@ -91,7 +91,10 @@ class DocumentSqlBeDao(
             insertStoryStep(storyStep, i.toDouble(), document.id)
         }
 
-        replaceCommentConversationsUnchecked(document.id, document.commentConversations)
+        replaceCommentConversationsUnchecked(
+            document.id,
+            mergeCommentConversations(document.id, document.commentConversations),
+        )
         insertDocument(document)
     }
 
@@ -118,24 +121,82 @@ class DocumentSqlBeDao(
             "A conversation cannot be upserted and deleted in the same request"
         }
 
-        if (deletedConversationIds.isNotEmpty()) {
-            commentQueries?.deleteByConversationIdsForDocument(documentId, deletedConversationIds)
+        val existingConversations = loadCommentConversations(documentId)
+        val tombstonedConversationIds = existingConversations
+            .filterValues { comments -> comments.isNotEmpty() && comments.all { comment -> comment.deleted } }
+            .keys
+        val incomingConversationTombstones = conversations
+            .filterValues { comments -> comments.isNotEmpty() && comments.all { comment -> comment.deleted } }
+            .keys
+        val conversationIdsToDelete =
+            (deletedConversationIds + incomingConversationTombstones).toSet()
+
+        if (conversationIdsToDelete.isNotEmpty()) {
+            commentQueries?.markConversationDeletedForDocument(
+                documentId,
+                conversationIdsToDelete,
+            )
         }
         if (deletedCommentIds.isNotEmpty()) {
-            commentQueries?.deleteByIdsForDocument(documentId, deletedCommentIds)
+            commentQueries?.markDeletedByIdsForDocument(documentId, deletedCommentIds)
         }
-        conversations.forEach { (conversationId, comments) ->
-            comments.forEachIndexed { commentPosition, comment ->
-                commentQueries?.insert(
-                    id = comment.id,
-                    conversation_id = conversationId,
-                    document_id = documentId,
-                    comment_position = commentPosition.toLong(),
-                    text = comment.text,
-                    deleted = comment.deleted,
-                )
+
+        conversations
+            .filterKeys { conversationId ->
+                conversationId !in conversationIdsToDelete &&
+                    conversationId !in tombstonedConversationIds
+            }
+            .forEach { (conversationId, comments) ->
+                comments.forEachIndexed { commentPosition, comment ->
+                    commentQueries?.insert(
+                        id = comment.id,
+                        conversation_id = conversationId,
+                        document_id = documentId,
+                        comment_position = commentPosition.toLong(),
+                        text = comment.text,
+                        deleted = comment.deleted,
+                    )
+                }
+            }
+    }
+
+    private fun mergeCommentConversations(
+        documentId: String,
+        incoming: Map<String, List<Comment>>,
+    ): Map<String, List<Comment>> {
+        val existing = loadCommentConversations(documentId)
+        if (existing.isEmpty()) return incoming
+
+        val merged = existing.toMutableMap()
+        incoming.forEach { (conversationId, incomingComments) ->
+            val existingComments = existing[conversationId].orEmpty()
+
+            if (existingComments.isNotEmpty() && existingComments.all { comment -> comment.deleted }) {
+                return@forEach
+            }
+
+            val commentsById = linkedMapOf<String, Comment>()
+            existingComments.forEach { comment -> commentsById[comment.id] = comment }
+            incomingComments.forEach { incomingComment ->
+                val current = commentsById[incomingComment.id]
+                commentsById[incomingComment.id] = if (current == null) {
+                    incomingComment
+                } else {
+                    incomingComment.copy(deleted = current.deleted || incomingComment.deleted)
+                }
+            }
+
+            merged[conversationId] = if (
+                incomingComments.isNotEmpty() &&
+                incomingComments.all { comment -> comment.deleted }
+            ) {
+                commentsById.values.map { comment -> comment.copy(deleted = true) }
+            } else {
+                commentsById.values.toList()
             }
         }
+
+        return merged
     }
 
     private fun validateCommentConversations(
