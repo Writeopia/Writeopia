@@ -227,4 +227,7 @@
   <string name="comments_count">Comentários (%1$d)</string>
   <string name="delete_thread">Excluir conversa</string>
   <string name="reply">Responder</string>
+  <string name="local_folder_setup_title">Escolha uma pasta local</string>
+  <string name="local_folder_setup_description">Escolha uma pasta no seu computador para guardar uma cópia do seu workspace, ou pule e faça isso depois nas Configurações.</string>
+  <string name="local_folder_description">Escolha uma pasta no seu computador para guardar uma cópia do seu workspace.</string>
 </resources>

@@ -34,7 +34,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -58,7 +57,7 @@ import io.writeopia.common.utils.date.formatCompactNumber
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.SettingsPanel
 import io.writeopia.commonui.buttons.CommonButton
-import io.writeopia.commonui.workplace.WorkspaceConfigurationDialog
+import io.writeopia.commonui.workplace.WorkspacePathSelector
 import io.writeopia.controller.LocalAiConfigController
 import io.writeopia.localaiconfig.ui.LocalAiConfigScreen
 import io.writeopia.model.AccentColor
@@ -83,8 +82,6 @@ fun SettingsDialog(
     cloudAiUsageState: StateFlow<CloudAiUsageState>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
-    syncWorkspaceState: StateFlow<ResultData<String>>,
-    isAutoSyncEnabled: StateFlow<Boolean>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
     workspaceToEdit: Flow<Workspace?>,
     logoutInProgress: StateFlow<Boolean>,
@@ -102,8 +99,6 @@ fun SettingsDialog(
     showDeleteConfirm: () -> Unit,
     dismissDeleteConfirm: () -> Unit,
     deleteAccount: () -> Unit,
-    syncWorkspace: () -> Unit,
-    onAutoSyncToggle: (Boolean) -> Unit,
     addUserToTeam: (String) -> Unit,
     selectWorkspaceToManage: (String) -> Unit,
     usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
@@ -124,9 +119,6 @@ fun SettingsDialog(
 //                .padding(horizontal = 40.dp, vertical = 20.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
-            val userOnline by userOnlineState.collectAsState()
-            val isUserOnline = userOnline.id != WriteopiaUser.DISCONNECTED
-
             SettingsPanel(
                 modifier = Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
                 accountScreen = {
@@ -168,12 +160,7 @@ fun SettingsDialog(
                     WorkspaceSection(
                         workplacePathState = workplacePathState,
                         showPath = true,
-                        isOnline = isUserOnline,
                         selectWorkplacePath = selectWorkplacePath,
-                        syncWorkspace = syncWorkspace,
-                        syncWorkspaceState = syncWorkspaceState,
-                        isAutoSyncEnabled = isAutoSyncEnabled,
-                        onAutoSyncToggle = onAutoSyncToggle
                     )
                 },
                 aiScreen = {
@@ -493,123 +480,32 @@ private fun TeamLine(workspace: Workspace, modifier: Modifier = Modifier) {
 @Composable
 private fun WorkspaceSection(
     workplacePathState: StateFlow<String>,
-    syncWorkspaceState: StateFlow<ResultData<String>>,
     showPath: Boolean = true,
-    isOnline: Boolean = true,
     selectWorkplacePath: (String) -> Unit,
-    syncWorkspace: () -> Unit,
-    isAutoSyncEnabled: StateFlow<Boolean>,
-    onAutoSyncToggle: (Boolean) -> Unit,
 ) {
     Column {
-        val titleStyle = MaterialTheme.typography.titleLarge
-        val titleColor = MaterialTheme.colorScheme.onBackground
-
         val workplacePath by workplacePathState.collectAsState()
-        var showEditPathDialog by remember {
-            mutableStateOf(false)
-        }
 
         if (showPath) {
-            Text(WrStrings.localFolder(), style = titleStyle, color = titleColor)
+            Text(
+                WrStrings.localFolder(),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onBackground
+            )
 
-            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-
-            val textShape = MaterialTheme.shapes.medium
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                workplacePath,
-                style = MaterialTheme.typography.bodySmall,
-                color = titleColor,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.border(
-                    1.dp,
-                    MaterialTheme.colorScheme.onSurfaceVariant,
-                    textShape
-                )
-                    .clip(shape = textShape)
-                    .clickable {
-                        showEditPathDialog = true
-                    }
-                    .padding(8.dp)
-                    .fillMaxWidth()
+                WrStrings.localFolderDescription(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-
-        if (isOnline) {
-            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-
-            Text(text = "Sync", style = titleStyle, color = titleColor)
 
             Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
 
-            if (workplacePath.isNotBlank()) {
-                val autoSyncEnabled by isAutoSyncEnabled.collectAsState()
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Auto sync",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = titleColor,
-                        modifier = Modifier.weight(1F)
-                    )
-
-                    Switch(
-                        checked = autoSyncEnabled,
-                        onCheckedChange = onAutoSyncToggle
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-            }
-
-            CommonButton(
-                text = "Sync workspace",
-                clickListener = syncWorkspace
-            )
-
-            val lastSync = syncWorkspaceState.collectAsState().value
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            when (lastSync) {
-                is ResultData.Complete<String> -> {
-                    Text(
-                        text = lastSync.data,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = titleColor
-                    )
-                }
-
-                is ResultData.Error<*> -> {
-                    Text(
-                        text = lastSync.exception?.message ?: "Error syncing workspace",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = titleColor
-                    )
-                }
-
-                is ResultData.Loading<*> -> {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                }
-
-                else -> {}
-            }
-        }
-
-        if (showEditPathDialog) {
-            WorkspaceConfigurationDialog(
-                currentPath = workplacePath,
-                pathChange = selectWorkplacePath,
-                onDismissRequest = {
-                    showEditPathDialog = false
-                },
-                onConfirmation = {
-                    showEditPathDialog = false
-                },
+            WorkspacePathSelector(
+                workplacePath = workplacePath,
+                selectWorkplacePath = selectWorkplacePath
             )
         }
     }

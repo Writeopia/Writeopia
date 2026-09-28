@@ -31,6 +31,7 @@ import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterPasswordScreen
 import io.writeopia.auth.register.RegisterScreen
 import io.writeopia.auth.spacechoice.LocalAiSetupScreen
+import io.writeopia.auth.spacechoice.LocalFolderSetupScreen
 import io.writeopia.auth.spacechoice.SpaceChoiceScreen
 import io.writeopia.auth.workspace.ChooseWorkspace
 import io.writeopia.common.utils.Destinations
@@ -212,6 +213,22 @@ fun NavGraphBuilder.authNavigation(
         WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
             LocalAiSetupScreen(
                 controller = localAiConfigController,
+                onContinueClick = {
+                    navController.navigate(Destinations.LOCAL_FOLDER_SETUP.id)
+                }
+            )
+        }
+    }
+
+    // Local folder first-run setup - desktop only, shown right after the local AI setup.
+    composable(Destinations.LOCAL_FOLDER_SETUP.id) {
+        val colorTheme by colorThemeOption.collectAsState()
+        val localFolderSetupViewModel = authInjection.provideLocalFolderSetupViewModel()
+
+        WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+            LocalFolderSetupScreen(
+                workplacePathState = localFolderSetupViewModel.workspaceLocalPath,
+                selectWorkplacePath = localFolderSetupViewModel::changeWorkspaceLocalPath,
                 onContinueClick = toAppNavigation
             )
         }
