@@ -143,6 +143,11 @@ class DocumentRoomRepositoryTest {
     }
 
     @Test
+    fun staleSaveDoesNotResurrectSoftDeletedDocument() = runTest {
+        documentRepositoryTests.staleSaveDoesNotResurrectSoftDeletedDocument()
+    }
+
+    @Test
     fun hardDeleteRemovesComments() = runTest {
         val document = documentRepositoryTests.saveDocumentWithComments()
 
