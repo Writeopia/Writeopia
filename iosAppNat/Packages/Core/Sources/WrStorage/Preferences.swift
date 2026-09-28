@@ -9,6 +9,8 @@ public final class Preferences {
         case colorTheme = "wr.colorTheme"
         case pendingEmail = "wr.pendingEmail"
         case passwordResetEmail = "wr.passwordResetEmail"
+        case documentsArrangement = "wr.documentsArrangement"
+        case documentsOrder = "wr.documentsOrder"
     }
 
     private let defaults: UserDefaults

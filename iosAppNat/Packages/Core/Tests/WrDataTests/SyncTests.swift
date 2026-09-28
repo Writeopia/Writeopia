@@ -110,6 +110,10 @@ final class FakeBackend: HTTPTransport {
     private(set) var deletedFolderIds: [String] = []
     private(set) var favorites: [String: Bool] = [:]
     var deleteFails = false
+    /// Folders sent while this is set are refused, like when the backend can't be reached.
+    var folderSendFails = false
+    /// Runs while folders are being sent, before the backend answers.
+    var onFolderSend: (() -> Void)?
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         let path = request.url!.path()
@@ -128,8 +132,13 @@ final class FakeBackend: HTTPTransport {
             sentDocuments += body["documents"] as? [[String: Any]] ?? []
             response = Data("Accepted".utf8)
         case "/api/docs/workspace/folder":
-            sentFolders += body["folders"] as? [[String: Any]] ?? []
-            response = Data("Accepted".utf8)
+            if folderSendFails {
+                status = 500
+            } else {
+                onFolderSend?()
+                sentFolders += body["folders"] as? [[String: Any]] ?? []
+                response = Data("Accepted".utf8)
+            }
         case let path where request.httpMethod == "DELETE" && path.contains("/folder/"):
             if deleteFails {
                 status = 500

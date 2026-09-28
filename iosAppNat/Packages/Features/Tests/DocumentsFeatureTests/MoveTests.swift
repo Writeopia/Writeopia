@@ -29,6 +29,18 @@ final class FakeDocumentsRepository: DocumentsRepository {
         if let moveError { throw moveError }
         moves.append("folder \(id) -> \(folderId)")
         contents.folders.removeAll { $0.id == id }
+        foldersById[id]?.parentId = folderId
+    }
+
+    var foldersById: [String: Folder] = [:]
+    private(set) var updatedFolders: [Folder] = []
+    var updateError: Error?
+    func folder(id: String) async throws -> Folder? { foldersById[id] }
+    func updateFolder(_ folder: Folder) async throws -> Folder {
+        if let updateError { throw updateError }
+        updatedFolders.append(folder)
+        foldersById[folder.id] = folder
+        return folder
     }
 
     func save(_ document: WrDocument) async throws { saved.append(document) }

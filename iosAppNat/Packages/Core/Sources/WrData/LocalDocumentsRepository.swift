@@ -139,7 +139,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
     }
 
     public func moveFolder(id: String, toFolder folderId: String) async throws {
-        guard try storedFolder(id: id) != nil else { throw APIError.notFound }
+        guard let stored = try storedFolder(id: id) else { throw APIError.notFound }
 
         // Walk up from the target: reaching the moved folder means the target is inside it.
         var ancestor: String? = folderId
@@ -150,8 +150,15 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
 
         try db.run(
             "UPDATE folder SET parent_id = ?, last_updated_at = ? WHERE id = ?",
-            [.text(folderId), .integer(Date.nowMillis), .text(id)]
+            [.text(folderId), .integer(Self.changeTime(after: stored).millis), .text(id)]
         )
+    }
+
+    /// When a change of `folder` happens now. Always later than its last sync (times are stored
+    /// in milliseconds), so a change made right after a sync still counts as not sent.
+    static func changeTime(after folder: Folder) -> Date {
+        guard let lastSyncedAt = folder.lastSyncedAt else { return Date() }
+        return max(Date(), Date(millis: lastSyncedAt.millis + 1))
     }
 
     public func save(_ document: WrDocument) async throws {
@@ -161,6 +168,27 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
     /// The private space has nothing to sync, so the document is removed for good.
     public func deleteDocument(id: String) async throws {
         try hardDeleteDocument(id: id)
+    }
+
+    // MARK: - Edition menu
+
+    public func folder(id: String) async throws -> Folder? {
+        guard var folder = try storedFolder(id: id), !folder.deleted else { return nil }
+        folder.itemCount = (try? itemCount(of: folder.id)) ?? 0
+        return folder
+    }
+
+    /// Only the title and the icon are taken from `folder`; the rest is what's stored, so an edit
+    /// doesn't undo a move or a sync that happened meanwhile.
+    @discardableResult
+    public func updateFolder(_ folder: Folder) async throws -> Folder {
+        guard var stored = try storedFolder(id: folder.id), !stored.deleted else { throw APIError.notFound }
+        stored.title = folder.title
+        stored.icon = folder.icon
+        stored.lastUpdatedAt = Self.changeTime(after: stored)
+        try store(stored)
+        stored.itemCount = (try? itemCount(of: stored.id)) ?? 0
+        return stored
     }
 
     // MARK: - Selection menu

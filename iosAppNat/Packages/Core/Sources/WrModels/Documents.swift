@@ -94,6 +94,12 @@ public struct Folder: Codable, Identifiable, Equatable, Hashable, Sendable {
     }
 
     public var displayTitle: String { title.isEmpty ? String(localized: "Untitled folder") : title }
+
+    /// Changed on this device since the last sync, so it has to be sent to the backend.
+    public var isOutdated: Bool {
+        guard let lastSyncedAt else { return true }
+        return (lastUpdatedAt ?? .distantPast) > lastSyncedAt
+    }
 }
 
 public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {

@@ -16,6 +16,14 @@ public protocol DocumentsRepository: AnyObject {
     func save(_ document: WrDocument) async throws
     func deleteDocument(id: String) async throws
 
+    // Edition menu of a folder (Compose `EditFileDialog` and icon picker).
+
+    /// The folder with `id`, or nil when it doesn't exist (or was deleted).
+    func folder(id: String) async throws -> Folder?
+    /// Stores a new title or icon of the folder, and sends it to the backend when there's one.
+    @discardableResult
+    func updateFolder(_ folder: Folder) async throws -> Folder
+
     // Selection menu of the documents list (Compose `NotesSelectionMenu`).
 
     /// Copies documents with new ids; folders are copied with what's inside them.
@@ -38,6 +46,24 @@ public enum MoveError: Error, Equatable {
 }
 
 extension DocumentsRepository {
+    // Sources without folders of their own (editor previews and tests) don't need to offer these.
+    public func folder(id: String) async throws -> Folder? { nil }
+
+    @discardableResult
+    public func updateFolder(_ folder: Folder) async throws -> Folder { throw APIError.notFound }
+
+    /// The folders from the root down to `folderId`, the folder included. Empty for the root.
+    public func folderPath(to folderId: String) async throws -> [Folder] {
+        var path: [Folder] = []
+        var current = folderId
+        var visited: Set<String> = []
+        while current != Folder.rootId, visited.insert(current).inserted, let folder = try await folder(id: current) {
+            path.insert(folder, at: 0)
+            current = folder.parentId
+        }
+        return path
+    }
+
     /// A new document is stored with its title as the first step, like the Compose editor does.
     func newDocument(title: String, parentId: String, workspaceId: String) -> WrDocument {
         WrDocument(
@@ -118,6 +144,20 @@ public final class RemoteDocumentsRepository: DocumentsRepository {
         for id in ids { try await setFavorite(documentId: id, favorite: favorite) }
     }
     public func deleteItems(ids: [String]) async throws { try await deleteDocuments(ids: ids) }
+
+    // The backend has no endpoint for a single folder; the synced repository reads its cache.
+    public func folder(id: String) async throws -> Folder? { nil }
+
+    public func updateFolder(_ folder: Folder) async throws -> Folder {
+        struct Body: Encodable {
+            let folders: [FolderApiBody]
+            let workspaceId: String
+        }
+        var folder = folder
+        folder.lastUpdatedAt = Date()
+        try await client.perform(.post, "api/docs/workspace/folder", body: Body(folders: [folder.api], workspaceId: workspaceId))
+        return folder
+    }
 
     public func save(_ document: WrDocument) async throws {
         struct Body: Encodable { let document: WrDocument }

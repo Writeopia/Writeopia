@@ -85,9 +85,14 @@ public enum FolderConflictHandler {
         let localById = Dictionary(local.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
 
         for external in remote {
-            if try store.storedFolder(id: external.id)?.deleted == true { continue }
+            let stored = try store.storedFolder(id: external.id)
+            if stored?.deleted == true { continue }
 
-            if let mine = localById[external.id],
+            // A folder changed here but not sent yet may be outside `local`: when it was moved to
+            // another folder, the backend still lists it in the old one. The local change wins, or
+            // the move would be undone.
+            let changedHere = localById[external.id] ?? stored.flatMap { $0.isOutdated ? $0 : nil }
+            if let mine = changedHere,
                (mine.lastUpdatedAt ?? .distantPast) >= (external.lastUpdatedAt ?? .distantPast) {
                 toSend.append(mine)
                 try store.store(mine)
@@ -299,13 +304,40 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
 
     public func moveFolder(id: String, toFolder folderId: String) async throws {
         try await local.moveFolder(id: id, toFolder: folderId)
+        let moved = try local.storedFolder(id: id)
         do {
             try await remote.moveFolder(id: id, toFolder: folderId)
+            if let moved { try markSynced(moved) }
         } catch MoveError.folderIntoItself {
             throw MoveError.folderIntoItself
         } catch {
             // Sent with the next sync.
         }
+    }
+
+    public func folder(id: String) async throws -> Folder? {
+        try await local.folder(id: id)
+    }
+
+    /// Stored here first; when the backend can't be reached, the next sync of the parent folder
+    /// sends it (it's newer than its last sync).
+    @discardableResult
+    public func updateFolder(_ folder: Folder) async throws -> Folder {
+        let updated = try await local.updateFolder(folder)
+        if (try? await api.sendFolders([updated])) != nil {
+            try markSynced(updated)
+        }
+        return try await local.folder(id: updated.id) ?? updated
+    }
+
+    /// Marks the folder as synced when what's stored is still the version that was sent; a
+    /// change made while it was being sent stays outdated, to be sent with the next sync.
+    private func markSynced(_ sent: Folder) throws {
+        guard var stored = try local.storedFolder(id: sent.id) else { return }
+        let storedTime = stored.lastUpdatedAt?.millis ?? 0
+        guard storedTime <= (sent.lastUpdatedAt?.millis ?? 0) else { return }
+        stored.lastSyncedAt = max(Date(), Date(millis: storedTime))
+        try local.store(stored)
     }
 
     /// Saves the editor's copy. The sync time and deleted flag are the ones stored, since the
@@ -412,11 +444,7 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         let storedDocuments = try local.storedDocuments(inFolder: folderId)
         let storedFolders = try local.storedFolders(inFolder: folderId)
         let outdatedDocuments = storedDocuments.filter { !$0.deleted && $0.isOutdated }
-        let outdatedFolders = storedFolders.filter { folder in
-            guard !folder.deleted else { return false }
-            guard let synced = folder.lastSyncedAt else { return true }
-            return (folder.lastUpdatedAt ?? .distantPast) > synced
-        }
+        let outdatedFolders = storedFolders.filter { !$0.deleted && $0.isOutdated }
 
         let documentsToSend = try DocumentConflictHandler.handle(
             local: outdatedDocuments,
@@ -442,9 +470,8 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
 
         try await sendAndMarkSynced(documentsToSend)
         try await api.sendFolders(foldersToSend)
-        for var folder in foldersToSend {
-            folder.lastSyncedAt = Date()
-            try local.store(folder)
+        for folder in foldersToSend {
+            try markSynced(folder)
         }
 
         lastFolderSync[folderId] = Date()
