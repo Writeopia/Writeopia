@@ -629,6 +629,69 @@ class DocumentRepositoryTest {
         assertTrue(deletedThread.all { comment -> comment.deleted })
         assertTrue(deletedThread.none { comment -> comment.id == "stale-new-reply" })
 
+        val offlineDeletedConversation = "conversation-offline-deleted"
+        val offlineDeletedComment = "comment-offline-deleted"
+        DocumentsService.syncStorySteps(
+            documentId = documentId,
+            workspaceId = workspaceId,
+            request = StoryStepSyncRequest(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                lastSyncTimestamp = 30,
+                requestTimestamp = 40,
+                changes = emptyList(),
+                deletions = emptyList(),
+                commentConversations = listOf(
+                    CommentConversationApi(
+                        id = offlineDeletedConversation,
+                        comments = listOf(
+                            CommentApi(
+                                id = offlineDeletedComment,
+                                text = "Deleted before first server sync",
+                                deleted = true,
+                            )
+                        ),
+                    )
+                ),
+            ),
+            writeopiaDb = database,
+        )
+
+        loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
+        assertTrue(
+            loaded.commentConversations.getValue(offlineDeletedConversation)
+                .all { comment -> comment.deleted }
+        )
+
+        DocumentsService.syncStorySteps(
+            documentId = documentId,
+            workspaceId = workspaceId,
+            request = StoryStepSyncRequest(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                lastSyncTimestamp = 0,
+                requestTimestamp = 50,
+                changes = emptyList(),
+                deletions = emptyList(),
+                commentConversations = listOf(
+                    CommentConversationApi(
+                        id = offlineDeletedConversation,
+                        comments = listOf(
+                            CommentApi(id = offlineDeletedComment, text = "Stale active"),
+                            CommentApi(id = "offline-stale-reply", text = "Must not resurrect"),
+                        ),
+                    )
+                ),
+            ),
+            writeopiaDb = database,
+        )
+
+        loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
+        val offlineDeletedThread =
+            loaded.commentConversations.getValue(offlineDeletedConversation)
+        assertTrue(offlineDeletedThread.all { comment -> comment.deleted })
+        assertTrue(offlineDeletedThread.none { comment -> comment.id == "offline-stale-reply" })
+
         database.deleteDocumentById(documentId)
     }
 
