@@ -26,6 +26,10 @@ import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
+private fun StoryStep.containsCommentSpanRecursively(): Boolean =
+    spans.any { span -> span.span == Span.COMMENT } ||
+        steps.any { step -> step.containsCommentSpanRecursively() }
+
 class OnUpdateDocumentTracker(
     private val documentUpdate: DocumentUpdate,
     private val documentFilter: DocumentFilter = DocumentFilterObject,
@@ -39,7 +43,7 @@ class OnUpdateDocumentTracker(
     ) {
         val commentFreeDocumentEditionFlow = documentEditionFlow.onEach { (storyState, _) ->
             val hasCommentSpans = storyState.stories.values.any { story ->
-                story.spans.any { span -> span.span == Span.COMMENT }
+                story.containsCommentSpanRecursively()
             }
             if (hasCommentSpans) {
                 throw UnsupportedCommentConversationsException(

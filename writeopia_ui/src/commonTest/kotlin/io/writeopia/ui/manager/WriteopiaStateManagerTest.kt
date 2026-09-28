@@ -2557,4 +2557,142 @@ class WriteopiaStateManagerTest {
         val currentDocument = manager.currentDocument.filterNotNull().first()
         assertTrue(currentDocument.commentConversations.isEmpty())
     }
+
+    @Test
+    fun selectionTouchingCommentEndShouldNotResolveThatConversation() {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "conversation-1",
+            comments = listOf(Comment(id = "comment-1", text = "first")),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "hello world",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, conversation.id)),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = mapOf(conversation.id to conversation.comments),
+            )
+        )
+
+        val story = manager.currentStory.value.stories[0.0]!!
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = story,
+                position = 0.0,
+                selectionStart = 5,
+                selectionEnd = 5,
+            )
+        )
+
+        assertEquals(null, manager.getCommentConversationAtSelection())
+        assertEquals(null, manager.getCommentConversationAtCursor())
+    }
+
+
+    @Test
+    fun nestedCommentSpansShouldParticipateInConversationLifecycle() {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "conversation-nested",
+            comments = listOf(Comment(id = "comment-nested", text = "nested")),
+        )
+        val nested = StoryStep(
+            text = "nested text",
+            type = StoryTypes.TEXT.type,
+            spans = setOf(SpanInfo.create(0, 6, Span.COMMENT, conversation.id)),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "parent",
+                        type = StoryTypes.TEXT.type,
+                        steps = listOf(nested),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = mapOf(conversation.id to conversation.comments),
+            )
+        )
+
+        val parent = manager.currentStory.value.stories.getValue(0.0)
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = parent.copy(text = "parent changed"),
+                position = 0.0,
+            )
+        )
+
+        assertEquals(mapOf(conversation.id to conversation.comments), manager.commentConversations.value)
+
+        assertTrue(manager.deleteCommentConversation(conversation.id))
+
+        val updatedNested = manager.currentStory.value.stories.getValue(0.0).steps.single()
+        assertTrue(updatedNested.spans.none { it.span == Span.COMMENT })
+        assertTrue(manager.commentConversations.value.isEmpty())
+    }
+
+
+    @Test
+    fun removingLastStoryReferenceShouldRemoveOrphanConversation() {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "conversation-remove-story",
+            comments = listOf(Comment(id = "comment-remove-story", text = "remove me")),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "commented",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(
+                            SpanInfo.create(0, 9, Span.COMMENT, conversation.id)
+                        ),
+                    ),
+                    1.0 to StoryStep(text = "keep", type = StoryTypes.TEXT.type),
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = mapOf(conversation.id to conversation.comments),
+            )
+        )
+
+        manager.removeAtPosition(0.0)
+
+        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(manager.getDocument().commentConversations.isEmpty())
+    }
+
 }

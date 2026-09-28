@@ -128,7 +128,7 @@ fun Routing.documentsRoute(
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
             val parentId = call.pathParameters["parentId"]!!
-            val documentList = writeopiaDb.getDocumentsByParentId(parentId)
+            val documentList = writeopiaDb.getDocumentsByParentId(parentId, workspaceId)
 
             logger.info("Documents by parent - parentId: $parentId, returning ${documentList.size} documents")
 
@@ -152,7 +152,7 @@ fun Routing.documentsRoute(
         val id = call.pathParameters["id"]!!
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
-            val ids = writeopiaDb.getIdsByParentId(id)
+            val ids = writeopiaDb.getIdsByParentId(id, workspaceId)
 
             if (ids.isNotEmpty()) {
                 call.respond(
@@ -225,8 +225,8 @@ fun Routing.documentsRoute(
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
             try {
-                val folders = writeopiaDb.getFoldersByParentId(folderId)
-                val documents = writeopiaDb.getDocumentsByParentId(folderId)
+                val folders = writeopiaDb.getFoldersByParentId(folderId, workspaceId)
+                val documents = writeopiaDb.getDocumentsByParentId(folderId, workspaceId)
 
                 // Get user's favorite document IDs
                 val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
@@ -341,9 +341,11 @@ fun Routing.documentsRoute(
                 if (documentList.isNotEmpty()) {
                     val addedToHub = DocumentsService.receiveDocuments(
                         documentList.map { document ->
-                            document
-                                .toModel()
-                                .copy(lastSyncedAt = Clock.System.now())
+                            DocumentsService.documentFromApiForWrite(
+                                document = document,
+                                workspaceId = workspaceId,
+                                writeopiaDb = writeopiaDb,
+                            ).copy(lastSyncedAt = Clock.System.now())
                         },
                         workspaceId = workspaceId,
                         writeopiaDb,
@@ -367,6 +369,11 @@ fun Routing.documentsRoute(
                         message = "Empty documents"
                     )
                 }
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "${e.message}"
+                )
             } catch (e: Exception) {
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
@@ -382,9 +389,11 @@ fun Routing.documentsRoute(
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
             try {
-                val documentModel = request.document
-                    .copy(workspaceId = workspaceId)
-                    .toModel()
+                val documentModel = DocumentsService.documentFromApiForWrite(
+                    document = request.document,
+                    workspaceId = workspaceId,
+                    writeopiaDb = writeopiaDb,
+                )
 
                 val upsertedDocument = DocumentsService.upsertDocument(
                     document = documentModel,
@@ -395,6 +404,11 @@ fun Routing.documentsRoute(
                 call.respond(
                     status = HttpStatusCode.OK,
                     message = upsertedDocument.toApi()
+                )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "${e.message}"
                 )
             } catch (e: Exception) {
                 call.respond(
@@ -471,7 +485,7 @@ fun Routing.documentsRoute(
                     )
 
                 // Get subfolders for this folder
-                val subfolders = writeopiaDb.getFoldersByParentId(folderDiff.folderId)
+                val subfolders = writeopiaDb.getFoldersByParentId(folderDiff.folderId, workspaceId)
 
                 // Get user's favorite document IDs
                 val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
@@ -619,6 +633,11 @@ fun Routing.documentsRoute(
                 call.respond(
                     status = HttpStatusCode.OK,
                     message = "Documents deleted successfully"
+                )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "${e.message}"
                 )
             } catch (e: Exception) {
                 call.respond(
@@ -1006,6 +1025,11 @@ fun Routing.documentsRoute(
                 call.respond(
                     status = HttpStatusCode.OK,
                     message = response
+                )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "${e.message}"
                 )
             } catch (e: Exception) {
                 call.respond(
