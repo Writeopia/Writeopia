@@ -55,15 +55,16 @@ class OnUpdateStoryStepSyncTracker(
         val version: Long,
     )
 
+    private val initialCommentConversations: Map<String, List<Comment>> =
+        commentConversationsFlow?.value ?: emptyMap()
     private val commentSnapshot = MutableStateFlow(
         CommentSnapshot(
             conversations = commentConversationsFlow?.value,
-            version = 0L,
+            version = if (initialCommentConversations.isEmpty()) 0L else 1L,
         )
     )
     private var lastSyncedCommentChangeVersion: Long = 0L
-    private var lastSyncedCommentConversations: Map<String, List<Comment>> =
-        commentConversationsFlow?.value ?: emptyMap()
+    private var lastSyncedCommentConversations: Map<String, List<Comment>> = emptyMap()
 
     private data class CommentDelta(
         val changedConversations: Map<String, List<Comment>>,
