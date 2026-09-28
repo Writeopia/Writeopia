@@ -229,6 +229,8 @@ class WriteopiaStateManager(
         MutableStateFlow<Map<String, List<Comment>>>(emptyMap())
     private val commentConversationArchive =
         MutableStateFlow<Map<String, List<Comment>>>(emptyMap())
+    private val commentConversationTombstones =
+        MutableStateFlow<Map<String, List<Comment>>>(emptyMap())
     val commentConversations: StateFlow<Map<String, List<Comment>>> =
         _commentConversations.asStateFlow()
 
@@ -1269,6 +1271,11 @@ class WriteopiaStateManager(
             }
             updatedComments = commentsWithTombstone
             removedConversation = !hasActiveReply
+            if (removedConversation) {
+                commentConversationTombstones.update { tombstones ->
+                    tombstones + (conversationId to commentsWithTombstone)
+                }
+            }
             conversations + (conversationId to commentsWithTombstone)
         }
 
@@ -1295,9 +1302,11 @@ class WriteopiaStateManager(
             if (comments.all { comment -> comment.deleted }) return@update conversations
 
             originalComments = comments
-            conversations + (
-                conversationId to comments.map { comment -> comment.copy(deleted = true) }
-            )
+            val tombstone = comments.map { comment -> comment.copy(deleted = true) }
+            commentConversationTombstones.update { tombstones ->
+                tombstones + (conversationId to tombstone)
+            }
+            conversations + (conversationId to tombstone)
         }
         val original = originalComments ?: return false
 
@@ -1367,6 +1376,11 @@ class WriteopiaStateManager(
         }
         if (removedConversations.isNotEmpty()) {
             rememberCommentConversations(removedConversations)
+            commentConversationTombstones.update { tombstones ->
+                tombstones + removedConversations.mapValues { (_, comments) ->
+                    comments.map { comment -> comment.copy(deleted = true) }
+                }
+            }
         }
     }
 
@@ -1389,12 +1403,22 @@ class WriteopiaStateManager(
         }
 
     private fun replaceCommentConversationArchive(conversations: Map<String, List<Comment>>) {
-        commentConversationArchive.value = conversations
+        commentConversationArchive.value = conversations.filterValues { comments ->
+            comments.any { comment -> !comment.deleted }
+        }
+        commentConversationTombstones.value = conversations.filterValues { comments ->
+            comments.isNotEmpty() && comments.all { comment -> comment.deleted }
+        }
     }
 
     private fun rememberCommentConversations(conversations: Map<String, List<Comment>>) {
+        val activeConversations = conversations.filterValues { comments ->
+            comments.any { comment -> !comment.deleted }
+        }
+        if (activeConversations.isEmpty()) return
+
         commentConversationArchive.update { archived ->
-            archived + conversations
+            archived + activeConversations
         }
     }
 
@@ -1437,9 +1461,12 @@ class WriteopiaStateManager(
             }
         }
 
-        val tombstones = currentById.filterValues { comments ->
-            comments.isNotEmpty() && comments.all { comment -> comment.deleted }
-        }
+        val tombstones = (
+            commentConversationTombstones.value +
+                currentById.filterValues { comments ->
+                    comments.isNotEmpty() && comments.all { comment -> comment.deleted }
+                }
+            ).filterKeys { conversationId -> conversationId !in referencedConversationIds }
         val nextConversations = tombstones + restored
         _commentConversations.update { current ->
             if (current == nextConversations) current else nextConversations
