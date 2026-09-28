@@ -1,4 +1,3 @@
-
 package io.writeopia.sdk.persistence.core.sync
 
 import io.writeopia.sdk.manager.DocumentTracker
@@ -122,7 +121,6 @@ class DocumentSyncManager(
         documentId: String,
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
-        commentConversationsFlow: StateFlow<Map<String, List<Comment>>>? = null,
         syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse,
         onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> }
     ) {
@@ -131,8 +129,7 @@ class DocumentSyncManager(
 
         val storyStepSyncTracker: StoryStepSyncTracker = OnUpdateStoryStepSyncTracker(
             syncApi = syncApi,
-            onServerUpdate = onServerUpdate,
-            commentConversationsFlow = commentConversationsFlow,
+            onServerUpdate = onServerUpdate
         )
 
         // Start a new backend sync job in the global scope
