@@ -33,6 +33,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -57,6 +58,7 @@ import io.writeopia.ui.drawer.factory.EndOfText
 import io.writeopia.ui.extensions.toTextRange
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.ui.model.EmptyErase
+import io.writeopia.ui.model.PERSISTENT_SELECTION_EXTRA
 import io.writeopia.ui.model.TextInput
 import io.writeopia.ui.spellcheck.SpellChecker
 import io.writeopia.ui.spellcheck.SpellCheckVisualTransformation
@@ -107,21 +109,61 @@ class TextDrawer(
         }
 
         val isSuggestion = step.tags.contains(TagInfo(Tag.FIRST_AI_SUGGESTION))
+        val persistentSelection =
+            drawInfo.extraData[PERSISTENT_SELECTION_EXTRA] == true
+        val persistentSelectionColor = MaterialTheme.colorScheme.secondaryContainer
+
+        fun displayText(text: String?, selection: TextRange?): androidx.compose.ui.text.AnnotatedString {
+            val annotated = Spans.createStringWithSpans(text, spans, isDarkTheme)
+            if (!persistentSelection || selection == null || selection.collapsed) return annotated
+
+            return buildAnnotatedString {
+                append(annotated)
+                addStyle(
+                    SpanStyle(background = persistentSelectionColor),
+                    selection.min,
+                    selection.max,
+                )
+            }
+        }
 
         var inputText by remember {
             val text = step.text
 
             mutableStateOf(
+                val selection = drawInfo.selection?.toTextRange(text ?: "")
+                    ?: TextRange.Zero
                 TextFieldValue(
-                    Spans.createStringWithSpans(text, spans, isDarkTheme),
-                    selection = drawInfo.selection?.toTextRange(text ?: "")
-                        ?: TextRange.Zero
+                    displayText(text, selection),
+                    selection = selection,
                 )
             )
         }
 
         var previousInputText by remember {
             mutableStateOf(inputText)
+        }
+        var hadPersistentSelection by remember { mutableStateOf(persistentSelection) }
+
+        LaunchedEffect(persistentSelection, drawInfo.selection) {
+            if (persistentSelection) {
+                val selection = drawInfo.selection?.toTextRange(inputText.text)
+                    ?: return@LaunchedEffect
+                val updatedInputText = inputText.copy(
+                    displayText(inputText.text, selection),
+                    selection = selection,
+                )
+                inputText = updatedInputText
+                previousInputText = updatedInputText
+                hadPersistentSelection = true
+            } else if (hadPersistentSelection) {
+                val updatedInputText = inputText.copy(
+                    Spans.createStringWithSpans(inputText.text, spans, isDarkTheme),
+                )
+                inputText = updatedInputText
+                previousInputText = updatedInputText
+                hadPersistentSelection = false
+            }
         }
 
         var textLayoutResult by remember {
