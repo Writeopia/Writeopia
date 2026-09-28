@@ -270,6 +270,11 @@ class SqlDelightDocumentRepositoryTest {
     }
 
     @Test
+    fun `stale save does not resurrect soft deleted document`() = runTest {
+        DocumentRepositoryTests(documentRepository).staleSaveDoesNotResurrectSoftDeletedDocument()
+    }
+
+    @Test
     fun `hard delete removes comment rows in sqldelight`() = runTest {
         val now = Clock.System.now()
         val document = Document(
