@@ -61,11 +61,15 @@ private const val SPACE_AFTER_SUB_TITLE = 6
  * the desktop Settings screen and the offline space's first-run setup - both feed it a
  * [LocalAiConfigController], which may be backed by different implementations (a session-bound
  * one in Settings, a lightweight session-independent one for the offline first-run flow).
+ *
+ * [onDownloadStarted] is called once a model picked in the wizard starts downloading, in the
+ * background as an AI task.
  */
 @Composable
 fun LocalAiConfigScreen(
     controller: LocalAiConfigController,
     modifier: Modifier = Modifier,
+    onDownloadStarted: () -> Unit = {},
 ) {
     Column(modifier = modifier) {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -192,7 +196,9 @@ fun LocalAiConfigScreen(
     LocalAiWizardDialog(
         wizardState = controller.wizardState,
         onClose = controller::closeWizard,
-        onSelectProviderAndModel = controller::selectProviderAndModel,
+        onSelectProviderAndModel = { providerUrl, modelName ->
+            controller.selectProviderAndModel(providerUrl, modelName, onDownloadStarted)
+        },
         onRetry = controller::openWizard
     )
 }

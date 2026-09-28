@@ -92,12 +92,6 @@ class ConfigurationSqlDelightRepository(
         )
     }
 
-    override suspend fun isOnboarded(): Boolean = configurationSqlDelightDao.isOnboarded()
-
-    override suspend fun setOnboarded() {
-        configurationSqlDelightDao.setOnboarded()
-    }
-
     private suspend fun refreshArrangementPref(userId: String) {
         _arrangementPref.value = arrangementPref(userId)
     }

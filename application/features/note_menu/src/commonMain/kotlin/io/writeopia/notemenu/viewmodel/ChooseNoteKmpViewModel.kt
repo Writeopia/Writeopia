@@ -22,7 +22,6 @@ import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
-import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.export.DocumentToJson
 import io.writeopia.sdk.export.DocumentToMarkdown
 import io.writeopia.sdk.export.DocumentToTxt
@@ -87,11 +86,6 @@ internal class ChooseNoteKmpViewModel(
     private val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
 ) : ChooseNoteViewModel, ViewModel(), FolderController by folderController {
 
-    private val _showOnboardingState =
-        MutableStateFlow(OnboardingState.CONFIGURATION)
-    override val showOnboardingState: StateFlow<OnboardingState> =
-        _showOnboardingState.asStateFlow()
-
     override val hasSelectedNotes: StateFlow<Boolean> by lazy {
         selectedNotes.map { selectedIds ->
             selectedIds.isNotEmpty()
@@ -136,6 +130,30 @@ internal class ChooseNoteKmpViewModel(
                 user.name
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, UserState.Idle())
+    }
+
+    override val currentFolderTitle: StateFlow<String?> by lazy {
+        when (notesNavigation) {
+            NotesNavigation.Root -> MutableStateFlow(null)
+
+            NotesNavigation.Favorites -> MutableStateFlow("Favorites")
+
+            is NotesNavigation.Folder ->
+                currentFolder
+                    .map { folder -> folder?.title ?: "" }
+                    .stateIn(viewModelScope, SharingStarted.Lazily, "")
+        }
+    }
+
+    override val currentFolder: StateFlow<Folder?> by lazy {
+        when (notesNavigation) {
+            is NotesNavigation.Folder ->
+                combine(menuItemsPerFolderId, folderController.folderChanges) { _, _ ->
+                    notesUseCase.getFolderById(notesNavigation.id)
+                }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+            NotesNavigation.Root, NotesNavigation.Favorites -> MutableStateFlow(null)
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -250,14 +268,6 @@ internal class ChooseNoteKmpViewModel(
             // This ensures local state reflects any deletions/moves from other devices
             syncEventsOnStartup()
 
-            val onboarded = notesConfig.isOnboarded()
-
-            _showOnboardingState.value = if (onboarded) {
-                OnboardingState.COMPLETE
-            } else {
-                OnboardingState.CONFIGURATION
-            }
-
             keyboardEventFlow.collect { event ->
                 when (event) {
                     KeyboardEvent.DELETE -> {
@@ -303,6 +313,25 @@ internal class ChooseNoteKmpViewModel(
 
     override fun showEditMenu() {
         _editState.value = true
+    }
+
+    override suspend fun currentFolderMoveDestinations(): List<FolderDestination> {
+        val folderId = (notesNavigation as? NotesNavigation.Folder)?.id ?: return emptyList()
+        val folder = notesUseCase.getFolderById(folderId) ?: return emptyList()
+
+        return moveDestinations(folder, notesUseCase.loadFoldersForWorkspace(getWorkspaceId()))
+    }
+
+    override fun moveCurrentFolder(parentId: String) {
+        val folderId = (notesNavigation as? NotesNavigation.Folder)?.id ?: return
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val folder = notesUseCase.getFolderById(folderId) ?: return@launch
+            if (folder.parentId == parentId) return@launch
+
+            // updateFolder also bumps lastUpdatedAt and syncs the folder to the backend.
+            folderController.updateFolder(folder.copy(parentId = parentId))
+        }
     }
 
     override fun cancelEditMenu() {
@@ -632,36 +661,6 @@ internal class ChooseNoteKmpViewModel(
 
     override fun cancelDeletion() {
         askToDelete.value = false
-    }
-
-    override fun requestInitFlow(flow: () -> Unit) {
-        val onboarding = _showOnboardingState.value
-
-        if (onboarding == OnboardingState.HIDDEN) {
-            _showOnboardingState.value = OnboardingState.CONFIGURATION
-        } else {
-            flow()
-        }
-    }
-
-    override fun hideOnboarding() {
-        _showOnboardingState.value = OnboardingState.HIDDEN
-    }
-
-    override fun completeOnboarding() {
-        viewModelScope.launch(Dispatchers.Default) {
-            notesConfig.setOnboarded()
-            _showOnboardingState.value = OnboardingState.CONGRATULATION
-            delay(3000)
-            _showOnboardingState.value = OnboardingState.COMPLETE
-        }
-    }
-
-    override fun closeOnboardingPermanently() {
-        viewModelScope.launch(Dispatchers.Default) {
-            notesConfig.setOnboarded()
-            _showOnboardingState.value = OnboardingState.COMPLETE
-        }
     }
 
     override fun syncFolderWithCloud() {

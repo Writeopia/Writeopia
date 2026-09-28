@@ -1,7 +1,8 @@
 package io.writeopia.auth.spacechoice
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.widthIn
@@ -38,15 +40,22 @@ fun LocalAiSetupScreen(
     onContinueClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxSize().background(WriteopiaTheme.colorScheme.globalBackground)) {
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+            .background(WriteopiaTheme.colorScheme.globalBackground)
+            .padding(WindowInsets.systemBars.asPaddingValues())
+    ) {
+        // Centered in the window; scrolls once the content is taller than it.
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .widthIn(max = 700.dp)
-                .fillMaxSize()
-                .padding(WindowInsets.systemBars.asPaddingValues())
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = maxHeight)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
         ) {
             Text(
                 text = WrStrings.localAiSetupTitle(),
@@ -65,7 +74,9 @@ fun LocalAiSetupScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            LocalAiConfigScreen(controller = controller)
+            // Once the model picked in the wizard is downloading, go to the app: the download
+            // goes on there as an AI task, with its progress next to the other AI tasks.
+            LocalAiConfigScreen(controller = controller, onDownloadStarted = onContinueClick)
 
             Spacer(modifier = Modifier.height(32.dp))
 

@@ -82,7 +82,7 @@ class DocumentSqlDao(
         queries.transaction {
             val existing = queries.selectById(document.id).executeAsOneOrNull()
             require(existing == null || existing.workspace_id == document.workspaceId) {
-                "Document does not belong to the requested workspace"
+                "Document does not belong to the requested workspace. existing: ${existing?.workspace_id}, document: ${document.workspaceId}"
             }
 
             storyStepQueries?.deleteByDocumentId(document.id)

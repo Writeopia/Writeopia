@@ -31,7 +31,6 @@ import io.writeopia.auth.navigation.startScreen
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.keyboard.KeyboardCommands
 import io.writeopia.common.utils.keyboard.isMultiSelectionTrigger
-import io.writeopia.common.utils.ui.GlobalToastBox
 import io.writeopia.model.AccentColor
 import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.ScreenLoading
@@ -256,7 +255,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     darkTheme = colorTheme.value.isDarkTheme(),
                     accentColor = accentColor ?: AccentColor.PURPLE
                 ) {
-                    GlobalToastBox(
+                    Box(
                         modifier = Modifier
                             .background(WriteopiaTheme.colorScheme.globalBackground)
                     ) {

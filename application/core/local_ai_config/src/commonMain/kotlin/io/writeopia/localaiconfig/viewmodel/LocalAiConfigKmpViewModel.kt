@@ -3,6 +3,8 @@ package io.writeopia.localaiconfig.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.enqueueModelDownload
 import io.writeopia.api.LocalAiAutoConfigApi
 import io.writeopia.common.utils.download.DownloadParser
 import io.writeopia.common.utils.download.DownloadState
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * A [LocalAiConfigController] that doesn't require a logged-in session - it keys the persisted
@@ -263,7 +266,11 @@ class LocalAiConfigKmpViewModel(
         }
     }
 
-    override fun selectProviderAndModel(providerUrl: String, modelName: String) {
+    override fun selectProviderAndModel(
+        providerUrl: String,
+        modelName: String,
+        onDownloadStarted: () -> Unit,
+    ) {
         viewModelScope.launch(Dispatchers.Default) {
             _wizardState.value = LocalAiWizardState.Closed
 
@@ -271,18 +278,25 @@ class LocalAiConfigKmpViewModel(
             localAiRepository.saveLocalAiSelectedModel(userId, modelName)
             localAiRepository.refreshConfiguration(userId)
 
-            localAiRepository.downloadModel(modelName, providerUrl)
-                .collectLatest { result ->
-                    _downloadModelState.value = result
+            // An AI task, so the download keeps going (and shows its progress) in the app, after
+            // the setup screen is gone.
+            AiTaskManager.singleton().enqueueModelDownload(
+                localAiRepository = localAiRepository,
+                modelName = modelName,
+                providerUrl = providerUrl,
+            ) { result ->
+                _downloadModelState.value = result
 
-                    when (result) {
-                        is ResultData.Complete -> retryModels()
-                        is ResultData.Error -> {
-                            _wizardState.value = LocalAiWizardState.Error(WizardErrorType.DOWNLOAD_FAILED)
-                        }
-                        else -> {}
+                when (result) {
+                    is ResultData.Complete -> retryModels()
+                    is ResultData.Error -> {
+                        _wizardState.value = LocalAiWizardState.Error(WizardErrorType.DOWNLOAD_FAILED)
                     }
+                    else -> {}
                 }
+            }
+
+            withContext(Dispatchers.Main) { onDownloadStarted() }
         }
     }
 

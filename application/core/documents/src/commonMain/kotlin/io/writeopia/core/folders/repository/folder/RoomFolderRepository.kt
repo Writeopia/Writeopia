@@ -6,8 +6,6 @@ import io.writeopia.common.utils.persistence.daos.FolderCommonDao
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.models.interfaces.search.FolderSearch
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -38,9 +36,8 @@ class RoomFolderRepository(
         TODO("Not yet implemented")
     }
 
-    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> {
-        TODO("Not yet implemented")
-    }
+    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> =
+        folderRoomDao.getFoldersForWorkspace(workspaceId)
 
     override suspend fun deleteFolderById(folderId: String, workspaceId: String) {
         folderRoomDao.deleteById(folderId, workspaceId, Clock.System.now().toEpochMilliseconds())
@@ -74,7 +71,9 @@ class RoomFolderRepository(
     }
 
     override suspend fun moveToFolder(documentId: String, parentId: String) {
-        TODO("Not yet implemented")
+        updateFolderById(documentId) { folder ->
+            folder.copy(parentId = parentId, lastUpdatedAt = Clock.System.now())
+        }
     }
 
     override suspend fun refreshFolders() {}
@@ -88,26 +87,12 @@ class RoomFolderRepository(
     override suspend fun listenForFoldersByParentId(
         parentId: String,
         workspaceId: String,
-    ): Flow<Map<String, List<Folder>>> {
-        SelectedIds.ids.add(parentId)
+    ): Flow<Map<String, List<Folder>>> =
+        // Room stops listening by itself once the flow isn't collected anymore.
+        folderRoomDao.listenForFolderByParentId(parentId)
+            .map { folders -> folders.groupBy { folder -> folder.parentId } }
 
-        val flows = SelectedIds.ids.map {
-            folderRoomDao.listenForFolderByParentId(parentId)
-        }
-
-        return if (flows.isNotEmpty()) {
-            combine(flows) { arrayOfFolders -> arrayOfFolders.toList().flatten() }
-                .map { folders ->
-                    folders.groupBy { folder -> folder.parentId }
-                }
-        } else {
-            flow { emit(emptyMap()) }
-        }
-    }
-
-    override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
-        SelectedIds.ids.remove(parentId)
-    }
+    override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {}
 
     override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =
         folderRoomDao.getFoldersForWorkspace(workspaceId)
@@ -125,8 +110,4 @@ class RoomFolderRepository(
                 updateFolder(folder)
             }
     }
-}
-
-private object SelectedIds {
-    val ids = mutableSetOf<String>()
 }

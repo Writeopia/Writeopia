@@ -52,6 +52,7 @@ actual fun NotesMenuScreen(
         navigationBar = navigationBar,
         isWideLayout = isWideLayout,
         sideMenuContent = sideMenuContent,
+        onCurrentFolderDeleted = { navigationController.popBackStack() },
         modifier = modifier,
     )
 }

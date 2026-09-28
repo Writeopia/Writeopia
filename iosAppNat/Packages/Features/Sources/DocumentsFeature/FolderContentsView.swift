@@ -479,7 +479,14 @@ struct FolderContentsView: View {
             )
         }
         .navigationTitle(viewModel.folder?.displayTitle ?? title)
+        // A large title can't show an icon, so inside a folder the title is inline, with the icon.
+        .navigationBarTitleDisplayMode(viewModel.isRoot ? .automatic : .inline)
         .toolbar {
+            if !viewModel.isRoot {
+                ToolbarItem(placement: .principal) {
+                    folderTitle
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 folderMenu
             }
@@ -616,6 +623,19 @@ struct FolderContentsView: View {
                 dropTargetId = nil
             }
         }
+    }
+
+    /// The icon and the name of the folder shown, in the navigation bar.
+    private var folderTitle: some View {
+        HStack(spacing: 6) {
+            FolderIconImage(icon: viewModel.folder?.icon)
+            Text(viewModel.folder?.displayTitle ?? title)
+                .fontWeight(.semibold)
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+        .accessibilityIdentifier("documents.folderTitle")
     }
 
     // MARK: - Edition menu of the folder
