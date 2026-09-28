@@ -145,9 +145,20 @@ internal class ChooseNoteKmpViewModel(
             NotesNavigation.Favorites -> MutableStateFlow("Favorites")
 
             is NotesNavigation.Folder ->
-                menuItemsPerFolderId
-                    .map { notesUseCase.getFolderById(notesNavigation.id)?.title ?: "" }
+                currentFolder
+                    .map { folder -> folder?.title ?: "" }
                     .stateIn(viewModelScope, SharingStarted.Lazily, "")
+        }
+    }
+
+    override val currentFolder: StateFlow<Folder?> by lazy {
+        when (notesNavigation) {
+            is NotesNavigation.Folder ->
+                menuItemsPerFolderId
+                    .map { notesUseCase.getFolderById(notesNavigation.id) }
+                    .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+            NotesNavigation.Root, NotesNavigation.Favorites -> MutableStateFlow(null)
         }
     }
 
@@ -316,6 +327,25 @@ internal class ChooseNoteKmpViewModel(
 
     override fun showEditMenu() {
         _editState.value = true
+    }
+
+    override suspend fun currentFolderMoveDestinations(): List<FolderDestination> {
+        val folderId = (notesNavigation as? NotesNavigation.Folder)?.id ?: return emptyList()
+        val folder = notesUseCase.getFolderById(folderId) ?: return emptyList()
+
+        return moveDestinations(folder, notesUseCase.loadFoldersForWorkspace(getWorkspaceId()))
+    }
+
+    override fun moveCurrentFolder(parentId: String) {
+        val folderId = (notesNavigation as? NotesNavigation.Folder)?.id ?: return
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val folder = notesUseCase.getFolderById(folderId) ?: return@launch
+            if (folder.parentId == parentId) return@launch
+
+            // updateFolder also bumps lastUpdatedAt and syncs the folder to the backend.
+            folderController.updateFolder(folder.copy(parentId = parentId))
+        }
     }
 
     override fun cancelEditMenu() {

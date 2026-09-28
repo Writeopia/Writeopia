@@ -19,6 +19,7 @@ import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
 import io.writeopia.notemenu.viewmodel.FolderController
+import io.writeopia.notemenu.viewmodel.FolderDestination
 import io.writeopia.notemenu.viewmodel.SyncState
 import io.writeopia.notemenu.viewmodel.UserState
 import io.writeopia.onboarding.OnboardingState
@@ -88,6 +89,9 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     override val currentFolderTitle: StateFlow<String?> = MutableStateFlow(
         if (notesNavigation == NotesNavigation.Favorites) "Favorites" else null
     )
+
+    // Editing, moving and deleting the current folder is not offered in the backend only mode.
+    override val currentFolder: StateFlow<Folder?> = MutableStateFlow(null)
 
     private val _notesArrangement = MutableStateFlow(NotesArrangement.GRID)
     override val notesArrangement: StateFlow<NotesArrangement> = _notesArrangement.asStateFlow()
@@ -243,6 +247,10 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         } else {
             false
         }
+
+    override suspend fun currentFolderMoveDestinations(): List<FolderDestination> = emptyList()
+
+    override fun moveCurrentFolder(parentId: String) {}
 
     override fun showEditMenu() {
         _editState.value = true

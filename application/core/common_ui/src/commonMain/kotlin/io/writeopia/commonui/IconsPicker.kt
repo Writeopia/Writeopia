@@ -3,16 +3,20 @@ package io.writeopia.commonui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
@@ -36,42 +41,61 @@ fun IconsPicker(
     modifier: Modifier = Modifier.size(200.dp),
     icons: Map<String, ImageVector> = WrIcons.allIcons,
     iconSize: Dp = 24.dp,
+    initialIconName: String? = null,
+    initialTint: Int? = null,
+    colorSize: Dp = 12.dp,
     iconSelect: (String, Int) -> Unit,
 ) {
     val defaultColor = MaterialTheme.colorScheme.onBackground
     val selectedBackground = MaterialTheme.colorScheme.primaryContainer
 
     var tintColor by remember {
-        mutableStateOf(defaultColor)
+        mutableStateOf(initialTint?.let(::Color) ?: defaultColor)
     }
 
     var selectedIconName by remember {
-        mutableStateOf<String?>(null)
+        mutableStateOf(initialIconName)
     }
 
     val colorShape = CircleShape
 
     Column {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ColorUtils.tintColors().forEach { color ->
-                val isSelected = color == tintColor
-                Box(
-                    modifier = Modifier
-                        .size(if (isSelected) 16.dp else 12.dp)
-                        .background(color, colorShape)
-                        .clip(colorShape)
-                        .clickable {
-                            tintColor = color
-                            // Update the selection with new color if an icon is selected
-                            selectedIconName?.let { iconName ->
-                                iconSelect(iconName, color.toArgb())
-                            }
-                        }
-                )
+        // Spread over the whole width when the colors fit, scrolls sideways when they don't.
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .widthIn(min = maxWidth)
+                    .padding(vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ColorUtils.tintColors().forEach { color ->
+                    val isSelected = color == tintColor
+                    val selectedSize = colorSize * 4 / 3
+
+                    // Same space for every color, so selecting one doesn't move the others.
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = colorSize / 6)
+                            .size(selectedSize),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(if (isSelected) selectedSize else colorSize)
+                                .background(color, colorShape)
+                                .clip(colorShape)
+                                .clickable {
+                                    tintColor = color
+                                    // Update the selection with new color if an icon is selected
+                                    selectedIconName?.let { iconName ->
+                                        iconSelect(iconName, color.toArgb())
+                                    }
+                                }
+                        )
+                    }
+                }
             }
         }
 
@@ -90,7 +114,7 @@ fun IconsPicker(
                     modifier = Modifier
                         .clip(MaterialTheme.shapes.medium)
                         .background(
-                            if (isSelected) selectedBackground else androidx.compose.ui.graphics.Color.Transparent,
+                            if (isSelected) selectedBackground else Color.Transparent,
                             MaterialTheme.shapes.medium
                         )
                         .clickable {

@@ -38,9 +38,8 @@ class RoomFolderRepository(
         TODO("Not yet implemented")
     }
 
-    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> {
-        TODO("Not yet implemented")
-    }
+    override suspend fun getFoldersForWorkspace(workspaceId: String): List<Folder> =
+        folderRoomDao.getFoldersForWorkspace(workspaceId)
 
     override suspend fun deleteFolderById(folderId: String, workspaceId: String) {
         folderRoomDao.deleteById(folderId, workspaceId, Clock.System.now().toEpochMilliseconds())
@@ -74,7 +73,9 @@ class RoomFolderRepository(
     }
 
     override suspend fun moveToFolder(documentId: String, parentId: String) {
-        TODO("Not yet implemented")
+        updateFolderById(documentId) { folder ->
+            folder.copy(parentId = parentId, lastUpdatedAt = Clock.System.now())
+        }
     }
 
     override suspend fun refreshFolders() {}

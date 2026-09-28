@@ -21,6 +21,11 @@ interface ChooseNoteViewModel : FolderController {
      */
     val currentFolderTitle: StateFlow<String?>
 
+    /**
+     * The folder currently being displayed. Null when not inside a folder (root or favorites).
+     */
+    val currentFolder: StateFlow<Folder?>
+
     val documentsState: StateFlow<ResultData<NotesUi>>
 
     val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>>
@@ -127,6 +132,14 @@ interface ChooseNoteViewModel : FolderController {
     fun hideCreateFolderDialog()
 
     fun createFolderWithDetails(name: String, icon: MenuItem.Icon?)
+
+    /**
+     * Folders the current folder can be moved into: the whole tree of the workspace, except the
+     * current folder itself, what is inside it and where it already is.
+     */
+    suspend fun currentFolderMoveDestinations(): List<FolderDestination>
+
+    fun moveCurrentFolder(parentId: String)
 }
 
 sealed interface UserState<T> {

@@ -132,6 +132,8 @@ object WrIcons {
 
     val delete: ImageVector = Trash2
 
+    val edit: ImageVector = PencilLine
+
     val transparent: ImageVector = Droplet
 
     val person: ImageVector = User
