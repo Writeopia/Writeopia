@@ -14,7 +14,10 @@ interface FolderController {
 
     fun updateFolder(folderEdit: Folder)
 
-    fun deleteFolder(id: String)
+    /**
+     * Deletes the folder. [onDeleted] is called on the main thread once it's deleted locally.
+     */
+    fun deleteFolder(id: String, onDeleted: () -> Unit = {})
 
     fun stopEditingFolder()
 

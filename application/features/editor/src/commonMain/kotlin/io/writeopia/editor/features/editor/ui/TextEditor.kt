@@ -1,8 +1,6 @@
 package io.writeopia.editor.features.editor.ui
 
 import androidx.compose.foundation.gestures.animateScrollBy
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -11,28 +9,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.drawing.ui.drawer.DrawingPreviewDrawer
 import io.writeopia.editor.configuration.ui.DrawConfigFactory
-import io.writeopia.editor.features.editor.ui.comments.CommentThreadOverlay
-import io.writeopia.editor.features.editor.ui.comments.resolveCommentUiState
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
-import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.ui.WriteopiaEditor
 import io.writeopia.ui.drawer.factory.DrawersFactory
 import io.writeopia.ui.model.DrawStory
-import io.writeopia.ui.model.PERSISTENT_SELECTION_EXTRA
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -52,47 +43,6 @@ internal fun TextEditor(
     val editable by noteEditorViewModel.isEditable.collectAsState()
     val position by noteEditorViewModel.scrollToPosition.collectAsState()
     val commentConversations by noteEditorViewModel.commentConversations.collectAsState()
-    var pendingCommentTarget by remember { mutableStateOf<Selection?>(null) }
-    var pendingCommentText by remember { mutableStateOf<String?>(null) }
-
-    fun selectedText(target: Selection): String? {
-        val story = storyState.stories.firstOrNull { drawStory ->
-            drawStory.position == target.position
-        }?.storyStep ?: return null
-        val text = story.text ?: return null
-        val (start, end) = target.sortedPositions()
-        if (start < 0 || end > text.length || start == end) return null
-        return text.substring(start, end)
-    }
-
-    LaunchedEffect(storyState, pendingCommentTarget, pendingCommentText) {
-        val target = pendingCommentTarget ?: return@LaunchedEffect
-        val expectedText = pendingCommentText ?: return@LaunchedEffect
-        if (selectedText(target) != expectedText) {
-            pendingCommentTarget = null
-            pendingCommentText = null
-        }
-    }
-
-    val displayStoryState = remember(storyState, pendingCommentTarget) {
-        val target = pendingCommentTarget
-        if (target == null) {
-            storyState
-        } else {
-            storyState.copy(
-                stories = storyState.stories.map { drawStory ->
-                    if (drawStory.position == target.position) {
-                        drawStory.copy(
-                            cursor = target,
-                            extraInfo = drawStory.extraInfo + (PERSISTENT_SELECTION_EXTRA to true),
-                        )
-                    } else {
-                        drawStory
-                    }
-                }
-            )
-        }
-    }
 
     if (position != null) {
         LaunchedEffect(position, block = {
@@ -130,69 +80,55 @@ internal fun TextEditor(
             onDragStop = noteEditorViewModel.writeopiaManager::onDragStop
         )
     }
+//
+//    val commentUiState = remember(storyState, commentConversations) {
+//        resolveCommentUiState(storyState, commentConversations)
+//    }
 
-    val commentUiState = remember(storyState, commentConversations) {
-        resolveCommentUiState(storyState, commentConversations)
-    }
+//    Box {
+    WriteopiaEditor(
+        modifier = modifier.widthIn(max = 850.dp),
+        editable = editable,
+        listState = listState,
+        keyFn = keyFn,
+        drawers = drawersFactory.create(
+            noteEditorViewModel.writeopiaManager,
+            onHeaderClick = noteEditorViewModel::onHeaderClick,
+            editable = isEditable,
+            aiExplanation = WrStrings.aiExplanation(),
+            isDarkTheme = isDarkTheme,
+            drawConfig = drawConfig,
+            fontFamily = fontFamily,
+            generateSection = noteEditorViewModel::aiSection,
+            receiveExternalFile = noteEditorViewModel::receiveExternalFile,
+            onDocumentLinkClick = onDocumentLinkClick,
+            linkLeadingIcon = WrIcons.pageStyle,
+            equationToImageUrl = "https://latex.codecogs.com/png.latex?\\Large&space;x=",
+            customDrawers = mapOf(
+                StoryTypes.DRAWING.type.number to drawingPreviewDrawer
+            )
+        ),
+        storyState = storyState,
+    )
 
-    Box {
-        WriteopiaEditor(
-            modifier = modifier.widthIn(max = 850.dp),
-            editable = editable,
-            listState = listState,
-            keyFn = keyFn,
-            drawers = drawersFactory.create(
-                noteEditorViewModel.writeopiaManager,
-                onHeaderClick = noteEditorViewModel::onHeaderClick,
-                editable = isEditable,
-                aiExplanation = WrStrings.aiExplanation(),
-                isDarkTheme = isDarkTheme,
-                drawConfig = drawConfig,
-                fontFamily = fontFamily,
-                generateSection = noteEditorViewModel::aiSection,
-                receiveExternalFile = noteEditorViewModel::receiveExternalFile,
-                onDocumentLinkClick = onDocumentLinkClick,
-                linkLeadingIcon = WrIcons.pageStyle,
-                equationToImageUrl = "https://latex.codecogs.com/png.latex?\\Large&space;x=",
-                customDrawers = mapOf(
-                    StoryTypes.DRAWING.type.number to drawingPreviewDrawer
-                )
-            ),
-            storyState = displayStoryState,
-        )
-
-        CommentThreadOverlay(
-            uiState = commentUiState,
-            editable = editable,
-            createTarget = pendingCommentTarget,
-            onCreateTargetChange = { target ->
-                pendingCommentTarget = target
-                pendingCommentText = target?.let(::selectedText)
-            },
-            onCreateComment = { text, target ->
-                val expectedText = pendingCommentText
-                val targetStillValid =
-                    expectedText != null && selectedText(target) == expectedText
-                if (targetStillValid) {
-                    noteEditorViewModel.createComment(text, target) != null
-                } else {
-                    pendingCommentTarget = null
-                    pendingCommentText = null
-                    false
-                }
-            },
-            onReply = { conversationId, text ->
-                noteEditorViewModel.addComment(conversationId, text) != null
-            },
-            onDeleteComment = { conversationId, commentId ->
-                noteEditorViewModel.deleteComment(conversationId, commentId)
-            },
-            onDeleteConversation = { conversationId ->
-                noteEditorViewModel.deleteCommentConversation(conversationId)
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 8.dp, end = 8.dp),
-        )
-    }
+//        CommentThreadOverlay(
+//            uiState = commentUiState,
+//            editable = editable,
+//            onCreateComment = { text, target ->
+//                noteEditorViewModel.createComment(text, target) != null
+//            },
+//            onReply = { conversationId, text ->
+//                noteEditorViewModel.addComment(conversationId, text) != null
+//            },
+//            onDeleteComment = { conversationId, commentId ->
+//                noteEditorViewModel.deleteComment(conversationId, commentId)
+//            },
+//            onDeleteConversation = { conversationId ->
+//                noteEditorViewModel.deleteCommentConversation(conversationId)
+//            },
+//            modifier = Modifier
+//                .align(Alignment.TopEnd)
+//                .padding(top = 8.dp, end = 8.dp),
+//        )
+//    }
 }

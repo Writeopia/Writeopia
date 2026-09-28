@@ -19,9 +19,9 @@ import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
 import io.writeopia.notemenu.viewmodel.FolderController
+import io.writeopia.notemenu.viewmodel.FolderDestination
 import io.writeopia.notemenu.viewmodel.SyncState
 import io.writeopia.notemenu.viewmodel.UserState
-import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -85,6 +86,13 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     private val _userName = MutableStateFlow<UserState<String>>(UserState.Idle())
     override val userName: StateFlow<UserState<String>> = _userName.asStateFlow()
 
+    override val currentFolderTitle: StateFlow<String?> = MutableStateFlow(
+        if (notesNavigation == NotesNavigation.Favorites) "Favorites" else null
+    )
+
+    // Editing, moving and deleting the current folder is not offered in the backend only mode.
+    override val currentFolder: StateFlow<Folder?> = MutableStateFlow(null)
+
     private val _notesArrangement = MutableStateFlow(NotesArrangement.GRID)
     override val notesArrangement: StateFlow<NotesArrangement> = _notesArrangement.asStateFlow()
 
@@ -106,10 +114,6 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     private val _titlesToDelete = MutableStateFlow<List<String>>(emptyList())
     override val titlesToDelete: StateFlow<List<String>> = _titlesToDelete.asStateFlow()
-
-    private val _showOnboardingState = MutableStateFlow(OnboardingState.COMPLETE)
-    override val showOnboardingState: StateFlow<OnboardingState> =
-        _showOnboardingState.asStateFlow()
 
     private val _showAddMenuState = MutableStateFlow(false)
     override val showAddMenuState: StateFlow<Boolean> = _showAddMenuState.asStateFlow()
@@ -239,6 +243,10 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         } else {
             false
         }
+
+    override suspend fun currentFolderMoveDestinations(): List<FolderDestination> = emptyList()
+
+    override fun moveCurrentFolder(parentId: String) {}
 
     override fun showEditMenu() {
         _editState.value = true
@@ -528,12 +536,15 @@ internal class OnlyBackendChooseNoteKmpViewModel(
         }
     }
 
-    override fun deleteFolder(id: String) {
+    override fun deleteFolder(id: String, onDeleted: () -> Unit) {
         viewModelScope.launch(Dispatchers.Default) {
             val workspace = authRepository.getWorkspace() ?: return@launch
 
-            documentsApi.deleteFolder(id, workspace.id)
+            // On failure the folder stays, and so does the dialog that asked to delete it.
+            if (documentsApi.deleteFolder(id, workspace.id) !is ResultData.Complete) return@launch
+
             stopEditingFolder()
+            withContext(Dispatchers.Main) { onDeleted() }
             loadFolderContents()
         }
     }
@@ -650,21 +661,5 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun confirmWorkplacePath() {
         // Not supported
-    }
-
-    override fun requestInitFlow(flow: () -> Unit) {
-        flow()
-    }
-
-    override fun hideOnboarding() {
-        _showOnboardingState.value = OnboardingState.HIDDEN
-    }
-
-    override fun closeOnboardingPermanently() {
-        _showOnboardingState.value = OnboardingState.COMPLETE
-    }
-
-    override fun completeOnboarding() {
-        _showOnboardingState.value = OnboardingState.COMPLETE
     }
 }

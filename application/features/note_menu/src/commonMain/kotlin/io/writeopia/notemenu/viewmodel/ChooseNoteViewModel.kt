@@ -2,7 +2,6 @@ package io.writeopia.notemenu.viewmodel
 
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.notemenu.ui.dto.NotesUi
-import io.writeopia.onboarding.OnboardingState
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
@@ -15,6 +14,16 @@ interface ChooseNoteViewModel : FolderController {
     val hasSelectedNotes: StateFlow<Boolean>
 
     val userName: StateFlow<UserState<String>>
+
+    /**
+     * Title of the folder currently being displayed. Null when in the root of the workspace.
+     */
+    val currentFolderTitle: StateFlow<String?>
+
+    /**
+     * The folder currently being displayed. Null when not inside a folder (root or favorites).
+     */
+    val currentFolder: StateFlow<Folder?>
 
     val documentsState: StateFlow<ResultData<NotesUi>>
 
@@ -35,8 +44,6 @@ interface ChooseNoteViewModel : FolderController {
     val syncInProgress: StateFlow<SyncState>
 
     val titlesToDelete: StateFlow<List<String>>
-
-    val showOnboardingState: StateFlow<OnboardingState>
 
     val showAddMenuState: StateFlow<Boolean>
 
@@ -105,14 +112,6 @@ interface ChooseNoteViewModel : FolderController {
 
     fun cancelDeletion()
 
-    fun requestInitFlow(flow: () -> Unit)
-
-    fun hideOnboarding()
-
-    fun closeOnboardingPermanently()
-
-    fun completeOnboarding()
-
     fun syncFolderWithCloud()
 
     fun newFolder()
@@ -122,6 +121,14 @@ interface ChooseNoteViewModel : FolderController {
     fun hideCreateFolderDialog()
 
     fun createFolderWithDetails(name: String, icon: MenuItem.Icon?)
+
+    /**
+     * Folders the current folder can be moved into: the whole tree of the workspace, except the
+     * current folder itself, what is inside it and where it already is.
+     */
+    suspend fun currentFolderMoveDestinations(): List<FolderDestination>
+
+    fun moveCurrentFolder(parentId: String)
 }
 
 sealed interface UserState<T> {

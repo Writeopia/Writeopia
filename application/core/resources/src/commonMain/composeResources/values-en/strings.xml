@@ -93,15 +93,10 @@
   <string name="tap_to_start">Tap here to <font fgcolor='#FFFF3B30'>write</font> the next big thing</string>
   <string name="font">Font</string>
   <string name="actions">Actions</string>
-  <string name="onboarding_hello">Hello, welcome!</string>
-  <string name="onboarding_explain1">Follow the tutorial to use AI privately.</string>
-  <string name="onboarding_select_ai">Select one AI that you would like to use.</string>
   <string name="close">Close</string>
   <string name="download_ollama">To use AI, download Ollama</string>
   <string name="access_ollama_site">Access ollama.com</string>
   <string name="ollama_configuration_complete">Configuration completed!</string>
-  <string name="private_ai_enabled">You can write now using private AI</string>
-  <string name="small_robot">Small robot</string>
   <string name="document">Document</string>
   <string name="confirmation_delete_multiple_items">Are you sure you would like to delete the selected items?</string>
   <string name="cancel">Cancel</string>
@@ -154,7 +149,6 @@
   <string name="title">Title</string>
   <string name="subtitle">Subtitle</string>
   <string name="heading">Heading</string>
-  <string name="dont_show_again">Don't show again</string>
   <string name="manage_teams">Manage teams</string>
   <string name="error_loading_teams">Error loading teams</string>
   <string name="error_loading_workspaces">Error loading workspaces</string>

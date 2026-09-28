@@ -44,6 +44,8 @@ class NotesUseCase private constructor(
         folderRepository.updateFolder(folder)
     }
 
+    suspend fun getFolderById(id: String): Folder? = folderRepository.getFolderById(id)
+
     suspend fun updateFolderById(id: String, folderChange: (Folder) -> Folder): Folder? {
         val newFolder = folderRepository.getFolderById(id)?.let(folderChange)
 

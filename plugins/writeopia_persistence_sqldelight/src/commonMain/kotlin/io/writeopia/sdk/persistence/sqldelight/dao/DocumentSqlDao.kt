@@ -82,7 +82,7 @@ class DocumentSqlDao(
         queries.transaction {
             val existing = queries.selectById(document.id).awaitAsOneOrNull()
             require(existing == null || existing.workspace_id == document.workspaceId) {
-                "Document does not belong to the requested workspace"
+                "Document does not belong to the requested workspace. existing: ${existing?.workspace_id}, document: ${document.workspaceId}"
             }
             if (existing?.deleted == 1L && !document.deleted) return@transaction
 

@@ -157,8 +157,6 @@ class WorkspaceHandlerImplTest {
                 savedPath = firstArg()
             }
             coEvery { loadWorkspacePath(any()) } answers { savedPath }
-            coEvery { isOnboarded() } returns true
-            coEvery { setOnboarded() } returns Unit
         }
         val handler = createHandler(
             configFileWatcher = fakeWatcher,
@@ -216,8 +214,6 @@ class WorkspaceHandlerImplTest {
         val mockConfigRepo = workspaceConfigRepository ?: mockk<WorkspaceConfigRepository> {
             coEvery { saveWorkspacePath(any(), any()) } returns Unit
             coEvery { loadWorkspacePath(any()) } returns savedPath
-            coEvery { isOnboarded() } returns true
-            coEvery { setOnboarded() } returns Unit
         }
 
         return WorkspaceHandlerImpl(

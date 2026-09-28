@@ -33,13 +33,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.NotesNavigation
@@ -52,6 +57,7 @@ import io.writeopia.notemenu.ui.screen.documents.NotesCardsScreen
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.UserState
 import io.writeopia.notemenu.viewmodel.toNumberDesktop
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.ui.draganddrop.target.DraggableScreen
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -72,6 +78,7 @@ internal fun MobileChooseNoteScreen(
     navigationBar: @Composable () -> Unit,
     isWideLayout: Boolean = false,
     sideMenuContent: @Composable () -> Unit = {},
+    onCurrentFolderDeleted: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(key1 = "refresh", block = {
@@ -83,6 +90,20 @@ internal fun MobileChooseNoteScreen(
     val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
     val editState by chooseNoteViewModel.editState.collectAsState()
     val folderEdit = chooseNoteViewModel.editFolderState.collectAsState().value
+    val currentFolder by chooseNoteViewModel.currentFolder.collectAsState()
+    var currentFolderDialog by remember { mutableStateOf<CurrentFolderDialog?>(null) }
+
+    // The options sheet closes before a dialog about the current folder opens.
+    val openCurrentFolderDialog = { dialog: CurrentFolderDialog ->
+        chooseNoteViewModel.cancelEditMenu()
+        currentFolderDialog = dialog
+    }
+
+    // Leaves the folder only once it's deleted locally: leaving first could cancel the deletion.
+    val deleteCurrentFolder = { folderId: String ->
+        currentFolderDialog = null
+        chooseNoteViewModel.deleteFolder(folderId, onCurrentFolderDeleted)
+    }
 
     val showFab by derivedStateOf { !editState && !hasSelectedNotes }
 
@@ -110,6 +131,8 @@ internal fun MobileChooseNoteScreen(
                 ) {
                     TopBar(
                         titleState = chooseNoteViewModel.userName,
+                        folderTitleState = chooseNoteViewModel.currentFolderTitle,
+                        folder = currentFolder,
                         accountClick = navigateToAccount,
                         menuClick = chooseNoteViewModel::showEditMenu
                     )
@@ -164,8 +187,47 @@ internal fun MobileChooseNoteScreen(
                     listOptionClick = chooseNoteViewModel::listArrangementSelected,
                     sortingSelected = chooseNoteViewModel::sortingSelected,
                     sortingState = chooseNoteViewModel.orderByState,
-                    modifier = Modifier.padding(bottom = contentBottomPadding)
+                    folderTitle = currentFolder?.title,
+                    onEditFolder = { openCurrentFolderDialog(CurrentFolderDialog.EDIT) },
+                    onMoveFolder = { openCurrentFolderDialog(CurrentFolderDialog.MOVE) },
+                    onDeleteFolder = { openCurrentFolderDialog(CurrentFolderDialog.DELETE) },
                 )
+
+                currentFolder?.let { folder ->
+                    when (currentFolderDialog) {
+                        CurrentFolderDialog.EDIT -> EditFileDialog(
+                            folderEdit = folder,
+                            onDismissRequest = { currentFolderDialog = null },
+                            deleteFolder = deleteCurrentFolder,
+                            editFolder = chooseNoteViewModel::updateFolder,
+                            colorSize = TOUCH_COLOR_SIZE,
+                        )
+
+                        CurrentFolderDialog.MOVE -> MoveFolderDialog(
+                            folderTitle = folder.title,
+                            loadDestinations = chooseNoteViewModel::currentFolderMoveDestinations,
+                            onDismissRequest = { currentFolderDialog = null },
+                            onMove = chooseNoteViewModel::moveCurrentFolder
+                        )
+
+                        CurrentFolderDialog.DELETE -> DeleteConfirmationDialog(
+                            onConfirmation = { deleteCurrentFolder(folder.id) },
+                            onCancel = { currentFolderDialog = null },
+                        )
+
+                        null -> {}
+                    }
+                }
+
+                val showCreateFolderDialog by chooseNoteViewModel.showCreateFolderDialogState.collectAsState()
+
+                if (showCreateFolderDialog) {
+                    CreateFolderDialog(
+                        onDismissRequest = chooseNoteViewModel::hideCreateFolderDialog,
+                        onCreate = chooseNoteViewModel::createFolderWithDetails,
+                        colorSize = TOUCH_COLOR_SIZE,
+                    )
+                }
 
                 val titlesToDelete by chooseNoteViewModel.titlesToDelete.collectAsState()
 
@@ -181,7 +243,8 @@ internal fun MobileChooseNoteScreen(
                         folderEdit = folderEdit,
                         onDismissRequest = chooseNoteViewModel::stopEditingFolder,
                         deleteFolder = chooseNoteViewModel::deleteFolder,
-                        editFolder = chooseNoteViewModel::updateFolder
+                        editFolder = chooseNoteViewModel::updateFolder,
+                        colorSize = TOUCH_COLOR_SIZE,
                     )
                 }
 
@@ -207,46 +270,82 @@ internal fun MobileChooseNoteScreen(
     }
 }
 
+// Big enough for a finger, the default of the icon picker is sized for a mouse.
+private val TOUCH_COLOR_SIZE = 30.dp
+
+private enum class CurrentFolderDialog {
+    EDIT,
+    MOVE,
+    DELETE
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 // @Preview(backgroundColor = 0xFF000000)
 @Composable
 private fun TopBar(
     titleState: StateFlow<UserState<String>> = MutableStateFlow(UserState.ConnectedUser("Title")),
+    folderTitleState: StateFlow<String?> = MutableStateFlow(null),
+    folder: Folder? = null,
     accountClick: () -> Unit = {},
     menuClick: () -> Unit = {}
 ) {
     val title = titleState.collectAsState().value
+    val folderTitle = folderTitleState.collectAsState().value
 
     TopAppBar(
         title = {
-            Row(
-                modifier = Modifier.clickable(onClick = accountClick),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary)
-                        .clickable(onClick = accountClick),
-                    contentAlignment = Alignment.Center
-                ) {
+            if (folderTitle != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (folder != null) {
+                        Icon(
+                            modifier = Modifier.size(24.dp),
+                            imageVector = folder.icon?.label?.let(WrIcons::fromName)
+                                ?: WrIcons.folder,
+                            contentDescription = null,
+                            tint = folder.icon?.tint?.let(::Color)
+                                ?: MaterialTheme.colorScheme.onPrimary
+                        )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+                    }
+
                     Text(
-                        text = getUserInitials(title),
-                        color = MaterialTheme.colorScheme.onSecondary,
-                        style = MaterialTheme.typography.labelLarge,
+                        text = folderTitle,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.clickable(onClick = accountClick),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondary)
+                            .clickable(onClick = accountClick),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = getUserInitials(title),
+                            color = MaterialTheme.colorScheme.onSecondary,
+                            style = MaterialTheme.typography.labelLarge,
+                            maxLines = 1
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Text(
+                        modifier = Modifier,
+                        text = getUserName(title),
+                        color = MaterialTheme.colorScheme.onPrimary,
                         maxLines = 1
                     )
                 }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Text(
-                    modifier = Modifier,
-                    text = getUserName(title),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    maxLines = 1
-                )
             }
         },
         actions = {

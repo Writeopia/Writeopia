@@ -18,7 +18,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -37,6 +39,11 @@ class FolderStateController private constructor(
     // Todo: Change this to a usecase
     private val editingFolderMutable = MutableStateFlow<MenuItemUi.FolderUi?>(null)
     val editingFolderState = editingFolderMutable.asStateFlow()
+
+    // Bumped after a folder is saved locally. The folder lists only change when what's inside a
+    // folder changes, so screens showing a folder itself (its name, its icon) listen to this.
+    private val _folderChanges = MutableStateFlow(0L)
+    val folderChanges: StateFlow<Long> = _folderChanges.asStateFlow()
 
     fun initCoroutine(coroutineScope: CoroutineScope) {
         this.coroutineScope = coroutineScope
@@ -58,11 +65,12 @@ class FolderStateController private constructor(
         coroutineScope.launch(Dispatchers.Default) {
             val updatedFolder = folderEdit.copy(lastUpdatedAt = Clock.System.now())
             notesUseCase.updateFolder(updatedFolder)
+            _folderChanges.update { it + 1 }
             syncFolderToBackend(updatedFolder)
         }
     }
 
-    override fun deleteFolder(id: String) {
+    override fun deleteFolder(id: String, onDeleted: () -> Unit) {
         coroutineScope.launch(Dispatchers.Default) {
             val workspaceId = authRepository.getWorkspace()?.id
                 ?: Workspace.disconnectedWorkspace().id
@@ -70,6 +78,7 @@ class FolderStateController private constructor(
             // Soft delete locally first (optimistic delete - folder disappears from UI)
             notesUseCase.deleteFolderById(id, workspaceId)
             stopEditingFolder()
+            withContext(Dispatchers.Main) { onDeleted() }
 
             // Try to sync folder deletion to backend
             val syncSuccess = syncFolderDeletionToBackend(id)
@@ -183,6 +192,7 @@ class FolderStateController private constructor(
                             lastUpdatedAt = Clock.System.now()
                         )
                     }
+                    _folderChanges.update { it + 1 }
                     updatedFolder?.let { syncFolderToBackend(it) }
                 }
 

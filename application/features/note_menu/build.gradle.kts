@@ -75,7 +75,6 @@ kotlin {
                 implementation(project(":application:core:forcegraph"))
 
                 implementation(project(":application:features:account"))
-                implementation(project(":application:features:onboarding"))
 
                 //
 
