@@ -1466,7 +1466,7 @@ class WriteopiaStateManager(
                 currentById.filterValues { comments ->
                     comments.isNotEmpty() && comments.all { comment -> comment.deleted }
                 }
-            ).filterKeys { conversationId -> conversationId !in referencedConversationIds }
+        ).filterKeys { conversationId -> conversationId !in referencedConversationIds }
         val nextConversations = tombstones + restored
         _commentConversations.update { current ->
             if (current == nextConversations) current else nextConversations
