@@ -450,6 +450,7 @@ class WriteopiaStateManager(
         _currentStory.value = withNextPositions
         _commentConversations.value = emptyMap()
         commentConversationArchive.value = emptyMap()
+        commentConversationTombstones.value = emptyMap()
     }
 
     /**

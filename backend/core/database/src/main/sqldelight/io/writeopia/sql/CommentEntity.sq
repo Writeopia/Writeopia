@@ -17,7 +17,8 @@ WHERE id = ?;
 selectByDocumentId:
 SELECT *
 FROM comment_entity
-WHERE document_id = ?;
+WHERE document_id = ?
+ORDER BY comment_position, id;
 
 insert:
 INSERT INTO comment_entity(

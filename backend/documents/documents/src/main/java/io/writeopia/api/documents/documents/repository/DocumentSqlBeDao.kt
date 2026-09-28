@@ -122,6 +122,13 @@ class DocumentSqlBeDao(
         }
 
         val existingConversations = loadCommentConversations(documentId)
+        val existingPositions = commentQueries?.selectByDocumentId(documentId)
+            ?.executeAsList()
+            ?.groupBy { row -> row.conversation_id }
+            ?.mapValues { (_, rows) ->
+                rows.associate { row -> row.id to row.comment_position }
+            }
+            ?: emptyMap()
         val tombstonedConversationIds = existingConversations
             .filterValues { comments -> comments.isNotEmpty() && comments.all { comment -> comment.deleted } }
             .keys
@@ -148,12 +155,16 @@ class DocumentSqlBeDao(
             }
             .forEach { (conversationId, comments) ->
                 val conversationDeleted = conversationId in conversationIdsToDelete
-                comments.forEachIndexed { commentPosition, comment ->
+                val storedPositions = existingPositions[conversationId].orEmpty()
+                var nextPosition = (storedPositions.values.maxOrNull() ?: -1L) + 1L
+
+                comments.forEach { comment ->
+                    val commentPosition = storedPositions[comment.id] ?: nextPosition++
                     commentQueries?.insert(
                         id = comment.id,
                         conversation_id = conversationId,
                         document_id = documentId,
-                        comment_position = commentPosition.toLong(),
+                        comment_position = commentPosition,
                         text = comment.text,
                         deleted = comment.deleted || conversationDeleted,
                     )

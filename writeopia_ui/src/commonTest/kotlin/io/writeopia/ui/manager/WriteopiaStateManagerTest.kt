@@ -95,6 +95,54 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun newDocumentShouldNotRestorePreviousCommentTombstonesOnUndo() = runTest {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "old-conversation",
+            comments = listOf(Comment(id = "old-comment", text = "old")),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "old document",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(
+                            SpanInfo.create(0, 3, Span.COMMENT, conversation.id)
+                        ),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = mapOf(conversation.id to conversation.comments),
+            )
+        )
+
+        assertTrue(manager.deleteCommentConversation(conversation.id))
+        manager.newDocument(forceRestart = true)
+
+        val story = manager.currentStory.value.stories.getValue(0.0)
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = story.copy(text = "fresh document"),
+                position = 0.0,
+            )
+        )
+        manager.undo()
+        advanceUntilIdle()
+
+        assertFalse(manager.commentConversations.value.containsKey(conversation.id))
+    }
+
+    @Test
     fun whenALineBreakHappensOneNewItemShouldBeCreated() {
         val input = MapStoryData.singleCheckItem()
         val checkItem = input[0.0]

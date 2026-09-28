@@ -572,6 +572,10 @@ class DocumentRepositoryTest {
             setOf(sharedId, remoteReplyId, "comment-local-reply"),
             loaded.commentConversations.getValue(conversationA).map { it.id }.toSet(),
         )
+        assertEquals(
+            listOf(sharedId, remoteReplyId, "comment-local-reply"),
+            loaded.commentConversations.getValue(conversationA).map { it.id },
+        )
 
         DocumentsService.syncStorySteps(
             documentId = documentId,
