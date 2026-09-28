@@ -33,7 +33,6 @@ import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskStatus
 import io.writeopia.ai.task.AiTaskType
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import io.writeopia.ai.task.enqueueModelDownload
 import io.writeopia.model.UiConfiguration
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
@@ -325,7 +324,6 @@ class GlobalShellKmpViewModel(
                     }.mapTo(mutableSetOf()) { task -> task.id }
                 }
                 .distinctUntilChanged()
-                .drop(1)
                 .collect { completedIds ->
                     if (completedIds.isNotEmpty()) retryModels()
                 }
