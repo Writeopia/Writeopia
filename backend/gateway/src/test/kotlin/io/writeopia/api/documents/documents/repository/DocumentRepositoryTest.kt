@@ -249,14 +249,17 @@ class DocumentRepositoryTest {
     }
 
     @Test
-    fun `legacy full document write should not erase existing comments`() = runTest {
+    fun `full document writes should merge and preserve existing comments`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()
         val workspaceId = GenerateId.generate()
         val documentId = GenerateId.generate()
         val conversation = CommentConversation(
             id = GenerateId.generate(),
-            comments = listOf(Comment(id = GenerateId.generate(), text = "keep")),
+            comments = listOf(
+                Comment(id = "comment-shared", text = "keep"),
+                Comment(id = "comment-remote", text = "remote reply"),
+            ),
         )
 
         database.saveDocument(
@@ -271,33 +274,50 @@ class DocumentRepositoryTest {
             )
         )
 
-        assertFailsWith<IllegalArgumentException> {
-            DocumentsService.documentFromApiForWrite(
-                document = DocumentApi(
-                    id = documentId,
-                    workspaceId = workspaceId,
-                    parentId = "root",
-                ),
-                workspaceId = workspaceId,
-                writeopiaDb = database,
-            )
-        }
-
-        val explicitModernPayload = DocumentsService.documentFromApiForWrite(
+        val legacyPayload = DocumentsService.documentFromApiForWrite(
             document = DocumentApi(
                 id = documentId,
                 workspaceId = workspaceId,
                 parentId = "root",
-                commentConversations = emptyList(),
             ),
             workspaceId = workspaceId,
             writeopiaDb = database,
         )
-        assertTrue(explicitModernPayload.commentConversations.isEmpty())
+        DocumentsService.receiveDocuments(
+            listOf(legacyPayload),
+            workspaceId,
+            database,
+            useAi = false,
+        )
 
+        val staleModernPayload = DocumentsService.documentFromApiForWrite(
+            document = DocumentApi(
+                id = documentId,
+                workspaceId = workspaceId,
+                parentId = "root",
+                commentConversations = listOf(
+                    CommentConversationApi(
+                        id = conversation.id,
+                        comments = listOf(
+                            CommentApi(id = "comment-shared", text = "keep")
+                        ),
+                    )
+                ),
+            ),
+            workspaceId = workspaceId,
+            writeopiaDb = database,
+        )
+        DocumentsService.receiveDocuments(
+            listOf(staleModernPayload),
+            workspaceId,
+            database,
+            useAi = false,
+        )
+
+        val loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
         assertEquals(
-            commentMap(conversation),
-            database.getDocumentWithContentById(documentId, workspaceId)?.commentConversations,
+            setOf("comment-shared", "comment-remote"),
+            loaded.commentConversations.getValue(conversation.id).map { it.id }.toSet(),
         )
 
         database.deleteDocumentById(documentId)
@@ -493,7 +513,7 @@ class DocumentRepositoryTest {
     }
 
     @Test
-    fun `stale comment delta should preserve unseen remote data and apply explicit deletions`() = runTest {
+    fun `stale comment delta should preserve unseen remote data and tombstone deletions`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()
         val workspaceId = GenerateId.generate()
@@ -552,10 +572,6 @@ class DocumentRepositoryTest {
             setOf(sharedId, remoteReplyId, "comment-local-reply"),
             loaded.commentConversations.getValue(conversationA).map { it.id }.toSet(),
         )
-        assertEquals(
-            listOf(unseenId),
-            loaded.commentConversations.getValue(conversationB).map { it.id },
-        )
 
         DocumentsService.syncStorySteps(
             documentId = documentId,
@@ -575,11 +591,43 @@ class DocumentRepositoryTest {
         )
 
         loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
-        assertEquals(setOf(conversationA), loaded.commentConversations.keys)
-        assertEquals(
-            setOf(sharedId, "comment-local-reply"),
-            loaded.commentConversations.getValue(conversationA).map { it.id }.toSet(),
+        assertTrue(
+            loaded.commentConversations.getValue(conversationB)
+                .all { comment -> comment.deleted }
         )
+        assertTrue(
+            loaded.commentConversations.getValue(conversationA)
+                .single { comment -> comment.id == remoteReplyId }
+                .deleted
+        )
+
+        DocumentsService.syncStorySteps(
+            documentId = documentId,
+            workspaceId = workspaceId,
+            request = StoryStepSyncRequest(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                lastSyncTimestamp = 0,
+                requestTimestamp = 30,
+                changes = emptyList(),
+                deletions = emptyList(),
+                commentConversations = listOf(
+                    CommentConversationApi(
+                        id = conversationB,
+                        comments = listOf(
+                            CommentApi(id = unseenId, text = "Stale thread"),
+                            CommentApi(id = "stale-new-reply", text = "Must not resurrect"),
+                        ),
+                    )
+                ),
+            ),
+            writeopiaDb = database,
+        )
+
+        loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
+        val deletedThread = loaded.commentConversations.getValue(conversationB)
+        assertTrue(deletedThread.all { comment -> comment.deleted })
+        assertTrue(deletedThread.none { comment -> comment.id == "stale-new-reply" })
 
         database.deleteDocumentById(documentId)
     }
@@ -911,6 +959,66 @@ class DocumentRepositoryTest {
 
         assertTrue(documentFromDb.isNotEmpty())
     }
+
+    @Test
+    fun `stale writes should not resurrect a soft deleted document`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+            )
+        )
+        database.deleteDocumentById(documentId)
+
+        assertFailsWith<IllegalArgumentException> {
+            DocumentsService.documentFromApiForWrite(
+                document = DocumentApi(
+                    id = documentId,
+                    workspaceId = workspaceId,
+                    parentId = "root",
+                    commentConversations = emptyList(),
+                ),
+                workspaceId = workspaceId,
+                writeopiaDb = database,
+            )
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            DocumentsService.syncStorySteps(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                request = StoryStepSyncRequest(
+                    documentId = documentId,
+                    workspaceId = workspaceId,
+                    lastSyncTimestamp = 0,
+                    requestTimestamp = 1,
+                    changes = emptyList(),
+                    deletions = emptyList(),
+                    commentConversations = listOf(
+                        CommentConversationApi(
+                            id = "stale-conversation",
+                            comments = listOf(
+                                CommentApi(id = "stale-comment", text = "stale")
+                            ),
+                        )
+                    ),
+                ),
+                writeopiaDb = database,
+            )
+        }
+
+        assertEquals(null, database.getDocumentWithContentById(documentId, workspaceId))
+    }
+
 
     private fun commentMap(
         vararg conversations: CommentConversation,
