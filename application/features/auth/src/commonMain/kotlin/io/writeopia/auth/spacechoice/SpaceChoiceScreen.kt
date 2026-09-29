@@ -46,11 +46,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
+
+const val PRIVATE_SPACE_CARD_TAG = "privateSpaceCard"
 
 private val OFFLINE_MODELS = listOf("llama3", "mistral", "deepseek-r1")
 private val ONLINE_MODELS = listOf("claude", "gemini", "gpt")
@@ -133,7 +136,7 @@ fun SpaceChoiceScreen(
                         horizontalArrangement = Arrangement.spacedBy(CARDS_SPACING)
                     ) {
                         SpaceCard(
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            modifier = Modifier.weight(1f).fillMaxHeight().testTag(PRIVATE_SPACE_CARD_TAG),
                             label = WrStrings.privateSpaceLabel(),
                             title = WrStrings.privateSpaceTitle(),
                             description = WrStrings.privateSpaceDescription(),
@@ -160,7 +163,10 @@ fun SpaceChoiceScreen(
                         verticalArrangement = Arrangement.spacedBy(CARDS_SPACING)
                     ) {
                         SpaceCard(
-                            modifier = Modifier.fillMaxWidth().heightIn(min = cardMinHeight),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = cardMinHeight)
+                                .testTag(PRIVATE_SPACE_CARD_TAG),
                             label = WrStrings.privateSpaceLabel(),
                             title = WrStrings.privateSpaceTitle(),
                             description = WrStrings.privateSpaceDescription(),

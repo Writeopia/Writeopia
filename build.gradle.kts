@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.application) apply false
     alias(libs.plugins.androidLibrary) apply false
     alias(libs.plugins.androidMultiplatformLibrary) apply false
+    alias(libs.plugins.androidTest) apply false
+    alias(libs.plugins.baselineprofile) apply false
     alias(libs.plugins.kotlinAndroid) apply false
     alias(libs.plugins.nativeCocoapods) apply false
     alias(libs.plugins.sqldelight) apply false

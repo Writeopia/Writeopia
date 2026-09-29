@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.multiplatform.compiler)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.baselineprofile)
 }
 
 android {
@@ -45,7 +46,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules-android.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            // Falls back to debug signing when the release keys aren't available (local
+            // builds), so the baseline profile can be generated on any machine.
+            signingConfig = if (System.getenv("WR_ANDROID_SIGNING_STORE_PASSWORD") != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
             resValue("string", "app_name", "Writeopia")
         }
     }
@@ -72,7 +79,15 @@ android {
     }
 }
 
+baselineProfile {
+    // Profiles are generated on demand and checked in; don't regenerate on every release build.
+    automaticGenerationDuringBuild = false
+}
+
 dependencies {
+    baselineProfile(project(":application:baselineprofile"))
+    implementation(libs.androidx.profileinstaller)
+
     implementation(project(":application:composeApp"))
     implementation(project(":writeopia_ui"))
     implementation(project(":writeopia"))
