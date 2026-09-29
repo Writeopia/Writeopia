@@ -28,13 +28,19 @@ public final class AppSession {
     public var colorTheme: ColorTheme {
         didSet { preferences.set(colorTheme.rawValue, for: .colorTheme) }
     }
+    /// Who runs the AI commands. Apple Intelligence unless the user picks the cloud AI.
+    public var aiProvider: AiProvider {
+        didSet { preferences.set(aiProvider.rawValue, for: .aiProvider) }
+    }
 
     public let client: APIClient
     public let authAPI: AuthAPI
     public let workspacesAPI: WorkspacesAPI
     public let aiAPI: AiAPI
+    public let appleIntelligence: AppleIntelligenceAi
     public let preferences: Preferences
     private let tokenStore: TokenStore
+    @ObservationIgnored private let isAppleIntelligenceAvailable: () -> Bool
     private let localDocuments: LocalDocumentsRepository
     @ObservationIgnored private var syncedDocuments: SyncedDocumentsRepository?
 
@@ -42,9 +48,11 @@ public final class AppSession {
         tokenStore: TokenStore = KeychainTokenStore(),
         preferences: Preferences = Preferences(),
         transport: HTTPTransport = URLSession.shared,
-        localDocuments: LocalDocumentsRepository = LocalDocumentsRepository()
+        localDocuments: LocalDocumentsRepository = LocalDocumentsRepository(),
+        isAppleIntelligenceAvailable: @escaping () -> Bool = { AppleIntelligenceAi.isAvailable }
     ) {
         self.tokenStore = tokenStore
+        self.isAppleIntelligenceAvailable = isAppleIntelligenceAvailable
         self.preferences = preferences
         self.localDocuments = localDocuments
 
@@ -53,11 +61,13 @@ public final class AppSession {
         authAPI = AuthAPI(client: client, tokenStore: tokenStore)
         workspacesAPI = WorkspacesAPI(client: client)
         aiAPI = AiAPI(client: client)
+        appleIntelligence = AppleIntelligenceAi()
 
         spaceType = preferences.string(.spaceType).flatMap(SpaceType.init(rawValue:))
         user = preferences.codable(User.self, .currentUser)
         workspace = preferences.codable(Workspace.self, .selectedWorkspace)
         colorTheme = preferences.string(.colorTheme).flatMap(ColorTheme.init(rawValue:)) ?? .system
+        aiProvider = preferences.string(.aiProvider).flatMap(AiProvider.init(rawValue:)) ?? .appleIntelligence
         phase = .spaceChoice
         phase = resolvePhase()
 
@@ -83,6 +93,24 @@ public final class AppSession {
         )
         syncedDocuments = repository
         return repository
+    }
+
+    /// Runs the AI commands of the editor and of the documents list; nil when no AI can answer.
+    /// Apple Intelligence runs on the device, so it also works in the private space and offline.
+    /// The cloud AI is used when picked in the open space, or when Apple Intelligence isn't
+    /// available on this device.
+    public var aiClient: AiStreaming? {
+        let appleIntelligenceReady = isAppleIntelligenceAvailable()
+        // The cloud AI needs a session and a workspace of the open space.
+        let cloudReady = isOnline && workspace.map { $0.id != Workspace.localId } == true
+        switch aiProvider {
+        case .appleIntelligence:
+            if appleIntelligenceReady { return appleIntelligence }
+            return cloudReady ? aiAPI : nil
+        case .cloud:
+            if cloudReady { return aiAPI }
+            return appleIntelligenceReady ? appleIntelligence : nil
+        }
     }
 
     /// Image uploads; nil outside the open space, where images stay on the device.

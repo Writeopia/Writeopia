@@ -224,3 +224,63 @@ private func makeSession(
         #expect(session.spaceType == nil)
     }
 }
+
+@Suite struct AiProviderTests {
+    private func session(online: Bool, appleIntelligence: Bool, defaults: UserDefaults = UserDefaults(suiteName: "tests.\(UUID().uuidString)")!) -> AppSession {
+        let session = AppSession(
+            tokenStore: InMemoryTokenStore(accessToken: online ? "token" : nil),
+            preferences: Preferences(defaults: defaults),
+            transport: StubTransport([:]),
+            isAppleIntelligenceAvailable: { appleIntelligence }
+        )
+        if online {
+            session.chooseOnlineSpace()
+            session.select(workspace: Workspace(id: "w1", userId: "u1", name: "Team", role: "ADMIN"))
+        } else {
+            session.chooseOfflineSpace()
+        }
+        return session
+    }
+
+    @Test func cloudNeedsAWorkspaceOfTheOpenSpace() {
+        let session = AppSession(
+            tokenStore: InMemoryTokenStore(accessToken: "token"),
+            preferences: Preferences(defaults: UserDefaults(suiteName: "tests.\(UUID().uuidString)")!),
+            transport: StubTransport([:]),
+            isAppleIntelligenceAvailable: { false }
+        )
+        session.chooseOnlineSpace()
+        session.aiProvider = .cloud
+        #expect(session.aiClient == nil)
+    }
+
+    @Test func appleIntelligenceIsTheDefaultInBothSpaces() {
+        let offline = session(online: false, appleIntelligence: true)
+        #expect(offline.aiProvider == .appleIntelligence)
+        #expect(offline.aiClient === offline.appleIntelligence)
+
+        let online = session(online: true, appleIntelligence: true)
+        #expect(online.aiClient === online.appleIntelligence)
+    }
+
+    @Test func cloudIsUsedWhenAppleIntelligenceIsUnavailable() {
+        let online = session(online: true, appleIntelligence: false)
+        #expect(online.aiClient === online.aiAPI)
+
+        // The private space has no backend: no AI at all.
+        #expect(session(online: false, appleIntelligence: false).aiClient == nil)
+    }
+
+    @Test func cloudCanBePickedInTheOpenSpaceAndIsRemembered() {
+        let defaults = UserDefaults(suiteName: "tests.\(UUID().uuidString)")!
+        let online = session(online: true, appleIntelligence: true, defaults: defaults)
+
+        online.aiProvider = .cloud
+
+        #expect(online.aiClient === online.aiAPI)
+        #expect(session(online: true, appleIntelligence: true, defaults: defaults).aiProvider == .cloud)
+        // Offline the cloud can't answer, so Apple Intelligence does.
+        let offline = session(online: false, appleIntelligence: true, defaults: defaults)
+        #expect(offline.aiClient === offline.appleIntelligence)
+    }
+}

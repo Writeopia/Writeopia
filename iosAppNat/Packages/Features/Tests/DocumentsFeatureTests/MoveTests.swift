@@ -16,7 +16,13 @@ final class FakeDocumentsRepository: DocumentsRepository {
         return document
     }
     func search(query: String) async throws -> [WrDocument] { [] }
-    func createFolder(title: String, parentId: String) async throws -> Folder { throw APIError.notFound }
+    var createdFolders: [Folder] = []
+
+    func createFolder(title: String, parentId: String) async throws -> Folder {
+        let folder = Folder(id: "new-\(createdFolders.count)", parentId: parentId, title: title, workspaceId: "w")
+        createdFolders.append(folder)
+        return folder
+    }
     func createDocument(title: String, parentId: String) async throws -> WrDocument { throw APIError.notFound }
 
     func moveDocument(id: String, toFolder folderId: String) async throws {

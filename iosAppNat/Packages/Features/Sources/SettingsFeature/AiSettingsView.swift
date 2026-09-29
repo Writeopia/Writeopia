@@ -1,5 +1,6 @@
 import Observation
 import SwiftUI
+import WrData
 import WrDesign
 import WrModels
 import WrNetwork
@@ -34,27 +35,85 @@ final class AiSettingsViewModel {
 
 struct AiSettingsView: View {
     @State private var viewModel: AiSettingsViewModel
+    @State private var appleIntelligence = AppleIntelligenceAi.status
+    @Environment(\.scenePhase) private var scenePhase
 
     init(session: AppSession) {
         _viewModel = State(initialValue: AiSettingsViewModel(session: session))
     }
 
     var body: some View {
-        Group {
+        @Bindable var session = viewModel.session
+        Form {
+            appleIntelligenceSection
+
             if viewModel.session.isOnline {
-                Form {
-                    usageSection
+                Section {
+                    Picker("Run AI with", selection: $session.aiProvider) {
+                        ForEach(AiProvider.allCases) { provider in
+                            Text(provider.title).tag(provider)
+                        }
+                    }
+                    .accessibilityIdentifier("settings.ai.provider")
+                } header: {
+                    Text("Provider")
+                } footer: {
+                    Text(providerFooter)
                 }
-                .task { await viewModel.loadUsage() }
-                .refreshable { await viewModel.loadUsage() }
-            } else {
-                OfflineNotice(
-                    title: "AI needs an account",
-                    message: "Sign in to the open space to use AI in your documents."
-                )
+
+                usageSection
+            } else if !appleIntelligence.isAvailable {
+                Section {
+                    Text("Sign in to the open space to use the cloud AI on this device.")
+                        .foregroundStyle(.secondary)
+                }
             }
         }
+        .task { await viewModel.loadUsage() }
+        .refreshable { await viewModel.loadUsage() }
+        // Apple Intelligence may have been turned on in the Settings app, or finished downloading.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { appleIntelligence = AppleIntelligenceAi.status }
+        }
         .navigationTitle("AI")
+    }
+
+    private var appleIntelligenceSection: some View {
+        Section {
+            Label {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(appleIntelligence.isAvailable ? "Available" : "Unavailable")
+                        .font(.headline)
+                    Text(appleIntelligence.message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } icon: {
+                Image(systemName: appleIntelligence.isAvailable ? "apple.intelligence" : "exclamationmark.triangle")
+                    .foregroundStyle(appleIntelligence.isAvailable ? WrColors.accent : .orange)
+            }
+            .padding(.vertical, 4)
+            .accessibilityIdentifier("settings.ai.appleIntelligence")
+
+            if appleIntelligence == .notEnabled, let url = URL(string: UIApplication.openSettingsURLString) {
+                Link("Open Settings", destination: url)
+            }
+        } header: {
+            Text("Apple Intelligence")
+        } footer: {
+            Text("Summaries, action points, FAQs, tags and prompts run on this device, even offline and in the private space.")
+        }
+    }
+
+    private var providerFooter: String {
+        switch viewModel.session.aiProvider {
+        case .appleIntelligence where !appleIntelligence.isAvailable:
+            String(localized: "Apple Intelligence isn't available, so the cloud AI is used for now.")
+        case .appleIntelligence:
+            String(localized: "AI runs on this device and doesn't use your monthly tokens.")
+        case .cloud:
+            String(localized: "AI runs on the Writeopia servers and uses your monthly tokens.")
+        }
     }
 
     @ViewBuilder
@@ -88,7 +147,7 @@ struct AiSettingsView: View {
                 Text(error).foregroundStyle(.red)
             }
         } header: {
-            Text("Cloud AI")
+            Text("Cloud AI usage")
         }
     }
 }

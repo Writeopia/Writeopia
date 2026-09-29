@@ -99,7 +99,8 @@ final class FolderContentsViewModel {
     }
 
     /// Summarizes the selected documents with the AI into a new document of this folder, like
-    /// "AI Summary" of the Compose selection menu (which uses local AI; here the cloud AI).
+    /// "AI Summary" of the Compose selection menu. Runs with Apple Intelligence on the device, or
+    /// the cloud AI (see `AppSession.aiClient`).
     func summarizeSelected() async {
         guard let aiClient, hasSelection else { return }
         let ids = documents.map(\.id).filter { selectedIds.contains($0) }
@@ -183,10 +184,24 @@ final class FolderContentsViewModel {
         }
     }
 
-    func createFolder(title: String) async {
-        await perform {
-            _ = try await self.repository.createFolder(title: self.normalized(title, fallback: "New folder"), parentId: self.folderId)
+    /// Creates a folder here with `icon`, picked in the same sheet that edits folders.
+    func createFolder(title: String, icon: IconInfo? = nil) async {
+        let created: Folder
+        do {
+            created = try await repository.createFolder(title: normalized(title, fallback: "New folder"), parentId: folderId)
+        } catch {
+            actionError = error.userMessage
+            return
         }
+        // The folder exists now: a failed icon doesn't make it look like the creation failed.
+        if let icon {
+            var withIcon = created
+            withIcon.icon = icon
+            if (try? await repository.updateFolder(withIcon)) == nil {
+                actionError = String(localized: "The folder was created, but its icon couldn't be saved.")
+            }
+        }
+        await load()
     }
 
     func createDocument(title: String) async -> WrDocument? {
@@ -347,7 +362,7 @@ private struct DocumentsNavigation: View {
                             documentId: id,
                             title: title,
                             repository: session.documents,
-                            aiClient: session.isOnline ? session.aiAPI : nil,
+                            aiClient: session.aiClient,
                             publishing: session.publishing,
                             imageUploader: session.imageUploader,
                             isPremium: session.user?.isPremium ?? false
@@ -366,7 +381,7 @@ private struct DocumentsNavigation: View {
             title: title,
             rootTitle: rootTitle,
             repository: session.documents,
-            aiClient: session.isOnline ? session.aiAPI : nil,
+            aiClient: session.aiClient,
             settings: settings,
             path: $router.path,
             onItemsChange: router.treeChanged
@@ -378,6 +393,7 @@ struct FolderContentsView: View {
     @State private var viewModel: FolderContentsViewModel
     @Binding private var path: NavigationPath
     @State private var newItem: NewItem?
+    @State private var showsNewFolder = false
     @State private var newItemTitle = ""
     /// Folder currently under a drag, highlighted as the drop target.
     @State private var dropTargetId: String?
@@ -392,8 +408,8 @@ struct FolderContentsView: View {
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 12)]
 
+    /// New documents are named in an alert; new folders use `FolderEditSheet`, to pick an icon.
     private enum NewItem: String, Identifiable {
-        case folder = "New folder"
         case document = "New document"
 
         var id: String { rawValue }
@@ -517,7 +533,7 @@ struct FolderContentsView: View {
                         Label("New document", systemImage: "doc.badge.plus")
                     }
                     Button {
-                        present(.folder)
+                        showsNewFolder = true
                     } label: {
                         Label("New folder", systemImage: "folder.badge.plus")
                     }
@@ -536,6 +552,12 @@ struct FolderContentsView: View {
             TextField("Title", text: $newItemTitle)
             Button("Cancel", role: .cancel) {}
             Button("Create") { create(item) }
+        }
+        .sheet(isPresented: $showsNewFolder) {
+            FolderEditSheet(folder: nil) { title, icon in
+                Task { await viewModel.createFolder(title: title, icon: icon) }
+            }
+            .presentationDetents([.medium, .large])
         }
         .alert(
             "Something went wrong",
@@ -710,8 +732,6 @@ struct FolderContentsView: View {
         let title = newItemTitle
         Task {
             switch item {
-            case .folder:
-                await viewModel.createFolder(title: title)
             case .document:
                 if let document = await viewModel.createDocument(title: title) {
                     path.append(DocumentsRoute.document(id: document.id, title: document.displayTitle))
