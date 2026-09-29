@@ -1,6 +1,5 @@
 package io.writeopia.auth.spacechoice
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -41,9 +40,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -60,6 +62,11 @@ private val ONLINE_MODELS = listOf("claude", "gemini", "gpt")
 private val PAGE_PADDING = 24.dp
 private val CARDS_SPACING = 16.dp
 
+/** How much of the light above the window reaches the screen at rest. */
+private const val LIGHT_AT_REST = 0.35f
+private const val DARK_ROOM_ALPHA = 0.55f
+private val LIGHT_RADIUS = 900.dp
+
 @Composable
 fun SpaceChoiceScreen(
     modifier: Modifier = Modifier,
@@ -70,17 +77,45 @@ fun SpaceChoiceScreen(
     var isOpenHovered by remember { mutableStateOf(false) }
 
     val screenBackground = WriteopiaTheme.colorScheme.globalBackground
-    val targetBackground = when {
-        isPrivateHovered -> lerp(screenBackground, Color.Black, 0.8f)
-        isOpenHovered -> lerp(screenBackground, Color.White, 0.3f)
-        else -> screenBackground
-    }
-    val animatedBackground by animateColorAsState(
-        targetValue = targetBackground,
-        animationSpec = tween(durationMillis = 200)
+    // A light hangs above the window: only its glow reaches the screen. Dimmed at rest, brighter
+    // over the open space, and off while the private space darkens the room.
+    val lightIntensity by animateFloatAsState(
+        targetValue = when {
+            isPrivateHovered -> 0f
+            isOpenHovered -> 1f
+            else -> LIGHT_AT_REST
+        },
+        animationSpec = tween(durationMillis = 300)
     )
+    val darkness by animateFloatAsState(
+        targetValue = if (isPrivateHovered) DARK_ROOM_ALPHA else 0f,
+        animationSpec = tween(durationMillis = 300)
+    )
+    val lightRadius = with(LocalDensity.current) { LIGHT_RADIUS.toPx() }
 
-    BoxWithConstraints(modifier = modifier.fillMaxSize().background(animatedBackground)) {
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+            .background(screenBackground)
+            .drawBehind {
+                if (darkness > 0f) {
+                    drawRect(Color.Black.copy(alpha = darkness))
+                }
+                if (lightIntensity > 0f) {
+                    drawRect(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.55f * lightIntensity),
+                                Color.White.copy(alpha = 0.18f * lightIntensity),
+                                Color.Transparent
+                            ),
+                            center = Offset(size.width / 2f, -0.35f * size.height),
+                            radius = lightRadius
+                        )
+                    )
+                }
+            }
+    ) {
         val isWide = maxWidth > maxHeight
         val density = LocalDensity.current
         var headerHeight by remember { mutableStateOf(0.dp) }
@@ -246,8 +281,7 @@ private fun SpaceCard(
                 color = accentColor,
                 style = MaterialTheme.typography.labelMedium,
                 letterSpacing = 1.5.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.scale(titleScale)
+                fontWeight = FontWeight.Bold
             )
         }
 
@@ -257,7 +291,13 @@ private fun SpaceCard(
             text = title,
             color = WriteopiaTheme.colorScheme.textLight,
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            // Grows from its left edge, so the text doesn't shift.
+            modifier = Modifier.graphicsLayer {
+                scaleX = titleScale
+                scaleY = titleScale
+                transformOrigin = TransformOrigin(0f, 0.5f)
+            }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
