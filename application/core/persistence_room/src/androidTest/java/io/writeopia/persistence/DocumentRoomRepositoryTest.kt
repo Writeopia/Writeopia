@@ -177,6 +177,125 @@ class DocumentRoomRepositoryTest {
     }
 
     @Test
+    fun incrementalStoryStepSaveReplacesPersistedSubtree() = runTest {
+        val now = Clock.System.now()
+        val workspaceId = "workspace-subtree-single"
+        val documentId = GenerateId.generate()
+        val keptChild = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "kept",
+        )
+        val staleGrandchild = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "stale-grandchild",
+        )
+        val removedChild = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "removed",
+            steps = listOf(staleGrandchild),
+        )
+        val parent = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "parent",
+            steps = listOf(keptChild, removedChild),
+        )
+        documentRepository.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+                content = mapOf(0.0 to parent),
+            )
+        )
+
+        documentRepository.saveStoryStep(
+            storyStep = parent.copy(steps = listOf(keptChild)),
+            position = 0.0,
+            documentId = documentId,
+        )
+
+        val loaded = documentRepository.loadDocumentById(documentId, workspaceId)!!
+        assertEquals(listOf(keptChild.id), loaded.content.getValue(0.0).steps.map { it.id })
+        assertEquals(null, storyUnitEntityDao.queryById(removedChild.id))
+        assertEquals(null, storyUnitEntityDao.queryById(staleGrandchild.id))
+    }
+
+    @Test
+    fun incrementalStoryStepsSaveReplacesPersistedSubtrees() = runTest {
+        val now = Clock.System.now()
+        val workspaceId = "workspace-subtree-batch"
+        val documentId = GenerateId.generate()
+        val firstKept = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "first-kept",
+        )
+        val firstRemoved = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "first-removed",
+        )
+        val secondKept = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "second-kept",
+        )
+        val secondRemoved = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "second-removed",
+        )
+        val firstParent = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "first-parent",
+            steps = listOf(firstKept, firstRemoved),
+        )
+        val secondParent = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "second-parent",
+            steps = listOf(secondKept, secondRemoved),
+        )
+        documentRepository.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+                content = mapOf(0.0 to firstParent, 1.0 to secondParent),
+            )
+        )
+
+        documentRepository.saveStorySteps(
+            steps = listOf(
+                0.0 to firstParent.copy(steps = listOf(firstKept)),
+                1.0 to secondParent.copy(steps = listOf(secondKept)),
+            ),
+            documentId = documentId,
+        )
+
+        val loaded = documentRepository.loadDocumentById(documentId, workspaceId)!!
+        assertEquals(
+            listOf(firstKept.id),
+            loaded.content.getValue(0.0).steps.map { it.id },
+        )
+        assertEquals(
+            listOf(secondKept.id),
+            loaded.content.getValue(1.0).steps.map { it.id },
+        )
+        assertEquals(null, storyUnitEntityDao.queryById(firstRemoved.id))
+        assertEquals(null, storyUnitEntityDao.queryById(secondRemoved.id))
+    }
+
+    @Test
     fun collectionLoadPreservesComments() = runTest {
         documentRepositoryTests.collectionLoadPreservesComments()
     }

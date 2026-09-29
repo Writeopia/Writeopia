@@ -231,14 +231,20 @@ class RoomDocumentRepository(
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
         val dbPos = storyStep.dbPosition ?: position
         val entities = mapOf(dbPos to storyStep).toEntity(documentId)
-        storyUnitEntityDao?.insertStoryUnits(*entities.toTypedArray())
+        writeTransaction {
+            storyUnitEntityDao?.deleteDescendants(listOf(storyStep.id))
+            storyUnitEntityDao?.insertStoryUnits(*entities.toTypedArray())
+        }
     }
 
     override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
         val entities = steps.flatMap { (position, storyStep) ->
             mapOf(position to storyStep).toEntity(documentId)
         }
-        storyUnitEntityDao?.insertStoryUnits(*entities.toTypedArray())
+        writeTransaction {
+            storyUnitEntityDao?.deleteDescendants(steps.map { (_, step) -> step.id })
+            storyUnitEntityDao?.insertStoryUnits(*entities.toTypedArray())
+        }
     }
 
     override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {

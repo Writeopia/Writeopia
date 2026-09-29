@@ -48,6 +48,23 @@ interface StoryUnitEntityDao {
     @Query("DELETE FROM $STORY_UNIT_ENTITY WHERE $STORY_UNIT_ENTITY.id = :id")
     suspend fun deleteById(id: String)
 
+    @Query(
+        """
+        WITH RECURSIVE descendants(id) AS (
+            SELECT id
+            FROM $STORY_UNIT_ENTITY
+            WHERE parent_id IN (:parentIds)
+            UNION ALL
+            SELECT child.id
+            FROM $STORY_UNIT_ENTITY AS child
+            INNER JOIN descendants AS parent ON child.parent_id = parent.id
+        )
+        DELETE FROM $STORY_UNIT_ENTITY
+        WHERE id IN (SELECT id FROM descendants)
+        """
+    )
+    suspend fun deleteDescendants(parentIds: List<String>)
+
     @Query("DELETE FROM $STORY_UNIT_ENTITY WHERE $STORY_UNIT_ENTITY.document_id IN (:documentIds)")
     suspend fun deleteByDocumentIds(documentIds: List<String>)
 }
