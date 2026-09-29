@@ -101,18 +101,19 @@ class OnUpdateDocumentTracker(
             Triple(documentEdition, workspaceId, commentConversations)
         }.collect { (documentEdition, workspaceId, commentConversations) ->
             val (storyState, documentInfo) = documentEdition
-            val persistedStoryState = if (storyState.lastEdit is LastEdit.LineEdition) {
-                val lineEdit = storyState.lastEdit
-                val persistedStep = lineEdit.storyStep.copy(
-                    localId = GenerateId.generate(),
-                    lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
-                )
-                storyState.copy(
-                    stories = storyState.stories + (lineEdit.position to persistedStep),
-                    lastEdit = lineEdit.copy(storyStep = persistedStep),
-                )
-            } else {
-                storyState
+            val persistedStoryState = when (val lineEdit = storyState.lastEdit) {
+                is LastEdit.LineEdition -> {
+                    val persistedStep = lineEdit.storyStep.copy(
+                        localId = GenerateId.generate(),
+                        lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
+                    )
+                    storyState.copy(
+                        stories = storyState.stories + (lineEdit.position to persistedStep),
+                        lastEdit = lineEdit.copy(storyStep = persistedStep),
+                    )
+                }
+
+                else -> storyState
             }
             val commentsChanged = previousCommentConversations?.let { previous ->
                 previous != commentConversations
