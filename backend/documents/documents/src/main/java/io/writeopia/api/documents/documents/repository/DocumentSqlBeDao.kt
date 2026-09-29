@@ -1184,6 +1184,10 @@ class DocumentSqlBeDao(
             "StoryStep does not belong to the requested document"
         }
 
+        // Incremental sync sends the complete subtree for the changed StoryStep.
+        // Remove descendants omitted by the replacement payload before recursively upserting it.
+        storyStepQueries?.deleteDescendantsForDocument(documentId, storyStep.id)
+
         storyStep.run {
             storyStepQueries?.insert(
                 id = id,

@@ -80,25 +80,33 @@ class OnUpdateStoryStepSyncTracker(
      * Changes to other fields (like localId, cursor position) should not trigger sync.
      */
     private data class StoryStepContent(
-        val text: String?,
+        val id: String,
         val type: Int,
-        val checked: Boolean?,
+        val parentId: String?,
         val url: String?,
         val path: String?,
+        val text: String?,
+        val checked: Boolean?,
+        val steps: List<StoryStepContent>,
+        val tags: Set<Any>,
         val spans: Set<Any>,
         val decoration: Any,
-        val documentLink: Any?
+        val documentLink: Any?,
     )
 
-    private fun StoryStep.toContent() = StoryStepContent(
-        text = text,
+    private fun StoryStep.toContent(): StoryStepContent = StoryStepContent(
+        id = id,
         type = type.number,
-        checked = checked,
+        parentId = parentId,
         url = url,
         path = path,
+        text = text,
+        checked = checked,
+        steps = steps.map { child -> child.toContent() },
+        tags = tags,
         spans = spans,
         decoration = decoration,
-        documentLink = documentLink
+        documentLink = documentLink,
     )
 
     /**
@@ -373,12 +381,7 @@ class OnUpdateStoryStepSyncTracker(
                 syncBuffer.syncInterval * consecutiveFailures.coerceAtMost(maxRetries).toLong()
             delay(retryDelay)
 
-            batch.changes.forEach { change ->
-                syncBuffer.addChange(change.storyStep, change.position, change.documentId)
-            }
-            batch.deletions.forEach { id ->
-                syncBuffer.addDeletion(id)
-            }
+            syncBuffer.requeue(batch)
             if (commentsChanged) {
                 syncBuffer.requestSync()
             }

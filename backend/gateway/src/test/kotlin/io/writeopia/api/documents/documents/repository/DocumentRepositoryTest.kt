@@ -1176,6 +1176,85 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun `incremental subtree sync should remove omitted descendants`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        val keptChild = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "kept",
+            lastUpdatedAt = 1,
+        )
+        val staleGrandchild = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "stale-grandchild",
+            lastUpdatedAt = 1,
+        )
+        val removedChild = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "removed",
+            steps = listOf(staleGrandchild),
+            lastUpdatedAt = 1,
+        )
+        val parent = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "parent",
+            steps = listOf(keptChild, removedChild),
+            lastUpdatedAt = 1,
+        )
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+                content = mapOf(0.0 to parent),
+            )
+        )
+
+        val replacement = parent.copy(
+            steps = listOf(keptChild.copy(lastUpdatedAt = 2)),
+            lastUpdatedAt = 2,
+        )
+        DocumentsService.syncStorySteps(
+            documentId = documentId,
+            workspaceId = workspaceId,
+            request = StoryStepSyncRequest(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                lastSyncTimestamp = 1,
+                requestTimestamp = 2,
+                changes = listOf(
+                    StoryStepChangeApi(
+                        storyStep = replacement.toApi(0.0),
+                        position = 0.0,
+                    )
+                ),
+                deletions = emptyList(),
+                commentConversations = null,
+            ),
+            writeopiaDb = database,
+        )
+
+        val loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
+        assertEquals(
+            listOf(keptChild.id),
+            loaded.content.values.single().steps.map { child -> child.id },
+        )
+        assertEquals(null, database.getStoryStepById(removedChild.id))
+        assertEquals(null, database.getStoryStepById(staleGrandchild.id))
+
+        database.deleteDocumentById(documentId)
+    }
+
+    @Test
     fun `story step sync preserves epoch millis and rejects stale client edit`() = runTest {
         val database = configurePersistence()
         val now = Clock.System.now()

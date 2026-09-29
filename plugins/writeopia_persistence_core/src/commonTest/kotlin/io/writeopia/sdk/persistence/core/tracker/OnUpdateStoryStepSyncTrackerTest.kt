@@ -428,6 +428,312 @@ class OnUpdateStoryStepSyncTrackerTest {
     }
 
     @Test
+    fun nestedOnlyLineEditsShouldBothReachBackendSync() = runTest {
+        val now = Clock.System.now()
+        val childV1 = StoryStep(
+            id = "child-1",
+            type = StoryTypes.TEXT.type,
+            text = "v1",
+        )
+        val parentV1 = StoryStep(
+            id = "parent-1",
+            type = StoryTypes.TEXT.type,
+            text = "sheet",
+            steps = listOf(childV1),
+        )
+        val document = Document(
+            id = "document-nested-sync",
+            content = mapOf(0.0 to parentV1),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = now,
+            workspaceId = "workspace-1",
+            parentId = "root",
+        )
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(stories = document.content, lastEdit = LastEdit.Nothing) to document.info()
+        )
+        val workspaceIdFlow = MutableStateFlow(document.workspaceId)
+        val requests = mutableListOf<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        val secondRequest =
+            CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        val tracker = OnUpdateStoryStepSyncTracker(
+            syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
+            syncApi = { request ->
+                requests += request
+                if (requests.size == 2 && !secondRequest.isCompleted) {
+                    secondRequest.complete(request)
+                }
+                StoryStepSyncResponse(
+                    serverTimestamp = request.requestTimestamp,
+                    updatedSteps = emptyList(),
+                    deletedIds = emptyList(),
+                )
+            },
+        )
+
+        val job = launch {
+            tracker.syncStorySteps(documentEditionFlow, workspaceIdFlow)
+        }
+        runCurrent()
+
+        documentEditionFlow.value = StoryState(
+            stories = mapOf(0.0 to parentV1),
+            lastEdit = LastEdit.LineEdition(0.0, parentV1),
+        ) to document.info()
+        advanceTimeBy(20)
+        runCurrent()
+
+        val parentV2 = parentV1.copy(
+            steps = listOf(childV1.copy(text = "v2"))
+        )
+        documentEditionFlow.value = StoryState(
+            stories = mapOf(0.0 to parentV2),
+            lastEdit = LastEdit.LineEdition(0.0, parentV2),
+        ) to document.info()
+        advanceTimeBy(20)
+        runCurrent()
+
+        val synced = withTimeout(1_000) { secondRequest.await() }
+        job.cancel()
+
+        assertEquals(2, requests.size)
+        assertEquals("v2", synced.changes.single().storyStep.steps.single().text)
+    }
+
+    @Test
+    fun failedChangeRetryShouldNotOverwriteNewerPendingChange() = runTest {
+        val now = Clock.System.now()
+        val initialStep = StoryStep(
+            id = "step-retry-order",
+            type = StoryTypes.TEXT.type,
+            text = "v0",
+        )
+        val document = Document(
+            id = "document-retry-order",
+            content = mapOf(0.0 to initialStep),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = now,
+            workspaceId = "workspace-1",
+            parentId = "root",
+        )
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(stories = document.content, lastEdit = LastEdit.Nothing) to document.info()
+        )
+        val workspaceIdFlow = MutableStateFlow(document.workspaceId)
+        val firstRequestStarted = CompletableDeferred<Unit>()
+        val failFirstRequest = CompletableDeferred<Unit>()
+        val successfulRequest =
+            CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        var attempts = 0
+        val tracker = OnUpdateStoryStepSyncTracker(
+            syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
+            syncApi = { request ->
+                attempts++
+                if (attempts == 1) {
+                    firstRequestStarted.complete(Unit)
+                    failFirstRequest.await()
+                    error("first request failed")
+                }
+                if (!successfulRequest.isCompleted) {
+                    successfulRequest.complete(request)
+                }
+                StoryStepSyncResponse(
+                    serverTimestamp = request.requestTimestamp,
+                    updatedSteps = emptyList(),
+                    deletedIds = emptyList(),
+                )
+            },
+        )
+
+        val job = launch {
+            tracker.syncStorySteps(documentEditionFlow, workspaceIdFlow)
+        }
+        runCurrent()
+
+        val v1 = initialStep.copy(text = "v1")
+        documentEditionFlow.value = StoryState(
+            stories = mapOf(0.0 to v1),
+            lastEdit = LastEdit.LineEdition(0.0, v1),
+        ) to document.info()
+        advanceTimeBy(20)
+        runCurrent()
+        withTimeout(1_000) { firstRequestStarted.await() }
+
+        val v2 = initialStep.copy(text = "v2")
+        documentEditionFlow.value = StoryState(
+            stories = mapOf(0.0 to v2),
+            lastEdit = LastEdit.LineEdition(0.0, v2),
+        ) to document.info()
+        runCurrent()
+
+        failFirstRequest.complete(Unit)
+        advanceTimeBy(40)
+        runCurrent()
+
+        val synced = withTimeout(1_000) { successfulRequest.await() }
+        job.cancel()
+
+        assertEquals("v2", synced.changes.single().storyStep.text)
+        assertTrue(synced.deletions.isEmpty())
+    }
+
+    @Test
+    fun failedChangeRetryShouldNotResurrectChangeOverNewerDeletion() = runTest {
+        val now = Clock.System.now()
+        val initialStep = StoryStep(
+            id = "step-delete-order",
+            type = StoryTypes.TEXT.type,
+            text = "v0",
+        )
+        val document = Document(
+            id = "document-delete-order",
+            content = mapOf(0.0 to initialStep),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = now,
+            workspaceId = "workspace-1",
+            parentId = "root",
+        )
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(stories = document.content, lastEdit = LastEdit.Nothing) to document.info()
+        )
+        val workspaceIdFlow = MutableStateFlow(document.workspaceId)
+        val firstRequestStarted = CompletableDeferred<Unit>()
+        val failFirstRequest = CompletableDeferred<Unit>()
+        val successfulRequest =
+            CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        var attempts = 0
+        val tracker = OnUpdateStoryStepSyncTracker(
+            syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
+            syncApi = { request ->
+                attempts++
+                if (attempts == 1) {
+                    firstRequestStarted.complete(Unit)
+                    failFirstRequest.await()
+                    error("first request failed")
+                }
+                if (!successfulRequest.isCompleted) {
+                    successfulRequest.complete(request)
+                }
+                StoryStepSyncResponse(
+                    serverTimestamp = request.requestTimestamp,
+                    updatedSteps = emptyList(),
+                    deletedIds = emptyList(),
+                )
+            },
+        )
+
+        val job = launch {
+            tracker.syncStorySteps(documentEditionFlow, workspaceIdFlow)
+        }
+        runCurrent()
+
+        val v1 = initialStep.copy(text = "v1")
+        documentEditionFlow.value = StoryState(
+            stories = mapOf(0.0 to v1),
+            lastEdit = LastEdit.LineEdition(0.0, v1),
+        ) to document.info()
+        advanceTimeBy(20)
+        runCurrent()
+        withTimeout(1_000) { firstRequestStarted.await() }
+
+        documentEditionFlow.value = StoryState(
+            stories = emptyMap(),
+            lastEdit = LastEdit.DeleteEdition(initialStep.id, document.id),
+        ) to document.info()
+        runCurrent()
+
+        failFirstRequest.complete(Unit)
+        advanceTimeBy(40)
+        runCurrent()
+
+        val synced = withTimeout(1_000) { successfulRequest.await() }
+        job.cancel()
+
+        assertTrue(synced.changes.isEmpty())
+        assertEquals(setOf(initialStep.id), synced.deletions.toSet())
+    }
+
+    @Test
+    fun failedDeletionRetryShouldNotDeleteNewerPendingChange() = runTest {
+        val now = Clock.System.now()
+        val initialStep = StoryStep(
+            id = "step-change-order",
+            type = StoryTypes.TEXT.type,
+            text = "v0",
+        )
+        val document = Document(
+            id = "document-change-order",
+            content = mapOf(0.0 to initialStep),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = now,
+            workspaceId = "workspace-1",
+            parentId = "root",
+        )
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(stories = document.content, lastEdit = LastEdit.Nothing) to document.info()
+        )
+        val workspaceIdFlow = MutableStateFlow(document.workspaceId)
+        val firstRequestStarted = CompletableDeferred<Unit>()
+        val failFirstRequest = CompletableDeferred<Unit>()
+        val successfulRequest =
+            CompletableDeferred<io.writeopia.sdk.serialization.request.StoryStepSyncRequest>()
+        var attempts = 0
+        val tracker = OnUpdateStoryStepSyncTracker(
+            syncBuffer = StoryStepSyncBuffer(syncIntervalMs = 10),
+            syncApi = { request ->
+                attempts++
+                if (attempts == 1) {
+                    firstRequestStarted.complete(Unit)
+                    failFirstRequest.await()
+                    error("first request failed")
+                }
+                if (!successfulRequest.isCompleted) {
+                    successfulRequest.complete(request)
+                }
+                StoryStepSyncResponse(
+                    serverTimestamp = request.requestTimestamp,
+                    updatedSteps = emptyList(),
+                    deletedIds = emptyList(),
+                )
+            },
+        )
+
+        val job = launch {
+            tracker.syncStorySteps(documentEditionFlow, workspaceIdFlow)
+        }
+        runCurrent()
+
+        documentEditionFlow.value = StoryState(
+            stories = emptyMap(),
+            lastEdit = LastEdit.DeleteEdition(initialStep.id, document.id),
+        ) to document.info()
+        advanceTimeBy(20)
+        runCurrent()
+        withTimeout(1_000) { firstRequestStarted.await() }
+
+        val v2 = initialStep.copy(text = "v2")
+        documentEditionFlow.value = StoryState(
+            stories = mapOf(0.0 to v2),
+            lastEdit = LastEdit.LineEdition(0.0, v2),
+        ) to document.info()
+        runCurrent()
+
+        failFirstRequest.complete(Unit)
+        advanceTimeBy(40)
+        runCurrent()
+
+        val synced = withTimeout(1_000) { successfulRequest.await() }
+        job.cancel()
+
+        assertEquals("v2", synced.changes.single().storyStep.text)
+        assertTrue(synced.deletions.isEmpty())
+    }
+
+    @Test
     fun commentSyncShouldKeepRetryingAfterRetryLimit() = runTest {
         val now = Clock.System.now()
         val document = Document(

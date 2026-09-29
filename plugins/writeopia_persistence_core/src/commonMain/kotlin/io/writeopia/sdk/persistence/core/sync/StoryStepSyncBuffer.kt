@@ -94,6 +94,33 @@ class StoryStepSyncBuffer(
     }
 
     /**
+     * Requeues a failed batch without replacing mutations that arrived while the batch was
+     * in flight. A newer change or deletion for the same StoryStep always wins over the retry.
+     */
+    fun requeue(batch: SyncBatch) {
+        var requeued = false
+
+        batch.changes.forEach { change ->
+            val storyStepId = change.storyStep.id
+            if (storyStepId !in pendingChanges && storyStepId !in pendingDeletions) {
+                pendingChanges[storyStepId] = change
+                requeued = true
+            }
+        }
+
+        batch.deletions.forEach { storyStepId ->
+            if (storyStepId !in pendingChanges && storyStepId !in pendingDeletions) {
+                pendingDeletions.add(storyStepId)
+                requeued = true
+            }
+        }
+
+        if (requeued) {
+            _syncTrigger.tryEmit(Unit)
+        }
+    }
+
+    /**
      * Checks if there are any pending changes or deletions.
      */
     fun hasPendingChanges(): Boolean = pendingChanges.isNotEmpty() || pendingDeletions.isNotEmpty()
