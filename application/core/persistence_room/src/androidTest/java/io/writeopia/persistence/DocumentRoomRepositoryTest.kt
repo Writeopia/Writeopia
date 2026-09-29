@@ -6,8 +6,13 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.writeopia.libraries.dbtests.DocumentRepositoryTests
 import io.writeopia.persistence.room.WriteopiaApplicationDatabase
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
+import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.persistence.dao.CommentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
@@ -115,6 +120,60 @@ class DocumentRoomRepositoryTest {
     @Test
     fun saveAndLoadDocumentWithComments() = runTest {
         documentRepositoryTests.saveAndLoadDocumentWithComments()
+    }
+
+    @Test
+    fun nestedStoryStepsSurviveRepositoryRoundTrip() = runTest {
+        val now = Clock.System.now()
+        val workspaceId = "workspace-deep"
+        val documentId = GenerateId.generate()
+        val conversationId = GenerateId.generate()
+        val timestamp = 1_700_000_000_123L
+        val grandchild = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "grandchild",
+            spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, conversationId)),
+            lastUpdatedAt = timestamp,
+        )
+        val child = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "child",
+            steps = listOf(grandchild),
+            lastUpdatedAt = timestamp,
+        )
+        val parent = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "parent",
+            steps = listOf(child),
+            lastUpdatedAt = timestamp,
+        )
+        documentRepository.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+                content = mapOf(0.0 to parent),
+                commentConversations = mapOf(
+                    conversationId to listOf(Comment(id = GenerateId.generate(), text = "comment"))
+                ),
+            )
+        )
+
+        val loaded = documentRepository.loadDocumentById(documentId, workspaceId)!!
+        val loadedGrandchild = loaded.content.values.single()
+            .steps.single()
+            .steps.single()
+
+        assertEquals("grandchild", loadedGrandchild.text)
+        assertEquals(timestamp, loadedGrandchild.lastUpdatedAt)
+        assertEquals(conversationId, loadedGrandchild.spans.single().extra)
+        assertTrue(loaded.commentConversations.containsKey(conversationId))
     }
 
     @Test

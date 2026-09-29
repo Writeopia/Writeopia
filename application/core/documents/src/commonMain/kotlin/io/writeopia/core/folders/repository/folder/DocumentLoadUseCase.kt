@@ -38,52 +38,64 @@ class DocumentLoadUseCase(
         currentLocalDocument: (() -> Document?)? = null,
         onMergeComplete: suspend (Document) -> Unit
     ) {
-        val editorBeforeFetch = currentLocalDocument
-            ?.invoke()
-            ?.takeIf { document ->
-                document.id == documentId && document.workspaceId == workspaceId
-            }
+        fun currentEditorDocument(): Document? =
+            currentLocalDocument
+                ?.invoke()
+                ?.takeIf { document ->
+                    document.id == documentId && document.workspaceId == workspaceId
+                }
 
+        val editorBeforeFetch = currentEditorDocument()
         val backendDocument = fetchFromBackend(documentId, workspaceId) ?: return
         if (backendDocument.id != documentId || backendDocument.workspaceId != workspaceId) return
 
-        val editorAfterFetch = currentLocalDocument
-            ?.invoke()
-            ?.takeIf { document ->
-                document.id == documentId && document.workspaceId == workspaceId
-            }
         val persistedLocal = documentRepository.loadDocumentById(documentId, workspaceId)
-        val localDocument = editorAfterFetch ?: persistedLocal
+        var editorSnapshot = currentEditorDocument()
 
-        val beforeById = editorBeforeFetch?.content?.values?.associateBy { step -> step.id }.orEmpty()
-        val afterById = editorAfterFetch?.content?.values?.associateBy { step -> step.id }.orEmpty()
-        val localOverrideStepIds = if (editorBeforeFetch != null && editorAfterFetch != null) {
-            afterById.keys.filterTo(mutableSetOf()) { stepId ->
-                beforeById[stepId] != afterById[stepId]
-            }
-        } else {
-            emptySet()
-        }
-        val localDeletedStepIds = if (editorBeforeFetch != null && editorAfterFetch != null) {
-            beforeById.keys - afterById.keys
-        } else {
-            emptySet()
-        }
+        while (true) {
+            val localDocument = editorSnapshot ?: persistedLocal
+            val beforeById =
+                editorBeforeFetch?.content?.values?.associateBy { step -> step.id }.orEmpty()
+            val afterById =
+                editorSnapshot?.content?.values?.associateBy { step -> step.id }.orEmpty()
+            val localOverrideStepIds =
+                if (editorBeforeFetch != null && editorSnapshot != null) {
+                    afterById.keys.filterTo(mutableSetOf()) { stepId ->
+                        beforeById[stepId] != afterById[stepId]
+                    }
+                } else {
+                    emptySet()
+                }
+            val localDeletedStepIds =
+                if (editorBeforeFetch != null && editorSnapshot != null) {
+                    beforeById.keys - afterById.keys
+                } else {
+                    emptySet()
+                }
 
-        val mergedDocument = documentMerger.merge(
-            localDocument,
-            backendDocument,
-            localOverrideStepIds = localOverrideStepIds,
-            localDeletedStepIds = localDeletedStepIds,
-        ) ?: return
+            val mergedDocument = documentMerger.merge(
+                localDocument,
+                backendDocument,
+                localOverrideStepIds = localOverrideStepIds,
+                localDeletedStepIds = localDeletedStepIds,
+            ) ?: return
 
-        val hasChanges = localDocument == null ||
-            mergedDocument.content != localDocument.content ||
-            mergedDocument.commentConversations != localDocument.commentConversations
+            val hasChanges = localDocument == null ||
+                mergedDocument.content != localDocument.content ||
+                mergedDocument.commentConversations != localDocument.commentConversations
 
-        if (hasChanges) {
+            if (!hasChanges) return
+
             documentRepository.saveDocument(mergedDocument)
+
+            val latestEditor = currentEditorDocument()
+            if (latestEditor != editorSnapshot) {
+                editorSnapshot = latestEditor
+                continue
+            }
+
             onMergeComplete(mergedDocument)
+            return
         }
     }
 

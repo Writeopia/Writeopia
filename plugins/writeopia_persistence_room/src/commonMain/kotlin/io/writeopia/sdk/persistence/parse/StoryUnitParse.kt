@@ -29,6 +29,29 @@ private fun StoryStep.toEntityTree(
     }
 }
 
+internal fun List<StoryStepEntity>.toStoryTree(
+    documentLinkTitles: Map<String, String?> = emptyMap(),
+): Map<Double, StoryStep> {
+    val childrenByParent = groupBy { entity -> entity.parentId }
+
+    fun restore(entity: StoryStepEntity): StoryStep {
+        val children = childrenByParent[entity.id]
+            .orEmpty()
+            .sortedBy { child -> child.position }
+            .map(::restore)
+        val documentLink = entity.linkToDocument?.let { documentId ->
+            DocumentLink(documentId, documentLinkTitles[documentId])
+        }
+
+        return entity.toModel(documentLink = documentLink).copy(steps = children)
+    }
+
+    return childrenByParent[null]
+        .orEmpty()
+        .sortedBy { entity -> entity.position }
+        .associate { entity -> entity.position to restore(entity) }
+}
+
 fun StoryStepEntity.toModel(
     steps: List<StoryStepEntity> = emptyList(),
     nameToType: (String) -> StoryType = { typeName ->

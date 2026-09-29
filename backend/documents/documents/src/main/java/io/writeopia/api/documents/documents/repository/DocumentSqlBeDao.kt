@@ -303,7 +303,7 @@ class DocumentSqlBeDao(
                 tags = tags.joinToString(separator = ",") { it.tag.label },
                 spans = spans.joinToString(separator = ",") { it.toText() },
                 link_to_document = documentLink?.id,
-                last_updated_at = lastUpdatedAt?.toInt()
+                last_updated_at = lastUpdatedAt
             )
 
             // Recursively save nested steps with parent_id set to this step's id
@@ -1193,7 +1193,7 @@ class DocumentSqlBeDao(
                 tags = tags.joinToString(separator = ",") { it.tag.label },
                 spans = spans.joinToString(separator = ",") { it.toText() },
                 link_to_document = documentLink?.id,
-                last_updated_at = lastUpdatedAt.toInt()
+                last_updated_at = lastUpdatedAt
             )
 
             steps.forEachIndexed { index, childStep ->
@@ -1211,7 +1211,7 @@ class DocumentSqlBeDao(
      * Gets story steps for a document that were updated after the given timestamp.
      */
     fun getStoryStepsAfterTime(documentId: String, afterTime: Long): List<Pair<Double, StoryStep>> {
-        return storyStepQueries?.selectByDocumentIdAfterTime(documentId, afterTime.toInt())
+        return storyStepQueries?.selectByDocumentIdAfterTime(documentId, afterTime)
             ?.executeAsList()
             ?.map { entity ->
                 val storyStep = StoryStep(

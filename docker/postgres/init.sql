@@ -33,7 +33,7 @@ CREATE TABLE story_step_entity (
   tags TEXT NOT NULL,
   spans TEXT NOT NULL,
   link_to_document TEXT,
-  last_updated_at INTEGER
+  last_updated_at BIGINT
 );
 
 CREATE TABLE comment_entity (

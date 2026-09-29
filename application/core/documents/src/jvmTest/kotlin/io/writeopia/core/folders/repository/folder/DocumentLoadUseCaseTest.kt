@@ -130,6 +130,80 @@ class DocumentLoadUseCaseTest {
     }
 
     @Test
+    fun `edit made after backend snapshot during local reload should survive`() = runBlocking {
+        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+        val documentsApi = mockk<DocumentsApi>()
+        val authRepository = mockk<AuthRepository>(relaxed = true)
+        val conversationId = "conversation-1"
+        val initialStep = StoryStep(
+            id = "step-1",
+            type = StoryTypes.TEXT.type,
+            text = "C0",
+            spans = setOf(SpanInfo.create(0, 2, Span.COMMENT, conversationId)),
+            lastUpdatedAt = 1,
+        )
+        val local = document(
+            lastUpdatedAt = 1,
+            content = mapOf(0.0 to initialStep),
+            commentText = "Local comment",
+        )
+        val backend = document(
+            lastUpdatedAt = 2,
+            content = mapOf(0.0 to initialStep.copy(lastUpdatedAt = 2)),
+            commentText = "Remote comment",
+        )
+        val localReply = Comment(id = "comment-2", text = "Local reply")
+        var editorDocument = local
+
+        coEvery { documentsApi.getDocumentById(local.id, local.workspaceId) } returns
+            ResultData.Complete(backend)
+        coEvery { documentRepository.loadDocumentById(local.id, local.workspaceId) } coAnswers {
+            editorDocument = editorDocument.copy(
+                content = mapOf(
+                    0.0 to initialStep.copy(text = "C2")
+                ),
+                commentConversations = mapOf(
+                    conversationId to (
+                        editorDocument.commentConversations.getValue(conversationId) + localReply
+                    )
+                ),
+            )
+            local
+        }
+
+        val useCase = DocumentLoadUseCase(
+            documentRepository = documentRepository,
+            documentsApi = documentsApi,
+            documentMerger = DocumentMerger(),
+            authRepository = authRepository,
+        )
+        var reloaded: Document? = null
+
+        useCase.fetchAndMergeFromBackend(
+            documentId = local.id,
+            workspaceId = local.workspaceId,
+            currentLocalDocument = { editorDocument },
+        ) { merged ->
+            reloaded = merged
+        }
+
+        val merged = assertNotNull(reloaded)
+        assertEquals("C2", merged.content.values.single().text)
+        assertEquals(
+            setOf("comment-1", "comment-2"),
+            merged.commentConversations.getValue(conversationId)
+                .map { comment -> comment.id }
+                .toSet(),
+        )
+        assertEquals(
+            "Remote comment",
+            merged.commentConversations.getValue(conversationId)
+                .single { comment -> comment.id == "comment-1" }
+                .text,
+        )
+    }
+
+    @Test
     fun `backend document with mismatched identity is ignored`() = runBlocking {
         val documentRepository = mockk<DocumentRepository>(relaxed = true)
         val documentsApi = mockk<DocumentsApi>()

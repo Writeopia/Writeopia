@@ -1175,6 +1175,65 @@ class DocumentRepositoryTest {
         database.deleteDocumentById(documentId)
     }
 
+    @Test
+    fun `story step sync preserves epoch millis and rejects stale client edit`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        val freshTimestamp = 1_700_000_000_123L
+        val staleTimestamp = freshTimestamp - 1L
+        val step = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "fresh",
+            lastUpdatedAt = freshTimestamp,
+        )
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+                content = mapOf(0.0 to step),
+            )
+        )
+
+        var loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
+        assertEquals(freshTimestamp, loaded.content.values.single().lastUpdatedAt)
+
+        DocumentsService.syncStorySteps(
+            documentId = documentId,
+            workspaceId = workspaceId,
+            request = StoryStepSyncRequest(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                lastSyncTimestamp = freshTimestamp - 10_000L,
+                requestTimestamp = freshTimestamp + 10_000L,
+                changes = listOf(
+                    StoryStepChangeApi(
+                        storyStep = step.copy(
+                            text = "stale",
+                            lastUpdatedAt = staleTimestamp,
+                        ).toApi(0.0),
+                        position = 0.0,
+                    )
+                ),
+                deletions = emptyList(),
+                commentConversations = null,
+            ),
+            writeopiaDb = database,
+        )
+
+        loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
+        assertEquals("fresh", loaded.content.values.single().text)
+        assertEquals(freshTimestamp, loaded.content.values.single().lastUpdatedAt)
+
+        database.deleteDocumentById(documentId)
+    }
+
     private fun commentMap(
         vararg conversations: CommentConversation,
     ): Map<String, List<Comment>> =
