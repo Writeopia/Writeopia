@@ -124,10 +124,15 @@ class OnUpdateDocumentTrackerTest {
             conversation.id to conversation.comments + reply
         )
 
+        val incrementallyPersisted = withTimeout(1_000) { recorder.savedStoryStep.await() }
         val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
         job.cancel()
 
-        assertNotNull(persisted.content.values.single().lastUpdatedAt)
+        assertNotNull(incrementallyPersisted.lastUpdatedAt)
+        assertEquals(
+            incrementallyPersisted.lastUpdatedAt,
+            persisted.content.values.single().lastUpdatedAt,
+        )
     }
 
     @Test

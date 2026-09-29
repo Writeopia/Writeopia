@@ -65,6 +65,8 @@ class OnUpdateDocumentTracker(
         commentConversationsFlow: StateFlow<Map<String, List<Comment>>>,
     ) {
         var previousCommentConversations: Map<String, List<Comment>>? = null
+        var lastLineEditSource: LastEdit.LineEdition? = null
+        var lastStampedLineEdit: LastEdit.LineEdition? = null
 
         fun fullDocument(
             storyState: StoryState,
@@ -103,17 +105,32 @@ class OnUpdateDocumentTracker(
             val (storyState, documentInfo) = documentEdition
             val persistedStoryState = when (val lineEdit = storyState.lastEdit) {
                 is LastEdit.LineEdition -> {
-                    val persistedStep = lineEdit.storyStep.copy(
-                        localId = GenerateId.generate(),
-                        lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
-                    )
+                    val stampedLineEdit = if (lineEdit === lastLineEditSource) {
+                        checkNotNull(lastStampedLineEdit)
+                    } else {
+                        lineEdit.copy(
+                            storyStep = lineEdit.storyStep.copy(
+                                localId = GenerateId.generate(),
+                                lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
+                            )
+                        ).also { stamped ->
+                            lastLineEditSource = lineEdit
+                            lastStampedLineEdit = stamped
+                        }
+                    }
                     storyState.copy(
-                        stories = storyState.stories + (lineEdit.position to persistedStep),
-                        lastEdit = lineEdit.copy(storyStep = persistedStep),
+                        stories = storyState.stories + (
+                            stampedLineEdit.position to stampedLineEdit.storyStep
+                        ),
+                        lastEdit = stampedLineEdit,
                     )
                 }
 
-                else -> storyState
+                else -> {
+                    lastLineEditSource = null
+                    lastStampedLineEdit = null
+                    storyState
+                }
             }
             val commentsChanged = previousCommentConversations?.let { previous ->
                 previous != commentConversations
