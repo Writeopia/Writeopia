@@ -10,6 +10,8 @@ public struct WriteopiaEditor: View {
     // Swipes don't start on the grip column, which belongs to the reorder drag.
     @State private var swipeSelection = SwipeSelectionCoordinator(leadingExclusion: EditorLayout.gutter + 4)
     @State private var reorder = ReorderCoordinator()
+    /// A drag on the empty space selects the lines it crosses, like the Compose desktop app.
+    @State private var dragSelection = DragSelection()
 
     /// Room on the sides of the text. On the Mac it keeps the text clear of the column of side
     /// options that floats over the trailing edge.
@@ -64,10 +66,14 @@ public struct WriteopiaEditor: View {
                     .frame(minHeight: geometry.size.height, alignment: .top)
                     .contentShape(Rectangle())
                     .onTapGesture { manager.onBackgroundClick?() }
+                    .dragSelectionBox(dragSelection, enabled: manager.isEditable)
                 }
             }
             .scrollDismissesKeyboard(.interactively)
             .onAppear {
+                dragSelection.onChange = { [manager] id, isInside in
+                    manager.onSelected(stepId: id, isSelected: isInside)
+                }
                 reorder.manager = manager
                 swipeSelection.onScrollViewFound = { [reorder] scrollView in reorder.scrollView = scrollView }
                 if let scrollView = swipeSelection.scrollView { reorder.scrollView = scrollView }

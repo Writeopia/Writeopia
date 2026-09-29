@@ -363,7 +363,7 @@ struct AiDialog: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            WrSheetList {
                 Section("Apply to:") {
                     if let fixedMode {
                         Text(fixedMode.title)
@@ -383,21 +383,17 @@ struct AiDialog: View {
 
                 Section {
                     ForEach(NoteEditorViewModel.commands(for: mode)) { command in
-                        Button {
+                        WrSheetRow(verbatim: command.title, systemImage: command.systemImage) {
                             dismiss()
                             onCommand(command, mode)
-                        } label: {
-                            Label(command.title, systemImage: command.systemImage)
                         }
                         .accessibilityIdentifier("ai.\(command.rawValue)")
                     }
                     if mode == .cursor {
                         ForEach(cursorActions) { action in
-                            Button {
+                            WrSheetRow(verbatim: action.title, systemImage: action.systemImage) {
                                 dismiss()
                                 action.run()
-                            } label: {
-                                Label(action.title, systemImage: action.systemImage)
                             }
                             .accessibilityIdentifier("ai.\(action.id)")
                         }

@@ -183,6 +183,14 @@ public struct NoteEditorView: View {
             Button("Link to page") { Task { await viewModel.linkSelectionToNewPage() } }
                 .keyboardShortcut("l", modifiers: .command)
                 .disabled(!canEdit || !manager.hasSelectedLines)
+            // Backspace and Delete remove the selected lines wherever the keyboard focus is;
+            // without a selection they reach the text as usual.
+            Button("Delete lines") { withAnimation(.snappy) { manager.deleteSelectedLines() } }
+                .keyboardShortcut(.delete, modifiers: [])
+                .disabled(!canEdit || !manager.hasSelectedLines)
+            Button("Delete lines forward") { withAnimation(.snappy) { manager.deleteSelectedLines() } }
+                .keyboardShortcut(.deleteForward, modifiers: [])
+                .disabled(!canEdit || !manager.hasSelectedLines)
         }
         .opacity(0)
         .allowsHitTesting(false)
@@ -330,9 +338,11 @@ public struct NoteEditorView: View {
         .animation(.snappy, value: isWideLayout)
         .sheet(isPresented: $showMenu) {
             NoteMenuSheet(viewModel: viewModel, onPublishClick: publishClick, onDelete: deleteDocument)
+                .wrSheetSize(width: 440, height: 560)
         }
         .sheet(isPresented: $showPublish) {
             PublishSheet(viewModel: viewModel)
+                .wrSheetSize(width: 440, height: 400)
         }
         .alert("Premium Feature", isPresented: $showPremium) {
             Button("OK", role: .cancel) {}
@@ -349,12 +359,14 @@ public struct NoteEditorView: View {
                 viewModel.runAi(command, mode: mode)
             }
             .onAppear { viewModel.prewarmAi() }
+            .wrSheetSize(width: 420, height: 440)
         }
         .sheet(isPresented: $showSelectedLinesAiDialog) {
             AiDialog(fixedMode: .selectedLines) { command, mode in
                 viewModel.runAi(command, mode: mode)
             }
             .onAppear { viewModel.prewarmAi() }
+            .wrSheetSize(width: 420, height: 440)
         }
         .alert(
             "Could not delete the document",
@@ -425,6 +437,7 @@ public struct NoteEditorView: View {
             viewModel.writeopiaManager.onCutSelectedLines = {
                 withAnimation(.snappy) { viewModel.cutSelectedLines(to: SystemLinePasteboard()) }
             }
+            viewModel.writeopiaManager.onLinkRequested = linkClick
             // A click on the empty space closes the side menu and clears the selection, like the
             // Compose desktop app.
             viewModel.writeopiaManager.onBackgroundClick = {

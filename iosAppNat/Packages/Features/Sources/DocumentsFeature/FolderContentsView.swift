@@ -54,6 +54,14 @@ final class FolderContentsViewModel {
     var hasSelection: Bool { !selectedIds.isEmpty }
     var canSummarize: Bool { aiClient != nil }
 
+    func select(_ id: String, _ selected: Bool) {
+        if selected {
+            selectedIds.insert(id)
+        } else {
+            selectedIds.remove(id)
+        }
+    }
+
     func toggleSelection(_ id: String) {
         if selectedIds.contains(id) {
             selectedIds.remove(id)
@@ -404,6 +412,7 @@ struct FolderContentsView: View {
     @State private var dropTargetId: String?
     @State private var movedCount = 0
     @State private var swipeSelection = SwipeSelectionCoordinator()
+    @State private var dragSelection = DragSelection()
     @State private var folderSheet: FolderSheet?
     @State private var confirmsFolderDeletion = false
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -461,6 +470,12 @@ struct FolderContentsView: View {
                 .padding(.top, viewModel.isRoot ? 16 : 4)
                 .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
                 .environment(\.swipeSelection, swipeSelection)
+                // A drag on the empty space selects the items it crosses, like the Compose app.
+                .contentShape(Rectangle())
+                .dragSelectionBox(dragSelection)
+                .onAppear {
+                    dragSelection.onChange = { [viewModel] id, isInside in viewModel.select(id, isInside) }
+                }
         }
         // On the scroll view only: applied to the whole screen, the sheets would inherit it and
         // get a pull to refresh of their own.
@@ -568,6 +583,7 @@ struct FolderContentsView: View {
                 Task { await viewModel.createFolder(title: title, icon: icon) }
             }
             .presentationDetents([.medium, .large])
+            .wrSheetSize(width: 440, height: 480)
         }
         .alert(
             "Something went wrong",
@@ -647,6 +663,7 @@ struct FolderContentsView: View {
         .buttonStyle(.plain)
         // Slide a card sideways to select it, like the Compose notes list.
         .slideToSelect { viewModel.toggleSelection(item.id) }
+        .selectableByDrag(id: item.id)
         .accessibilityAction(named: viewModel.isSelected(item.id) ? "Unselect" : "Select") {
             viewModel.toggleSelection(item.id)
         }

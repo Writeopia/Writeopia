@@ -1,7 +1,7 @@
 package io.writeopia.ui.components.multiselection
 
 data class DragSelectionInfo(
-    val selectionBox: SelectionBox? = null,
+    val selectionBox: DesktSelectionBox? = null,
     val isDragging: Boolean = false
 )
 

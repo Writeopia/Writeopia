@@ -90,6 +90,7 @@ struct AccountSettingsView: View {
                 showDeleteConfirmation = false
                 Task { await viewModel.deleteAccount() }
             }
+            .wrSheetSize(width: 440, height: 380)
         }
         .sheet(isPresented: $showChangePassword) {
             ChangePasswordSheet { password in
@@ -99,6 +100,7 @@ struct AccountSettingsView: View {
                     }
                 }
             }
+            .wrSheetSize(width: 440, height: 380)
         }
         .alert(
             "Something went wrong",

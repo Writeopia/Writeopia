@@ -16,6 +16,19 @@ public extension ToolbarItemPlacement {
     }
 }
 
+public extension View {
+    /// Sheets on the Mac take the size of their content, and a list or a form has none: this
+    /// gives them a sensible window. Nothing changes on iOS, where sheets fill the screen.
+    @ViewBuilder
+    func wrSheetSize(width: CGFloat = 440, height: CGFloat = 480) -> some View {
+        #if os(macOS)
+        frame(minWidth: width, idealWidth: width, minHeight: height, idealHeight: height)
+        #else
+        self
+        #endif
+    }
+}
+
 /// Deep links into the system settings.
 public enum SystemSettings {
     /// Where Apple Intelligence is turned on: the app's settings on iOS, the Apple Intelligence

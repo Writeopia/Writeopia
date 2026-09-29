@@ -4,11 +4,49 @@ import SwiftUI
 import Writeopia
 import WrModels
 
-/// Editable text of a step on the Mac: an `NSTextView` without its scroll view, sized to its
-/// text, with the native spell check, dictation and input methods. Return, Backspace at the
-/// start, and the arrows at the first or last line go to the state manager, like the
-/// `UITextView` of iOS and the key handling of the Compose desktop app.
-struct StepTextView: NSViewRepresentable {
+/// Editable text of a step on the Mac, with the formatting popup floating above its selection.
+struct StepTextView: View {
+    let step: StoryStep
+    let manager: WriteopiaStateManager
+    @State private var topInEditor: CGFloat = .infinity
+
+    private var selectionRect: CGRect? {
+        guard let selection = manager.textSelection, selection.stepId == step.id, !selection.isEmpty else { return nil }
+        return manager.textSelectionRect
+    }
+
+    var body: some View {
+        StepTextViewRepresentable(step: step, manager: manager)
+            .background {
+                // Near the top of the editor the popup goes under the selection instead.
+                GeometryReader { geometry in
+                    let top = geometry.frame(in: .named(ReorderCoordinator.coordinateSpace)).minY
+                    Color.clear
+                        .onAppear { topInEditor = top }
+                        .onChange(of: top) { _, top in topInEditor = top }
+                }
+            }
+            .overlay(alignment: .topLeading) {
+                if let rect = selectionRect {
+                    let spacing: CGFloat = 8
+                    let above = rect.minY - TextSelectionToolbar.height - spacing
+                    let fitsAbove = topInEditor + above >= 0
+                    TextSelectionToolbar(manager: manager)
+                        .fixedSize()
+                        .offset(x: max(0, rect.minX), y: fitsAbove ? above : rect.maxY + spacing)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        .zIndex(1)
+                }
+            }
+            .animation(.easeOut(duration: 0.12), value: selectionRect == nil)
+    }
+}
+
+/// An `NSTextView` without its scroll view, sized to its text, with the native spell check,
+/// dictation and input methods. Return, Backspace at the start, and the arrows at the first or
+/// last line go to the state manager, like the `UITextView` of iOS and the key handling of the
+/// Compose desktop app.
+struct StepTextViewRepresentable: NSViewRepresentable {
     let step: StoryStep
     let manager: WriteopiaStateManager
 
@@ -128,7 +166,7 @@ struct StepTextView: NSViewRepresentable {
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
-        var parent: StepTextView
+        var parent: StepTextViewRepresentable
         var renderedStep: StoryStep?
         var appliedRequest: UUID?
         var renderedFont: EditorFont = .system
@@ -136,7 +174,7 @@ struct StepTextView: NSViewRepresentable {
         /// reported back as user selections during a SwiftUI update.
         var isRendering = false
 
-        init(parent: StepTextView) {
+        init(parent: StepTextViewRepresentable) {
             self.parent = parent
         }
 
@@ -149,6 +187,10 @@ struct StepTextView: NSViewRepresentable {
                 let range = textView.selectedRange()
                 let newText = (textView.string as NSString).replacingCharacters(in: range, with: "\n")
                 manager.handleTextInput(newText, cursor: range.location + 1, stepId: parent.step.id)
+                return true
+
+            case #selector(NSResponder.deleteForward(_:)) where manager.hasSelectedLines:
+                manager.deleteSelectedLines()
                 return true
 
             case #selector(NSResponder.deleteBackward(_:)):
@@ -223,7 +265,12 @@ struct StepTextView: NSViewRepresentable {
                   !textView.hasMarkedText()
             else { return }
             let range = textView.selectedRange()
-            manager.onSelectionChange(stepId: parent.step.id, start: range.location, end: range.location + range.length)
+            var rect: CGRect?
+            if range.length > 0, let layoutManager = textView.layoutManager, let container = textView.textContainer {
+                let glyphs = layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+                rect = layoutManager.boundingRect(forGlyphRange: glyphs, in: container)
+            }
+            manager.onSelectionChange(stepId: parent.step.id, start: range.location, end: range.location + range.length, rect: rect)
         }
 
         /// Whether the cursor sits on the first and on the last line of the text.

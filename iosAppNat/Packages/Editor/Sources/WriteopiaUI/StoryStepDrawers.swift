@@ -134,6 +134,7 @@ struct DraggableStep<Content: View>: View {
                 .blockDecoration(step)
         }
         .swipeToSelect(step, manager: manager)
+        .selectableByDrag(id: step.id)
         // With a pointer the grip shows on hover, like the drag handle of the Compose app.
         .onHover { isHovered = $0 }
     }
@@ -147,9 +148,17 @@ enum EditorLayout {
     static let gutter: CGFloat = 20
 }
 
+/// The title of the document, with its colored header when it has one, like `HeaderDrawer` of
+/// the SDK. A pencil in the corner opens the header colors.
 struct TitleDrawer: View {
     let step: StoryStep
     let manager: WriteopiaStateManager
+    @State private var isHovered = false
+    @State private var showsColors = false
+
+    private var headerColor: Color? {
+        step.decoration?.backgroundColor.map { Color(argb: $0) }
+    }
 
     var body: some View {
         StepTextView(step: step, manager: manager)
@@ -162,7 +171,97 @@ struct TitleDrawer: View {
                 }
             }
             .padding(.leading, EditorLayout.gutter + 4)
-            .padding(.vertical, 8)
+            .padding(.trailing, 12)
+            .padding(.top, headerColor == nil ? 8 : 114)
+            .padding(.bottom, 8)
+            .background {
+                if let headerColor {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(headerColor)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if manager.isEditable, showsEditButton {
+                    Button {
+                        showsColors = true
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.primary)
+                            .frame(width: 30, height: 30)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Edit header")
+                    .accessibilityLabel("Edit header")
+                    .accessibilityIdentifier("editor.header.edit")
+                    .padding(8)
+                    .popover(isPresented: $showsColors, arrowEdge: .bottom) {
+                        HeaderColorPicker(manager: manager)
+                            .padding(16)
+                            .presentationCompactAdaptation(.popover)
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .onHover { isHovered = $0 }
+            .animation(.easeInOut(duration: 0.15), value: isHovered)
+            .animation(.snappy, value: headerColor == nil)
+    }
+
+    /// On the Mac the pencil shows on hover; on touch screens it stays, like the Compose app.
+    private var showsEditButton: Bool {
+        #if os(macOS)
+        isHovered || showsColors
+        #else
+        true
+        #endif
+    }
+}
+
+/// The colors of the header: none, then the palette of the Compose app. The selected one is a
+/// wider, squarer swatch, like `HeaderEditionOptions`.
+struct HeaderColorPicker: View {
+    let manager: WriteopiaStateManager
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Header")
+                .font(.headline)
+
+            HStack(spacing: 10) {
+                swatch(nil)
+                ForEach(WriteopiaStateManager.headerColors, id: \.self) { color in
+                    swatch(color)
+                }
+            }
+        }
+    }
+
+    private func swatch(_ argb: Int?) -> some View {
+        let isSelected = manager.headerColor == argb
+        let shape = RoundedRectangle(cornerRadius: isSelected ? 10 : 20, style: .continuous)
+        return Button {
+            withAnimation(.snappy) { manager.setHeaderColor(argb) }
+        } label: {
+            shape
+                .fill(argb.map { Color(argb: $0) } ?? Color.clear)
+                .overlay(shape.strokeBorder(isSelected ? WrColors.accent : WrColors.divider, lineWidth: isSelected ? 2 : 1))
+                .overlay {
+                    if argb == nil {
+                        Image(systemName: "slash.circle")
+                            .foregroundStyle(Color.primary)
+                    }
+                }
+                .frame(width: isSelected ? 44 : 34, height: 34)
+                .contentShape(shape)
+        }
+        .buttonStyle(.plain)
+        .help(argb == nil ? "No color" : "Header color")
+        .accessibilityLabel(argb == nil ? "No color" : "Header color")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .animation(.snappy, value: isSelected)
     }
 }
 

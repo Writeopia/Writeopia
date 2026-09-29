@@ -21,7 +21,7 @@ struct NoteMenuSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            WrSheetList {
                 Section("Actions") {
                     Toggle(isOn: Binding(get: { viewModel.isLocked }, set: { _ in viewModel.toggleLock() })) {
                         Label("Lock document", systemImage: viewModel.isLocked ? "lock.fill" : "lock.open")
@@ -43,34 +43,24 @@ struct NoteMenuSheet: View {
 
                 Section("Export") {
                     ForEach(ExportFormat.allCases) { format in
-                        Button {
+                        WrSheetRow(verbatim: format.title, systemImage: format.systemImage) {
                             export(format)
-                        } label: {
-                            Label(format.title, systemImage: format.systemImage)
                         }
                         .accessibilityIdentifier("menu.export.\(format.rawValue)")
                     }
                 }
 
                 Section("Publish") {
-                    Button {
+                    WrSheetRow("Publish to Web", systemImage: viewModel.isPublished ? "globe.badge.chevron.backward" : "globe") {
                         dismiss()
                         onPublishClick()
-                    } label: {
-                        Label {
-                            Text("Publish to Web")
-                        } icon: {
-                            Image(systemName: viewModel.isPublished ? "globe.badge.chevron.backward" : "globe")
-                        }
                     }
                     .accessibilityIdentifier("menu.publish")
                 }
 
                 Section {
-                    Button(role: .destructive) {
+                    WrSheetRow("Delete document", systemImage: "trash", tint: .red) {
                         confirmsDelete = true
-                    } label: {
-                        Label("Delete document", systemImage: "trash")
                     }
                     .accessibilityIdentifier("menu.delete")
                     .confirmationDialog(
@@ -172,10 +162,11 @@ struct PublishSheet: View {
     @Bindable var viewModel: NoteEditorViewModel
     @State private var copied = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         NavigationStack {
-            List {
+            WrSheetList {
                 Section {
                     HStack(spacing: 12) {
                         Image(systemName: viewModel.isPublished ? "globe" : "globe.badge.chevron.backward")
@@ -199,7 +190,7 @@ struct PublishSheet: View {
                         Text(viewModel.siteURL.absoluteString)
                             .font(.callout.monospaced())
                             .textSelection(.enabled)
-                        Button {
+                        WrSheetRow(copied ? "Link copied!" : "Copy Link", systemImage: copied ? "checkmark" : "doc.on.doc") {
                             #if canImport(UIKit)
                             UIPasteboard.general.url = viewModel.siteURL
                             #else
@@ -207,25 +198,24 @@ struct PublishSheet: View {
                             NSPasteboard.general.setString(viewModel.siteURL.absoluteString, forType: .string)
                             #endif
                             copied = true
-                        } label: {
-                            Label(copied ? "Link copied!" : "Copy Link", systemImage: copied ? "checkmark" : "doc.on.doc")
                         }
-                        Link(destination: viewModel.siteURL) {
-                            Label("Open in Safari", systemImage: "safari")
+                        WrSheetRow("Open in Safari", systemImage: "safari") {
+                            openURL(viewModel.siteURL)
                         }
                     }
                 }
 
                 Section {
-                    Button(role: viewModel.isPublished ? .destructive : nil) {
+                    WrSheetRow(
+                        viewModel.isPublished ? "Unpublish" : "Publish",
+                        systemImage: viewModel.isPublished ? "globe.badge.chevron.backward" : "globe",
+                        tint: viewModel.isPublished ? .red : WrColors.accent
+                    ) {
                         Task { await viewModel.setPublished(!viewModel.isPublished) }
-                    } label: {
-                        HStack {
-                            Text(viewModel.isPublished ? "Unpublish" : "Publish")
-                            if viewModel.isPublishing {
-                                Spacer()
-                                ProgressView()
-                            }
+                    } trailing: {
+                        if viewModel.isPublishing {
+                            ProgressView()
+                                .controlSize(.small)
                         }
                     }
                     .disabled(viewModel.isPublishing)

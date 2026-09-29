@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import WrDesign
 @testable import WriteopiaUI
 import Writeopia
 import WrModels
@@ -438,6 +439,57 @@ private let sample = document([
         manager.handleTextInput("# Doc", cursor: 2, stepId: "t")
         #expect(manager.step(withId: "t")?.text == "# Doc")
         #expect(manager.step(withId: "t")?.type == .title)
+    }
+}
+
+@Suite struct HeaderColorTests {
+    @Test func headerColorIsStoredOnTheTitleAndKeepsTheCursor() {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(document([
+            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
+            StoryStep(id: "a", type: .text, text: "Line", position: 1),
+        ]))
+        manager.onFocusChange(stepId: "a", hasFocus: true)
+        #expect(manager.headerColor == nil)
+
+        manager.setHeaderColor(WriteopiaStateManager.headerColors[7])
+        #expect(manager.headerColor == -65281) // magenta, as the Compose app stores it
+        #expect(manager.step(withId: "t")?.decoration?.backgroundColor == -65281)
+        #expect(manager.focusRequest == nil) // nothing moved the cursor
+        #expect(manager.currentStory.focus == 1)
+
+        manager.setHeaderColor(nil)
+        #expect(manager.step(withId: "t")?.decoration == nil)
+
+        manager.isEditable = false
+        manager.setHeaderColor(WriteopiaStateManager.headerColors[0])
+        #expect(manager.headerColor == nil)
+    }
+}
+
+@Suite struct DragSelectionTests {
+    @Test func boxSelectsWhatItTouchesAndUnselectsWhatItLeaves() {
+        let selection = DragSelection()
+        var events: [(String, Bool)] = []
+        selection.onChange = { events.append(($0, $1)) }
+        selection.setFrame(CGRect(x: 0, y: 0, width: 300, height: 40), for: "a")
+        selection.setFrame(CGRect(x: 0, y: 50, width: 300, height: 40), for: "b")
+        selection.setFrame(CGRect(x: 0, y: 100, width: 300, height: 40), for: "c")
+
+        selection.update(from: CGPoint(x: 10, y: 45), to: CGPoint(x: 20, y: 95))
+        #expect(selection.rect == CGRect(x: 10, y: 45, width: 10, height: 50))
+        #expect(events.map(\.0) == ["b"])
+
+        // Dragging upwards past "a" adds it; shrinking back below "b" drops it again.
+        selection.update(from: CGPoint(x: 10, y: 45), to: CGPoint(x: 20, y: 10))
+        #expect(Set(events.filter(\.1).map(\.0)) == ["a", "b"])
+        selection.update(from: CGPoint(x: 10, y: 45), to: CGPoint(x: 20, y: 48))
+        #expect(events.last?.0 == "a")
+        #expect(events.last?.1 == false)
+
+        selection.end()
+        #expect(selection.rect == nil)
+        #expect(!selection.isActive)
     }
 }
 

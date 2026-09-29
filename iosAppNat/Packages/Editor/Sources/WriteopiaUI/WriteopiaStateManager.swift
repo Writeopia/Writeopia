@@ -37,6 +37,9 @@ public final class WriteopiaStateManager {
     public private(set) var selectedStepIds: Set<String> = []
     /// Current selection of the focused text step. Drives the formatting buttons.
     public private(set) var textSelection: StepSelection?
+    /// Where the selected text is, in the coordinates of its text view, when the view reports
+    /// it (the Mac). The formatting popup floats above it.
+    public private(set) var textSelectionRect: CGRect?
     /// Increases on every change of the document, handy to observe edits.
     public private(set) var changeCount = 0
 
@@ -55,6 +58,8 @@ public final class WriteopiaStateManager {
     @ObservationIgnored public var onCutSelectedLines: (() -> Void)?
     /// A click on the empty space of the editor, outside every step. The app closes its menus.
     @ObservationIgnored public var onBackgroundClick: (() -> Void)?
+    /// The link button of the formatting popup; the app asks for the URL.
+    @ObservationIgnored public var onLinkRequested: (() -> Void)?
 
     public init(writeopiaManager: WriteopiaManager = WriteopiaManager()) {
         self.writeopiaManager = writeopiaManager
@@ -167,6 +172,39 @@ public final class WriteopiaStateManager {
         focusRequest = FocusRequest(stepId: changed.id, cursor: newCursor)
     }
 
+    /// The colors of the document header, `ColorUtils.headerColors()` of the Compose app, as
+    /// the ARGB `Int` the document stores.
+    public static let headerColors: [Int] = [
+        Int(Int32(bitPattern: 0xFFFF_FFFF)), // White
+        Int(Int32(bitPattern: 0xFF00_0000)), // Black
+        Int(Int32(bitPattern: 0xFF00_00FF)), // Blue
+        Int(Int32(bitPattern: 0xFF88_8888)), // Gray
+        Int(Int32(bitPattern: 0xFFFF_FF00)), // Yellow
+        Int(Int32(bitPattern: 0xFFFF_0000)), // Red
+        Int(Int32(bitPattern: 0xFF00_FF00)), // Green
+        Int(Int32(bitPattern: 0xFFFF_00FF)), // Magenta
+        Int(Int32(bitPattern: 0xFF44_4444)), // DarkGray
+        Int(Int32(bitPattern: 0xFF00_FFFF)), // Cyan
+    ]
+
+    /// The background color of the header (the title), nil for none.
+    public var headerColor: Int? {
+        currentStory.stories[0]?.decoration?.backgroundColor
+    }
+
+    /// Colors the header, like `onHeaderColorSelection` of the Compose app. The cursor stays
+    /// where it is.
+    public func setHeaderColor(_ argb: Int?) {
+        guard isEditable, var title = currentStory.stories[0], title.isTitle else { return }
+        title.decoration = argb.map { Decoration(backgroundColor: $0) }
+        var stories = currentStory.stories
+        stories[0] = title
+        var state = currentStory
+        state.stories = stories
+        state.lastEdit = .lineEdition(position: 0, storyStep: title)
+        apply(state)
+    }
+
     /// Backspace with the cursor at the start of a step.
     public func onErase(stepId: String) {
         dismissAiSuggestions()
@@ -182,14 +220,19 @@ public final class WriteopiaStateManager {
             currentStory.focus = nil
             if textSelection?.stepId == stepId {
                 textSelection = nil
+                textSelectionRect = nil
             }
         }
     }
 
-    public func onSelectionChange(stepId: String, start: Int, end: Int) {
+    public func onSelectionChange(stepId: String, start: Int, end: Int, rect: CGRect? = nil) {
         let selection = StepSelection(stepId: stepId, start: min(start, end), end: max(start, end))
         if textSelection != selection {
             textSelection = selection
+        }
+        let rect = selection.isEmpty ? nil : rect
+        if textSelectionRect != rect {
+            textSelectionRect = rect
         }
     }
 
