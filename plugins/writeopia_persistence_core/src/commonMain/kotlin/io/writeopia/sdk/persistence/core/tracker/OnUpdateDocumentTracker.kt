@@ -67,6 +67,8 @@ class OnUpdateDocumentTracker(
         var previousCommentConversations: Map<String, List<Comment>>? = null
         var lastLineEditSource: LastEdit.LineEdition? = null
         var lastStampedLineEdit: LastEdit.LineEdition? = null
+        var lastInfoEditSource: LastEdit.InfoEdition? = null
+        var lastStampedInfoEdit: LastEdit.InfoEdition? = null
 
         fun fullDocument(
             storyState: StoryState,
@@ -103,18 +105,20 @@ class OnUpdateDocumentTracker(
             Triple(documentEdition, workspaceId, commentConversations)
         }.collect { (documentEdition, workspaceId, commentConversations) ->
             val (storyState, documentInfo) = documentEdition
-            val persistedStoryState = when (val lineEdit = storyState.lastEdit) {
+            val persistedStoryState = when (val lastEdit = storyState.lastEdit) {
                 is LastEdit.LineEdition -> {
-                    val stampedLineEdit = if (lineEdit === lastLineEditSource) {
+                    lastInfoEditSource = null
+                    lastStampedInfoEdit = null
+                    val stampedLineEdit = if (lastEdit === lastLineEditSource) {
                         checkNotNull(lastStampedLineEdit)
                     } else {
-                        lineEdit.copy(
-                            storyStep = lineEdit.storyStep.copy(
+                        lastEdit.copy(
+                            storyStep = lastEdit.storyStep.copy(
                                 localId = GenerateId.generate(),
                                 lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
                             )
                         ).also { stamped ->
-                            lastLineEditSource = lineEdit
+                            lastLineEditSource = lastEdit
                             lastStampedLineEdit = stamped
                         }
                     }
@@ -126,9 +130,34 @@ class OnUpdateDocumentTracker(
                     )
                 }
 
+                is LastEdit.InfoEdition -> {
+                    lastLineEditSource = null
+                    lastStampedLineEdit = null
+                    val stampedInfoEdit = if (lastEdit === lastInfoEditSource) {
+                        checkNotNull(lastStampedInfoEdit)
+                    } else {
+                        lastEdit.copy(
+                            storyStep = lastEdit.storyStep.copy(
+                                lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
+                            )
+                        ).also { stamped ->
+                            lastInfoEditSource = lastEdit
+                            lastStampedInfoEdit = stamped
+                        }
+                    }
+                    storyState.copy(
+                        stories = storyState.stories + (
+                            stampedInfoEdit.position to stampedInfoEdit.storyStep
+                        ),
+                        lastEdit = stampedInfoEdit,
+                    )
+                }
+
                 else -> {
                     lastLineEditSource = null
                     lastStampedLineEdit = null
+                    lastInfoEditSource = null
+                    lastStampedInfoEdit = null
                     storyState
                 }
             }
@@ -223,9 +252,7 @@ class OnUpdateDocumentTracker(
 
                     if (!lastEdit.storyStep.ephemeral) {
                         documentUpdate.saveStoryStep(
-                            storyStep = lastEdit.storyStep.copy(
-                                lastUpdatedAt = Clock.System.now().toEpochMilliseconds()
-                            ),
+                            storyStep = lastEdit.storyStep,
                             position = lastEdit.position,
                             documentId = documentInfo.id
                         )
