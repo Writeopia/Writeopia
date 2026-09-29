@@ -69,6 +69,12 @@ class OnUpdateDocumentTracker(
         var lastStampedLineEdit: LastEdit.LineEdition? = null
         var lastInfoEditSource: LastEdit.InfoEdition? = null
         var lastStampedInfoEdit: LastEdit.InfoEdition? = null
+        var lastLineBreakEditSource: LastEdit.LineBreakEdition? = null
+        var lastStampedLineBreakEdit: LastEdit.LineBreakEdition? = null
+        var lastBulkEditSource: LastEdit.BulkEdition? = null
+        var lastStampedBulkEdit: LastEdit.BulkEdition? = null
+        var lastEraseEditSource: LastEdit.EraseEdition? = null
+        var lastStampedEraseEdit: LastEdit.EraseEdition? = null
 
         fun fullDocument(
             storyState: StoryState,
@@ -153,11 +159,127 @@ class OnUpdateDocumentTracker(
                     )
                 }
 
+                is LastEdit.LineBreakEdition -> {
+                    lastLineEditSource = null
+                    lastStampedLineEdit = null
+                    lastInfoEditSource = null
+                    lastStampedInfoEdit = null
+                    lastBulkEditSource = null
+                    lastStampedBulkEdit = null
+                    lastEraseEditSource = null
+                    lastStampedEraseEdit = null
+
+                    val stampedLineBreak = if (lastEdit === lastLineBreakEditSource) {
+                        checkNotNull(lastStampedLineBreakEdit)
+                    } else if (
+                        !lastEdit.originalStep.second.ephemeral &&
+                        !lastEdit.newStep.second.ephemeral
+                    ) {
+                        val timestamp = Clock.System.now().toEpochMilliseconds()
+                        lastEdit.copy(
+                            originalStep = lastEdit.originalStep.first to
+                                lastEdit.originalStep.second.copy(lastUpdatedAt = timestamp),
+                            newStep = lastEdit.newStep.first to
+                                lastEdit.newStep.second.copy(lastUpdatedAt = timestamp),
+                        ).also { stamped ->
+                            lastLineBreakEditSource = lastEdit
+                            lastStampedLineBreakEdit = stamped
+                        }
+                    } else {
+                        lastEdit.also {
+                            lastLineBreakEditSource = lastEdit
+                            lastStampedLineBreakEdit = it
+                        }
+                    }
+
+                    storyState.copy(
+                        stories = storyState.stories + listOf(
+                            stampedLineBreak.originalStep,
+                            stampedLineBreak.newStep,
+                        ),
+                        lastEdit = stampedLineBreak,
+                    )
+                }
+
+                is LastEdit.BulkEdition -> {
+                    lastLineEditSource = null
+                    lastStampedLineEdit = null
+                    lastInfoEditSource = null
+                    lastStampedInfoEdit = null
+                    lastLineBreakEditSource = null
+                    lastStampedLineBreakEdit = null
+                    lastEraseEditSource = null
+                    lastStampedEraseEdit = null
+
+                    val stampedBulk = if (lastEdit === lastBulkEditSource) {
+                        checkNotNull(lastStampedBulkEdit)
+                    } else {
+                        val timestamp = Clock.System.now().toEpochMilliseconds()
+                        lastEdit.copy(
+                            steps = lastEdit.steps.map { (position, step) ->
+                                position to if (step.ephemeral) {
+                                    step
+                                } else {
+                                    step.copy(lastUpdatedAt = timestamp)
+                                }
+                            }
+                        ).also { stamped ->
+                            lastBulkEditSource = lastEdit
+                            lastStampedBulkEdit = stamped
+                        }
+                    }
+
+                    storyState.copy(
+                        stories = storyState.stories + stampedBulk.steps,
+                        lastEdit = stampedBulk,
+                    )
+                }
+
+                is LastEdit.EraseEdition -> {
+                    lastLineEditSource = null
+                    lastStampedLineEdit = null
+                    lastInfoEditSource = null
+                    lastStampedInfoEdit = null
+                    lastLineBreakEditSource = null
+                    lastStampedLineBreakEdit = null
+                    lastBulkEditSource = null
+                    lastStampedBulkEdit = null
+
+                    val stampedErase = if (lastEdit === lastEraseEditSource) {
+                        checkNotNull(lastStampedEraseEdit)
+                    } else {
+                        val (position, step) = lastEdit.updatedStep
+                        lastEdit.copy(
+                            updatedStep = position to if (step.ephemeral) {
+                                step
+                            } else {
+                                step.copy(
+                                    lastUpdatedAt = Clock.System.now().toEpochMilliseconds()
+                                )
+                            }
+                        ).also { stamped ->
+                            lastEraseEditSource = lastEdit
+                            lastStampedEraseEdit = stamped
+                        }
+                    }
+
+                    storyState.copy(
+                        stories = storyState.stories + stampedErase.updatedStep,
+                        lastEdit = stampedErase,
+                    )
+                }
+
                 else -> {
                     lastLineEditSource = null
                     lastStampedLineEdit = null
                     lastInfoEditSource = null
                     lastStampedInfoEdit = null
+                    lastLineBreakEditSource = null
+                    lastStampedLineBreakEdit = null
+                    lastBulkEditSource = null
+                    lastStampedBulkEdit = null
+                    lastEraseEditSource = null
+                    lastStampedEraseEdit = null
                     storyState
                 }
             }
@@ -290,12 +412,8 @@ class OnUpdateDocumentTracker(
                     val newStep = lastEdit.newStep
 
                     if (!originalStep.second.ephemeral && !newStep.second.ephemeral) {
-                        val timestamp = Clock.System.now().toEpochMilliseconds()
                         documentUpdate.saveStorySteps(
-                            steps = listOf(
-                                originalStep.first to originalStep.second.copy(lastUpdatedAt = timestamp),
-                                newStep.first to newStep.second.copy(lastUpdatedAt = timestamp),
-                            ),
+                            steps = listOf(originalStep, newStep),
                             documentId = documentInfo.id
                         )
                     }
@@ -322,12 +440,8 @@ class OnUpdateDocumentTracker(
                 }
 
                 is LastEdit.BulkEdition -> withContext(NonCancellable) {
-                    val timestamp = Clock.System.now().toEpochMilliseconds()
                     val nonEphemeralSteps = lastEdit.steps
                         .filter { (_, step) -> !step.ephemeral }
-                        .map { (position, step) ->
-                            position to step.copy(lastUpdatedAt = timestamp)
-                        }
 
                     if (nonEphemeralSteps.isNotEmpty()) {
                         documentUpdate.saveStorySteps(
@@ -395,11 +509,7 @@ class OnUpdateDocumentTracker(
                     val (dbPos, updatedStep) = lastEdit.updatedStep
                     if (!updatedStep.ephemeral) {
                         documentUpdate.saveStorySteps(
-                            steps = listOf(
-                                dbPos to updatedStep.copy(
-                                    lastUpdatedAt = Clock.System.now().toEpochMilliseconds()
-                                )
-                            ),
+                            steps = listOf(dbPos to updatedStep),
                             documentId = documentInfo.id
                         )
                     }
