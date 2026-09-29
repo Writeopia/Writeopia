@@ -144,6 +144,9 @@
   <string name="local_ai_setup_title">Set up your local AI</string>
   <string name="local_ai_setup_description">Configure Ollama or llmman now, or skip and do it later from Settings.</string>
   <string name="continue_to_app">Continue</string>
+  <string name="local_folder_setup_title">Choose a local folder</string>
+  <string name="local_folder_setup_description">Pick a folder in your computer to keep a copy of your workspace, or skip and do it later from Settings.</string>
+  <string name="local_folder_description">Pick a folder in your computer to keep a copy of your workspace.</string>
   <string name="ai_explanation">[Tab - accept; Esc - remove]</string>
   <string name="ai_model">AI Model</string>
   <string name="title">Title</string>

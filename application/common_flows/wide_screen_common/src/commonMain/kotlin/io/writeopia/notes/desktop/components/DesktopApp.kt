@@ -262,8 +262,6 @@ fun DesktopApp(
                                     cloudAiUsageState = globalShellViewModel.cloudAiUsageState,
                                     userOnlineState = globalShellViewModel.userState,
                                     showDeleteConfirmation = globalShellViewModel.showDeleteConfirmation,
-                                    syncWorkspaceState = globalShellViewModel.lastWorkspaceSync,
-                                    isAutoSyncEnabled = globalShellViewModel.isAutoSyncEnabled,
                                     workspaceToEdit = globalShellViewModel.workspaceToEdit,
                                     logoutInProgress = globalShellViewModel.logoutInProgress,
                                     deleteAccountInProgress =
@@ -294,8 +292,6 @@ fun DesktopApp(
                                             sideEffect = navigateToAccountDeletionStarted
                                         )
                                     },
-                                    syncWorkspace = globalShellViewModel::syncWorkspace,
-                                    onAutoSyncToggle = globalShellViewModel::toggleAutoSync,
                                     addUserToTeam = globalShellViewModel::addUserToTeam,
                                     selectWorkspaceToManage =
                                         globalShellViewModel::selectWorkspaceToManage,

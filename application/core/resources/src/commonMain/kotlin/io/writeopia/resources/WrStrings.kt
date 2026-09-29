@@ -106,6 +106,9 @@ import writeopia.application.core.resources.generated.resources.local_ai
 import writeopia.application.core.resources.generated.resources.local_ai_setup_description
 import writeopia.application.core.resources.generated.resources.local_ai_setup_title
 import writeopia.application.core.resources.generated.resources.continue_to_app
+import writeopia.application.core.resources.generated.resources.local_folder_description
+import writeopia.application.core.resources.generated.resources.local_folder_setup_description
+import writeopia.application.core.resources.generated.resources.local_folder_setup_title
 import writeopia.application.core.resources.generated.resources.or_word
 import writeopia.application.core.resources.generated.resources.page
 import writeopia.application.core.resources.generated.resources.password
@@ -585,6 +588,15 @@ object WrStrings {
 
     @Composable
     fun continueToApp() = stringResource(Res.string.continue_to_app)
+
+    @Composable
+    fun localFolderSetupTitle() = stringResource(Res.string.local_folder_setup_title)
+
+    @Composable
+    fun localFolderSetupDescription() = stringResource(Res.string.local_folder_setup_description)
+
+    @Composable
+    fun localFolderDescription() = stringResource(Res.string.local_folder_description)
 
     @Composable
     fun privateSpaceLabel() = stringResource(Res.string.private_space_label)

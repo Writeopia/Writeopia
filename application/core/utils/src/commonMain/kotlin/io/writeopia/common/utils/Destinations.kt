@@ -33,6 +33,7 @@ enum class Destinations(val id: String, val root: String) {
     CHOOSE_WORKSPACE("choose_workspace", "Home"),
     WORKSPACE_TYPE_CHOICE("workspace_type_choice", "Home"),
     LOCAL_AI_SETUP("local_ai_setup", "Home"),
+    LOCAL_FOLDER_SETUP("local_folder_setup", "Home"),
     AUTH_MENU("auth_menu", "Home"),
     AUTH_LOGIN("auth_login", "Home"),
 
