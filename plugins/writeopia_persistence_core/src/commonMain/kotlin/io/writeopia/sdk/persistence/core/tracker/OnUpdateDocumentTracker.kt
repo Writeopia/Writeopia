@@ -115,6 +115,12 @@ class OnUpdateDocumentTracker(
                 is LastEdit.LineEdition -> {
                     lastInfoEditSource = null
                     lastStampedInfoEdit = null
+                    lastLineBreakEditSource = null
+                    lastStampedLineBreakEdit = null
+                    lastBulkEditSource = null
+                    lastStampedBulkEdit = null
+                    lastEraseEditSource = null
+                    lastStampedEraseEdit = null
                     val stampedLineEdit = if (lastEdit === lastLineEditSource) {
                         checkNotNull(lastStampedLineEdit)
                     } else {
@@ -139,6 +145,12 @@ class OnUpdateDocumentTracker(
                 is LastEdit.InfoEdition -> {
                     lastLineEditSource = null
                     lastStampedLineEdit = null
+                    lastLineBreakEditSource = null
+                    lastStampedLineBreakEdit = null
+                    lastBulkEditSource = null
+                    lastStampedBulkEdit = null
+                    lastEraseEditSource = null
+                    lastStampedEraseEdit = null
                     val stampedInfoEdit = if (lastEdit === lastInfoEditSource) {
                         checkNotNull(lastStampedInfoEdit)
                     } else {
