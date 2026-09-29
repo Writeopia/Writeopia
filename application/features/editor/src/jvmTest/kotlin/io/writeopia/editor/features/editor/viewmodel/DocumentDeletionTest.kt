@@ -3,7 +3,7 @@
 package io.writeopia.editor.features.editor.viewmodel
 
 import io.writeopia.sdk.models.document.Document
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -13,7 +13,7 @@ import kotlin.time.ExperimentalTime
 class DocumentDeletionTest {
 
     @Test
-    fun failedDeleteShouldNotUnregisterSync() = runTest {
+    fun failedDeleteShouldNotUnregisterSync() = runBlocking {
         val document = document()
         var unregisterCount = 0
 
@@ -29,7 +29,7 @@ class DocumentDeletionTest {
     }
 
     @Test
-    fun successfulDeleteShouldUnregisterAfterRepositoryDelete() = runTest {
+    fun successfulDeleteShouldUnregisterAfterRepositoryDelete() = runBlocking {
         val document = document()
         val events = mutableListOf<String>()
 
