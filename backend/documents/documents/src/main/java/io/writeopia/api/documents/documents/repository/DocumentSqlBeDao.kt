@@ -456,7 +456,7 @@ class DocumentSqlBeDao(
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at?.toLong(),
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -528,7 +528,7 @@ class DocumentSqlBeDao(
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at?.toLong(),
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -603,7 +603,7 @@ class DocumentSqlBeDao(
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at?.toLong(),
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -678,7 +678,7 @@ class DocumentSqlBeDao(
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at?.toLong(),
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -751,7 +751,7 @@ class DocumentSqlBeDao(
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at?.toLong(),
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -824,7 +824,7 @@ class DocumentSqlBeDao(
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at?.toLong(),
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -897,7 +897,7 @@ class DocumentSqlBeDao(
                                     .executeAsOneOrNull()
                                 DocumentLink(linkDocId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at?.toLong(),
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -970,7 +970,7 @@ class DocumentSqlBeDao(
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at?.toLong(),
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -1044,7 +1044,7 @@ class DocumentSqlBeDao(
 
                                 DocumentLink(docId, docTitle)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at?.toLong(),
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep
@@ -1361,7 +1361,7 @@ class DocumentSqlBeDao(
                                     .executeAsOneOrNull()
                                 DocumentLink(linkDocId, title)
                             },
-                            lastUpdatedAt = innerContent.last_updated_at?.toLong(),
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())

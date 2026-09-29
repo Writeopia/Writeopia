@@ -52,63 +52,63 @@ WHERE document_entity.id = ?
 LIMIT 1;
 
 selectWithContent:
-SELECT *
+SELECT *, story_step_entity.last_updated_at AS story_step_last_updated_at
 FROM document_entity
 INNER JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE deleted = FALSE
 ORDER BY position;
 
 selectWithContentByIds:
-SELECT *
+SELECT *, story_step_entity.last_updated_at AS story_step_last_updated_at
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.id IN ? AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentByUserId:
-SELECT *
+SELECT *, story_step_entity.last_updated_at AS story_step_last_updated_at
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.workspace_id = ? AND deleted = FALSE
 ORDER BY position;
 
 selectFavoritesWithContentByUserId:
-SELECT *
+SELECT *, story_step_entity.last_updated_at AS story_step_last_updated_at
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.workspace_id = ? AND document_entity.favorite = 1 AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentByUserIdAfterTime:
-SELECT *
+SELECT *, story_step_entity.last_updated_at AS story_step_last_updated_at
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.workspace_id = ? AND last_synced > ? AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentByFolderIdAfterTime:
-SELECT *
+SELECT *, story_step_entity.last_updated_at AS story_step_last_updated_at
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.parent_document_id = ? AND last_synced > ? AND workspace_id = ? AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentByWorkspaceIdAfterTime:
-SELECT *
+SELECT *, story_step_entity.last_updated_at AS story_step_last_updated_at
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE last_synced > ? AND workspace_id = ?
 ORDER BY position;
 
 selectWithContentById:
-SELECT *
+SELECT *, story_step_entity.last_updated_at AS story_step_last_updated_at
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.id = ? AND deleted = FALSE AND workspace_id = ?
 ORDER BY position;
 
 selectWithContentByParentId:
-SELECT *
+SELECT *, story_step_entity.last_updated_at AS story_step_last_updated_at
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.parent_document_id = ? AND workspace_id = ? AND deleted = FALSE
@@ -166,7 +166,7 @@ moveToFolder:
 UPDATE document_entity SET parent_document_id = ?, last_synced = ? WHERE id = ?;
 
 selectWithContentByTitle:
-SELECT *
+SELECT *, story_step_entity.last_updated_at AS story_step_last_updated_at
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.title = ? AND workspace_id = ? AND deleted = FALSE
@@ -188,7 +188,7 @@ SET last_updated_at = ?, last_synced = ?
 WHERE id = ? AND workspace_id = ? AND deleted = FALSE;
 
 selectPublishedWithContentById:
-SELECT *
+SELECT *, story_step_entity.last_updated_at AS story_step_last_updated_at
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.id = ? AND document_entity.published = TRUE AND deleted = FALSE
