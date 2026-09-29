@@ -139,7 +139,7 @@ struct FolderOptionsSheet: View {
             .scrollContentBackground(.hidden)
             .background(WrColors.background)
             .navigationTitle("Folder options")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
         }
         .presentationDetents(isFolder ? [.medium, .large] : [.medium])
         .presentationDragIndicator(.visible)

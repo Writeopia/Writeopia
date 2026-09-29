@@ -65,16 +65,22 @@ public final class KeychainTokenStore: TokenStore {
 
     private func write(_ value: String, for key: String) {
         let data = Data(value.utf8)
-        let attributes: [String: Any] = [
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
-        ]
+        var attributes: [String: Any] = [kSecValueData as String: data]
+        #if !os(macOS)
+        // Only meaningful with the data protection keychain, which on macOS needs a signed app.
+        attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        #endif
 
-        let status = SecItemUpdate(baseQuery(key) as CFDictionary, attributes as CFDictionary)
+        var status = SecItemUpdate(baseQuery(key) as CFDictionary, attributes as CFDictionary)
         if status == errSecItemNotFound {
             let query = baseQuery(key).merging(attributes) { _, new in new }
-            SecItemAdd(query as CFDictionary, nil)
+            status = SecItemAdd(query as CFDictionary, nil)
         }
+        #if DEBUG
+        if status != errSecSuccess {
+            print("Keychain write of \(key) failed with status \(status)")
+        }
+        #endif
     }
 
     private func delete(_ key: String) {

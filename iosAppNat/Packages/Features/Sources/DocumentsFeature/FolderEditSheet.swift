@@ -59,7 +59,7 @@ struct FolderEditSheet: View {
             .scrollContentBackground(.hidden)
             .background(WrColors.background)
             .navigationTitle(isNew ? "New folder" : "Edit folder")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

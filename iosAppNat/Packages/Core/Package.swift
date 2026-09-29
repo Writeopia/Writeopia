@@ -7,7 +7,7 @@ let mainActorByDefault: [SwiftSetting] = [.defaultIsolation(MainActor.self)]
 let package = Package(
     name: "Core",
     defaultLocalization: "en",
-    platforms: [.iOS(.v17), .macOS(.v14)],
+    platforms: [.iOS(.v17), .macOS(.v26)],
     products: [
         .library(name: "WrModels", targets: ["WrModels"]),
         .library(name: "WrStorage", targets: ["WrStorage"]),

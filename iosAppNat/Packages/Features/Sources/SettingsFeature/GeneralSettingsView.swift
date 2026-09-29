@@ -1,3 +1,4 @@
+import SetupFeature
 import SwiftUI
 import WrDesign
 import WrModels
@@ -24,6 +25,18 @@ struct GeneralSettingsView: View {
             } footer: {
                 Text("System follows the appearance of your device.")
             }
+
+            #if os(macOS)
+            if session.spaceType == .offline {
+                Section {
+                    PrivateSpaceFolderPicker()
+                } header: {
+                    Text("Local folder")
+                } footer: {
+                    Text("Pick a folder in your computer to keep your workspace.")
+                }
+            }
+            #endif
 
             Section("About") {
                 LabeledContent("Version", value: Bundle.main.appVersion)

@@ -85,7 +85,7 @@ struct NoteMenuSheet: View {
                 }
             }
             .navigationTitle("Document")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -217,7 +217,7 @@ struct PublishSheet: View {
                 }
             }
             .navigationTitle("Publish to Web")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }

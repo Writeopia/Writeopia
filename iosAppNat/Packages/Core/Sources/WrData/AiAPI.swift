@@ -29,6 +29,8 @@ public enum AiProvider: String, CaseIterable, Identifiable, Sendable {
     case appleIntelligence
     /// The Writeopia backend (Gemini). Only in the open space.
     case cloud
+    /// A model served on this machine by Ollama or llmman. Works in both spaces, offline too.
+    case ollama
 
     public var id: String { rawValue }
 
@@ -36,6 +38,7 @@ public enum AiProvider: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .appleIntelligence: String(localized: "Apple Intelligence")
         case .cloud: String(localized: "Writeopia Cloud")
+        case .ollama: String(localized: "Local AI (Ollama)")
         }
     }
 }

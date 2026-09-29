@@ -16,9 +16,10 @@ let coreProducts: [Target.Dependency] = [
 let package = Package(
     name: "Features",
     defaultLocalization: "en",
-    platforms: [.iOS(.v17), .macOS(.v14)],
+    platforms: [.iOS(.v17), .macOS(.v26)],
     products: [
         .library(name: "AuthFeature", targets: ["AuthFeature"]),
+        .library(name: "SetupFeature", targets: ["SetupFeature"]),
         .library(name: "DocumentsFeature", targets: ["DocumentsFeature"]),
         .library(name: "SearchFeature", targets: ["SearchFeature"]),
         .library(name: "SettingsFeature", targets: ["SettingsFeature"]),
@@ -28,7 +29,8 @@ let package = Package(
         .package(path: "../Editor"),
     ],
     targets: [
-        .target(name: "AuthFeature", dependencies: coreProducts, swiftSettings: mainActorByDefault),
+        .target(name: "SetupFeature", dependencies: coreProducts, swiftSettings: mainActorByDefault),
+        .target(name: "AuthFeature", dependencies: coreProducts + ["SetupFeature"], swiftSettings: mainActorByDefault),
         .target(
             name: "DocumentsFeature",
             dependencies: coreProducts + [
@@ -42,7 +44,7 @@ let package = Package(
             dependencies: coreProducts + ["DocumentsFeature", .product(name: "NoteEditor", package: "Editor")],
             swiftSettings: mainActorByDefault
         ),
-        .target(name: "SettingsFeature", dependencies: coreProducts, swiftSettings: mainActorByDefault),
+        .target(name: "SettingsFeature", dependencies: coreProducts + ["SetupFeature"], swiftSettings: mainActorByDefault),
         .testTarget(
             name: "DocumentsFeatureTests",
             dependencies: ["DocumentsFeature"] + coreProducts,

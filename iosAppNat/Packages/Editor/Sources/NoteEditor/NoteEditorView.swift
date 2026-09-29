@@ -169,13 +169,6 @@ public struct NoteEditorView: View {
         }
     }
 
-    /// Adds `https://` when the scheme is missing; nil for empty input.
-    static func normalizedURL(_ input: String) -> String? {
-        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        return trimmed.contains("://") ? trimmed : "https://" + trimmed
-    }
-
     /// Publishing is for premium users in the open space, like in the Compose app.
     private func publishClick() {
         if viewModel.canPublish {
@@ -275,7 +268,7 @@ public struct NoteEditorView: View {
         .animation(.snappy, value: viewModel.isAiRunning)
         .background { keyboardShortcuts }
         .navigationTitle(viewModel.hasLoaded ? viewModel.title : fallbackTitle)
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 TitleView(

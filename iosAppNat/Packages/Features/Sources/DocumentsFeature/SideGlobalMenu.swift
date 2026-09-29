@@ -16,13 +16,17 @@ public enum MainDestination: Hashable {
 public struct SideGlobalMenu: View {
     @Binding private var selection: MainDestination
     private let router: DocumentsRouter
+    private let fixedWidth: Bool
     @Environment(AppSession.self) private var session
     @State private var newFolderTitle = ""
     @State private var asksNewFolderTitle = false
 
-    public init(selection: Binding<MainDestination>, router: DocumentsRouter) {
+    /// `fixedWidth` keeps the menu at the width of the landscape layout; the Mac sidebar column
+    /// sizes it instead and paints its own material behind it.
+    public init(selection: Binding<MainDestination>, router: DocumentsRouter, fixedWidth: Bool = true) {
         _selection = selection
         self.router = router
+        self.fixedWidth = fixedWidth
     }
 
     public var body: some View {
@@ -66,8 +70,9 @@ public struct SideGlobalMenu: View {
             .padding(.vertical, 12)
             .padding(.horizontal, 8)
         }
-        .frame(width: 234)
-        .background(WrColors.surface)
+        .frame(width: fixedWidth ? 234 : nil)
+        .frame(maxWidth: fixedWidth ? nil : .infinity)
+        .background(fixedWidth ? WrColors.surface : .clear)
         .alert("New folder", isPresented: $asksNewFolderTitle) {
             TextField("Title", text: $newFolderTitle)
             Button("Cancel", role: .cancel) {}

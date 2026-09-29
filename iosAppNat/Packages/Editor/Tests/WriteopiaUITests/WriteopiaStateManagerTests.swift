@@ -357,6 +357,7 @@ private let sample = document([
     }
 }
 
+#if canImport(UIKit)
 @Suite struct ReorderDragTests {
     /// Title and three lines, each 40pt tall, stacked from y = 0.
     private func setUp() -> (WriteopiaStateManager, ReorderCoordinator) {
@@ -433,3 +434,4 @@ private let sample = document([
         #expect(reorder.active == nil)
     }
 }
+#endif

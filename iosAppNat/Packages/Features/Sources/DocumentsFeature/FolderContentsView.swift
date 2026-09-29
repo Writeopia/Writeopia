@@ -337,7 +337,7 @@ public struct DocumentsRootView: View {
     public var body: some View {
         DocumentsNavigation(session: session, router: router)
             // A different workspace means a different tree: start again from its root.
-            .id(session.workspace?.id)
+            .id("\(session.workspace?.id ?? "")-\(session.documentsVersion)")
             .onChange(of: session.workspace?.id) { router.reset() }
     }
 }
@@ -516,7 +516,7 @@ struct FolderContentsView: View {
         }
         .navigationTitle(viewModel.folder?.displayTitle ?? title)
         // A large title can't show an icon, so inside a folder the title is inline, with the icon.
-        .navigationBarTitleDisplayMode(viewModel.isRoot ? .automatic : .inline)
+        .toolbarTitleDisplayMode(viewModel.isRoot ? .automatic : .inline)
         .toolbar {
             if !viewModel.isRoot {
                 ToolbarItem(placement: .principal) {
@@ -526,7 +526,7 @@ struct FolderContentsView: View {
             ToolbarItem(placement: .primaryAction) {
                 folderMenu
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .wrTrailing) {
                 if viewModel.isSyncing {
                     ProgressView()
                         .controlSize(.small)

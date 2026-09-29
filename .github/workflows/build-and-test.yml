@@ -340,6 +340,15 @@ jobs:
         working-directory: iosAppNat/Packages/Core
         run: swift test
 
+      # The packages also build for the Mac app; the Editor and Features tests run there too.
+      - name: Editor package tests on macOS
+        working-directory: iosAppNat/Packages/Editor
+        run: swift test
+
+      - name: Features package tests on macOS
+        working-directory: iosAppNat/Packages/Features
+        run: swift test
+
       - name: Editor package tests
         working-directory: iosAppNat/Packages/Editor
         run: >-
@@ -365,4 +374,13 @@ jobs:
           -scheme iosAppNat
           -destination "id=${{ steps.simulator.outputs.udid }}"
           -derivedDataPath "$RUNNER_TEMP/app"
+          CODE_SIGNING_ALLOWED=NO
+
+      - name: Build Mac app
+        run: >-
+          xcodebuild build
+          -project iosAppNat.xcodeproj
+          -scheme iosAppNat
+          -destination "platform=macOS"
+          -derivedDataPath "$RUNNER_TEMP/mac"
           CODE_SIGNING_ALLOWED=NO

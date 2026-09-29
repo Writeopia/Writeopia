@@ -82,7 +82,7 @@ private struct FolderPickerLevel: View {
             )
         }
         .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             Button {
                 onPick(folderId)

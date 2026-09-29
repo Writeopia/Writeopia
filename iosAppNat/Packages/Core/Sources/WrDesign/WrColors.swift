@@ -1,6 +1,8 @@
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 
 /// Writeopia palette, mirrored from the Compose `WriteopiaTheme` so both apps feel the same.
@@ -14,13 +16,33 @@ nonisolated public enum WrColors {
     public static let textLighter = dynamic(light: 0x666666, dark: 0xAAAAAA)
     public static let divider = dynamic(light: 0xE0E0E0, dark: 0x616161)
 
+    /// The background of the system (`systemBackground` on iOS, the window background on macOS).
+    public static var systemBackground: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .systemBackground)
+        #else
+        Color(nsColor: .windowBackgroundColor)
+        #endif
+    }
+
+    /// A subtle fill for placeholders (`secondarySystemFill` on iOS).
+    public static var secondaryFill: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .secondarySystemFill)
+        #else
+        Color(nsColor: .quaternaryLabelColor)
+        #endif
+    }
+
     private static func dynamic(light: UInt32, dark: UInt32) -> Color {
         #if canImport(UIKit)
         Color(UIColor { traits in
             traits.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light)
         })
         #else
-        Color(hex: light)
+        Color(NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? NSColor(hex: dark) : NSColor(hex: light)
+        })
         #endif
     }
 }
@@ -30,6 +52,17 @@ nonisolated extension UIColor {
     convenience init(hex: UInt32) {
         self.init(
             red: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: 1
+        )
+    }
+}
+#elseif canImport(AppKit)
+nonisolated extension NSColor {
+    convenience init(hex: UInt32) {
+        self.init(
+            srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
             green: CGFloat((hex >> 8) & 0xFF) / 255,
             blue: CGFloat(hex & 0xFF) / 255,
             alpha: 1

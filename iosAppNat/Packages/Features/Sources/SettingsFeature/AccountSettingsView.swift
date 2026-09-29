@@ -216,8 +216,10 @@ private struct DeleteAccountSheet: View {
                 }
                 Section {
                     TextField("Email", text: $typedEmail)
+                        #if os(iOS)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.emailAddress)
+                        #endif
                         .autocorrectionDisabled()
                 } footer: {
                     Text("Type \(email) to confirm.")
@@ -228,7 +230,7 @@ private struct DeleteAccountSheet: View {
                 }
             }
             .navigationTitle("Are you sure?")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -266,7 +268,7 @@ private struct ChangePasswordSheet: View {
                 }
             }
             .navigationTitle("Change password")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

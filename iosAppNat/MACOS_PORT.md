@@ -26,7 +26,11 @@ For a text editor, most of the gain is in text input and system integration:
 - Keep Compose Desktop for Windows and Linux. Decide later whether the Compose Mac build stays, based on parity for graph, Ollama and local folder sync.
 - Skip Mac Catalyst: it's cheaper at first but never feels fully like a Mac app, and for an editor the `NSTextView` port is where most of the value is.
 
-## Current state
+## Current state (updated with the first Mac slice)
+
+The `iosAppNat` target now builds for macOS as well (`SUPPORTED_PLATFORMS = iphoneos iphonesimulator macosx`, minimum macOS 26), and all three packages build and pass their tests on a Mac host. Done from the plan below: parts 1 (mechanical fixes: `toolbarTitleDisplayMode`, `WrColors` with `NSColor`, `ToolbarItemPlacement.wrTrailing`, `SystemSettings`), the Mac shell of part 4 (`MacMainView`: `NavigationSplitView` with `SideGlobalMenu`), part 5 (CI builds the Mac app and runs the package tests on macOS), plus the auth and first-run setup flow of the desktop app (AI with Apple Intelligence or Ollama/llmman, private space folder). Not done: parts 2 and 3 (`NSTextView`) and the rest of part 4; on macOS `NoteEditorView` is a read-only placeholder (`NoteEditor/NoteEditorView+macOS.swift`) and `SwipeSelection` compiles to no-ops.
+
+## State before the first slice
 
 The packages already declare `.macOS(.v14)`. Running `swift build` on each package for macOS:
 

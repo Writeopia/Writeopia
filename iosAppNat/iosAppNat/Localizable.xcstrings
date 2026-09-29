@@ -179,6 +179,17 @@
         }
       }
     },
+    "A model served on this machine by Ollama or llmman, in both spaces and offline." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um modelo servido nesta máquina pelo Ollama ou pelo llmman, nos dois espaços e offline."
+          }
+        }
+      }
+    },
     "A team needs at least one admin." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -197,6 +208,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sobre"
+          }
+        }
+      }
+    },
+    "Accept" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceitar"
           }
         }
       }
@@ -289,6 +311,39 @@
         }
       }
     },
+    "AI configured" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IA configurada"
+          }
+        }
+      }
+    },
+    "AI generated" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerado por IA"
+          }
+        }
+      }
+    },
+    "AI is writing…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA está escrevendo…"
+          }
+        }
+      }
+    },
     "AI needs an account" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -296,6 +351,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A IA precisa de uma conta"
+          }
+        }
+      }
+    },
+    "AI not configured" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IA não configurada"
+          }
+        }
+      }
+    },
+    "AI runs on the Writeopia servers and uses your monthly tokens." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA roda nos servidores do Writeopia e usa seus tokens mensais."
+          }
+        }
+      }
+    },
+    "AI runs on this device and doesn't use your monthly tokens." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA roda neste dispositivo e não usa seus tokens mensais."
+          }
+        }
+      }
+    },
+    "AI runs on this machine through Ollama or llmman and doesn't use your monthly tokens." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA roda nesta máquina pelo Ollama ou pelo llmman e não usa seus tokens mensais."
+          }
+        }
+      }
+    },
+    "AI suggestions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugestões da IA"
           }
         }
       }
@@ -340,6 +450,138 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qualquer pessoa com o link pode ler este documento."
+          }
+        }
+      }
+    },
+    "Apple Intelligence" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence"
+          }
+        }
+      }
+    },
+    "Apple Intelligence available" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence disponível"
+          }
+        }
+      }
+    },
+    "Apple Intelligence can't answer about this text." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence não pode responder sobre este texto."
+          }
+        }
+      }
+    },
+    "Apple Intelligence doesn't support the language of this text yet." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence ainda não suporta o idioma deste texto."
+          }
+        }
+      }
+    },
+    "Apple Intelligence is busy. Try again in a moment." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence está ocupada. Tente de novo em instantes."
+          }
+        }
+      }
+    },
+    "Apple Intelligence is getting ready. Try again in a few minutes." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence está sendo preparada. Tente de novo em alguns minutos."
+          }
+        }
+      }
+    },
+    "Apple Intelligence is ready. AI runs on this device and your text never leaves it." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence está pronta. A IA roda neste dispositivo e seu texto nunca sai dele."
+          }
+        }
+      }
+    },
+    "Apple Intelligence isn't available right now." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence não está disponível agora."
+          }
+        }
+      }
+    },
+    "Apple Intelligence isn't available, so the cloud AI is used for now." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence não está disponível, então a IA na nuvem é usada por enquanto."
+          }
+        }
+      }
+    },
+    "Apple Intelligence needs iOS 26 or macOS 26." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence precisa do iOS 26 ou do macOS 26."
+          }
+        }
+      }
+    },
+    "Apple Intelligence unavailable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence indisponível"
+          }
+        }
+      }
+    },
+    "Application Support (default)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Application Support (padrão)"
           }
         }
       }
@@ -410,6 +652,39 @@
         }
       }
     },
+    "Auto configure" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configurar automaticamente"
+          }
+        }
+      }
+    },
+    "Available" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disponível"
+          }
+        }
+      }
+    },
+    "Available Models" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelos disponíveis"
+          }
+        }
+      }
+    },
     "Back to sign in" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -417,6 +692,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Voltar para o login"
+          }
+        }
+      }
+    },
+    "Balanced performance for most use cases" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desempenho equilibrado para a maioria dos usos"
           }
         }
       }
@@ -553,6 +839,17 @@
         }
       }
     },
+    "Choose a local folder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha uma pasta local"
+          }
+        }
+      }
+    },
     "Choose a new password" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -597,6 +894,17 @@
         }
       }
     },
+    "Choose…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher…"
+          }
+        }
+      }
+    },
     "Clear" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -608,6 +916,17 @@
         }
       }
     },
+    "Close" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar"
+          }
+        }
+      }
+    },
     "Cloud AI" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -615,6 +934,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "IA na Nuvem"
+          }
+        }
+      }
+    },
+    "Cloud AI usage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uso da IA na nuvem"
           }
         }
       }
@@ -663,6 +993,28 @@
         }
       }
     },
+    "Configuration Failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A configuração falhou"
+          }
+        }
+      }
+    },
+    "Configure Local AI" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configurar a IA local"
+          }
+        }
+      }
+    },
     "Confirm" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -692,6 +1044,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Código de confirmação"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuar"
           }
         }
       }
@@ -1078,6 +1441,17 @@
         }
       }
     },
+    "Delete model" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apagar modelo"
+          }
+        }
+      }
+    },
     "Delete my account" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1107,6 +1481,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Deletar este item?"
+          }
+        }
+      }
+    },
+    "Detecting Local AI" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detectando a IA local"
+          }
+        }
+      }
+    },
+    "Discard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descartar"
+          }
+        }
+      }
+    },
+    "Dismiss" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispensar"
           }
         }
       }
@@ -1154,6 +1561,39 @@
         }
       }
     },
+    "Download & Configure" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baixar e configurar"
+          }
+        }
+      }
+    },
+    "Download model" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baixar modelo"
+          }
+        }
+      }
+    },
+    "Download Model" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baixar modelo"
+          }
+        }
+      }
+    },
     "Drawing" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1183,6 +1623,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Editar pasta"
+          }
+        }
+      }
+    },
+    "Editing on Mac is coming in a next version." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A edição no Mac chega em uma próxima versão."
           }
         }
       }
@@ -1253,6 +1704,28 @@
         }
       }
     },
+    "Error when downloading model. %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erro ao baixar o modelo. %@"
+          }
+        }
+      }
+    },
+    "Error when requesting models. Did you start Local AI?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erro ao buscar os modelos. Você iniciou a IA local?"
+          }
+        }
+      }
+    },
     "Error. Message: %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1297,6 +1770,17 @@
         }
       }
     },
+    "Failed to download model. %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falha ao baixar o modelo. %@"
+          }
+        }
+      }
+    },
     "FAQ" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1304,6 +1788,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Perguntas frequentes"
+          }
+        }
+      }
+    },
+    "Fast and efficient for basic tasks" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rápido e eficiente para tarefas básicas"
           }
         }
       }
@@ -1440,6 +1935,17 @@
         }
       }
     },
+    "Get Ollama" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baixar o Ollama"
+          }
+        }
+      }
+    },
     "Getting started" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1480,6 +1986,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cabeçalho"
+          }
+        }
+      }
+    },
+    "Heavy" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesado"
           }
         }
       }
@@ -1704,6 +2221,83 @@
         }
       }
     },
+    "Local AI" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IA local"
+          }
+        }
+      }
+    },
+    "Local AI (Ollama or llmman)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IA local (Ollama ou llmman)"
+          }
+        }
+      }
+    },
+    "Local AI (Ollama)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IA local (Ollama)"
+          }
+        }
+      }
+    },
+    "Local AI isn't running at this address." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA local não está rodando neste endereço."
+          }
+        }
+      }
+    },
+    "Local AI was not found running on this machine. Please, install and start Ollama or llmman and try again." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA local não foi encontrada rodando nesta máquina. Instale e inicie o Ollama ou o llmman e tente de novo."
+          }
+        }
+      }
+    },
+    "Local folder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasta local"
+          }
+        }
+      }
+    },
+    "Local Folder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasta local"
+          }
+        }
+      }
+    },
     "Lock document" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1744,6 +2338,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tornar membro"
+          }
+        }
+      }
+    },
+    "Manual Configuration" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configuração manual"
+          }
+        }
+      }
+    },
+    "Maximum quality for complex tasks" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualidade máxima para tarefas complexas"
+          }
+        }
+      }
+    },
+    "Medium" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Médio"
           }
         }
       }
@@ -1891,6 +2518,17 @@
         }
       }
     },
+    "No models found" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum modelo encontrado"
+          }
+        }
+      }
+    },
     "No teams" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1898,6 +2536,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nenhum time"
+          }
+        }
+      }
+    },
+    "Not Detected" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não detectado"
           }
         }
       }
@@ -1975,6 +2624,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Abrir no Safari"
+          }
+        }
+      }
+    },
+    "Open Settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Ajustes"
           }
         }
       }
@@ -2067,6 +2727,39 @@
         }
       }
     },
+    "Pick a folder in your computer to keep your workspace, or skip and do it later from Settings." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha uma pasta no seu computador para guardar seu espaço de trabalho, ou pule e faça isso depois em Ajustes."
+          }
+        }
+      }
+    },
+    "Pick a folder in your computer to keep your workspace." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha uma pasta no seu computador para guardar seu espaço de trabalho."
+          }
+        }
+      }
+    },
+    "Pick a model of the local AI below; until then another provider answers." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha um modelo da IA local abaixo; até lá outro provedor responde."
+          }
+        }
+      }
+    },
     "Plan" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2129,6 +2822,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Prompt"
+          }
+        }
+      }
+    },
+    "Provider" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provedor"
           }
         }
       }
@@ -2331,6 +3035,17 @@
         }
       }
     },
+    "Retry" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tentar de novo"
+          }
+        }
+      }
+    },
     "Role" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2338,6 +3053,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Função"
+          }
+        }
+      }
+    },
+    "Run AI with" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rodar a IA com"
           }
         }
       }
@@ -2429,6 +3155,28 @@
         }
       }
     },
+    "Select Model Tier" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecione o porte do modelo"
+          }
+        }
+      }
+    },
+    "Select Provider" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecione o provedor"
+          }
+        }
+      }
+    },
     "Selected lines" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2458,6 +3206,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Serifada"
+          }
+        }
+      }
+    },
+    "Set up your AI" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure sua IA"
           }
         }
       }
@@ -2523,6 +3282,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Entre no espaço aberto para usar IA nos seus documentos."
+          }
+        }
+      }
+    },
+    "Sign in to the open space to use the cloud AI on this device." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entre no espaço aberto para usar a IA na nuvem neste dispositivo."
           }
         }
       }
@@ -2626,6 +3396,28 @@
         }
       }
     },
+    "Stop" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parar"
+          }
+        }
+      }
+    },
+    "Stop AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parar IA"
+          }
+        }
+      }
+    },
     "Stroke width" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2644,6 +3436,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Subtítulo"
+          }
+        }
+      }
+    },
+    "Suggest more items" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugerir mais itens"
+          }
+        }
+      }
+    },
+    "Suggestions:" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugestões:"
+          }
+        }
+      }
+    },
+    "Summaries, action points, FAQs, tags and prompts run on this device, even offline and in the private space." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumos, acionáveis, FAQs, tags e prompts rodam neste dispositivo, mesmo offline e no espaço privado."
           }
         }
       }
@@ -2868,6 +3693,17 @@
         }
       }
     },
+    "The text is too long for Apple Intelligence. Try with fewer lines." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O texto é longo demais para a Apple Intelligence. Tente com menos linhas."
+          }
+        }
+      }
+    },
     "There's no Writeopia user with this email." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2923,6 +3759,17 @@
         }
       }
     },
+    "This device doesn't support Apple Intelligence." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo não suporta a Apple Intelligence."
+          }
+        }
+      }
+    },
     "This feature is only available for premium users using an online workspace" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2930,6 +3777,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Este recurso está disponível apenas para usuários premium usando uma área de trabalho online"
+          }
+        }
+      }
+    },
+    "This folder can't be used. Pick another one." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta pasta não pode ser usada. Escolha outra."
           }
         }
       }
@@ -3011,6 +3869,17 @@
         }
       }
     },
+    "Turn on Apple Intelligence in the Settings app to use AI on this device." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ative a Apple Intelligence no app Ajustes para usar IA neste dispositivo."
+          }
+        }
+      }
+    },
     "Type %@ to confirm." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3018,6 +3887,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Digite %@ para confirmar."
+          }
+        }
+      }
+    },
+    "Unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indisponível"
           }
         }
       }
@@ -3214,6 +4094,39 @@
         }
       }
     },
+    "Url" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Url"
+          }
+        }
+      }
+    },
+    "Use Apple Intelligence, or configure Ollama or llmman now. You can change this later in Settings." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use o Apple Intelligence ou configure o Ollama ou o llmman agora. Você pode mudar isso depois em Ajustes."
+          }
+        }
+      }
+    },
+    "Use default" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar padrão"
+          }
+        }
+      }
+    },
     "Username" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3342,6 +4255,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Área de trabalho"
+          }
+        }
+      }
+    },
+    "Write this section" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrever esta seção"
+          }
+        }
+      }
+    },
+    "Write this section with AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrever esta seção com IA"
+          }
+        }
+      }
+    },
+    "Write your AI model" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escreva seu modelo de IA"
+          }
+        }
+      }
+    },
+    "Writeopia Cloud" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Writeopia Cloud"
           }
         }
       }
@@ -3507,380 +4464,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Seus times"
-          }
-        }
-      }
-    },
-    "AI generated" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gerado por IA"
-          }
-        }
-      }
-    },
-    "AI is writing…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A IA está escrevendo…"
-          }
-        }
-      }
-    },
-    "AI runs on the Writeopia servers and uses your monthly tokens." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A IA roda nos servidores do Writeopia e usa seus tokens mensais."
-          }
-        }
-      }
-    },
-    "AI runs on this device and doesn't use your monthly tokens." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A IA roda neste dispositivo e não usa seus tokens mensais."
-          }
-        }
-      }
-    },
-    "AI suggestions" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sugestões da IA"
-          }
-        }
-      }
-    },
-    "Accept" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aceitar"
-          }
-        }
-      }
-    },
-    "Apple Intelligence" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple Intelligence"
-          }
-        }
-      }
-    },
-    "Apple Intelligence can't answer about this text." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A Apple Intelligence não pode responder sobre este texto."
-          }
-        }
-      }
-    },
-    "Apple Intelligence doesn't support the language of this text yet." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A Apple Intelligence ainda não suporta o idioma deste texto."
-          }
-        }
-      }
-    },
-    "Apple Intelligence is busy. Try again in a moment." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A Apple Intelligence está ocupada. Tente de novo em instantes."
-          }
-        }
-      }
-    },
-    "Apple Intelligence is getting ready. Try again in a few minutes." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A Apple Intelligence está sendo preparada. Tente de novo em alguns minutos."
-          }
-        }
-      }
-    },
-    "Apple Intelligence is ready. AI runs on this device and your text never leaves it." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A Apple Intelligence está pronta. A IA roda neste dispositivo e seu texto nunca sai dele."
-          }
-        }
-      }
-    },
-    "Apple Intelligence isn't available right now." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A Apple Intelligence não está disponível agora."
-          }
-        }
-      }
-    },
-    "Apple Intelligence isn't available, so the cloud AI is used for now." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A Apple Intelligence não está disponível, então a IA na nuvem é usada por enquanto."
-          }
-        }
-      }
-    },
-    "Apple Intelligence needs iOS 26 or later." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A Apple Intelligence precisa do iOS 26 ou posterior."
-          }
-        }
-      }
-    },
-    "Available" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Disponível"
-          }
-        }
-      }
-    },
-    "Cloud AI usage" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uso da IA na nuvem"
-          }
-        }
-      }
-    },
-    "Discard" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Descartar"
-          }
-        }
-      }
-    },
-    "Dismiss" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dispensar"
-          }
-        }
-      }
-    },
-    "Open Settings" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abrir Ajustes"
-          }
-        }
-      }
-    },
-    "Provider" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Provedor"
-          }
-        }
-      }
-    },
-    "Run AI with" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rodar a IA com"
-          }
-        }
-      }
-    },
-    "Sign in to the open space to use the cloud AI on this device." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entre no espaço aberto para usar a IA na nuvem neste dispositivo."
-          }
-        }
-      }
-    },
-    "Stop" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Parar"
-          }
-        }
-      }
-    },
-    "Stop AI" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Parar IA"
-          }
-        }
-      }
-    },
-    "Suggest more items" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sugerir mais itens"
-          }
-        }
-      }
-    },
-    "Summaries, action points, FAQs, tags and prompts run on this device, even offline and in the private space." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resumos, acionáveis, FAQs, tags e prompts rodam neste dispositivo, mesmo offline e no espaço privado."
-          }
-        }
-      }
-    },
-    "The text is too long for Apple Intelligence. Try with fewer lines." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O texto é longo demais para a Apple Intelligence. Tente com menos linhas."
-          }
-        }
-      }
-    },
-    "This device doesn't support Apple Intelligence." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este dispositivo não suporta a Apple Intelligence."
-          }
-        }
-      }
-    },
-    "Turn on Apple Intelligence in the Settings app to use AI on this device." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ative a Apple Intelligence no app Ajustes para usar IA neste dispositivo."
-          }
-        }
-      }
-    },
-    "Unavailable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Indisponível"
-          }
-        }
-      }
-    },
-    "Write this section" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escrever esta seção"
-          }
-        }
-      }
-    },
-    "Write this section with AI" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escrever esta seção com IA"
-          }
-        }
-      }
-    },
-    "Writeopia Cloud" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Writeopia Cloud"
           }
         }
       }

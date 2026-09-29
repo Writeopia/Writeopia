@@ -22,22 +22,57 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
-    public init(
+    public convenience init(
         directory: URL = LocalDocumentsRepository.defaultDirectory,
         workspaceId: String = Workspace.localId,
         seedsWelcome: Bool = true
     ) {
-        self.directory = directory
-        self.workspaceId = workspaceId
-        self.seedsWelcome = seedsWelcome
         do {
-            db = try SQLiteDatabase(url: directory.appending(path: "writeopia.sqlite"))
-            try createSchema()
-            try importJsonFilesIfNeeded()
+            try self.init(
+                opening: directory,
+                workspaceId: workspaceId,
+                seedsWelcome: seedsWelcome,
+                importsLegacyJson: true,
+                journalMode: .wal
+            )
         } catch {
             fatalError("Could not open the documents database: \(error)")
         }
     }
+
+    /// The private space in a folder the user picked (the Mac app). The folder is left as it
+    /// is: JSON files already there are not imported nor moved, and the database uses a single
+    /// file so folders synced by iCloud Drive or Dropbox stay consistent. Throws when the folder
+    /// can't be written, so a stale choice can fall back to the default location.
+    public static func inUserFolder(_ directory: URL) throws -> LocalDocumentsRepository {
+        try LocalDocumentsRepository(
+            opening: directory,
+            workspaceId: Workspace.localId,
+            seedsWelcome: true,
+            importsLegacyJson: false,
+            journalMode: .delete
+        )
+    }
+
+    init(
+        opening directory: URL,
+        workspaceId: String,
+        seedsWelcome: Bool,
+        importsLegacyJson: Bool,
+        journalMode: SQLiteDatabase.JournalMode
+    ) throws {
+        self.directory = directory
+        self.workspaceId = workspaceId
+        self.seedsWelcome = seedsWelcome
+        db = try SQLiteDatabase(url: directory.appending(path: "writeopia.sqlite"), journalMode: journalMode)
+        try createSchema()
+        if importsLegacyJson {
+            try importJsonFilesIfNeeded()
+        }
+    }
+
+    /// Where the documents are kept.
+    public var location: URL { directory }
 
     public static var defaultDirectory: URL {
         URL.applicationSupportDirectory.appending(path: "Writeopia/PrivateSpace", directoryHint: .isDirectory)

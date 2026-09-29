@@ -208,8 +208,10 @@ struct TeamDetailView: View {
                 Section {
                     TextField("Email", text: $viewModel.newMemberEmail)
                         .textContentType(.emailAddress)
+                        #if os(iOS)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
+                        #endif
                         .autocorrectionDisabled()
 
                     Picker("Role", selection: $viewModel.newMemberRole) {

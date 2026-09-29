@@ -255,4 +255,41 @@ public extension View {
         modifier(SlideToSelect(onSwipe: onSwipe))
     }
 }
+#else
+import SwiftUI
+
+// The swipe gesture is a touch interaction; the Mac app selects with the pointer instead.
+// These stand-ins keep the shared lists compiling and do nothing.
+
+/// No-op on macOS; see the UIKit implementation above.
+public final class SwipeSelectionCoordinator {
+    public init(leadingExclusion: CGFloat = 0) {}
+}
+
+/// No-op on macOS; see the UIKit implementation above.
+public struct SwipeSelectionInstaller: View {
+    public init(coordinator: SwipeSelectionCoordinator) {}
+
+    public var body: some View {
+        EmptyView()
+    }
+}
+
+private struct SwipeSelectionKey: EnvironmentKey {
+    static let defaultValue: SwipeSelectionCoordinator? = nil
+}
+
+public extension EnvironmentValues {
+    var swipeSelection: SwipeSelectionCoordinator? {
+        get { self[SwipeSelectionKey.self] }
+        set { self[SwipeSelectionKey.self] = newValue }
+    }
+}
+
+public extension View {
+    /// No-op on macOS: there is no swipe to select.
+    func slideToSelect(onSwipe: @escaping () -> Void) -> some View {
+        self
+    }
+}
 #endif

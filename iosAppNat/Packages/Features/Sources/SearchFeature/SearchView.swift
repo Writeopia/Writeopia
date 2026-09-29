@@ -71,7 +71,7 @@ public struct SearchRootView: View {
             imageUploader: session.imageUploader,
             isPremium: session.user?.isPremium ?? false
         )
-            .id(session.workspace?.id)
+            .id("\(session.workspace?.id ?? "")-\(session.documentsVersion)")
     }
 }
 
