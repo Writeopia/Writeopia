@@ -60,15 +60,17 @@ public enum AiPrompts {
 
         var parts: [String] = []
         var current = ""
+        // Separate from `current.isEmpty`: a part can start with an empty line or a space.
+        var started = false
 
         func flush() {
-            let trimmed = current.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty { parts.append(trimmed) }
+            if !current.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { parts.append(current) }
             current = ""
+            started = false
         }
 
         func append(_ piece: String, separator: String) {
-            if current.isEmpty {
+            if !started {
                 current = piece
             } else if current.count + separator.count + piece.count <= limit {
                 current += separator + piece
@@ -76,6 +78,7 @@ public enum AiPrompts {
                 flush()
                 current = piece
             }
+            started = true
         }
 
         for line in text.components(separatedBy: "\n") {
@@ -84,7 +87,8 @@ public enum AiPrompts {
                 continue
             }
             // A line too long for a part: cut it between words, or anywhere when a word is too long.
-            for word in line.split(separator: " ", omittingEmptySubsequences: true).map(String.init) {
+            // Empty pieces are kept so repeated spaces and indentation survive.
+            for word in line.split(separator: " ", omittingEmptySubsequences: false).map(String.init) {
                 var word = word
                 while word.count > limit {
                     flush()

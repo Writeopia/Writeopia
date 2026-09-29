@@ -186,13 +186,22 @@ final class FolderContentsViewModel {
 
     /// Creates a folder here with `icon`, picked in the same sheet that edits folders.
     func createFolder(title: String, icon: IconInfo? = nil) async {
-        await perform {
-            var created = try await self.repository.createFolder(title: self.normalized(title, fallback: "New folder"), parentId: self.folderId)
-            if let icon {
-                created.icon = icon
-                _ = try await self.repository.updateFolder(created)
+        let created: Folder
+        do {
+            created = try await repository.createFolder(title: normalized(title, fallback: "New folder"), parentId: folderId)
+        } catch {
+            actionError = error.userMessage
+            return
+        }
+        // The folder exists now: a failed icon doesn't make it look like the creation failed.
+        if let icon {
+            var withIcon = created
+            withIcon.icon = icon
+            if (try? await repository.updateFolder(withIcon)) == nil {
+                actionError = String(localized: "The folder was created, but its icon couldn't be saved.")
             }
         }
+        await load()
     }
 
     func createDocument(title: String) async -> WrDocument? {

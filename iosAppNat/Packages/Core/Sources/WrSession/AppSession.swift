@@ -101,12 +101,14 @@ public final class AppSession {
     /// available on this device.
     public var aiClient: AiStreaming? {
         let appleIntelligenceReady = isAppleIntelligenceAvailable()
+        // The cloud AI needs a session and a workspace of the open space.
+        let cloudReady = isOnline && workspace.map { $0.id != Workspace.localId } == true
         switch aiProvider {
         case .appleIntelligence:
             if appleIntelligenceReady { return appleIntelligence }
-            return isOnline ? aiAPI : nil
+            return cloudReady ? aiAPI : nil
         case .cloud:
-            if isOnline { return aiAPI }
+            if cloudReady { return aiAPI }
             return appleIntelligenceReady ? appleIntelligence : nil
         }
     }

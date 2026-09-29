@@ -350,7 +350,9 @@ public final class WriteopiaStateManager {
     /// Turns the AI answer with `stepId` into regular lines, reading its Markdown (headings,
     /// lists, checkboxes), like the accept button of `AiAnswerDrawer` of the SDK.
     public func acceptAiAnswer(stepId: String) {
-        guard isEditable, let step = step(withId: stepId), step.type.number == StoryType.aiAnswer.number else { return }
+        guard isEditable, stepId != streamingAnswerId,
+              let step = step(withId: stepId), step.type.number == StoryType.aiAnswer.number
+        else { return }
         var lines = MarkdownSteps.parse(step.text ?? "")
         if lines.isEmpty {
             lines = [StoryStep(type: .text, text: step.text ?? "", position: 0)]

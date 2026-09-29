@@ -109,7 +109,9 @@ public final class AppleIntelligenceAi: AiStreaming {
             let status = Self.status
             guard status.isAvailable else { throw AiStreamError(message: status.message) }
 
-            let input = try await fitting(text)
+            // A free prompt carries the user's instruction, which condensing could drop: it's
+            // sent as is, and the model reports when it's too long.
+            let input = command == .prompt ? text : try await fitting(text)
             let session = LanguageModelSession(instructions: AiPrompts.instructions)
             let stream = session.streamResponse(
                 to: AiPrompts.prompt(for: command, text: input),
@@ -126,7 +128,7 @@ public final class AppleIntelligenceAi: AiStreaming {
     }
 
     /// `text` when it fits in one request; otherwise its parts condensed one by one, until the
-    /// notes fit.
+    /// notes fit. Throws when they still don't fit after a few rounds.
     private func fitting(_ text: String) async throws -> String {
         var text = text
         var partLimit = inputLimit
@@ -143,7 +145,13 @@ public final class AppleIntelligenceAi: AiStreaming {
             }
             text = notes.joined(separator: "\n")
         }
-        return String(text.prefix(inputLimit))
+        if await fits(text) { return text }
+        // Cutting the notes would silently drop the end of the text.
+        throw AiStreamError(message: Self.tooLongMessage)
+    }
+
+    static var tooLongMessage: String {
+        String(localized: "The text is too long for Apple Intelligence. Try with fewer lines.")
     }
 
     /// Whether `text` can be sent with a command. Counts the tokens when the system can (iOS
@@ -195,7 +203,7 @@ public final class AppleIntelligenceAi: AiStreaming {
             case .guardrailViolation, .refusal:
                 String(localized: "Apple Intelligence can't answer about this text.")
             case .exceededContextWindowSize:
-                String(localized: "The text is too long for Apple Intelligence. Try with fewer lines.")
+                tooLongMessage
             case .unsupportedLanguageOrLocale:
                 String(localized: "Apple Intelligence doesn't support the language of this text yet.")
             case .assetsUnavailable:

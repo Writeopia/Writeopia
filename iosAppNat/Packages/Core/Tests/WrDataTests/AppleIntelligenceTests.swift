@@ -47,10 +47,21 @@ import WrModels
         #expect(chunks == ["aaaaaaaaaa", "aaaaaaaaaa", "aaaaa"])
     }
 
+    @Test func aLongLineKeepsItsRepeatedSpaces() {
+        let text = "    indented  line with   gaps " + String(repeating: "word ", count: 20)
+        let chunks = AiPrompts.chunks(of: text, limit: 30)
+
+        #expect(chunks.allSatisfy { $0.count <= 30 })
+        #expect(chunks.first?.hasPrefix("    indented  line with   gaps") == true)
+        #expect(chunks.joined(separator: " ") == text)
+    }
+
     @Test func statusMessagesExplainWhatToDo() {
         #expect(AppleIntelligenceStatus.available.isAvailable)
         #expect(!AppleIntelligenceStatus.notEnabled.isAvailable)
-        #expect(AppleIntelligenceStatus.notEnabled.message.contains("Settings"))
+        // Not the text itself, which depends on the language of the device.
+        #expect(!AppleIntelligenceStatus.notEnabled.message.isEmpty)
+        #expect(AppleIntelligenceStatus.notEnabled.message != AppleIntelligenceStatus.available.message)
         #expect(AppleIntelligenceStatus.unsupportedSystem.message.contains("iOS 26"))
     }
 
@@ -82,6 +93,28 @@ import WrModels
         #expect(steps[4].type == .checkItem && steps[4].checked == false)
         #expect(steps[5].type == .checkItem && steps[5].checked == true)
         #expect(steps.map(\.position) == [1, 2, 3, 4, 5, 6])
+    }
+
+    @Test func fencedCodeIsKeptAsCode() {
+        let steps = MarkdownSteps.parse("""
+            Intro
+            ````swift
+            # not a heading
+            let a = **b**
+            ```
+            ````
+            - Item
+            """)
+
+        #expect(steps.map(\.text) == ["Intro", "# not a heading", "let a = **b**", "```", "Item"])
+        #expect(steps[1...3].allSatisfy { $0.type == .codeBlock && $0.tags.isEmpty })
+        #expect(steps[4].type == .unorderedListItem)
+    }
+
+    @Test func aHeadingInsideCodeIsNotTheTitle() {
+        let document = MarkdownToDocument.read("~~~\n# Code\n~~~\n# Real title\nText", parentId: "root", workspaceId: "")
+        #expect(document?.title == "Real title")
+        #expect(document?.content.map(\.text) == ["Real title", "# Code", "Text"])
     }
 
     @Test func listItemsIgnoreTheTextAroundTheList() {

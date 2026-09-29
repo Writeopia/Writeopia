@@ -233,8 +233,25 @@ private func makeSession(
             transport: StubTransport([:]),
             isAppleIntelligenceAvailable: { appleIntelligence }
         )
-        if online { session.chooseOnlineSpace() } else { session.chooseOfflineSpace() }
+        if online {
+            session.chooseOnlineSpace()
+            session.select(workspace: Workspace(id: "w1", userId: "u1", name: "Team", role: "ADMIN"))
+        } else {
+            session.chooseOfflineSpace()
+        }
         return session
+    }
+
+    @Test func cloudNeedsAWorkspaceOfTheOpenSpace() {
+        let session = AppSession(
+            tokenStore: InMemoryTokenStore(accessToken: "token"),
+            preferences: Preferences(defaults: UserDefaults(suiteName: "tests.\(UUID().uuidString)")!),
+            transport: StubTransport([:]),
+            isAppleIntelligenceAvailable: { false }
+        )
+        session.chooseOnlineSpace()
+        session.aiProvider = .cloud
+        #expect(session.aiClient == nil)
     }
 
     @Test func appleIntelligenceIsTheDefaultInBothSpaces() {

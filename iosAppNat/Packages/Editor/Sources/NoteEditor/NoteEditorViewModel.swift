@@ -379,12 +379,14 @@ public final class NoteEditorViewModel {
     /// suggestions, like `generateSuggestionsList` of the SDK. Not streamed: the items show up
     /// together.
     public func suggestListItems(after stepId: String) {
-        guard let aiClient, !isAiRunning else { return }
+        guard let aiClient, !isAiRunning, writeopiaManager.isEditable else { return }
 
         let context = String(writeopiaManager.documentText.prefix(Self.contextLimit))
         let prompt = "Generate a list of options. Start each options with a line break and \"-\". Generate at most 5 items. Use this context to generate the list: \(context)"
 
         suggestionTask?.cancel()
+        // Shares `isAiRunning` with the answers, so only one AI request runs at a time.
+        isAiRunning = true
         suggestionTask = Task { [weak self] in
             var answer = ""
             do {
@@ -392,9 +394,12 @@ public final class NoteEditorViewModel {
                     answer = partial
                 }
             } catch {
+                self?.isAiRunning = false
                 return
             }
-            guard !Task.isCancelled, let self else { return }
+            guard let self else { return }
+            self.isAiRunning = false
+            guard !Task.isCancelled else { return }
             let items = MarkdownSteps.listItems(answer, limit: 5)
             self.writeopiaManager.showAiSuggestions(items, after: stepId)
         }
@@ -417,7 +422,7 @@ public final class NoteEditorViewModel {
     /// Streams the answer of `prompt` into a new AI answer after `position`. A loading step
     /// shows until the first part of the answer arrives.
     private func streamAnswer(_ command: AiCommand, prompt: String, after position: Double?) {
-        guard let aiClient else { return }
+        guard let aiClient, !isAiRunning else { return }
 
         let answerId = writeopiaManager.loadingAtPosition(position)
         isAiRunning = true
