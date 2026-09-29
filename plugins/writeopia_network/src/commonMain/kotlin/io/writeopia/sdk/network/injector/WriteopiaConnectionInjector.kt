@@ -1,6 +1,7 @@
 package io.writeopia.sdk.network.injector
 
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
@@ -9,8 +10,11 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.plugin
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.json.json
 import io.writeopia.sdk.network.api.StoryStepSyncApi
 import io.writeopia.sdk.network.api.StoryStepSyncApiImpl
@@ -133,12 +137,14 @@ private object ApiInjectorDefaults {
         // WriteopiaConnectionInjector.setBearerTokenHandler() is called.
         install(Auth) {
             bearer {
+                // No token means no Authorization header at all. An empty "Bearer " would
+                // stop the web BFF from bridging the session cookie into the header.
                 loadTokens {
                     val handler = WriteopiaConnectionInjector.currentBearerTokenHandler()
-                    val accessToken = handler?.getIdToken() ?: ""
-                    val refreshToken = handler?.getRefreshToken() ?: ""
+                    val accessToken = handler?.getIdToken()?.takeIf { it.isNotBlank() }
+                        ?: return@loadTokens null
 
-                    BearerTokens(accessToken, refreshToken)
+                    BearerTokens(accessToken, handler.getRefreshToken())
                 }
 
                 refreshTokens {
@@ -151,6 +157,29 @@ private object ApiInjectorDefaults {
                         else -> null
                     }
                 }
+            }
+        }
+    }.also(::retryAfterSessionRefresh)
+
+    /**
+     * Sessions held in cookies the client can't read (the web app) are renewed through
+     * [BearerTokenHandler.refreshSession] rather than the bearer plugin, which can only retry
+     * by attaching a token it holds. Auth endpoints are skipped: their 401s mean bad
+     * credentials or an expired session, which a refresh can't fix.
+     */
+    private fun retryAfterSessionRefresh(client: HttpClient) {
+        client.plugin(HttpSend).intercept { request ->
+            val call = execute(request)
+            val handler = WriteopiaConnectionInjector.currentBearerTokenHandler()
+
+            if (
+                call.response.status == HttpStatusCode.Unauthorized &&
+                !request.url.encodedPath.startsWith("/api/auth/") &&
+                handler?.refreshSession() == true
+            ) {
+                execute(request)
+            } else {
+                call
             }
         }
     }

@@ -230,6 +230,44 @@ class CookieAuthIntegrationTest {
     }
 
     @Test
+    fun `web refresh should restore session cookie after it expired`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val cookieClient = cookieClient()
+        registerTestUser(cookieClient)
+
+        val loginResponse = cookieClient.post("/api/auth/login/web") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest(testEmail, testPassword))
+        }
+        assertEquals(HttpStatusCode.OK, loginResponse.status)
+        val userId = loginResponse.body<AuthResponse>().writeopiaUser.id
+        val refreshToken = loginResponse.headers.getAll("Set-Cookie")!!
+            .first { it.startsWith("writeopia_refresh=") }
+            .substringAfter("=")
+            .substringBefore(";")
+
+        // Only the refresh cookie is left, as when the browser already dropped the others
+        val refreshResponse = client.post("/api/auth/refresh/web") {
+            cookie("writeopia_refresh", refreshToken)
+        }
+        assertEquals(HttpStatusCode.OK, refreshResponse.status)
+
+        val sessionCookie = refreshResponse.headers.getAll("Set-Cookie")!!
+            .first { it.startsWith("writeopia_session=") }
+        assertTrue(
+            sessionCookie.startsWith("writeopia_session=$userId"),
+            "Session cookie should carry the userId from the new token: $sessionCookie"
+        )
+        assertTrue(
+            sessionCookie.contains("Max-Age=${7 * 24 * 60 * 60}"),
+            "Session cookie should live as long as the refresh token: $sessionCookie"
+        )
+    }
+
+    @Test
     fun `authenticated endpoint should work with cookie auth`() = testApplication {
         application {
             module(db, debugMode = true)

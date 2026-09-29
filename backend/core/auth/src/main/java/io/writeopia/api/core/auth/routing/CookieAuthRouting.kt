@@ -124,9 +124,9 @@ fun Routing.cookieAuthRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean 
             if (tokenPair != null) {
                 val accessTokenExpiry = System.currentTimeMillis() + (15 * 60 * 1000)
 
-                // Extract userId from the session metadata cookie
-                val existingMeta = call.request.cookies[COOKIE_SESSION_META]
-                val userId = existingMeta?.split(":")?.firstOrNull() ?: ""
+                // Taken from the new token: the session metadata cookie is client-writable
+                // and may be gone by the time the client refreshes.
+                val userId = JwtConfig.extractUserId(tokenPair.accessToken) ?: ""
 
                 setAuthCookies(
                     accessToken = tokenPair.accessToken,
@@ -249,12 +249,14 @@ private fun RoutingContext.setAuthCookies(
         )
     )
 
-    // Non-HttpOnly cookie with session metadata for frontend auth status checks
+    // Non-HttpOnly cookie with session metadata for frontend auth status checks. It lives as
+    // long as the refresh token: the session is still alive after the access token expires,
+    // and its value carries the access token expiry for the client.
     call.response.cookies.append(
         Cookie(
             name = COOKIE_SESSION_META,
             value = "$userId:$accessTokenExpiry",
-            maxAge = 15 * 60,
+            maxAge = 7 * 24 * 60 * 60,
             path = "/",
             secure = secureCookies,
             httpOnly = false, // Accessible by JavaScript

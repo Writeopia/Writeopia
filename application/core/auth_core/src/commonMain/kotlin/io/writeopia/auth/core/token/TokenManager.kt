@@ -19,11 +19,33 @@ class TokenManager(
 
     private val refreshMutex = Mutex()
 
+    private var lastSessionRefreshAt = 0L
+
     override suspend fun getIdToken(): String? =
         authRepository.getAccessToken()
 
     override suspend fun getRefreshToken(): String? =
         authRepository.getRefreshToken()
+
+    /**
+     * Web sessions live in HttpOnly cookies, so they're renewed by the backend rotating the
+     * cookies instead of by handing tokens back. The backend rotates the refresh token on
+     * every call, so concurrent 401s are serialized and a caller that waited on a refresh
+     * finished meanwhile reuses it instead of rotating again.
+     */
+    override suspend fun refreshSession(): Boolean {
+        if (!authRepository.useWebLogin) return false
+
+        val requestedAt = Clock.System.now().toEpochMilliseconds()
+
+        return refreshMutex.withLock {
+            if (lastSessionRefreshAt > requestedAt) return@withLock true
+
+            val refreshed = authApi.refreshWeb() is ResultData.Complete
+            if (refreshed) lastSessionRefreshAt = Clock.System.now().toEpochMilliseconds()
+            refreshed
+        }
+    }
 
     override suspend fun refreshTokens(): TokenRefreshResult =
         refreshMutex.withLock {

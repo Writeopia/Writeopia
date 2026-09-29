@@ -21,6 +21,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.account.ui.AccountDeletionStartedScreen
+import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.auth.navigation.startScreen
 import io.writeopia.common.utils.ALLOW_BACKEND
@@ -128,9 +129,9 @@ fun CreateAppInMemory() {
     val baseUrl = window.location.origin
     WriteopiaConnectionInjector.setBaseUrl(baseUrl)
     WriteopiaConnectionInjector.setDisableWebsocket(true)
-    // Don't call setupBearerTokenHandler() - webapp uses HttpOnly cookies for auth,
-    // not Bearer tokens. The Bearer plugin would add an empty Authorization header
-    // that prevents the server from falling back to cookie-based authentication.
+    // The webapp authenticates with HttpOnly cookies, so the handler never provides a
+    // bearer token; it's registered to renew the session cookies when they expire.
+    setupBearerTokenHandler()
 
     // Initialize GenAI (Gemini) for the webapp
     GenAiInjection.initialize(

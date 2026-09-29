@@ -271,6 +271,23 @@ class AuthApi(private val client: HttpClient, private val baseUrl: String) {
         ResultData.Error(e)
     }
 
+    /**
+     * Web-specific refresh: the refresh token travels in its HttpOnly cookie and the backend
+     * answers by rotating both session cookies, so nothing is sent or returned in the body.
+     */
+    suspend fun refreshWeb(): ResultData<Unit> = try {
+        val response = client.post("$baseUrl/api/auth/refresh/web")
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            ResultData.Error()
+        }
+    } catch (e: Exception) {
+        println("refreshWeb error: ${e.message}")
+        ResultData.Error(e)
+    }
+
     suspend fun logout(refreshToken: String): ResultData<Unit> = try {
         val response = client.post("$baseUrl/api/auth/logout") {
             contentType(ContentType.Application.Json)
