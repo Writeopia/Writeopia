@@ -103,9 +103,11 @@ class DocumentMerger {
             val commentIds = (primaryComments + fallbackComments)
                 .map { comment -> comment.id }
                 .distinct()
-            val conversationDeleted =
-                primaryComments.isNotEmpty() && primaryComments.all { comment -> comment.deleted } ||
-                    fallbackComments.isNotEmpty() && fallbackComments.all { comment -> comment.deleted }
+            val primaryDeleted =
+                primaryComments.isNotEmpty() && primaryComments.all { comment -> comment.deleted }
+            val fallbackDeleted =
+                fallbackComments.isNotEmpty() && fallbackComments.all { comment -> comment.deleted }
+            val conversationDeleted = primaryDeleted || fallbackDeleted
 
             val mergedComments = commentIds.mapNotNull { commentId ->
                 val primaryComment = primaryById[commentId]
