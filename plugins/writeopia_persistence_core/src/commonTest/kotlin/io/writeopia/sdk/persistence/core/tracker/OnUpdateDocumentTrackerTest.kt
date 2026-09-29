@@ -87,6 +87,50 @@ class OnUpdateDocumentTrackerTest {
     }
 
     @Test
+    fun commentChangeAfterLineEditShouldPreserveTimestampInFullSave() = runTest {
+        val conversation = conversation()
+        val sourceDocument = sourceDocument(listOf(conversation))
+        val editedStep = sourceDocument.content.values.single().copy(
+            text = "updated",
+            lastUpdatedAt = null,
+        )
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(
+                stories = sourceDocument.content,
+                lastEdit = LastEdit.Nothing,
+            ) to sourceDocument.info()
+        )
+        val commentConversationsFlow = MutableStateFlow(sourceDocument.commentConversations)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                documentEditionFlow,
+                MutableStateFlow(sourceDocument.workspaceId),
+                commentConversationsFlow,
+            )
+        }
+        runCurrent()
+
+        documentEditionFlow.value = StoryState(
+            stories = mapOf(0.0 to editedStep),
+            lastEdit = LastEdit.LineEdition(0.0, editedStep),
+        ) to sourceDocument.info()
+        runCurrent()
+
+        val reply = Comment(id = "comment-2", text = "reply")
+        commentConversationsFlow.value = mapOf(
+            conversation.id to conversation.comments + reply
+        )
+
+        val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
+        job.cancel()
+
+        assertNotNull(persisted.content.values.single().lastUpdatedAt)
+    }
+
+    @Test
     fun legacySaveShouldRejectCommentBearingDocumentsBeforePersisting() = runTest {
         val conversation = conversation()
         val sourceDocument = sourceDocument(listOf(conversation))
