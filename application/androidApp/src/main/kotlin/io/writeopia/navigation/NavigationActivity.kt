@@ -8,10 +8,14 @@ import android.os.Bundle
 import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -44,10 +48,14 @@ class NavigationActivity : ComponentActivity() {
         setContent {
             ImageLoadConfig.configImageLoad()
 
-            NavigationGraph(
-                application = application,
-                window = window,
-            )
+            // Exposes Compose test tags as resource ids so UiAutomator (baseline profile
+            // generation) can find them.
+            Box(modifier = Modifier.semantics { testTagsAsResourceId = true }) {
+                NavigationGraph(
+                    application = application,
+                    window = window,
+                )
+            }
         }
     }
 }

@@ -43,6 +43,7 @@ fun WriteopiaEditor(
                 items(
                     content,
                     key = keyFn,
+                    contentType = { drawStory -> drawStory.storyStep.type.number },
                     itemContent = { drawStory ->
                         val size = storyState.stories.size
 
