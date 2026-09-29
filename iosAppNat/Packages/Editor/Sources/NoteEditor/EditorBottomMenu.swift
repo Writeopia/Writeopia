@@ -249,7 +249,7 @@ private struct SelectedLinesChip: View {
 }
 
 /// The highlight colors, shown above the menu like the color row of the Compose app.
-private struct HighlightColors: View {
+struct HighlightColors: View {
     let manager: WriteopiaStateManager
 
     var body: some View {
@@ -298,7 +298,7 @@ private extension Span {
 }
 
 /// The look of a menu button, for controls that aren't plain buttons (e.g. the photo picker).
-private struct MenuIcon: View {
+struct MenuIcon: View {
     let systemImage: String
 
     var body: some View {
@@ -310,7 +310,7 @@ private struct MenuIcon: View {
     }
 }
 
-private struct MenuButton: View {
+struct MenuButton: View {
     let systemImage: String
     let label: LocalizedStringKey
     var tint: Color = .primary
@@ -335,7 +335,7 @@ private struct MenuButton: View {
     }
 }
 
-private extension View {
+extension View {
     @ViewBuilder
     func glassCapsule() -> some View {
         if #available(iOS 26.0, *) {

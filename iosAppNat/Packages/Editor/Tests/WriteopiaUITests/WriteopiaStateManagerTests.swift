@@ -239,6 +239,52 @@ private let sample = document([
     }
 }
 
+@Suite struct BlockOptionsTests {
+    private func manager() -> WriteopiaStateManager {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(document([
+            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
+            StoryStep(id: "a", type: .text, text: "One", position: 1),
+            StoryStep(id: "b", type: .text, text: "Two", position: 2),
+        ]))
+        return manager
+    }
+
+    @Test func actOnTheFocusedLineWithoutSelection() {
+        let manager = manager()
+        manager.onFocusChange(stepId: "b", hasFocus: true)
+
+        manager.toggleType(.checkItem)
+        #expect(manager.currentStory.stories[2]?.type.number == StoryType.checkItem.number)
+        #expect(manager.currentStory.stories[1]?.type.number == StoryType.text.number)
+        #expect(manager.blocksAre(.checkItem))
+
+        manager.toggleHeading(.h1)
+        #expect(manager.blocksHave(.h1))
+    }
+
+    @Test func selectedLinesWinOverTheFocusedLine() {
+        let manager = manager()
+        manager.onFocusChange(stepId: "b", hasFocus: true)
+        manager.onSelected(stepId: "a", isSelected: true)
+
+        manager.toggleType(.unorderedListItem)
+        #expect(manager.currentStory.stories[1]?.type.number == StoryType.unorderedListItem.number)
+        #expect(manager.currentStory.stories[2]?.type.number == StoryType.text.number)
+    }
+
+    @Test func nothingHappensOnTheTitleOrWithoutFocus() {
+        let manager = manager()
+        manager.toggleType(.checkItem)
+        #expect(manager.changeCount == 0)
+
+        manager.onFocusChange(stepId: "t", hasFocus: true)
+        manager.toggleType(.checkItem)
+        #expect(manager.changeCount == 0)
+        #expect(!manager.blocksAre(.checkItem))
+    }
+}
+
 @Suite struct ImageStepTests {
     private func manager() -> WriteopiaStateManager {
         let manager = WriteopiaStateManager()

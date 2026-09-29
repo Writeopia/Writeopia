@@ -308,29 +308,35 @@ public enum DocumentsRoute: Hashable {
 /// Documents tab: the folders and documents of the current workspace.
 public struct DocumentsRootView: View {
     @Environment(AppSession.self) private var session
+    private let router: DocumentsRouter
 
-    public init() {}
+    /// `router` is shared with the side menu of landscape, which navigates this tab too.
+    public init(router: DocumentsRouter = DocumentsRouter()) {
+        self.router = router
+    }
 
     public var body: some View {
-        DocumentsNavigation(session: session)
+        DocumentsNavigation(session: session, router: router)
             // A different workspace means a different tree: start again from its root.
             .id(session.workspace?.id)
+            .onChange(of: session.workspace?.id) { router.reset() }
     }
 }
 
 private struct DocumentsNavigation: View {
     let session: AppSession
-    @State private var path = NavigationPath()
+    @Bindable var router: DocumentsRouter
     @State private var settings: FolderDisplaySettings
 
-    init(session: AppSession) {
+    init(session: AppSession, router: DocumentsRouter) {
         self.session = session
+        self.router = router
         _settings = State(initialValue: FolderDisplaySettings(preferences: session.preferences))
     }
 
     var body: some View {
         let rootTitle = session.workspace?.name ?? String(localized: "Documents")
-        NavigationStack(path: $path) {
+        NavigationStack(path: $router.path) {
             folderView(id: Folder.rootId, title: rootTitle, rootTitle: rootTitle)
                 .navigationDestination(for: DocumentsRoute.self) { route in
                     switch route {
@@ -346,7 +352,7 @@ private struct DocumentsNavigation: View {
                             imageUploader: session.imageUploader,
                             isPremium: session.user?.isPremium ?? false
                         ) { link in
-                            path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
+                            router.path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
                         }
                     }
                 }
@@ -362,7 +368,8 @@ private struct DocumentsNavigation: View {
             repository: session.documents,
             aiClient: session.isOnline ? session.aiAPI : nil,
             settings: settings,
-            path: $path
+            path: $router.path,
+            onItemsChange: router.treeChanged
         )
     }
 }
@@ -381,6 +388,7 @@ struct FolderContentsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private let title: String
     private let rootTitle: String
+    private let onItemsChange: () -> Void
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 12)]
 
@@ -399,7 +407,8 @@ struct FolderContentsView: View {
         repository: DocumentsRepository,
         aiClient: AiStreaming? = nil,
         settings: FolderDisplaySettings,
-        path: Binding<NavigationPath>
+        path: Binding<NavigationPath>,
+        onItemsChange: @escaping () -> Void = {}
     ) {
         _viewModel = State(
             initialValue: FolderContentsViewModel(folderId: folderId, folder: folder, repository: repository, aiClient: aiClient, settings: settings)
@@ -407,6 +416,7 @@ struct FolderContentsView: View {
         _path = path
         self.title = title
         self.rootTitle = rootTitle
+        self.onItemsChange = onItemsChange
     }
 
     private var settings: FolderDisplaySettings { viewModel.settings }
@@ -465,6 +475,8 @@ struct FolderContentsView: View {
             Text(viewModel.summaryError ?? "")
         }
         .animation(.snappy, value: viewModel.items.map(\.id))
+        // Keeps the folder tree of the side menu in step.
+        .onChange(of: viewModel.items.map(\.id)) { onItemsChange() }
         .animation(.snappy, value: settings.arrangement)
         .animation(.snappy, value: dropTargetId)
         .sensoryFeedback(.success, trigger: movedCount)
