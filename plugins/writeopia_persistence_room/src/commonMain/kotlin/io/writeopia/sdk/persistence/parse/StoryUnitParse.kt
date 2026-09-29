@@ -11,15 +11,23 @@ import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
 
 fun Map<Double, StoryStep>.toEntity(documentId: String): List<StoryStepEntity> =
     flatMap { (position, storyUnit) ->
-        val dbPos = storyUnit.dbPosition ?: position
-        if (storyUnit.isGroup) {
-            listOf(storyUnit.toEntity(dbPos, documentId)) + storyUnit.steps.map { innerStory ->
-                innerStory.copy(parentId = storyUnit.id).toEntity(dbPos, documentId)
-            }
-        } else {
-            listOf(storyUnit.toEntity(dbPos, documentId))
-        }
+        storyUnit.toEntityTree(storyUnit.dbPosition ?: position, documentId)
     }
+
+private fun StoryStep.toEntityTree(
+    position: Double,
+    documentId: String,
+    parentIdOverride: String? = parentId,
+): List<StoryStepEntity> {
+    val current = copy(parentId = parentIdOverride).toEntity(position, documentId)
+    return listOf(current) + steps.flatMapIndexed { index, child ->
+        child.toEntityTree(
+            position = index.toDouble(),
+            documentId = documentId,
+            parentIdOverride = id,
+        )
+    }
+}
 
 fun StoryStepEntity.toModel(
     steps: List<StoryStepEntity> = emptyList(),
@@ -52,7 +60,8 @@ fun StoryStepEntity.toModel(
             .map(SpanInfo::fromString)
             .toSet(),
         documentLink = documentLink,
-        dbPosition = position
+        dbPosition = position,
+        lastUpdatedAt = lastUpdatedAt,
     )
 
 fun StoryStep.toEntity(position: Double, documentId: String): StoryStepEntity =
@@ -72,5 +81,6 @@ fun StoryStep.toEntity(position: Double, documentId: String): StoryStepEntity =
         backgroundColor = this.decoration.backgroundColor,
         tags = this.tags.joinToString(separator = ",") { it.tag.label },
         spans = this.spans.joinToString(separator = ",") { it.toText() },
-        linkToDocument = documentLink?.id
+        linkToDocument = documentLink?.id,
+        lastUpdatedAt = lastUpdatedAt,
     )

@@ -1195,6 +1195,15 @@ class DocumentSqlBeDao(
                 link_to_document = documentLink?.id,
                 last_updated_at = lastUpdatedAt.toInt()
             )
+
+            steps.forEachIndexed { index, childStep ->
+                upsertStoryStep(
+                    storyStep = childStep.copy(parentId = id),
+                    position = index.toDouble(),
+                    documentId = documentId,
+                    lastUpdatedAt = lastUpdatedAt,
+                )
+            }
         }
     }
 

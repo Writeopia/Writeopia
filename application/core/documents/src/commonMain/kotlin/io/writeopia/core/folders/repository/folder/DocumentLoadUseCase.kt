@@ -35,28 +35,54 @@ class DocumentLoadUseCase(
     suspend fun fetchAndMergeFromBackend(
         documentId: String,
         workspaceId: String,
+        currentLocalDocument: (() -> Document?)? = null,
         onMergeComplete: suspend (Document) -> Unit
     ) {
-        // Step 1: Load current local document
-        val localDocument = documentRepository.loadDocumentById(documentId, workspaceId)
+        val editorBeforeFetch = currentLocalDocument
+            ?.invoke()
+            ?.takeIf { document ->
+                document.id == documentId && document.workspaceId == workspaceId
+            }
 
-        // Step 2: Fetch from backend
         val backendDocument = fetchFromBackend(documentId, workspaceId) ?: return
         if (backendDocument.id != documentId || backendDocument.workspaceId != workspaceId) return
 
-        // Step 3: Merge documents
-        val mergedDocument = documentMerger.merge(localDocument, backendDocument) ?: return
+        val editorAfterFetch = currentLocalDocument
+            ?.invoke()
+            ?.takeIf { document ->
+                document.id == documentId && document.workspaceId == workspaceId
+            }
+        val persistedLocal = documentRepository.loadDocumentById(documentId, workspaceId)
+        val localDocument = editorAfterFetch ?: persistedLocal
 
-        // Step 4: Check if merge resulted in changes
+        val beforeById = editorBeforeFetch?.content?.values?.associateBy { step -> step.id }.orEmpty()
+        val afterById = editorAfterFetch?.content?.values?.associateBy { step -> step.id }.orEmpty()
+        val localOverrideStepIds = if (editorBeforeFetch != null && editorAfterFetch != null) {
+            afterById.keys.filterTo(mutableSetOf()) { stepId ->
+                beforeById[stepId] != afterById[stepId]
+            }
+        } else {
+            emptySet()
+        }
+        val localDeletedStepIds = if (editorBeforeFetch != null && editorAfterFetch != null) {
+            beforeById.keys - afterById.keys
+        } else {
+            emptySet()
+        }
+
+        val mergedDocument = documentMerger.merge(
+            localDocument,
+            backendDocument,
+            localOverrideStepIds = localOverrideStepIds,
+            localDeletedStepIds = localDeletedStepIds,
+        ) ?: return
+
         val hasChanges = localDocument == null ||
             mergedDocument.content != localDocument.content ||
             mergedDocument.commentConversations != localDocument.commentConversations
 
         if (hasChanges) {
-            // Step 5: Save merged result to database
             documentRepository.saveDocument(mergedDocument)
-
-            // Step 6: Notify that merge is complete so the UI can reload
             onMergeComplete(mergedDocument)
         }
     }

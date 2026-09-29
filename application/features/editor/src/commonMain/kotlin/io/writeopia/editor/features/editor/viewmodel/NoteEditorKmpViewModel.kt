@@ -553,6 +553,9 @@ class NoteEditorKmpViewModel(
                 documentLoadUseCase.fetchAndMergeFromBackend(
                     documentId = documentId,
                     workspaceId = workspace.id,
+                    currentLocalDocument = {
+                        writeopiaManager.getDocument().copy(workspaceId = workspace.id)
+                    },
                     onMergeComplete = { mergedDocument ->
                         // Update the document in the manager with merged content
                         writeopiaManager.updateDocument(mergedDocument)

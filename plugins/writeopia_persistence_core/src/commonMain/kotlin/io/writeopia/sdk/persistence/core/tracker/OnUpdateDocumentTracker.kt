@@ -126,7 +126,8 @@ class OnUpdateDocumentTracker(
 
                     documentUpdate.saveStoryStep(
                         storyStep = lastEdit.storyStep.copy(
-                            localId = GenerateId.generate()
+                            localId = GenerateId.generate(),
+                            lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
                         ),
                         position = lastEdit.position,
                         documentId = documentInfo.id,
@@ -194,7 +195,9 @@ class OnUpdateDocumentTracker(
 
                     if (!lastEdit.storyStep.ephemeral) {
                         documentUpdate.saveStoryStep(
-                            storyStep = lastEdit.storyStep,
+                            storyStep = lastEdit.storyStep.copy(
+                                lastUpdatedAt = Clock.System.now().toEpochMilliseconds()
+                            ),
                             position = lastEdit.position,
                             documentId = documentInfo.id
                         )
@@ -232,8 +235,12 @@ class OnUpdateDocumentTracker(
                     val newStep = lastEdit.newStep
 
                     if (!originalStep.second.ephemeral && !newStep.second.ephemeral) {
+                        val timestamp = Clock.System.now().toEpochMilliseconds()
                         documentUpdate.saveStorySteps(
-                            steps = listOf(originalStep, newStep),
+                            steps = listOf(
+                                originalStep.first to originalStep.second.copy(lastUpdatedAt = timestamp),
+                                newStep.first to newStep.second.copy(lastUpdatedAt = timestamp),
+                            ),
                             documentId = documentInfo.id
                         )
                     }
@@ -260,7 +267,12 @@ class OnUpdateDocumentTracker(
                 }
 
                 is LastEdit.BulkEdition -> withContext(NonCancellable) {
-                    val nonEphemeralSteps = lastEdit.steps.filter { (_, step) -> !step.ephemeral }
+                    val timestamp = Clock.System.now().toEpochMilliseconds()
+                    val nonEphemeralSteps = lastEdit.steps
+                        .filter { (_, step) -> !step.ephemeral }
+                        .map { (position, step) ->
+                            position to step.copy(lastUpdatedAt = timestamp)
+                        }
 
                     if (nonEphemeralSteps.isNotEmpty()) {
                         documentUpdate.saveStorySteps(
@@ -328,7 +340,11 @@ class OnUpdateDocumentTracker(
                     val (dbPos, updatedStep) = lastEdit.updatedStep
                     if (!updatedStep.ephemeral) {
                         documentUpdate.saveStorySteps(
-                            steps = listOf(dbPos to updatedStep),
+                            steps = listOf(
+                                dbPos to updatedStep.copy(
+                                    lastUpdatedAt = Clock.System.now().toEpochMilliseconds()
+                                )
+                            ),
                             documentId = documentInfo.id
                         )
                     }
