@@ -8,6 +8,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class DocumentMergerTest {
@@ -172,13 +173,95 @@ class DocumentMergerTest {
         assertEquals(emptyMap(), merged?.commentConversations)
     }
 
+    @Test
+    fun `unreferenced local tombstone should survive stale backend copy`() {
+        val conversationId = "conversation-1"
+        val local = document(
+            lastUpdatedAt = 2,
+            comments = mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-1", text = "Deleted", deleted = true)
+                )
+            ),
+            content = mapOf(0.0 to step("step-1", 2)),
+        )
+        val backend = document(
+            lastUpdatedAt = 1,
+            comments = mapOf(
+                conversationId to listOf(Comment(id = "comment-1", text = "Stale active"))
+            ),
+            content = mapOf(0.0 to step("step-1", 1, conversationId)),
+        )
+
+        val merged = merger.merge(local, backend)!!
+
+        assertTrue(
+            merged.content.values.single().spans.none { span -> span.span == Span.COMMENT }
+        )
+        assertTrue(
+            merged.commentConversations.getValue(conversationId)
+                .all { comment -> comment.deleted }
+        )
+    }
+
+    @Test
+    fun `whole conversation tombstone should delete unseen stale reply`() {
+        val conversationId = "conversation-1"
+        val local = document(
+            lastUpdatedAt = 2,
+            comments = mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-1", text = "Stale active"),
+                    Comment(id = "comment-2", text = "Offline reply"),
+                )
+            ),
+            content = mapOf(0.0 to step("step-1", 2, conversationId)),
+        )
+        val backend = document(
+            lastUpdatedAt = 1,
+            comments = mapOf(
+                conversationId to listOf(
+                    Comment(id = "comment-1", text = "Deleted", deleted = true)
+                )
+            ),
+            content = mapOf(0.0 to step("step-1", 1)),
+        )
+
+        val merged = merger.merge(local, backend)!!
+
+        val comments = merged.commentConversations.getValue(conversationId)
+        assertEquals(setOf("comment-1", "comment-2"), comments.map { it.id }.toSet())
+        assertTrue(comments.all { comment -> comment.deleted })
+    }
+
+    @Test
+    fun `known backend timestamp should beat persisted local null timestamp`() {
+        val conversationId = "conversation-1"
+        val local = document(
+            lastUpdatedAt = 1,
+            comments = emptyMap(),
+            content = mapOf(0.0 to step("step-1", null)),
+        )
+        val backendComments = commentMap(conversationId, "Remote comment")
+        val backend = document(
+            lastUpdatedAt = 2,
+            comments = backendComments,
+            content = mapOf(0.0 to step("step-1", 2, conversationId)),
+        )
+
+        val merged = merger.merge(local, backend)!!
+
+        assertEquals(conversationId, merged.content.values.single().spans.single().extra)
+        assertEquals(backendComments, merged.commentConversations)
+    }
+
     private fun commentMap(id: String, text: String) = mapOf(
         id to listOf(Comment(id = "$id-comment", text = text))
     )
 
     private fun step(
         id: String,
-        updatedAt: Long,
+        updatedAt: Long?,
         conversationId: String? = null,
         children: List<StoryStep> = emptyList(),
     ) = StoryStep(

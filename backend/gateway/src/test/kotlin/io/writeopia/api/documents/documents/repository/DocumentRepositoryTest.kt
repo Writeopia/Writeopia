@@ -1087,6 +1087,94 @@ class DocumentRepositoryTest {
     }
 
 
+    @Test
+    fun `nested comment span deletion should survive incremental sync reload`() = runTest {
+        val database = configurePersistence()
+        val now = Clock.System.now()
+        val workspaceId = GenerateId.generate()
+        val documentId = GenerateId.generate()
+        val conversationId = GenerateId.generate()
+        val commentId = GenerateId.generate()
+        val child = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "nested",
+            spans = setOf(SpanInfo.create(0, 6, Span.COMMENT, conversationId)),
+            lastUpdatedAt = 1,
+        )
+        val parent = StoryStep(
+            id = GenerateId.generate(),
+            type = StoryTypes.TEXT.type,
+            text = "parent",
+            steps = listOf(child),
+            lastUpdatedAt = 1,
+        )
+        database.saveDocument(
+            Document(
+                id = documentId,
+                createdAt = now,
+                lastUpdatedAt = now,
+                lastSyncedAt = now,
+                workspaceId = workspaceId,
+                parentId = "root",
+                content = mapOf(0.0 to parent),
+                commentConversations = mapOf(
+                    conversationId to listOf(Comment(id = commentId, text = "comment"))
+                ),
+            )
+        )
+
+        val updatedParent = parent.copy(
+            steps = listOf(
+                child.copy(
+                    spans = emptySet(),
+                    lastUpdatedAt = 2,
+                )
+            ),
+            lastUpdatedAt = 2,
+        )
+        DocumentsService.syncStorySteps(
+            documentId = documentId,
+            workspaceId = workspaceId,
+            request = StoryStepSyncRequest(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                lastSyncTimestamp = 0,
+                requestTimestamp = 2,
+                changes = listOf(
+                    StoryStepChangeApi(
+                        storyStep = updatedParent.toApi(0.0),
+                        position = 0.0,
+                    )
+                ),
+                deletions = emptyList(),
+                commentConversations = listOf(
+                    CommentConversationApi(
+                        id = conversationId,
+                        comments = listOf(
+                            CommentApi(
+                                id = commentId,
+                                text = "comment",
+                                deleted = true,
+                            )
+                        ),
+                    )
+                ),
+            ),
+            writeopiaDb = database,
+        )
+
+        val loaded = database.getDocumentWithContentById(documentId, workspaceId)!!
+        val loadedChild = loaded.content.values.single().steps.single()
+        assertTrue(loadedChild.spans.none { span -> span.span == Span.COMMENT })
+        assertTrue(
+            loaded.commentConversations.getValue(conversationId)
+                .all { comment -> comment.deleted }
+        )
+
+        database.deleteDocumentById(documentId)
+    }
+
     private fun commentMap(
         vararg conversations: CommentConversation,
     ): Map<String, List<Comment>> =

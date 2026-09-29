@@ -24,6 +24,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -54,6 +55,35 @@ class OnUpdateDocumentTrackerTest {
 
         assertEquals(mapOf(conversation.id to conversation.comments), persisted.commentConversations)
         assertEquals(sourceDocument.workspaceId, persisted.workspaceId)
+    }
+
+    @Test
+    fun lineEditShouldPersistStoryStepFreshnessTimestamp() = runTest {
+        val sourceDocument = sourceDocument(emptyList())
+        val editedStep = sourceDocument.content.values.single().copy(
+            text = "updated",
+            lastUpdatedAt = null,
+        )
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                MutableStateFlow(
+                    StoryState(
+                        stories = mapOf(0.0 to editedStep),
+                        lastEdit = LastEdit.LineEdition(0.0, editedStep),
+                    ) to sourceDocument.info()
+                ),
+                MutableStateFlow(sourceDocument.workspaceId),
+                MutableStateFlow(emptyMap()),
+            )
+        }
+
+        val persisted = withTimeout(1_000) { recorder.savedStoryStep.await() }
+        job.cancel()
+
+        assertNotNull(persisted.lastUpdatedAt)
     }
 
     @Test
@@ -200,6 +230,7 @@ class OnUpdateDocumentTrackerTest {
 
     private class RecordingDocumentUpdate : DocumentUpdate {
         val savedDocument = CompletableDeferred<Document>()
+        val savedStoryStep = CompletableDeferred<StoryStep>()
 
         override suspend fun saveDocument(document: Document) {
             if (!savedDocument.isCompleted) savedDocument.complete(document)
@@ -211,7 +242,9 @@ class OnUpdateDocumentTrackerTest {
             storyStep: StoryStep,
             position: Double,
             documentId: String,
-        ) = Unit
+        ) {
+            if (!savedStoryStep.isCompleted) savedStoryStep.complete(storyStep)
+        }
 
         override suspend fun updateStoryStep(
             storyStep: StoryStep,
