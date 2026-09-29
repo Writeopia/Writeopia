@@ -10,6 +10,7 @@ import io.writeopia.auth.forgotpassword.ForgotPasswordViewModel
 import io.writeopia.auth.menu.AuthMenuViewModel
 import io.writeopia.auth.register.RegisterViewModel
 import io.writeopia.auth.register.ResetPasswordViewModel
+import io.writeopia.auth.spacechoice.LocalFolderSetupViewModel
 import io.writeopia.auth.workspace.ChooseWorkspaceViewModel
 import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.core.configuration.di.AppConfigurationInjector
@@ -85,6 +86,14 @@ class AuthInjection private constructor(
             configRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
             notesUseCase = provideNotesUseCase(),
             localAiRepository = localAiInjection.provideRepository(),
+        )
+    }
+
+    @Composable
+    internal fun provideLocalFolderSetupViewModel(): LocalFolderSetupViewModel = viewModel {
+        LocalFolderSetupViewModel(
+            authRepository = authCoreInjection.provideAuthRepository(),
+            workspaceConfigRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
         )
     }
 
