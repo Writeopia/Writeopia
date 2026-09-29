@@ -354,6 +354,8 @@ struct AiDialog: View {
     /// When set, the dialog works on this target and doesn't offer the picker, like the dialog
     /// the Compose app opens for selected lines.
     var fixedMode: AiTargetMode?
+    /// Actions for the line with the cursor (write a section, suggest list items).
+    var cursorActions: [AiCursorAction] = []
     let onCommand: (AiCommand, AiTargetMode) -> Void
     @State private var pickedMode: AiTargetMode = .document
     @Environment(\.dismiss) private var dismiss
@@ -390,6 +392,17 @@ struct AiDialog: View {
                         }
                         .accessibilityIdentifier("ai.\(command.rawValue)")
                     }
+                    if mode == .cursor {
+                        ForEach(cursorActions) { action in
+                            Button {
+                                dismiss()
+                                action.run()
+                            } label: {
+                                Label(action.title, systemImage: action.systemImage)
+                            }
+                            .accessibilityIdentifier("ai.\(action.id)")
+                        }
+                    }
                 }
             }
             .navigationTitle("Ask AI")
@@ -403,6 +416,14 @@ struct AiDialog: View {
         .presentationDetents([.medium])
         .tint(WrColors.accent)
     }
+}
+
+/// An AI action on the line with the cursor, beyond the commands.
+struct AiCursorAction: Identifiable {
+    let id: String
+    let title: String
+    let systemImage: String
+    let run: () -> Void
 }
 
 extension AiCommand {

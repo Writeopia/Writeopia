@@ -286,6 +286,37 @@ public struct WriteopiaManager {
         return newState
     }
 
+    /// Puts `steps` in place of the step with `id`, e.g. an AI answer accepted as regular lines.
+    public func replaceStep(id: String, with steps: [StoryStep], state: StoryState) -> StoryState {
+        var ordered = state.sortedStories
+        guard let index = ordered.firstIndex(where: { $0.id == id }) else { return state }
+        ordered.replaceSubrange(index...index, with: steps)
+        return StoryState(stories: contentManager.renumber(ordered), lastEdit: .whole, focus: nil)
+    }
+
+    /// Adds `steps`, in order, right after `position`.
+    public func addSteps(_ steps: [StoryStep], after position: Double, state: StoryState) -> StoryState {
+        var ordered = state.sortedStories
+        guard !steps.isEmpty, let index = ordered.firstIndex(where: { $0.position == position }) else { return state }
+        ordered.insert(contentsOf: steps, at: index + 1)
+        return keepingFocus(of: state, in: contentManager.renumber(ordered))
+    }
+
+    /// Removes every step matching `predicate`.
+    public func removeSteps(where predicate: (StoryStep) -> Bool, state: StoryState) -> StoryState {
+        let ordered = state.sortedStories
+        let kept = ordered.filter { !predicate($0) }
+        guard kept.count != ordered.count else { return state }
+        return keepingFocus(of: state, in: contentManager.renumber(kept))
+    }
+
+    /// `stories` with the focus still on the step that had it in `state`, if it's still there.
+    private func keepingFocus(of state: StoryState, in stories: [Double: StoryStep]) -> StoryState {
+        let focusId = state.focus.flatMap { state.stories[$0]?.id }
+        let focus = focusId.flatMap { id in stories.first { $0.value.id == id }?.key }
+        return StoryState(stories: stories, lastEdit: .whole, focus: focus)
+    }
+
     public func removeStep(id: String, state: StoryState) -> StoryState {
         guard let position = state.stories.first(where: { $0.value.id == id })?.key else { return state }
         var newState = contentManager.onDelete(Action.DeleteStory(position: position), in: state.stories)
@@ -296,15 +327,16 @@ public struct WriteopiaManager {
     /// Text of every text step, one per line. Used as the input of AI commands on the document.
     public func documentText(_ state: StoryState) -> String {
         state.sortedStories
-            .filter(\.isTextStep)
+            .filter { $0.isTextStep && !$0.isAiSuggestion }
             .compactMap(\.text)
             .filter { !$0.isEmpty }
             .joined(separator: "\n")
     }
 
-    /// The steps that make the document content: sorted, without ephemeral steps.
+    /// The steps that make the document content: sorted, without ephemeral steps nor AI
+    /// suggestions that weren't accepted.
     public func documentContent(_ state: StoryState) -> [StoryStep] {
-        state.sortedStories.filter { !StoryTypes.ephemeral.contains($0.type.number) }
+        state.sortedStories.filter { !StoryTypes.ephemeral.contains($0.type.number) && !$0.isAiSuggestion }
     }
 
     /// The text of the title step.

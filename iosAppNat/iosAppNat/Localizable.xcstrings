@@ -3510,6 +3510,380 @@
           }
         }
       }
+    },
+    "AI generated" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerado por IA"
+          }
+        }
+      }
+    },
+    "AI is writing…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA está escrevendo…"
+          }
+        }
+      }
+    },
+    "AI runs on the Writeopia servers and uses your monthly tokens." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA roda nos servidores do Writeopia e usa seus tokens mensais."
+          }
+        }
+      }
+    },
+    "AI runs on this device and doesn't use your monthly tokens." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA roda neste dispositivo e não usa seus tokens mensais."
+          }
+        }
+      }
+    },
+    "AI suggestions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugestões da IA"
+          }
+        }
+      }
+    },
+    "Accept" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceitar"
+          }
+        }
+      }
+    },
+    "Apple Intelligence" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence"
+          }
+        }
+      }
+    },
+    "Apple Intelligence can't answer about this text." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence não pode responder sobre este texto."
+          }
+        }
+      }
+    },
+    "Apple Intelligence doesn't support the language of this text yet." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence ainda não suporta o idioma deste texto."
+          }
+        }
+      }
+    },
+    "Apple Intelligence is busy. Try again in a moment." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence está ocupada. Tente de novo em instantes."
+          }
+        }
+      }
+    },
+    "Apple Intelligence is getting ready. Try again in a few minutes." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence está sendo preparada. Tente de novo em alguns minutos."
+          }
+        }
+      }
+    },
+    "Apple Intelligence is ready. AI runs on this device and your text never leaves it." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence está pronta. A IA roda neste dispositivo e seu texto nunca sai dele."
+          }
+        }
+      }
+    },
+    "Apple Intelligence isn't available right now." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence não está disponível agora."
+          }
+        }
+      }
+    },
+    "Apple Intelligence isn't available, so the cloud AI is used for now." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence não está disponível, então a IA na nuvem é usada por enquanto."
+          }
+        }
+      }
+    },
+    "Apple Intelligence needs iOS 26 or later." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Apple Intelligence precisa do iOS 26 ou posterior."
+          }
+        }
+      }
+    },
+    "Available" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disponível"
+          }
+        }
+      }
+    },
+    "Cloud AI usage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uso da IA na nuvem"
+          }
+        }
+      }
+    },
+    "Discard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descartar"
+          }
+        }
+      }
+    },
+    "Dismiss" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispensar"
+          }
+        }
+      }
+    },
+    "Open Settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Ajustes"
+          }
+        }
+      }
+    },
+    "Provider" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provedor"
+          }
+        }
+      }
+    },
+    "Run AI with" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rodar a IA com"
+          }
+        }
+      }
+    },
+    "Sign in to the open space to use the cloud AI on this device." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entre no espaço aberto para usar a IA na nuvem neste dispositivo."
+          }
+        }
+      }
+    },
+    "Stop" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parar"
+          }
+        }
+      }
+    },
+    "Stop AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parar IA"
+          }
+        }
+      }
+    },
+    "Suggest more items" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugerir mais itens"
+          }
+        }
+      }
+    },
+    "Summaries, action points, FAQs, tags and prompts run on this device, even offline and in the private space." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumos, acionáveis, FAQs, tags e prompts rodam neste dispositivo, mesmo offline e no espaço privado."
+          }
+        }
+      }
+    },
+    "The text is too long for Apple Intelligence. Try with fewer lines." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O texto é longo demais para a Apple Intelligence. Tente com menos linhas."
+          }
+        }
+      }
+    },
+    "This device doesn't support Apple Intelligence." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo não suporta a Apple Intelligence."
+          }
+        }
+      }
+    },
+    "Turn on Apple Intelligence in the Settings app to use AI on this device." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ative a Apple Intelligence no app Ajustes para usar IA neste dispositivo."
+          }
+        }
+      }
+    },
+    "Unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indisponível"
+          }
+        }
+      }
+    },
+    "Write this section" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrever esta seção"
+          }
+        }
+      }
+    },
+    "Write this section with AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrever esta seção com IA"
+          }
+        }
+      }
+    },
+    "Writeopia Cloud" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Writeopia Cloud"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

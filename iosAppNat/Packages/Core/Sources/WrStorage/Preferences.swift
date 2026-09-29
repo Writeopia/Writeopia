@@ -11,6 +11,7 @@ public final class Preferences {
         case passwordResetEmail = "wr.passwordResetEmail"
         case documentsArrangement = "wr.documentsArrangement"
         case documentsOrder = "wr.documentsOrder"
+        case aiProvider = "wr.aiProvider"
     }
 
     private let defaults: UserDefaults

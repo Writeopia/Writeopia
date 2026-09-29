@@ -32,10 +32,10 @@ final class SmokeUITests: XCTestCase {
         // Create a folder.
         app.buttons["documents.add"].tap()
         app.buttons["New folder"].tap()
-        let title = app.alerts.textFields.firstMatch
+        let title = app.textFields["folderEdit.name"]
         XCTAssertTrue(title.waitForExistence(timeout: 3))
         title.typeText("Ideas")
-        app.alerts.buttons["Create"].tap()
+        app.buttons["folderEdit.save"].tap()
         XCTAssertTrue(app.staticTexts["Ideas"].waitForExistence(timeout: 5))
 
         // Drag the welcome document onto the folder.

@@ -41,6 +41,26 @@ import WrStorage
         #expect(viewModel.ancestors.isEmpty)
     }
 
+    @Test func createsAFolderWithTheIconPickedInTheSheet() async {
+        let (viewModel, repository) = await makeViewModel()
+
+        await viewModel.createFolder(title: " Trips ", icon: IconInfo(label: "star", tint: -256))
+
+        #expect(repository.createdFolders.map(\.title) == ["Trips"])
+        #expect(repository.createdFolders.first?.parentId == "ideas")
+        #expect(repository.updatedFolders.last?.id == repository.createdFolders.first?.id)
+        #expect(repository.updatedFolders.last?.icon == IconInfo(label: "star", tint: -256))
+    }
+
+    @Test func createsAFolderWithoutIconInOneStep() async {
+        let (viewModel, repository) = await makeViewModel()
+
+        await viewModel.createFolder(title: "", icon: nil)
+
+        #expect(repository.createdFolders.map(\.title) == ["New folder"])
+        #expect(repository.updatedFolders.isEmpty)
+    }
+
     @Test func editsNameAndIcon() async {
         let (viewModel, repository) = await makeViewModel()
 

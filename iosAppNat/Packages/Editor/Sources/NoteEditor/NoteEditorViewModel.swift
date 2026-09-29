@@ -74,6 +74,7 @@ public final class NoteEditorViewModel {
     @ObservationIgnored private let isPremium: Bool
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var aiTask: Task<Void, Never>?
+    @ObservationIgnored private var suggestionTask: Task<Void, Never>?
     @ObservationIgnored private var loadedDocument: WrDocument?
 
     // Persistence and sync, like `registerForSync` of the Compose editor.
@@ -119,6 +120,11 @@ public final class NoteEditorViewModel {
         self.writeopiaManager = writeopiaManager
         writeopiaManager.fontFamily = defaults.string(forKey: Self.fontKey).flatMap(EditorFont.init(rawValue:)) ?? .system
         writeopiaManager.customDrawableTypes = [StoryType.drawing.number]
+
+        if aiClient != nil {
+            writeopiaManager.onGenerateSection = { [weak self] stepId in self?.generateSection(stepId: stepId) }
+            writeopiaManager.onListStarted = { [weak self] stepId in self?.suggestListItems(after: stepId) }
+        }
     }
 
     // MARK: - Selected lines
@@ -341,14 +347,85 @@ public final class NoteEditorViewModel {
         }
 
         guard let input, !input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        streamAnswer(command, prompt: input.text, after: input.position)
+    }
 
-        let answerId = writeopiaManager.loadingAtPosition(input.position)
+    /// Characters of the document sent as context of a section or of list suggestions, so the
+    /// request fits in the on-device model.
+    static let contextLimit = 4000
+
+    /// Writes the content of the heading with `stepId` right below it, like the AI wand of the
+    /// Compose app (`aiSection`).
+    public func generateSection(stepId: String) {
+        guard aiClient != nil, !isAiRunning,
+              let heading = writeopiaManager.headingText(stepId: stepId),
+              let position = writeopiaManager.position(of: stepId)
+        else { return }
+
+        let document = String(writeopiaManager.documentText.prefix(Self.contextLimit))
+        let prompt = """
+            Create a document section for a document.
+            The document is:
+            ```
+            \(document)
+            ```
+
+            Use the language of the text. Do not add titles. Create content for this section: \(heading)
+            """
+        streamAnswer(.prompt, prompt: prompt, after: position)
+    }
+
+    /// Asks the AI for the next items of the list that ends with `stepId` and shows them as
+    /// suggestions, like `generateSuggestionsList` of the SDK. Not streamed: the items show up
+    /// together.
+    public func suggestListItems(after stepId: String) {
+        guard let aiClient, !isAiRunning else { return }
+
+        let context = String(writeopiaManager.documentText.prefix(Self.contextLimit))
+        let prompt = "Generate a list of options. Start each options with a line break and \"-\". Generate at most 5 items. Use this context to generate the list: \(context)"
+
+        suggestionTask?.cancel()
+        suggestionTask = Task { [weak self] in
+            var answer = ""
+            do {
+                for try await partial in aiClient.stream(.prompt, prompt: prompt) {
+                    answer = partial
+                }
+            } catch {
+                return
+            }
+            guard !Task.isCancelled, let self else { return }
+            let items = MarkdownSteps.listItems(answer, limit: 5)
+            self.writeopiaManager.showAiSuggestions(items, after: stepId)
+        }
+    }
+
+    public func acceptAiSuggestions() {
+        writeopiaManager.acceptAiSuggestions()
+    }
+
+    public func dismissAiSuggestions() {
+        suggestionTask?.cancel()
+        writeopiaManager.dismissAiSuggestions()
+    }
+
+    /// Loads the model ahead of a request, e.g. when the AI dialog opens.
+    public func prewarmAi() {
+        aiClient?.prewarm()
+    }
+
+    /// Streams the answer of `prompt` into a new AI answer after `position`. A loading step
+    /// shows until the first part of the answer arrives.
+    private func streamAnswer(_ command: AiCommand, prompt: String, after position: Double?) {
+        guard let aiClient else { return }
+
+        let answerId = writeopiaManager.loadingAtPosition(position)
         isAiRunning = true
 
         aiTask = Task { [weak self] in
             var receivedAnswer = false
             do {
-                for try await answer in aiClient.stream(command, prompt: input.text) {
+                for try await answer in aiClient.stream(command, prompt: prompt) {
                     receivedAnswer = true
                     self?.writeopiaManager.showAiAnswer(answer, stepId: answerId)
                 }
@@ -362,12 +439,14 @@ public final class NoteEditorViewModel {
             } catch {
                 self?.writeopiaManager.showAiAnswer(String(localized: "Error. Message: \(error.userMessage)"), stepId: answerId)
             }
+            self?.writeopiaManager.aiAnswerFinished(stepId: answerId)
             self?.isAiRunning = false
         }
     }
 
     public func cancelAi() {
         aiTask?.cancel()
+        suggestionTask?.cancel()
     }
 
     // MARK: - Persistence and sync

@@ -41,6 +41,12 @@ public final class WriteopiaStateManager {
     public private(set) var changeCount = 0
 
     @ObservationIgnored public var onDocumentLinkClick: ((DocumentLink) -> Void)?
+    /// Asks the AI to write the content of the heading with this step id, like the AI wand of
+    /// the Compose app. Nil when no AI is available, which hides the wand.
+    @ObservationIgnored public var onGenerateSection: ((String) -> Void)?
+    /// Called with the id of the last line that just became a list item or a checkbox, so the AI
+    /// can suggest the next items, like `generateSuggestionsList` of the SDK.
+    @ObservationIgnored public var onListStarted: ((String) -> Void)?
     @ObservationIgnored private let writeopiaManager: WriteopiaManager
 
     public init(writeopiaManager: WriteopiaManager = WriteopiaManager()) {
@@ -82,6 +88,8 @@ public final class WriteopiaStateManager {
         newStep.text = text
 
         if text.contains("\n") {
+            dismissAiSuggestions()
+            guard let (position, _) = find(stepId) else { return }
             apply(writeopiaManager.onLineBreak(
                 Action.LineBreak(storyStep: newStep, position: position, cursor: cursor),
                 state: currentStory
@@ -96,6 +104,7 @@ public final class WriteopiaStateManager {
 
     /// Backspace with the cursor at the start of a step.
     public func onErase(stepId: String) {
+        dismissAiSuggestions()
         guard isEditable, let (position, step) = find(stepId) else { return }
         apply(writeopiaManager.onErase(Action.EraseStory(storyStep: step, position: position), state: currentStory))
     }
@@ -206,7 +215,13 @@ public final class WriteopiaStateManager {
 
     /// Checkbox, list item and code block buttons of the selection menu.
     public func toggleTypeOfSelectedLines(_ type: StoryType) {
+        let lastId = selectedPositions.last.flatMap { currentStory.stories[$0]?.id }
         applyToSelectedLines { writeopiaManager.toggleType(type, positions: $0, state: $1) }
+
+        let isList = type.number == StoryType.checkItem.number || type.number == StoryType.unorderedListItem.number
+        if isList, let lastId, step(withId: lastId)?.type.number == type.number {
+            onListStarted?(lastId)
+        }
     }
 
     /// Box and card buttons of the selection menu.
@@ -310,7 +325,16 @@ public final class WriteopiaStateManager {
         currentStory = writeopiaManager.addAtPosition(loading, after: position, state: currentStory)
         currentStory.focus = nil
         changeCount += 1
+        streamingAnswerId = loading.id
         return loading.id
+    }
+
+    /// The AI answer still being written; it can't be accepted yet.
+    public private(set) var streamingAnswerId: String?
+
+    /// The answer with `stepId` is complete (or failed).
+    public func aiAnswerFinished(stepId: String) {
+        if streamingAnswerId == stepId { streamingAnswerId = nil }
     }
 
     /// Shows `text` as an AI answer in the step with `stepId` (the loading step at first).
@@ -321,6 +345,77 @@ public final class WriteopiaStateManager {
         step.spans = []
         currentStory = writeopiaManager.replaceStep(step, state: currentStory)
         changeCount += 1
+    }
+
+    /// Turns the AI answer with `stepId` into regular lines, reading its Markdown (headings,
+    /// lists, checkboxes), like the accept button of `AiAnswerDrawer` of the SDK.
+    public func acceptAiAnswer(stepId: String) {
+        guard isEditable, let step = step(withId: stepId), step.type.number == StoryType.aiAnswer.number else { return }
+        var lines = MarkdownSteps.parse(step.text ?? "")
+        if lines.isEmpty {
+            lines = [StoryStep(type: .text, text: step.text ?? "", position: 0)]
+        }
+        currentStory = writeopiaManager.replaceStep(id: stepId, with: lines, state: currentStory)
+        changeCount += 1
+    }
+
+    // MARK: - AI list suggestions
+
+    public var hasAiSuggestions: Bool {
+        currentStory.stories.values.contains(where: \.isAiSuggestion)
+    }
+
+    /// Shows `items` as suggestions right after the list item with `stepId`, of the same type.
+    /// They are gray and not saved until accepted. Replaces suggestions shown before.
+    public func showAiSuggestions(_ items: [String], after stepId: String) {
+        guard isEditable, !items.isEmpty else { return }
+        dismissAiSuggestions()
+        guard let (position, listStep) = find(stepId) else { return }
+
+        let suggestions = items.enumerated().map { index, item in
+            StoryStep(
+                type: listStep.type,
+                text: item,
+                checked: listStep.type.number == StoryType.checkItem.number ? false : nil,
+                tags: [TagInfo(tag: AiTag.suggestion)] + (index == 0 ? [TagInfo(tag: AiTag.firstSuggestion)] : []),
+                position: 0
+            )
+        }
+        currentStory = writeopiaManager.addSteps(suggestions, after: position, state: currentStory)
+        changeCount += 1
+    }
+
+    /// Keeps the suggestions as regular list items, like `acceptSuggestions` of the SDK.
+    public func acceptAiSuggestions() {
+        guard hasAiSuggestions else { return }
+        var state = currentStory
+        for (position, step) in state.stories where step.isAiSuggestion {
+            var accepted = step
+            accepted.tags.removeAll { $0.tag == AiTag.suggestion || $0.tag == AiTag.firstSuggestion }
+            state.stories[position] = accepted
+        }
+        state.lastEdit = .whole
+        currentStory = state
+        changeCount += 1
+    }
+
+    /// Removes the suggestions, like `cancelSuggestions` of the SDK.
+    public func dismissAiSuggestions() {
+        guard hasAiSuggestions else { return }
+        currentStory = writeopiaManager.removeSteps(where: \.isAiSuggestion, state: currentStory)
+        changeCount += 1
+    }
+
+    /// Text of the heading with `stepId`, when it's a heading the AI can write a section for.
+    public func headingText(stepId: String) -> String? {
+        guard let step = step(withId: stepId), step.headingLevel != nil, !step.isTitle else { return nil }
+        let text = (step.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? nil : text
+    }
+
+    /// Position of the step with `stepId`.
+    public func position(of stepId: String) -> Double? {
+        find(stepId)?.0
     }
 
     // MARK: - Images
@@ -385,6 +480,7 @@ public final class WriteopiaStateManager {
     }
 
     public func removeStep(stepId: String) {
+        aiAnswerFinished(stepId: stepId)
         currentStory = writeopiaManager.removeStep(id: stepId, state: currentStory)
         changeCount += 1
     }

@@ -52,14 +52,21 @@ struct StoryStepDrawer: View {
         case StoryType.text.number:
             DraggableStep(step: step, position: draw.position, manager: manager) {
                 StepTextView(step: step, manager: manager)
+                    .overlay(alignment: .trailing) {
+                        SectionWandButton(step: step, position: draw.position, manager: manager)
+                    }
             }
-        case StoryType.checkItem.number:
-            DraggableStep(step: step, position: draw.position, manager: manager) {
-                CheckItemDrawer(step: step, manager: manager)
-            }
-        case StoryType.unorderedListItem.number:
-            DraggableStep(step: step, position: draw.position, manager: manager) {
-                UnorderedListItemDrawer(step: step, manager: manager)
+        case StoryType.checkItem.number, StoryType.unorderedListItem.number:
+            if step.isAiSuggestion {
+                AiSuggestionDrawer(step: step, manager: manager)
+            } else if step.type.number == StoryType.checkItem.number {
+                DraggableStep(step: step, position: draw.position, manager: manager) {
+                    CheckItemDrawer(step: step, manager: manager)
+                }
+            } else {
+                DraggableStep(step: step, position: draw.position, manager: manager) {
+                    UnorderedListItemDrawer(step: step, manager: manager)
+                }
             }
         case StoryType.codeBlock.number:
             DraggableStep(step: step, position: draw.position, manager: manager) {
@@ -227,21 +234,148 @@ struct UnorderedListItemDrawer: View {
     }
 }
 
-/// Text written by the AI, shown in a card. It stays editable like any paragraph.
+/// Text written by the AI, shown in a card. It stays editable like any paragraph. Once complete,
+/// it can be accepted (turned into regular lines), copied or discarded, like `AiAnswerDrawer` of
+/// the SDK.
 struct AiAnswerDrawer: View {
     let step: StoryStep
     let manager: WriteopiaStateManager
 
+    private var isStreaming: Bool { manager.streamingAnswerId == step.id }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("AI", systemImage: "sparkles")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(WrColors.accent)
+            HStack(spacing: 4) {
+                Label("AI generated", systemImage: "sparkles")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(WrColors.accent)
+                Spacer()
+                if !isStreaming {
+                    actions
+                }
+            }
             StepTextView(step: step, manager: manager)
         }
         .padding(14)
         .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
         .padding(.vertical, 8)
+    }
+
+    private var actions: some View {
+        HStack(spacing: 2) {
+            Button {
+                UIPasteboard.general.string = step.text ?? ""
+            } label: {
+                Image(systemName: "doc.on.doc")
+                    .frame(width: 32, height: 28)
+            }
+            .accessibilityLabel("Copy")
+            .accessibilityIdentifier("ai.answer.copy")
+
+            if manager.isEditable {
+                Button(role: .destructive) {
+                    withAnimation(.snappy) { manager.removeStep(stepId: step.id) }
+                } label: {
+                    Image(systemName: "trash")
+                        .frame(width: 32, height: 28)
+                }
+                .accessibilityLabel("Discard")
+                .accessibilityIdentifier("ai.answer.discard")
+
+                Button {
+                    withAnimation(.snappy) { manager.acceptAiAnswer(stepId: step.id) }
+                } label: {
+                    Image(systemName: "checkmark")
+                        .frame(width: 32, height: 28)
+                }
+                .accessibilityLabel("Accept")
+                .accessibilityIdentifier("ai.answer.accept")
+            }
+        }
+        .font(.footnote.weight(.semibold))
+        .buttonStyle(.borderless)
+        .foregroundStyle(.secondary)
+    }
+}
+
+/// The AI wand of a heading, like the one the Compose app shows on hover: it writes the content
+/// of the section. Shown while the heading has the cursor.
+struct SectionWandButton: View {
+    let step: StoryStep
+    let position: Double
+    let manager: WriteopiaStateManager
+
+    private var isShown: Bool {
+        manager.isEditable &&
+            manager.onGenerateSection != nil &&
+            manager.currentStory.focus == position &&
+            step.headingLevel != nil &&
+            !(step.text ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        if isShown {
+            Button {
+                manager.onGenerateSection?(step.id)
+            } label: {
+                Image(systemName: "wand.and.sparkles")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(WrColors.accent)
+                    .padding(6)
+                    .background(.thinMaterial, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Write this section with AI")
+            .accessibilityIdentifier("editor.section.ai")
+            .transition(.opacity)
+        }
+    }
+}
+
+/// A list item suggested by the AI: gray and read-only until accepted. The first one of the group
+/// holds the buttons to keep or remove them all.
+struct AiSuggestionDrawer: View {
+    let step: StoryStep
+    let manager: WriteopiaStateManager
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if step.isFirstAiSuggestion {
+                HStack(spacing: 12) {
+                    Label("AI suggestions", systemImage: "sparkles")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(WrColors.accent)
+                    Spacer()
+                    Button("Dismiss", role: .cancel) {
+                        withAnimation(.snappy) { manager.dismissAiSuggestions() }
+                    }
+                    .accessibilityIdentifier("ai.suggestions.dismiss")
+                    Button("Accept") {
+                        withAnimation(.snappy) { manager.acceptAiSuggestions() }
+                    }
+                    .fontWeight(.semibold)
+                    .accessibilityIdentifier("ai.suggestions.accept")
+                }
+                .font(.footnote)
+                .buttonStyle(.borderless)
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                if step.type.number == StoryType.checkItem.number {
+                    Image(systemName: "square")
+                        .imageScale(.large)
+                } else {
+                    Text("•").font(.body.bold())
+                }
+                Text(step.text ?? "")
+                    .font(manager.fontFamily.font(size: 17, weight: .regular).monospaced())
+            }
+            .foregroundStyle(.secondary)
+        }
+        .padding(.leading, EditorLayout.gutter + 4)
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ai.suggestion")
     }
 }
 

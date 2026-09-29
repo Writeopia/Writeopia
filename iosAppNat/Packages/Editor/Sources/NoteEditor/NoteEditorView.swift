@@ -9,11 +9,36 @@ import WrData
 import WrDesign
 import WrModels
 
+/// Shown while the AI writes into the document, with a button to stop it, like the AI task
+/// indicator of the desktop app.
+struct AiRunningChip: View {
+    let onStop: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+                .controlSize(.small)
+            Text("AI is writing…")
+                .font(.footnote.weight(.medium))
+            Button("Stop", action: onStop)
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.borderless)
+                .accessibilityIdentifier("editor.ai.stop")
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.regularMaterial, in: Capsule())
+        .shadow(color: .black.opacity(0.1), radius: 8, y: 2)
+    }
+}
+
 /// The document screen: the Writeopia editor for the document with `documentId`.
 public struct NoteEditorView: View {
     @State private var viewModel: NoteEditorViewModel
     @State private var showAiDialog = false
     @State private var showSelectedLinesAiDialog = false
+    /// Line with the cursor when the AI dialog opened (the focus goes away with the keyboard).
+    @State private var aiCursorStepId: String?
     @State private var showMenu = false
     @State private var showPublish = false
     @State private var showPremium = false
@@ -86,6 +111,48 @@ public struct NoteEditorView: View {
         colorScheme == .dark ? DrawingColor.argb(0xFFFF_FFFF) : Stroke.black
     }
 
+    /// AI actions for the line that had the cursor: write the section of a heading, or suggest
+    /// the next items of a list.
+    private var aiCursorActions: [AiCursorAction] {
+        let manager = viewModel.writeopiaManager
+        guard let stepId = aiCursorStepId, let step = manager.step(withId: stepId) else { return [] }
+
+        var actions: [AiCursorAction] = []
+        if manager.headingText(stepId: stepId) != nil {
+            actions.append(AiCursorAction(id: "section", title: String(localized: "Write this section"), systemImage: "wand.and.sparkles") {
+                viewModel.generateSection(stepId: stepId)
+            })
+        }
+        if step.type.number == StoryType.checkItem.number || step.type.number == StoryType.unorderedListItem.number {
+            actions.append(AiCursorAction(id: "suggestItems", title: String(localized: "Suggest more items"), systemImage: "list.bullet.indent") {
+                viewModel.suggestListItems(after: stepId)
+            })
+        }
+        return actions
+    }
+
+    /// Hardware keyboard shortcuts of the desktop app: Cmd+K sends the line with the cursor to the
+    /// AI, Esc stops the AI and removes its suggestions.
+    private var keyboardShortcuts: some View {
+        ZStack {
+            Button("Ask AI") {
+                viewModel.runAi(.prompt, mode: .cursor)
+            }
+            .keyboardShortcut("k", modifiers: .command)
+            .disabled(!viewModel.hasLoaded || !viewModel.isAiAvailable || viewModel.isLocked || viewModel.isAiRunning)
+
+            Button("Stop AI") {
+                viewModel.cancelAi()
+                viewModel.dismissAiSuggestions()
+            }
+            .keyboardShortcut(.escape, modifiers: [])
+            .disabled(!viewModel.isAiRunning && !viewModel.writeopiaManager.hasAiSuggestions)
+        }
+        .opacity(0)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
     /// Asks for a URL for the selected text, or removes the link when it already has one.
     private func linkClick() {
         let manager = viewModel.writeopiaManager
@@ -129,7 +196,10 @@ public struct NoteEditorView: View {
                             EditorBottomMenu(
                                 manager: viewModel.writeopiaManager,
                                 showsAi: viewModel.isAiAvailable,
-                                onAiClick: { showAiDialog = true },
+                                onAiClick: {
+                                    aiCursorStepId = viewModel.writeopiaManager.currentTextStep?.step.id
+                                    showAiDialog = true
+                                },
                                 onLinkClick: linkClick,
                                 onDrawingClick: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) },
                                 onImagePicked: addImage
@@ -152,6 +222,15 @@ public struct NoteEditorView: View {
             }
         }
         .background(Color(uiColor: .systemBackground))
+        .overlay(alignment: .top) {
+            if viewModel.isAiRunning {
+                AiRunningChip { viewModel.cancelAi() }
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.snappy, value: viewModel.isAiRunning)
+        .background { keyboardShortcuts }
         .navigationTitle(viewModel.hasLoaded ? viewModel.title : fallbackTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -201,14 +280,16 @@ public struct NoteEditorView: View {
         // The editor has its own bottom menu, like the Compose app.
         .toolbar(.hidden, for: .tabBar)
         .sheet(isPresented: $showAiDialog) {
-            AiDialog { command, mode in
+            AiDialog(cursorActions: aiCursorActions) { command, mode in
                 viewModel.runAi(command, mode: mode)
             }
+            .onAppear { viewModel.prewarmAi() }
         }
         .sheet(isPresented: $showSelectedLinesAiDialog) {
             AiDialog(fixedMode: .selectedLines) { command, mode in
                 viewModel.runAi(command, mode: mode)
             }
+            .onAppear { viewModel.prewarmAi() }
         }
         .alert(
             "Could not delete the document",

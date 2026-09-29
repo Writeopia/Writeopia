@@ -23,10 +23,33 @@ public enum AiCommand: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// Who answers the AI commands.
+public enum AiProvider: String, CaseIterable, Identifiable, Sendable {
+    /// The on-device model of Apple Intelligence. Works in both spaces, offline too.
+    case appleIntelligence
+    /// The Writeopia backend (Gemini). Only in the open space.
+    case cloud
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .appleIntelligence: String(localized: "Apple Intelligence")
+        case .cloud: String(localized: "Writeopia Cloud")
+        }
+    }
+}
+
 /// Streams the answer of an AI command. Abstracted so the editor can be tested without the network.
 public protocol AiStreaming: AnyObject {
     /// Each element is the whole answer received so far, not just the new part.
     func stream(_ command: AiCommand, prompt: String) -> AsyncThrowingStream<String, Error>
+    /// Gets ready for a request that's likely to come, e.g. loads the on-device model.
+    func prewarm()
+}
+
+public extension AiStreaming {
+    func prewarm() {}
 }
 
 public struct AiStreamError: Error, Equatable {
