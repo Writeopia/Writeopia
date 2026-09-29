@@ -86,11 +86,13 @@ class DocumentMerger {
             .asSequence()
             .flatMap { step -> step.referencedCommentConversationIds() }
             .toSet()
-        val tombstonedIds = (primary + fallback)
-            .filterValues { comments ->
+        val tombstonedIds =
+            primary.filterValues { comments ->
                 comments.isNotEmpty() && comments.all { comment -> comment.deleted }
-            }
-            .keys
+            }.keys +
+                fallback.filterValues { comments ->
+                    comments.isNotEmpty() && comments.all { comment -> comment.deleted }
+                }.keys
         val retainedIds = referencedIds + tombstonedIds
 
         return retainedIds.mapNotNull { conversationId ->
