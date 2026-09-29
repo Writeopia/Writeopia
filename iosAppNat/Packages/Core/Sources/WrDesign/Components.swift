@@ -63,6 +63,7 @@ public struct WrTextField: View {
                 .frame(width: 20)
 
             field
+                .textFieldStyle(.plain)
                 .autocorrectionDisabled()
         }
         .padding(.horizontal, 14)

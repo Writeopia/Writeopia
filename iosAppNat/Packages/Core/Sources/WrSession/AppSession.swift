@@ -205,6 +205,16 @@ public final class AppSession {
         phase = next < offlineSetupSteps.endIndex ? .offlineSetup(offlineSetupSteps[next]) : .ready
     }
 
+    /// Back to the previous setup screen, or to "Choose your space" from the first one.
+    public func retreatOfflineSetup() {
+        guard case .offlineSetup(let step) = phase, let index = offlineSetupSteps.firstIndex(of: step) else { return }
+        if index == offlineSetupSteps.startIndex {
+            switchSpace()
+        } else {
+            phase = .offlineSetup(offlineSetupSteps[offlineSetupSteps.index(before: index)])
+        }
+    }
+
     // MARK: - Private space folder
 
     /// Keeps the private space in `url` (a folder the user picked), or back in the default

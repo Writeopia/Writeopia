@@ -93,6 +93,27 @@ private func makeSession(
         #expect(session.phase == .ready)
     }
 
+    @Test func offlineSetupCanGoBackToTheSpaceChoice() {
+        let defaults = UserDefaults(suiteName: "tests.\(UUID().uuidString)")!
+        let session = AppSession(
+            tokenStore: InMemoryTokenStore(),
+            preferences: Preferences(defaults: defaults),
+            transport: StubTransport([:]),
+            offlineSetupSteps: [.localAi, .localFolder]
+        )
+
+        session.chooseOfflineSpace()
+        session.advanceOfflineSetup()
+        #expect(session.phase == .offlineSetup(.localFolder))
+
+        session.retreatOfflineSetup()
+        #expect(session.phase == .offlineSetup(.localAi))
+
+        session.retreatOfflineSetup()
+        #expect(session.phase == .spaceChoice)
+        #expect(session.spaceType == nil)
+    }
+
     @Test func loginStoresTokensAndAsksForWorkspace() async {
         let tokens = InMemoryTokenStore()
         let (session, transport) = makeSession(

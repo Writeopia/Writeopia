@@ -13,6 +13,9 @@ public struct LocalAiSetupView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                WrBackButton("Choose space", action: session.retreatOfflineSetup)
+                    .accessibilityIdentifier("setup.ai.back")
+
                 WrScreenHeader(
                     eyebrow: "Private space",
                     title: "Set up your AI",

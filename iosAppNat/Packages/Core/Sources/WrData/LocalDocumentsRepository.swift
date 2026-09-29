@@ -608,11 +608,20 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
         }
     }
 
-    /// Gives a brand new private space something to look at.
+    /// Gives a brand new private space the tutorial notes of the Compose app, so both apps
+    /// start the same way; a single welcome note when they can't be read.
     private func seedIfNeeded() throws {
         guard seedsWelcome, try meta("seeded") == nil else { return }
         try setMeta("seeded", "1")
         guard try db.query("SELECT COUNT(*) FROM document", row: { $0.integer(0) }).first == 0 else { return }
+
+        let tutorials = Self.tutorialDocuments(workspaceId: workspaceId)
+        guard tutorials.isEmpty else {
+            for document in tutorials {
+                try store(document)
+            }
+            return
+        }
 
         let welcome = WrDocument(
             id: UUID().uuidString,
@@ -637,5 +646,28 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
             parentId: Folder.rootId
         )
         try store(welcome)
+    }
+
+    /// The tutorial notes bundled with the app (`Resources/Tutorials`, the same JSON as the
+    /// `tutorials` module of the Compose app), newest first so the welcome note leads the list.
+    static func tutorialDocuments(workspaceId: String) -> [WrDocument] {
+        guard let urls = Bundle.module.urls(forResourcesWithExtension: "json", subdirectory: "Tutorials") else { return [] }
+        let decoder = JSONDecoder()
+        let now = Date.nowMillis
+        return urls
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .compactMap { url -> WrDocument? in
+                guard let data = try? Data(contentsOf: url), let document = try? decoder.decode(WrDocument.self, from: data) else { return nil }
+                return document
+            }
+            .enumerated()
+            .map { index, document in
+                var document = document
+                document.workspaceId = workspaceId
+                document.parentId = Folder.rootId
+                document.createdAt = now - Int64(index)
+                document.lastUpdatedAt = now - Int64(index)
+                return document
+            }
     }
 }

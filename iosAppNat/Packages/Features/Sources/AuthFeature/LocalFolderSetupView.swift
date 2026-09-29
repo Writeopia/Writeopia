@@ -13,6 +13,9 @@ public struct LocalFolderSetupView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                WrBackButton("Back", action: session.retreatOfflineSetup)
+                    .accessibilityIdentifier("setup.folder.back")
+
                 WrScreenHeader(
                     eyebrow: "Private space",
                     title: "Choose a local folder",

@@ -20,7 +20,12 @@ let package = Package(
         .target(name: "WrModels"),
         .target(name: "WrStorage", swiftSettings: mainActorByDefault),
         .target(name: "WrNetwork", dependencies: ["WrModels", "WrStorage"], swiftSettings: mainActorByDefault),
-        .target(name: "WrData", dependencies: ["WrModels", "WrNetwork", "WrStorage"], swiftSettings: mainActorByDefault),
+        .target(
+            name: "WrData",
+            dependencies: ["WrModels", "WrNetwork", "WrStorage"],
+            resources: [.copy("Resources/Tutorials")],
+            swiftSettings: mainActorByDefault
+        ),
         .target(
             name: "WrSession",
             dependencies: ["WrModels", "WrNetwork", "WrStorage", "WrData"],

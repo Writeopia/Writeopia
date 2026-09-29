@@ -66,6 +66,11 @@ struct LoginView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                #if os(macOS)
+                WrBackButton("Choose space", action: session.switchSpace)
+                    .accessibilityIdentifier("login.back")
+                #endif
+
                 WrScreenHeader(
                     eyebrow: "Open space",
                     title: "Welcome back",
