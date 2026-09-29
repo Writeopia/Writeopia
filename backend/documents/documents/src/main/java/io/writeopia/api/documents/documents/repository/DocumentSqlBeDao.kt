@@ -455,7 +455,7 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
                             lastUpdatedAt = innerContent.last_updated_at?.toLong(),
                         )
 
@@ -527,7 +527,7 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
                             lastUpdatedAt = innerContent.last_updated_at?.toLong(),
                         )
 
@@ -602,7 +602,7 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
                             lastUpdatedAt = innerContent.last_updated_at?.toLong(),
                         )
 
@@ -677,7 +677,7 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
                             lastUpdatedAt = innerContent.last_updated_at?.toLong(),
                         )
 
@@ -750,7 +750,7 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
                             lastUpdatedAt = innerContent.last_updated_at?.toLong(),
                         )
 
@@ -823,7 +823,7 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
                             lastUpdatedAt = innerContent.last_updated_at?.toLong(),
                         )
 
@@ -896,7 +896,7 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(linkDocId)
                                     .executeAsOneOrNull()
                                 DocumentLink(linkDocId, title)
-                            }
+                            },
                             lastUpdatedAt = innerContent.last_updated_at?.toLong(),
                         )
 
@@ -969,7 +969,7 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
                             lastUpdatedAt = innerContent.last_updated_at?.toLong(),
                         )
 
@@ -1043,7 +1043,7 @@ class DocumentSqlBeDao(
                                     .executeAsOneOrNull()
 
                                 DocumentLink(docId, docTitle)
-                            }
+                            },
                             lastUpdatedAt = innerContent.last_updated_at?.toLong(),
                         )
 
@@ -1360,7 +1360,7 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(linkDocId)
                                     .executeAsOneOrNull()
                                 DocumentLink(linkDocId, title)
-                            }
+                            },
                             lastUpdatedAt = innerContent.last_updated_at?.toLong(),
                         )
 
