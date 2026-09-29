@@ -10,6 +10,8 @@ public final class DocumentsRouter {
     public var path = NavigationPath()
     /// Increases whenever the side menu should load its tree again.
     public private(set) var treeVersion = 0
+    /// Increases whenever the side menu changed the folders, so the list loads them again.
+    public private(set) var contentsVersion = 0
 
     public init() {}
 
@@ -31,6 +33,12 @@ public final class DocumentsRouter {
 
     /// Folders or documents were added, moved or removed.
     func treeChanged() {
+        treeVersion += 1
+    }
+
+    /// The side menu added a folder: the list shows it too.
+    func contentsChanged() {
+        contentsVersion += 1
         treeVersion += 1
     }
 }

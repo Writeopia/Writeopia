@@ -117,7 +117,7 @@ public struct SideGlobalMenu: View {
                 title: title.isEmpty ? String(localized: "Untitled") : title,
                 parentId: Folder.rootId
             )
-            router.treeChanged()
+            router.contentsChanged()
         }
     }
 }
