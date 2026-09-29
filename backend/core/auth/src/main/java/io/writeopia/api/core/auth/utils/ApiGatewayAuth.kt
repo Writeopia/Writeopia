@@ -39,7 +39,8 @@ fun ApplicationCall.getUserIdFromApiGateway(debugMode: Boolean = false): String?
         val decodedJWT = JWT.decode(token)
         decodedJWT.getClaim("userId").asString()
     } catch (e: Exception) {
-        if (debugMode) return Random.nextInt().toString() else null
+        logger.error("Failed to decode JWT token", e)
+        null
     }
 }
 

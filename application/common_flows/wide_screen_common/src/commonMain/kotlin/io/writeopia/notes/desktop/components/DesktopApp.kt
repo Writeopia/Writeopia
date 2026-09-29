@@ -83,6 +83,7 @@ fun DesktopApp(
     navigateToChooseWorkspace: () -> Unit,
     navigateToSpaceChoice: () -> Unit,
     navigateToAccountDeletionStarted: () -> Unit,
+    onLogout: () -> Unit = navigateToRegister,
     modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
     startDestination: String = startDestination(),
@@ -372,4 +373,4 @@ fun DesktopApp(
 }
 
 fun startDestination() =
-    "${Destinations.CHOOSE_NOTE.id}/${NotesNavigationType.ROOT.type}/path"
+    "${Destinations.CHOOSE_NOTE.id}/${NotesNavigationType.ROOT.type}/path"  
