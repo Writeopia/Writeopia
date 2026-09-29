@@ -938,8 +938,11 @@ class NoteEditorKmpViewModel(
     override fun deleteDocument() {
         viewModelScope.launch(Dispatchers.Default) {
             val document = writeopiaManager.getDocument()
-            documentSyncManager.unregisterFromSync(document.id)
-            documentRepository.deleteDocument(document, document.workspaceId)
+            deleteDocumentThenUnregister(
+                document = document,
+                delete = documentRepository::deleteDocument,
+                unregister = documentSyncManager::unregisterFromSync,
+            )
         }
     }
 
@@ -1232,4 +1235,13 @@ class NoteEditorKmpViewModel(
         if (!isEditable.value) return
         writeopiaManager.addSpreadsheet(columnCount)
     }
+}
+
+internal suspend fun deleteDocumentThenUnregister(
+    document: Document,
+    delete: suspend (Document, String) -> Unit,
+    unregister: (String) -> Unit,
+) {
+    delete(document, document.workspaceId)
+    unregister(document.id)
 }

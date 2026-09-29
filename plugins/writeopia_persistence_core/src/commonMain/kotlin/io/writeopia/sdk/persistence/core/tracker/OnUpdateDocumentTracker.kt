@@ -101,6 +101,19 @@ class OnUpdateDocumentTracker(
             Triple(documentEdition, workspaceId, commentConversations)
         }.collect { (documentEdition, workspaceId, commentConversations) ->
             val (storyState, documentInfo) = documentEdition
+            val persistedStoryState = if (storyState.lastEdit is LastEdit.LineEdition) {
+                val lineEdit = storyState.lastEdit
+                val persistedStep = lineEdit.storyStep.copy(
+                    localId = GenerateId.generate(),
+                    lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
+                )
+                storyState.copy(
+                    stories = storyState.stories + (lineEdit.position to persistedStep),
+                    lastEdit = lineEdit.copy(storyStep = persistedStep),
+                )
+            } else {
+                storyState
+            }
             val commentsChanged = previousCommentConversations?.let { previous ->
                 previous != commentConversations
             } ?: false
@@ -109,7 +122,7 @@ class OnUpdateDocumentTracker(
             if (commentsChanged) {
                 withContext(NonCancellable) {
                     val document = fullDocument(
-                        storyState,
+                        persistedStoryState,
                         documentInfo,
                         workspaceId,
                         commentConversations,
@@ -120,15 +133,12 @@ class OnUpdateDocumentTracker(
                 return@collect
             }
 
-            when (val lastEdit = storyState.lastEdit) {
+            when (val lastEdit = persistedStoryState.lastEdit) {
                 is LastEdit.LineEdition -> {
                     if (lastEdit.storyStep.ephemeral) return@collect
 
                     documentUpdate.saveStoryStep(
-                        storyStep = lastEdit.storyStep.copy(
-                            localId = GenerateId.generate(),
-                            lastUpdatedAt = Clock.System.now().toEpochMilliseconds(),
-                        ),
+                        storyStep = lastEdit.storyStep,
                         position = lastEdit.position,
                         documentId = documentInfo.id,
                     )
