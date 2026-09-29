@@ -45,6 +45,9 @@ public struct NoteEditorView: View {
     @State private var drawingTarget: DrawingTarget?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
+    /// Landscape: no navigation bar nor bottom menu, the side options instead.
+    @Environment(\.isWideLayout) private var isWideLayout
+    @Environment(\.openEditors) private var openEditors
     /// Selection waiting for a URL. Kept here because the alert takes the focus from the text.
     @State private var linkSelection: StepSelection?
     @State private var linkURL = ""
@@ -173,6 +176,23 @@ public struct NoteEditorView: View {
         return trimmed.contains("://") ? trimmed : "https://" + trimmed
     }
 
+    /// Publishing is for premium users in the open space, like in the Compose app.
+    private func publishClick() {
+        if viewModel.canPublish {
+            showPublish = true
+        } else {
+            showPremium = true
+        }
+    }
+
+    private func deleteDocument() {
+        Task {
+            if await viewModel.deleteDocument() {
+                dismiss()
+            }
+        }
+    }
+
     public var body: some View {
         Group {
             if viewModel.hasLoaded {
@@ -180,7 +200,8 @@ public struct NoteEditorView: View {
                     .safeAreaInset(edge: .bottom, spacing: 0) {
                         // A locked document can't be edited, so its menu is hidden. While lines are
                         // selected, the selection menu takes the place of the regular one.
-                        if viewModel.isLocked {
+                        // In landscape the side options take their place.
+                        if viewModel.isLocked || isWideLayout {
                             EmptyView()
                         } else if viewModel.writeopiaManager.hasSelectedLines {
                             SelectionMenu(
@@ -205,6 +226,28 @@ public struct NoteEditorView: View {
                                 onImagePicked: addImage
                             )
                             .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                    }
+                    .overlay(alignment: .trailing) {
+                        if isWideLayout {
+                            EditorSideOptions(
+                                viewModel: viewModel,
+                                onBack: { dismiss() },
+                                onAiClick: {
+                                    if viewModel.writeopiaManager.hasSelectedLines {
+                                        showSelectedLinesAiDialog = true
+                                    } else {
+                                        showAiDialog = true
+                                    }
+                                },
+                                onLinkClick: linkClick,
+                                onDrawingClick: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) },
+                                onImagePicked: addImage,
+                                onPublishClick: publishClick,
+                                onDelete: deleteDocument
+                            )
+                            .padding(.trailing, 10)
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
                         }
                     }
             } else if let errorMessage = viewModel.errorMessage {
@@ -252,21 +295,11 @@ public struct NoteEditorView: View {
                 }
             }
         }
+        // The side options of landscape replace the navigation bar, back button included.
+        .toolbar(isWideLayout ? .hidden : .automatic, for: .navigationBar)
+        .animation(.snappy, value: isWideLayout)
         .sheet(isPresented: $showMenu) {
-            NoteMenuSheet(viewModel: viewModel) {
-                // Publishing is for premium users in the open space, like in the Compose app.
-                if viewModel.canPublish {
-                    showPublish = true
-                } else {
-                    showPremium = true
-                }
-            } onDelete: {
-                Task {
-                    if await viewModel.deleteDocument() {
-                        dismiss()
-                    }
-                }
-            }
+            NoteMenuSheet(viewModel: viewModel, onPublishClick: publishClick, onDelete: deleteDocument)
         }
         .sheet(isPresented: $showPublish) {
             PublishSheet(viewModel: viewModel)
@@ -336,7 +369,9 @@ public struct NoteEditorView: View {
                 viewModel.saveDrawing(drawing, stepId: target.stepId)
             }
         }
+        .onAppear { openEditors?.opened() }
         .onDisappear {
+            openEditors?.closed()
             viewModel.cancelAi()
             // Save and send what's pending before leaving.
             Task { await viewModel.flush() }

@@ -168,7 +168,7 @@ final class FolderContentsViewModel {
         }
     }
 
-    private func loadLocal() async {
+    func loadLocal() async {
         do {
             let contents = try await repository.folderContents(folderId: folderId)
             folders = contents.folders
@@ -249,8 +249,10 @@ final class FolderContentsViewModel {
     // MARK: - Edition menu of the folder
 
     /// Renames the folder and changes its icon. An empty name keeps the current one.
-    func updateFolder(title: String, icon: IconInfo?) async {
-        guard var edited = folder else { return }
+    /// Returns whether the change was saved.
+    @discardableResult
+    func updateFolder(title: String, icon: IconInfo?) async -> Bool {
+        guard var edited = folder else { return false }
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { edited.title = trimmed }
         edited.icon = icon
@@ -259,9 +261,11 @@ final class FolderContentsViewModel {
         folder = edited
         do {
             folder = try await repository.updateFolder(edited)
+            return true
         } catch {
             folder = previous
             actionError = error.userMessage
+            return false
         }
     }
 
@@ -323,29 +327,35 @@ public enum DocumentsRoute: Hashable {
 /// Documents tab: the folders and documents of the current workspace.
 public struct DocumentsRootView: View {
     @Environment(AppSession.self) private var session
+    private let router: DocumentsRouter
 
-    public init() {}
+    /// `router` is shared with the side menu of landscape, which navigates this tab too.
+    public init(router: DocumentsRouter = DocumentsRouter()) {
+        self.router = router
+    }
 
     public var body: some View {
-        DocumentsNavigation(session: session)
+        DocumentsNavigation(session: session, router: router)
             // A different workspace means a different tree: start again from its root.
             .id(session.workspace?.id)
+            .onChange(of: session.workspace?.id) { router.reset() }
     }
 }
 
 private struct DocumentsNavigation: View {
     let session: AppSession
-    @State private var path = NavigationPath()
+    @Bindable var router: DocumentsRouter
     @State private var settings: FolderDisplaySettings
 
-    init(session: AppSession) {
+    init(session: AppSession, router: DocumentsRouter) {
         self.session = session
+        self.router = router
         _settings = State(initialValue: FolderDisplaySettings(preferences: session.preferences))
     }
 
     var body: some View {
         let rootTitle = session.workspace?.name ?? String(localized: "Documents")
-        NavigationStack(path: $path) {
+        NavigationStack(path: $router.path) {
             folderView(id: Folder.rootId, title: rootTitle, rootTitle: rootTitle)
                 .navigationDestination(for: DocumentsRoute.self) { route in
                     switch route {
@@ -361,7 +371,7 @@ private struct DocumentsNavigation: View {
                             imageUploader: session.imageUploader,
                             isPremium: session.user?.isPremium ?? false
                         ) { link in
-                            path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
+                            router.path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
                         }
                     }
                 }
@@ -377,7 +387,9 @@ private struct DocumentsNavigation: View {
             repository: session.documents,
             aiClient: session.aiClient,
             settings: settings,
-            path: $path
+            path: $router.path,
+            contentsVersion: router.contentsVersion,
+            onItemsChange: router.treeChanged
         )
     }
 }
@@ -397,6 +409,8 @@ struct FolderContentsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private let title: String
     private let rootTitle: String
+    private let contentsVersion: Int
+    private let onItemsChange: () -> Void
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 12)]
 
@@ -415,7 +429,9 @@ struct FolderContentsView: View {
         repository: DocumentsRepository,
         aiClient: AiStreaming? = nil,
         settings: FolderDisplaySettings,
-        path: Binding<NavigationPath>
+        path: Binding<NavigationPath>,
+        contentsVersion: Int = 0,
+        onItemsChange: @escaping () -> Void = {}
     ) {
         _viewModel = State(
             initialValue: FolderContentsViewModel(folderId: folderId, folder: folder, repository: repository, aiClient: aiClient, settings: settings)
@@ -423,6 +439,8 @@ struct FolderContentsView: View {
         _path = path
         self.title = title
         self.rootTitle = rootTitle
+        self.contentsVersion = contentsVersion
+        self.onItemsChange = onItemsChange
     }
 
     private var settings: FolderDisplaySettings { viewModel.settings }
@@ -481,6 +499,8 @@ struct FolderContentsView: View {
             Text(viewModel.summaryError ?? "")
         }
         .animation(.snappy, value: viewModel.items.map(\.id))
+        // Keeps the folder tree of the side menu in step.
+        .onChange(of: viewModel.items.map(\.id)) { onItemsChange() }
         .animation(.snappy, value: settings.arrangement)
         .animation(.snappy, value: dropTargetId)
         .sensoryFeedback(.success, trigger: movedCount)
@@ -532,6 +552,8 @@ struct FolderContentsView: View {
             }
         }
         .task { await viewModel.load() }
+        // Something outside the list, like the side menu, changed the folders.
+        .onChange(of: contentsVersion) { Task { await viewModel.loadLocal() } }
         .alert(
             newItem?.rawValue ?? "",
             isPresented: Binding(get: { newItem != nil }, set: { if !$0 { newItem = nil } }),
@@ -683,12 +705,21 @@ struct FolderContentsView: View {
             repository: viewModel.repository,
             sheet: $folderSheet,
             confirmsDeletion: $confirmsFolderDeletion,
-            onEdit: { title, icon in Task { await viewModel.updateFolder(title: title, icon: icon) } },
+            onEdit: { title, icon in
+                Task {
+                    // The title and icon show in the side menu tree too.
+                    if await viewModel.updateFolder(title: title, icon: icon) {
+                        onItemsChange()
+                    }
+                }
+            },
             onMove: { targetId in
                 Task {
                     if let newPath = await viewModel.moveFolder(to: targetId) {
                         // The back button now goes through the folders it's in after the move.
                         path = NavigationPath(newPath.map(DocumentsRoute.folder))
+                        // Its place in the side menu tree changed, not the items it shows.
+                        onItemsChange()
                     }
                 }
             },

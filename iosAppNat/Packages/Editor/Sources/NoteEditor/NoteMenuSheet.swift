@@ -117,12 +117,12 @@ struct NoteMenuSheet: View {
     }
 }
 
-private struct ExportedFile: Identifiable {
+struct ExportedFile: Identifiable {
     let url: URL
     var id: URL { url }
 }
 
-private struct FontOption: View {
+struct FontOption: View {
     let font: EditorFont
     let isSelected: Bool
     let action: () -> Void

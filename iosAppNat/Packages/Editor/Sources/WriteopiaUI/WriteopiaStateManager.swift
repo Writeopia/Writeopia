@@ -246,6 +246,43 @@ public final class WriteopiaStateManager {
         return !steps.isEmpty && steps.allSatisfy { $0.hasTag(tag.rawValue) }
     }
 
+    // MARK: - Blocks: the selected lines, or else the focused line
+
+    /// Where the block buttons of the side menu act: the selected lines when there are any,
+    /// otherwise the line with the cursor, like the text options of the desktop app.
+    public var blockPositions: [Double] {
+        if !selectedPositions.isEmpty { return selectedPositions }
+        guard let focus = currentStory.focus, let step = currentStory.stories[focus], !step.isTitle else { return [] }
+        return [focus]
+    }
+
+    /// Checkbox, list item and code block buttons of the side menu.
+    public func toggleType(_ type: StoryType) {
+        applyToBlocks { writeopiaManager.toggleType(type, positions: $0, state: $1) }
+    }
+
+    /// Box and card buttons of the side menu.
+    public func toggleTag(_ tag: BlockTag) {
+        applyToBlocks { writeopiaManager.toggleTag(tag, positions: $0, state: $1) }
+    }
+
+    /// Title, subtitle and header buttons of the side menu.
+    public func toggleHeading(_ tag: BlockTag) {
+        applyToBlocks { writeopiaManager.toggleHeading(tag, positions: $0, state: $1) }
+    }
+
+    /// Whether every block is of `type`, to show the button as active.
+    public func blocksAre(_ type: StoryType) -> Bool {
+        let steps = blockPositions.compactMap { currentStory.stories[$0] }
+        return !steps.isEmpty && steps.allSatisfy { $0.type.number == type.number }
+    }
+
+    /// Whether every block has `tag`, to show the button as active.
+    public func blocksHave(_ tag: BlockTag) -> Bool {
+        let steps = blockPositions.compactMap { currentStory.stories[$0] }
+        return !steps.isEmpty && steps.allSatisfy { $0.hasTag(tag.rawValue) }
+    }
+
     /// Text of the selected lines, one per line.
     public var selectedLinesText: String {
         writeopiaManager.text(of: selectedPositions, state: currentStory)
@@ -274,8 +311,16 @@ public final class WriteopiaStateManager {
     }
 
     private func applyToSelectedLines(_ change: ([Double], StoryState) -> StoryState) {
-        guard isEditable, !selectedPositions.isEmpty else { return }
-        let newState = change(selectedPositions, currentStory)
+        apply(change, to: selectedPositions)
+    }
+
+    private func applyToBlocks(_ change: ([Double], StoryState) -> StoryState) {
+        apply(change, to: blockPositions)
+    }
+
+    private func apply(_ change: ([Double], StoryState) -> StoryState, to positions: [Double]) {
+        guard isEditable, !positions.isEmpty else { return }
+        let newState = change(positions, currentStory)
         guard newState != currentStory else { return }
         currentStory = newState
         changeCount += 1
