@@ -232,7 +232,7 @@ class RoomDocumentRepository(
         val dbPos = storyStep.dbPosition ?: position
         val entities = mapOf(dbPos to storyStep).toEntity(documentId)
         writeTransaction {
-            storyUnitEntityDao?.deleteDescendants(listOf(storyStep.id))
+            storyUnitEntityDao?.deleteDescendants(listOf(storyStep.id), documentId)
             storyUnitEntityDao?.insertStoryUnits(*entities.toTypedArray())
         }
     }
@@ -242,7 +242,12 @@ class RoomDocumentRepository(
             mapOf(position to storyStep).toEntity(documentId)
         }
         writeTransaction {
-            storyUnitEntityDao?.deleteDescendants(steps.map { (_, step) -> step.id })
+            if (steps.isNotEmpty()) {
+                storyUnitEntityDao?.deleteDescendants(
+                    steps.map { (_, step) -> step.id },
+                    documentId,
+                )
+            }
             storyUnitEntityDao?.insertStoryUnits(*entities.toTypedArray())
         }
     }
