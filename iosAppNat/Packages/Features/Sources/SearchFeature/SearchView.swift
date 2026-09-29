@@ -66,7 +66,7 @@ public struct SearchRootView: View {
     public var body: some View {
         SearchView(
             repository: session.documents,
-            aiClient: session.isOnline ? session.aiAPI : nil,
+            aiClient: session.aiClient,
             publishing: session.publishing,
             imageUploader: session.imageUploader,
             isPremium: session.user?.isPremium ?? false

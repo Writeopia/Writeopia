@@ -41,6 +41,17 @@ public extension StoryStep {
             type.number == StoryType.unorderedListItem.number ||
             type.number == StoryType.codeBlock.number
     }
+
+    /// List items suggested by the AI, shown in gray until accepted. Like `AI_SUGGESTION` of the SDK.
+    var isAiSuggestion: Bool { hasTag(AiTag.suggestion) }
+    /// The first suggestion of a group, which shows the accept and dismiss buttons.
+    var isFirstAiSuggestion: Bool { hasTag(AiTag.firstSuggestion) }
+}
+
+/// Tags of the steps suggested by the AI, the same as the Compose app.
+public enum AiTag {
+    public static let suggestion = "AI_SUGGESTION"
+    public static let firstSuggestion = "FIRST_AI_SUGGESTION"
 }
 
 /// Block tags that can be toggled from the selection menu. Mirrors `Tag` of the Kotlin models.

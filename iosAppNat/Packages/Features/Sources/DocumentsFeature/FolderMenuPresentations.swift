@@ -91,14 +91,9 @@ struct FolderOptionsSheet: View {
         NavigationStack {
             List {
                 Section {
-                    Picker("View as", selection: $settings.arrangement) {
-                        ForEach(DocumentsArrangement.allCases, id: \.self) { arrangement in
-                            Label(arrangement.title, systemImage: arrangement.systemImage).tag(arrangement)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .accessibilityIdentifier("folderOptions.arrangement")
+                    ArrangementPicker(selection: $settings.arrangement)
+                        .listRowInsets(EdgeInsets())
+                        .accessibilityIdentifier("folderOptions.arrangement")
                 } header: {
                     Text("View as")
                 }
@@ -126,13 +121,7 @@ struct FolderOptionsSheet: View {
                     Text("Sort by")
                 }
 
-
-                if !isFolder {
-                    Section {
-                    } footer: {
-                        Text("Open a folder to edit, move or delete it.")
-                    }
-                } else {
+                if isFolder {
                     Section {
                         action("Edit folder", systemImage: "pencil", id: "edit") { onAction(.edit) }
                         action("Move to…", systemImage: "folder", id: "move") { onAction(.move) }
@@ -163,5 +152,46 @@ struct FolderOptionsSheet: View {
         }
         .foregroundStyle(WrColors.textLight)
         .accessibilityIdentifier("folderOptions.\(id)")
+    }
+}
+
+/// "View as" choice that fills the whole row: each option is a tall segment with its icon above
+/// its name, and the selected one is highlighted edge to edge.
+struct ArrangementPicker: View {
+    @Binding var selection: DocumentsArrangement
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(DocumentsArrangement.allCases, id: \.self) { arrangement in
+                let isSelected = selection == arrangement
+                Button {
+                    withAnimation(.snappy) { selection = arrangement }
+                } label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: arrangement.systemImage)
+                            .font(.title3)
+                        Text(arrangement.title)
+                            .font(.footnote.weight(isSelected ? .semibold : .regular))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    .foregroundStyle(isSelected ? WrColors.accent : WrColors.textLight)
+                    .frame(maxWidth: .infinity, minHeight: 64)
+                    .background {
+                        if isSelected {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(WrColors.accent.opacity(0.15))
+                        }
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(arrangement.title))
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .accessibilityIdentifier("folderOptions.arrangement.\(arrangement.rawValue)")
+            }
+        }
+        .padding(4)
+        .accessibilityElement(children: .contain)
     }
 }

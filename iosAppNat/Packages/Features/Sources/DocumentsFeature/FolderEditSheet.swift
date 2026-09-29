@@ -3,9 +3,10 @@ import WrDesign
 import WrModels
 
 /// Edits the name and the icon of a folder, like `EditFileDialog` and the icon picker of the
-/// Compose app.
+/// Compose app. Without a folder it creates one, with the same name and icon choices.
 struct FolderEditSheet: View {
-    let folder: Folder
+    /// Nil to create a new folder.
+    let folder: Folder?
     let onSave: (_ title: String, _ icon: IconInfo?) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var title: String
@@ -15,13 +16,15 @@ struct FolderEditSheet: View {
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 6)
 
-    init(folder: Folder, onSave: @escaping (_ title: String, _ icon: IconInfo?) -> Void) {
+    init(folder: Folder?, onSave: @escaping (_ title: String, _ icon: IconInfo?) -> Void) {
         self.folder = folder
         self.onSave = onSave
-        _title = State(initialValue: folder.title)
-        _iconName = State(initialValue: folder.icon?.label)
-        _tint = State(initialValue: folder.icon?.tint)
+        _title = State(initialValue: folder?.title ?? "")
+        _iconName = State(initialValue: folder?.icon?.label)
+        _tint = State(initialValue: folder?.icon?.tint)
     }
+
+    private var isNew: Bool { folder == nil }
 
     var body: some View {
         NavigationStack {
@@ -55,16 +58,19 @@ struct FolderEditSheet: View {
             }
             .scrollContentBackground(.hidden)
             .background(WrColors.background)
-            .navigationTitle("Edit folder")
+            .navigationTitle(isNew ? "New folder" : "Edit folder")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save", action: save)
+                    Button(isNew ? "Create" : "Save", action: save)
                         .accessibilityIdentifier("folderEdit.save")
                 }
+            }
+            .onAppear {
+                if isNew { titleFocused = true }
             }
         }
     }
