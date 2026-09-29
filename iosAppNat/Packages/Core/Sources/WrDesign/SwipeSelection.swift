@@ -256,22 +256,56 @@ public extension View {
     }
 }
 #else
+import AppKit
 import SwiftUI
 
 // The swipe gesture is a touch interaction; the Mac app selects with the pointer instead.
-// These stand-ins keep the shared lists compiling and do nothing.
+// These stand-ins keep the shared lists compiling; they only find the scroll view, which the
+// editor's reorder drag needs to scroll near the edges.
 
 /// No-op on macOS; see the UIKit implementation above.
 public final class SwipeSelectionCoordinator {
+    public private(set) weak var scrollView: NSScrollView?
+    public var onScrollViewFound: ((NSScrollView) -> Void)?
+
     public init(leadingExclusion: CGFloat = 0) {}
+
+    fileprivate func found(_ scrollView: NSScrollView) {
+        guard self.scrollView !== scrollView else { return }
+        self.scrollView = scrollView
+        onScrollViewFound?(scrollView)
+    }
 }
 
-/// No-op on macOS; see the UIKit implementation above.
-public struct SwipeSelectionInstaller: View {
-    public init(coordinator: SwipeSelectionCoordinator) {}
+/// Finds the enclosing scroll view for the coordinator; nothing else on macOS.
+public struct SwipeSelectionInstaller: NSViewRepresentable {
+    private let coordinator: SwipeSelectionCoordinator
 
-    public var body: some View {
-        EmptyView()
+    public init(coordinator: SwipeSelectionCoordinator) {
+        self.coordinator = coordinator
+    }
+
+    public func makeNSView(context: Context) -> InstallerView {
+        let view = InstallerView()
+        view.coordinator = coordinator
+        return view
+    }
+
+    public func updateNSView(_ view: InstallerView, context: Context) {
+        view.coordinator = coordinator
+    }
+
+    public final class InstallerView: NSView {
+        weak var coordinator: SwipeSelectionCoordinator?
+
+        override public func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if window != nil, let scrollView = enclosingScrollView {
+                coordinator?.found(scrollView)
+            }
+        }
+
+        override public func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 }
 

@@ -1,4 +1,3 @@
-#if canImport(UIKit)
 import SwiftUI
 import Writeopia
 import WrDesign
@@ -120,6 +119,7 @@ struct DraggableStep<Content: View>: View {
     let manager: WriteopiaStateManager
     var alignment: VerticalAlignment = .center
     @ViewBuilder let content: Content
+    @State private var isHovered = false
 
     var body: some View {
         HStack(alignment: alignment, spacing: 4) {
@@ -134,10 +134,12 @@ struct DraggableStep<Content: View>: View {
                 .blockDecoration(step)
         }
         .swipeToSelect(step, manager: manager)
+        // With a pointer the grip shows on hover, like the drag handle of the Compose app.
+        .onHover { isHovered = $0 }
     }
 
     private var showsGrip: Bool {
-        manager.isEditable && manager.currentStory.focus == position
+        manager.isEditable && (manager.currentStory.focus == position || isHovered)
     }
 }
 
@@ -173,7 +175,7 @@ struct CodeBlockDrawer: View {
         StepTextView(step: step, manager: manager)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(Color(uiColor: .secondarySystemFill), in: RoundedRectangle(cornerRadius: 8))
+            .background(WrColors.secondaryFill, in: RoundedRectangle(cornerRadius: 8))
     }
 }
 
@@ -190,7 +192,7 @@ extension View {
                 }
         } else if step.hasTag(BlockTag.card.rawValue) {
             padding(12)
-                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+                .background(WrColors.secondaryBackground, in: RoundedRectangle(cornerRadius: 12))
                 .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
         } else {
             self
@@ -225,10 +227,13 @@ struct UnorderedListItemDrawer: View {
     let manager: WriteopiaStateManager
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        // The text view has no baseline for SwiftUI to align to, so the bullet sits on the
+        // first line by hand, like the checkbox next to it.
+        HStack(alignment: .top, spacing: 8) {
             Text("•")
                 .font(.body.bold())
                 .foregroundStyle(.secondary)
+                .frame(height: TextStyles.lineHeight(of: TextStyles.baseFont(for: step, family: manager.fontFamily)))
             StepTextView(step: step, manager: manager)
         }
     }
@@ -257,14 +262,14 @@ struct AiAnswerDrawer: View {
             StepTextView(step: step, manager: manager)
         }
         .padding(14)
-        .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+        .background(WrColors.secondaryBackground, in: RoundedRectangle(cornerRadius: 12))
         .padding(.vertical, 8)
     }
 
     private var actions: some View {
         HStack(spacing: 2) {
             Button {
-                UIPasteboard.general.string = step.text ?? ""
+                SystemPasteboard.copy(step.text ?? "")
             } label: {
                 Image(systemName: "doc.on.doc")
                     .frame(width: 32, height: 28)
@@ -412,7 +417,7 @@ struct DividerDrawer: View {
     var body: some View {
         // `Divider` would be vertical inside the gutter's HStack, so draw the line directly.
         Rectangle()
-            .fill(Color(uiColor: .separator))
+            .fill(WrColors.separator)
             .frame(maxWidth: .infinity)
             .frame(height: 1)
             .padding(.vertical, 12)
@@ -489,4 +494,3 @@ struct DragPreview: View {
     }
 }
 
-#endif

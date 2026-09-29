@@ -48,6 +48,13 @@ public final class WriteopiaStateManager {
     /// can suggest the next items, like `generateSuggestionsList` of the SDK.
     @ObservationIgnored public var onListStarted: ((String) -> Void)?
     @ObservationIgnored private let writeopiaManager: WriteopiaManager
+    @ObservationIgnored private let focusHandler = FocusHandler()
+    /// Copy and Cut of the selected lines, when the app has a clipboard for them. Called from
+    /// the text views on the Mac, where the Edit menu sends Copy and Cut to the focused text.
+    @ObservationIgnored public var onCopySelectedLines: (() -> Void)?
+    @ObservationIgnored public var onCutSelectedLines: (() -> Void)?
+    /// A click on the empty space of the editor, outside every step. The app closes its menus.
+    @ObservationIgnored public var onBackgroundClick: (() -> Void)?
 
     public init(writeopiaManager: WriteopiaManager = WriteopiaManager()) {
         self.writeopiaManager = writeopiaManager
@@ -94,12 +101,70 @@ public final class WriteopiaStateManager {
                 Action.LineBreak(storyStep: newStep, position: position, cursor: cursor),
                 state: currentStory
             ))
+        } else if !step.isTitle, let (command, rest) = TextCommands.command(in: text) {
+            applyCommand(command, rest: rest, to: newStep, at: position, cursor: cursor)
         } else {
             apply(writeopiaManager.changeStoryState(
                 Action.StoryStateChange(storyStep: newStep, position: position, selectionStart: cursor, selectionEnd: cursor),
                 state: currentStory
             ))
         }
+    }
+
+    /// A command typed at the start of the line changes the type of the step and disappears
+    /// from its text, like `changeStoryType` with a written command in the Compose app.
+    private func applyCommand(_ command: TextCommands.Command, rest: String, to step: StoryStep, at position: Double, cursor: Int) {
+        var changed = step
+        changed.spans = SpansHandler.adjust(step.spans, from: step.text ?? "", to: rest)
+        changed.text = rest
+
+        switch command {
+        case .checkItem, .checkItem2:
+            changed.type = .checkItem
+            changed.checked = changed.checked ?? false
+        case .list:
+            changed.type = .unorderedListItem
+            changed.checked = nil
+        case .codeBlock:
+            changed.type = .codeBlock
+            changed.checked = nil
+            changed.decoration = nil
+        case .divider:
+            changed.type = .divider
+            changed.checked = nil
+            changed.decoration = nil
+        case .h1, .h2, .h3, .h4:
+            let tag: BlockTag = switch command {
+            case .h1: .h1
+            case .h2: .h2
+            case .h3: .h3
+            default: .h4
+            }
+            changed.type = .text
+            changed.checked = nil
+            changed.decoration = nil
+            changed.tags.removeAll { BlockTag(rawValue: $0.tag)?.isHeading == true }
+            changed.tags.append(TagInfo(tag: tag.rawValue))
+        case .box, .card:
+            let tag: BlockTag = command == .box ? .box : .card
+            if changed.hasTag(tag.rawValue) {
+                changed.tags.removeAll { $0.tag == tag.rawValue }
+            } else {
+                changed.tags.append(TagInfo(tag: tag.rawValue))
+            }
+        }
+
+        var stories = currentStory.stories
+        stories[position] = changed
+        let newCursor = max(0, min(cursor - ((step.text ?? "").utf16.count - rest.utf16.count), rest.utf16.count))
+        apply(StoryState(
+            stories: stories,
+            lastEdit: .lineEdition(position: position, storyStep: changed),
+            focus: position,
+            selection: .cursor(newCursor, at: position)
+        ))
+        // The step is drawn by another drawer now; its new text view takes the keyboard.
+        focusRequest = FocusRequest(stepId: changed.id, cursor: newCursor)
     }
 
     /// Backspace with the cursor at the start of a step.
@@ -211,6 +276,54 @@ public final class WriteopiaStateManager {
 
     public func clearLineSelection() {
         selectedStepIds.removeAll()
+    }
+
+    /// Selects every line but the title, like Cmd+A of the Compose desktop app.
+    public func selectAllLines() {
+        guard isEditable else { return }
+        selectedStepIds = Set(currentStory.sortedStories.filter(Self.isSelectable).map(\.id))
+    }
+
+    /// Grows the selection by one line above (Shift+Up) or below (Shift+Down), like the
+    /// Compose desktop app. Does nothing without a selection.
+    public func extendLineSelection(up: Bool) {
+        let selected = selectedPositions
+        guard let edge = up ? selected.first : selected.last else { return }
+        let positions = currentStory.sortedPositions
+        guard var index = positions.firstIndex(of: edge) else { return }
+        index += up ? -1 : 1
+        while positions.indices.contains(index) {
+            if let step = currentStory.stories[positions[index]], Self.isSelectable(step) {
+                selectedStepIds.insert(step.id)
+                return
+            }
+            index += up ? -1 : 1
+        }
+    }
+
+    private static func isSelectable(_ step: StoryStep) -> Bool {
+        !step.isTitle && StoryTypes.supported.contains(step.type.number)
+    }
+
+    // MARK: - Keyboard focus
+
+    /// Up at the first line of a step moves the cursor to the step above, at the same column
+    /// when it has one.
+    public func focusPrevious(stepId: String, cursor: Int) {
+        guard let (position, _) = find(stepId),
+              let target = focusHandler.findPreviousFocus(before: position, in: currentStory.stories),
+              let step = currentStory.stories[target]
+        else { return }
+        focusRequest = FocusRequest(stepId: step.id, cursor: min(cursor, (step.text ?? "").utf16.count))
+    }
+
+    /// Down at the last line of a step moves the cursor to the step below.
+    public func focusNext(stepId: String, cursor: Int) {
+        guard let (position, _) = find(stepId),
+              let target = focusHandler.findNextFocus(after: position, in: currentStory.stories),
+              let step = currentStory.stories[target]
+        else { return }
+        focusRequest = FocusRequest(stepId: step.id, cursor: min(cursor, (step.text ?? "").utf16.count))
     }
 
     /// Checkbox, list item and code block buttons of the selection menu.

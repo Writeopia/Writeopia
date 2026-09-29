@@ -25,6 +25,33 @@ nonisolated public enum WrColors {
         #endif
     }
 
+    /// A raised surface inside the content (`secondarySystemBackground` on iOS).
+    public static var secondaryBackground: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .secondarySystemBackground)
+        #else
+        Color(nsColor: .controlBackgroundColor)
+        #endif
+    }
+
+    /// Thin lines between content (`separator` on iOS).
+    public static var separator: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .separator)
+        #else
+        Color(nsColor: .separatorColor)
+        #endif
+    }
+
+    /// A faint fill behind unselected chips (`tertiarySystemFill` on iOS).
+    public static var tertiaryFill: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .tertiarySystemFill)
+        #else
+        Color(nsColor: .quaternaryLabelColor).opacity(0.5)
+        #endif
+    }
+
     /// A subtle fill for placeholders (`secondarySystemFill` on iOS).
     public static var secondaryFill: Color {
         #if canImport(UIKit)

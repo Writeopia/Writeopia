@@ -1,7 +1,10 @@
-#if canImport(UIKit)
 import SwiftUI
-import UIKit
 import WriteopiaUI
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import WrData
 import WrDesign
 
@@ -91,10 +94,18 @@ struct NoteMenuSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
+            #if os(iOS)
             .sheet(item: $exportedFile) { file in
                 ShareSheet(items: [file.url])
                     .presentationDetents([.medium, .large])
             }
+            #else
+            .onChange(of: exportedFile) { _, file in
+                guard let file else { return }
+                ExportSaver.save(file.url)
+                exportedFile = nil
+            }
+            #endif
             .alert(
                 "Could not export",
                 isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })
@@ -117,7 +128,7 @@ struct NoteMenuSheet: View {
     }
 }
 
-struct ExportedFile: Identifiable {
+struct ExportedFile: Identifiable, Equatable {
     let url: URL
     var id: URL { url }
 }
@@ -142,7 +153,7 @@ struct FontOption: View {
             .foregroundStyle(isSelected ? WrColors.accent : .primary)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(isSelected ? WrColors.accent.opacity(0.12) : Color(uiColor: .tertiarySystemFill))
+                    .fill(isSelected ? WrColors.accent.opacity(0.12) : WrColors.tertiaryFill)
             )
             .overlay {
                 RoundedRectangle(cornerRadius: 10)
@@ -189,7 +200,12 @@ struct PublishSheet: View {
                             .font(.callout.monospaced())
                             .textSelection(.enabled)
                         Button {
+                            #if canImport(UIKit)
                             UIPasteboard.general.url = viewModel.siteURL
+                            #else
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(viewModel.siteURL.absoluteString, forType: .string)
+                            #endif
                             copied = true
                         } label: {
                             Label(copied ? "Link copied!" : "Copy Link", systemImage: copied ? "checkmark" : "doc.on.doc")
@@ -238,6 +254,7 @@ struct PublishSheet: View {
     }
 }
 
+#if os(iOS)
 /// `UIActivityViewController` for sharing exported files.
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
@@ -248,6 +265,7 @@ struct ShareSheet: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
+#endif
 
 extension ExportFormat {
     var title: String {
@@ -264,4 +282,3 @@ extension ExportFormat {
         }
     }
 }
-#endif

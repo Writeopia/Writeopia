@@ -1,4 +1,3 @@
-#if canImport(UIKit)
 import PhotosUI
 import SwiftUI
 import Writeopia
@@ -447,4 +446,3 @@ extension AiCommand {
         }
     }
 }
-#endif

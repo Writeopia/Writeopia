@@ -357,6 +357,146 @@ private let sample = document([
     }
 }
 
+@Suite struct TextCommandTests {
+    private func manager() -> WriteopiaStateManager {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(document([
+            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
+            StoryStep(id: "a", type: .text, text: "", position: 1),
+        ]))
+        return manager
+    }
+
+    @Test func headingCommandsTagTheLineAndVanish() {
+        let manager = manager()
+        manager.handleTextInput("### Heading", cursor: 11, stepId: "a")
+
+        let step = manager.step(withId: "a")
+        #expect(step?.text == "Heading")
+        #expect(step?.type == .text)
+        #expect(step?.headingLevel == 3)
+        #expect(manager.focusRequest?.stepId == "a")
+        #expect(manager.focusRequest?.cursor == 7)
+
+        // Another level replaces the first.
+        manager.handleTextInput("# Heading", cursor: 2, stepId: "a")
+        #expect(manager.step(withId: "a")?.headingLevel == 1)
+        #expect(manager.step(withId: "a")?.tags.count == 1)
+    }
+
+    @Test func typeCommandsChangeTheStep() {
+        let manager = manager()
+        manager.handleTextInput("[] Buy milk", cursor: 3, stepId: "a")
+        #expect(manager.step(withId: "a")?.type == .checkItem)
+        #expect(manager.step(withId: "a")?.checked == false)
+        #expect(manager.step(withId: "a")?.text == "Buy milk")
+        #expect(manager.focusRequest?.cursor == 0)
+
+        manager.handleTextInput("- item", cursor: 6, stepId: "a")
+        #expect(manager.step(withId: "a")?.type == .unorderedListItem)
+        #expect(manager.step(withId: "a")?.checked == nil)
+        #expect(manager.step(withId: "a")?.text == "item")
+
+        manager.handleTextInput("``` ", cursor: 4, stepId: "a")
+        #expect(manager.step(withId: "a")?.type == .codeBlock)
+        #expect(manager.step(withId: "a")?.text == "")
+
+        manager.handleTextInput("--- ", cursor: 4, stepId: "a")
+        #expect(manager.step(withId: "a")?.type == .divider)
+    }
+
+    @Test func boxAndCardToggleTheirTags() {
+        let manager = manager()
+        manager.handleTextInput("/box text", cursor: 4, stepId: "a")
+        #expect(manager.step(withId: "a")?.hasTag(BlockTag.box.rawValue) == true)
+        #expect(manager.step(withId: "a")?.text == "text")
+
+        manager.handleTextInput("/box text", cursor: 4, stepId: "a")
+        #expect(manager.step(withId: "a")?.hasTag(BlockTag.box.rawValue) == false)
+
+        manager.handleTextInput("/card ", cursor: 6, stepId: "a")
+        #expect(manager.step(withId: "a")?.hasTag(BlockTag.card.rawValue) == true)
+    }
+
+    @Test func commandsNeedTheSpaceAndTheStartOfTheLineAndSkipTheTitle() {
+        let manager = manager()
+        // Without the space nothing happens, so longer commands can still be typed.
+        for typed in ["#", "##", "-", "--", "---", "[]", "```", "/box"] {
+            manager.handleTextInput(typed, cursor: typed.count, stepId: "a")
+            #expect(manager.step(withId: "a")?.type == .text, "\(typed) alone is plain text")
+            #expect(manager.step(withId: "a")?.text == typed)
+            #expect(manager.step(withId: "a")?.tags.isEmpty == true)
+        }
+
+        manager.handleTextInput("a - b", cursor: 5, stepId: "a")
+        #expect(manager.step(withId: "a")?.type == .text)
+        #expect(manager.step(withId: "a")?.text == "a - b")
+
+        manager.handleTextInput("#hashtag ", cursor: 9, stepId: "a")
+        #expect(manager.step(withId: "a")?.headingLevel == nil)
+
+        manager.handleTextInput("# Doc", cursor: 2, stepId: "t")
+        #expect(manager.step(withId: "t")?.text == "# Doc")
+        #expect(manager.step(withId: "t")?.type == .title)
+    }
+}
+
+@Suite struct KeyboardNavigationTests {
+    private func manager() -> WriteopiaStateManager {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(document([
+            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
+            StoryStep(id: "a", type: .text, text: "First line", position: 1),
+            StoryStep(id: "d", type: .divider, position: 2),
+            StoryStep(id: "b", type: .checkItem, text: "Second", position: 3),
+            StoryStep(id: "c", type: .text, text: "Third line here", position: 4),
+        ]))
+        return manager
+    }
+
+    @Test func arrowsMoveTheCursorToTheTextStepsAroundKeepingTheColumn() {
+        let manager = manager()
+
+        manager.focusNext(stepId: "a", cursor: 4)
+        #expect(manager.focusRequest?.stepId == "b")
+        #expect(manager.focusRequest?.cursor == 4)
+
+        manager.focusNext(stepId: "c", cursor: 12)
+        #expect(manager.focusRequest?.stepId == "b") // nothing below: unchanged
+
+        // The column is capped at the length of the shorter line.
+        manager.focusPrevious(stepId: "c", cursor: 12)
+        #expect(manager.focusRequest?.stepId == "b")
+        #expect(manager.focusRequest?.cursor == 6)
+
+        // The divider is skipped; the title is a text step and gets the focus.
+        manager.focusPrevious(stepId: "a", cursor: 0)
+        #expect(manager.focusRequest?.stepId == "t")
+    }
+
+    @Test func selectionGrowsWithShiftArrowsAndSelectAllSkipsTheTitle() {
+        let manager = manager()
+        manager.extendLineSelection(up: false)
+        #expect(!manager.hasSelectedLines) // needs a selection to grow
+
+        manager.toggleLineSelection(stepId: "b")
+        manager.extendLineSelection(up: false)
+        #expect(manager.selectedStepIds == ["b", "c"])
+        manager.extendLineSelection(up: false)
+        #expect(manager.selectedStepIds == ["b", "c"]) // nothing below
+        manager.extendLineSelection(up: true)
+        #expect(manager.selectedStepIds == ["b", "c", "d"])
+        manager.extendLineSelection(up: true)
+        #expect(manager.selectedStepIds == ["a", "b", "c", "d"])
+        manager.extendLineSelection(up: true)
+        #expect(manager.selectedStepIds == ["a", "b", "c", "d"]) // the title is never selected
+
+        manager.clearLineSelection()
+        manager.selectAllLines()
+        #expect(manager.selectedStepIds == ["a", "b", "c", "d"])
+    }
+}
+
 #if canImport(UIKit)
 @Suite struct ReorderDragTests {
     /// Title and three lines, each 40pt tall, stacked from y = 0.

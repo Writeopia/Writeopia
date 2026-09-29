@@ -1,9 +1,13 @@
-#if canImport(UIKit)
 import Observation
 import SwiftUI
-import UIKit
 import Writeopia
+import WrDesign
 import WrModels
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 /// Drag to reorder steps, started from the grip of a step as soon as the finger moves (no
 /// long press, unlike system drag and drop). Mirrors the drag of the Kotlin SDK: over the upper
@@ -22,7 +26,7 @@ final class ReorderCoordinator {
     private(set) var active: ActiveDrag?
 
     @ObservationIgnored weak var manager: WriteopiaStateManager?
-    @ObservationIgnored weak var scrollView: UIScrollView?
+    @ObservationIgnored weak var scrollView: (any EditorScrolling)?
     @ObservationIgnored private var frames: [String: CGRect] = [:]
     @ObservationIgnored private var scrollOffsetAtLastEvent: CGFloat = 0
     @ObservationIgnored private var autoScroll: Timer?
@@ -40,11 +44,15 @@ final class ReorderCoordinator {
 
     func dragChanged(stepId: String, location: CGPoint) {
         if active == nil {
+            #if canImport(UIKit)
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            #else
+            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+            #endif
             startAutoScroll()
         }
         active = ActiveDrag(stepId: stepId, location: location)
-        scrollOffsetAtLastEvent = scrollView?.contentOffset.y ?? 0
+        scrollOffsetAtLastEvent = scrollView?.scrollOffset ?? 0
         updateTarget()
     }
 
@@ -124,12 +132,11 @@ final class ReorderCoordinator {
     private func autoScrollTick() {
         guard var drag = active, let scrollView else { return }
 
-        let offset = scrollView.contentOffset.y
-        let insets = scrollView.adjustedContentInset
+        let offset = scrollView.scrollOffset
         // Where the finger is on screen, from its last position in the content.
         let fingerInView = drag.location.y + (scrollOffsetAtLastEvent - offset) - offset
-        let visibleTop = insets.top
-        let visibleBottom = scrollView.bounds.height - insets.bottom
+        let visibleTop = scrollView.topInset
+        let visibleBottom = scrollView.visibleHeight - scrollView.bottomInset
         let edge: CGFloat = 70
 
         var delta: CGFloat = 0
@@ -140,12 +147,12 @@ final class ReorderCoordinator {
         }
         guard delta != 0 else { return }
 
-        let minOffset = -insets.top
-        let maxOffset = max(minOffset, scrollView.contentSize.height - scrollView.bounds.height + insets.bottom)
+        let minOffset = -scrollView.topInset
+        let maxOffset = max(minOffset, scrollView.contentHeight - scrollView.visibleHeight + scrollView.bottomInset)
         let newOffset = min(max(offset + delta, minOffset), maxOffset)
         guard newOffset != offset else { return }
 
-        scrollView.contentOffset.y = newOffset
+        scrollView.scrollOffset = newOffset
         // The finger stays still on screen while the content moves under it.
         drag.location.y += newOffset - offset
         scrollOffsetAtLastEvent = newOffset
@@ -189,17 +196,28 @@ private struct ReorderFrameReporter: ViewModifier {
     }
 }
 
-/// The grip of a step: dragging it moves the step, starting right away.
+/// The grip of a step: dragging it moves the step, starting right away; a click on it selects
+/// the line, like the drag handle of the Compose desktop app.
 struct ReorderGrip: View {
     let step: StoryStep
     @Environment(\.reorderCoordinator) private var coordinator
+    @State private var isHovered = false
 
     var body: some View {
         Image(systemName: "line.3.horizontal")
-            .font(.caption)
-            .foregroundStyle(.tertiary)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(isHovered ? WrColors.accent : Color.secondary)
             .frame(width: EditorLayout.gutter, height: 24)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isHovered ? WrColors.accent.opacity(0.15) : Color.clear)
+            )
             .contentShape(Rectangle().inset(by: -8))
+            .onHover { isHovered = $0 }
+            .animation(.easeInOut(duration: 0.15), value: isHovered)
+            .onTapGesture {
+                coordinator?.manager?.toggleLineSelection(stepId: step.id)
+            }
             .gesture(
                 DragGesture(minimumDistance: 2, coordinateSpace: .named(ReorderCoordinator.coordinateSpace))
                     .onChanged { value in
@@ -209,6 +227,8 @@ struct ReorderGrip: View {
             )
             .accessibilityLabel("Reorder")
             .accessibilityIdentifier("drag.\(step.id)")
+            #if os(macOS)
+            .pointerStyle(.grabIdle)
+            #endif
     }
 }
-#endif

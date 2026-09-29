@@ -94,18 +94,24 @@ private func texts(_ state: StoryState) -> [String] {
         #expect(result.stories[2]?.checked == false)
     }
 
-    @Test func lineBreakOnEmptyListItemLeavesTheList() {
-        let initial = state([
-            StoryStep(type: .title, text: "T", position: 0),
-            StoryStep(type: .unorderedListItem, text: "", position: 1),
-        ])
-        var item = initial.stories[1]!
-        item.text = "\n"
+    @Test func lineBreakOnEmptyItemAddsAnotherItem() {
+        for type in [StoryType.unorderedListItem, .checkItem] {
+            let initial = state([
+                StoryStep(type: .title, text: "T", position: 0),
+                StoryStep(type: type, text: "", checked: type == .checkItem ? false : nil, position: 1),
+            ])
+            var item = initial.stories[1]!
+            item.text = "\n"
 
-        let result = manager.onLineBreak(Action.LineBreak(storyStep: item, position: 1, cursor: 1), state: initial)
+            let result = manager.onLineBreak(Action.LineBreak(storyStep: item, position: 1, cursor: 1), state: initial)
 
-        #expect(result.stories.count == 2)
-        #expect(result.stories[1]?.type.number == StoryType.text.number)
+            #expect(result.stories.count == 3)
+            #expect(result.stories[1]?.type == type)
+            #expect(result.stories[1]?.text == "")
+            #expect(result.stories[2]?.type == type)
+            #expect(result.stories[2]?.checked == (type == .checkItem ? false : nil))
+            #expect(result.focus == 2)
+        }
     }
 
     @Test func pastedLinesBecomeSteps() {
@@ -144,6 +150,25 @@ private func texts(_ state: StoryState) -> [String] {
 
         #expect(texts(result) == ["T", "after"])
         #expect(result.focus == 1)
+    }
+
+    @Test func eraseOnHeadingOrBlockRemovesTheTagFirst() {
+        let initial = state([
+            StoryStep(type: .title, text: "T", position: 0),
+            StoryStep(type: .text, text: "Before", position: 1),
+            StoryStep(type: .text, text: "Heading", tags: [TagInfo(tag: "H2"), TagInfo(tag: "HIGH_LIGHT_BLOCK")], position: 2),
+        ])
+
+        let plain = manager.onErase(Action.EraseStory(storyStep: initial.stories[2]!, position: 2), state: initial)
+        #expect(plain.stories.count == 3)
+        #expect(plain.stories[2]?.text == "Heading")
+        #expect(plain.stories[2]?.tags.isEmpty == true)
+        #expect(plain.focus == 2)
+
+        // The next Backspace merges as usual.
+        let merged = manager.onErase(Action.EraseStory(storyStep: plain.stories[2]!, position: 2), state: plain)
+        #expect(merged.stories.count == 2)
+        #expect(merged.stories[1]?.text == "BeforeHeading")
     }
 
     @Test func eraseOnListItemTurnsItIntoParagraph() {

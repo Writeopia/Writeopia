@@ -1,4 +1,3 @@
-#if canImport(UIKit)
 import SwiftUI
 import Writeopia
 import WrDesign
@@ -39,4 +38,3 @@ extension View {
         modifier(SwipeToSelect(step: step, manager: manager))
     }
 }
-#endif
