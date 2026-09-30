@@ -15,6 +15,42 @@ public enum AiPrompts {
     static let tags =
         "Generate a list of relevant tags based on the following text. The tags should capture key topics, themes, and important concepts. Use concise, single-word tags that accurately represent the content. Produce at most 10 tags. Detect the language of the text and write in the same language."
 
+    /// Asks for the slides of a presentation of a document, one per `---`, in the Markdown
+    /// `PresentationMarkdown` reads.
+    static let presentation = """
+        Create a slide presentation from the document below. Write it in Markdown, following these rules:
+        - Every slide starts with a heading line ("## Title of the slide").
+        - Below the heading, write a short description of the slide: a few sentences, "- " items for a list \
+        or "[] " items for a checklist. Keep every slide short enough to be read at a glance.
+        - Every slide ends with a line containing only "---".
+        - Make roughly one slide per section of the document. When sections are too small, merge them into \
+        one slide; when a section is too long, split it. The presentation must make sense on its own.
+        - Start with a title slide and end with a closing slide. Use between 3 and 12 slides.
+        - Use the language of the document.
+        - Answer with the Markdown of the slides only, without comments about the task and without wrapping \
+        it in a code block.
+
+        Example of the format:
+        ## Why the sky is blue
+
+        Sunlight scatters in the atmosphere, and blue light scatters the most.
+        ---
+
+        ## What we will see
+
+        [] The physics of scattering
+        - Sunsets and their colors
+        ---
+
+        ## Thank you!
+        The presentation is over.
+        """
+
+    /// The whole prompt that generates the presentation of `document` (its Markdown).
+    public static func presentationPrompt(document: String) -> String {
+        "\(presentation)\n\nThe document:\n```\n\(document)\n```"
+    }
+
     /// Used to shrink a part of a long text so the whole of it fits in the on-device model.
     static let condense =
         "Rewrite the following part of a longer text as short notes that keep every fact, name, number, decision and task. Write in the same language as the text"

@@ -480,7 +480,8 @@ private struct DocumentsNavigation: View {
                             aiClient: session.aiClient,
                             publishing: session.publishing,
                             imageUploader: session.imageUploader,
-                            isPremium: session.user?.isPremium ?? false
+                            isPremium: session.user?.isPremium ?? false,
+                            presentationsEnabled: session.supportsPresentations
                         ) { link in
                             router.path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
                         }

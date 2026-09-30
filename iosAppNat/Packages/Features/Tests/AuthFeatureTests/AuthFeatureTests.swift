@@ -303,6 +303,31 @@ private func makeSession(
         #expect(session.aiClient == nil)
     }
 
+    @Test func presentationsNeedTheCloudOrOllama() {
+        let cloud = session(online: true, appleIntelligence: true)
+        cloud.aiProvider = .cloud
+        #expect(cloud.supportsPresentations)
+        #expect(cloud.resolvedAi?.provider == .cloud)
+
+        let ollama = session(online: false, appleIntelligence: true)
+        ollama.aiProvider = .ollama
+        ollama.localAiModel = "gemma"
+        #expect(ollama.supportsPresentations)
+        #expect(ollama.resolvedAi?.provider == .ollama)
+
+        let apple = session(online: true, appleIntelligence: true)
+        #expect(!apple.supportsPresentations)
+
+        // The cloud can't answer offline, so the pick falls back to Apple Intelligence.
+        let fallback = session(online: false, appleIntelligence: true)
+        fallback.aiProvider = .cloud
+        #expect(fallback.aiClient === fallback.appleIntelligence)
+        #expect(!fallback.supportsPresentations)
+
+        let none = session(online: false, appleIntelligence: false)
+        #expect(!none.supportsPresentations)
+    }
+
     @Test func appleIntelligenceIsTheDefaultInBothSpaces() {
         let offline = session(online: false, appleIntelligence: true)
         #expect(offline.aiProvider == .appleIntelligence)

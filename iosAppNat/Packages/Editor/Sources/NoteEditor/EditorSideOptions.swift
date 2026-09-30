@@ -21,6 +21,8 @@ struct EditorSideOptions: View {
     let onImageFilePicked: (URL) -> Void
     let onPublishClick: () -> Void
     let onDelete: () -> Void
+    /// Opens the presentations of the document (the Mac, with the cloud AI or Ollama).
+    var onPresentationClick: () -> Void = {}
     /// The open panel; the editor closes it on a click outside.
     @Binding var tab: SideTab?
     private static let panelWidth: CGFloat = 280
@@ -66,6 +68,15 @@ struct EditorSideOptions: View {
                 .accessibilityIdentifier("editor.side.text")
             tabButton(.export, systemImage: "square.and.arrow.up", label: "Export")
                 .accessibilityIdentifier("editor.side.export")
+            #if os(macOS)
+            if viewModel.showsPresentations {
+                MenuButton(systemImage: "play.rectangle", label: "Presentation") {
+                    tab = nil
+                    onPresentationClick()
+                }
+                .accessibilityIdentifier("editor.side.presentation")
+            }
+            #endif
             if viewModel.isAiAvailable && !viewModel.isLocked {
                 MenuButton(systemImage: "sparkles", label: "AI", tint: WrColors.accent) {
                     tab = nil
