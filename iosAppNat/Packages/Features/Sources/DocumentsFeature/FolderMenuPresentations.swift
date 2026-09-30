@@ -51,7 +51,7 @@ struct FolderMenuPresentations: ViewModifier {
                     if let folder {
                         FolderEditSheet(folder: folder, onSave: onEdit)
                             .presentationDetents([.medium, .large])
-                            .wrSheetSize(width: 440, height: 480)
+                            .wrSheetSize(width: 440, height: 440)
                     }
                 case .move:
                     if let folder {

@@ -745,7 +745,7 @@ struct FolderContentsView: View {
                 Task { await viewModel.createFolder(title: title, icon: icon) }
             }
             .presentationDetents([.medium, .large])
-            .wrSheetSize(width: 440, height: 480)
+            .wrSheetSize(width: 440, height: 440)
         }
         .alert(
             "Something went wrong",
