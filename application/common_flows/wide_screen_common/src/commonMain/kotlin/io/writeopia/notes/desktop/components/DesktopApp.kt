@@ -97,7 +97,6 @@ fun DesktopApp(
                 keyboardEventFlow = keyboardEventFlow,
                 imageUploader = WorkspaceInjection.singleton().provideImageUploader(),
             )
-
             else -> EditorKmpInjector.desktop(
                 selectionState = selectionState,
                 keyboardEventFlow = keyboardEventFlow,
