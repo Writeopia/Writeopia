@@ -415,13 +415,24 @@ struct FolderContentsView: View {
     @State private var dragSelection = DragSelection()
     @State private var folderSheet: FolderSheet?
     @State private var confirmsFolderDeletion = false
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private let title: String
     private let rootTitle: String
     private let contentsVersion: Int
     private let onItemsChange: () -> Void
 
-    private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 12)]
+    /// Cards are at least this wide and fill the width, so wider windows get more columns, like
+    /// the adaptive grids of the Compose app (220 on desktop, 150 on phones and tablets).
+    private static var minCardWidth: CGFloat {
+        #if os(macOS)
+        220
+        #else
+        150
+        #endif
+    }
+
+    private static let gridSpacing: CGFloat = 12
+    private let columns = [GridItem(.adaptive(minimum: FolderContentsView.minCardWidth), spacing: FolderContentsView.gridSpacing)]
+    @State private var contentWidth: CGFloat = 0
 
     /// New documents are named in an alert; new folders use `FolderEditSheet`, to pick an icon.
     private enum NewItem: String, Identifiable {
@@ -455,27 +466,36 @@ struct FolderContentsView: View {
     private var settings: FolderDisplaySettings { viewModel.settings }
 
     var body: some View {
-        ScrollView {
-            // Inside the scroll view, not in a top inset: an inset hides the large title on iOS 26+.
-            if !viewModel.isRoot {
-                FolderBreadcrumb(
-                    rootTitle: rootTitle,
-                    ancestors: viewModel.ancestors,
-                    current: viewModel.folder?.displayTitle ?? title,
-                    onSelect: navigate(toAncestor:)
-                )
-            }
-            arrangedItems
-                .padding([.horizontal, .bottom])
-                .padding(.top, viewModel.isRoot ? 16 : 4)
-                .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
-                .environment(\.swipeSelection, swipeSelection)
-                // A drag on the empty space selects the items it crosses, like the Compose app.
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Inside the scroll view, not in a top inset: an inset hides the large title on iOS 26+.
+                    if !viewModel.isRoot {
+                        FolderBreadcrumb(
+                            rootTitle: rootTitle,
+                            ancestors: viewModel.ancestors,
+                            current: viewModel.folder?.displayTitle ?? title,
+                            onSelect: navigate(toAncestor:)
+                        )
+                    }
+                    arrangedItems
+                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { contentWidth = $0 }
+                        .padding([.horizontal, .bottom])
+                        .padding(.top, viewModel.isRoot ? 16 : 4)
+                        .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
+                        .environment(\.swipeSelection, swipeSelection)
+                }
+                // The content fills the visible height, so a drag can start anywhere on the
+                // empty space and select the items it crosses, like the Compose app.
+                .frame(maxWidth: .infinity, minHeight: geometry.size.height, alignment: .top)
                 .contentShape(Rectangle())
                 .dragSelectionBox(dragSelection)
                 .onAppear {
                     dragSelection.onChange = { [viewModel] id, isInside in viewModel.select(id, isInside) }
+                    swipeSelection.onScrollViewFound = { [dragSelection] scrollView in dragSelection.scrollView = scrollView }
+                    if let scrollView = swipeSelection.scrollView { dragSelection.scrollView = scrollView }
                 }
+            }
         }
         // On the scroll view only: applied to the whole screen, the sheets would inherit it and
         // get a pull to refresh of their own.
@@ -645,7 +665,9 @@ struct FolderContentsView: View {
     /// Items spread over the columns of the staggered grid, each going to the shortest column so
     /// they stay balanced.
     private var staggeredColumns: [[FolderItem]] {
-        let count = horizontalSizeClass == .regular ? 3 : 2
+        // As many columns as cards of the minimum width fit, at least two.
+        let fitting = Int((contentWidth + Self.gridSpacing) / (Self.minCardWidth + Self.gridSpacing))
+        let count = max(2, fitting)
         var columns = Array(repeating: [FolderItem](), count: count)
         var heights = Array(repeating: 0, count: count)
         for item in viewModel.items {

@@ -124,9 +124,12 @@ final class ReorderCoordinator {
     /// Scrolls while the finger is close to the top or bottom edge, like `AutoScrollLazyColumn`.
     private func startAutoScroll() {
         autoScroll?.invalidate()
-        autoScroll = Timer.scheduledTimer(withTimeInterval: 1 / 60, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1 / 60, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.autoScrollTick() }
         }
+        // While the pointer drags, the run loop tracks it: only the common modes get ticks.
+        RunLoop.main.add(timer, forMode: .common)
+        autoScroll = timer
     }
 
     private func autoScrollTick() {

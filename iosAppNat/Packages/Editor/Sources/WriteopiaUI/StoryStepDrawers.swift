@@ -290,9 +290,14 @@ extension View {
                         .strokeBorder(WrColors.accent.opacity(0.35))
                 }
         } else if step.hasTag(BlockTag.card.rawValue) {
+            // A raised surface with an edge and a shadow, so it reads as a card on any background.
             padding(12)
                 .background(WrColors.secondaryBackground, in: RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(WrColors.divider)
+                }
+                .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
         } else {
             self
         }
@@ -362,6 +367,11 @@ struct AiAnswerDrawer: View {
         }
         .padding(14)
         .background(WrColors.secondaryBackground, in: RoundedRectangle(cornerRadius: 12))
+        // A tinted edge marks where the answer starts and ends, whatever the background.
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(WrColors.accent.opacity(0.35), lineWidth: 1)
+        }
         .padding(.vertical, 8)
     }
 

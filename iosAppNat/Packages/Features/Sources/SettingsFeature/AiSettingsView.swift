@@ -45,7 +45,7 @@ struct AiSettingsView: View {
 
     var body: some View {
         @Bindable var session = viewModel.session
-        Form {
+        WrForm {
             appleIntelligenceSection
 
             Section {

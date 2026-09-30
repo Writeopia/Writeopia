@@ -197,7 +197,7 @@ struct TeamDetailView: View {
     }
 
     var body: some View {
-        Form {
+        WrForm {
             Section {
                 LabeledContent("Name", value: viewModel.workspace.name)
                 LabeledContent("Your role", value: viewModel.workspace.isAdmin ? String(localized: "Admin") : String(localized: "Member"))

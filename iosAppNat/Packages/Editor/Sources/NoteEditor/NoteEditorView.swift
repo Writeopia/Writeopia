@@ -486,5 +486,10 @@ private struct TitleView: View {
                     .accessibilityLabel("Published")
             }
         }
+        #if os(macOS)
+        // The Mac toolbar draws a bubble around the item; the title needs room inside it.
+        .padding(.horizontal, 12)
+        .padding(.vertical, 2)
+        #endif
     }
 }

@@ -491,6 +491,45 @@ private let sample = document([
         #expect(selection.rect == nil)
         #expect(!selection.isActive)
     }
+
+    @MainActor
+    final class FakeScrolling: EditorScrolling {
+        var scrollOffset: CGFloat = 0
+        var visibleHeight: CGFloat = 200
+        var topInset: CGFloat = 0
+        var bottomInset: CGFloat = 0
+        var contentHeight: CGFloat = 1000
+    }
+
+    @Test func draggingNearTheBottomScrollsAndGrowsTheBox() {
+        let selection = DragSelection()
+        let scrolling = FakeScrolling()
+        selection.scrollView = scrolling
+        var selected: Set<String> = []
+        selection.onChange = { id, inside in if inside { selected.insert(id) } else { selected.remove(id) } }
+        for row in 0..<20 {
+            selection.setFrame(CGRect(x: 0, y: CGFloat(row) * 50, width: 300, height: 40), for: "r\(row)")
+        }
+
+        // The pointer sits 10pt above the bottom edge of a 200pt viewport.
+        selection.update(from: CGPoint(x: 10, y: 20), to: CGPoint(x: 20, y: 190))
+        #expect(selected == ["r0", "r1", "r2", "r3"])
+
+        selection.autoScrollStep()
+        #expect(scrolling.scrollOffset > 0)
+        #expect(selection.rect!.maxY > 190, "the box grew with the scroll")
+
+        for _ in 0..<200 { selection.autoScrollStep() }
+        #expect(scrolling.scrollOffset == 800, "stops at the end of the content")
+        #expect(selected.count == 20, "everything down to the last row got selected")
+
+        // Away from the edges nothing scrolls.
+        let offset = scrolling.scrollOffset
+        selection.update(from: CGPoint(x: 10, y: 20), to: CGPoint(x: 20, y: offset + 100))
+        selection.autoScrollStep()
+        #expect(scrolling.scrollOffset == offset)
+        selection.end()
+    }
 }
 
 @Suite struct KeyboardNavigationTests {

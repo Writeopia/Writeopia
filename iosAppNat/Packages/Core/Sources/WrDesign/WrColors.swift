@@ -25,12 +25,14 @@ nonisolated public enum WrColors {
         #endif
     }
 
-    /// A raised surface inside the content (`secondarySystemBackground` on iOS).
+    /// A raised surface inside the content (`secondarySystemBackground` on iOS). On the Mac the
+    /// system's control background is the window color in dark mode, so the palette's surface
+    /// is used instead: it stands out on both appearances.
     public static var secondaryBackground: Color {
         #if canImport(UIKit)
         Color(uiColor: .secondarySystemBackground)
         #else
-        Color(nsColor: .controlBackgroundColor)
+        surface
         #endif
     }
 

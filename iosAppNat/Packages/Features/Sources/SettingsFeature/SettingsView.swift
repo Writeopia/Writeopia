@@ -2,19 +2,100 @@ import SwiftUI
 import WrDesign
 import WrSession
 
-enum SettingsRoute: Hashable {
+enum SettingsRoute: String, Hashable, CaseIterable {
     case general
     case teams
     case ai
     case account
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .general: "General"
+        case .teams: "Teams"
+        case .ai: "AI"
+        case .account: "Account"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .general: "gearshape"
+        case .teams: "person.3.fill"
+        case .ai: "sparkles"
+        case .account: "person.crop.circle"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .general: .gray
+        case .teams: .blue
+        case .ai: .purple
+        case .account: .orange
+        }
+    }
 }
 
 public struct SettingsRootView: View {
     @Environment(AppSession.self) private var session
+    @State private var macRoute: SettingsRoute = .general
 
     public init() {}
 
     public var body: some View {
+        #if os(macOS)
+        macBody
+        #else
+        stackBody
+        #endif
+    }
+
+    #if os(macOS)
+    /// The Mac: the sections on the left and the chosen one on the right, like System Settings.
+    private var macBody: some View {
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                AccountHeader()
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
+                    .padding(.bottom, 12)
+
+                List(selection: $macRoute) {
+                    ForEach(SettingsRoute.allCases, id: \.self) { route in
+                        SettingsLabel(route.title, systemImage: route.systemImage, color: route.color)
+                            .tag(route)
+                            .accessibilityIdentifier("settings.\(route.rawValue)")
+                    }
+                }
+                .listStyle(.sidebar)
+                .scrollContentBackground(.hidden)
+            }
+            .frame(width: 240)
+            .background(WrColors.surface.opacity(0.6))
+
+            Divider()
+
+            NavigationStack {
+                section(macRoute)
+            }
+            .id(macRoute)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background(WrColors.background)
+    }
+    #endif
+
+    @ViewBuilder
+    private func section(_ route: SettingsRoute) -> some View {
+        switch route {
+        case .general: GeneralSettingsView()
+        case .teams: TeamsSettingsView(session: session)
+        case .ai: AiSettingsView(session: session)
+        case .account: AccountSettingsView(session: session)
+        }
+    }
+
+    private var stackBody: some View {
         NavigationStack {
             List {
                 Section {
@@ -38,14 +119,7 @@ public struct SettingsRootView: View {
                 }
             }
             .navigationTitle("Settings")
-            .navigationDestination(for: SettingsRoute.self) { route in
-                switch route {
-                case .general: GeneralSettingsView()
-                case .teams: TeamsSettingsView(session: session)
-                case .ai: AiSettingsView(session: session)
-                case .account: AccountSettingsView(session: session)
-                }
-            }
+            .navigationDestination(for: SettingsRoute.self, destination: section)
         }
     }
 }
@@ -92,15 +166,15 @@ struct SettingsLabel: View {
     }
 
     var body: some View {
-        Label {
-            Text(title)
-        } icon: {
+        HStack(spacing: 12) {
             Image(systemName: systemImage)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.white)
                 .frame(width: 28, height: 28)
                 .background(color.gradient, in: RoundedRectangle(cornerRadius: 7))
+            Text(title)
         }
+        .padding(.vertical, 2)
     }
 }
 

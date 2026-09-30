@@ -29,13 +29,24 @@ public struct LocalAiConfigView: View {
             .disabled(config.wizard != .closed)
             .accessibilityIdentifier("localAi.autoConfigure")
 
-            DisclosureGroup("Manual Configuration", isExpanded: $showsManual) {
+            DisclosureGroup(isExpanded: $showsManual) {
                 VStack(alignment: .leading, spacing: 16) {
                     urlField
                     modelsSection
                     downloadSection
                 }
                 .padding(.top, 12)
+            } label: {
+                // The title toggles the group too, not only the chevron.
+                Button {
+                    withAnimation(.snappy) { showsManual.toggle() }
+                } label: {
+                    Text("Manual Configuration")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("localAi.manual")
             }
             .foregroundStyle(WrColors.textLight)
         }

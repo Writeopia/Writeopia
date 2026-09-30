@@ -17,7 +17,7 @@ public struct WriteopiaEditor: View {
     /// options that floats over the trailing edge.
     private static var horizontalPadding: CGFloat {
         #if os(macOS)
-        56
+        64
         #else
         12
         #endif
@@ -53,13 +53,15 @@ public struct WriteopiaEditor: View {
                     }
                     .coordinateSpace(.named(ReorderCoordinator.coordinateSpace))
                     .overlay(alignment: .topLeading) { reorderPreview }
-                    .padding(.horizontal, Self.horizontalPadding)
                     .padding(.top, 8)
                     .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
                     .environment(\.reorderCoordinator, reorder)
                     .environment(\.swipeSelection, swipeSelection)
                     .environment(\.customStepDrawers, customDrawers)
                     .frame(maxWidth: 760)
+                    // Outside the text column: the text keeps its width, the padding keeps it
+                    // clear of the window edges and the side menu.
+                    .padding(.horizontal, Self.horizontalPadding)
                     .frame(maxWidth: .infinity)
                     // The content fills the visible height, so a click on the empty space below
                     // the last step reaches the background too.
@@ -75,8 +77,14 @@ public struct WriteopiaEditor: View {
                     manager.onSelected(stepId: id, isSelected: isInside)
                 }
                 reorder.manager = manager
-                swipeSelection.onScrollViewFound = { [reorder] scrollView in reorder.scrollView = scrollView }
-                if let scrollView = swipeSelection.scrollView { reorder.scrollView = scrollView }
+                swipeSelection.onScrollViewFound = { [reorder, dragSelection] scrollView in
+                    reorder.scrollView = scrollView
+                    dragSelection.scrollView = scrollView
+                }
+                if let scrollView = swipeSelection.scrollView {
+                    reorder.scrollView = scrollView
+                    dragSelection.scrollView = scrollView
+                }
             }
             .onChange(of: manager.focusRequest) { _, request in
                 guard let request else { return }

@@ -161,6 +161,24 @@ public struct WrScreenHeader: View {
     }
 }
 
+/// A settings form: the grouped style of System Settings on the Mac, the plain form on iOS.
+public struct WrForm<Content: View>: View {
+    @ViewBuilder private let content: Content
+
+    public init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    public var body: some View {
+        #if os(macOS)
+        Form { content }
+            .formStyle(.grouped)
+        #else
+        Form { content }
+        #endif
+    }
+}
+
 /// A list of options in a sheet: a plain list on iOS, a grouped form on the Mac, where a list
 /// of buttons looks out of place.
 public struct WrSheetList<Content: View>: View {

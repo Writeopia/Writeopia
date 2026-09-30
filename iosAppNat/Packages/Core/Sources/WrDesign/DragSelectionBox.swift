@@ -14,8 +14,14 @@ public final class DragSelection {
 
     /// Called with an item's id when the box starts or stops touching it.
     @ObservationIgnored public var onChange: (_ id: String, _ isInside: Bool) -> Void = { _, _ in }
+    /// The scroll view of the container: it scrolls while the pointer is near its top or bottom
+    /// edge, so a box can grow past what's on screen.
+    @ObservationIgnored public weak var scrollView: (any EditorScrolling)?
     @ObservationIgnored private var frames: [String: CGRect] = [:]
     @ObservationIgnored private var inside: Set<String> = []
+    @ObservationIgnored private var start: CGPoint = .zero
+    @ObservationIgnored private var current: CGPoint = .zero
+    @ObservationIgnored private var autoScroll: Timer?
 
     public init() {}
 
@@ -32,6 +38,11 @@ public final class DragSelection {
 
     /// The box from where the drag started to where the pointer is now.
     public func update(from start: CGPoint, to location: CGPoint) {
+        if rect == nil {
+            startAutoScroll()
+        }
+        self.start = start
+        current = location
         let box = CGRect(
             x: min(start.x, location.x),
             y: min(start.y, location.y),
@@ -51,8 +62,52 @@ public final class DragSelection {
     }
 
     public func end() {
+        autoScroll?.invalidate()
+        autoScroll = nil
         rect = nil
         inside = []
+    }
+
+    // MARK: - Auto scroll
+
+    private func startAutoScroll() {
+        autoScroll?.invalidate()
+        let timer = Timer(timeInterval: 1 / 60, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.autoScrollStep() }
+        }
+        // While the mouse drags, the run loop tracks the mouse: only the common modes get ticks.
+        RunLoop.main.add(timer, forMode: .common)
+        autoScroll = timer
+    }
+
+    /// Scrolls when the pointer is within `edge` of the top or bottom of the scroll view, and
+    /// grows the box by the same amount since the pointer stays still on screen. One step of
+    /// the timer; public so tests can drive it.
+    public func autoScrollStep() {
+        guard rect != nil, let scrollView else { return }
+
+        let offset = scrollView.scrollOffset
+        // Content coordinates minus the offset: where the pointer is in the visible area.
+        let pointerInView = current.y - offset
+        let visibleTop = scrollView.topInset
+        let visibleBottom = scrollView.visibleHeight - scrollView.bottomInset
+        let edge: CGFloat = 60
+
+        var delta: CGFloat = 0
+        if pointerInView < visibleTop + edge {
+            delta = -max(2, (visibleTop + edge - pointerInView) / 6)
+        } else if pointerInView > visibleBottom - edge {
+            delta = max(2, (pointerInView - (visibleBottom - edge)) / 6)
+        }
+        guard delta != 0 else { return }
+
+        let minOffset = -scrollView.topInset
+        let maxOffset = max(minOffset, scrollView.contentHeight - scrollView.visibleHeight + scrollView.bottomInset)
+        let newOffset = min(max(offset + delta, minOffset), maxOffset)
+        guard newOffset != offset else { return }
+
+        scrollView.scrollOffset = newOffset
+        update(from: start, to: CGPoint(x: current.x, y: current.y + (newOffset - offset)))
     }
 }
 
@@ -110,9 +165,10 @@ private struct DragSelectionContainer: ViewModifier {
             #endif
             .overlay {
                 if let rect = selection.rect {
-                    Rectangle()
+                    let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    shape
                         .fill(WrColors.accent.opacity(0.2))
-                        .overlay(Rectangle().strokeBorder(WrColors.accent, lineWidth: 1))
+                        .overlay(shape.strokeBorder(WrColors.accent, lineWidth: 1))
                         .frame(width: rect.width, height: rect.height)
                         .position(x: rect.midX, y: rect.midY)
                         .allowsHitTesting(false)
