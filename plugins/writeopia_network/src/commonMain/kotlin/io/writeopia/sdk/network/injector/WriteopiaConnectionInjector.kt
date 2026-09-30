@@ -144,7 +144,7 @@ private object ApiInjectorDefaults {
                     val accessToken = handler?.getIdToken()?.takeIf { it.isNotBlank() } ?: return@loadTokens null
                     val refreshToken = handler?.getRefreshToken() ?: ""
 
-                    BearerTokens(accessToken, handler.getRefreshToken())
+                    BearerTokens(accessToken, refreshToken)
                 }
 
                 refreshTokens {
