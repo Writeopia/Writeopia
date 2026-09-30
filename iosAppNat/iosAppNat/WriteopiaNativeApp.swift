@@ -1,3 +1,4 @@
+import DocumentsFeature
 import SwiftUI
 import WrDesign
 import WrSession
@@ -18,6 +19,8 @@ struct WriteopiaNativeApp: App {
         .commands {
             SidebarCommands()
         }
+        // Presentations play in a window of their own.
+        PresentationWindowScene(session: session)
         #else
         WindowGroup {
             RootView()

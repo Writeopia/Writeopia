@@ -88,6 +88,9 @@ public final class NoteEditorViewModel {
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private var pushTask: Task<Void, Never>?
     public private(set) var isSyncing = false
+    /// The presentations of the document; nil when the AI in use can't generate them (only the
+    /// cloud AI and Ollama do) or the repository can't keep them.
+    public private(set) var presentations: PresentationsViewModel?
     /// Set once the document is deleted: nothing is saved or sent anymore.
     public private(set) var isDeleted = false
     public var deleteError: String?
@@ -100,6 +103,7 @@ public final class NoteEditorViewModel {
     static let fontKey = "wr.editor.font"
 
     /// `aiClient` and `publishing` are nil in the private space, where there's no backend.
+    /// `presentationsEnabled` is true when the AI in use can write presentations.
     public init(
         documentId: String,
         repository: DocumentsRepository,
@@ -107,6 +111,7 @@ public final class NoteEditorViewModel {
         publishing: DocumentPublishing? = nil,
         imageUploader: ImageUploading? = nil,
         isPremium: Bool = false,
+        presentationsEnabled: Bool = false,
         defaults: UserDefaults = .standard,
         writeopiaManager: WriteopiaStateManager = WriteopiaStateManager()
     ) {
@@ -125,7 +130,18 @@ public final class NoteEditorViewModel {
             writeopiaManager.onGenerateSection = { [weak self] stepId in self?.generateSection(stepId: stepId) }
             writeopiaManager.onListStarted = { [weak self] stepId in self?.suggestListItems(after: stepId) }
         }
+        if presentationsEnabled, let aiClient, let presentationsRepository = repository as? PresentationsRepository {
+            presentations = PresentationsViewModel(
+                documentId: documentId,
+                documentTitle: { [weak self] in self?.writeopiaManager.title ?? "" },
+                documentMarkdown: { [weak self] in self?.exportMarkdown() ?? "" },
+                repository: presentationsRepository,
+                aiClient: aiClient
+            )
+        }
     }
+
+    public var showsPresentations: Bool { presentations != nil }
 
     // MARK: - Selected lines
 
