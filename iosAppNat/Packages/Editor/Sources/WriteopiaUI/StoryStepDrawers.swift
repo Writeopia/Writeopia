@@ -160,6 +160,16 @@ struct TitleDrawer: View {
         step.decoration?.backgroundColor.map { Color(argb: $0) }
     }
 
+    /// Space above the title inside a colored header. The Compose app uses 114; the Mac window
+    /// is taller, so the band gets a little more room there.
+    private static let coloredHeaderTopPadding: CGFloat = {
+        #if os(macOS)
+        160
+        #else
+        114
+        #endif
+    }()
+
     var body: some View {
         StepTextView(step: step, manager: manager)
             .overlay(alignment: .topLeading) {
@@ -172,7 +182,7 @@ struct TitleDrawer: View {
             }
             .padding(.leading, EditorLayout.gutter + 4)
             .padding(.trailing, 12)
-            .padding(.top, headerColor == nil ? 8 : 114)
+            .padding(.top, headerColor == nil ? 8 : Self.coloredHeaderTopPadding)
             .padding(.bottom, 8)
             .background {
                 if let headerColor {

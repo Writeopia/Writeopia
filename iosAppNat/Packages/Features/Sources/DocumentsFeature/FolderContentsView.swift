@@ -1056,42 +1056,77 @@ struct ItemCard: View {
     private var cornerRadius: CGFloat { style == .row ? 12 : 16 }
 
     private var card: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top) {
-                iconImage
-                    .font(.title2)
-                Spacer()
-                if isFavorite {
-                    Image(systemName: "star.fill")
-                        .font(.caption)
-                        .foregroundStyle(.yellow)
+        VStack(alignment: .leading, spacing: 0) {
+            // A document with a colored header shows it across the top of the card, with the
+            // title on it, like `HeaderPreviewDrawer` of the Compose app.
+            if let headerColor {
+                coloredHeader(headerColor)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                if headerColor == nil {
+                    HStack(alignment: .top) {
+                        iconImage
+                            .font(.title2)
+                        Spacer()
+                        favoriteStar
+                    }
+
+                    titleText
                 }
-            }
 
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(WrColors.textLight)
-                .lineLimit(style == .staggered ? 4 : 2)
-                .multilineTextAlignment(.leading)
+                if let preview, !preview.isEmpty {
+                    Text(preview)
+                        .font(.caption)
+                        .foregroundStyle(WrColors.textLighter)
+                        .lineLimit(style == .staggered ? 10 : 3)
+                        .multilineTextAlignment(.leading)
+                }
 
-            if let preview, !preview.isEmpty {
-                Text(preview)
-                    .font(.caption)
+                if style == .grid {
+                    Spacer(minLength: 0)
+                }
+
+                footer
+                    .font(.caption2)
                     .foregroundStyle(WrColors.textLighter)
-                    .lineLimit(style == .staggered ? 10 : 3)
-                    .multilineTextAlignment(.leading)
             }
+            .padding(14)
+        }
+        .frame(maxWidth: .infinity, minHeight: style == .grid ? 150 : nil, alignment: .topLeading)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+    }
 
-            if style == .grid {
-                Spacer(minLength: 0)
-            }
-
-            footer
-                .font(.caption2)
-                .foregroundStyle(WrColors.textLighter)
+    private func coloredHeader(_ color: Color) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            iconImage
+                .font(.title3)
+            titleText
         }
         .padding(14)
-        .frame(maxWidth: .infinity, minHeight: style == .grid ? 150 : nil, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 70, alignment: .bottomLeading)
+        .background(color)
+        .overlay(alignment: .topTrailing) {
+            favoriteStar
+                .padding(8)
+        }
+    }
+
+    private var titleText: some View {
+        Text(title)
+            .font(.headline)
+            .foregroundStyle(WrColors.textLight)
+            .lineLimit(style == .staggered ? 4 : 2)
+            .multilineTextAlignment(.leading)
+    }
+
+    @ViewBuilder
+    private var favoriteStar: some View {
+        if isFavorite {
+            Image(systemName: "star.fill")
+                .font(.caption)
+                .foregroundStyle(.yellow)
+        }
     }
 
     private var row: some View {
@@ -1159,6 +1194,10 @@ struct ItemCard: View {
 
     private var preview: String? {
         if case .document(let document) = item { document.preview } else { nil }
+    }
+
+    private var headerColor: Color? {
+        if case .document(let document) = item { document.headerColor.map { Color(argb: $0) } } else { nil }
     }
 
     @ViewBuilder
