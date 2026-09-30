@@ -83,7 +83,7 @@ fun DesktopApp(
     navigateToChooseWorkspace: () -> Unit,
     navigateToSpaceChoice: () -> Unit,
     navigateToAccountDeletionStarted: () -> Unit,
-    onLogout: () -> Unit = navigateToRegister,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
     startDestination: String = startDestination(),

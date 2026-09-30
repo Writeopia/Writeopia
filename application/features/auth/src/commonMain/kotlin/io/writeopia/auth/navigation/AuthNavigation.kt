@@ -128,7 +128,7 @@ fun NavGraphBuilder.authNavigation(
                     toAppNavigation()
                 },
                 navigateBack = {
-                    navController.navigateUpSafely()
+                    navController.navigateUp()
                 }
             )
         }
@@ -254,7 +254,7 @@ fun NavGraphBuilder.authNavigation(
                     onLoginRequest = authMenuViewModel::onLoginRequest,
                     navigateToRegister = navController::navigateAuthRegister,
                     navigateToForgotPassword = navController::navigateToForgotPasswordEmail,
-                    navigateUp = navController::navigateUpSafely,
+                    navigateUp = navController::navigateUp,
                     navigateNext = {
                         if (emailConfirmationRequired) {
                             navController.navigateToEmailConfirm()
@@ -295,7 +295,7 @@ fun NavGraphBuilder.authNavigation(
                     onResetCreateWorkspaceState = workspacesViewModel::resetCreateWorkspaceState,
                     retry = workspacesViewModel::loadWorkspaces,
                     onBackClick = if (canGoBack) {
-                        { navController.navigateUpSafely() }
+                        { navController.navigateUp() }
                     } else {
                         null
                     }
@@ -325,7 +325,7 @@ fun NavGraphBuilder.authNavigation(
                     passwordChanged = registerViewModel::passwordChanged,
                     onRegisterRequest = registerViewModel::onRegister,
                     onRegisterSuccess = navController::navigateToEmailConfirm,
-                    navigateBack = navController::navigateUpSafely
+                    navigateBack = navController::navigateUp
                 )
             }
         }
@@ -345,7 +345,7 @@ fun NavGraphBuilder.authNavigation(
                             navController.navigateToForgotPasswordCode()
                         }
                     },
-                    navigateBack = navController::navigateUpSafely
+                    navigateBack = navController::navigateUp
                 )
             }
         }
@@ -373,7 +373,7 @@ fun NavGraphBuilder.authNavigation(
                         }
                     },
                     onResendCode = forgotPasswordViewModel::onResendCode,
-                    navigateBack = navController::navigateUpSafely
+                    navigateBack = navController::navigateUp
                 )
             }
         }
@@ -402,7 +402,7 @@ fun NavGraphBuilder.authNavigation(
                             }
                         }
                     },
-                    navigateBack = navController::navigateUpSafely
+                    navigateBack = navController::navigateUp
                 )
             }
         }
@@ -411,14 +411,6 @@ fun NavGraphBuilder.authNavigation(
 
 fun NavController.navigateAuthRegister() {
     navigate(Destinations.AUTH_REGISTER.id)
-}
-
-fun NavController.navigateUpSafely(): Boolean {
-    val prevRoute = previousBackStackEntry?.destination?.route
-    if (previousBackStackEntry == null || prevRoute == Destinations.START_APP.id) {
-        return false
-    }
-    return navigateUp()
 }
 
 fun NavController.navigateAndResetStack(
