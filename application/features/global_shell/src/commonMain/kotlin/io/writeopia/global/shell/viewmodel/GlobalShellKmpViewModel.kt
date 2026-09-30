@@ -776,7 +776,7 @@ class GlobalShellKmpViewModel(
 
     override fun changeWorkspace(sideEffect: () -> Unit) {
         viewModelScope.launch {
-            authRepository.unselectAllWorkspaces()
+            hideSettings()
             sideEffect()
         }
     }

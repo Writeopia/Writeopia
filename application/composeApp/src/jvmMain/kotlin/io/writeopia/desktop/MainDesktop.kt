@@ -230,8 +230,8 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 WriteopiaDbInjector.initialize(database)
                 RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
                 WriteopiaConnectionInjector.setBaseUrl(
-                    "https://writeopia.io"
-//                        "http://localhost:8080"
+                    // "https://writeopia.io"
+                       "http://localhost:8080"
                 )
                 setupBearerTokenHandler()
 
@@ -294,11 +294,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                         )
                                     },
                                     navigateToChooseWorkspace = {
-                                        navigationController.navigate(Destinations.START_APP.id) {
-                                            popUpTo(navigationController.graph.startDestinationId) {
-                                                inclusive = true
-                                            }
-                                        }
+                                        navigationController.navigate(Destinations.CHOOSE_WORKSPACE.id)
                                     },
                                     navigateToSpaceChoice = {
                                         navigationController.navigate(
@@ -319,9 +315,15 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                         }
                                     },
                                     onLogout = {
-                                        navigationController.navigateAndResetStack(
-                                            Destinations.AUTH_MENU_INNER_NAVIGATION.id
-                                        )
+                                        // Resets the nav graph back to START_APP so the login-state
+                                        // check re-runs and can land on the space-choice screen.
+                                        navigationController.navigate(
+                                            Destinations.START_APP.id
+                                        ) {
+                                            popUpTo(navigationController.graph.startDestinationId) {
+                                                inclusive = true
+                                            }
+                                        }
                                     }
                                 )
                             }

@@ -283,7 +283,7 @@ fun DesktopApp(
                                         // Resets the nav graph back to START_APP so the login-state
                                         // check re-runs and can land on the space-choice screen.
                                         globalShellViewModel.logout(
-                                            onSuccessSideEffect = navigateToChooseWorkspace
+                                            onSuccessSideEffect = onLogout
                                         )
                                     },
                                     showDeleteConfirm = globalShellViewModel::showDeleteConfirm,

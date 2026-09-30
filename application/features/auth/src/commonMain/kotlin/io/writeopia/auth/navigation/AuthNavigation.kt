@@ -270,6 +270,9 @@ fun NavGraphBuilder.authNavigation(
         composable(Destinations.CHOOSE_WORKSPACE.id) {
             val workspacesViewModel = authInjection.provideChooseWorkspaceViewModel()
 
+            val canGoBack =
+                navController.previousBackStackEntry?.destination?.route == Destinations.MAIN_APP.id
+
             LaunchedEffect(Unit) {
                 workspacesViewModel.loadWorkspaces()
             }
@@ -291,9 +294,9 @@ fun NavGraphBuilder.authNavigation(
                     onCreateWorkspace = { name -> workspacesViewModel.createWorkspace(name) },
                     onResetCreateWorkspaceState = workspacesViewModel::resetCreateWorkspaceState,
                     retry = workspacesViewModel::loadWorkspaces,
-                    onBackClick = {
-                        navController.navigateAndResetStack(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
-                    }
+                    onBackClick = if (canGoBack) {
+                        { navController.navigateUpSafely() }
+                    } else null
                 )
             }
         }
