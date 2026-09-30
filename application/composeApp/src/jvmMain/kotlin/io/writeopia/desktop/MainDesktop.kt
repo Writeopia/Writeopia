@@ -178,6 +178,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 sendEvent(KeyboardEvent.REDO)
                 false
             }
+
             KeyboardCommands.isEquationEvent(keyEvent) -> {
                 sendEvent(KeyboardEvent.EQUATION)
                 false
@@ -293,7 +294,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                         )
                                     },
                                     navigateToChooseWorkspace = {
-                                        navigationController.navigate(Destinations.START_APP.id)
+                                        navigationController.navigate(Destinations.START_APP.id) {
+                                            popUpTo(navigationController.graph.startDestinationId) {
+                                                inclusive = true
+                                            }
+                                        }
                                     },
                                     navigateToSpaceChoice = {
                                         navigationController.navigate(
