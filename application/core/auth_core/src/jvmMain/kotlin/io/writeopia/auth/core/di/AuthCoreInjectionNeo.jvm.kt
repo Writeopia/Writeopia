@@ -16,23 +16,17 @@ actual class AuthCoreInjectionNeo(
         EncryptedAuthRepository(writeopiaDb)
     }
 
-    // WriteopiaConnectionInjector's client authenticates requests with whatever bearer
-    // token handler is current at request time, so it's safe to use here even before
-    // setupBearerTokenHandler() has run.
-    private val authApi: AuthApi by lazy {
-        AuthApi(
-            client = WriteopiaConnectionInjector.singleton().httpClient(),
-            baseUrl = WriteopiaConnectionInjector.getBaseUrl()
-        )
-    }
-
     private val tokenManager: TokenManager by lazy {
-        TokenManager(authRepository, authApi)
+        TokenManager(authRepository, ::provideAuthApi)
     }
 
     actual fun provideAuthRepository(): AuthRepository = authRepository
 
-    actual fun provideAuthApi(): AuthApi = authApi
+    actual fun provideAuthApi(): AuthApi =
+        AuthApi(
+            clientProvider = { WriteopiaConnectionInjector.singleton().httpClient() },
+            baseUrl = WriteopiaConnectionInjector.getBaseUrl()
+        )
 
     actual fun provideTokenManager(): TokenManager = tokenManager
 

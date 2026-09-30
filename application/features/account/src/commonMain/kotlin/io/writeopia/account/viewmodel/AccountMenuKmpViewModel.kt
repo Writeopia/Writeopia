@@ -39,7 +39,7 @@ internal class AccountMenuKmpViewModel(
 
     override val isLoggedIn: StateFlow<ResultData<Boolean>> by lazy {
         authRepository.listenForUser().map {
-            ResultData.Complete(it.id != WriteopiaUser.DISCONNECTED)
+            ResultData.Complete(it.isOnline)
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Loading())
     }
 

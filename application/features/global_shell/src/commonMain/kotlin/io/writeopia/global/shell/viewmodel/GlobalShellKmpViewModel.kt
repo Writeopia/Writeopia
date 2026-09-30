@@ -743,28 +743,28 @@ class GlobalShellKmpViewModel(
                 // Revoke refresh token on backend (non-web platforms)
                 val refreshToken = authRepository.getRefreshToken()
                 if (refreshToken != null) {
-                    val apiResult = authApi.logout(refreshToken)
-                    if (apiResult is ResultData.Error) {
-                        // Backend logout failed - don't clean local state
-                        return@launch
+                    try {
+                        authApi.logout(refreshToken)
+                    } catch (e: Exception) {
+                        println("Backend logout call failed: ${e.message}")
                     }
                 }
 
                 // Call repository logout - for web this calls the backend
                 // to clear HttpOnly cookies
-                val repoResult = authRepository.logout()
-                if (repoResult is ResultData.Error) {
-                    // Backend logout failed - don't clean local state
-                    return@launch
-                }
+                authRepository.logout()
 
-                // Only clean local state after successful backend logout
+                // Clean local state
+                authRepository.unselectAllUsers()
                 authRepository.unselectAllWorkspaces()
                 authRepository.clearTokens()
 
                 // Clear singletons that cache API instances with old HttpClient
                 WriteopiaConnectionInjector.clearInstance()
                 FolderStateController.clearInstance()
+
+                workspaceHandler.clearWorkspaces()
+                hideSettings()
 
                 loginStateTrigger.value = GenerateId.generate()
                 onSuccessSideEffect()

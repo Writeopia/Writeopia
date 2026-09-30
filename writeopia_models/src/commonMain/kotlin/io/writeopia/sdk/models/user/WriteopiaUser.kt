@@ -6,6 +6,9 @@ data class WriteopiaUser(
     val name: String,
     val tier: Tier = Tier.FREE
 ) {
+    val isOnline: Boolean
+        get() = id != DISCONNECTED && id != NO_USER && name.isNotBlank()
+
     companion object {
         const val DISCONNECTED = "disconnected_user"
         const val NO_USER = "no_user"

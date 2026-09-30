@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import io.writeopia.auth.core.manager.LoginStatus
@@ -79,7 +80,7 @@ fun NavGraphBuilder.startScreen(
                     LoginStatus.EMAIL_NOT_CONFIRMED -> Destinations.EMAIL_CONFIRM.id
                     LoginStatus.ONLINE, LoginStatus.OFFLINE_CHOSEN -> Destinations.MAIN_APP.id
                 }
-                navigationController.navigate(destination)
+                navigationController.navigateAndResetStack(destination)
             }
         }
     }
@@ -127,7 +128,7 @@ fun NavGraphBuilder.authNavigation(
                     toAppNavigation()
                 },
                 navigateBack = {
-                    navController.navigateUp()
+                    navController.navigateUpSafely()
                 }
             )
         }
@@ -158,9 +159,7 @@ fun NavGraphBuilder.authNavigation(
                 },
                 onResend = emailConfirmViewModel::onResend,
                 navigateBack = {
-                    navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id) {
-                        popUpTo(Destinations.EMAIL_CONFIRM.id) { inclusive = true }
-                    }
+                    navController.navigateAndResetStack(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
                 }
             )
         }
@@ -255,7 +254,7 @@ fun NavGraphBuilder.authNavigation(
                     onLoginRequest = authMenuViewModel::onLoginRequest,
                     navigateToRegister = navController::navigateAuthRegister,
                     navigateToForgotPassword = navController::navigateToForgotPasswordEmail,
-                    navigateUp = navController::navigateUp,
+                    navigateUp = navController::navigateUpSafely,
                     navigateNext = {
                         if (emailConfirmationRequired) {
                             navController.navigateToEmailConfirm()
@@ -293,9 +292,7 @@ fun NavGraphBuilder.authNavigation(
                     onResetCreateWorkspaceState = workspacesViewModel::resetCreateWorkspaceState,
                     retry = workspacesViewModel::loadWorkspaces,
                     onBackClick = {
-                        navController.navigate(Destinations.AUTH_MENU.id) {
-                            popUpTo(Destinations.CHOOSE_WORKSPACE.id) { inclusive = true }
-                        }
+                        navController.navigateAndResetStack(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
                     }
                 )
             }
@@ -323,7 +320,7 @@ fun NavGraphBuilder.authNavigation(
                     passwordChanged = registerViewModel::passwordChanged,
                     onRegisterRequest = registerViewModel::onRegister,
                     onRegisterSuccess = navController::navigateToEmailConfirm,
-                    navigateBack = navController::navigateUp
+                    navigateBack = navController::navigateUpSafely
                 )
             }
         }
@@ -343,7 +340,7 @@ fun NavGraphBuilder.authNavigation(
                             navController.navigateToForgotPasswordCode()
                         }
                     },
-                    navigateBack = navController::navigateUp
+                    navigateBack = navController::navigateUpSafely
                 )
             }
         }
@@ -371,7 +368,7 @@ fun NavGraphBuilder.authNavigation(
                         }
                     },
                     onResendCode = forgotPasswordViewModel::onResendCode,
-                    navigateBack = navController::navigateUp
+                    navigateBack = navController::navigateUpSafely
                 )
             }
         }
@@ -400,7 +397,7 @@ fun NavGraphBuilder.authNavigation(
                             }
                         }
                     },
-                    navigateBack = navController::navigateUp
+                    navigateBack = navController::navigateUpSafely
                 )
             }
         }
@@ -411,12 +408,36 @@ fun NavController.navigateAuthRegister() {
     navigate(Destinations.AUTH_REGISTER.id)
 }
 
+fun NavController.navigateUpSafely(): Boolean {
+    val prevRoute = previousBackStackEntry?.destination?.route
+    if (previousBackStackEntry == null || prevRoute == Destinations.START_APP.id) {
+        return false
+    }
+    return navigateUp()
+}
+
+fun NavController.navigateAndResetStack(
+    destination: String,
+    builder: (NavOptionsBuilder.() -> Unit)? = null
+) {
+    val popTarget = currentBackStack.value
+        .getOrNull(1)
+        ?.destination?.id ?: graph.startDestinationId
+
+    navigate(destination) {
+        popUpTo(popTarget) {
+            inclusive = true
+        }
+        builder?.invoke(this)
+    }
+}
+
 fun NavController.navigateToApp() {
-    navigate(Destinations.MAIN_APP.id)
+    navigateAndResetStack(Destinations.MAIN_APP.id)
 }
 
 fun NavController.navigateToWorkspaceChoice() {
-    navigate(Destinations.CHOOSE_WORKSPACE.id)
+    navigateAndResetStack(Destinations.CHOOSE_WORKSPACE.id)
 }
 
 fun NavController.navigateToEmailConfirm() {
@@ -436,9 +457,5 @@ fun NavController.navigateToForgotPasswordNewPassword() {
 }
 
 fun NavController.navigateToAccountDeletionPending() {
-    navigate(Destinations.ACCOUNT_DELETION_STARTED.id) {
-        popUpTo(graph.startDestinationId) {
-            inclusive = true
-        }
-    }
+    navigateAndResetStack(Destinations.ACCOUNT_DELETION_STARTED.id)
 }

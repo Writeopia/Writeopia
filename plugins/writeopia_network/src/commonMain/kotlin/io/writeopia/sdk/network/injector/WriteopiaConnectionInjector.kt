@@ -141,8 +141,8 @@ private object ApiInjectorDefaults {
                 // stop the web BFF from bridging the session cookie into the header.
                 loadTokens {
                     val handler = WriteopiaConnectionInjector.currentBearerTokenHandler()
-                    val accessToken = handler?.getIdToken()?.takeIf { it.isNotBlank() }
-                        ?: return@loadTokens null
+                    val accessToken = handler?.getIdToken()?.takeIf { it.isNotBlank() } ?: return@loadTokens null
+                    val refreshToken = handler?.getRefreshToken() ?: ""
 
                     BearerTokens(accessToken, handler.getRefreshToken())
                 }
