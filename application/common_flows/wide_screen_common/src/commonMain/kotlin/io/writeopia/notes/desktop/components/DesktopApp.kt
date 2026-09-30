@@ -97,6 +97,7 @@ fun DesktopApp(
                 keyboardEventFlow = keyboardEventFlow,
                 imageUploader = WorkspaceInjection.singleton().provideImageUploader(),
             )
+
             else -> EditorKmpInjector.desktop(
                 selectionState = selectionState,
                 keyboardEventFlow = keyboardEventFlow,
@@ -373,4 +374,3 @@ fun DesktopApp(
 
 fun startDestination() =
     "${Destinations.CHOOSE_NOTE.id}/${NotesNavigationType.ROOT.type}/path"
-    
