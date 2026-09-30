@@ -76,6 +76,7 @@ fun NavGraphBuilder.startScreen(
                     } else {
                         Destinations.WORKSPACE_TYPE_CHOICE.id
                     }
+
                     LoginStatus.CHOOSE_WORKSPACE -> Destinations.CHOOSE_WORKSPACE.id
                     LoginStatus.EMAIL_NOT_CONFIRMED -> Destinations.EMAIL_CONFIRM.id
                     LoginStatus.ONLINE, LoginStatus.OFFLINE_CHOSEN -> Destinations.MAIN_APP.id
@@ -294,11 +295,8 @@ fun NavGraphBuilder.authNavigation(
                     onCreateWorkspace = { name -> workspacesViewModel.createWorkspace(name) },
                     onResetCreateWorkspaceState = workspacesViewModel::resetCreateWorkspaceState,
                     retry = workspacesViewModel::loadWorkspaces,
-                    onBackClick = if (canGoBack) {
-                        { navController.navigateUp() }
-                    } else {
-                        null
-                    }
+                    onBackClick = { navController.navigateUp() },
+                    canGoBack
                 )
             }
         }

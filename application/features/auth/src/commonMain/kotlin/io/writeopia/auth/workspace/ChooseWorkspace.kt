@@ -53,7 +53,9 @@ fun BoxScope.ChooseWorkspace(
     onCreateWorkspace: (String) -> Unit,
     onResetCreateWorkspaceState: () -> Unit,
     retry: () -> Unit,
-    onBackClick: (() -> Unit)? = null
+    onBackClick: () -> Unit,
+    canGoBack: Boolean
+
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
 
@@ -67,7 +69,7 @@ fun BoxScope.ChooseWorkspace(
             }
         )
     }
-    if (onBackClick != null && LocalPlatform.current != PlatformType.WEB) {
+    if (canGoBack && LocalPlatform.current != PlatformType.WEB) {
         Icon(
             modifier = Modifier
                 .align(Alignment.TopStart)

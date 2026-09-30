@@ -293,7 +293,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                         )
                                     },
                                     navigateToChooseWorkspace = {
-                                        navigationController.navigate(Destinations.CHOOSE_WORKSPACE.id)
+                                        navigationController.navigate(Destinations.START_APP.id)
                                     },
                                     navigateToSpaceChoice = {
                                         navigationController.navigate(

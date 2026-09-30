@@ -119,9 +119,6 @@ fun SettingsDialog(
 //                .padding(horizontal = 40.dp, vertical = 20.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
-            val userOnline by userOnlineState.collectAsState()
-            val isUserOnline = userOnline.isOnline
-
             SettingsPanel(
                 modifier = Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
                 accountScreen = {
