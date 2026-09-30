@@ -1,6 +1,7 @@
 package io.writeopia.api.core.auth.utils
 
 import com.auth0.jwt.JWT
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
 private val logger = LoggerFactory.getLogger("ApiGatewayAuth")
+private const val COOKIE_ACCESS_TOKEN = "writeopia_access"
 
 /**
  * Extract userId from X-Forwarded-Authorization header (from API Gateway).
@@ -18,8 +20,15 @@ private val logger = LoggerFactory.getLogger("ApiGatewayAuth")
  * @return userId if found, null otherwise
  */
 fun ApplicationCall.getUserIdFromApiGateway(debugMode: Boolean = false): String? {
-    // In debug mode, extract userId from the access token cookie for testing
-    val forwardedAuth = request.headers["X-Forwarded-Authorization"]
+    val forwardedAuth = run {
+        if (!debugMode) {
+            return@run request.headers["X-Forwarded-Authorization"]
+        }
+        request.headers["X-Forwarded-Authorization"]
+            ?: request.headers[HttpHeaders.Authorization]
+            ?: request.cookies[COOKIE_ACCESS_TOKEN]
+    }
+
     val token = if (forwardedAuth?.startsWith("Bearer ", ignoreCase = true) == true) {
         forwardedAuth.substring(7).trim()
     } else {
