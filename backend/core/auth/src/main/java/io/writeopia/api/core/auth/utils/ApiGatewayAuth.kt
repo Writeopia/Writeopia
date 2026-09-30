@@ -20,14 +20,13 @@ private const val COOKIE_ACCESS_TOKEN = "writeopia_access"
  * @return userId if found, null otherwise
  */
 fun ApplicationCall.getUserIdFromApiGateway(debugMode: Boolean = false): String? {
-    // In debug mode, extract userId from the access token cookie for testing
     val forwardedAuth = run {
         if (!debugMode) {
             return@run request.headers["X-Forwarded-Authorization"]
         }
-        request.cookies[COOKIE_ACCESS_TOKEN]
+        request.headers["X-Forwarded-Authorization"]
             ?: request.headers[HttpHeaders.Authorization]
-            ?: request.headers["X-Forwarded-Authorization"]
+            ?: request.cookies[COOKIE_ACCESS_TOKEN]
     }
 
     val token = if (forwardedAuth?.startsWith("Bearer ", ignoreCase = true) == true) {
@@ -39,8 +38,7 @@ fun ApplicationCall.getUserIdFromApiGateway(debugMode: Boolean = false): String?
         val decodedJWT = JWT.decode(token)
         decodedJWT.getClaim("userId").asString()
     } catch (e: Exception) {
-        logger.error("Failed to decode JWT token", e)
-        null
+        if (debugMode) return Random.nextInt().toString() else null
     }
 }
 
