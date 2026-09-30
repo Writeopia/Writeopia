@@ -519,15 +519,14 @@ private fun FolderItem(
     modifier: Modifier = Modifier,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
 ) {
-//    sharedTransitionScope.run {
-    Box(
-        shadowModifier()
-//                .sharedBounds(
-//                rememberSharedContentState(key = "folderTransition${folderUi.documentId}"),
-//                animatedVisibilityScope = animatedVisibilityScope,
-//                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
-//            )
-    ) {
+    // Folders are selected by the drag box too, like the documents.
+    SelectableByDrag(shadowModifier()) { isInsideDrag ->
+        if (isInsideDrag != null) {
+            LaunchedEffect(isInsideDrag) {
+                selectionListener(folderUi.documentId, isInsideDrag)
+            }
+        }
+
         DropTarget { inBound, data ->
             val menuItemUI = data?.info as? MenuItemUi
             if (inBound && menuItemUI != null) {

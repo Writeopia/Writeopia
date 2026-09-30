@@ -2430,6 +2430,17 @@
         }
       }
     },
+    "Move here, or open a folder to move the items into it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mova para cá, ou abra uma pasta para mover os itens para ela."
+          }
+        }
+      }
+    },
     "Move to…" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3645,6 +3656,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Não foi possível salvar a imagem neste dispositivo."
+          }
+        }
+      }
+    },
+    "The items are here" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os itens estão aqui"
+          }
+        }
+      }
+    },
+    "The items are here. Open a folder to move them into it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os itens estão aqui. Abra uma pasta para movê-los para ela."
           }
         }
       }

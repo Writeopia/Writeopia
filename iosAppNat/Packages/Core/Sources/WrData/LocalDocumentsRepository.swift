@@ -112,6 +112,27 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
         return FolderContents(folders: folders, documents: documents)
     }
 
+    public func favorites() async throws -> FolderContents {
+        try seedIfNeeded()
+
+        let folders = try db.query(
+            "\(Self.folderColumns) FROM folder WHERE favorite = 1 AND deleted = 0",
+            row: folder
+        ).map { folder -> Folder in
+            var folder = folder
+            folder.itemCount = (try? itemCount(of: folder.id)) ?? 0
+            return folder
+        }
+        .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+
+        let documents = try db.query(
+            "\(Self.documentColumns) FROM document WHERE favorite = 1 AND deleted = 0 ORDER BY last_updated_at DESC",
+            row: documentRow
+        ).map(withContent)
+
+        return FolderContents(folders: folders, documents: documents)
+    }
+
     public func document(id: String) async throws -> WrDocument {
         try seedIfNeeded()
         guard let document = try storedDocument(id: id), !document.deleted else {
@@ -166,10 +187,12 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
     }
 
     public func moveDocument(id: String, toFolder folderId: String) async throws {
-        guard try storedDocument(id: id) != nil else { throw APIError.notFound }
+        guard let stored = try storedDocument(id: id) else { throw APIError.notFound }
+        // Always later than the last sync, so a move right after a sync is still sent.
+        let time = max(Date.nowMillis, (stored.lastSyncedAt ?? 0) + 1)
         try db.run(
             "UPDATE document SET parent_document_id = ?, last_updated_at = ? WHERE id = ?",
-            [.text(folderId), .integer(Date.nowMillis), .text(id)]
+            [.text(folderId), .integer(time), .text(id)]
         )
     }
 
@@ -367,6 +390,23 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
             [.text(folderId)],
             row: documentRow
         ).map(withContent)
+    }
+
+    /// Documents changed since they were last sent, wherever they are (edited, created or moved
+    /// while the backend couldn't be reached).
+    public func storedOutdatedDocuments() throws -> [WrDocument] {
+        try db.query(
+            "\(Self.documentColumns) FROM document WHERE deleted = 0 AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)",
+            row: documentRow
+        ).map(withContent)
+    }
+
+    /// Folders changed since they were last sent, wherever they are.
+    public func storedOutdatedFolders() throws -> [Folder] {
+        try db.query(
+            "\(Self.folderColumns) FROM folder WHERE deleted = 0 AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)",
+            row: folder
+        )
     }
 
     /// Folders directly inside `folderId`, soft deleted ones included.

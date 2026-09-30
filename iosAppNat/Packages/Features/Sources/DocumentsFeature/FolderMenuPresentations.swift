@@ -122,7 +122,7 @@ struct FolderOptionsSheet: View {
                 if isFolder {
                     Section {
                         row("Edit folder", systemImage: "pencil", id: "edit") { onAction(.edit) }
-                        row("Move to…", systemImage: "folder", id: "move") { onAction(.move) }
+                        row("Move to…", systemImage: "arrow.forward.folder", id: "move") { onAction(.move) }
                         row("Delete folder", systemImage: "trash", id: "delete", tint: .red) { onAction(.delete) }
                     } header: {
                         Text(folderTitle)

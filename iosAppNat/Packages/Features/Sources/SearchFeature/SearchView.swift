@@ -129,6 +129,9 @@ struct SearchView: View {
                     }
                 case .folder(let folder):
                     Text(folder.displayTitle)
+                case .favorites:
+                    // Search only opens documents; the favorites live in the Documents tab.
+                    Text("Favorites")
                 }
             }
         }

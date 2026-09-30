@@ -1,4 +1,5 @@
 import NoteEditor
+import WriteopiaUI
 import Writeopia
 import Observation
 import SwiftUI
@@ -23,6 +24,8 @@ final class FolderContentsViewModel {
     private(set) var selectedIds: Set<String> = []
     private(set) var isSummarizing = false
     var summaryError: String?
+    /// The summary in progress, awaited by tests.
+    @ObservationIgnored private(set) var summaryTask: Task<Void, Never>?
 
     /// The folder shown, with its current title and icon; nil for the root.
     private(set) var folder: Folder?
@@ -49,10 +52,19 @@ final class FolderContentsViewModel {
         self.settings = settings
     }
 
+    /// The "folder" that lists every favorite of the workspace.
+    static let favoritesId = "wr.favorites"
+
     var isRoot: Bool { folderId == Folder.rootId }
+    var isFavorites: Bool { folderId == Self.favoritesId }
+    /// Items can be created and dropped only in a real folder.
+    var canCreateItems: Bool { !isFavorites }
 
     var hasSelection: Bool { !selectedIds.isEmpty }
     var canSummarize: Bool { aiClient != nil }
+    /// Folders can be selected, but not duplicated nor summarized: with one in the selection,
+    /// only favorite and delete are offered, like the Compose app.
+    var selectionHasFolders: Bool { folders.contains { selectedIds.contains($0.id) } }
 
     func select(_ id: String, _ selected: Bool) {
         if selected {
@@ -97,6 +109,41 @@ final class FolderContentsViewModel {
         await perform { try await self.repository.setFavorite(ids: ids, favorite: favorite) }
     }
 
+    /// The selected folders, which the picker mustn't offer as a destination.
+    var selectedFolderIds: Set<String> {
+        Set(folders.map(\.id)).intersection(selectedIds)
+    }
+
+    /// Moves every selected folder and document into `folderId`, like dragging the selection
+    /// onto a folder in the Compose app. Each move bumps the item's timestamp, so the next sync
+    /// sends it to the backend when it couldn't be sent right away.
+    func moveSelected(to folderId: String) async {
+        let ids = selectedIds.subtracting([folderId])
+        clearSelection()
+        guard !ids.isEmpty else { return }
+
+        let movingFolders = Set(folders.map(\.id)).intersection(ids)
+        folders.removeAll { ids.contains($0.id) }
+        documents.removeAll { ids.contains($0.id) }
+
+        var failure: String?
+        for id in ids {
+            do {
+                if movingFolders.contains(id) {
+                    try await repository.moveFolder(id: id, toFolder: folderId)
+                } else {
+                    try await repository.moveDocument(id: id, toFolder: folderId)
+                }
+            } catch {
+                failure = failure ?? error.userMessage
+            }
+        }
+        if let failure {
+            actionError = failure
+        }
+        await load()
+    }
+
     /// Deletes the selection (folders with everything inside).
     func deleteSelected() async {
         let ids = selectedIds
@@ -106,10 +153,35 @@ final class FolderContentsViewModel {
         await perform { try await self.repository.deleteItems(ids: Array(ids)) }
     }
 
+    /// Dropped image files become one note each in this folder, an untitled document with the
+    /// image as its only step, like `importImages` of the Compose notes menu.
+    func importImages(_ urls: [URL]) async {
+        let images = urls.filter { ImageProcessing.supportedExtensions.contains($0.pathExtension.lowercased()) }
+        guard canCreateItems, !images.isEmpty else { return }
+
+        for url in images {
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+            guard let data = try? Data(contentsOf: url), let jpeg = ImageProcessing.jpeg(from: data),
+                  let file = try? ImageFiles.save(jpeg)
+            else {
+                actionError = String(localized: "\(url.lastPathComponent) can't be added as an image.")
+                continue
+            }
+
+            await perform {
+                var document = try await self.repository.createDocument(title: "", parentId: self.folderId)
+                document.content.append(StoryStep(type: .image, path: file.path(percentEncoded: false), position: 1))
+                try await self.repository.save(document)
+            }
+        }
+        await load()
+    }
+
     /// Summarizes the selected documents with the AI into a new document of this folder, like
     /// "AI Summary" of the Compose selection menu. Runs with Apple Intelligence on the device, or
     /// the cloud AI (see `AppSession.aiClient`).
-    func summarizeSelected() async {
+    func summarizeSelected() {
         guard let aiClient, hasSelection else { return }
         let ids = documents.map(\.id).filter { selectedIds.contains($0) }
         clearSelection()
@@ -118,8 +190,22 @@ final class FolderContentsViewModel {
             return
         }
 
+        summaryTask?.cancel()
         isSummarizing = true
-        defer { isSummarizing = false }
+        summaryTask = Task { await summarize(ids: ids, with: aiClient) }
+    }
+
+    /// Stops the summary in progress; nothing is saved.
+    func cancelSummary() {
+        summaryTask?.cancel()
+        summaryTask = nil
+    }
+
+    private func summarize(ids: [String], with aiClient: AiStreaming) async {
+        defer {
+            isSummarizing = false
+            summaryTask = nil
+        }
 
         do {
             var prompt = ""
@@ -134,14 +220,20 @@ final class FolderContentsViewModel {
             for try await partial in aiClient.stream(.summary, prompt: prompt) {
                 answer = partial
             }
+            // A cancelled stream just ends: don't mistake it for an empty answer.
+            try Task.checkCancellation()
 
             guard let summary = MarkdownToDocument.read(answer, parentId: folderId, workspaceId: "") else {
                 summaryError = String(localized: "The AI didn't return a summary.")
                 return
             }
+            try Task.checkCancellation()
             try await repository.save(summary)
             await load()
+        } catch is CancellationError {
+            return
         } catch {
+            if Task.isCancelled { return }
             summaryError = error.userMessage
         }
     }
@@ -161,7 +253,8 @@ final class FolderContentsViewModel {
 
         await loadLocal()
 
-        guard let syncing = repository as? DocumentSyncing else { return }
+        // Favorites come from what's synced already; a folder syncs itself.
+        guard !isFavorites, let syncing = repository as? DocumentSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
         do {
@@ -178,10 +271,12 @@ final class FolderContentsViewModel {
 
     func loadLocal() async {
         do {
-            let contents = try await repository.folderContents(folderId: folderId)
+            let contents = try isFavorites
+                ? await repository.favorites()
+                : await repository.folderContents(folderId: folderId)
             folders = contents.folders
             documents = contents.documents
-            if !isRoot {
+            if !isRoot, !isFavorites {
                 setPath(try await repository.folderPath(to: folderId))
             }
             errorMessage = nil
@@ -296,7 +391,7 @@ final class FolderContentsViewModel {
 
     /// Deletes this folder with everything inside it. Returns whether it was deleted.
     func deleteFolder() async -> Bool {
-        guard !isRoot else { return false }
+        guard !isRoot, !isFavorites else { return false }
         do {
             try await repository.deleteItems(ids: [folderId])
             return true
@@ -330,6 +425,8 @@ final class FolderContentsViewModel {
 public enum DocumentsRoute: Hashable {
     case folder(Folder)
     case document(id: String, title: String)
+    /// Every favorite of the workspace, like "Favorites" of the Compose side menu.
+    case favorites
 }
 
 /// Documents tab: the folders and documents of the current workspace.
@@ -369,6 +466,8 @@ private struct DocumentsNavigation: View {
                     switch route {
                     case .folder(let folder):
                         folderView(id: folder.id, folder: folder, title: folder.displayTitle, rootTitle: rootTitle)
+                    case .favorites:
+                        folderView(id: FolderContentsViewModel.favoritesId, title: String(localized: "Favorites"), rootTitle: rootTitle)
                     case .document(let id, let title):
                         NoteEditorView(
                             documentId: id,
@@ -407,6 +506,7 @@ struct FolderContentsView: View {
     @Binding private var path: NavigationPath
     @State private var newItem: NewItem?
     @State private var showsNewFolder = false
+    @State private var showsMoveSelection = false
     @State private var newItemTitle = ""
     /// Folder currently under a drag, highlighted as the drop target.
     @State private var dropTargetId: String?
@@ -490,6 +590,13 @@ struct FolderContentsView: View {
                 .frame(maxWidth: .infinity, minHeight: geometry.size.height, alignment: .top)
                 .contentShape(Rectangle())
                 .dragSelectionBox(dragSelection)
+                // Image files dropped from the Finder become notes, like the Compose app.
+                .dropDestination(for: URL.self) { urls, _ in
+                    let images = urls.filter { ImageProcessing.supportedExtensions.contains($0.pathExtension.lowercased()) }
+                    guard !images.isEmpty else { return false }
+                    Task { await viewModel.importImages(images) }
+                    return true
+                }
                 .onAppear {
                     dragSelection.onChange = { [viewModel] id, isInside in viewModel.select(id, isInside) }
                     swipeSelection.onScrollViewFound = { [dragSelection] scrollView in dragSelection.scrollView = scrollView }
@@ -507,24 +614,46 @@ struct FolderContentsView: View {
                 DocumentsSelectionMenu(
                     count: viewModel.selectedIds.count,
                     isFavorite: viewModel.selectionIsFavorite,
-                    showsSummary: viewModel.canSummarize,
+                    showsCopy: !viewModel.selectionHasFolders,
+                    showsSummary: viewModel.canSummarize && !viewModel.selectionHasFolders,
                     onCopy: { Task { await viewModel.copySelected() } },
                     onFavorite: { Task { await viewModel.favoriteSelected() } },
-                    onSummary: { Task { await viewModel.summarizeSelected() } },
+                    onSummary: { viewModel.summarizeSelected() },
+                    onMove: { showsMoveSelection = true },
                     onDelete: { Task { await viewModel.deleteSelected() } },
                     onClose: { withAnimation(.snappy) { viewModel.clearSelection() } }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             } else if viewModel.isSummarizing {
-                Label("Summarizing…", systemImage: "sparkles")
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 16)
-                    .frame(height: 44)
-                    .background(.regularMaterial, in: Capsule())
-                    .padding(.bottom, 8)
+                HStack(spacing: 10) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Label("Summarizing…", systemImage: "sparkles")
+                        .font(.subheadline.weight(.semibold))
+                    Button {
+                        withAnimation(.snappy) { viewModel.cancelSummary() }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.footnote.weight(.bold))
+                            .frame(width: 28, height: 28)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help("Cancel summary")
+                    .accessibilityLabel("Cancel summary")
+                    .accessibilityIdentifier("documents.summary.cancel")
+                }
+                .padding(.leading, 16)
+                .padding(.trailing, 6)
+                .frame(height: 44)
+                .background(.regularMaterial, in: Capsule())
+                .padding(.bottom, 8)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.snappy, value: viewModel.hasSelection)
+        .animation(.snappy, value: viewModel.isSummarizing)
         .alert(
             "Could not summarize",
             isPresented: Binding(get: { viewModel.summaryError != nil }, set: { if !$0 { viewModel.summaryError = nil } })
@@ -553,7 +682,7 @@ struct FolderContentsView: View {
         // A large title can't show an icon, so inside a folder the title is inline, with the icon.
         .toolbarTitleDisplayMode(viewModel.isRoot ? .automatic : .inline)
         .toolbar {
-            if !viewModel.isRoot {
+            if !viewModel.isRoot, !viewModel.isFavorites {
                 ToolbarItem(placement: .principal) {
                     folderTitle
                 }
@@ -568,22 +697,24 @@ struct FolderContentsView: View {
                         .accessibilityLabel("Syncing")
                 }
             }
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button {
-                        present(.document)
+            if viewModel.canCreateItems {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button {
+                            present(.document)
+                        } label: {
+                            Label("New document", systemImage: "doc.badge.plus")
+                        }
+                        Button {
+                            showsNewFolder = true
+                        } label: {
+                            Label("New folder", systemImage: "folder.badge.plus")
+                        }
                     } label: {
-                        Label("New document", systemImage: "doc.badge.plus")
+                        Label("Add", systemImage: "plus")
                     }
-                    Button {
-                        showsNewFolder = true
-                    } label: {
-                        Label("New folder", systemImage: "folder.badge.plus")
-                    }
-                } label: {
-                    Label("Add", systemImage: "plus")
+                    .accessibilityIdentifier("documents.add")
                 }
-                .accessibilityIdentifier("documents.add")
             }
         }
         .task { await viewModel.load() }
@@ -597,6 +728,17 @@ struct FolderContentsView: View {
             TextField("Title", text: $newItemTitle)
             Button("Cancel", role: .cancel) {}
             Button("Create") { create(item) }
+        }
+        .sheet(isPresented: $showsMoveSelection) {
+            FolderPickerSheet(
+                excludedFolderIds: viewModel.selectedFolderIds,
+                currentParentId: viewModel.folderId,
+                rootTitle: rootTitle,
+                repository: viewModel.repository
+            ) { folderId in
+                Task { await viewModel.moveSelected(to: folderId) }
+            }
+            .wrSheetSize(width: 440, height: 520)
         }
         .sheet(isPresented: $showsNewFolder) {
             FolderEditSheet(folder: nil) { title, icon in
@@ -736,7 +878,7 @@ struct FolderContentsView: View {
 
     private var folderMenuPresentations: FolderMenuPresentations {
         FolderMenuPresentations(
-            isFolder: !viewModel.isRoot,
+            isFolder: !viewModel.isRoot && !viewModel.isFavorites,
             folderTitle: viewModel.folder?.displayTitle ?? title,
             folder: viewModel.folder,
             rootTitle: rootTitle,

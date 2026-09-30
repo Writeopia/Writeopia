@@ -97,7 +97,17 @@ public struct NoteEditorView: View {
         ]
     }
 
-    /// An image file picked on the Mac.
+    /// Image files dropped on the editor are added where the cursor is, like the Compose app.
+    private func dropImages(_ urls: [URL]) -> Bool {
+        let images = urls.filter { ImageProcessing.supportedExtensions.contains($0.pathExtension.lowercased()) }
+        guard !images.isEmpty, !viewModel.isLocked else { return false }
+        for url in images {
+            addImage(fileURL: url)
+        }
+        return true
+    }
+
+    /// An image file picked on the Mac, or dropped on the editor.
     private func addImage(fileURL url: URL) {
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
@@ -231,6 +241,7 @@ public struct NoteEditorView: View {
         Group {
             if viewModel.hasLoaded {
                 WriteopiaEditor(manager: viewModel.writeopiaManager, customDrawers: customDrawers)
+                    .dropDestination(for: URL.self) { urls, _ in dropImages(urls) }
                     .safeAreaInset(edge: .bottom, spacing: 0) {
                         // A locked document can't be edited, so its menu is hidden. While lines are
                         // selected, the selection menu takes the place of the regular one.

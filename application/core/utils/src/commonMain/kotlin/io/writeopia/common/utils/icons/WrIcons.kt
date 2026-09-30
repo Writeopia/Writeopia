@@ -31,6 +31,7 @@ import io.writeopia.common.utils.icons.all.EyeClosed
 import io.writeopia.common.utils.icons.all.FileDown
 import io.writeopia.common.utils.icons.all.FileMinus
 import io.writeopia.common.utils.icons.all.FileUp
+import io.writeopia.common.utils.icons.all.FolderInput
 import io.writeopia.common.utils.icons.all.FolderOpen
 import io.writeopia.common.utils.icons.all.FolderSync
 import io.writeopia.common.utils.icons.all.Heart
@@ -81,6 +82,9 @@ object WrIcons {
     val fileDownload: ImageVector = FileDown
 
     val folder: ImageVector = FolderOpen
+
+    /** Moving items into a folder. */
+    val moveToFolder: ImageVector = FolderInput
 
     val exportFile: ImageVector = FileUp
 

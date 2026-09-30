@@ -146,33 +146,97 @@ class FolderStateController private constructor(
         editingFolderMutable.value = null
     }
 
+    private val _moveSelectionState = MutableStateFlow(false)
+    override val moveSelectionState: StateFlow<Boolean> = _moveSelectionState.asStateFlow()
+
+    override fun showMoveSelection() {
+        if (_selectedNotes.value.isNotEmpty()) {
+            _moveSelectionState.value = true
+        }
+    }
+
+    override fun hideMoveSelection() {
+        _moveSelectionState.value = false
+    }
+
+    override fun moveSelectionTo(parentId: String) {
+        val ids = _selectedNotes.value - parentId
+        _moveSelectionState.value = false
+        if (ids.isEmpty()) return
+
+        coroutineScope.launch(Dispatchers.Default) {
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            val moved = notesUseCase.moveItemsById(ids = ids, workspaceId = workspace.id, parentId = parentId)
+            _selectedNotes.value = emptySet()
+            _folderChanges.update { it + 1 }
+            sendMovesToBackend(moved, parentId, workspace)
+        }
+    }
+
+    /**
+     * Tells the backend about the moves right away, so it records the events. When it can't be
+     * reached, the moved items stay outdated locally and the next workspace sync sends them.
+     */
+    private suspend fun sendMovesToBackend(moved: List<MenuItem>, parentId: String, workspace: Workspace) {
+        moved.forEach { item ->
+            sendMoveToBackend(item.id, isFolder = item is Folder, parentId, workspace)
+        }
+    }
+
+    private suspend fun sendMoveToBackend(
+        id: String,
+        isFolder: Boolean,
+        parentId: String,
+        workspace: Workspace
+    ) {
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return
+
+        // Best effort: without the backend the item stays outdated locally and the next
+        // workspace sync sends it.
+        runCatching {
+            if (isFolder) {
+                documentsApi.moveFolder(id, parentId, workspace.id)
+            } else {
+                documentsApi.moveDocument(id, parentId, workspace.id)
+            }
+        }
+    }
+
     override fun moveToFolder(menuItemUi: MenuItemUi, parentId: String) {
         if (menuItemUi.documentId != parentId) {
             coroutineScope.launch(Dispatchers.Default) {
+                val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
                 if (_selectedNotes.value.isEmpty()) {
-                    moveItemToFolder(menuItemUi, parentId)
+                    if (moveItemToFolder(menuItemUi, parentId)) {
+                        sendMoveToBackend(
+                            menuItemUi.documentId,
+                            isFolder = menuItemUi is MenuItemUi.FolderUi,
+                            parentId,
+                            workspace
+                        )
+                    }
                 } else {
-                    val workspace =
-                        authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-
-                    notesUseCase.moveItemsById(
+                    val moved = notesUseCase.moveItemsById(
                         ids = selectedNotes.value,
                         parentId,
                         workspace.id
                     )
+                    sendMovesToBackend(moved, parentId, workspace)
                 }
             }
         }
     }
 
-    private suspend fun moveItemToFolder(menuItemUi: MenuItemUi, parentId: String) {
+    /** Moves the item; false when a folder would be moved into itself. */
+    private suspend fun moveItemToFolder(menuItemUi: MenuItemUi, parentId: String): Boolean {
         if (menuItemUi is MenuItemUi.FolderUi &&
             menuItemUi.anyNode { node -> node.id == parentId }
         ) {
-            return
+            return false
         }
 
         notesUseCase.moveItem(menuItemUi, parentId)
+        return true
     }
 
     override fun changeIcons(

@@ -68,8 +68,8 @@ class FolderSyncTest {
             documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
         } returns ResultData.Complete(folderContentResponse)
 
-        coEvery { documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId) } returns emptyList()
-        coEvery { folderRepository.getFolderByParentId(folderId, workspaceId) } returns emptyList()
+        coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns emptyList()
+        coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns emptyList()
 
         coEvery { documentConflictHandler.handleConflict(any(), any()) } returns emptyList()
         coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
@@ -128,8 +128,8 @@ class FolderSyncTest {
             documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
         } returns ResultData.Complete(FolderContentResponse())
 
-        coEvery { documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId) } returns emptyList()
-        coEvery { folderRepository.getFolderByParentId(folderId, workspaceId) } returns listOf(localSubfolder)
+        coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns emptyList()
+        coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns listOf(localSubfolder)
 
         coEvery { documentConflictHandler.handleConflict(any(), any()) } returns emptyList()
 
@@ -160,6 +160,71 @@ class FolderSyncTest {
 
         // Verify sendFolders was called with the local subfolder
         coVerify { documentsApi.sendFolders(listOf(localSubfolder), workspaceId) }
+    }
+
+    @Test
+    fun `syncFolder sends outdated items of other folders too`() = runBlocking {
+        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+        val documentsApi = mockk<DocumentsApi>()
+        val documentConflictHandler = mockk<DocumentConflictHandler>()
+        val folderConflictHandler = mockk<FolderConflictHandler>()
+        val folderRepository = mockk<FolderRepository>(relaxed = true)
+        val authRepository = mockk<AuthRepository>()
+
+        val existingFolder = Folder.fromName("Test Folder", workspaceId).copy(
+            id = folderId,
+            lastSyncedAt = Instant.DISTANT_PAST
+        )
+
+        // Moved into another folder while offline: outdated, but not inside the synced folder.
+        val movedDocument = Document(
+            id = "movedDoc",
+            title = "Moved",
+            createdAt = Instant.DISTANT_PAST,
+            lastUpdatedAt = Instant.DISTANT_PAST,
+            lastSyncedAt = null,
+            workspaceId = workspaceId,
+            parentId = "otherFolder"
+        )
+        val movedFolder = Folder.fromName("Moved Folder", workspaceId).copy(
+            id = "movedFolder",
+            parentId = "otherFolder"
+        )
+
+        coEvery { folderRepository.getFolderById(folderId) } returns existingFolder
+        coEvery {
+            documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
+        } returns ResultData.Complete(FolderContentResponse())
+
+        coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns listOf(movedDocument)
+        coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns listOf(movedFolder)
+
+        val documentsSlot = slot<List<Document>>()
+        coEvery { documentConflictHandler.handleConflict(capture(documentsSlot), any()) } returns listOf(movedDocument)
+        val foldersSlot = slot<List<Folder>>()
+        coEvery { folderConflictHandler.handleConflict(capture(foldersSlot), any()) } returns listOf(movedFolder)
+
+        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
+
+        val folderSync = FolderSync(
+            documentRepository = documentRepository,
+            documentsApi = documentsApi,
+            documentConflictHandler = documentConflictHandler,
+            folderConflictHandler = folderConflictHandler,
+            folderRepository = folderRepository,
+            authRepository = authRepository,
+            minSyncInternal = 0.milliseconds
+        )
+
+        folderSync.syncFolder(folderId, workspaceId, force = true)
+
+        assertEquals(listOf(movedDocument), documentsSlot.captured)
+        assertEquals(listOf(movedFolder), foldersSlot.captured)
+        coVerify { documentsApi.sendDocuments(listOf(movedDocument), workspaceId) }
+        coVerify { documentsApi.sendFolders(listOf(movedFolder), workspaceId) }
+        // Only the opened folder is received.
+        coVerify(exactly = 1) { documentsApi.getFolderNewData(any(), any(), any(), any()) }
     }
 
     @Test
@@ -218,8 +283,8 @@ class FolderSyncTest {
             documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
         } returns ResultData.Complete(FolderContentResponse())
 
-        coEvery { documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId) } returns emptyList()
-        coEvery { folderRepository.getFolderByParentId(folderId, workspaceId) } returns emptyList()
+        coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns emptyList()
+        coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns emptyList()
 
         coEvery { documentConflictHandler.handleConflict(any(), any()) } returns listOf(documentToSend)
         coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
@@ -271,8 +336,8 @@ class FolderSyncTest {
             documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
         } returns ResultData.Complete(FolderContentResponse())
 
-        coEvery { documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId) } returns emptyList()
-        coEvery { folderRepository.getFolderByParentId(folderId, workspaceId) } returns emptyList()
+        coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns emptyList()
+        coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns emptyList()
 
         coEvery { documentConflictHandler.handleConflict(any(), any()) } returns emptyList()
         coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()

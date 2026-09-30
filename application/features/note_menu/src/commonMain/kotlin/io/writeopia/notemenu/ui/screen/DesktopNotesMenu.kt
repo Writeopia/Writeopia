@@ -43,6 +43,7 @@ import io.writeopia.notemenu.ui.screen.documents.NotesCardsScreen
 import io.writeopia.notemenu.ui.screen.file.fileChooserLoad
 import io.writeopia.notemenu.ui.screen.menu.CreateFolderDialog
 import io.writeopia.notemenu.ui.screen.menu.EditFileDialog
+import io.writeopia.notemenu.ui.screen.menu.MoveToFolderDialog
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
 import io.writeopia.notemenu.viewmodel.getPath
@@ -189,10 +190,13 @@ fun DesktopNotesMenu(
             }
 
             val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
+            val selectionHasFolders by chooseNoteViewModel.selectionHasFolders.collectAsState()
             val currentPlatform = LocalPlatform.current
 
-            // Enable AI summary for desktop (with Local AI) or web (with GenAI backend)
-            val showAiSummary = localAiConfigController != null || currentPlatform == PlatformType.WEB
+            // Enable AI summary for desktop (with Local AI) or web (with GenAI backend). Folders
+            // can't be summarized nor duplicated: with one selected, only favorite and delete stay.
+            val showAiSummary =
+                (localAiConfigController != null || currentPlatform == PlatformType.WEB) && !selectionHasFolders
 
             NotesSelectionMenu(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp)
@@ -203,6 +207,8 @@ fun DesktopNotesMenu(
                 onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
                 onSummary = if (showAiSummary) chooseNoteViewModel::showAiOptions else null,
                 onClose = chooseNoteViewModel::clearSelection,
+                onMove = chooseNoteViewModel::showMoveSelection,
+                showCopy = !selectionHasFolders,
                 shape = RoundedCornerShape(CornerSize(16.dp)),
                 exitAnimationOffset = 2.3F,
                 enterAnimationSpec = spring(dampingRatio = 0.6F)
@@ -216,6 +222,21 @@ fun DesktopNotesMenu(
                 onCancelTask = aiTaskManager::cancelTask,
                 modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 16.dp)
             )
+
+            val showMoveSelection by chooseNoteViewModel.moveSelectionState.collectAsState()
+
+            if (showMoveSelection) {
+                val itemsPerFolderId by chooseNoteViewModel.menuItemsPerFolderId.collectAsState()
+                val selectedNotes by chooseNoteViewModel.selectedNotes.collectAsState()
+
+                MoveToFolderDialog(
+                    itemsPerFolderId = itemsPerFolderId,
+                    excludedIds = selectedNotes,
+                    currentParentId = chooseNoteViewModel.currentFolderId,
+                    onPick = chooseNoteViewModel::moveSelectionTo,
+                    onDismissRequest = chooseNoteViewModel::hideMoveSelection
+                )
+            }
 
             val showAiOptions by chooseNoteViewModel.showAiOptionsState.collectAsState()
 

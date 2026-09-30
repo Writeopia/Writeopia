@@ -13,6 +13,12 @@ import kotlinx.coroutines.flow.map
 interface ChooseNoteViewModel : FolderController {
     val hasSelectedNotes: StateFlow<Boolean>
 
+    /** The folder shown (the root, a folder or the favorites), where the items can't be moved to. */
+    val currentFolderId: String
+
+    /** True while a folder is part of the selection: folders can't be duplicated nor summarized. */
+    val selectionHasFolders: StateFlow<Boolean>
+
     val userName: StateFlow<UserState<String>>
 
     /**

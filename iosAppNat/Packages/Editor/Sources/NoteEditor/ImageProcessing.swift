@@ -7,10 +7,13 @@ import UIKit
 
 /// Turns picked images (HEIC, PNG...) into JPEGs no larger than `maxDimension`, which every
 /// platform of the app and the media service can read.
-enum ImageProcessing {
-    static let maxDimension: CGFloat = 2048
+public enum ImageProcessing {
+    public static let maxDimension: CGFloat = 2048
 
-    static func jpeg(from data: Data, quality: CGFloat = 0.85) -> Data? {
+    /// The image formats that can be dropped or picked, like `supportedImageFiles` of the SDK.
+    public static let supportedExtensions: Set<String> = ["jpg", "jpeg", "png", "heic", "gif", "webp", "tiff"]
+
+    public static func jpeg(from data: Data, quality: CGFloat = 0.85) -> Data? {
         #if canImport(UIKit)
         guard let image = UIImage(data: data) else { return nil }
 

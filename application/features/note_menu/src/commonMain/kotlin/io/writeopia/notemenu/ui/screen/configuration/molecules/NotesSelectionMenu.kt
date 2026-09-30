@@ -36,6 +36,8 @@ internal fun NotesSelectionMenu(
     onFavorite: () -> Unit,
     onSummary: (() -> Unit)? = null,
     onClose: () -> Unit,
+    onMove: (() -> Unit)? = null,
+    showCopy: Boolean = true,
     shape: Shape = RoundedCornerShape(
         CornerSize(16.dp),
         CornerSize(16.dp),
@@ -73,16 +75,17 @@ internal fun NotesSelectionMenu(
             Row {
                 val tintColor = MaterialTheme.colorScheme.onPrimary
 
-                Icon(
-                    modifier = Modifier
-                        .clickable(onClick = onCopy)
-                        .weight(1F)
-                        .padding(vertical = 25.dp),
-                    imageVector = WrSdkIcons.copy,
-                    contentDescription = "Copy note",
-//                    stringResource(R.string.copy_note),
-                    tint = tintColor
-                )
+                if (showCopy) {
+                    Icon(
+                        modifier = Modifier
+                            .clickable(onClick = onCopy)
+                            .weight(1F)
+                            .padding(vertical = 25.dp),
+                        imageVector = WrSdkIcons.copy,
+                        contentDescription = "Copy note",
+                        tint = tintColor
+                    )
+                }
 
                 Icon(
                     modifier = Modifier
@@ -103,6 +106,18 @@ internal fun NotesSelectionMenu(
                             .padding(vertical = 25.dp),
                         imageVector = WrSdkIcons.ai,
                         contentDescription = "AI Summary",
+                        tint = tintColor
+                    )
+                }
+
+                if (onMove != null) {
+                    Icon(
+                        modifier = Modifier
+                            .clickable(onClick = onMove)
+                            .weight(1F)
+                            .padding(vertical = 25.dp),
+                        imageVector = WrIcons.moveToFolder,
+                        contentDescription = "Move to folder",
                         tint = tintColor
                     )
                 }

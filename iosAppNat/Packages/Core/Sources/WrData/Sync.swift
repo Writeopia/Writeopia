@@ -252,6 +252,10 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         try await local.folderContents(folderId: folderId)
     }
 
+    public func favorites() async throws -> FolderContents {
+        try await local.favorites()
+    }
+
     public func document(id: String) async throws -> WrDocument {
         if let document = try? await local.document(id: id) {
             return document
@@ -474,6 +478,12 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
             try markSynced(folder)
         }
 
+        // Changes made in other folders that couldn't be sent yet (a move while offline, for
+        // one) go with this sync too, so they don't wait for their folder to be opened. After
+        // this folder is handled: they're still outdated while its listing is applied, so a
+        // stale copy of a moved item in it can't undo the move.
+        await pushPending(outside: folderId)
+
         lastFolderSync[folderId] = Date()
     }
 
@@ -514,6 +524,35 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
             try local.store(stored)
         }
         return response.serverTimestamp
+    }
+
+    /// Sends the outdated documents and folders that aren't in `folderId`, resolving each
+    /// document against the backend copy like the folder sync does. Failures are left for the
+    /// next sync.
+    private func pushPending(outside folderId: String) async {
+        let documents = (try? local.storedOutdatedDocuments())?.filter { $0.parentId != folderId } ?? []
+        let folders = (try? local.storedOutdatedFolders())?.filter { $0.parentId != folderId } ?? []
+
+        if !documents.isEmpty {
+            var toSend: [WrDocument] = []
+            for document in documents {
+                let remote = (try? await api.document(id: document.id)).map { [$0] } ?? []
+                if let resolved = try? DocumentConflictHandler.handle(
+                    local: [document],
+                    remote: remote.filter { $0.id == document.id },
+                    store: local
+                ) {
+                    toSend += resolved
+                }
+            }
+            try? await sendAndMarkSynced(toSend)
+        }
+
+        if !folders.isEmpty, (try? await api.sendFolders(folders)) != nil {
+            for folder in folders {
+                try? markSynced(folder)
+            }
+        }
     }
 
     private func sendAndMarkSynced(_ documents: [WrDocument]) async throws {
