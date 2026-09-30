@@ -22,9 +22,9 @@ fun ApplicationCall.getUserIdFromApiGateway(debugMode: Boolean = false): String?
         if (!debugMode) {
             return@run request.headers["X-Forwarded-Authorization"]
         }
-        request.cookies[COOKIE_ACCESS_TOKEN]
+        request.headers["X-Forwarded-Authorization"]
+            ?: request.cookies[COOKIE_ACCESS_TOKEN]
             ?: request.headers[HttpHeaders.Authorization]
-            ?: request.headers["X-Forwarded-Authorization"]
     }
 
     val token = if (forwardedAuth?.startsWith("Bearer ", ignoreCase = true) == true) {
