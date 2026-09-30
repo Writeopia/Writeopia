@@ -373,3 +373,4 @@ fun DesktopApp(
 
 fun startDestination() =
     "${Destinations.CHOOSE_NOTE.id}/${NotesNavigationType.ROOT.type}/path"
+    
