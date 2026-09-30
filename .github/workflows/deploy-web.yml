@@ -52,3 +52,9 @@ jobs:
       - name: Deploy to Cloud Storage
         run: |
           gsutil -m rsync -r -d application/web/build/dist/js/productionExecutable/ gs://writeopia-web/
+
+      # writeopia.js is not content-hashed and Cloud CDN caches it for 24h, so
+      # without this users can keep getting the previous bundle after a release.
+      - name: Invalidate Cloud CDN cache
+        run: |
+          gcloud compute url-maps invalidate-cdn-cache http-lb-writeopia2 --path "/*" --async
