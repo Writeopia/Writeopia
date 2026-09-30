@@ -230,8 +230,8 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 WriteopiaDbInjector.initialize(database)
                 RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
                 WriteopiaConnectionInjector.setBaseUrl(
-                    // "https://writeopia.io"
-                       "http://localhost:8080"
+                    "https://writeopia.io"
+                       // "http://localhost:8080"
                 )
                 setupBearerTokenHandler()
 
