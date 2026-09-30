@@ -207,11 +207,7 @@ struct TitleDrawer: View {
                     .accessibilityLabel("Edit header")
                     .accessibilityIdentifier("editor.header.edit")
                     .padding(8)
-                    .popover(isPresented: $showsColors, arrowEdge: .bottom) {
-                        HeaderColorPicker(manager: manager)
-                            .padding(16)
-                            .presentationCompactAdaptation(.popover)
-                    }
+                    .headerColorsPresentation(isPresented: $showsColors, manager: manager)
                     .transition(.opacity)
                 }
             }
@@ -230,20 +226,62 @@ struct TitleDrawer: View {
     }
 }
 
+private extension View {
+    /// The header colors: a popover under the pencil on the Mac, and a bottom sheet on iOS, where
+    /// a popover doesn't fit the screen.
+    @ViewBuilder
+    func headerColorsPresentation(isPresented: Binding<Bool>, manager: WriteopiaStateManager) -> some View {
+        #if os(macOS)
+        popover(isPresented: isPresented, arrowEdge: .bottom) {
+            HeaderColorPicker(manager: manager)
+                .padding(16)
+        }
+        #else
+        sheet(isPresented: isPresented) {
+            HeaderColorPicker(manager: manager)
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .padding(.bottom, 16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .presentationDetents([.height(220)])
+                .presentationDragIndicator(.visible)
+        }
+        #endif
+    }
+}
+
 /// The colors of the header: none, then the palette of the Compose app. The selected one is a
 /// wider, squarer swatch, like `HeaderEditionOptions`.
 struct HeaderColorPicker: View {
     let manager: WriteopiaStateManager
+
+    /// On the Mac the swatches fit in one row; on a phone they wrap to the width of the sheet.
+    private static let wrapsSwatches: Bool = {
+        #if os(macOS)
+        false
+        #else
+        true
+        #endif
+    }()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Header")
                 .font(.headline)
 
-            HStack(spacing: 10) {
-                swatch(nil)
-                ForEach(WriteopiaStateManager.headerColors, id: \.self) { color in
-                    swatch(color)
+            if Self.wrapsSwatches {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 44), spacing: 10)], alignment: .leading, spacing: 10) {
+                    swatch(nil)
+                    ForEach(WriteopiaStateManager.headerColors, id: \.self) { color in
+                        swatch(color)
+                    }
+                }
+            } else {
+                HStack(spacing: 10) {
+                    swatch(nil)
+                    ForEach(WriteopiaStateManager.headerColors, id: \.self) { color in
+                        swatch(color)
+                    }
                 }
             }
         }

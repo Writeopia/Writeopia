@@ -76,7 +76,12 @@ public struct SettingsRootView: View {
             Divider()
 
             NavigationStack {
+                // The grouped form centers itself in a wide window; capping its width and pinning
+                // it to the leading edge keeps every page aligned with the sidebar.
                 section(macRoute)
+                    .scrollContentBackground(.hidden)
+                    .frame(maxWidth: 820, alignment: .leading)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             .id(macRoute)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

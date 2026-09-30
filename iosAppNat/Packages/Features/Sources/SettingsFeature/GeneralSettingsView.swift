@@ -7,64 +7,10 @@ import WrSession
 struct GeneralSettingsView: View {
     @Environment(AppSession.self) private var session
 
+    /// The grouped form on every platform, like the other settings pages.
     var body: some View {
-        #if os(macOS)
-        macBody
-        #else
         formBody
-        #endif
     }
-
-    #if os(macOS)
-    /// Laid out by hand on the Mac: the grouped form would box the theme cards and the folder
-    /// picker, which are controls of their own.
-    private var macBody: some View {
-        @Bindable var session = session
-
-        return ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                MacSettingsBlock("Color theme", footer: "System follows the appearance of your device.") {
-                    HStack(spacing: 12) {
-                        ForEach(ColorTheme.allCases) { theme in
-                            ThemeOption(theme: theme, isSelected: session.colorTheme == theme) {
-                                withAnimation(.snappy) { session.colorTheme = theme }
-                            }
-                        }
-                    }
-                }
-
-                if session.spaceType == .offline {
-                    MacSettingsBlock("Local folder", footer: "Pick a folder in your computer to keep your workspace.") {
-                        PrivateSpaceFolderPicker()
-                    }
-                }
-
-                MacSettingsBlock("About") {
-                    VStack(spacing: 0) {
-                        aboutRow("Version", value: Bundle.main.appVersion)
-                        Divider()
-                        aboutRow("Space", value: session.spaceType == .online ? String(localized: "Open space") : String(localized: "Private space"))
-                    }
-                    .padding(.horizontal, 14)
-                    .background(WrColors.surface.opacity(0.6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-            }
-            .padding(24)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .navigationTitle("General")
-    }
-
-    private func aboutRow(_ title: LocalizedStringKey, value: String) -> some View {
-        HStack {
-            Text(title)
-            Spacer()
-            Text(value)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 10)
-    }
-    #endif
 
     private var formBody: some View {
         @Bindable var session = session
@@ -110,34 +56,6 @@ struct GeneralSettingsView: View {
         .navigationTitle("General")
     }
 }
-
-#if os(macOS)
-/// A titled block of the Mac settings, with the spacing of the grouped form and no box.
-private struct MacSettingsBlock<Content: View>: View {
-    let title: LocalizedStringKey
-    var footer: LocalizedStringKey?
-    @ViewBuilder let content: Content
-
-    init(_ title: LocalizedStringKey, footer: LocalizedStringKey? = nil, @ViewBuilder content: () -> Content) {
-        self.title = title
-        self.footer = footer
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.headline)
-            content
-            if let footer {
-                Text(footer)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-#endif
 
 private struct ThemeOption: View {
     let theme: ColorTheme

@@ -452,6 +452,10 @@ private struct DocumentsNavigation: View {
     @Bindable var router: DocumentsRouter
     @State private var settings: FolderDisplaySettings
 
+    /// Ties a document card to the editor pushed from it, so the card zooms into the editor,
+    /// like the shared element transition of the Compose app.
+    @Namespace private var zoomNamespace
+
     init(session: AppSession, router: DocumentsRouter) {
         self.session = session
         self.router = router
@@ -480,6 +484,7 @@ private struct DocumentsNavigation: View {
                         ) { link in
                             router.path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
                         }
+                        .zoomTransition(sourceID: id, in: zoomNamespace)
                     }
                 }
         }
@@ -496,7 +501,8 @@ private struct DocumentsNavigation: View {
             settings: settings,
             path: $router.path,
             contentsVersion: router.contentsVersion,
-            onItemsChange: router.treeChanged
+            onItemsChange: router.treeChanged,
+            transitionNamespace: zoomNamespace
         )
     }
 }
@@ -519,6 +525,8 @@ struct FolderContentsView: View {
     private let rootTitle: String
     private let contentsVersion: Int
     private let onItemsChange: () -> Void
+    /// Namespace of the zoom into the editor; nil where the cards don't push the editor.
+    private let transitionNamespace: Namespace.ID?
 
     /// Cards are at least this wide and fill the width, so wider windows get more columns, like
     /// the adaptive grids of the Compose app (220 on desktop, 150 on phones and tablets).
@@ -551,7 +559,8 @@ struct FolderContentsView: View {
         settings: FolderDisplaySettings,
         path: Binding<NavigationPath>,
         contentsVersion: Int = 0,
-        onItemsChange: @escaping () -> Void = {}
+        onItemsChange: @escaping () -> Void = {},
+        transitionNamespace: Namespace.ID? = nil
     ) {
         _viewModel = State(
             initialValue: FolderContentsViewModel(folderId: folderId, folder: folder, repository: repository, aiClient: aiClient, settings: settings)
@@ -561,6 +570,7 @@ struct FolderContentsView: View {
         self.rootTitle = rootTitle
         self.contentsVersion = contentsVersion
         self.onItemsChange = onItemsChange
+        self.transitionNamespace = transitionNamespace
     }
 
     private var settings: FolderDisplaySettings { viewModel.settings }
@@ -825,6 +835,7 @@ struct FolderContentsView: View {
             ItemCard(item: item, isDropTarget: dropTargetId == item.id, isSelected: viewModel.isSelected(item.id), style: style)
         }
         .buttonStyle(.plain)
+        .zoomTransitionSource(id: item.id, in: transitionNamespace, enabled: !item.isFolder)
         // Slide a card sideways to select it, like the Compose notes list.
         .slideToSelect { viewModel.toggleSelection(item.id) }
         .selectableByDrag(id: item.id)
@@ -1269,6 +1280,37 @@ extension FolderItem {
 }
 
 extension View {
+    /// Marks the view as the origin of a zoom into the screen pushed from it, like the shared
+    /// element transition of the Compose app. iOS 18 has the transition; the Mac has no zoom for
+    /// a pushed screen (`NavigationTransition.zoom` is unavailable there), and older iOS keeps
+    /// the default push.
+    @ViewBuilder
+    func zoomTransitionSource(id: String, in namespace: Namespace.ID?, enabled: Bool) -> some View {
+        #if os(iOS)
+        if enabled, let namespace, #available(iOS 18, *) {
+            matchedTransitionSource(id: id, in: namespace)
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+
+    /// Zooms the pushed screen out of the view marked with `zoomTransitionSource`.
+    @ViewBuilder
+    func zoomTransition(sourceID: String, in namespace: Namespace.ID) -> some View {
+        #if os(iOS)
+        if #available(iOS 18, *) {
+            navigationTransition(.zoom(sourceID: sourceID, in: namespace))
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+
     /// Makes folder cards accept dragged items. Documents are not drop targets.
     @ViewBuilder
     func folderDropDestination(
