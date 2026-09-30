@@ -6,10 +6,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
 import io.writeopia.backend.models.ServerResponse
-import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
-private val logger = LoggerFactory.getLogger("ApiGatewayAuth")
 private const val COOKIE_ACCESS_TOKEN = "writeopia_access"
 
 /**
