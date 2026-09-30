@@ -27,7 +27,6 @@ import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsA
 import io.writeopia.account.ui.AccountDeletionStartedScreen
 import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.auth.navigation.authNavigation
-import io.writeopia.auth.navigation.navigateAndResetStack
 import io.writeopia.auth.navigation.navigateToApp
 import io.writeopia.auth.navigation.startScreen
 import io.writeopia.common.utils.Destinations
@@ -231,7 +230,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 RepositoryInjector.initialize(SqlDelightDaoInjector.singleton())
                 WriteopiaConnectionInjector.setBaseUrl(
                     "https://writeopia.io"
-                       // "http://localhost:8080"
+                    // "http://localhost:8080"
                 )
                 setupBearerTokenHandler()
 

@@ -296,7 +296,9 @@ fun NavGraphBuilder.authNavigation(
                     retry = workspacesViewModel::loadWorkspaces,
                     onBackClick = if (canGoBack) {
                         { navController.navigateUpSafely() }
-                    } else null
+                    } else {
+                        null
+                    }
                 )
             }
         }
