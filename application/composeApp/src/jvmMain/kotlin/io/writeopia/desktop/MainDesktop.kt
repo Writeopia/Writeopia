@@ -317,17 +317,6 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                                 inclusive = true
                                             }
                                         }
-                                    },
-                                    onLogout = {
-                                        // Resets the nav graph back to START_APP so the login-state
-                                        // check re-runs and can land on the space-choice screen.
-                                        navigationController.navigate(
-                                            Destinations.START_APP.id
-                                        ) {
-                                            popUpTo(navigationController.graph.startDestinationId) {
-                                                inclusive = true
-                                            }
-                                        }
                                     }
                                 )
                             }

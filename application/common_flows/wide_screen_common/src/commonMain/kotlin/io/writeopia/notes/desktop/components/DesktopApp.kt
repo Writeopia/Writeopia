@@ -83,7 +83,6 @@ fun DesktopApp(
     navigateToChooseWorkspace: () -> Unit,
     navigateToSpaceChoice: () -> Unit,
     navigateToAccountDeletionStarted: () -> Unit,
-    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     hasGlobalHeader: Boolean = true,
     startDestination: String = startDestination(),
@@ -283,7 +282,7 @@ fun DesktopApp(
                                         // Resets the nav graph back to START_APP so the login-state
                                         // check re-runs and can land on the space-choice screen.
                                         globalShellViewModel.logout(
-                                            onSuccessSideEffect = onLogout
+                                            onSuccessSideEffect = navigateToChooseWorkspace
                                         )
                                     },
                                     showDeleteConfirm = globalShellViewModel::showDeleteConfirm,
