@@ -36,7 +36,8 @@ fun ComposeUiTest.startApp(
             navigateToResetPassword = {},
             navigateToChooseWorkspace = {},
             navigateToSpaceChoice = {},
-            navigateToAccountDeletionStarted = {}
+            navigateToAccountDeletionStarted = {},
+            onLogout = {}
         )
     }
 }
