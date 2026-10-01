@@ -4,9 +4,9 @@ import WrData
 import WrModels
 import WrNetwork
 
-/// The presentations of a document: the ones generated before, and the generation of a new
-/// one by the AI. The AI writes the slides as Markdown, read by `PresentationMarkdown`, and
-/// the result is kept on the device.
+/// The presentations of a document: the ones made before, and the making of a new one. Who
+/// makes and keeps them depends on the AI in use (`PresentationsSource`): the backend with the
+/// cloud AI, this device with the local AI. Either way the app only shows what it gets back.
 @Observable
 public final class PresentationsViewModel {
     public private(set) var presentations: [Presentation] = []
@@ -15,28 +15,23 @@ public final class PresentationsViewModel {
     public var error: String?
 
     public let documentId: String
-    @ObservationIgnored private let documentTitle: () -> String
-    @ObservationIgnored private let documentMarkdown: () -> String
     @ObservationIgnored private let repository: PresentationsRepository
-    @ObservationIgnored private let aiClient: AiStreaming
+    @ObservationIgnored private let generator: PresentationGenerating
+    /// Runs before asking for a presentation, e.g. to send the pending edits to the backend so
+    /// the slides come from the latest text.
+    @ObservationIgnored private let beforeGenerate: () async -> Void
     @ObservationIgnored private var generationTask: Task<Presentation?, Never>?
-
-    /// Characters of the document sent to the AI. The cloud and Ollama take long inputs; this
-    /// keeps a huge document from timing out.
-    static let documentLimit = 20_000
 
     public init(
         documentId: String,
-        documentTitle: @escaping () -> String,
-        documentMarkdown: @escaping () -> String,
         repository: PresentationsRepository,
-        aiClient: AiStreaming
+        generator: PresentationGenerating,
+        beforeGenerate: @escaping () async -> Void = {}
     ) {
         self.documentId = documentId
-        self.documentTitle = documentTitle
-        self.documentMarkdown = documentMarkdown
         self.repository = repository
-        self.aiClient = aiClient
+        self.generator = generator
+        self.beforeGenerate = beforeGenerate
     }
 
     public func load() async {
@@ -49,8 +44,8 @@ public final class PresentationsViewModel {
         }
     }
 
-    /// Asks the AI for the slides of the document, saves them and returns the new presentation;
-    /// nil when it failed or was cancelled, with the reason in `error`.
+    /// Makes a new presentation of the document and returns it; nil when it failed or was
+    /// cancelled, with the reason in `error`.
     @discardableResult
     public func generate() async -> Presentation? {
         guard !isGenerating else { return nil }
@@ -65,31 +60,16 @@ public final class PresentationsViewModel {
     }
 
     private func generatePresentation() async -> Presentation? {
-        let document = String(documentMarkdown().prefix(Self.documentLimit))
-        let prompt = AiPrompts.presentationPrompt(document: document)
         do {
-            var answer = ""
-            for try await partial in aiClient.stream(.prompt, prompt: prompt) {
-                answer = partial
-            }
-            // A cancelled stream just ends: don't mistake it for an empty answer.
+            await beforeGenerate()
             try Task.checkCancellation()
-
-            let slides = PresentationMarkdown.parse(answer)
-            guard !slides.isEmpty else {
-                error = String(localized: "The AI didn't return any slide.")
-                return nil
-            }
-            let firstTitle = slides[0].title
-            let presentation = Presentation(
-                documentId: documentId,
-                title: firstTitle.isEmpty ? documentTitle() : firstTitle,
-                slides: slides
-            )
-            try await repository.savePresentation(presentation)
+            let presentation = try await generator.generatePresentation(documentId: documentId)
             await load()
             return presentation
         } catch is CancellationError {
+            return nil
+        } catch let error as PresentationError {
+            self.error = error.message
             return nil
         } catch let error as AiStreamError {
             self.error = error.message
@@ -101,7 +81,7 @@ public final class PresentationsViewModel {
         }
     }
 
-    /// Stops the generation in progress; nothing is saved.
+    /// Stops the generation in progress; nothing is kept.
     public func cancel() {
         generationTask?.cancel()
     }

@@ -308,12 +308,17 @@ private func makeSession(
         cloud.aiProvider = .cloud
         #expect(cloud.supportsPresentations)
         #expect(cloud.resolvedAi?.provider == .cloud)
+        guard case .cloud(let api)? = cloud.presentationsSource else { Issue.record("the cloud makes the presentations"); return }
+        #expect(api.workspaceId == "w1")
+        #expect((cloud.presentationsRepository as? PresentationsAPI)?.workspaceId == "w1")
 
         let ollama = session(online: false, appleIntelligence: true)
         ollama.aiProvider = .ollama
         ollama.localAiModel = "gemma"
         #expect(ollama.supportsPresentations)
         #expect(ollama.resolvedAi?.provider == .ollama)
+        guard case .local? = ollama.presentationsSource else { Issue.record("Ollama keeps the presentations on the device"); return }
+        #expect(ollama.presentationsRepository is PresentationsStore)
 
         let apple = session(online: true, appleIntelligence: true)
         #expect(!apple.supportsPresentations)

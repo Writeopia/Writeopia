@@ -14,7 +14,7 @@ public protocol StepStore: AnyObject {
 ///
 /// Steps are rows of their own so an edit writes only what changed; the content of a step is
 /// kept as JSON, which carries nested steps, tags, spans and links as they are.
-public final class LocalDocumentsRepository: DocumentsRepository, StepStore, PresentationsRepository {
+public final class LocalDocumentsRepository: DocumentsRepository, StepStore, PresentationsStore {
     private let directory: URL
     private let workspaceId: String
     private let seedsWelcome: Bool
@@ -454,7 +454,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         }
     }
 
-    // MARK: - PresentationsRepository
+    // MARK: - PresentationsStore
 
     public func presentations(ofDocument documentId: String) async throws -> [Presentation] {
         try db.query(

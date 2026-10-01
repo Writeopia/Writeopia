@@ -1,0 +1,40 @@
+CREATE TABLE presentation_step_entity (
+  id TEXT PRIMARY KEY,
+  presentation_id TEXT NOT NULL,
+  slide_index INTEGER NOT NULL,
+  type INTEGER NOT NULL,
+  text TEXT,
+  checked BOOLEAN NOT NULL,
+  position NUMERIC NOT NULL,
+  url TEXT,
+  path TEXT,
+  tags TEXT NOT NULL,
+  spans TEXT NOT NULL,
+  background_color INTEGER
+);
+
+CREATE INDEX idx_presentation_step_presentation_id ON presentation_step_entity(presentation_id);
+
+selectByPresentationId:
+SELECT *
+FROM presentation_step_entity
+WHERE presentation_id = ?
+ORDER BY slide_index, position;
+
+insert:
+INSERT INTO presentation_step_entity(id, presentation_id, slide_index, type, text, checked, position, url, path, tags, spans, background_color)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET presentation_id=excluded.presentation_id, slide_index=excluded.slide_index, type=excluded.type,
+text=excluded.text, checked=excluded.checked, position=excluded.position, url=excluded.url, path=excluded.path,
+tags=excluded.tags, spans=excluded.spans, background_color=excluded.background_color;
+
+deleteByPresentationId:
+DELETE
+FROM presentation_step_entity
+WHERE presentation_id = ?;
+
+deleteByPresentationIds:
+DELETE
+FROM presentation_step_entity
+WHERE presentation_id IN ?;

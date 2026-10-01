@@ -62,6 +62,11 @@ fun WriteopiaDbBackend.hardDeleteWorkspaceContents(workspaceId: String) {
         this.storyStepEntityQueries.deleteByDocumentIds(documentIds)
     }
     this.documentEntityQueries.hardDeleteByWorkspaceId(workspaceId)
+    val presentationIds = this.presentationEntityQueries.selectIdsByWorkspaceId(workspaceId).executeAsList()
+    if (presentationIds.isNotEmpty()) {
+        this.presentationStepEntityQueries.deleteByPresentationIds(presentationIds)
+    }
+    this.presentationEntityQueries.deleteByWorkspaceId(workspaceId)
     this.folderEntityQueries.deleteByWorkspace(workspaceId)
     this.userFavoriteEntityQueries.deleteByWorkspace(workspaceId)
     this.workspaceTutorialStatusQueries.deleteByWorkspace(workspaceId)

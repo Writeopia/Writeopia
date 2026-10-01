@@ -62,7 +62,7 @@ public struct NoteEditorView: View {
         publishing: DocumentPublishing? = nil,
         imageUploader: ImageUploading? = nil,
         isPremium: Bool = false,
-        presentationsEnabled: Bool = false,
+        presentations: PresentationsSource? = nil,
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
         _viewModel = State(initialValue: NoteEditorViewModel(
@@ -72,7 +72,7 @@ public struct NoteEditorView: View {
             publishing: publishing,
             imageUploader: imageUploader,
             isPremium: isPremium,
-            presentationsEnabled: presentationsEnabled
+            presentations: presentations
         ))
         fallbackTitle = title
         self.openDocumentLink = openDocumentLink

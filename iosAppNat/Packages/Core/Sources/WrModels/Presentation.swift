@@ -1,15 +1,26 @@
 import Foundation
 
-/// One slide of a presentation, like `SlidePage` of the Kotlin presentation plugin: a title and
-/// the steps below it.
-public struct Slide: Equatable, Sendable {
+/// One slide of a presentation, like `Slide` of the Kotlin SDK: a title and the steps below it.
+/// Encoded like the backend's `SlideApi`.
+public struct Slide: Codable, Equatable, Sendable {
     public var title: String
     /// The content rows of the slide, positions from 1 up.
     public var steps: [StoryStep]
 
+    enum CodingKeys: String, CodingKey {
+        case title
+        case steps = "content"
+    }
+
     public init(title: String, steps: [StoryStep] = []) {
         self.title = title
         self.steps = steps
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        steps = (try container.decodeIfPresent([StoryStep].self, forKey: .steps) ?? []).sorted { $0.position < $1.position }
     }
 
     /// The slide as a document the editor can load: the title as a `title` step at position 0,
@@ -24,8 +35,9 @@ public struct Slide: Equatable, Sendable {
     }
 }
 
-/// A presentation the AI generated from a document. Kept on the device, one row per step.
-public struct Presentation: Identifiable, Equatable, Sendable {
+/// A presentation the AI generated from a document. Encoded like the backend's `PresentationApi`:
+/// the cloud keeps it on the server, the local AI on the device, one row per step either way.
+public struct Presentation: Codable, Identifiable, Equatable, Sendable {
     public let id: String
     public var documentId: String
     public var title: String

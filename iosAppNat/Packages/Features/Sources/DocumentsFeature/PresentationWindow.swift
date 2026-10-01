@@ -51,8 +51,7 @@ struct PresentationWindowView: View {
         .background(WrColors.systemBackground)
         .task(id: presentationId) {
             isLoading = true
-            let repository = session.documents as? PresentationsRepository
-            presentation = try? await repository?.presentation(id: presentationId)
+            presentation = try? await session.presentationsRepository?.presentation(id: presentationId)
             isLoading = false
         }
     }

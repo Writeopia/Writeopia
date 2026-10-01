@@ -1,0 +1,43 @@
+CREATE TABLE presentation_entity (
+  id TEXT PRIMARY KEY,
+  document_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  created_at BIGINT NOT NULL
+);
+
+CREATE INDEX idx_presentation_document_id ON presentation_entity(document_id);
+
+selectById:
+SELECT *
+FROM presentation_entity
+WHERE id = ? AND workspace_id = ?;
+
+selectByDocumentId:
+SELECT *
+FROM presentation_entity
+WHERE document_id = ? AND workspace_id = ?
+ORDER BY created_at DESC;
+
+selectIdsByWorkspaceId:
+SELECT id
+FROM presentation_entity
+WHERE workspace_id = ?;
+
+insert:
+INSERT INTO presentation_entity(id, document_id, workspace_id, user_id, title, created_at)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET document_id=excluded.document_id, workspace_id=excluded.workspace_id, user_id=excluded.user_id,
+title=excluded.title, created_at=excluded.created_at;
+
+deleteById:
+DELETE
+FROM presentation_entity
+WHERE id = ? AND workspace_id = ?;
+
+deleteByWorkspaceId:
+DELETE
+FROM presentation_entity
+WHERE workspace_id = ?;
