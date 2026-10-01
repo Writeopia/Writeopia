@@ -67,7 +67,7 @@ struct AccountSettingsView: View {
     private var session: AppSession { viewModel.session }
 
     var body: some View {
-        Form {
+        WrForm {
             if session.isOnline {
                 onlineSections
             } else {
@@ -90,6 +90,7 @@ struct AccountSettingsView: View {
                 showDeleteConfirmation = false
                 Task { await viewModel.deleteAccount() }
             }
+            .wrSheetSize(width: 440, height: 380)
         }
         .sheet(isPresented: $showChangePassword) {
             ChangePasswordSheet { password in
@@ -99,6 +100,7 @@ struct AccountSettingsView: View {
                     }
                 }
             }
+            .wrSheetSize(width: 440, height: 380)
         }
         .alert(
             "Something went wrong",
@@ -126,29 +128,21 @@ struct AccountSettingsView: View {
 
         Section {
             LabeledContent("Workspace", value: session.workspace?.name ?? "—")
-            Button {
+            WrSheetRow("Change workspace", systemImage: "arrow.left.arrow.right") {
                 session.changeWorkspace()
-            } label: {
-                Label("Change workspace", systemImage: "arrow.left.arrow.right")
             }
-            Button {
+            WrSheetRow("Switch space", systemImage: "rectangle.2.swap") {
                 session.switchSpace()
-            } label: {
-                Label("Switch space", systemImage: "rectangle.2.swap")
             }
             .accessibilityIdentifier("account.switchSpace")
         }
 
         Section {
-            Button {
+            WrSheetRow("Change password", systemImage: "key") {
                 showChangePassword = true
-            } label: {
-                Label("Change password", systemImage: "key")
             }
-            Button {
+            WrSheetRow("Sign out", systemImage: "rectangle.portrait.and.arrow.right") {
                 showLogoutConfirmation = true
-            } label: {
-                Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
             }
             .confirmationDialog("Sign out of Writeopia?", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {
                 Button("Sign out", role: .destructive) {
@@ -158,10 +152,8 @@ struct AccountSettingsView: View {
         }
 
         Section {
-            Button(role: .destructive) {
+            WrSheetRow("Delete account", systemImage: "trash", tint: .red) {
                 showDeleteConfirmation = true
-            } label: {
-                Label("Delete account", systemImage: "trash")
             }
         } header: {
             Text("Danger zone")
@@ -184,17 +176,13 @@ struct AccountSettingsView: View {
         }
 
         Section {
-            Button {
+            WrSheetRow("Sign in", systemImage: "person.crop.circle.badge.checkmark", tint: WrColors.accent) {
                 session.signIn()
-            } label: {
-                Label("Sign in", systemImage: "person.crop.circle.badge.checkmark")
             }
             .accessibilityIdentifier("account.signIn")
 
-            Button {
+            WrSheetRow("Switch space", systemImage: "rectangle.2.swap") {
                 session.switchSpace()
-            } label: {
-                Label("Switch space", systemImage: "rectangle.2.swap")
             }
             .accessibilityIdentifier("account.switchSpace")
         }
@@ -209,15 +197,17 @@ private struct DeleteAccountSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            WrForm {
                 Section {
                     Text("This can't be undone. Your account and all your notes in the open space will be deleted.")
                         .font(.callout.weight(.semibold))
                 }
                 Section {
                     TextField("Email", text: $typedEmail)
+                        #if os(iOS)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.emailAddress)
+                        #endif
                         .autocorrectionDisabled()
                 } footer: {
                     Text("Type \(email) to confirm.")
@@ -228,7 +218,7 @@ private struct DeleteAccountSheet: View {
                 }
             }
             .navigationTitle("Are you sure?")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -251,7 +241,7 @@ private struct ChangePasswordSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            WrForm {
                 Section {
                     SecureField("New password", text: $password)
                         .textContentType(.newPassword)
@@ -266,7 +256,7 @@ private struct ChangePasswordSheet: View {
                 }
             }
             .navigationTitle("Change password")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

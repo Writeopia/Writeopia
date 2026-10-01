@@ -1,4 +1,5 @@
 import Observation
+import SetupFeature
 import SwiftUI
 import WrData
 import WrDesign
@@ -44,25 +45,34 @@ struct AiSettingsView: View {
 
     var body: some View {
         @Bindable var session = viewModel.session
-        Form {
+        WrForm {
             appleIntelligenceSection
 
-            if viewModel.session.isOnline {
-                Section {
-                    Picker("Run AI with", selection: $session.aiProvider) {
-                        ForEach(AiProvider.allCases) { provider in
-                            Text(provider.title).tag(provider)
-                        }
+            Section {
+                Picker("Run AI with", selection: $session.aiProvider) {
+                    ForEach(viewModel.session.isOnline ? AiProvider.allCases : AiProvider.offlineChoices) { provider in
+                        Text(provider.title).tag(provider)
                     }
-                    .accessibilityIdentifier("settings.ai.provider")
-                } header: {
-                    Text("Provider")
-                } footer: {
-                    Text(providerFooter)
                 }
+                .accessibilityIdentifier("settings.ai.provider")
+            } header: {
+                Text("Provider")
+            } footer: {
+                Text(providerFooter)
+            }
 
+            Section {
+                LocalAiConfigView()
+                    .padding(.vertical, 4)
+            } header: {
+                Text("Local AI")
+            } footer: {
+                Text("A model served on this machine by Ollama or llmman, in both spaces and offline.")
+            }
+
+            if viewModel.session.isOnline {
                 usageSection
-            } else if !appleIntelligence.isAvailable {
+            } else if !appleIntelligence.isAvailable, !viewModel.session.localAiConfig.isConfigured {
                 Section {
                     Text("Sign in to the open space to use the cloud AI on this device.")
                         .foregroundStyle(.secondary)
@@ -95,7 +105,7 @@ struct AiSettingsView: View {
             .padding(.vertical, 4)
             .accessibilityIdentifier("settings.ai.appleIntelligence")
 
-            if appleIntelligence == .notEnabled, let url = URL(string: UIApplication.openSettingsURLString) {
+            if appleIntelligence == .notEnabled, let url = SystemSettings.appleIntelligenceURL {
                 Link("Open Settings", destination: url)
             }
         } header: {
@@ -113,6 +123,10 @@ struct AiSettingsView: View {
             String(localized: "AI runs on this device and doesn't use your monthly tokens.")
         case .cloud:
             String(localized: "AI runs on the Writeopia servers and uses your monthly tokens.")
+        case .ollama where !viewModel.session.localAiConfig.isConfigured:
+            String(localized: "Pick a model of the local AI below; until then another provider answers.")
+        case .ollama:
+            String(localized: "AI runs on this machine through Ollama or llmman and doesn't use your monthly tokens.")
         }
     }
 

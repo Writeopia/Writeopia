@@ -84,11 +84,13 @@ class NotesUseCase private constructor(
         folderRepository.refreshFolders()
     }
 
-    suspend fun moveItemsById(ids: Iterable<String>, workspaceId: String, parentId: String) {
+    /** Moves the items into [parentId] and returns them, so the caller can send the move. */
+    suspend fun moveItemsById(ids: Iterable<String>, workspaceId: String, parentId: String): List<MenuItem> {
         val items = loadMenuItemsByIds(ids, workspaceId).filter { it.id != parentId }
 
         items.forEach { moveItem(it, parentId) }
         folderRepository.refreshFolders()
+        return items
     }
 
     suspend fun loadDocumentsForWorkspaceFromDb(workspaceId: String): List<Document> =

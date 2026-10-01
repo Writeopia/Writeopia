@@ -1,4 +1,5 @@
 import NoteEditor
+import WriteopiaUI
 import Writeopia
 import Observation
 import SwiftUI
@@ -23,6 +24,8 @@ final class FolderContentsViewModel {
     private(set) var selectedIds: Set<String> = []
     private(set) var isSummarizing = false
     var summaryError: String?
+    /// The summary in progress, awaited by tests.
+    @ObservationIgnored private(set) var summaryTask: Task<Void, Never>?
 
     /// The folder shown, with its current title and icon; nil for the root.
     private(set) var folder: Folder?
@@ -49,10 +52,27 @@ final class FolderContentsViewModel {
         self.settings = settings
     }
 
+    /// The "folder" that lists every favorite of the workspace.
+    static let favoritesId = "wr.favorites"
+
     var isRoot: Bool { folderId == Folder.rootId }
+    var isFavorites: Bool { folderId == Self.favoritesId }
+    /// Items can be created and dropped only in a real folder.
+    var canCreateItems: Bool { !isFavorites }
 
     var hasSelection: Bool { !selectedIds.isEmpty }
     var canSummarize: Bool { aiClient != nil }
+    /// Folders can be selected, but not duplicated nor summarized: with one in the selection,
+    /// only favorite and delete are offered, like the Compose app.
+    var selectionHasFolders: Bool { folders.contains { selectedIds.contains($0.id) } }
+
+    func select(_ id: String, _ selected: Bool) {
+        if selected {
+            selectedIds.insert(id)
+        } else {
+            selectedIds.remove(id)
+        }
+    }
 
     func toggleSelection(_ id: String) {
         if selectedIds.contains(id) {
@@ -89,6 +109,41 @@ final class FolderContentsViewModel {
         await perform { try await self.repository.setFavorite(ids: ids, favorite: favorite) }
     }
 
+    /// The selected folders, which the picker mustn't offer as a destination.
+    var selectedFolderIds: Set<String> {
+        Set(folders.map(\.id)).intersection(selectedIds)
+    }
+
+    /// Moves every selected folder and document into `folderId`, like dragging the selection
+    /// onto a folder in the Compose app. Each move bumps the item's timestamp, so the next sync
+    /// sends it to the backend when it couldn't be sent right away.
+    func moveSelected(to folderId: String) async {
+        let ids = selectedIds.subtracting([folderId])
+        clearSelection()
+        guard !ids.isEmpty else { return }
+
+        let movingFolders = Set(folders.map(\.id)).intersection(ids)
+        folders.removeAll { ids.contains($0.id) }
+        documents.removeAll { ids.contains($0.id) }
+
+        var failure: String?
+        for id in ids {
+            do {
+                if movingFolders.contains(id) {
+                    try await repository.moveFolder(id: id, toFolder: folderId)
+                } else {
+                    try await repository.moveDocument(id: id, toFolder: folderId)
+                }
+            } catch {
+                failure = failure ?? error.userMessage
+            }
+        }
+        if let failure {
+            actionError = failure
+        }
+        await load()
+    }
+
     /// Deletes the selection (folders with everything inside).
     func deleteSelected() async {
         let ids = selectedIds
@@ -98,10 +153,35 @@ final class FolderContentsViewModel {
         await perform { try await self.repository.deleteItems(ids: Array(ids)) }
     }
 
+    /// Dropped image files become one note each in this folder, an untitled document with the
+    /// image as its only step, like `importImages` of the Compose notes menu.
+    func importImages(_ urls: [URL]) async {
+        let images = urls.filter { ImageProcessing.supportedExtensions.contains($0.pathExtension.lowercased()) }
+        guard canCreateItems, !images.isEmpty else { return }
+
+        for url in images {
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+            guard let data = try? Data(contentsOf: url), let jpeg = ImageProcessing.jpeg(from: data),
+                  let file = try? ImageFiles.save(jpeg)
+            else {
+                actionError = String(localized: "\(url.lastPathComponent) can't be added as an image.")
+                continue
+            }
+
+            await perform {
+                var document = try await self.repository.createDocument(title: "", parentId: self.folderId)
+                document.content.append(StoryStep(type: .image, path: file.path(percentEncoded: false), position: 1))
+                try await self.repository.save(document)
+            }
+        }
+        await load()
+    }
+
     /// Summarizes the selected documents with the AI into a new document of this folder, like
     /// "AI Summary" of the Compose selection menu. Runs with Apple Intelligence on the device, or
     /// the cloud AI (see `AppSession.aiClient`).
-    func summarizeSelected() async {
+    func summarizeSelected() {
         guard let aiClient, hasSelection else { return }
         let ids = documents.map(\.id).filter { selectedIds.contains($0) }
         clearSelection()
@@ -110,8 +190,22 @@ final class FolderContentsViewModel {
             return
         }
 
+        summaryTask?.cancel()
         isSummarizing = true
-        defer { isSummarizing = false }
+        summaryTask = Task { await summarize(ids: ids, with: aiClient) }
+    }
+
+    /// Stops the summary in progress; nothing is saved.
+    func cancelSummary() {
+        summaryTask?.cancel()
+        summaryTask = nil
+    }
+
+    private func summarize(ids: [String], with aiClient: AiStreaming) async {
+        defer {
+            isSummarizing = false
+            summaryTask = nil
+        }
 
         do {
             var prompt = ""
@@ -126,14 +220,20 @@ final class FolderContentsViewModel {
             for try await partial in aiClient.stream(.summary, prompt: prompt) {
                 answer = partial
             }
+            // A cancelled stream just ends: don't mistake it for an empty answer.
+            try Task.checkCancellation()
 
             guard let summary = MarkdownToDocument.read(answer, parentId: folderId, workspaceId: "") else {
                 summaryError = String(localized: "The AI didn't return a summary.")
                 return
             }
+            try Task.checkCancellation()
             try await repository.save(summary)
             await load()
+        } catch is CancellationError {
+            return
         } catch {
+            if Task.isCancelled { return }
             summaryError = error.userMessage
         }
     }
@@ -153,7 +253,8 @@ final class FolderContentsViewModel {
 
         await loadLocal()
 
-        guard let syncing = repository as? DocumentSyncing else { return }
+        // Favorites come from what's synced already; a folder syncs itself.
+        guard !isFavorites, let syncing = repository as? DocumentSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
         do {
@@ -170,10 +271,12 @@ final class FolderContentsViewModel {
 
     func loadLocal() async {
         do {
-            let contents = try await repository.folderContents(folderId: folderId)
+            let contents = try isFavorites
+                ? await repository.favorites()
+                : await repository.folderContents(folderId: folderId)
             folders = contents.folders
             documents = contents.documents
-            if !isRoot {
+            if !isRoot, !isFavorites {
                 setPath(try await repository.folderPath(to: folderId))
             }
             errorMessage = nil
@@ -288,7 +391,7 @@ final class FolderContentsViewModel {
 
     /// Deletes this folder with everything inside it. Returns whether it was deleted.
     func deleteFolder() async -> Bool {
-        guard !isRoot else { return false }
+        guard !isRoot, !isFavorites else { return false }
         do {
             try await repository.deleteItems(ids: [folderId])
             return true
@@ -322,6 +425,8 @@ final class FolderContentsViewModel {
 public enum DocumentsRoute: Hashable {
     case folder(Folder)
     case document(id: String, title: String)
+    /// Every favorite of the workspace, like "Favorites" of the Compose side menu.
+    case favorites
 }
 
 /// Documents tab: the folders and documents of the current workspace.
@@ -337,7 +442,7 @@ public struct DocumentsRootView: View {
     public var body: some View {
         DocumentsNavigation(session: session, router: router)
             // A different workspace means a different tree: start again from its root.
-            .id(session.workspace?.id)
+            .id("\(session.workspace?.id ?? "")-\(session.documentsVersion)")
             .onChange(of: session.workspace?.id) { router.reset() }
     }
 }
@@ -346,6 +451,10 @@ private struct DocumentsNavigation: View {
     let session: AppSession
     @Bindable var router: DocumentsRouter
     @State private var settings: FolderDisplaySettings
+
+    /// Ties a document card to the editor pushed from it, so the card zooms into the editor,
+    /// like the shared element transition of the Compose app.
+    @Namespace private var zoomNamespace
 
     init(session: AppSession, router: DocumentsRouter) {
         self.session = session
@@ -361,6 +470,8 @@ private struct DocumentsNavigation: View {
                     switch route {
                     case .folder(let folder):
                         folderView(id: folder.id, folder: folder, title: folder.displayTitle, rootTitle: rootTitle)
+                    case .favorites:
+                        folderView(id: FolderContentsViewModel.favoritesId, title: String(localized: "Favorites"), rootTitle: rootTitle)
                     case .document(let id, let title):
                         NoteEditorView(
                             documentId: id,
@@ -373,6 +484,7 @@ private struct DocumentsNavigation: View {
                         ) { link in
                             router.path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
                         }
+                        .zoomTransition(sourceID: id, in: zoomNamespace)
                     }
                 }
         }
@@ -389,7 +501,8 @@ private struct DocumentsNavigation: View {
             settings: settings,
             path: $router.path,
             contentsVersion: router.contentsVersion,
-            onItemsChange: router.treeChanged
+            onItemsChange: router.treeChanged,
+            transitionNamespace: zoomNamespace
         )
     }
 }
@@ -399,20 +512,35 @@ struct FolderContentsView: View {
     @Binding private var path: NavigationPath
     @State private var newItem: NewItem?
     @State private var showsNewFolder = false
+    @State private var showsMoveSelection = false
     @State private var newItemTitle = ""
     /// Folder currently under a drag, highlighted as the drop target.
     @State private var dropTargetId: String?
     @State private var movedCount = 0
     @State private var swipeSelection = SwipeSelectionCoordinator()
+    @State private var dragSelection = DragSelection()
     @State private var folderSheet: FolderSheet?
     @State private var confirmsFolderDeletion = false
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private let title: String
     private let rootTitle: String
     private let contentsVersion: Int
     private let onItemsChange: () -> Void
+    /// Namespace of the zoom into the editor; nil where the cards don't push the editor.
+    private let transitionNamespace: Namespace.ID?
 
-    private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 12)]
+    /// Cards are at least this wide and fill the width, so wider windows get more columns, like
+    /// the adaptive grids of the Compose app (220 on desktop, 150 on phones and tablets).
+    private static var minCardWidth: CGFloat {
+        #if os(macOS)
+        220
+        #else
+        150
+        #endif
+    }
+
+    private static let gridSpacing: CGFloat = 12
+    private let columns = [GridItem(.adaptive(minimum: FolderContentsView.minCardWidth), spacing: FolderContentsView.gridSpacing)]
+    @State private var contentWidth: CGFloat = 0
 
     /// New documents are named in an alert; new folders use `FolderEditSheet`, to pick an icon.
     private enum NewItem: String, Identifiable {
@@ -431,7 +559,8 @@ struct FolderContentsView: View {
         settings: FolderDisplaySettings,
         path: Binding<NavigationPath>,
         contentsVersion: Int = 0,
-        onItemsChange: @escaping () -> Void = {}
+        onItemsChange: @escaping () -> Void = {},
+        transitionNamespace: Namespace.ID? = nil
     ) {
         _viewModel = State(
             initialValue: FolderContentsViewModel(folderId: folderId, folder: folder, repository: repository, aiClient: aiClient, settings: settings)
@@ -441,26 +570,49 @@ struct FolderContentsView: View {
         self.rootTitle = rootTitle
         self.contentsVersion = contentsVersion
         self.onItemsChange = onItemsChange
+        self.transitionNamespace = transitionNamespace
     }
 
     private var settings: FolderDisplaySettings { viewModel.settings }
 
     var body: some View {
-        ScrollView {
-            // Inside the scroll view, not in a top inset: an inset hides the large title on iOS 26+.
-            if !viewModel.isRoot {
-                FolderBreadcrumb(
-                    rootTitle: rootTitle,
-                    ancestors: viewModel.ancestors,
-                    current: viewModel.folder?.displayTitle ?? title,
-                    onSelect: navigate(toAncestor:)
-                )
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Inside the scroll view, not in a top inset: an inset hides the large title on iOS 26+.
+                    if !viewModel.isRoot {
+                        FolderBreadcrumb(
+                            rootTitle: rootTitle,
+                            ancestors: viewModel.ancestors,
+                            current: viewModel.folder?.displayTitle ?? title,
+                            onSelect: navigate(toAncestor:)
+                        )
+                    }
+                    arrangedItems
+                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { contentWidth = $0 }
+                        .padding([.horizontal, .bottom])
+                        .padding(.top, viewModel.isRoot ? 16 : 4)
+                        .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
+                        .environment(\.swipeSelection, swipeSelection)
+                }
+                // The content fills the visible height, so a drag can start anywhere on the
+                // empty space and select the items it crosses, like the Compose app.
+                .frame(maxWidth: .infinity, minHeight: geometry.size.height, alignment: .top)
+                .contentShape(Rectangle())
+                .dragSelectionBox(dragSelection)
+                // Image files dropped from the Finder become notes, like the Compose app.
+                .dropDestination(for: URL.self) { urls, _ in
+                    let images = urls.filter { ImageProcessing.supportedExtensions.contains($0.pathExtension.lowercased()) }
+                    guard !images.isEmpty else { return false }
+                    Task { await viewModel.importImages(images) }
+                    return true
+                }
+                .onAppear {
+                    dragSelection.onChange = { [viewModel] id, isInside in viewModel.select(id, isInside) }
+                    swipeSelection.onScrollViewFound = { [dragSelection] scrollView in dragSelection.scrollView = scrollView }
+                    if let scrollView = swipeSelection.scrollView { dragSelection.scrollView = scrollView }
+                }
             }
-            arrangedItems
-                .padding([.horizontal, .bottom])
-                .padding(.top, viewModel.isRoot ? 16 : 4)
-                .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
-                .environment(\.swipeSelection, swipeSelection)
         }
         // On the scroll view only: applied to the whole screen, the sheets would inherit it and
         // get a pull to refresh of their own.
@@ -472,24 +624,46 @@ struct FolderContentsView: View {
                 DocumentsSelectionMenu(
                     count: viewModel.selectedIds.count,
                     isFavorite: viewModel.selectionIsFavorite,
-                    showsSummary: viewModel.canSummarize,
+                    showsCopy: !viewModel.selectionHasFolders,
+                    showsSummary: viewModel.canSummarize && !viewModel.selectionHasFolders,
                     onCopy: { Task { await viewModel.copySelected() } },
                     onFavorite: { Task { await viewModel.favoriteSelected() } },
-                    onSummary: { Task { await viewModel.summarizeSelected() } },
+                    onSummary: { viewModel.summarizeSelected() },
+                    onMove: { showsMoveSelection = true },
                     onDelete: { Task { await viewModel.deleteSelected() } },
                     onClose: { withAnimation(.snappy) { viewModel.clearSelection() } }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             } else if viewModel.isSummarizing {
-                Label("Summarizing…", systemImage: "sparkles")
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 16)
-                    .frame(height: 44)
-                    .background(.regularMaterial, in: Capsule())
-                    .padding(.bottom, 8)
+                HStack(spacing: 10) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Label("Summarizing…", systemImage: "sparkles")
+                        .font(.subheadline.weight(.semibold))
+                    Button {
+                        withAnimation(.snappy) { viewModel.cancelSummary() }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.footnote.weight(.bold))
+                            .frame(width: 28, height: 28)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help("Cancel summary")
+                    .accessibilityLabel("Cancel summary")
+                    .accessibilityIdentifier("documents.summary.cancel")
+                }
+                .padding(.leading, 16)
+                .padding(.trailing, 6)
+                .frame(height: 44)
+                .background(.regularMaterial, in: Capsule())
+                .padding(.bottom, 8)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.snappy, value: viewModel.hasSelection)
+        .animation(.snappy, value: viewModel.isSummarizing)
         .alert(
             "Could not summarize",
             isPresented: Binding(get: { viewModel.summaryError != nil }, set: { if !$0 { viewModel.summaryError = nil } })
@@ -516,9 +690,9 @@ struct FolderContentsView: View {
         }
         .navigationTitle(viewModel.folder?.displayTitle ?? title)
         // A large title can't show an icon, so inside a folder the title is inline, with the icon.
-        .navigationBarTitleDisplayMode(viewModel.isRoot ? .automatic : .inline)
+        .toolbarTitleDisplayMode(viewModel.isRoot ? .automatic : .inline)
         .toolbar {
-            if !viewModel.isRoot {
+            if !viewModel.isRoot, !viewModel.isFavorites {
                 ToolbarItem(placement: .principal) {
                     folderTitle
                 }
@@ -526,29 +700,31 @@ struct FolderContentsView: View {
             ToolbarItem(placement: .primaryAction) {
                 folderMenu
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .wrTrailing) {
                 if viewModel.isSyncing {
                     ProgressView()
                         .controlSize(.small)
                         .accessibilityLabel("Syncing")
                 }
             }
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button {
-                        present(.document)
+            if viewModel.canCreateItems {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button {
+                            present(.document)
+                        } label: {
+                            Label("New document", systemImage: "doc.badge.plus")
+                        }
+                        Button {
+                            showsNewFolder = true
+                        } label: {
+                            Label("New folder", systemImage: "folder.badge.plus")
+                        }
                     } label: {
-                        Label("New document", systemImage: "doc.badge.plus")
+                        Label("Add", systemImage: "plus")
                     }
-                    Button {
-                        showsNewFolder = true
-                    } label: {
-                        Label("New folder", systemImage: "folder.badge.plus")
-                    }
-                } label: {
-                    Label("Add", systemImage: "plus")
+                    .accessibilityIdentifier("documents.add")
                 }
-                .accessibilityIdentifier("documents.add")
             }
         }
         .task { await viewModel.load() }
@@ -563,11 +739,23 @@ struct FolderContentsView: View {
             Button("Cancel", role: .cancel) {}
             Button("Create") { create(item) }
         }
+        .sheet(isPresented: $showsMoveSelection) {
+            FolderPickerSheet(
+                excludedFolderIds: viewModel.selectedFolderIds,
+                currentParentId: viewModel.folderId,
+                rootTitle: rootTitle,
+                repository: viewModel.repository
+            ) { folderId in
+                Task { await viewModel.moveSelected(to: folderId) }
+            }
+            .wrSheetSize(width: 440, height: 520)
+        }
         .sheet(isPresented: $showsNewFolder) {
             FolderEditSheet(folder: nil) { title, icon in
                 Task { await viewModel.createFolder(title: title, icon: icon) }
             }
             .presentationDetents([.medium, .large])
+            .wrSheetSize(width: 440, height: 440)
         }
         .alert(
             "Something went wrong",
@@ -629,7 +817,9 @@ struct FolderContentsView: View {
     /// Items spread over the columns of the staggered grid, each going to the shortest column so
     /// they stay balanced.
     private var staggeredColumns: [[FolderItem]] {
-        let count = horizontalSizeClass == .regular ? 3 : 2
+        // As many columns as cards of the minimum width fit, at least two.
+        let fitting = Int((contentWidth + Self.gridSpacing) / (Self.minCardWidth + Self.gridSpacing))
+        let count = max(2, fitting)
         var columns = Array(repeating: [FolderItem](), count: count)
         var heights = Array(repeating: 0, count: count)
         for item in viewModel.items {
@@ -645,8 +835,10 @@ struct FolderContentsView: View {
             ItemCard(item: item, isDropTarget: dropTargetId == item.id, isSelected: viewModel.isSelected(item.id), style: style)
         }
         .buttonStyle(.plain)
+        .zoomTransitionSource(id: item.id, in: transitionNamespace, enabled: !item.isFolder)
         // Slide a card sideways to select it, like the Compose notes list.
         .slideToSelect { viewModel.toggleSelection(item.id) }
+        .selectableByDrag(id: item.id)
         .accessibilityAction(named: viewModel.isSelected(item.id) ? "Unselect" : "Select") {
             viewModel.toggleSelection(item.id)
         }
@@ -697,7 +889,7 @@ struct FolderContentsView: View {
 
     private var folderMenuPresentations: FolderMenuPresentations {
         FolderMenuPresentations(
-            isFolder: !viewModel.isRoot,
+            isFolder: !viewModel.isRoot && !viewModel.isFavorites,
             folderTitle: viewModel.folder?.displayTitle ?? title,
             folder: viewModel.folder,
             rootTitle: rootTitle,
@@ -875,42 +1067,77 @@ struct ItemCard: View {
     private var cornerRadius: CGFloat { style == .row ? 12 : 16 }
 
     private var card: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top) {
-                iconImage
-                    .font(.title2)
-                Spacer()
-                if isFavorite {
-                    Image(systemName: "star.fill")
-                        .font(.caption)
-                        .foregroundStyle(.yellow)
+        VStack(alignment: .leading, spacing: 0) {
+            // A document with a colored header shows it across the top of the card, with the
+            // title on it, like `HeaderPreviewDrawer` of the Compose app.
+            if let headerColor {
+                coloredHeader(headerColor)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                if headerColor == nil {
+                    HStack(alignment: .top) {
+                        iconImage
+                            .font(.title2)
+                        Spacer()
+                        favoriteStar
+                    }
+
+                    titleText
                 }
-            }
 
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(WrColors.textLight)
-                .lineLimit(style == .staggered ? 4 : 2)
-                .multilineTextAlignment(.leading)
+                if let preview, !preview.isEmpty {
+                    Text(preview)
+                        .font(.caption)
+                        .foregroundStyle(WrColors.textLighter)
+                        .lineLimit(style == .staggered ? 10 : 3)
+                        .multilineTextAlignment(.leading)
+                }
 
-            if let preview, !preview.isEmpty {
-                Text(preview)
-                    .font(.caption)
+                if style == .grid {
+                    Spacer(minLength: 0)
+                }
+
+                footer
+                    .font(.caption2)
                     .foregroundStyle(WrColors.textLighter)
-                    .lineLimit(style == .staggered ? 10 : 3)
-                    .multilineTextAlignment(.leading)
             }
+            .padding(14)
+        }
+        .frame(maxWidth: .infinity, minHeight: style == .grid ? 150 : nil, alignment: .topLeading)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+    }
 
-            if style == .grid {
-                Spacer(minLength: 0)
-            }
-
-            footer
-                .font(.caption2)
-                .foregroundStyle(WrColors.textLighter)
+    private func coloredHeader(_ color: Color) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            iconImage
+                .font(.title3)
+            titleText
         }
         .padding(14)
-        .frame(maxWidth: .infinity, minHeight: style == .grid ? 150 : nil, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 70, alignment: .bottomLeading)
+        .background(color)
+        .overlay(alignment: .topTrailing) {
+            favoriteStar
+                .padding(8)
+        }
+    }
+
+    private var titleText: some View {
+        Text(title)
+            .font(.headline)
+            .foregroundStyle(WrColors.textLight)
+            .lineLimit(style == .staggered ? 4 : 2)
+            .multilineTextAlignment(.leading)
+    }
+
+    @ViewBuilder
+    private var favoriteStar: some View {
+        if isFavorite {
+            Image(systemName: "star.fill")
+                .font(.caption)
+                .foregroundStyle(.yellow)
+        }
     }
 
     private var row: some View {
@@ -978,6 +1205,10 @@ struct ItemCard: View {
 
     private var preview: String? {
         if case .document(let document) = item { document.preview } else { nil }
+    }
+
+    private var headerColor: Color? {
+        if case .document(let document) = item { document.headerColor.map { Color(argb: $0) } } else { nil }
     }
 
     @ViewBuilder
@@ -1049,6 +1280,37 @@ extension FolderItem {
 }
 
 extension View {
+    /// Marks the view as the origin of a zoom into the screen pushed from it, like the shared
+    /// element transition of the Compose app. iOS 18 has the transition; the Mac has no zoom for
+    /// a pushed screen (`NavigationTransition.zoom` is unavailable there), and older iOS keeps
+    /// the default push.
+    @ViewBuilder
+    func zoomTransitionSource(id: String, in namespace: Namespace.ID?, enabled: Bool) -> some View {
+        #if os(iOS)
+        if enabled, let namespace, #available(iOS 18, *) {
+            matchedTransitionSource(id: id, in: namespace)
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+
+    /// Zooms the pushed screen out of the view marked with `zoomTransitionSource`.
+    @ViewBuilder
+    func zoomTransition(sourceID: String, in namespace: Namespace.ID) -> some View {
+        #if os(iOS)
+        if #available(iOS 18, *) {
+            navigationTransition(.zoom(sourceID: sourceID, in: namespace))
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+
     /// Makes folder cards accept dragged items. Documents are not drop targets.
     @ViewBuilder
     func folderDropDestination(

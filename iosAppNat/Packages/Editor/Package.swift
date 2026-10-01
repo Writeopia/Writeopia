@@ -12,7 +12,7 @@ let mainActorByDefault: [SwiftSetting] = [.defaultIsolation(MainActor.self)]
 let package = Package(
     name: "Editor",
     defaultLocalization: "en",
-    platforms: [.iOS(.v17), .macOS(.v14)],
+    platforms: [.iOS(.v17), .macOS(.v26)],
     products: [
         .library(name: "Writeopia", targets: ["Writeopia"]),
         .library(name: "WriteopiaUI", targets: ["WriteopiaUI"]),

@@ -179,6 +179,11 @@ public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
         Date(timeIntervalSince1970: TimeInterval(lastUpdatedAt) / 1000)
     }
 
+    /// ARGB color of the document header, when the title has one.
+    public var headerColor: Int? {
+        content.first { $0.type.number == StoryType.title.number }?.decoration?.backgroundColor
+    }
+
     /// Steps sorted by position, without the title step (which is shown as the navigation title).
     public var bodySteps: [StoryStep] {
         content

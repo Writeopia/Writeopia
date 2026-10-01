@@ -78,17 +78,8 @@ public struct ContentManager {
         let step = lineBreak.storyStep
         let text = step.text ?? ""
 
-        // Return on an empty list item leaves the list instead of adding another empty item.
-        if step.isListLike, text.trimmingCharacters(in: .newlines).isEmpty {
-            var plain = step
-            plain.text = ""
-            plain.type = .text
-            plain.checked = nil
-            var newStories = stories
-            newStories[lineBreak.position] = plain
-            return StoryState(stories: newStories, lastEdit: .whole, focus: lineBreak.position)
-        }
-
+        // Like the Compose app, Return on an empty list or check item adds another item; the
+        // list is left with Backspace at the start of the empty item.
         let lines = SpansHandler.splitLines(text, spans: step.spans)
         let carriedTags = step.tags.filter { Self.carryOverTags.contains($0.tag) }
         let newType = lineBreakType(step.type)
@@ -139,9 +130,16 @@ public struct ContentManager {
         )
     }
 
+    /// Tags that Backspace at the start removes before merging the line, like the Compose app.
+    static let erasableTags: Set<String> = [
+        BlockTag.h1.rawValue, BlockTag.h2.rawValue, BlockTag.h3.rawValue, BlockTag.h4.rawValue,
+        BlockTag.box.rawValue, BlockTag.card.rawValue,
+    ]
+
     /// Backspace at the start of a step.
     ///
     /// - A list or checklist item becomes a regular paragraph first.
+    /// - A heading, box or card becomes a plain paragraph first.
     /// - When the previous step isn't text (divider, link...), that step is removed.
     /// - Otherwise the text joins the previous text step, keeping its spans.
     public func onErase(_ erase: Action.EraseStory, in stories: [Double: StoryStep]) -> StoryState? {
@@ -151,6 +149,14 @@ public struct ContentManager {
             var newStep = step
             newStep.type = .text
             newStep.checked = nil
+            var newStories = stories
+            newStories[erase.position] = newStep
+            return StoryState(stories: newStories, lastEdit: .whole, focus: erase.position)
+        }
+
+        if !step.isTitle, step.tags.contains(where: { Self.erasableTags.contains($0.tag) }) {
+            var newStep = step
+            newStep.tags.removeAll { Self.erasableTags.contains($0.tag) }
             var newStories = stories
             newStories[erase.position] = newStep
             return StoryState(stories: newStories, lastEdit: .whole, focus: erase.position)

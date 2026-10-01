@@ -1,4 +1,3 @@
-#if canImport(UIKit)
 import SwiftUI
 import WrDesign
 import Writeopia
@@ -11,6 +10,18 @@ public struct WriteopiaEditor: View {
     // Swipes don't start on the grip column, which belongs to the reorder drag.
     @State private var swipeSelection = SwipeSelectionCoordinator(leadingExclusion: EditorLayout.gutter + 4)
     @State private var reorder = ReorderCoordinator()
+    /// A drag on the empty space selects the lines it crosses, like the Compose desktop app.
+    @State private var dragSelection = DragSelection()
+
+    /// Room on the sides of the text. On the Mac it keeps the text clear of the column of side
+    /// options that floats over the trailing edge.
+    private static var horizontalPadding: CGFloat {
+        #if os(macOS)
+        64
+        #else
+        12
+        #endif
+    }
 
     /// `customDrawers` draws step types the editor doesn't know, by type number.
     public init(manager: WriteopiaStateManager, customDrawers: [Int: CustomStepDrawer] = [:]) {
@@ -32,29 +43,48 @@ public struct WriteopiaEditor: View {
 
     public var body: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(manager.toDraw) { draw in
-                        StoryStepDrawer(draw: draw, manager: manager)
-                            .id(draw.id)
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(manager.toDraw) { draw in
+                            StoryStepDrawer(draw: draw, manager: manager)
+                                .id(draw.id)
+                        }
                     }
+                    .coordinateSpace(.named(ReorderCoordinator.coordinateSpace))
+                    .overlay(alignment: .topLeading) { reorderPreview }
+                    .padding(.top, 8)
+                    .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
+                    .environment(\.reorderCoordinator, reorder)
+                    .environment(\.swipeSelection, swipeSelection)
+                    .environment(\.customStepDrawers, customDrawers)
+                    .frame(maxWidth: 760)
+                    // Outside the text column: the text keeps its width, the padding keeps it
+                    // clear of the window edges and the side menu.
+                    .padding(.horizontal, Self.horizontalPadding)
+                    .frame(maxWidth: .infinity)
+                    // The content fills the visible height, so a click on the empty space below
+                    // the last step reaches the background too.
+                    .frame(minHeight: geometry.size.height, alignment: .top)
+                    .contentShape(Rectangle())
+                    .onTapGesture { manager.onBackgroundClick?() }
+                    .dragSelectionBox(dragSelection, enabled: manager.isEditable)
                 }
-                .coordinateSpace(.named(ReorderCoordinator.coordinateSpace))
-                .overlay(alignment: .topLeading) { reorderPreview }
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
-                .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
-                .environment(\.reorderCoordinator, reorder)
-                .environment(\.swipeSelection, swipeSelection)
-                .environment(\.customStepDrawers, customDrawers)
-                .frame(maxWidth: 760)
-                .frame(maxWidth: .infinity)
             }
             .scrollDismissesKeyboard(.interactively)
             .onAppear {
+                dragSelection.onChange = { [manager] id, isInside in
+                    manager.onSelected(stepId: id, isSelected: isInside)
+                }
                 reorder.manager = manager
-                swipeSelection.onScrollViewFound = { [reorder] scrollView in reorder.scrollView = scrollView }
-                if let scrollView = swipeSelection.scrollView { reorder.scrollView = scrollView }
+                swipeSelection.onScrollViewFound = { [reorder, dragSelection] scrollView in
+                    reorder.scrollView = scrollView
+                    dragSelection.scrollView = scrollView
+                }
+                if let scrollView = swipeSelection.scrollView {
+                    reorder.scrollView = scrollView
+                    dragSelection.scrollView = scrollView
+                }
             }
             .onChange(of: manager.focusRequest) { _, request in
                 guard let request else { return }
@@ -65,4 +95,3 @@ public struct WriteopiaEditor: View {
         }
     }
 }
-#endif

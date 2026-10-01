@@ -71,7 +71,7 @@ public struct SearchRootView: View {
             imageUploader: session.imageUploader,
             isPremium: session.user?.isPremium ?? false
         )
-            .id(session.workspace?.id)
+            .id("\(session.workspace?.id ?? "")-\(session.documentsVersion)")
     }
 }
 
@@ -129,6 +129,9 @@ struct SearchView: View {
                     }
                 case .folder(let folder):
                     Text(folder.displayTitle)
+                case .favorites:
+                    // Search only opens documents; the favorites live in the Documents tab.
+                    Text("Favorites")
                 }
             }
         }

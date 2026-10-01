@@ -88,6 +88,7 @@ internal fun MobileChooseNoteScreen(
     })
 
     val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
+    val selectionHasFolders by chooseNoteViewModel.selectionHasFolders.collectAsState()
     val editState by chooseNoteViewModel.editState.collectAsState()
     val folderEdit = chooseNoteViewModel.editFolderState.collectAsState().value
     val currentFolder by chooseNoteViewModel.currentFolder.collectAsState()
@@ -261,10 +262,27 @@ internal fun MobileChooseNoteScreen(
                     onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
                     onCopy = chooseNoteViewModel::copySelectedNotes,
                     onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
-                    onSummary = chooseNoteViewModel::summarizeDocuments,
+                    onSummary = if (selectionHasFolders) null else chooseNoteViewModel::summarizeDocuments,
                     onClose = chooseNoteViewModel::clearSelection,
+                    onMove = chooseNoteViewModel::showMoveSelection,
+                    showCopy = !selectionHasFolders,
                     shape = MaterialTheme.shapes.large
                 )
+
+                val showMoveSelection by chooseNoteViewModel.moveSelectionState.collectAsState()
+
+                if (showMoveSelection) {
+                    val itemsPerFolderId by chooseNoteViewModel.menuItemsPerFolderId.collectAsState()
+                    val selectedNotes by chooseNoteViewModel.selectedNotes.collectAsState()
+
+                    MoveToFolderDialog(
+                        itemsPerFolderId = itemsPerFolderId,
+                        excludedIds = selectedNotes,
+                        currentParentId = chooseNoteViewModel.currentFolderId,
+                        onPick = chooseNoteViewModel::moveSelectionTo,
+                        onDismissRequest = chooseNoteViewModel::hideMoveSelection
+                    )
+                }
             }
         }
     }

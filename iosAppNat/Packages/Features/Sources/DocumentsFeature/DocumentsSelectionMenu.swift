@@ -6,10 +6,13 @@ import WrDesign
 struct DocumentsSelectionMenu: View {
     let count: Int
     let isFavorite: Bool
+    let showsCopy: Bool
     let showsSummary: Bool
     let onCopy: () -> Void
     let onFavorite: () -> Void
     let onSummary: () -> Void
+    /// Opens the folder picker to move the selection.
+    let onMove: () -> Void
     /// Called once the deletion is confirmed.
     let onDelete: () -> Void
     let onClose: () -> Void
@@ -17,11 +20,14 @@ struct DocumentsSelectionMenu: View {
 
     var body: some View {
         HStack(spacing: 2) {
-            button("doc.on.doc", label: "Copy", id: "copy", action: onCopy)
+            if showsCopy {
+                button("doc.on.doc", label: "Copy", id: "copy", action: onCopy)
+            }
             button(isFavorite ? "star.slash" : "star", label: isFavorite ? "Remove from favorites" : "Favorite", id: "favorite", action: onFavorite)
             if showsSummary {
                 button("sparkles", label: "AI Summary", id: "summary", tint: WrColors.accent, action: onSummary)
             }
+            button("arrow.forward.folder", label: "Move to…", id: "move", action: onMove)
             button("trash", label: "Delete", id: "delete", tint: .red) { confirmsDelete = true }
                 // Attached to the button so the confirmation shows right above it.
                 .confirmationDialog(

@@ -372,6 +372,28 @@ final class FakeBackend: HTTPTransport {
         #expect(try repository.local.storedDocument(id: "d") == nil)
     }
 
+    @Test func offlineMoveIsSentWithTheNextSyncOfAnyFolder() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        let folder = Folder(id: "f", parentId: "root", title: "Ideas", workspaceId: "w", lastSyncedAt: Date())
+        try repository.local.store(folder)
+        let document = WrDocument(id: "d", title: "Note", workspaceId: "w", parentId: "root", lastSyncedAt: Date.nowMillis)
+        try repository.local.store(document)
+
+        // The backend refuses the move (offline): it's kept locally, to be sent later.
+        try await repository.moveDocument(id: "d", toFolder: "f")
+        #expect(try repository.local.storedDocument(id: "d")?.parentId == "f")
+        #expect(try repository.local.storedDocument(id: "d")?.isOutdated == true)
+
+        // Syncing the root, not the folder the document moved to, still sends it.
+        try await repository.syncFolder("root")
+
+        let sent = try #require(backend.sentDocuments.first)
+        #expect(sent["id"] as? String == "d")
+        #expect(sent["parentId"] as? String == "f")
+        #expect(try repository.local.storedDocument(id: "d")?.isOutdated == false)
+    }
+
     @Test func offlineDeletionIsHiddenAndSentWithTheNextSync() async throws {
         let backend = FakeBackend()
         backend.deleteFails = true

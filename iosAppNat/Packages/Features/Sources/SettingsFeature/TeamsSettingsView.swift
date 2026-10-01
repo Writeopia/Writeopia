@@ -197,7 +197,7 @@ struct TeamDetailView: View {
     }
 
     var body: some View {
-        Form {
+        WrForm {
             Section {
                 LabeledContent("Name", value: viewModel.workspace.name)
                 LabeledContent("Your role", value: viewModel.workspace.isAdmin ? String(localized: "Admin") : String(localized: "Member"))
@@ -208,8 +208,10 @@ struct TeamDetailView: View {
                 Section {
                     TextField("Email", text: $viewModel.newMemberEmail)
                         .textContentType(.emailAddress)
+                        #if os(iOS)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
+                        #endif
                         .autocorrectionDisabled()
 
                     Picker("Role", selection: $viewModel.newMemberRole) {

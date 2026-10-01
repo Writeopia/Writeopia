@@ -1,8 +1,6 @@
-#if canImport(UIKit)
 import Drawing
 import PhotosUI
 import SwiftUI
-import UIKit
 import Writeopia
 import WriteopiaUI
 import WrData
@@ -49,6 +47,7 @@ public struct NoteEditorView: View {
     @Environment(\.isWideLayout) private var isWideLayout
     @Environment(\.openEditors) private var openEditors
     /// Selection waiting for a URL. Kept here because the alert takes the focus from the text.
+    @State private var sideTab: EditorSideOptions.SideTab?
     @State private var linkSelection: StepSelection?
     @State private var linkURL = ""
     private let fallbackTitle: String
@@ -98,6 +97,24 @@ public struct NoteEditorView: View {
         ]
     }
 
+    /// Image files dropped on the editor are added where the cursor is, like the Compose app.
+    private func dropImages(_ urls: [URL]) -> Bool {
+        let images = urls.filter { ImageProcessing.supportedExtensions.contains($0.pathExtension.lowercased()) }
+        guard !images.isEmpty, !viewModel.isLocked else { return false }
+        for url in images {
+            addImage(fileURL: url)
+        }
+        return true
+    }
+
+    /// An image file picked on the Mac, or dropped on the editor.
+    private func addImage(fileURL url: URL) {
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: url) else { return }
+        Task { await viewModel.addImage(data) }
+    }
+
     private func addImage(_ item: PhotosPickerItem) {
         Task {
             do {
@@ -136,8 +153,11 @@ public struct NoteEditorView: View {
 
     /// Hardware keyboard shortcuts of the desktop app: Cmd+K sends the line with the cursor to the
     /// AI, Esc stops the AI and removes its suggestions.
+    /// The shortcuts of the Compose desktop app. Cmd+Z is left to the text views for now.
     private var keyboardShortcuts: some View {
-        ZStack {
+        let manager = viewModel.writeopiaManager
+        let canEdit = viewModel.hasLoaded && !viewModel.isLocked
+        return ZStack {
             Button("Ask AI") {
                 viewModel.runAi(.prompt, mode: .cursor)
             }
@@ -147,9 +167,40 @@ public struct NoteEditorView: View {
             Button("Stop AI") {
                 viewModel.cancelAi()
                 viewModel.dismissAiSuggestions()
+                withAnimation(.snappy) { manager.clearLineSelection() }
             }
             .keyboardShortcut(.escape, modifiers: [])
-            .disabled(!viewModel.isAiRunning && !viewModel.writeopiaManager.hasAiSuggestions)
+            .disabled(!viewModel.isAiRunning && !manager.hasAiSuggestions && !manager.hasSelectedLines)
+
+            Button("Bold") { manager.toggleSpan(.bold) }
+                .keyboardShortcut("b", modifiers: .command)
+                .disabled(!canEdit)
+            Button("Italic") { manager.toggleSpan(.italic) }
+                .keyboardShortcut("i", modifiers: .command)
+                .disabled(!canEdit)
+            Button("Underline") { manager.toggleSpan(.underline) }
+                .keyboardShortcut("u", modifiers: .command)
+                .disabled(!canEdit)
+            Button("Box") { manager.toggleTag(.box) }
+                .keyboardShortcut("b", modifiers: [.command, .shift])
+                .disabled(!canEdit)
+            Button("List item") { manager.toggleType(.unorderedListItem) }
+                .keyboardShortcut("-", modifiers: .command)
+                .disabled(!canEdit)
+            Button("Select all lines") { withAnimation(.snappy) { manager.selectAllLines() } }
+                .keyboardShortcut("a", modifiers: [.command, .shift])
+                .disabled(!canEdit)
+            Button("Link to page") { Task { await viewModel.linkSelectionToNewPage() } }
+                .keyboardShortcut("l", modifiers: .command)
+                .disabled(!canEdit || !manager.hasSelectedLines)
+            // Backspace and Delete remove the selected lines wherever the keyboard focus is;
+            // without a selection they reach the text as usual.
+            Button("Delete lines") { withAnimation(.snappy) { manager.deleteSelectedLines() } }
+                .keyboardShortcut(.delete, modifiers: [])
+                .disabled(!canEdit || !manager.hasSelectedLines)
+            Button("Delete lines forward") { withAnimation(.snappy) { manager.deleteSelectedLines() } }
+                .keyboardShortcut(.deleteForward, modifiers: [])
+                .disabled(!canEdit || !manager.hasSelectedLines)
         }
         .opacity(0)
         .allowsHitTesting(false)
@@ -167,13 +218,6 @@ public struct NoteEditorView: View {
             linkURL = ""
             linkSelection = selection
         }
-    }
-
-    /// Adds `https://` when the scheme is missing; nil for empty input.
-    static func normalizedURL(_ input: String) -> String? {
-        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        return trimmed.contains("://") ? trimmed : "https://" + trimmed
     }
 
     /// Publishing is for premium users in the open space, like in the Compose app.
@@ -197,6 +241,7 @@ public struct NoteEditorView: View {
         Group {
             if viewModel.hasLoaded {
                 WriteopiaEditor(manager: viewModel.writeopiaManager, customDrawers: customDrawers)
+                    .dropDestination(for: URL.self) { urls, _ in dropImages(urls) }
                     .safeAreaInset(edge: .bottom, spacing: 0) {
                         // A locked document can't be edited, so its menu is hidden. While lines are
                         // selected, the selection menu takes the place of the regular one.
@@ -243,8 +288,10 @@ public struct NoteEditorView: View {
                                 onLinkClick: linkClick,
                                 onDrawingClick: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) },
                                 onImagePicked: addImage,
+                                onImageFilePicked: addImage(fileURL:),
                                 onPublishClick: publishClick,
-                                onDelete: deleteDocument
+                                onDelete: deleteDocument,
+                                tab: $sideTab
                             )
                             .padding(.trailing, 10)
                             .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -264,7 +311,7 @@ public struct NoteEditorView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .background(Color(uiColor: .systemBackground))
+        .background(WrColors.systemBackground)
         .overlay(alignment: .top) {
             if viewModel.isAiRunning {
                 AiRunningChip { viewModel.cancelAi() }
@@ -275,7 +322,7 @@ public struct NoteEditorView: View {
         .animation(.snappy, value: viewModel.isAiRunning)
         .background { keyboardShortcuts }
         .navigationTitle(viewModel.hasLoaded ? viewModel.title : fallbackTitle)
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 TitleView(
@@ -295,14 +342,18 @@ public struct NoteEditorView: View {
                 }
             }
         }
+        #if os(iOS)
         // The side options of landscape replace the navigation bar, back button included.
         .toolbar(isWideLayout ? .hidden : .automatic, for: .navigationBar)
+        #endif
         .animation(.snappy, value: isWideLayout)
         .sheet(isPresented: $showMenu) {
             NoteMenuSheet(viewModel: viewModel, onPublishClick: publishClick, onDelete: deleteDocument)
+                .wrSheetSize(width: 440, height: 560)
         }
         .sheet(isPresented: $showPublish) {
             PublishSheet(viewModel: viewModel)
+                .wrSheetSize(width: 440, height: 400)
         }
         .alert("Premium Feature", isPresented: $showPremium) {
             Button("OK", role: .cancel) {}
@@ -310,19 +361,23 @@ public struct NoteEditorView: View {
             Text("This feature is only available for premium users using an online workspace")
         }
         .animation(.snappy, value: viewModel.isLocked)
+        #if os(iOS)
         // The editor has its own bottom menu, like the Compose app.
         .toolbar(.hidden, for: .tabBar)
+        #endif
         .sheet(isPresented: $showAiDialog) {
             AiDialog(cursorActions: aiCursorActions) { command, mode in
                 viewModel.runAi(command, mode: mode)
             }
             .onAppear { viewModel.prewarmAi() }
+            .wrSheetSize(width: 420, height: 440)
         }
         .sheet(isPresented: $showSelectedLinesAiDialog) {
             AiDialog(fixedMode: .selectedLines) { command, mode in
                 viewModel.runAi(command, mode: mode)
             }
             .onAppear { viewModel.prewarmAi() }
+            .wrSheetSize(width: 420, height: 440)
         }
         .alert(
             "Could not delete the document",
@@ -354,8 +409,10 @@ public struct NoteEditorView: View {
             isPresented: Binding(get: { linkSelection != nil }, set: { if !$0 { linkSelection = nil } })
         ) {
             TextField("https://", text: $linkURL)
+                #if os(iOS)
                 .textInputAutocapitalization(.never)
                 .keyboardType(.URL)
+                #endif
                 .autocorrectionDisabled()
             Button("Cancel", role: .cancel) {}
             Button("Add") {
@@ -364,11 +421,20 @@ public struct NoteEditorView: View {
                 }
             }
         }
+        #if os(iOS)
         .fullScreenCover(item: $drawingTarget) { target in
             DrawingEditorView(drawing: target.drawing, defaultColor: defaultDrawingColor) { drawing in
                 viewModel.saveDrawing(drawing, stepId: target.stepId)
             }
         }
+        #else
+        .sheet(item: $drawingTarget) { target in
+            DrawingEditorView(drawing: target.drawing, defaultColor: defaultDrawingColor) { drawing in
+                viewModel.saveDrawing(drawing, stepId: target.stepId)
+            }
+            .frame(minWidth: 800, minHeight: 560)
+        }
+        #endif
         .onAppear { openEditors?.opened() }
         .onDisappear {
             openEditors?.closed()
@@ -378,6 +444,19 @@ public struct NoteEditorView: View {
         }
         .task {
             viewModel.writeopiaManager.onDocumentLinkClick = openDocumentLink
+            viewModel.writeopiaManager.onCopySelectedLines = { viewModel.copySelectedLines(to: SystemLinePasteboard()) }
+            viewModel.writeopiaManager.onCutSelectedLines = {
+                withAnimation(.snappy) { viewModel.cutSelectedLines(to: SystemLinePasteboard()) }
+            }
+            viewModel.writeopiaManager.onLinkRequested = linkClick
+            // A click on the empty space closes the side menu and clears the selection, like the
+            // Compose desktop app.
+            viewModel.writeopiaManager.onBackgroundClick = {
+                withAnimation(.snappy) {
+                    sideTab = nil
+                    viewModel.writeopiaManager.clearLineSelection()
+                }
+            }
             await viewModel.loadDocument()
             await viewModel.mergeFromBackend()
             await viewModel.loadPublishState()
@@ -418,6 +497,10 @@ private struct TitleView: View {
                     .accessibilityLabel("Published")
             }
         }
+        #if os(macOS)
+        // The Mac toolbar draws a bubble around the item; the title needs room inside it.
+        .padding(.horizontal, 12)
+        .padding(.vertical, 2)
+        #endif
     }
 }
-#endif

@@ -86,9 +86,20 @@ internal class ChooseNoteKmpViewModel(
     private val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
 ) : ChooseNoteViewModel, ViewModel(), FolderController by folderController {
 
+    override val currentFolderId: String get() = notesNavigation.id
+
     override val hasSelectedNotes: StateFlow<Boolean> by lazy {
         selectedNotes.map { selectedIds ->
             selectedIds.isNotEmpty()
+        }.stateIn(viewModelScope, SharingStarted.Lazily, false)
+    }
+
+    override val selectionHasFolders: StateFlow<Boolean> by lazy {
+        combine(selectedNotes, menuItemsState) { selectedIds, items ->
+            (items as? ResultData.Complete<List<MenuItem>>)
+                ?.data
+                ?.any { item -> item is Folder && selectedIds.contains(item.id) }
+                ?: false
         }.stateIn(viewModelScope, SharingStarted.Lazily, false)
     }
 

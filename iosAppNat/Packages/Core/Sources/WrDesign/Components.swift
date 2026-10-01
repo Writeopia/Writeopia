@@ -63,6 +63,7 @@ public struct WrTextField: View {
                 .frame(width: 20)
 
             field
+                .textFieldStyle(.plain)
                 .autocorrectionDisabled()
         }
         .padding(.horizontal, 14)
@@ -157,6 +158,97 @@ public struct WrScreenHeader: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// A settings form: the grouped style of System Settings on the Mac, the plain form on iOS.
+public struct WrForm<Content: View>: View {
+    @ViewBuilder private let content: Content
+
+    public init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    public var body: some View {
+        #if os(macOS)
+        Form { content }
+            .formStyle(.grouped)
+        #else
+        Form { content }
+        #endif
+    }
+}
+
+/// A list of options in a sheet: a plain list on iOS, a grouped form on the Mac, where a list
+/// of buttons looks out of place.
+public struct WrSheetList<Content: View>: View {
+    @ViewBuilder private let content: Content
+
+    public init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    public var body: some View {
+        #if os(macOS)
+        Form { content }
+            .formStyle(.grouped)
+        #else
+        List { content }
+        #endif
+    }
+}
+
+/// A full-width row of a `WrSheetList`: an icon in a fixed column, a title and, when given,
+/// something at the trailing edge. Looks the same on both platforms.
+public struct WrSheetRow<Trailing: View>: View {
+    private let title: Text
+    private let systemImage: String
+    private let tint: Color
+    private let action: () -> Void
+    private let trailing: Trailing
+
+    public init(
+        _ title: LocalizedStringKey,
+        systemImage: String,
+        tint: Color = WrColors.textLight,
+        action: @escaping () -> Void,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() }
+    ) {
+        self.title = Text(title)
+        self.systemImage = systemImage
+        self.tint = tint
+        self.action = action
+        self.trailing = trailing()
+    }
+
+    public init(
+        verbatim title: String,
+        systemImage: String,
+        tint: Color = WrColors.textLight,
+        action: @escaping () -> Void,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() }
+    ) {
+        self.title = Text(verbatim: title)
+        self.systemImage = systemImage
+        self.tint = tint
+        self.action = action
+        self.trailing = trailing()
+    }
+
+    public var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .frame(width: 22)
+                title
+                Spacer()
+                trailing
+            }
+            .foregroundStyle(tint)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 

@@ -67,9 +67,56 @@ private func makeSession(
         #expect(!session.isOnline)
     }
 
+    @Test func offlineSetupStepsRunBeforeTheApp() {
+        let defaults = UserDefaults(suiteName: "tests.\(UUID().uuidString)")!
+        let session = AppSession(
+            tokenStore: InMemoryTokenStore(),
+            preferences: Preferences(defaults: defaults),
+            transport: StubTransport([:]),
+            offlineSetupSteps: [.localAi, .localFolder]
+        )
+
+        session.chooseOfflineSpace()
+        #expect(session.phase == .offlineSetup(.localAi))
+        // Saved before the setup, so quitting in the middle lands in the app next time.
+        #expect(session.spaceType == .offline)
+        #expect(session.workspace == .local)
+
+        session.advanceOfflineSetup()
+        #expect(session.phase == .offlineSetup(.localFolder))
+
+        session.advanceOfflineSetup()
+        #expect(session.phase == .ready)
+
+        // Outside the setup it does nothing.
+        session.advanceOfflineSetup()
+        #expect(session.phase == .ready)
+    }
+
+    @Test func offlineSetupCanGoBackToTheSpaceChoice() {
+        let defaults = UserDefaults(suiteName: "tests.\(UUID().uuidString)")!
+        let session = AppSession(
+            tokenStore: InMemoryTokenStore(),
+            preferences: Preferences(defaults: defaults),
+            transport: StubTransport([:]),
+            offlineSetupSteps: [.localAi, .localFolder]
+        )
+
+        session.chooseOfflineSpace()
+        session.advanceOfflineSetup()
+        #expect(session.phase == .offlineSetup(.localFolder))
+
+        session.retreatOfflineSetup()
+        #expect(session.phase == .offlineSetup(.localAi))
+
+        session.retreatOfflineSetup()
+        #expect(session.phase == .spaceChoice)
+        #expect(session.spaceType == nil)
+    }
+
     @Test func loginStoresTokensAndAsksForWorkspace() async {
         let tokens = InMemoryTokenStore()
-        let (session, _) = makeSession(
+        let (session, transport) = makeSession(
             ["/api/auth/login": (200, #"{"accessToken":"a","refreshToken":"r","writeopiaUser":\#(userJson),"enabled":true}"#)],
             tokens: tokens
         )
@@ -81,6 +128,8 @@ private func makeSession(
         viewModel.password = "secret"
         await viewModel.logIn()
 
+        #expect(viewModel.errorMessage == nil)
+        #expect(transport.paths == ["/api/auth/login"])
         #expect(tokens.accessToken == "a")
         #expect(session.user?.name == "Ana")
         #expect(session.phase == .chooseWorkspace)

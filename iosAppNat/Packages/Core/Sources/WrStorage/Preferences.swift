@@ -12,6 +12,10 @@ public final class Preferences {
         case documentsArrangement = "wr.documentsArrangement"
         case documentsOrder = "wr.documentsOrder"
         case aiProvider = "wr.aiProvider"
+        /// Security-scoped bookmark of the folder of the private space (macOS).
+        case privateSpaceFolderBookmark = "wr.privateSpaceFolderBookmark"
+        case localAiURL = "wr.localAiUrl"
+        case localAiModel = "wr.localAiModel"
     }
 
     private let defaults: UserDefaults
@@ -40,6 +44,18 @@ public final class Preferences {
     public func setCodable<T: Encodable>(_ value: T?, for key: Key) {
         if let value, let data = try? JSONEncoder().encode(value) {
             defaults.set(data, forKey: key.rawValue)
+        } else {
+            defaults.removeObject(forKey: key.rawValue)
+        }
+    }
+
+    public func data(_ key: Key) -> Data? {
+        defaults.data(forKey: key.rawValue)
+    }
+
+    public func set(_ value: Data?, for key: Key) {
+        if let value {
+            defaults.set(value, forKey: key.rawValue)
         } else {
             defaults.removeObject(forKey: key.rawValue)
         }

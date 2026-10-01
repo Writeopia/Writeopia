@@ -37,6 +37,9 @@ public final class WriteopiaStateManager {
     public private(set) var selectedStepIds: Set<String> = []
     /// Current selection of the focused text step. Drives the formatting buttons.
     public private(set) var textSelection: StepSelection?
+    /// Where the selected text is, in the coordinates of its text view, when the view reports
+    /// it (the Mac). The formatting popup floats above it.
+    public private(set) var textSelectionRect: CGRect?
     /// Increases on every change of the document, handy to observe edits.
     public private(set) var changeCount = 0
 
@@ -48,6 +51,15 @@ public final class WriteopiaStateManager {
     /// can suggest the next items, like `generateSuggestionsList` of the SDK.
     @ObservationIgnored public var onListStarted: ((String) -> Void)?
     @ObservationIgnored private let writeopiaManager: WriteopiaManager
+    @ObservationIgnored private let focusHandler = FocusHandler()
+    /// Copy and Cut of the selected lines, when the app has a clipboard for them. Called from
+    /// the text views on the Mac, where the Edit menu sends Copy and Cut to the focused text.
+    @ObservationIgnored public var onCopySelectedLines: (() -> Void)?
+    @ObservationIgnored public var onCutSelectedLines: (() -> Void)?
+    /// A click on the empty space of the editor, outside every step. The app closes its menus.
+    @ObservationIgnored public var onBackgroundClick: (() -> Void)?
+    /// The link button of the formatting popup; the app asks for the URL.
+    @ObservationIgnored public var onLinkRequested: (() -> Void)?
 
     public init(writeopiaManager: WriteopiaManager = WriteopiaManager()) {
         self.writeopiaManager = writeopiaManager
@@ -94,12 +106,103 @@ public final class WriteopiaStateManager {
                 Action.LineBreak(storyStep: newStep, position: position, cursor: cursor),
                 state: currentStory
             ))
+        } else if !step.isTitle, let (command, rest) = TextCommands.command(in: text) {
+            applyCommand(command, rest: rest, to: newStep, at: position, cursor: cursor)
         } else {
             apply(writeopiaManager.changeStoryState(
                 Action.StoryStateChange(storyStep: newStep, position: position, selectionStart: cursor, selectionEnd: cursor),
                 state: currentStory
             ))
         }
+    }
+
+    /// A command typed at the start of the line changes the type of the step and disappears
+    /// from its text, like `changeStoryType` with a written command in the Compose app.
+    private func applyCommand(_ command: TextCommands.Command, rest: String, to step: StoryStep, at position: Double, cursor: Int) {
+        var changed = step
+        changed.spans = SpansHandler.adjust(step.spans, from: step.text ?? "", to: rest)
+        changed.text = rest
+
+        switch command {
+        case .checkItem, .checkItem2:
+            changed.type = .checkItem
+            changed.checked = changed.checked ?? false
+        case .list:
+            changed.type = .unorderedListItem
+            changed.checked = nil
+        case .codeBlock:
+            changed.type = .codeBlock
+            changed.checked = nil
+            changed.decoration = nil
+        case .divider:
+            changed.type = .divider
+            changed.checked = nil
+            changed.decoration = nil
+        case .h1, .h2, .h3, .h4:
+            let tag: BlockTag = switch command {
+            case .h1: .h1
+            case .h2: .h2
+            case .h3: .h3
+            default: .h4
+            }
+            changed.type = .text
+            changed.checked = nil
+            changed.decoration = nil
+            changed.tags.removeAll { BlockTag(rawValue: $0.tag)?.isHeading == true }
+            changed.tags.append(TagInfo(tag: tag.rawValue))
+        case .box, .card:
+            let tag: BlockTag = command == .box ? .box : .card
+            if changed.hasTag(tag.rawValue) {
+                changed.tags.removeAll { $0.tag == tag.rawValue }
+            } else {
+                changed.tags.append(TagInfo(tag: tag.rawValue))
+            }
+        }
+
+        var stories = currentStory.stories
+        stories[position] = changed
+        let newCursor = max(0, min(cursor - ((step.text ?? "").utf16.count - rest.utf16.count), rest.utf16.count))
+        apply(StoryState(
+            stories: stories,
+            lastEdit: .lineEdition(position: position, storyStep: changed),
+            focus: position,
+            selection: .cursor(newCursor, at: position)
+        ))
+        // The step is drawn by another drawer now; its new text view takes the keyboard.
+        focusRequest = FocusRequest(stepId: changed.id, cursor: newCursor)
+    }
+
+    /// The colors of the document header, `ColorUtils.headerColors()` of the Compose app, as
+    /// the ARGB `Int` the document stores.
+    public static let headerColors: [Int] = [
+        Int(Int32(bitPattern: 0xFFFF_FFFF)), // White
+        Int(Int32(bitPattern: 0xFF00_0000)), // Black
+        Int(Int32(bitPattern: 0xFF00_00FF)), // Blue
+        Int(Int32(bitPattern: 0xFF88_8888)), // Gray
+        Int(Int32(bitPattern: 0xFFFF_FF00)), // Yellow
+        Int(Int32(bitPattern: 0xFFFF_0000)), // Red
+        Int(Int32(bitPattern: 0xFF00_FF00)), // Green
+        Int(Int32(bitPattern: 0xFFFF_00FF)), // Magenta
+        Int(Int32(bitPattern: 0xFF44_4444)), // DarkGray
+        Int(Int32(bitPattern: 0xFF00_FFFF)), // Cyan
+    ]
+
+    /// The background color of the header (the title), nil for none.
+    public var headerColor: Int? {
+        currentStory.stories[0]?.decoration?.backgroundColor
+    }
+
+    /// Colors the header, like `onHeaderColorSelection` of the Compose app. The cursor stays
+    /// where it is.
+    public func setHeaderColor(_ argb: Int?) {
+        guard isEditable, var title = currentStory.stories[0], title.isTitle else { return }
+        title.decoration = argb.map { Decoration(backgroundColor: $0) }
+        var stories = currentStory.stories
+        stories[0] = title
+        var state = currentStory
+        state.stories = stories
+        state.lastEdit = .lineEdition(position: 0, storyStep: title)
+        apply(state)
     }
 
     /// Backspace with the cursor at the start of a step.
@@ -117,14 +220,19 @@ public final class WriteopiaStateManager {
             currentStory.focus = nil
             if textSelection?.stepId == stepId {
                 textSelection = nil
+                textSelectionRect = nil
             }
         }
     }
 
-    public func onSelectionChange(stepId: String, start: Int, end: Int) {
+    public func onSelectionChange(stepId: String, start: Int, end: Int, rect: CGRect? = nil) {
         let selection = StepSelection(stepId: stepId, start: min(start, end), end: max(start, end))
         if textSelection != selection {
             textSelection = selection
+        }
+        let rect = selection.isEmpty ? nil : rect
+        if textSelectionRect != rect {
+            textSelectionRect = rect
         }
     }
 
@@ -211,6 +319,54 @@ public final class WriteopiaStateManager {
 
     public func clearLineSelection() {
         selectedStepIds.removeAll()
+    }
+
+    /// Selects every line but the title, like Cmd+A of the Compose desktop app.
+    public func selectAllLines() {
+        guard isEditable else { return }
+        selectedStepIds = Set(currentStory.sortedStories.filter(Self.isSelectable).map(\.id))
+    }
+
+    /// Grows the selection by one line above (Shift+Up) or below (Shift+Down), like the
+    /// Compose desktop app. Does nothing without a selection.
+    public func extendLineSelection(up: Bool) {
+        let selected = selectedPositions
+        guard let edge = up ? selected.first : selected.last else { return }
+        let positions = currentStory.sortedPositions
+        guard var index = positions.firstIndex(of: edge) else { return }
+        index += up ? -1 : 1
+        while positions.indices.contains(index) {
+            if let step = currentStory.stories[positions[index]], Self.isSelectable(step) {
+                selectedStepIds.insert(step.id)
+                return
+            }
+            index += up ? -1 : 1
+        }
+    }
+
+    private static func isSelectable(_ step: StoryStep) -> Bool {
+        !step.isTitle && StoryTypes.supported.contains(step.type.number)
+    }
+
+    // MARK: - Keyboard focus
+
+    /// Up at the first line of a step moves the cursor to the step above, at the same column
+    /// when it has one.
+    public func focusPrevious(stepId: String, cursor: Int) {
+        guard let (position, _) = find(stepId),
+              let target = focusHandler.findPreviousFocus(before: position, in: currentStory.stories),
+              let step = currentStory.stories[target]
+        else { return }
+        focusRequest = FocusRequest(stepId: step.id, cursor: min(cursor, (step.text ?? "").utf16.count))
+    }
+
+    /// Down at the last line of a step moves the cursor to the step below.
+    public func focusNext(stepId: String, cursor: Int) {
+        guard let (position, _) = find(stepId),
+              let target = focusHandler.findNextFocus(after: position, in: currentStory.stories),
+              let step = currentStory.stories[target]
+        else { return }
+        focusRequest = FocusRequest(stepId: step.id, cursor: min(cursor, (step.text ?? "").utf16.count))
     }
 
     /// Checkbox, list item and code block buttons of the selection menu.

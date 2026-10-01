@@ -28,50 +28,123 @@ struct FolderEditSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    HStack(spacing: 12) {
-                        FolderIconImage(icon: icon)
-                            .font(.title2)
-                            .frame(width: 32)
-                        TextField("Folder name", text: $title)
-                            .focused($titleFocused)
-                            .submitLabel(.done)
-                            .onSubmit(save)
-                            .accessibilityIdentifier("folderEdit.name")
-                    }
-                } header: {
-                    Text("Name")
-                }
+            #if os(macOS)
+            macBody
+            #else
+            iosBody
+            #endif
+        }
+    }
 
-                Section {
-                    tintPicker
-                    LazyVGrid(columns: columns, spacing: 8) {
+    #if os(macOS)
+    /// Labels above the fields, and the icons in a scrolling box of fixed height, so the sheet
+    /// keeps its size whatever the number of icons.
+    private var macBody: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 6) {
+                fieldLabel("Folder name")
+                HStack(spacing: 10) {
+                    FolderIconImage(icon: icon)
+                        .font(.system(size: 17, weight: .medium))
+                        .frame(width: 34, height: 34)
+                        .background(
+                            (FolderIcons.color(for: tint) ?? WrColors.accent).opacity(0.14),
+                            in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        )
+                    TextField("Folder name", text: $title)
+                        .textFieldStyle(.roundedBorder)
+                        .controlSize(.large)
+                        .focused($titleFocused)
+                        .submitLabel(.done)
+                        .onSubmit(save)
+                        .accessibilityIdentifier("folderEdit.name")
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                fieldLabel("Color")
+                tintPicker
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                fieldLabel("Icon")
+                ScrollView {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 8), spacing: 4) {
                         ForEach(FolderIcons.all, id: \.name) { entry in
                             iconButton(entry.name, symbol: entry.symbol)
                         }
                     }
-                    .padding(.vertical, 4)
-                } header: {
-                    Text("Icon")
+                    .padding(8)
                 }
+                .frame(height: 176)
+                .background(WrColors.tertiaryFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
-            .scrollContentBackground(.hidden)
-            .background(WrColors.background)
-            .navigationTitle(isNew ? "New folder" : "Edit folder")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+
+            Spacer(minLength: 0)
+        }
+        .padding(20)
+        .background(WrColors.background)
+        .navigationTitle(isNew ? "New folder" : "Edit folder")
+        .toolbar { toolbarButtons }
+        .onAppear {
+            if isNew { titleFocused = true }
+        }
+    }
+
+    private func fieldLabel(_ text: LocalizedStringKey) -> some View {
+        Text(text)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.secondary)
+    }
+    #else
+    private var iosBody: some View {
+        Form {
+            Section {
+                HStack(spacing: 12) {
+                    FolderIconImage(icon: icon)
+                        .font(.title2)
+                        .frame(width: 32)
+                    TextField("Folder name", text: $title)
+                        .focused($titleFocused)
+                        .submitLabel(.done)
+                        .onSubmit(save)
+                        .accessibilityIdentifier("folderEdit.name")
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(isNew ? "Create" : "Save", action: save)
-                        .accessibilityIdentifier("folderEdit.save")
+            } header: {
+                Text("Name")
+            }
+
+            Section {
+                tintPicker
+                LazyVGrid(columns: columns, spacing: 8) {
+                    ForEach(FolderIcons.all, id: \.name) { entry in
+                        iconButton(entry.name, symbol: entry.symbol)
+                    }
                 }
+                .padding(.vertical, 4)
+            } header: {
+                Text("Icon")
             }
-            .onAppear {
-                if isNew { titleFocused = true }
-            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(WrColors.background)
+        .navigationTitle(isNew ? "New folder" : "Edit folder")
+        .toolbarTitleDisplayMode(.inline)
+        .toolbar { toolbarButtons }
+        .onAppear {
+            if isNew { titleFocused = true }
+        }
+    }
+    #endif
+
+    @ToolbarContentBuilder
+    private var toolbarButtons: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button("Cancel") { dismiss() }
+        }
+        ToolbarItem(placement: .confirmationAction) {
+            Button(isNew ? "Create" : "Save", action: save)
+                .accessibilityIdentifier("folderEdit.save")
         }
     }
 

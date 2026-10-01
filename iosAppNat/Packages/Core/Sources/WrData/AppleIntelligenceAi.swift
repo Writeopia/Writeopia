@@ -29,7 +29,7 @@ public enum AppleIntelligenceStatus: Equatable, Sendable {
         case .modelNotReady:
             String(localized: "Apple Intelligence is getting ready. Try again in a few minutes.")
         case .unsupportedSystem:
-            String(localized: "Apple Intelligence needs iOS 26 or later.")
+            String(localized: "Apple Intelligence needs iOS 26 or macOS 26.")
         case .unavailable:
             String(localized: "Apple Intelligence isn't available right now.")
         }

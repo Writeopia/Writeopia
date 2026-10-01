@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 import Testing
 import Drawing
 @testable import NoteEditor
@@ -386,6 +388,7 @@ final class FakeUploader: ImageUploading {
     }
 }
 
+#if canImport(UIKit)
 private func pngData(width: CGFloat, height: CGFloat) -> Data {
     UIGraphicsImageRenderer(size: CGSize(width: width, height: height)).pngData { context in
         UIColor.systemPink.setFill()
@@ -456,6 +459,7 @@ private func pngData(width: CGFloat, height: CGFloat) -> Data {
         #expect(viewModel.writeopiaManager.currentStory.stories.count == 3)
     }
 }
+#endif
 
 final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
     var stored: WrDocument

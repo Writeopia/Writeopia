@@ -1,3 +1,4 @@
+#if os(iOS)
 import DocumentsFeature
 import SearchFeature
 import SettingsFeature
@@ -56,3 +57,4 @@ private struct MainLayout: View {
         isWideLayout ? .hidden : .automatic
     }
 }
+#endif

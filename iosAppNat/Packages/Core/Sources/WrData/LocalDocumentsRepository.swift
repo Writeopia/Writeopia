@@ -22,22 +22,57 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
-    public init(
+    public convenience init(
         directory: URL = LocalDocumentsRepository.defaultDirectory,
         workspaceId: String = Workspace.localId,
         seedsWelcome: Bool = true
     ) {
-        self.directory = directory
-        self.workspaceId = workspaceId
-        self.seedsWelcome = seedsWelcome
         do {
-            db = try SQLiteDatabase(url: directory.appending(path: "writeopia.sqlite"))
-            try createSchema()
-            try importJsonFilesIfNeeded()
+            try self.init(
+                opening: directory,
+                workspaceId: workspaceId,
+                seedsWelcome: seedsWelcome,
+                importsLegacyJson: true,
+                journalMode: .wal
+            )
         } catch {
             fatalError("Could not open the documents database: \(error)")
         }
     }
+
+    /// The private space in a folder the user picked (the Mac app). The folder is left as it
+    /// is: JSON files already there are not imported nor moved, and the database uses a single
+    /// file so folders synced by iCloud Drive or Dropbox stay consistent. Throws when the folder
+    /// can't be written, so a stale choice can fall back to the default location.
+    public static func inUserFolder(_ directory: URL) throws -> LocalDocumentsRepository {
+        try LocalDocumentsRepository(
+            opening: directory,
+            workspaceId: Workspace.localId,
+            seedsWelcome: true,
+            importsLegacyJson: false,
+            journalMode: .delete
+        )
+    }
+
+    init(
+        opening directory: URL,
+        workspaceId: String,
+        seedsWelcome: Bool,
+        importsLegacyJson: Bool,
+        journalMode: SQLiteDatabase.JournalMode
+    ) throws {
+        self.directory = directory
+        self.workspaceId = workspaceId
+        self.seedsWelcome = seedsWelcome
+        db = try SQLiteDatabase(url: directory.appending(path: "writeopia.sqlite"), journalMode: journalMode)
+        try createSchema()
+        if importsLegacyJson {
+            try importJsonFilesIfNeeded()
+        }
+    }
+
+    /// Where the documents are kept.
+    public var location: URL { directory }
 
     public static var defaultDirectory: URL {
         URL.applicationSupportDirectory.appending(path: "Writeopia/PrivateSpace", directoryHint: .isDirectory)
@@ -71,6 +106,27 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
         let documents = try db.query(
             "\(Self.documentColumns) FROM document WHERE parent_document_id = ? AND deleted = 0 ORDER BY last_updated_at DESC",
             [.text(folderId)],
+            row: documentRow
+        ).map(withContent)
+
+        return FolderContents(folders: folders, documents: documents)
+    }
+
+    public func favorites() async throws -> FolderContents {
+        try seedIfNeeded()
+
+        let folders = try db.query(
+            "\(Self.folderColumns) FROM folder WHERE favorite = 1 AND deleted = 0",
+            row: folder
+        ).map { folder -> Folder in
+            var folder = folder
+            folder.itemCount = (try? itemCount(of: folder.id)) ?? 0
+            return folder
+        }
+        .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+
+        let documents = try db.query(
+            "\(Self.documentColumns) FROM document WHERE favorite = 1 AND deleted = 0 ORDER BY last_updated_at DESC",
             row: documentRow
         ).map(withContent)
 
@@ -131,10 +187,12 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
     }
 
     public func moveDocument(id: String, toFolder folderId: String) async throws {
-        guard try storedDocument(id: id) != nil else { throw APIError.notFound }
+        guard let stored = try storedDocument(id: id) else { throw APIError.notFound }
+        // Always later than the last sync, so a move right after a sync is still sent.
+        let time = max(Date.nowMillis, (stored.lastSyncedAt ?? 0) + 1)
         try db.run(
             "UPDATE document SET parent_document_id = ?, last_updated_at = ? WHERE id = ?",
-            [.text(folderId), .integer(Date.nowMillis), .text(id)]
+            [.text(folderId), .integer(time), .text(id)]
         )
     }
 
@@ -332,6 +390,23 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
             [.text(folderId)],
             row: documentRow
         ).map(withContent)
+    }
+
+    /// Documents changed since they were last sent, wherever they are (edited, created or moved
+    /// while the backend couldn't be reached).
+    public func storedOutdatedDocuments() throws -> [WrDocument] {
+        try db.query(
+            "\(Self.documentColumns) FROM document WHERE deleted = 0 AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)",
+            row: documentRow
+        ).map(withContent)
+    }
+
+    /// Folders changed since they were last sent, wherever they are.
+    public func storedOutdatedFolders() throws -> [Folder] {
+        try db.query(
+            "\(Self.folderColumns) FROM folder WHERE deleted = 0 AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)",
+            row: folder
+        )
     }
 
     /// Folders directly inside `folderId`, soft deleted ones included.
@@ -573,11 +648,20 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
         }
     }
 
-    /// Gives a brand new private space something to look at.
+    /// Gives a brand new private space the tutorial notes of the Compose app, so both apps
+    /// start the same way; a single welcome note when they can't be read.
     private func seedIfNeeded() throws {
         guard seedsWelcome, try meta("seeded") == nil else { return }
         try setMeta("seeded", "1")
         guard try db.query("SELECT COUNT(*) FROM document", row: { $0.integer(0) }).first == 0 else { return }
+
+        let tutorials = Self.tutorialDocuments(workspaceId: workspaceId)
+        guard tutorials.isEmpty else {
+            for document in tutorials {
+                try store(document)
+            }
+            return
+        }
 
         let welcome = WrDocument(
             id: UUID().uuidString,
@@ -602,5 +686,28 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
             parentId: Folder.rootId
         )
         try store(welcome)
+    }
+
+    /// The tutorial notes bundled with the app (`Resources/Tutorials`, the same JSON as the
+    /// `tutorials` module of the Compose app), newest first so the welcome note leads the list.
+    static func tutorialDocuments(workspaceId: String) -> [WrDocument] {
+        guard let urls = Bundle.module.urls(forResourcesWithExtension: "json", subdirectory: "Tutorials") else { return [] }
+        let decoder = JSONDecoder()
+        let now = Date.nowMillis
+        return urls
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .compactMap { url -> WrDocument? in
+                guard let data = try? Data(contentsOf: url), let document = try? decoder.decode(WrDocument.self, from: data) else { return nil }
+                return document
+            }
+            .enumerated()
+            .map { index, document in
+                var document = document
+                document.workspaceId = workspaceId
+                document.parentId = Folder.rootId
+                document.createdAt = now - Int64(index)
+                document.lastUpdatedAt = now - Int64(index)
+                return document
+            }
     }
 }

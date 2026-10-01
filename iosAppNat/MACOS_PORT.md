@@ -26,7 +26,11 @@ For a text editor, most of the gain is in text input and system integration:
 - Keep Compose Desktop for Windows and Linux. Decide later whether the Compose Mac build stays, based on parity for graph, Ollama and local folder sync.
 - Skip Mac Catalyst: it's cheaper at first but never feels fully like a Mac app, and for an editor the `NSTextView` port is where most of the value is.
 
-## Current state
+## Current state (updated with the first Mac slice)
+
+The `iosAppNat` target now builds for macOS as well (`SUPPORTED_PLATFORMS = iphoneos iphonesimulator macosx`, minimum macOS 26), and all three packages build and pass their tests on a Mac host. Done from the plan below: parts 1 (mechanical fixes: `toolbarTitleDisplayMode`, `WrColors` with `NSColor`, `ToolbarItemPlacement.wrTrailing`, `SystemSettings`), the Mac shell of part 4 (`MacMainView`: `NavigationSplitView` with `SideGlobalMenu`), part 5 (CI builds the Mac app and runs the package tests on macOS), plus the auth and first-run setup flow of the desktop app (AI with Apple Intelligence or Ollama/llmman, private space folder). Parts 2 and 3 are done too: `TextStyles`/`EditorFont` use `PlatformFont`/`PlatformColor`, `StepTextView+macOS.swift` is the `NSTextView` port (Return, Backspace, Up/Down between steps, Tab, Shift+Up/Down, Copy/Cut of selected lines), `ReorderCoordinator` scrolls through the `EditorScrolling` protocol, and the editor UI files lost their whole-file UIKit guards. From part 4: the grip shows on hover and a click on it selects the line, Cmd/Shift shortcuts are in `NoteEditorView.keyboardShortcuts`, and the landscape `EditorSideOptions` is the Mac menu. Still to do: the swipe selection (`SwipeSelection` compiles to no-ops on macOS, selection is by grip and Shift+arrows), undo/redo, menu-bar `Commands`, a `Settings` scene and multiple windows.
+
+## State before the first slice
 
 The packages already declare `.macOS(.v14)`. Running `swift build` on each package for macOS:
 

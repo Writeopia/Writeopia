@@ -46,14 +46,17 @@ struct FolderMenuPresentations: ViewModifier {
                         pendingAction = action
                         self.sheet = nil
                     }
+                    .wrSheetSize(width: 420, height: isFolder ? 560 : 420)
                 case .edit:
                     if let folder {
                         FolderEditSheet(folder: folder, onSave: onEdit)
                             .presentationDetents([.medium, .large])
+                            .wrSheetSize(width: 440, height: 440)
                     }
                 case .move:
                     if let folder {
                         FolderPickerSheet(movingFolder: folder, rootTitle: rootTitle, repository: repository, onPick: onMove)
+                            .wrSheetSize(width: 440, height: 520)
                     }
                 }
             }
@@ -86,10 +89,11 @@ struct FolderOptionsSheet: View {
     let isFolder: Bool
     let folderTitle: String
     let onAction: (FolderAction) -> Void
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            List {
+            WrSheetList {
                 Section {
                     ArrangementPicker(selection: $settings.arrangement)
                         .listRowInsets(EdgeInsets())
@@ -100,21 +104,15 @@ struct FolderOptionsSheet: View {
 
                 Section {
                     ForEach(DocumentsOrder.allCases, id: \.self) { order in
-                        Button {
+                        row(LocalizedStringKey(order.title), systemImage: order.systemImage, id: "order.\(order.rawValue)") {
                             settings.order = order
-                        } label: {
-                            HStack {
-                                Label(order.title, systemImage: order.systemImage)
-                                Spacer()
-                                if settings.order == order {
-                                    Image(systemName: "checkmark")
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(WrColors.accent)
-                                }
+                        } trailing: {
+                            if settings.order == order {
+                                Image(systemName: "checkmark")
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(WrColors.accent)
                             }
-                            .contentShape(Rectangle())
                         }
-                        .foregroundStyle(WrColors.textLight)
                         .accessibilityAddTraits(settings.order == order ? .isSelected : [])
                     }
                 } header: {
@@ -123,35 +121,40 @@ struct FolderOptionsSheet: View {
 
                 if isFolder {
                     Section {
-                        action("Edit folder", systemImage: "pencil", id: "edit") { onAction(.edit) }
-                        action("Move to…", systemImage: "folder", id: "move") { onAction(.move) }
-                        Button(role: .destructive) {
-                            onAction(.delete)
-                        } label: {
-                            Label("Delete folder", systemImage: "trash")
-                        }
-                        .accessibilityIdentifier("folderOptions.delete")
+                        row("Edit folder", systemImage: "pencil", id: "edit") { onAction(.edit) }
+                        row("Move to…", systemImage: "arrow.forward.folder", id: "move") { onAction(.move) }
+                        row("Delete folder", systemImage: "trash", id: "delete", tint: .red) { onAction(.delete) }
                     } header: {
                         Text(folderTitle)
                     }
                 }
             }
+            #if os(iOS)
             .scrollContentBackground(.hidden)
             .background(WrColors.background)
+            #endif
             .navigationTitle("Folder options")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
         }
         .presentationDetents(isFolder ? [.medium, .large] : [.medium])
         .presentationDragIndicator(.visible)
     }
 
-    private func action(_ title: LocalizedStringKey, systemImage: String, id: String, perform: @escaping () -> Void) -> some View {
-        Button(action: perform) {
-            Label(title, systemImage: systemImage)
-                .contentShape(Rectangle())
-        }
-        .foregroundStyle(WrColors.textLight)
-        .accessibilityIdentifier("folderOptions.\(id)")
+    private func row<Trailing: View>(
+        _ title: LocalizedStringKey,
+        systemImage: String,
+        id: String,
+        tint: Color = WrColors.textLight,
+        perform: @escaping () -> Void,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() }
+    ) -> some View {
+        WrSheetRow(title, systemImage: systemImage, tint: tint, action: perform, trailing: trailing)
+            .accessibilityIdentifier("folderOptions.\(id)")
     }
 }
 
@@ -176,7 +179,7 @@ struct ArrangementPicker: View {
                             .minimumScaleFactor(0.8)
                     }
                     .foregroundStyle(isSelected ? WrColors.accent : WrColors.textLight)
-                    .frame(maxWidth: .infinity, minHeight: 64)
+                    .frame(maxWidth: .infinity, minHeight: Self.segmentHeight)
                     .background {
                         if isSelected {
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -191,7 +194,24 @@ struct ArrangementPicker: View {
                 .accessibilityIdentifier("folderOptions.arrangement.\(arrangement.rawValue)")
             }
         }
-        .padding(4)
+        .padding(Self.padding)
         .accessibilityElement(children: .contain)
+    }
+
+    // The grouped form of the Mac already frames the row; the segments sit closer to its edge.
+    private static var padding: CGFloat {
+        #if os(macOS)
+        0
+        #else
+        4
+        #endif
+    }
+
+    private static var segmentHeight: CGFloat {
+        #if os(macOS)
+        52
+        #else
+        64
+        #endif
     }
 }

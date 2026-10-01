@@ -1,7 +1,10 @@
-#if canImport(UIKit)
 import SwiftUI
-import UIKit
 import WriteopiaUI
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import WrData
 import WrDesign
 
@@ -18,7 +21,7 @@ struct NoteMenuSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            WrSheetList {
                 Section("Actions") {
                     Toggle(isOn: Binding(get: { viewModel.isLocked }, set: { _ in viewModel.toggleLock() })) {
                         Label("Lock document", systemImage: viewModel.isLocked ? "lock.fill" : "lock.open")
@@ -40,34 +43,24 @@ struct NoteMenuSheet: View {
 
                 Section("Export") {
                     ForEach(ExportFormat.allCases) { format in
-                        Button {
+                        WrSheetRow(verbatim: format.title, systemImage: format.systemImage) {
                             export(format)
-                        } label: {
-                            Label(format.title, systemImage: format.systemImage)
                         }
                         .accessibilityIdentifier("menu.export.\(format.rawValue)")
                     }
                 }
 
                 Section("Publish") {
-                    Button {
+                    WrSheetRow("Publish to Web", systemImage: viewModel.isPublished ? "globe.badge.chevron.backward" : "globe") {
                         dismiss()
                         onPublishClick()
-                    } label: {
-                        Label {
-                            Text("Publish to Web")
-                        } icon: {
-                            Image(systemName: viewModel.isPublished ? "globe.badge.chevron.backward" : "globe")
-                        }
                     }
                     .accessibilityIdentifier("menu.publish")
                 }
 
                 Section {
-                    Button(role: .destructive) {
+                    WrSheetRow("Delete document", systemImage: "trash", tint: .red) {
                         confirmsDelete = true
-                    } label: {
-                        Label("Delete document", systemImage: "trash")
                     }
                     .accessibilityIdentifier("menu.delete")
                     .confirmationDialog(
@@ -85,16 +78,24 @@ struct NoteMenuSheet: View {
                 }
             }
             .navigationTitle("Document")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
             }
+            #if os(iOS)
             .sheet(item: $exportedFile) { file in
                 ShareSheet(items: [file.url])
                     .presentationDetents([.medium, .large])
             }
+            #else
+            .onChange(of: exportedFile) { _, file in
+                guard let file else { return }
+                ExportSaver.save(file.url)
+                exportedFile = nil
+            }
+            #endif
             .alert(
                 "Could not export",
                 isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })
@@ -117,7 +118,7 @@ struct NoteMenuSheet: View {
     }
 }
 
-struct ExportedFile: Identifiable {
+struct ExportedFile: Identifiable, Equatable {
     let url: URL
     var id: URL { url }
 }
@@ -142,7 +143,7 @@ struct FontOption: View {
             .foregroundStyle(isSelected ? WrColors.accent : .primary)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(isSelected ? WrColors.accent.opacity(0.12) : Color(uiColor: .tertiarySystemFill))
+                    .fill(isSelected ? WrColors.accent.opacity(0.12) : WrColors.tertiaryFill)
             )
             .overlay {
                 RoundedRectangle(cornerRadius: 10)
@@ -161,10 +162,11 @@ struct PublishSheet: View {
     @Bindable var viewModel: NoteEditorViewModel
     @State private var copied = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         NavigationStack {
-            List {
+            WrSheetList {
                 Section {
                     HStack(spacing: 12) {
                         Image(systemName: viewModel.isPublished ? "globe" : "globe.badge.chevron.backward")
@@ -188,28 +190,32 @@ struct PublishSheet: View {
                         Text(viewModel.siteURL.absoluteString)
                             .font(.callout.monospaced())
                             .textSelection(.enabled)
-                        Button {
+                        WrSheetRow(copied ? "Link copied!" : "Copy Link", systemImage: copied ? "checkmark" : "doc.on.doc") {
+                            #if canImport(UIKit)
                             UIPasteboard.general.url = viewModel.siteURL
+                            #else
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(viewModel.siteURL.absoluteString, forType: .string)
+                            #endif
                             copied = true
-                        } label: {
-                            Label(copied ? "Link copied!" : "Copy Link", systemImage: copied ? "checkmark" : "doc.on.doc")
                         }
-                        Link(destination: viewModel.siteURL) {
-                            Label("Open in Safari", systemImage: "safari")
+                        WrSheetRow("Open in Safari", systemImage: "safari") {
+                            openURL(viewModel.siteURL)
                         }
                     }
                 }
 
                 Section {
-                    Button(role: viewModel.isPublished ? .destructive : nil) {
+                    WrSheetRow(
+                        viewModel.isPublished ? "Unpublish" : "Publish",
+                        systemImage: viewModel.isPublished ? "globe.badge.chevron.backward" : "globe",
+                        tint: viewModel.isPublished ? .red : WrColors.accent
+                    ) {
                         Task { await viewModel.setPublished(!viewModel.isPublished) }
-                    } label: {
-                        HStack {
-                            Text(viewModel.isPublished ? "Unpublish" : "Publish")
-                            if viewModel.isPublishing {
-                                Spacer()
-                                ProgressView()
-                            }
+                    } trailing: {
+                        if viewModel.isPublishing {
+                            ProgressView()
+                                .controlSize(.small)
                         }
                     }
                     .disabled(viewModel.isPublishing)
@@ -217,7 +223,7 @@ struct PublishSheet: View {
                 }
             }
             .navigationTitle("Publish to Web")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -238,6 +244,7 @@ struct PublishSheet: View {
     }
 }
 
+#if os(iOS)
 /// `UIActivityViewController` for sharing exported files.
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
@@ -248,6 +255,7 @@ struct ShareSheet: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
+#endif
 
 extension ExportFormat {
     var title: String {
@@ -264,4 +272,3 @@ extension ExportFormat {
         }
     }
 }
-#endif

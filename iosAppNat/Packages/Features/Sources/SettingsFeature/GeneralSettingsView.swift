@@ -1,3 +1,4 @@
+import SetupFeature
 import SwiftUI
 import WrDesign
 import WrModels
@@ -6,10 +7,15 @@ import WrSession
 struct GeneralSettingsView: View {
     @Environment(AppSession.self) private var session
 
+    /// The grouped form on every platform, like the other settings pages.
     var body: some View {
+        formBody
+    }
+
+    private var formBody: some View {
         @Bindable var session = session
 
-        Form {
+        return WrForm {
             Section {
                 HStack(spacing: 12) {
                     ForEach(ColorTheme.allCases) { theme in
@@ -19,11 +25,28 @@ struct GeneralSettingsView: View {
                     }
                 }
                 .padding(.vertical, 6)
+                // The cards are the controls; the row needs no box of its own.
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
             } header: {
                 Text("Color theme")
             } footer: {
                 Text("System follows the appearance of your device.")
             }
+
+            #if os(macOS)
+            if session.spaceType == .offline {
+                Section {
+                    PrivateSpaceFolderPicker()
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
+                } header: {
+                    Text("Local folder")
+                } footer: {
+                    Text("Pick a folder in your computer to keep your workspace.")
+                }
+            }
+            #endif
 
             Section("About") {
                 LabeledContent("Version", value: Bundle.main.appVersion)
@@ -59,6 +82,8 @@ private struct ThemeOption: View {
                 RoundedRectangle(cornerRadius: 12)
                     .strokeBorder(isSelected ? WrColors.accent : WrColors.divider, lineWidth: isSelected ? 2 : 1)
             }
+            // The whole card takes the click, not only its icon and text.
+            .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("theme.\(theme.rawValue)")

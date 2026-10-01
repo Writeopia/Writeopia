@@ -1,0 +1,176 @@
+{
+  "id": "bkb3kwIrpf",
+  "title": "Using AI",
+  "workspaceId": "disconnected_user",
+  "content": [
+    {
+      "id": "lCRHVL4rV3",
+      "type": {
+        "name": "title",
+        "number": 11
+      },
+      "text": "Using AI",
+      "spans": [
+        {
+          "start": 0,
+          "end": 0,
+          "span": "BOLD"
+        }
+      ],
+      "decoration": {
+        "backgroundColor": -16776961
+      },
+      "position": 0
+    },
+    {
+      "id": "uFS1JqPMJX",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Let's learn how to use Ollama, shall we? Follow the next steps:",
+      "position": 1
+    },
+    {
+      "id": "xLipZC8Ynk",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Ollama",
+      "tags": [
+        {
+          "tag": "H3",
+          "position": 0
+        }
+      ],
+      "position": 2
+    },
+    {
+      "id": "bI6OjF9tmn",
+      "type": {
+        "name": "unordered_list_item",
+        "number": 16
+      },
+      "text": "Download Ollama at: https://ollama.com. Install it.",
+      "position": 3
+    },
+    {
+      "id": "hXYYCBpguU",
+      "type": {
+        "name": "unordered_list_item",
+        "number": 16
+      },
+      "text": "Start Ollama. You should always use it together with Writeopia when you would like to use AI on your computer. ",
+      "position": 4
+    },
+    {
+      "id": "OxtcocbkDI",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Selecting models",
+      "tags": [
+        {
+          "tag": "H3",
+          "position": 0
+        }
+      ],
+      "position": 5
+    },
+    {
+      "id": "Orsf4Yzxfk",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "In the section Download Model, you can choose the AI that you would like to use. ",
+      "spans": [
+        {
+          "start": 15,
+          "end": 29,
+          "span": "BOLD"
+        }
+      ],
+      "position": 6
+    },
+    {
+      "id": "keL0X4yE4V",
+      "type": {
+        "name": "unordered_list_item",
+        "number": 16
+      },
+      "text": "You can download ",
+      "spans": [
+        {
+          "start": 0,
+          "end": 0,
+          "span": "BOLD"
+        },
+        {
+          "start": 17,
+          "end": 17,
+          "span": "BOLD"
+        }
+      ],
+      "position": 7
+    },
+    {
+      "id": "vGjFhYaXxg",
+      "type": {
+        "name": "unordered_list_item",
+        "number": 16
+      },
+      "text": "Click in the cloud icon and wait for the model to be download. ",
+      "position": 8
+    },
+    {
+      "id": "LdRnQeewKZ",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "You can download many models and select between then. You can choose your favorite one and experiment with many of them and discover what is your favorite. ",
+      "position": 9
+    },
+    {
+      "id": "t6DF4khfNi",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "All models run on your computer and your data never goes to the internet. Rest assured: your data is completly private.",
+      "spans": [
+        {
+          "start": 87,
+          "end": 117,
+          "span": "BOLD"
+        },
+        {
+          "start": 117,
+          "end": 119,
+          "span": "BOLD"
+        }
+      ],
+      "position": 10
+    },
+    {
+      "id": "50NSeoLnhR",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "",
+      "position": 11
+    }
+  ],
+  "createdAt": 1739622940581,
+  "lastUpdatedAt": 1739622940581,
+  "parentId": "root",
+  "isLocked": false,
+  "icon": {
+    "label": "ai",
+    "tint": -7829368
+  }
+}

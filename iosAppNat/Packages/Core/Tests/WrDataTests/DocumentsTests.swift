@@ -9,14 +9,32 @@ import WrStorage
     let directory = FileManager.default.temporaryDirectory
         .appending(path: "wr tests \(UUID().uuidString)", directoryHint: .isDirectory)
 
-    @Test func seedsWelcomeDocumentOnlyOnce() async throws {
+    @Test func seedsTheTutorialsOnlyOnce() async throws {
         let repository = LocalDocumentsRepository(directory: directory)
 
         _ = try await repository.folderContents(folderId: Folder.rootId)
         let contents = try await repository.folderContents(folderId: Folder.rootId)
 
-        #expect(contents.documents.count == 1)
-        #expect(contents.documents[0].title == "Welcome to Writeopia")
+        #expect(contents.documents.count == 5)
+        #expect(contents.documents.map(\.title) == ["Welcome!", "Using AI", "Saving Notes", "Using Commands", "Video Tutorial"])
+    }
+
+    @Test func favoritesComeFromEveryFolder() async throws {
+        let repository = LocalDocumentsRepository(directory: directory, seedsWelcome: false)
+        let folder = try await repository.createFolder(title: "Ideas", parentId: Folder.rootId)
+        let inside = try await repository.createDocument(title: "Inside", parentId: folder.id)
+        let atRoot = try await repository.createDocument(title: "At root", parentId: Folder.rootId)
+        _ = try await repository.createDocument(title: "Plain", parentId: Folder.rootId)
+
+        #expect(try await repository.favorites() == FolderContents())
+
+        try await repository.setFavorite(ids: [folder.id, inside.id, atRoot.id], favorite: true)
+        let favorites = try await repository.favorites()
+        #expect(favorites.folders.map(\.id) == [folder.id])
+        #expect(Set(favorites.documents.map(\.id)) == [inside.id, atRoot.id])
+
+        try await repository.setFavorite(ids: [inside.id], favorite: false)
+        #expect(try await repository.favorites().documents.map(\.id) == [atRoot.id])
     }
 
     @Test func createsFoldersAndDocumentsInsideThem() async throws {
@@ -42,7 +60,7 @@ import WrStorage
         _ = try await repository.createDocument(title: "Groceries", parentId: Folder.rootId)
 
         #expect(try await repository.search(query: "grocer").map(\.title) == ["Groceries"])
-        #expect(try await repository.search(query: "private space").map(\.title) == ["Welcome to Writeopia"])
+        #expect(try await repository.search(query: "free place").map(\.title) == ["Welcome!"])
         #expect(try await repository.search(query: "  ").isEmpty)
     }
 }

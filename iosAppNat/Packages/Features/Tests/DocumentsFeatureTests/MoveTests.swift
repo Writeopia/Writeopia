@@ -23,7 +23,15 @@ final class FakeDocumentsRepository: DocumentsRepository {
         createdFolders.append(folder)
         return folder
     }
-    func createDocument(title: String, parentId: String) async throws -> WrDocument { throw APIError.notFound }
+    func createDocument(title: String, parentId: String) async throws -> WrDocument {
+        WrDocument(
+            id: UUID().uuidString,
+            title: title,
+            workspaceId: "w",
+            content: [StoryStep(type: .title, text: title, position: 0)],
+            parentId: parentId
+        )
+    }
 
     func moveDocument(id: String, toFolder folderId: String) async throws {
         if let moveError { throw moveError }
@@ -73,6 +81,25 @@ final class FakeDocumentsRepository: DocumentsRepository {
         let viewModel = FolderContentsViewModel(folderId: Folder.rootId, repository: repository)
         await viewModel.load()
         return (viewModel, repository)
+    }
+
+    @Test func favoritesListsTheFavoritesOfTheWholeTreeWithoutCreation() async {
+        let repository = FakeDocumentsRepository()
+        var favoriteDraft = draft
+        favoriteDraft.isFavorite = true
+        var favoriteIdeas = ideas
+        favoriteIdeas.favorite = true
+        repository.contents = FolderContents(folders: [favoriteIdeas, work], documents: [favoriteDraft])
+        let viewModel = FolderContentsViewModel(folderId: FolderContentsViewModel.favoritesId, repository: repository)
+        await viewModel.load()
+
+        #expect(viewModel.isFavorites)
+        #expect(!viewModel.canCreateItems)
+        // "Ideas" is a favorite folder, "Draft" a favorite document; "Work" isn't a favorite.
+        #expect(viewModel.folders.map(\.id) == ["f1"])
+        #expect(viewModel.documents.map(\.id) == ["d1"])
+        #expect(viewModel.ancestors.isEmpty)
+        #expect(await viewModel.deleteFolder() == false)
     }
 
     @Test func payloadRoundTrips() {
@@ -201,7 +228,10 @@ final class FakeSummaryAi: AiStreaming {
 
         viewModel.toggleSelection("d1")
         viewModel.toggleSelection("f1")
-        await viewModel.summarizeSelected()
+        viewModel.summarizeSelected()
+        #expect(viewModel.isSummarizing)
+        await viewModel.summaryTask?.value
+        #expect(!viewModel.isSummarizing)
 
         let prompt = try #require(ai.prompts.first)
         #expect(prompt.0 == .summary)
@@ -212,8 +242,87 @@ final class FakeSummaryAi: AiStreaming {
         #expect(!viewModel.hasSelection)
     }
 
+    @Test func summaryCanBeCancelledAndSavesNothing() async {
+        let ai = NeverEndingAi()
+        let (viewModel, repository) = await makeViewModel(ai: ai)
+        viewModel.toggleSelection("d1")
+        viewModel.summarizeSelected()
+        #expect(viewModel.isSummarizing)
+        for _ in 0..<10 { await Task.yield() }
+
+        viewModel.cancelSummary()
+        await viewModel.summaryTask?.value
+        for _ in 0..<10 { await Task.yield() }
+
+        #expect(!viewModel.isSummarizing)
+        #expect(viewModel.summaryError == nil, "error: \(viewModel.summaryError ?? "none")")
+        #expect(repository.saved.isEmpty)
+    }
+
+    @Test func droppedImagesBecomeUntitledNotesWithTheImage() async throws {
+        let (viewModel, repository) = await makeViewModel()
+        // A 1×1 PNG, and a file that isn't an image.
+        let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")!
+        let directory = URL.temporaryDirectory.appending(path: "drop \(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let image = directory.appending(path: "photo.png")
+        try png.write(to: image)
+        let text = directory.appending(path: "notes.txt")
+        try Data("hi".utf8).write(to: text)
+
+        await viewModel.importImages([image, text])
+
+        let created = try #require(repository.saved.first)
+        #expect(created.title == "")
+        #expect(created.parentId == Folder.rootId)
+        #expect(created.content.map(\.type) == [.title, .image])
+        #expect(created.content[1].path?.hasSuffix(".jpg") == true)
+        #expect(repository.saved.count == 1, "the text file was ignored")
+        #expect(viewModel.actionError == nil)
+    }
+
+    @Test func theSelectionMovesToAnotherFolder() async {
+        let (viewModel, repository) = await makeViewModel()
+        viewModel.toggleSelection("d1")
+        viewModel.toggleSelection("f1")
+        #expect(viewModel.selectedFolderIds == ["f1"])
+
+        await viewModel.moveSelected(to: "f2")
+
+        #expect(Set(repository.moves) == ["document d1 -> f2", "folder f1 -> f2"])
+        #expect(!viewModel.hasSelection)
+        #expect(viewModel.actionError == nil)
+    }
+
+    @Test func foldersInTheSelectionHideCopyAndSummary() async {
+        let (viewModel, _) = await makeViewModel()
+        viewModel.toggleSelection("d1")
+        #expect(!viewModel.selectionHasFolders)
+        viewModel.toggleSelection("f1")
+        #expect(viewModel.selectionHasFolders)
+        viewModel.toggleSelection("d1")
+        #expect(viewModel.selectionHasFolders)
+        viewModel.clearSelection()
+        #expect(!viewModel.selectionHasFolders)
+    }
+
     @Test func summaryNeedsTheCloudAi() async {
         let (viewModel, _) = await makeViewModel()
         #expect(!viewModel.canSummarize)
+    }
+}
+
+/// An AI that never answers, so a summary can only end by being cancelled.
+private final class NeverEndingAi: AiStreaming {
+    func stream(_ command: AiCommand, prompt: String) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(20))
+                }
+                continuation.finish(throwing: CancellationError())
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
     }
 }

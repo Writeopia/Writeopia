@@ -1,13 +1,14 @@
-# iosAppNat — native iOS app
+# iosAppNat — native iOS and macOS app
 
-A SwiftUI version of the Writeopia iOS app. The existing `iosApp` hosts the Compose Multiplatform UI; this one is fully native and talks to the Writeopia API gateway (`https://writeopia.io`) directly.
+A SwiftUI version of the Writeopia app for iOS and, from the same target, macOS. The existing `iosApp` hosts the Compose Multiplatform UI; this one is fully native and talks to the Writeopia API gateway (`https://writeopia.io`) directly.
 
-Requirements: Xcode 26+ (Swift 6.2 toolchain). Deployment target iOS 17. No third-party dependencies.
+Requirements: Xcode 26+ (Swift 6.2 toolchain). Deployment targets iOS 17 and macOS 26. No third-party dependencies.
 
 ```
 iosAppNat/
 ├── iosAppNat.xcodeproj
-├── iosAppNat/            App target: entry point, RootView (phase router), MainTabView
+├── iosAppNat/            App target (iOS + macOS): entry point, RootView (phase router),
+│                         MainTabView (iOS), MacMainView (macOS), macOS entitlements and Info.plist
 ├── iosAppNatUITests/     XCUITest smoke tests (no backend needed)
 └── Packages/
     ├── Core/             Local package with the core modules
@@ -33,14 +34,18 @@ iosAppNat/
         │                     cards to select them: copy, favorite, AI summary, delete),
         │                     new folder/document; documents open in the NoteEditor
         ├── SearchFeature     Debounced search (backend or local files)
-        └── SettingsFeature   General (color theme), Teams, AI (cloud usage), Account
+        ├── SetupFeature      Shared by the setup and Settings: Apple Intelligence status, the
+        │                     local AI (Ollama / llmman) configuration and the private space folder
+        └── SettingsFeature   General (color theme, folder on Mac), Teams, AI (provider, local AI,
+                              cloud usage), Account
 ```
 
 ## Flow
 
 `AppSession.phase` drives `RootView`:
 
-- `spaceChoice`: pick the **private space** (offline, documents stored as `.wrdoc.json`/`.wrfolder.json` in Application Support) or the **open space** (online).
+- `spaceChoice`: pick the **private space** (offline, documents stored in Application Support) or the **open space** (online).
+- `offlineSetup`: on the Mac only, the first-run setup of the desktop app after choosing the private space: the AI (Apple Intelligence or a local model through Ollama / llmman, with the same "Auto configure" wizard and manual configuration as the Compose app) and then the folder of the workspace. Both can be changed later in Settings.
 - `signedOut`: login, with register and password recovery.
 - `emailConfirmation`: shown after registering, or when logging in with an unconfirmed email.
 - `chooseWorkspace`: list or create team workspaces.
@@ -50,7 +55,17 @@ From Settings > Account, the private space offers **Sign in** and **Switch space
 
 ## Running
 
-Open `iosAppNat.xcodeproj` and run the `iosAppNat` scheme. To point the app at another gateway, set the `WRITEOPIA_BASE_URL` environment variable in the scheme.
+Open `iosAppNat.xcodeproj` and run the `iosAppNat` scheme on an iPhone, an iPad or **My Mac** (the product is `Writeopia.app` there). To point the app at another gateway, set the `WRITEOPIA_BASE_URL` environment variable in the scheme; `LOCAL_AI_URL` overrides where Ollama is looked for.
+
+## macOS
+
+The Mac app is the same target with the `macosx` platform: App Sandbox, hardened runtime, outgoing network, user-selected files and app-scope bookmarks (`macOS.entitlements`), and `NSAllowsLocalNetworking` (`macOS-Info.plist`) for a local AI on an IP address. It shows the auth and setup flows of the desktop app and the sidebar shell (`MacMainView`: the landscape `SideGlobalMenu` in a `NavigationSplitView`, then documents, search and settings).
+
+The editor is the same as on iOS. Each step is an `NSTextView` (`WriteopiaUI/StepTextView+macOS.swift`) with the native spell check and input methods; Return, Backspace at the start, Up and Down at the first or last line, Tab (accepts AI suggestions) and Shift+Up/Down (grows the line selection) go to the state manager, like the key handling of the Compose desktop app. The side options of the landscape layout replace the bottom menu: Page (lock, font, delete), Text (bold, italic, underline, link, highlights, checkbox, list, code block, box, card, headings, drawing, image from a file), Export (JSON and Markdown through a save panel, publish) and AI. Steps are reordered by dragging the grip, which shows on hover; clicking the grip selects the line. Shortcuts: Cmd+B/I/U, Cmd+Shift+B (box), Cmd+- (list item), Cmd+Shift+A (select all lines), Cmd+L (link the selected lines to a new page), Cmd+K (ask the AI), Esc (clear the selection, stop the AI), Cmd+C/X on selected lines.
+
+- **Private space folder**: chosen with the file importer and kept as a security-scoped bookmark. The database (`writeopia.sqlite`, single file, no WAL) is created in that folder; files already there are left alone. Documents in the previous location are not moved.
+- **Local AI**: `OllamaAPI` (`/api/tags`, `/api/pull`, `/api/delete`, `/api/generate` streaming) and `OllamaAi` answer the editor commands with the same prompts as the cloud; `LocalAiConfigController` in the session keeps the URL, the model and a running download; the wizard asks the backend for `/api/ai/local-config` (built-in defaults offline) and probes Ollama and llmman.
+- Build and test from the command line: `swift test` in each package, and `xcodebuild build -project iosAppNat.xcodeproj -scheme iosAppNat -destination 'platform=macOS'`.
 
 ## Documents list
 
@@ -60,7 +75,7 @@ Open `iosAppNat.xcodeproj` and run the `iosAppNat` scheme. To point the app at a
 
 Documents open in an editable editor. Supported step types: `TITLE`, `TEXT`, `CODE_BLOCK`, `IMAGE`, `CHECK_ITEM`, `UNORDERED_LIST_ITEM`, `DIVIDER`, `DOCUMENT_LINK`, `AI_ANSWER`, `LOADING`, `SPACE` and `ON_DRAG_SPACE`. Other types (spreadsheets, videos...) are kept in the document but not drawn.
 
-- Text is edited in place. Return splits a step (the title continues as a paragraph, lists and checklists continue as items, Return on an empty item leaves the list). Backspace at the start merges into the previous line, turns a list item into a paragraph, or removes a divider/link above.
+- Text is edited in place. Return splits a step (the title continues as a paragraph, lists and checklists continue as items, also from an empty item). Backspace at the start merges into the previous line, turns a list item into a paragraph (the way to leave a list), or removes a divider/link above.
 - Existing spans (bold, italic, underline, highlights, links) are drawn and follow the text as it's edited. Bold, italic, underline, highlights (yellow, green, red) and links can be applied to the selected text from the menu. Comments aren't supported.
 - Hold the grip on the left of a step and drop it on another step or space to reorder.
 - Slide a line sideways to select it (slide again to unselect), like the SDK's `SwipeBox`. Several lines can be selected. While lines are selected, the bottom menu becomes the selection menu of the SDK's `EditionScreen`: AI on the selected lines, bold/italic/underline, checkbox, list item, code block, Box/Card, Title/SubTitle/Header, link to a new page, copy (plain and rich text), cut, delete, and an "N selected ✕" chip that shows the count and clears the selection.

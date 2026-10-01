@@ -1,6 +1,6 @@
-#if canImport(UIKit)
 import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 import Writeopia
 import WriteopiaUI
 import WrData
@@ -17,9 +17,12 @@ struct EditorSideOptions: View {
     let onLinkClick: () -> Void
     let onDrawingClick: () -> Void
     let onImagePicked: (PhotosPickerItem) -> Void
+    /// An image file picked with the file importer (the Mac).
+    let onImageFilePicked: (URL) -> Void
     let onPublishClick: () -> Void
     let onDelete: () -> Void
-    @State private var tab: SideTab?
+    /// The open panel; the editor closes it on a click outside.
+    @Binding var tab: SideTab?
     private static let panelWidth: CGFloat = 280
     private static let spacing: CGFloat = 8
 
@@ -50,10 +53,13 @@ struct EditorSideOptions: View {
 
     private var column: some View {
         VStack(spacing: 4) {
+            #if os(iOS)
+            // The Mac window keeps its own back button; here it would only take space.
             MenuButton(systemImage: "chevron.left", label: "Back", action: onBack)
                 .accessibilityIdentifier("editor.side.back")
             Divider()
                 .frame(width: 22)
+            #endif
             tabButton(.page, systemImage: "doc.text", label: "Page")
                 .accessibilityIdentifier("editor.side.page")
             tabButton(.text, systemImage: "textformat", label: "Text", isEnabled: !viewModel.isLocked)
@@ -99,7 +105,8 @@ struct EditorSideOptions: View {
                             self.tab = nil
                             onDrawingClick()
                         },
-                        onImagePicked: onImagePicked
+                        onImagePicked: onImagePicked,
+                        onImageFilePicked: onImageFilePicked
                     )
                 case .export:
                     SideExportPanel(viewModel: viewModel, onPublishClick: onPublishClick)
@@ -167,7 +174,9 @@ private struct SideTextPanel: View {
     let onLinkClick: () -> Void
     let onDrawingClick: () -> Void
     let onImagePicked: (PhotosPickerItem) -> Void
+    let onImageFilePicked: (URL) -> Void
     @State private var pickedPhoto: PhotosPickerItem?
+    @State private var picksImageFile = false
 
     private var manager: WriteopiaStateManager { viewModel.writeopiaManager }
     private let columns = Array(repeating: GridItem(.fixed(40), spacing: 6), count: 5)
@@ -205,6 +214,14 @@ private struct SideTextPanel: View {
             LazyVGrid(columns: columns, alignment: .leading, spacing: 6) {
                 MenuButton(systemImage: "pencil.and.scribble", label: "Drawing", action: onDrawingClick)
                     .accessibilityIdentifier("side.drawing")
+                #if os(macOS)
+                // Images come from files on the Mac, not from the photo library.
+                MenuButton(systemImage: "photo", label: "Image") { picksImageFile = true }
+                    .accessibilityIdentifier("side.image")
+                    .fileImporter(isPresented: $picksImageFile, allowedContentTypes: [.image]) { result in
+                        if case .success(let url) = result { onImageFilePicked(url) }
+                    }
+                #else
                 PhotosPicker(selection: $pickedPhoto, matching: .images, photoLibrary: .shared()) {
                     MenuIcon(systemImage: "photo")
                 }
@@ -216,6 +233,7 @@ private struct SideTextPanel: View {
                     onImagePicked(item)
                     pickedPhoto = nil
                 }
+                #endif
             }
         }
 
@@ -266,7 +284,7 @@ private struct SideTextPanel: View {
                         .foregroundStyle(option.isActive ? WrColors.accent : .primary)
                         .frame(maxWidth: .infinity, minHeight: 32)
                         .background(
-                            Capsule().fill(option.isActive ? WrColors.accent.opacity(0.15) : Color(uiColor: .tertiarySystemFill))
+                            Capsule().fill(option.isActive ? WrColors.accent.opacity(0.15) : WrColors.tertiaryFill)
                         )
                         .contentShape(Capsule())
                 }
@@ -306,10 +324,18 @@ private struct SideExportPanel: View {
             }
             .accessibilityIdentifier("side.publish")
         }
+        #if os(iOS)
         .sheet(item: $exportedFile) { file in
             ShareSheet(items: [file.url])
                 .presentationDetents([.medium, .large])
         }
+        #else
+        .onChange(of: exportedFile) { _, file in
+            guard let file else { return }
+            ExportSaver.save(file.url)
+            exportedFile = nil
+        }
+        #endif
         .alert(
             "Could not export",
             isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })
@@ -377,4 +403,3 @@ private extension View {
         }
     }
 }
-#endif

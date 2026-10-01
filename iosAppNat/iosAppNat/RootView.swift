@@ -18,8 +18,16 @@ struct RootView: View {
                 EmailConfirmationView(email: email, session: session)
             case .chooseWorkspace:
                 ChooseWorkspaceView(session: session)
+            case .offlineSetup(.localAi):
+                LocalAiSetupView()
+            case .offlineSetup(.localFolder):
+                LocalFolderSetupView()
             case .ready:
+                #if os(macOS)
+                MacMainView()
+                #else
                 MainTabView()
+                #endif
             }
         }
         .tint(WrColors.accent)

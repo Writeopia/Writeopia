@@ -1,6 +1,8 @@
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 
 /// Writeopia palette, mirrored from the Compose `WriteopiaTheme` so both apps feel the same.
@@ -14,13 +16,62 @@ nonisolated public enum WrColors {
     public static let textLighter = dynamic(light: 0x666666, dark: 0xAAAAAA)
     public static let divider = dynamic(light: 0xE0E0E0, dark: 0x616161)
 
+    /// The background of the system (`systemBackground` on iOS, the window background on macOS).
+    public static var systemBackground: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .systemBackground)
+        #else
+        Color(nsColor: .windowBackgroundColor)
+        #endif
+    }
+
+    /// A raised surface inside the content (`secondarySystemBackground` on iOS). On the Mac the
+    /// system's control background is the window color in dark mode, so the palette's surface
+    /// is used instead: it stands out on both appearances.
+    public static var secondaryBackground: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .secondarySystemBackground)
+        #else
+        surface
+        #endif
+    }
+
+    /// Thin lines between content (`separator` on iOS).
+    public static var separator: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .separator)
+        #else
+        Color(nsColor: .separatorColor)
+        #endif
+    }
+
+    /// A faint fill behind unselected chips (`tertiarySystemFill` on iOS).
+    public static var tertiaryFill: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .tertiarySystemFill)
+        #else
+        Color(nsColor: .quaternaryLabelColor).opacity(0.5)
+        #endif
+    }
+
+    /// A subtle fill for placeholders (`secondarySystemFill` on iOS).
+    public static var secondaryFill: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .secondarySystemFill)
+        #else
+        Color(nsColor: .quaternaryLabelColor)
+        #endif
+    }
+
     private static func dynamic(light: UInt32, dark: UInt32) -> Color {
         #if canImport(UIKit)
         Color(UIColor { traits in
             traits.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light)
         })
         #else
-        Color(hex: light)
+        Color(NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? NSColor(hex: dark) : NSColor(hex: light)
+        })
         #endif
     }
 }
@@ -36,7 +87,32 @@ nonisolated extension UIColor {
         )
     }
 }
+#elseif canImport(AppKit)
+nonisolated extension NSColor {
+    convenience init(hex: UInt32) {
+        self.init(
+            srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: 1
+        )
+    }
+}
 #endif
+
+nonisolated public extension Color {
+    /// A color stored the way the Compose app stores it: an ARGB `Int` (negative for opaque
+    /// colors, e.g. `-65281` is magenta).
+    init(argb: Int) {
+        let value = UInt32(truncatingIfNeeded: argb)
+        self.init(
+            red: Double((value >> 16) & 0xFF) / 255,
+            green: Double((value >> 8) & 0xFF) / 255,
+            blue: Double(value & 0xFF) / 255,
+            opacity: Double((value >> 24) & 0xFF) / 255
+        )
+    }
+}
 
 nonisolated extension Color {
     init(hex: UInt32) {

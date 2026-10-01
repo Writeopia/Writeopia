@@ -1,4 +1,3 @@
-#if canImport(UIKit)
 import SwiftUI
 import Writeopia
 import WrDesign
@@ -120,6 +119,7 @@ struct DraggableStep<Content: View>: View {
     let manager: WriteopiaStateManager
     var alignment: VerticalAlignment = .center
     @ViewBuilder let content: Content
+    @State private var isHovered = false
 
     var body: some View {
         HStack(alignment: alignment, spacing: 4) {
@@ -134,10 +134,13 @@ struct DraggableStep<Content: View>: View {
                 .blockDecoration(step)
         }
         .swipeToSelect(step, manager: manager)
+        .selectableByDrag(id: step.id)
+        // With a pointer the grip shows on hover, like the drag handle of the Compose app.
+        .onHover { isHovered = $0 }
     }
 
     private var showsGrip: Bool {
-        manager.isEditable && manager.currentStory.focus == position
+        manager.isEditable && (manager.currentStory.focus == position || isHovered)
     }
 }
 
@@ -145,9 +148,27 @@ enum EditorLayout {
     static let gutter: CGFloat = 20
 }
 
+/// The title of the document, with its colored header when it has one, like `HeaderDrawer` of
+/// the SDK. A pencil in the corner opens the header colors.
 struct TitleDrawer: View {
     let step: StoryStep
     let manager: WriteopiaStateManager
+    @State private var isHovered = false
+    @State private var showsColors = false
+
+    private var headerColor: Color? {
+        step.decoration?.backgroundColor.map { Color(argb: $0) }
+    }
+
+    /// Space above the title inside a colored header. The Compose app uses 114; the Mac window
+    /// is taller, so the band gets a little more room there.
+    private static let coloredHeaderTopPadding: CGFloat = {
+        #if os(macOS)
+        160
+        #else
+        114
+        #endif
+    }()
 
     var body: some View {
         StepTextView(step: step, manager: manager)
@@ -160,7 +181,135 @@ struct TitleDrawer: View {
                 }
             }
             .padding(.leading, EditorLayout.gutter + 4)
-            .padding(.vertical, 8)
+            .padding(.trailing, 12)
+            .padding(.top, headerColor == nil ? 8 : Self.coloredHeaderTopPadding)
+            .padding(.bottom, 8)
+            .background {
+                if let headerColor {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(headerColor)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if manager.isEditable, showsEditButton {
+                    Button {
+                        showsColors = true
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.primary)
+                            .frame(width: 30, height: 30)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Edit header")
+                    .accessibilityLabel("Edit header")
+                    .accessibilityIdentifier("editor.header.edit")
+                    .padding(8)
+                    .headerColorsPresentation(isPresented: $showsColors, manager: manager)
+                    .transition(.opacity)
+                }
+            }
+            .onHover { isHovered = $0 }
+            .animation(.easeInOut(duration: 0.15), value: isHovered)
+            .animation(.snappy, value: headerColor == nil)
+    }
+
+    /// On the Mac the pencil shows on hover; on touch screens it stays, like the Compose app.
+    private var showsEditButton: Bool {
+        #if os(macOS)
+        isHovered || showsColors
+        #else
+        true
+        #endif
+    }
+}
+
+private extension View {
+    /// The header colors: a popover under the pencil on the Mac, and a bottom sheet on iOS, where
+    /// a popover doesn't fit the screen.
+    @ViewBuilder
+    func headerColorsPresentation(isPresented: Binding<Bool>, manager: WriteopiaStateManager) -> some View {
+        #if os(macOS)
+        popover(isPresented: isPresented, arrowEdge: .bottom) {
+            HeaderColorPicker(manager: manager)
+                .padding(16)
+        }
+        #else
+        sheet(isPresented: isPresented) {
+            HeaderColorPicker(manager: manager)
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .padding(.bottom, 16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .presentationDetents([.height(220)])
+                .presentationDragIndicator(.visible)
+        }
+        #endif
+    }
+}
+
+/// The colors of the header: none, then the palette of the Compose app. The selected one is a
+/// wider, squarer swatch, like `HeaderEditionOptions`.
+struct HeaderColorPicker: View {
+    let manager: WriteopiaStateManager
+
+    /// On the Mac the swatches fit in one row; on a phone they wrap to the width of the sheet.
+    private static let wrapsSwatches: Bool = {
+        #if os(macOS)
+        false
+        #else
+        true
+        #endif
+    }()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Header")
+                .font(.headline)
+
+            if Self.wrapsSwatches {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 44), spacing: 10)], alignment: .leading, spacing: 10) {
+                    swatch(nil)
+                    ForEach(WriteopiaStateManager.headerColors, id: \.self) { color in
+                        swatch(color)
+                    }
+                }
+            } else {
+                HStack(spacing: 10) {
+                    swatch(nil)
+                    ForEach(WriteopiaStateManager.headerColors, id: \.self) { color in
+                        swatch(color)
+                    }
+                }
+            }
+        }
+    }
+
+    private func swatch(_ argb: Int?) -> some View {
+        let isSelected = manager.headerColor == argb
+        let shape = RoundedRectangle(cornerRadius: isSelected ? 10 : 20, style: .continuous)
+        return Button {
+            withAnimation(.snappy) { manager.setHeaderColor(argb) }
+        } label: {
+            shape
+                .fill(argb.map { Color(argb: $0) } ?? Color.clear)
+                .overlay(shape.strokeBorder(isSelected ? WrColors.accent : WrColors.divider, lineWidth: isSelected ? 2 : 1))
+                .overlay {
+                    if argb == nil {
+                        Image(systemName: "slash.circle")
+                            .foregroundStyle(Color.primary)
+                    }
+                }
+                .frame(width: isSelected ? 44 : 34, height: 34)
+                .contentShape(shape)
+        }
+        .buttonStyle(.plain)
+        .help(argb == nil ? "No color" : "Header color")
+        .accessibilityLabel(argb == nil ? "No color" : "Header color")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .animation(.snappy, value: isSelected)
     }
 }
 
@@ -173,7 +322,7 @@ struct CodeBlockDrawer: View {
         StepTextView(step: step, manager: manager)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(Color(uiColor: .secondarySystemFill), in: RoundedRectangle(cornerRadius: 8))
+            .background(WrColors.secondaryFill, in: RoundedRectangle(cornerRadius: 8))
     }
 }
 
@@ -189,9 +338,14 @@ extension View {
                         .strokeBorder(WrColors.accent.opacity(0.35))
                 }
         } else if step.hasTag(BlockTag.card.rawValue) {
+            // A raised surface with an edge and a shadow, so it reads as a card on any background.
             padding(12)
-                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+                .background(WrColors.secondaryBackground, in: RoundedRectangle(cornerRadius: 12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(WrColors.divider)
+                }
+                .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
         } else {
             self
         }
@@ -225,10 +379,13 @@ struct UnorderedListItemDrawer: View {
     let manager: WriteopiaStateManager
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        // The text view has no baseline for SwiftUI to align to, so the bullet sits on the
+        // first line by hand, like the checkbox next to it.
+        HStack(alignment: .top, spacing: 8) {
             Text("•")
                 .font(.body.bold())
                 .foregroundStyle(.secondary)
+                .frame(height: TextStyles.lineHeight(of: TextStyles.baseFont(for: step, family: manager.fontFamily)))
             StepTextView(step: step, manager: manager)
         }
     }
@@ -257,14 +414,19 @@ struct AiAnswerDrawer: View {
             StepTextView(step: step, manager: manager)
         }
         .padding(14)
-        .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+        .background(WrColors.secondaryBackground, in: RoundedRectangle(cornerRadius: 12))
+        // A tinted edge marks where the answer starts and ends, whatever the background.
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(WrColors.accent.opacity(0.35), lineWidth: 1)
+        }
         .padding(.vertical, 8)
     }
 
     private var actions: some View {
         HStack(spacing: 2) {
             Button {
-                UIPasteboard.general.string = step.text ?? ""
+                SystemPasteboard.copy(step.text ?? "")
             } label: {
                 Image(systemName: "doc.on.doc")
                     .frame(width: 32, height: 28)
@@ -412,7 +574,7 @@ struct DividerDrawer: View {
     var body: some View {
         // `Divider` would be vertical inside the gutter's HStack, so draw the line directly.
         Rectangle()
-            .fill(Color(uiColor: .separator))
+            .fill(WrColors.separator)
             .frame(maxWidth: .infinity)
             .frame(height: 1)
             .padding(.vertical, 12)
@@ -489,4 +651,3 @@ struct DragPreview: View {
     }
 }
 
-#endif

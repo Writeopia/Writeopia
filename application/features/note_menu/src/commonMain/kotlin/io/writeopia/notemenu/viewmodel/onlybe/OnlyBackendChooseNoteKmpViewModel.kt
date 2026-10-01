@@ -70,6 +70,17 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     private val _selectedNotes = MutableStateFlow<Set<String>>(emptySet())
     override val selectedNotes: StateFlow<Set<String>> = _selectedNotes.asStateFlow()
 
+    override val selectionHasFolders: StateFlow<Boolean> by lazy {
+        combine(selectedNotes, menuItemsState) { selectedIds, items ->
+            (items as? ResultData.Complete<List<MenuItem>>)
+                ?.data
+                ?.any { item -> item is Folder && selectedIds.contains(item.id) }
+                ?: false
+        }.stateIn(viewModelScope, SharingStarted.Lazily, false)
+    }
+
+    override val currentFolderId: String get() = notesNavigation.id
+
     override val hasSelectedNotes: StateFlow<Boolean> by lazy {
         _selectedNotes.stateIn(viewModelScope, SharingStarted.Lazily, emptySet())
             .let { flow ->
@@ -555,6 +566,43 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun syncFolder(folder: Folder) {
         // No-op: this ViewModel directly uses the backend API, folders are already synced on creation
+    }
+
+    private val _moveSelectionState = MutableStateFlow(false)
+    override val moveSelectionState: StateFlow<Boolean> = _moveSelectionState.asStateFlow()
+
+    override fun showMoveSelection() {
+        if (_selectedNotes.value.isNotEmpty()) {
+            _moveSelectionState.value = true
+        }
+    }
+
+    override fun hideMoveSelection() {
+        _moveSelectionState.value = false
+    }
+
+    override fun moveSelectionTo(parentId: String) {
+        val ids = _selectedNotes.value - parentId
+        _moveSelectionState.value = false
+        if (ids.isEmpty()) return
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val workspace = authRepository.getWorkspace() ?: return@launch
+            val items = (menuItemsState.value as? ResultData.Complete<List<MenuItem>>)
+                ?.data
+                ?.filter { item -> ids.contains(item.id) }
+                ?: emptyList()
+
+            _menuItemsState.value = ResultData.Loading()
+            items.forEach { item ->
+                when (item) {
+                    is Folder -> documentsApi.moveFolder(item.id, parentId, workspace.id)
+                    else -> documentsApi.moveDocument(item.id, parentId, workspace.id)
+                }
+            }
+            _selectedNotes.value = emptySet()
+            loadFolderContents()
+        }
     }
 
     override fun moveToFolder(menuItemUi: MenuItemUi, parentId: String) {

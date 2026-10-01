@@ -16,13 +16,17 @@ public enum MainDestination: Hashable {
 public struct SideGlobalMenu: View {
     @Binding private var selection: MainDestination
     private let router: DocumentsRouter
+    private let fixedWidth: Bool
     @Environment(AppSession.self) private var session
     @State private var newFolderTitle = ""
     @State private var asksNewFolderTitle = false
 
-    public init(selection: Binding<MainDestination>, router: DocumentsRouter) {
+    /// `fixedWidth` keeps the menu at the width of the landscape layout; the Mac sidebar column
+    /// sizes it instead and paints its own material behind it.
+    public init(selection: Binding<MainDestination>, router: DocumentsRouter, fixedWidth: Bool = true) {
         _selection = selection
         self.router = router
+        self.fixedWidth = fixedWidth
     }
 
     public var body: some View {
@@ -36,6 +40,7 @@ public struct SideGlobalMenu: View {
 
                 destinationRow(.search, title: "Search", systemImage: "magnifyingglass")
                 destinationRow(.documents, title: "Home", systemImage: "house")
+                favoritesRow
                 destinationRow(.settings, title: "Settings", systemImage: "gearshape")
 
                 HStack {
@@ -66,8 +71,9 @@ public struct SideGlobalMenu: View {
             .padding(.vertical, 12)
             .padding(.horizontal, 8)
         }
-        .frame(width: 234)
-        .background(WrColors.surface)
+        .frame(width: fixedWidth ? 234 : nil)
+        .frame(maxWidth: fixedWidth ? nil : .infinity)
+        .background(fixedWidth ? WrColors.surface : .clear)
         .alert("New folder", isPresented: $asksNewFolderTitle) {
             TextField("Title", text: $newFolderTitle)
             Button("Cancel", role: .cancel) {}
@@ -76,7 +82,8 @@ public struct SideGlobalMenu: View {
     }
 
     private func destinationRow(_ destination: MainDestination, title: LocalizedStringKey, systemImage: String) -> some View {
-        let isSelected = selection == destination
+        // Home and Favorites share the Documents tab; only one of them is highlighted.
+        let isSelected = selection == destination && !(destination == .documents && showsFavorites)
         return Button {
             if destination == .documents, selection == .documents {
                 router.reset()
@@ -99,6 +106,32 @@ public struct SideGlobalMenu: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("sideMenu.\(destination)")
     }
+
+    /// Every favorite of the workspace, like "Favorites" of the Compose side menu.
+    private var favoritesRow: some View {
+        let isSelected = selection == .documents && showsFavorites
+        return Button {
+            selection = .documents
+            router.openFavorites()
+        } label: {
+            Label("Favorites", systemImage: "star")
+                .font(.body.weight(isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? WrColors.accent : .primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12)
+                .frame(height: 40)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(isSelected ? WrColors.accent.opacity(0.12) : Color.clear)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("sideMenu.favorites")
+    }
+
+    private var showsFavorites: Bool { router.showsFavorites }
 
     private func open(_ item: FolderItem) {
         selection = .documents

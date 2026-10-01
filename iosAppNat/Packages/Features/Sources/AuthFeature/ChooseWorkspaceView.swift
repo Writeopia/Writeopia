@@ -111,6 +111,15 @@ public struct ChooseWorkspaceView: View {
                 )
             }
             .navigationTitle("Choose a workspace")
+            #if os(macOS)
+            .safeAreaInset(edge: .top) {
+                WrBackButton("Sign out") {
+                    Task { await viewModel.signOut() }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+            }
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Sign out") {

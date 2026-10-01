@@ -1,0 +1,400 @@
+{
+  "id": "DDE16YFyYN",
+  "title": "Using Commands",
+  "workspaceId": "disconnected_user",
+  "content": [
+    {
+      "id": "K1PlDcHZpy",
+      "type": {
+        "name": "title",
+        "number": 11
+      },
+      "text": "Using Commands",
+      "decoration": {
+        "backgroundColor": -65536
+      },
+      "position": 0
+    },
+    {
+      "id": "6mglAAbAG0",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "In Writeopia there are many short cuts available to speed up your writing process. In this document you'll learn about them. ",
+      "position": 1
+    },
+    {
+      "id": "6I5TsI4cIZ",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "AI",
+      "tags": [
+        {
+          "tag": "H3",
+          "position": 0
+        }
+      ],
+      "position": 2
+    },
+    {
+      "id": "dCLKSvgIOX",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Make a question",
+      "tags": [
+        {
+          "tag": "H4",
+          "position": 0
+        }
+      ],
+      "spans": [
+        {
+          "start": 0,
+          "end": 15,
+          "span": "BOLD"
+        }
+      ],
+      "position": 3
+    },
+    {
+      "id": "eyicZFU99Y",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Short cut: CMD (Windows: ALT) + K.",
+      "position": 4
+    },
+    {
+      "id": "86bq8KyqG6",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "You need first to select one line that you would like to ask a question. Then use the short cut to perform the question.",
+      "position": 5
+    },
+    {
+      "id": "OMhbf3lvUk",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Actions ",
+      "tags": [
+        {
+          "tag": "H3",
+          "position": 0
+        }
+      ],
+      "position": 6
+    },
+    {
+      "id": "KlW3xYhp47",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Saving on local file",
+      "tags": [
+        {
+          "tag": "H4",
+          "position": 0
+        }
+      ],
+      "spans": [
+        {
+          "start": 0,
+          "end": 20,
+          "span": "BOLD"
+        }
+      ],
+      "position": 7
+    },
+    {
+      "id": "bCKPuHeXWg",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Short cut: CMD (Windows: ALT) + SHIFT + s. ",
+      "position": 8
+    },
+    {
+      "id": "BwBjU6Srvt",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "it saves on the configured local workspace. ",
+      "position": 9
+    },
+    {
+      "id": "nQN4Q3tAQ0",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Link to document",
+      "tags": [
+        {
+          "tag": "H4",
+          "position": 0
+        }
+      ],
+      "spans": [
+        {
+          "start": 0,
+          "end": 16,
+          "span": "BOLD"
+        }
+      ],
+      "position": 10
+    },
+    {
+      "id": "sv3ZtkLgOj",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Short cut: CMD (Windows: ALT) + L ",
+      "position": 11
+    },
+    {
+      "id": "QuRjfutfoM",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "It creates a new a document with the selected line and creates a link to it from the current text.",
+      "position": 12
+    },
+    {
+      "id": "M9X4QQhVi7",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Select All",
+      "tags": [
+        {
+          "tag": "H4",
+          "position": 0
+        }
+      ],
+      "spans": [
+        {
+          "start": 0,
+          "end": 10,
+          "span": "BOLD"
+        }
+      ],
+      "position": 13
+    },
+    {
+      "id": "G9ELTHMQlM",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Short cut: CMD (Windows: ALT) + A",
+      "position": 14
+    },
+    {
+      "id": "TL1rvWSyJd",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Selects all lines of the document ",
+      "position": 15
+    },
+    {
+      "id": "rSgefS5P7y",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Decoration",
+      "tags": [
+        {
+          "tag": "H3",
+          "position": 0
+        }
+      ],
+      "position": 16
+    },
+    {
+      "id": "j0HOyIf8Fp",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Bold ",
+      "tags": [
+        {
+          "tag": "H4",
+          "position": 0
+        }
+      ],
+      "spans": [
+        {
+          "start": 0,
+          "end": 4,
+          "span": "BOLD"
+        }
+      ],
+      "position": 17
+    },
+    {
+      "id": "ZuM2pRyfFA",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Short cut: CMD (Windows: ALT) + b",
+      "position": 18
+    },
+    {
+      "id": "1MVDZ2xY5a",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Adds bold to the selected text. If multiple lines are selected, it adds to all lines of the selection.",
+      "spans": [
+        {
+          "start": 5,
+          "end": 9,
+          "span": "BOLD"
+        }
+      ],
+      "position": 19
+    },
+    {
+      "id": "EPTehmCjjR",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Italic",
+      "tags": [
+        {
+          "tag": "H4",
+          "position": 0
+        }
+      ],
+      "spans": [
+        {
+          "start": 0,
+          "end": 6,
+          "span": "BOLD"
+        }
+      ],
+      "position": 20
+    },
+    {
+      "id": "1O4q8HNdH7",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Short cut: CMD (Windows: ALT) + i",
+      "position": 21
+    },
+    {
+      "id": "FOCNfmhiqd",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Adds italic to the selected text. If multiple lines are selected, it adds to all lines of the selection.",
+      "spans": [
+        {
+          "start": 5,
+          "end": 11,
+          "span": "ITALIC"
+        }
+      ],
+      "position": 22
+    },
+    {
+      "id": "elWfhjE6WR",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Underline",
+      "tags": [
+        {
+          "tag": "H4",
+          "position": 0
+        }
+      ],
+      "spans": [
+        {
+          "start": 0,
+          "end": 9,
+          "span": "BOLD"
+        }
+      ],
+      "position": 23
+    },
+    {
+      "id": "8FtaAoz1mN",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Short cut: CMD (Windows: ALT) + u",
+      "position": 24
+    },
+    {
+      "id": "1qMKSC1UEh",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "Adds underline to the selected text. If multiple lines are selected, it adds to all lines of the selection.",
+      "spans": [
+        {
+          "start": 5,
+          "end": 14,
+          "span": "UNDERLINE"
+        }
+      ],
+      "position": 25
+    },
+    {
+      "id": "7z6L1NUW0R",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "",
+      "position": 26
+    },
+    {
+      "id": "r1cbRpd5cC",
+      "type": {
+        "name": "message",
+        "number": 0
+      },
+      "text": "",
+      "position": 27
+    }
+  ],
+  "createdAt": 1739622940549,
+  "lastUpdatedAt": 1739622940549,
+  "parentId": "root",
+  "isLocked": false,
+  "icon": {
+    "label": "command",
+    "tint": -256
+  }
+}

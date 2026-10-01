@@ -18,6 +18,7 @@ public final class DocumentsRouter {
     /// Shows `folder` with its ancestors behind it, so back goes up the tree.
     @MainActor
     func open(folder: Folder, repository: DocumentsRepository) async {
+        favoritesOpened = false
         let ancestors = (try? await repository.folderPath(to: folder.id)) ?? []
         let folders = ancestors.last?.id == folder.id ? ancestors : [folder]
         path = NavigationPath(folders.map(DocumentsRoute.folder))
@@ -27,7 +28,21 @@ public final class DocumentsRouter {
         path.append(DocumentsRoute.document(id: document.id, title: document.displayTitle))
     }
 
+    /// Shows every favorite of the workspace, right under the root.
+    func openFavorites() {
+        favoritesOpened = true
+        path = NavigationPath([DocumentsRoute.favorites])
+    }
+
+    /// Set by `openFavorites`; cleared when the tree is opened again.
+    private var favoritesOpened = false
+
+    /// Whether the favorites screen is the one shown (or a document opened from it), for the
+    /// side menu's highlight. Going back to the root with the back button leaves it too.
+    public var showsFavorites: Bool { favoritesOpened && !path.isEmpty }
+
     func reset() {
+        favoritesOpened = false
         path = NavigationPath()
     }
 

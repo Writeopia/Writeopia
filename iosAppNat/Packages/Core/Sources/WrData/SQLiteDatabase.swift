@@ -16,12 +16,19 @@ final class SQLiteDatabase {
     nonisolated(unsafe) private var handle: OpaquePointer?
     nonisolated(unsafe) private var statements: [String: OpaquePointer] = [:]
 
-    init(url: URL) throws {
+    /// `wal` is the fastest; `delete` keeps a single file, safer in folders synced by iCloud
+    /// Drive or Dropbox.
+    enum JournalMode: String {
+        case wal = "WAL"
+        case delete = "DELETE"
+    }
+
+    init(url: URL, journalMode: JournalMode = .wal) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         guard sqlite3_open_v2(url.path(percentEncoded: false), &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nil) == SQLITE_OK else {
             throw SQLiteError(description: "Could not open the database: \(String(cString: sqlite3_errmsg(handle)))")
         }
-        try execute("PRAGMA journal_mode = WAL")
+        try execute("PRAGMA journal_mode = \(journalMode.rawValue)")
         try execute("PRAGMA foreign_keys = ON")
     }
 

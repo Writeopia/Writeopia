@@ -32,6 +32,10 @@ public protocol DocumentsRepository: AnyObject {
     func setFavorite(ids: [String], favorite: Bool) async throws
     /// Deletes documents, and folders with everything inside them.
     func deleteItems(ids: [String]) async throws
+
+    /// Every favorite folder and document of the workspace, wherever they are, for the
+    /// "Favorites" screen of the Compose app.
+    func favorites() async throws -> FolderContents
 }
 
 public enum MoveError: Error, Equatable {
@@ -62,6 +66,24 @@ extension DocumentsRepository {
             current = folder.parentId
         }
         return path
+    }
+
+    /// Walks the tree from the root and keeps the favorites. Stores with a database answer
+    /// this with a query instead.
+    public func favorites() async throws -> FolderContents {
+        var result = FolderContents()
+        var pending = [Folder.rootId]
+        var visited: Set<String> = []
+        var seen: Set<String> = []
+        while let folderId = pending.first {
+            pending.removeFirst()
+            guard visited.insert(folderId).inserted else { continue }
+            let contents = try await folderContents(folderId: folderId)
+            result.folders += contents.folders.filter { $0.favorite && seen.insert($0.id).inserted }
+            result.documents += contents.documents.filter { $0.isFavorite && seen.insert($0.id).inserted }
+            pending += contents.folders.map(\.id)
+        }
+        return result
     }
 
     /// A new document is stored with its title as the first step, like the Compose editor does.

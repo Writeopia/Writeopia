@@ -88,6 +88,10 @@ public struct EmailConfirmationView: View {
                 title: "Confirm your email",
                 subtitle: "Enter the code we sent to \(viewModel.email)."
             ) {
+                #if os(macOS)
+                WrBackButton("Back to sign in", action: viewModel.cancel)
+                #endif
+
                 WrTextField("Confirmation code", text: $viewModel.code, systemImage: "number", kind: .code)
                     .accessibilityIdentifier("confirm.code")
 

@@ -30,6 +30,10 @@ class FolderSync(
     /**
      * Sync the folder with the backend end. The lastSync should be data fetched from the backend.
      *
+     * Receiving is about this folder only. Sending covers the whole workspace: every document
+     * and folder changed locally since it was last sent goes with this sync, wherever it is, so
+     * a change (a move, for one) doesn't wait for its own folder to be opened.
+     *
      * This logic is atomic. If it fails, the whole process must be tried again in a future time.
      * The sync time of the folder will only be updated with everything works correctly.
      */
@@ -68,16 +72,10 @@ class FolderSync(
             val newDocuments = folderContent.documents.map { it.toModel() }
             val newFolders = folderContent.folders.map { it.toModel() }
 
-            // Then, load the outdated documents.
-            // These documents were updated locally, but were not sent to the backend yet
-            val localOutdatedDocs = documentRepository.loadOutdatedDocumentsByFolder(folderId, workspaceId)
-
-            // Load local outdated subfolders (where lastSyncedAt is null or lastUpdatedAt > lastSyncedAt)
-            val allLocalFolders = folderRepository.getFolderByParentId(folderId, workspaceId)
-            val localOutdatedFolders = allLocalFolders.filter { folder ->
-                val syncedAt = folder.lastSyncedAt
-                syncedAt == null || folder.lastUpdatedAt > syncedAt
-            }
+            // Then, load the outdated documents and folders of the whole workspace.
+            // These were updated locally, but were not sent to the backend yet.
+            val localOutdatedDocs = documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
+            val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
 
             // Resolve conflicts of documents that were updated both locally and in the backend.
             // Documents will be saved locally by documentConflictHandler.handleConflict

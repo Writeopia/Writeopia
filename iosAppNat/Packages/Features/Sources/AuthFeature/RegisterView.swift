@@ -120,7 +120,7 @@ struct RegisterView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Register")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inline)
         .animation(.default, value: viewModel.errorMessage)
     }
 

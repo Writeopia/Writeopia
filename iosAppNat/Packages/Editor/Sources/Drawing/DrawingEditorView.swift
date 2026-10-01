@@ -21,13 +21,13 @@ public struct DrawingEditorView: View {
 
     public var body: some View {
         NavigationStack {
-            DrawingCanvas(viewModel: viewModel, background: Color(uiColor: .systemBackground))
+            DrawingCanvas(viewModel: viewModel, background: WrColors.systemBackground)
                 .ignoresSafeArea(edges: .bottom)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     toolbar
                 }
                 .navigationTitle("Drawing")
-                .navigationBarTitleDisplayMode(.inline)
+                .toolbarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") { dismiss() }

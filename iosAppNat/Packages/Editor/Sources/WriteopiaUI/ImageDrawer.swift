@@ -1,7 +1,52 @@
-#if canImport(UIKit)
+import Foundation
 import SwiftUI
-import UIKit
+import WrDesign
 import WrModels
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
+
+#if canImport(UIKit)
+typealias PlatformImage = UIImage
+#else
+typealias PlatformImage = NSImage
+#endif
+
+/// Where the editor keeps the images added on this device.
+public enum ImageFiles {
+    public static var directory: URL {
+        URL.applicationSupportDirectory.appending(path: "Writeopia/Images", directoryHint: .isDirectory)
+    }
+
+    /// Saves JPEG data and returns its path.
+    public static func save(_ data: Data, name: String = UUID().uuidString) throws -> URL {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appending(path: "\(name).jpg")
+        try data.write(to: url, options: .atomic)
+        return url
+    }
+}
+
+extension ImageFiles {
+    /// The image at `path`. The app container moves between installs and updates, so a path
+    /// that doesn't exist anymore is also looked up by file name in `directory`.
+    static func localImage(path: String?) -> PlatformImage? {
+        guard let path, !path.isEmpty else { return nil }
+        if let cached = cache.object(forKey: path as NSString) {
+            return cached
+        }
+
+        let moved = directory.appending(path: (path as NSString).lastPathComponent).path(percentEncoded: false)
+        guard let image = PlatformImage(contentsOfFile: path) ?? PlatformImage(contentsOfFile: moved) else { return nil }
+        cache.setObject(image, forKey: path as NSString)
+        return image
+    }
+
+    /// Decoded images, so scrolling doesn't read and decode the files again.
+    private static let cache = NSCache<NSString, PlatformImage>()
+}
 
 /// An image of the document, like `ImageDrawer` of the SDK: from its URL when it was uploaded,
 /// otherwise from the file on this device.
@@ -30,7 +75,12 @@ struct ImageDrawer: View {
     @ViewBuilder
     private var content: some View {
         if let image = ImageFiles.localImage(path: step.path) {
-            Image(uiImage: image)
+            #if canImport(UIKit)
+            let swiftUIImage = Image(uiImage: image)
+            #else
+            let swiftUIImage = Image(nsImage: image)
+            #endif
+            swiftUIImage
                 .resizable()
                 .scaledToFit()
                 .frame(maxWidth: .infinity)
@@ -44,7 +94,7 @@ struct ImageDrawer: View {
                 default:
                     ProgressView()
                         .frame(maxWidth: .infinity, minHeight: 160)
-                        .background(Color(uiColor: .secondarySystemFill))
+                        .background(WrColors.secondaryFill)
                 }
             }
         } else {
@@ -57,39 +107,6 @@ struct ImageDrawer: View {
         Label("Image not available", systemImage: "photo")
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, minHeight: 120)
-            .background(Color(uiColor: .secondarySystemFill))
+            .background(WrColors.secondaryFill)
     }
 }
-
-/// Where the editor keeps the images added on this device.
-public enum ImageFiles {
-    public static var directory: URL {
-        URL.applicationSupportDirectory.appending(path: "Writeopia/Images", directoryHint: .isDirectory)
-    }
-
-    /// Saves JPEG data and returns its path.
-    public static func save(_ data: Data, name: String = UUID().uuidString) throws -> URL {
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let url = directory.appending(path: "\(name).jpg")
-        try data.write(to: url, options: .atomic)
-        return url
-    }
-
-    /// The image at `path`. The app container moves between installs and updates, so a path
-    /// that doesn't exist anymore is also looked up by file name in `directory`.
-    static func localImage(path: String?) -> UIImage? {
-        guard let path, !path.isEmpty else { return nil }
-        if let cached = cache.object(forKey: path as NSString) {
-            return cached
-        }
-
-        let moved = directory.appending(path: (path as NSString).lastPathComponent).path(percentEncoded: false)
-        guard let image = UIImage(contentsOfFile: path) ?? UIImage(contentsOfFile: moved) else { return nil }
-        cache.setObject(image, forKey: path as NSString)
-        return image
-    }
-
-    /// Decoded images, so scrolling doesn't read and decode the files again.
-    private static let cache = NSCache<NSString, UIImage>()
-}
-#endif

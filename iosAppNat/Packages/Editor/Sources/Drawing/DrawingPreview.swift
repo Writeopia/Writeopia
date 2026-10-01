@@ -16,7 +16,7 @@ public struct DrawingPreview: View {
         Button(action: onTap) {
             content
                 .frame(maxWidth: .infinity)
-                .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 12))
+                .background(WrColors.systemBackground, in: RoundedRectangle(cornerRadius: 12))
                 .overlay {
                     RoundedRectangle(cornerRadius: 12)
                         .strokeBorder(WrColors.divider)
@@ -43,7 +43,7 @@ public struct DrawingPreview: View {
                     StrokeRenderer.draw(
                         drawing.strokes,
                         in: &context,
-                        background: Color(uiColor: .systemBackground),
+                        background: WrColors.systemBackground,
                         transform: transform,
                         scale: scale
                     )
