@@ -17,7 +17,9 @@ private let sample = """
     """
 
 /// Keeps the presentations in memory, like the SQLite repository does on the device.
-final class MemoryPresentationsRepository: PresentationsStore {
+// The conformances are isolated explicitly: the store inherits a main-actor protocol, and the
+// compiler of CI (Xcode's Swift) refuses to infer the isolation of such a conformance.
+final class MemoryPresentationsRepository: @MainActor PresentationsStore {
     var saved: [Presentation] = []
     var failsSaving = false
 
@@ -61,7 +63,7 @@ final class FakePresentationsBackend: PresentationsRepository, PresentationGener
 }
 
 /// A repository of documents that also keeps presentations, so the editor offers them.
-final class PresentingDocumentsRepository: DocumentsRepository, PresentationsStore {
+final class PresentingDocumentsRepository: DocumentsRepository, @MainActor PresentationsStore {
     let document: WrDocument
     let presentations = MemoryPresentationsRepository()
     init(_ document: WrDocument) { self.document = document }
