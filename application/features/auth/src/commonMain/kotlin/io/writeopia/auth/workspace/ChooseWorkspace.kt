@@ -55,7 +55,6 @@ fun BoxScope.ChooseWorkspace(
     retry: () -> Unit,
     onBackClick: () -> Unit,
     canGoBack: Boolean
-
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
 

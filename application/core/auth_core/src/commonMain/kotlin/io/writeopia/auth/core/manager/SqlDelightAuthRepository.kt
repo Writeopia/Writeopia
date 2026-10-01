@@ -51,16 +51,19 @@ internal class SqlDelightAuthRepository(
     }
 
     override suspend fun saveUser(user: WriteopiaUser, selected: Boolean) {
-        if (selected) {
-            unselectAllUsers()
+        val db = writeopiaDb ?: return
+        db.transaction {
+            if (selected) {
+                db.writeopiaUserEntityQueries.unselectAllUsers()
+            }
+            db.writeopiaUserEntityQueries.insertUser(
+                id = user.id,
+                name = user.name,
+                email = user.email,
+                selected = selected.toLong(),
+                tier = user.tier.tierName()
+            )
         }
-        writeopiaDb?.writeopiaUserEntityQueries?.insertUser(
-            id = user.id,
-            name = user.name,
-            email = user.email,
-            selected = selected.toLong(),
-            tier = user.tier.tierName()
-        )
     }
 
     override suspend fun getAuthToken(): String? =

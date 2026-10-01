@@ -68,7 +68,6 @@ internal class EmailConfirmationViewModel(
                         // Save the tokens and user from the response
                         val authResponse = result.data
                         val user = authResponse.writeopiaUser.toModel()
-                        authRepository.unselectAllUsers()
                         authRepository.saveUser(user = user, selected = true)
                         val accessToken = authResponse.accessToken
                         val refreshToken = authResponse.refreshToken
