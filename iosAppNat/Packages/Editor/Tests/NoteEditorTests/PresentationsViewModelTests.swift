@@ -4,6 +4,7 @@ import Testing
 import WrData
 import WrModels
 import WrNetwork
+import WrStorage
 
 private let sample = """
     ## Why the sky is blue
@@ -16,7 +17,7 @@ private let sample = """
     """
 
 /// Keeps the presentations in memory, like the SQLite repository does on the device.
-final class MemoryPresentationsRepository: PresentationsRepository {
+final class MemoryPresentationsRepository: PresentationsStore {
     var saved: [Presentation] = []
     var failsSaving = false
 
@@ -39,8 +40,28 @@ final class MemoryPresentationsRepository: PresentationsRepository {
     }
 }
 
+/// A backend of presentations: makes and keeps them, like the cloud does.
+final class FakePresentationsBackend: PresentationsRepository, PresentationGenerating {
+    let store = MemoryPresentationsRepository()
+    var answer: Presentation?
+    var error: Error?
+    private(set) var generatedFor: [String] = []
+
+    func presentations(ofDocument documentId: String) async throws -> [Presentation] { try await store.presentations(ofDocument: documentId) }
+    func presentation(id: String) async throws -> Presentation? { try await store.presentation(id: id) }
+    func deletePresentation(id: String) async throws { try await store.deletePresentation(id: id) }
+
+    func generatePresentation(documentId: String) async throws -> Presentation {
+        generatedFor.append(documentId)
+        if let error { throw error }
+        guard let answer else { throw PresentationError(message: "nothing") }
+        try await store.savePresentation(answer)
+        return answer
+    }
+}
+
 /// A repository of documents that also keeps presentations, so the editor offers them.
-final class PresentingDocumentsRepository: DocumentsRepository, PresentationsRepository {
+final class PresentingDocumentsRepository: DocumentsRepository, PresentationsStore {
     let document: WrDocument
     let presentations = MemoryPresentationsRepository()
     init(_ document: WrDocument) { self.document = document }
@@ -69,13 +90,17 @@ private let document = WrDocument(id: "d", title: "Sky", workspaceId: "w", conte
     StoryStep(id: "a", type: .text, text: "Why is it blue?", position: 1),
 ])
 
+/// The local path: the AI on this machine answers and the app parses and keeps the slides.
 private func viewModel(ai: FakeAi, repository: MemoryPresentationsRepository = MemoryPresentationsRepository()) -> PresentationsViewModel {
     PresentationsViewModel(
         documentId: "d",
-        documentTitle: { "Sky" },
-        documentMarkdown: { "# Sky\n\nWhy is it blue?" },
         repository: repository,
-        aiClient: ai
+        generator: LocalPresentationGenerator(
+            aiClient: ai,
+            store: repository,
+            documentTitle: { "Sky" },
+            documentMarkdown: { "# Sky\n\nWhy is it blue?" }
+        )
     )
 }
 
@@ -173,21 +198,78 @@ private func viewModel(ai: FakeAi, repository: MemoryPresentationsRepository = M
     }
 }
 
+@Suite struct CloudPresentationsTests {
+    @Test func theBackendMakesAndKeepsThePresentation() async {
+        let backend = FakePresentationsBackend()
+        backend.answer = Presentation(documentId: "d", title: "From the cloud", slides: PresentationMarkdown.parse(sample))
+        var flushed = false
+        let viewModel = PresentationsViewModel(documentId: "d", repository: backend, generator: backend) { flushed = true }
+
+        let presentation = await viewModel.generate()
+
+        #expect(flushed, "the pending edits go to the backend before it reads the document")
+        #expect(backend.generatedFor == ["d"])
+        #expect(presentation?.title == "From the cloud")
+        #expect(viewModel.presentations.map(\.title) == ["From the cloud"])
+        #expect(viewModel.error == nil)
+    }
+
+    @Test func aBackendErrorIsShown() async {
+        let backend = FakePresentationsBackend()
+        backend.error = PresentationError(message: "AI didn't return any slide")
+        let viewModel = PresentationsViewModel(documentId: "d", repository: backend, generator: backend)
+
+        let presentation = await viewModel.generate()
+
+        #expect(presentation == nil)
+        #expect(viewModel.error == "AI didn't return any slide")
+    }
+
+    @Test func decodesThePresentationOfTheBackend() throws {
+        let json = """
+            {"id": "p1", "documentId": "d", "title": "Sky", "createdAt": 1700000000000, "slides": [
+                {"title": "Sky", "content": [
+                    {"id": "s2", "type": {"name": "unordered_list_item", "number": 16}, "text": "Second", "position": 2.0, "tags": [], "spans": []},
+                    {"id": "s1", "type": {"name": "message", "number": 0}, "text": "First", "position": 1.0, "tags": [], "spans": []}
+                ]},
+                {"title": "Bye"}
+            ]}
+            """
+
+        let presentation = try JSONDecoder().decode(Presentation.self, from: Data(json.utf8))
+
+        #expect(presentation.id == "p1")
+        #expect(presentation.createdAt == 1_700_000_000_000)
+        #expect(presentation.slides.map(\.title) == ["Sky", "Bye"])
+        #expect(presentation.slides[0].steps.map(\.text) == ["First", "Second"], "the steps come in the order of their positions")
+        #expect(presentation.slides[0].steps[1].type.number == StoryType.unorderedListItem.number)
+        #expect(presentation.slides[1].steps.isEmpty)
+    }
+}
+
 @Suite struct EditorPresentationsTests {
-    @Test func theEditorOffersPresentationsWhenEnabledWithAnAiAndAStore() {
+    @Test func theEditorOffersPresentationsForTheSourceOfTheSession() {
         let repository = PresentingDocumentsRepository(document)
 
-        let enabled = NoteEditorViewModel(documentId: "d", repository: repository, aiClient: FakeAi(), presentationsEnabled: true)
-        #expect(enabled.showsPresentations)
-        #expect(enabled.presentations?.documentId == "d")
+        let local = NoteEditorViewModel(documentId: "d", repository: repository, aiClient: FakeAi(), presentations: .local)
+        #expect(local.showsPresentations)
+        #expect(local.presentations?.documentId == "d")
 
-        let disabled = NoteEditorViewModel(documentId: "d", repository: repository, aiClient: FakeAi())
-        #expect(!disabled.showsPresentations)
+        let cloud = NoteEditorViewModel(
+            documentId: "d",
+            repository: OneDocumentRepository(document),
+            aiClient: FakeAi(),
+            presentations: .cloud(PresentationsAPI(client: APIClient(transport: URLSession.shared, tokenStore: InMemoryTokenStore()), workspaceId: "w"))
+        )
+        #expect(cloud.showsPresentations, "the cloud needs no local store")
 
-        let withoutAi = NoteEditorViewModel(documentId: "d", repository: repository, presentationsEnabled: true)
-        #expect(!withoutAi.showsPresentations)
+        let none = NoteEditorViewModel(documentId: "d", repository: repository, aiClient: FakeAi())
+        #expect(!none.showsPresentations)
 
-        let withoutStore = NoteEditorViewModel(documentId: "d", repository: OneDocumentRepository(document), aiClient: FakeAi(), presentationsEnabled: true)
-        #expect(!withoutStore.showsPresentations)
+        let localWithoutAi = NoteEditorViewModel(documentId: "d", repository: repository, presentations: .local)
+        #expect(!localWithoutAi.showsPresentations)
+
+        let localWithoutStore = NoteEditorViewModel(documentId: "d", repository: OneDocumentRepository(document), aiClient: FakeAi(), presentations: .local)
+        #expect(!localWithoutStore.showsPresentations)
     }
 }

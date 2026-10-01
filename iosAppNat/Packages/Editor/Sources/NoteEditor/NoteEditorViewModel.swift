@@ -88,8 +88,8 @@ public final class NoteEditorViewModel {
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private var pushTask: Task<Void, Never>?
     public private(set) var isSyncing = false
-    /// The presentations of the document; nil when the AI in use can't generate them (only the
-    /// cloud AI and Ollama do) or the repository can't keep them.
+    /// The presentations of the document; nil when the AI in use can't make them (only the cloud
+    /// AI and Ollama do).
     public private(set) var presentations: PresentationsViewModel?
     /// Set once the document is deleted: nothing is saved or sent anymore.
     public private(set) var isDeleted = false
@@ -103,7 +103,7 @@ public final class NoteEditorViewModel {
     static let fontKey = "wr.editor.font"
 
     /// `aiClient` and `publishing` are nil in the private space, where there's no backend.
-    /// `presentationsEnabled` is true when the AI in use can write presentations.
+    /// `presentations` says who makes the presentations of the document; nil hides the feature.
     public init(
         documentId: String,
         repository: DocumentsRepository,
@@ -111,7 +111,7 @@ public final class NoteEditorViewModel {
         publishing: DocumentPublishing? = nil,
         imageUploader: ImageUploading? = nil,
         isPremium: Bool = false,
-        presentationsEnabled: Bool = false,
+        presentations: PresentationsSource? = nil,
         defaults: UserDefaults = .standard,
         writeopiaManager: WriteopiaStateManager = WriteopiaStateManager()
     ) {
@@ -130,14 +130,30 @@ public final class NoteEditorViewModel {
             writeopiaManager.onGenerateSection = { [weak self] stepId in self?.generateSection(stepId: stepId) }
             writeopiaManager.onListStarted = { [weak self] stepId in self?.suggestListItems(after: stepId) }
         }
-        if presentationsEnabled, let aiClient, let presentationsRepository = repository as? PresentationsRepository {
-            presentations = PresentationsViewModel(
+        switch presentations {
+        case .cloud(let api):
+            // The backend reads the document it has: the pending edits go first.
+            self.presentations = PresentationsViewModel(
                 documentId: documentId,
-                documentTitle: { [weak self] in self?.writeopiaManager.title ?? "" },
-                documentMarkdown: { [weak self] in self?.exportMarkdown() ?? "" },
-                repository: presentationsRepository,
-                aiClient: aiClient
+                repository: api,
+                generator: api,
+                beforeGenerate: { [weak self] in await self?.flush() }
             )
+        case .local:
+            if let aiClient, let store = repository as? PresentationsStore {
+                self.presentations = PresentationsViewModel(
+                    documentId: documentId,
+                    repository: store,
+                    generator: LocalPresentationGenerator(
+                        aiClient: aiClient,
+                        store: store,
+                        documentTitle: { [weak self] in self?.writeopiaManager.title ?? "" },
+                        documentMarkdown: { [weak self] in self?.exportMarkdown() ?? "" }
+                    )
+                )
+            }
+        case nil:
+            break
         }
     }
 

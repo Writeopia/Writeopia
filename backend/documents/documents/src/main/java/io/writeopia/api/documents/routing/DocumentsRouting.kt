@@ -14,8 +14,12 @@ import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.utils.requirePremiumUserId
 import io.writeopia.api.core.workspaces.utils.runIfMember
 import io.writeopia.api.documents.documents.DocumentsService
+import io.writeopia.api.documents.documents.PresentationsService
 import io.writeopia.api.documents.documents.TutorialsService
 import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
+import io.writeopia.api.documents.documents.repository.deletePresentation
+import io.writeopia.api.documents.documents.repository.getPresentationById
+import io.writeopia.api.documents.documents.repository.getPresentationsByDocumentId
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
@@ -37,6 +41,7 @@ import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.EventDiffRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
+import io.writeopia.sdk.serialization.request.GeneratePresentationRequest
 import io.writeopia.sdk.serialization.request.GenerateSummaryRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
 import io.writeopia.sdk.serialization.request.MoveDocumentRequest
@@ -47,7 +52,9 @@ import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
 import io.writeopia.sdk.serialization.response.EventDiffResponse
 import io.writeopia.sdk.serialization.response.FolderContentResponse
+import io.writeopia.sdk.serialization.response.GeneratePresentationResponse
 import io.writeopia.sdk.serialization.response.GenerateSummaryResponse
+import io.writeopia.sdk.serialization.response.PresentationsResponse
 import io.writeopia.sdk.serialization.response.SyncEventApi
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
@@ -1121,6 +1128,103 @@ fun Routing.documentsRoute(
                 HttpStatusCode.OK,
                 mapOf("headerImage" to imageUrl, "documentId" to documentId)
             )
+        }
+    }
+
+    // Presentations: the AI writes the slides, the backend parses and saves them, the apps show them.
+    post<GeneratePresentationRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/presentations") { request ->
+        val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@post
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val documentId = call.pathParameters["documentId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            if (genAiService == null) {
+                call.respond(
+                    status = HttpStatusCode.ServiceUnavailable,
+                    message = GeneratePresentationResponse(error = "GenAI service is not available")
+                )
+                return@runIfMember
+            }
+
+            try {
+                val result = PresentationsService.generatePresentation(
+                    documentId = documentId,
+                    workspaceId = workspaceId,
+                    userId = userId,
+                    model = request.model,
+                    genAiService = genAiService,
+                    writeopiaDb = writeopiaDb
+                )
+
+                when (result) {
+                    is PresentationsService.GenerateResult.Success -> call.respond(
+                        status = HttpStatusCode.Created,
+                        message = GeneratePresentationResponse(presentation = result.presentation.toApi())
+                    )
+                    is PresentationsService.GenerateResult.NotFound -> call.respond(
+                        status = HttpStatusCode.NotFound,
+                        message = GeneratePresentationResponse(error = result.message)
+                    )
+                    is PresentationsService.GenerateResult.InvalidRequest -> call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = GeneratePresentationResponse(error = result.message)
+                    )
+                    is PresentationsService.GenerateResult.Error -> call.respond(
+                        status = HttpStatusCode.InternalServerError,
+                        message = GeneratePresentationResponse(error = result.message)
+                    )
+                    PresentationsService.GenerateResult.GenAiUnavailable -> call.respond(
+                        status = HttpStatusCode.ServiceUnavailable,
+                        message = GeneratePresentationResponse(error = "GenAI service is not configured")
+                    )
+                }
+            } catch (e: Exception) {
+                logger.error("Error generating presentation for document $documentId", e)
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = GeneratePresentationResponse(error = "Failed to generate presentation: ${e.message}")
+                )
+            }
+        }
+    }
+
+    get("/api/docs/workspace/{workspaceId}/document/{documentId}/presentations") {
+        val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@get
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val documentId = call.pathParameters["documentId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            val presentations = writeopiaDb.getPresentationsByDocumentId(documentId, workspaceId)
+            call.respond(HttpStatusCode.OK, PresentationsResponse(presentations.map { it.toApi() }))
+        }
+    }
+
+    get("/api/docs/workspace/{workspaceId}/presentation/{presentationId}") {
+        val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@get
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val presentationId = call.pathParameters["presentationId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            val presentation = writeopiaDb.getPresentationById(presentationId, workspaceId)
+            if (presentation != null) {
+                call.respond(HttpStatusCode.OK, presentation.toApi())
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Presentation not found")
+            }
+        }
+    }
+
+    delete("/api/docs/workspace/{workspaceId}/presentation/{presentationId}") {
+        val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@delete
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val presentationId = call.pathParameters["presentationId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            if (writeopiaDb.deletePresentation(presentationId, workspaceId)) {
+                call.respond(HttpStatusCode.OK)
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Presentation not found")
+            }
         }
     }
 }

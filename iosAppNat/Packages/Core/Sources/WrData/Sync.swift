@@ -234,7 +234,7 @@ public protocol DocumentSyncing: AnyObject {
 
 /// The open space: everything is read from and written to the local cache first, then synced
 /// with the backend.
-public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSyncing, StepStore, PresentationsRepository {
+public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSyncing, StepStore, PresentationsStore {
     public let local: LocalDocumentsRepository
     private let remote: RemoteDocumentsRepository
     private let api: SyncAPI
@@ -248,7 +248,7 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
 
     public var workspaceId: String { remote.workspaceId }
 
-    // MARK: - Presentations: kept in the local cache, never synced.
+    // MARK: - Presentations of the local AI: kept in the local cache, never synced.
 
     public func presentations(ofDocument documentId: String) async throws -> [Presentation] {
         try await local.presentations(ofDocument: documentId)
