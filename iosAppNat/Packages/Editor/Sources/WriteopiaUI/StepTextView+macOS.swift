@@ -10,8 +10,12 @@ struct StepTextView: View {
     let manager: WriteopiaStateManager
     @State private var topInEditor: CGFloat = .infinity
 
+    /// Where the formatting popup goes; nil when nothing is selected in this step, or when the
+    /// text can't be edited (a locked document, a slide of a presentation).
     private var selectionRect: CGRect? {
-        guard let selection = manager.textSelection, selection.stepId == step.id, !selection.isEmpty else { return nil }
+        guard manager.isEditable, let selection = manager.textSelection, selection.stepId == step.id, !selection.isEmpty else {
+            return nil
+        }
         return manager.textSelectionRect
     }
 
