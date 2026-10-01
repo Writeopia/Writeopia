@@ -11,6 +11,8 @@ struct PresentationsSheet: View {
     #if os(macOS)
     @Environment(\.openWindow) private var openWindow
     #endif
+    /// The presentation whose deletion waits for a confirmation.
+    @State private var deleting: Presentation?
 
     var body: some View {
         NavigationStack {
@@ -21,19 +23,7 @@ struct PresentationsSheet: View {
                             .foregroundStyle(.secondary)
                     }
                     ForEach(viewModel.presentations) { presentation in
-                        WrSheetRow(verbatim: presentation.title, systemImage: "play.rectangle") {
-                            open(presentation)
-                        } trailing: {
-                            Text(subtitle(of: presentation))
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                        .accessibilityIdentifier("presentations.item")
-                        .contextMenu {
-                            Button("Delete", systemImage: "trash", role: .destructive) {
-                                Task { await viewModel.delete(presentation) }
-                            }
-                        }
+                        row(presentation)
                     }
                 }
 
@@ -63,6 +53,18 @@ struct PresentationsSheet: View {
                 }
             }
             .task { await viewModel.load() }
+            .confirmationDialog(
+                "Delete this presentation?",
+                isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+                titleVisibility: .visible,
+                presenting: deleting
+            ) { presentation in
+                Button("Delete presentation", role: .destructive) {
+                    Task { await viewModel.delete(presentation) }
+                }
+            } message: { presentation in
+                Text("\"\(presentation.title)\" will be removed from this device. This can't be undone.")
+            }
             .alert(
                 "Could not create the presentation",
                 isPresented: Binding(get: { viewModel.error != nil }, set: { if !$0 { viewModel.error = nil } })
@@ -74,6 +76,48 @@ struct PresentationsSheet: View {
         }
         .presentationDetents([.medium, .large])
         .tint(WrColors.accent)
+    }
+
+    /// A presentation: its title and date open it, the trash at the end deletes it.
+    private func row(_ presentation: Presentation) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                open(presentation)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "play.rectangle")
+                        .frame(width: 22)
+                    Text(verbatim: presentation.title)
+                    Spacer()
+                    Text(subtitle(of: presentation))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .foregroundStyle(WrColors.textLight)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("presentations.item")
+
+            Button {
+                deleting = presentation
+            } label: {
+                Image(systemName: "trash")
+                    .foregroundStyle(.red)
+                    .frame(width: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Delete presentation")
+            .accessibilityLabel("Delete presentation")
+            .accessibilityIdentifier("presentations.delete")
+        }
+        .contextMenu {
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                deleting = presentation
+            }
+        }
     }
 
     private func subtitle(of presentation: Presentation) -> String {
