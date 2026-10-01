@@ -15,11 +15,4 @@ fun ApplicationTestBuilder.defaultClient(
     install(ContentNegotiation) {
         json(json = writeopiaJson)
     }
-    if (debugMode) {
-        defaultRequest {
-            if (!headers.contains(HttpHeaders.Authorization) && !headers.contains("X-Forwarded-Authorization")) {
-                header(HttpHeaders.Authorization, "Bearer " + JwtConfig.generateAccessToken("test-user-id"))
-            }
-        }
-    }
 }
