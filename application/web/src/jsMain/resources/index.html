@@ -6,6 +6,9 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- Google Identity Services, used by the "Continue with Google" button (OAuth code client popup). -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <!-- Start fetching the Skiko wasm and the default font in parallel with writeopia.js.
          Without these the browser only discovers them after the JS bundle is downloaded and executed.
          The wasm hash is the Skiko build hash and only changes when Compose is bumped

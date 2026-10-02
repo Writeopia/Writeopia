@@ -218,7 +218,7 @@ fun Routing.cookieAuthRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean 
 /**
  * Sets authentication cookies with proper security attributes.
  */
-private fun RoutingContext.setAuthCookies(
+internal fun RoutingContext.setAuthCookies(
     accessToken: String,
     refreshToken: String,
     userId: String,

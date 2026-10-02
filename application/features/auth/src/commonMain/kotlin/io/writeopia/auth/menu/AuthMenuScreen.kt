@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,6 +52,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import io.writeopia.auth.google.GoogleCredential
+import io.writeopia.auth.google.GoogleSignInResult
+import io.writeopia.auth.google.rememberGoogleSignInLauncher
 import io.writeopia.auth.utils.arrowPadding
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
@@ -60,7 +64,9 @@ import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.drawer.factory.isEnterKey
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 @Composable
 fun AuthMenuScreen(
@@ -72,6 +78,8 @@ fun AuthMenuScreen(
     emailChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
+    onGoogleLoginRequest: (GoogleCredential) -> Unit = {},
+    onGoogleSignInFailed: (Throwable) -> Unit = {},
     navigateToRegister: () -> Unit,
     navigateToForgotPassword: () -> Unit,
     navigateUp: () -> Unit,
@@ -108,6 +116,8 @@ fun AuthMenuScreen(
                 emailChanged,
                 passwordChanged,
                 onLoginRequest,
+                onGoogleLoginRequest,
+                onGoogleSignInFailed,
                 navigateToRegister,
                 navigateToForgotPassword,
                 modifier,
@@ -183,6 +193,8 @@ private fun AuthMenuContentScreen(
     emailChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onLoginRequest: () -> Unit,
+    onGoogleLoginRequest: (GoogleCredential) -> Unit,
+    onGoogleSignInFailed: (Throwable) -> Unit,
     navigateToRegister: () -> Unit,
     navigateToForgotPassword: () -> Unit,
     modifier: Modifier = Modifier
@@ -344,6 +356,38 @@ private fun AuthMenuContentScreen(
                 )
 
                 HorizontalDivider(modifier = Modifier.weight(1F))
+            }
+
+            val googleSignInLauncher = rememberGoogleSignInLauncher()
+            if (googleSignInLauncher != null) {
+                val scope = rememberCoroutineScope()
+
+                TextButton(
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp)
+                        .background(WriteopiaTheme.colorScheme.defaultButton, shape = shape)
+                        .fillMaxWidth(),
+                    onClick = {
+                        // UNDISPATCHED keeps the platform call inside the click event, which the
+                        // web popup needs to not be blocked by the browser.
+                        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                            when (val result = googleSignInLauncher.signIn()) {
+                                is GoogleSignInResult.Success -> onGoogleLoginRequest(result.credential)
+                                is GoogleSignInResult.Failure -> onGoogleSignInFailed(result.error)
+                                GoogleSignInResult.Cancelled -> Unit
+                            }
+                        }
+                    },
+                    contentPadding = PaddingValues(0.dp),
+                    shape = shape
+                ) {
+                    Text(
+                        text = WrStrings.continueWithGoogle(),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
             TextButton(

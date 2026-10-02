@@ -1,3 +1,4 @@
+import AuthFeature
 import DocumentsFeature
 import SwiftUI
 import WrDesign
@@ -14,6 +15,7 @@ struct WriteopiaNativeApp: App {
                 .environment(session)
                 .preferredColorScheme(session.colorTheme.colorScheme)
                 .frame(minWidth: 900, minHeight: 600)
+                .onOpenURL { GoogleSignInURLHandler.handle($0) }
         }
         .defaultSize(width: 1100, height: 800)
         .commands {
@@ -26,6 +28,7 @@ struct WriteopiaNativeApp: App {
             RootView()
                 .environment(session)
                 .preferredColorScheme(session.colorTheme.colorScheme)
+                .onOpenURL { GoogleSignInURLHandler.handle($0) }
         }
         #endif
     }

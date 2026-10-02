@@ -253,6 +253,8 @@ fun NavGraphBuilder.authNavigation(
                     emailChanged = authMenuViewModel::emailChanged,
                     passwordChanged = authMenuViewModel::passwordChanged,
                     onLoginRequest = authMenuViewModel::onLoginRequest,
+                    onGoogleLoginRequest = authMenuViewModel::onGoogleLoginRequest,
+                    onGoogleSignInFailed = authMenuViewModel::onGoogleSignInFailed,
                     navigateToRegister = navController::navigateAuthRegister,
                     navigateToForgotPassword = navController::navigateToForgotPasswordEmail,
                     navigateUp = navController::navigateUp,

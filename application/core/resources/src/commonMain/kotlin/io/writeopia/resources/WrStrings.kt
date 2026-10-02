@@ -16,6 +16,7 @@ import writeopia.application.core.resources.generated.resources.ai_explanation
 import writeopia.application.core.resources.generated.resources.ai_model
 import writeopia.application.core.resources.generated.resources.cloud_ai
 import writeopia.application.core.resources.generated.resources.cloud_ai_usage
+import writeopia.application.core.resources.generated.resources.continue_with_google
 import writeopia.application.core.resources.generated.resources.current_month_usage
 import writeopia.application.core.resources.generated.resources.error_loading_usage
 import writeopia.application.core.resources.generated.resources.input_tokens
@@ -672,6 +673,9 @@ object WrStrings {
 
     @Composable
     fun loginFailed() = stringResource(Res.string.login_failed)
+
+    @Composable
+    fun continueWithGoogle() = stringResource(Res.string.continue_with_google)
 
     @Composable
     fun registrationFailed() = stringResource(Res.string.registration_failed)

@@ -164,6 +164,7 @@
   <string name="drawing">Drawing</string>
   <string name="new_drawing">New Drawing</string>
   <string name="login_failed">Login failed. Please check your credentials.</string>
+  <string name="continue_with_google">Continue with Google</string>
   <string name="registration_failed">Registration failed. Please try again.</string>
   <string name="create_workspace">Create workspace</string>
   <string name="create">Create</string>

@@ -14,13 +14,41 @@ final class LoginViewModel {
     private(set) var errorMessage: String?
 
     private let session: AppSession
+    private let googleSignIn: GoogleSignInProviding
 
-    init(session: AppSession) {
+    init(session: AppSession, googleSignIn: GoogleSignInProviding = GoogleSignInService()) {
         self.session = session
+        self.googleSignIn = googleSignIn
     }
 
     var canLogIn: Bool {
         FieldValidator.isValidEmail(email) && !password.isEmpty && !isLoading
+    }
+
+    /// The Google button only shows once the OAuth client IDs are configured.
+    var isGoogleAvailable: Bool {
+        GoogleSignInConfig.isConfigured
+    }
+
+    func signInWithGoogle() async {
+        guard !isLoading else { return }
+
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            let idToken = try await googleSignIn.signIn()
+            try await complete(session.authAPI.loginWithGoogle(idToken: idToken))
+        } catch GoogleSignInError.cancelled {
+            // Dismissing Google's sheet is not an error.
+        } catch let error as AuthError {
+            errorMessage = error.userMessage
+        } catch is GoogleSignInError {
+            errorMessage = AuthError.googleSignInFailed.userMessage
+        } catch {
+            errorMessage = error.userMessage
+        }
     }
 
     func logIn() async {
@@ -31,17 +59,21 @@ final class LoginViewModel {
         defer { isLoading = false }
 
         do {
-            switch try await session.authAPI.login(email: email, password: password) {
-            case .loggedIn(let user):
-                session.loggedIn(user)
-            case .emailNotConfirmed(let user):
-                try? await session.authAPI.resendConfirmation(email: user.email)
-                session.needsEmailConfirmation(email: user.email)
-            }
+            try await complete(session.authAPI.login(email: email, password: password))
         } catch let error as AuthError {
             errorMessage = error.userMessage
         } catch {
             errorMessage = error.userMessage
+        }
+    }
+
+    private func complete(_ result: LoginResult) async throws {
+        switch result {
+        case .loggedIn(let user):
+            session.loggedIn(user)
+        case .emailNotConfirmed(let user):
+            try? await session.authAPI.resendConfirmation(email: user.email)
+            session.needsEmailConfirmation(email: user.email)
         }
     }
 }
@@ -103,6 +135,17 @@ struct LoginView: View {
                     .disabled(!viewModel.canLogIn)
                     .accessibilityIdentifier("login.submit")
 
+                if viewModel.isGoogleAvailable {
+                    Button(action: signInWithGoogle) {
+                        Label("Continue with Google", systemImage: "person.crop.circle.badge.checkmark")
+                            .frame(maxWidth: .infinity, minHeight: 28)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .disabled(viewModel.isLoading)
+                    .accessibilityIdentifier("login.google")
+                }
+
                 HStack(spacing: 4) {
                     Text("New to Writeopia?")
                         .foregroundStyle(WrColors.textLighter)
@@ -134,5 +177,10 @@ struct LoginView: View {
     private func logIn() {
         focusedField = nil
         Task { await viewModel.logIn() }
+    }
+
+    private func signInWithGoogle() {
+        focusedField = nil
+        Task { await viewModel.signInWithGoogle() }
     }
 }

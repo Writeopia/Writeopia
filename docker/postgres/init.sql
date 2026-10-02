@@ -62,6 +62,17 @@ CREATE TABLE refresh_token_entity (
 
 CREATE INDEX idx_refresh_token_user_id ON refresh_token_entity(user_id);
 
+-- Links a user to an identity at an external provider (currently only Google).
+CREATE TABLE external_identity (
+  provider TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES user_entity(id) ON DELETE CASCADE,
+  created_at BIGINT NOT NULL,
+  PRIMARY KEY(provider, subject)
+);
+
+CREATE INDEX idx_external_identity_user_id ON external_identity(user_id);
+
 CREATE TABLE company_entity (
   domain TEXT PRIMARY KEY,
   name TEXT NOT NULL

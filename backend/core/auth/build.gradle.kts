@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":backend:core:pubsub"))
 
     testImplementation(libs.ktor.server.tests)
+    testImplementation(libs.ktor.client.mock)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)

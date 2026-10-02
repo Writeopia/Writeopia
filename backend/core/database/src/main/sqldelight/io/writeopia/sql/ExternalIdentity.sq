@@ -1,0 +1,26 @@
+-- Links a user to an identity at an external provider (currently only Google). The provider's
+-- stable subject id is the key: emails can change or be hidden, the subject never does.
+CREATE TABLE external_identity (
+  provider TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES user_entity(id) ON DELETE CASCADE,
+  created_at BIGINT NOT NULL,
+  PRIMARY KEY(provider, subject)
+);
+
+CREATE INDEX idx_external_identity_user_id ON external_identity(user_id);
+
+selectUserIdByProviderAndSubject:
+SELECT user_id
+FROM external_identity
+WHERE provider = ? AND subject = ?
+LIMIT 1;
+
+insertExternalIdentity:
+INSERT INTO external_identity(provider, subject, user_id, created_at)
+VALUES (?, ?, ?, ?);
+
+deleteByUserId:
+DELETE
+FROM external_identity
+WHERE user_id = ?;

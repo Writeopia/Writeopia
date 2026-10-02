@@ -90,6 +90,10 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation(project(":plugins:writeopia_persistence_room"))
+                implementation(libs.activity.compose)
+                implementation(libs.androidx.credentials)
+                implementation(libs.androidx.credentials.play.services.auth)
+                implementation(libs.googleid)
             }
         }
 

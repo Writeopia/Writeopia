@@ -25,6 +25,25 @@ final class StubTransport: HTTPTransport {
 
 private let userJson = #"{"id":"u1","email":"ana@writeopia.io","name":"Ana"}"#
 
+/// Stands in for the GoogleSignIn SDK: hands back a fixed ID token or a fixed error.
+final class StubGoogleSignIn: GoogleSignInProviding {
+    private let result: Result<String, Error>
+    private(set) var calls = 0
+
+    init(idToken: String) {
+        result = .success(idToken)
+    }
+
+    init(error: Error) {
+        result = .failure(error)
+    }
+
+    func signIn() async throws -> String {
+        calls += 1
+        return try result.get()
+    }
+}
+
 private func makeSession(
     _ routes: [String: (Int, String)] = [:],
     tokens: InMemoryTokenStore = InMemoryTokenStore()
@@ -150,6 +169,69 @@ private func makeSession(
 
         #expect(viewModel.errorMessage == "Wrong email or password.")
         #expect(session.phase == .signedOut)
+    }
+
+    @Test func googleSignInStoresTokensAndAsksForWorkspace() async {
+        let tokens = InMemoryTokenStore()
+        let (session, transport) = makeSession(
+            ["/api/auth/login/google": (200, #"{"accessToken":"a","refreshToken":"r","writeopiaUser":\#(userJson),"enabled":true}"#)],
+            tokens: tokens
+        )
+        session.chooseOnlineSpace()
+
+        let google = StubGoogleSignIn(idToken: "google-id-token")
+        let viewModel = LoginViewModel(session: session, googleSignIn: google)
+        await viewModel.signInWithGoogle()
+
+        #expect(google.calls == 1)
+        #expect(viewModel.errorMessage == nil)
+        #expect(transport.paths == ["/api/auth/login/google"])
+        #expect(tokens.accessToken == "a")
+        #expect(session.user?.name == "Ana")
+        #expect(session.phase == .chooseWorkspace)
+    }
+
+    @Test func googleSignInRejectedByBackendShowsError() async {
+        let (session, _) = makeSession(["/api/auth/login/google": (401, "Invalid Google token")])
+        session.chooseOnlineSpace()
+
+        let viewModel = LoginViewModel(session: session, googleSignIn: StubGoogleSignIn(idToken: "bad"))
+        await viewModel.signInWithGoogle()
+
+        #expect(viewModel.errorMessage == AuthError.googleSignInFailed.userMessage)
+        #expect(session.phase == .signedOut)
+    }
+
+    @Test func googleSignInDeletionPendingShowsError() async {
+        let (session, _) = makeSession(["/api/auth/login/google": (403, "Account is being deleted")])
+        session.chooseOnlineSpace()
+
+        let viewModel = LoginViewModel(session: session, googleSignIn: StubGoogleSignIn(idToken: "tok"))
+        await viewModel.signInWithGoogle()
+
+        #expect(viewModel.errorMessage == AuthError.accountDeletionPending.userMessage)
+    }
+
+    @Test func cancellingGoogleSignInShowsNothing() async {
+        let (session, transport) = makeSession()
+        session.chooseOnlineSpace()
+
+        let viewModel = LoginViewModel(session: session, googleSignIn: StubGoogleSignIn(error: GoogleSignInError.cancelled))
+        await viewModel.signInWithGoogle()
+
+        #expect(viewModel.errorMessage == nil)
+        #expect(transport.paths.isEmpty)
+        #expect(session.phase == .signedOut)
+    }
+
+    @Test func googleSdkFailureShowsGenericError() async {
+        let (session, _) = makeSession()
+        session.chooseOnlineSpace()
+
+        let viewModel = LoginViewModel(session: session, googleSignIn: StubGoogleSignIn(error: GoogleSignInError.failed("boom")))
+        await viewModel.signInWithGoogle()
+
+        #expect(viewModel.errorMessage == AuthError.googleSignInFailed.userMessage)
     }
 
     @Test func unconfirmedEmailGoesToConfirmationThenToWorkspaces() async {
