@@ -34,7 +34,13 @@ import kotlin.time.ExperimentalTime
  * API for workspace operations. Authentication is handled automatically by the HTTP client's
  * bearer auth plugin - no manual token passing required.
  */
-class WorkspaceApi(private val client: HttpClient, private val baseUrl: String) {
+class WorkspaceApi(
+    private val clientProvider: () -> HttpClient,
+    private val baseUrl: String
+) {
+    constructor(client: HttpClient, baseUrl: String) : this({ client }, baseUrl)
+
+    private val client: HttpClient get() = clientProvider()
 
     private val workspaceUsersCache = MutableStateFlow<ResultData<List<String>>>(ResultData.Idle())
 

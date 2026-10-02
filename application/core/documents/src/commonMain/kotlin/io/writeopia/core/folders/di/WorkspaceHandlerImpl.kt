@@ -207,4 +207,9 @@ class WorkspaceHandlerImpl(
     override fun resetExportState() {
         _exportWorkspaceState.value = ResultData.Idle()
     }
+
+    override fun clearWorkspaces() {
+        _availableWorkspaces.value = ResultData.Idle()
+        _selectedWorkspaceId.value = null
+    }
 }

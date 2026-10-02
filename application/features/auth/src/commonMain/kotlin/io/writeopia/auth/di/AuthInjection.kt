@@ -37,8 +37,8 @@ class AuthInjection private constructor(
 
     fun provideWorkspaceApi() =
         WorkspaceApi(
-            WriteopiaConnectionInjector.singleton().httpClient(),
-            WriteopiaConnectionInjector.singleton().baseUrl()
+            clientProvider = { WriteopiaConnectionInjector.singleton().httpClient() },
+            baseUrl = WriteopiaConnectionInjector.singleton().baseUrl()
         )
 
     @Composable

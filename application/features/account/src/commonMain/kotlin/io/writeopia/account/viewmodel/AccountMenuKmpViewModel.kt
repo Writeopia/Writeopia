@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.sdk.models.utils.toBoolean
-import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +38,7 @@ internal class AccountMenuKmpViewModel(
 
     override val isLoggedIn: StateFlow<ResultData<Boolean>> by lazy {
         authRepository.listenForUser().map {
-            ResultData.Complete(it.id != WriteopiaUser.DISCONNECTED)
+            ResultData.Complete(it.isOnline)
         }.stateIn(viewModelScope, SharingStarted.Lazily, ResultData.Loading())
     }
 

@@ -14,8 +14,13 @@ import kotlin.time.ExperimentalTime
 
 class TokenManager(
     private val authRepository: AuthRepository,
-    private val authApi: AuthApi
+    private val authApiProvider: () -> AuthApi
 ) : BearerTokenHandler {
+
+    constructor(
+        authRepository: AuthRepository,
+        authApi: AuthApi
+    ) : this(authRepository, { authApi })
 
     private val refreshMutex = Mutex()
 
@@ -41,7 +46,7 @@ class TokenManager(
         return refreshMutex.withLock {
             if (lastSessionRefreshAt > requestedAt) return@withLock true
 
-            val refreshed = authApi.refreshWeb() is ResultData.Complete
+            val refreshed = authApiProvider().refreshWeb() is ResultData.Complete<*>
             if (refreshed) lastSessionRefreshAt = Clock.System.now().toEpochMilliseconds()
             refreshed
         }
@@ -52,7 +57,7 @@ class TokenManager(
             val refreshToken = authRepository.getRefreshToken()
                 ?: return@withLock TokenRefreshResult.NoRefreshToken
 
-            when (val result = authApi.refreshToken(refreshToken)) {
+            when (val result = authApiProvider().refreshToken(refreshToken)) {
                 is ResultData.Complete -> {
                     val tokenResponse = result.data
                     val userId = authRepository.getUser().id

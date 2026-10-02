@@ -752,13 +752,17 @@ class GlobalShellKmpViewModel(
                     return@launch
                 }
 
-                // Only clean local state after successful backend logout
+                // Clean local state
+                authRepository.unselectAllUsers()
                 authRepository.unselectAllWorkspaces()
                 authRepository.clearTokens()
 
                 // Clear singletons that cache API instances with old HttpClient
                 WriteopiaConnectionInjector.clearInstance()
                 FolderStateController.clearInstance()
+
+                workspaceHandler.clearWorkspaces()
+                hideSettings()
 
                 loginStateTrigger.value = GenerateId.generate()
                 onSuccessSideEffect()
@@ -770,7 +774,7 @@ class GlobalShellKmpViewModel(
 
     override fun changeWorkspace(sideEffect: () -> Unit) {
         viewModelScope.launch {
-            authRepository.unselectAllWorkspaces()
+            hideSettings()
             sideEffect()
         }
     }
