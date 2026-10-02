@@ -35,4 +35,26 @@ class DocumentsApiTest {
 
         assertIs<ResultData.Error<Unit>>(result)
     }
+
+    @Test
+    fun `sendDocuments rejects disconnected workspace without HTTP request`() = runTest {
+        val api = DocumentsApi(
+            client = HttpClient(MockEngine { error("HTTP request should not be sent") }),
+            baseUrl = "https://api.example.com"
+        )
+        val document = Document(
+            createdAt = Instant.fromEpochMilliseconds(0),
+            lastUpdatedAt = Instant.fromEpochMilliseconds(0),
+            lastSyncedAt = null,
+            workspaceId = "disconnected_user",
+            parentId = "root"
+        )
+
+        val result = api.sendDocuments(
+            documents = listOf(document),
+            workspaceId = "disconnected_user"
+        )
+
+        assertIs<ResultData.Error<Unit>>(result)
+    }
 }

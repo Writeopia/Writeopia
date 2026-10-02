@@ -1,7 +1,9 @@
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.api.documents.documents.repository
 
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
@@ -14,6 +16,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.search.DocumentSearch
+import io.writeopia.sql.CommentEntityQueries
 import io.writeopia.sql.DocumentEntityQueries
 import io.writeopia.sql.FolderEntityQueries
 import io.writeopia.sql.Folder_entity
@@ -29,6 +32,7 @@ class DocumentSqlBeDao(
     private val storyStepQueries: StoryStepEntityQueries?,
     private val foldersQueries: FolderEntityQueries?,
     private val userFavoriteQueries: UserFavoriteEntityQueries? = null,
+    private val commentQueries: CommentEntityQueries? = null,
 ) : DocumentSearch {
 
     override suspend fun search(query: String, workspaceId: String): List<Document> =
@@ -68,6 +72,14 @@ class DocumentSqlBeDao(
             } ?: emptyList()
 
     fun insertDocumentWithContent(document: Document) {
+        documentQueries?.transaction {
+            insertDocumentWithContentInTransaction(document)
+        } ?: insertDocumentWithContentInTransaction(document)
+    }
+
+    internal fun insertDocumentWithContentInTransaction(document: Document) {
+        validateCommentConversations(document.id, document.commentConversations)
+
         val result =
             documentQueries?.selectById(document.id, document.workspaceId)?.executeAsOneOrNull()
 
@@ -79,8 +91,179 @@ class DocumentSqlBeDao(
             insertStoryStep(storyStep, i.toDouble(), document.id)
         }
 
+        replaceCommentConversationsUnchecked(
+            document.id,
+            mergeCommentConversations(document.id, document.commentConversations),
+        )
         insertDocument(document)
     }
+
+    fun replaceCommentConversations(
+        documentId: String,
+        conversations: Map<String, List<Comment>>,
+    ) {
+        validateCommentConversations(documentId, conversations)
+        replaceCommentConversationsUnchecked(documentId, conversations)
+    }
+
+    fun applyCommentDelta(
+        documentId: String,
+        conversations: Map<String, List<Comment>>,
+        deletedConversationIds: List<String>,
+        deletedCommentIds: List<String>,
+    ) {
+        validateCommentConversations(documentId, conversations)
+        val incomingCommentIds = conversations.values.flatten().map { comment -> comment.id }.toSet()
+        require(incomingCommentIds.intersect(deletedCommentIds.toSet()).isEmpty()) {
+            "A comment cannot be upserted and deleted in the same request"
+        }
+        require(conversations.keys.intersect(deletedConversationIds.toSet()).isEmpty()) {
+            "A conversation cannot be upserted and deleted in the same request"
+        }
+
+        val existingConversations = loadCommentConversations(documentId)
+        val existingPositions = commentQueries?.selectByDocumentId(documentId)
+            ?.executeAsList()
+            ?.groupBy { row -> row.conversation_id }
+            ?.mapValues { (_, rows) ->
+                rows.associate { row -> row.id to row.comment_position }
+            }
+            ?: emptyMap()
+        val tombstonedConversationIds = existingConversations
+            .filterValues { comments -> comments.isNotEmpty() && comments.all { comment -> comment.deleted } }
+            .keys
+        val incomingConversationTombstones = conversations
+            .filterValues { comments -> comments.isNotEmpty() && comments.all { comment -> comment.deleted } }
+            .keys
+        val conversationIdsToDelete =
+            (deletedConversationIds + incomingConversationTombstones).toSet()
+
+        if (conversationIdsToDelete.isNotEmpty()) {
+            commentQueries?.markConversationDeletedForDocument(
+                documentId,
+                conversationIdsToDelete,
+            )
+        }
+        if (deletedCommentIds.isNotEmpty()) {
+            commentQueries?.markDeletedByIdsForDocument(documentId, deletedCommentIds)
+        }
+
+        conversations
+            .filterKeys { conversationId ->
+                conversationId !in tombstonedConversationIds ||
+                    conversationId in incomingConversationTombstones
+            }
+            .forEach { (conversationId, comments) ->
+                val conversationDeleted = conversationId in conversationIdsToDelete
+                val storedPositions = existingPositions[conversationId].orEmpty()
+                var nextPosition = (storedPositions.values.maxOrNull() ?: -1L) + 1L
+
+                comments.forEach { comment ->
+                    val commentPosition = storedPositions[comment.id] ?: nextPosition++
+                    commentQueries?.insert(
+                        id = comment.id,
+                        conversation_id = conversationId,
+                        document_id = documentId,
+                        comment_position = commentPosition,
+                        text = comment.text,
+                        deleted = comment.deleted || conversationDeleted,
+                    )
+                }
+            }
+    }
+
+    private fun mergeCommentConversations(
+        documentId: String,
+        incoming: Map<String, List<Comment>>,
+    ): Map<String, List<Comment>> {
+        val existing = loadCommentConversations(documentId)
+        if (existing.isEmpty()) return incoming
+
+        val merged = existing.toMutableMap()
+        incoming.forEach { (conversationId, incomingComments) ->
+            val existingComments = existing[conversationId].orEmpty()
+
+            if (existingComments.isNotEmpty() && existingComments.all { comment -> comment.deleted }) {
+                return@forEach
+            }
+
+            val commentsById = linkedMapOf<String, Comment>()
+            existingComments.forEach { comment -> commentsById[comment.id] = comment }
+            incomingComments.forEach { incomingComment ->
+                val current = commentsById[incomingComment.id]
+                commentsById[incomingComment.id] = if (current == null) {
+                    incomingComment
+                } else {
+                    incomingComment.copy(deleted = current.deleted || incomingComment.deleted)
+                }
+            }
+
+            merged[conversationId] = if (
+                incomingComments.isNotEmpty() &&
+                incomingComments.all { comment -> comment.deleted }
+            ) {
+                commentsById.values.map { comment -> comment.copy(deleted = true) }
+            } else {
+                commentsById.values.toList()
+            }
+        }
+
+        return merged
+    }
+
+    private fun validateCommentConversations(
+        documentId: String,
+        conversations: Map<String, List<Comment>>,
+    ) {
+        val comments = conversations.values.flatten()
+        require(comments.size == comments.map { comment -> comment.id }.toSet().size) {
+            "Comment IDs must be unique"
+        }
+
+        comments.forEach { comment ->
+            val existingDocumentId =
+                commentQueries?.selectDocumentIdById(comment.id)?.executeAsOneOrNull()
+            require(existingDocumentId == null || existingDocumentId == documentId) {
+                "Comment does not belong to the requested document"
+            }
+        }
+    }
+
+    private fun replaceCommentConversationsUnchecked(
+        documentId: String,
+        conversations: Map<String, List<Comment>>,
+    ) {
+        commentQueries?.deleteByDocumentId(documentId)
+        conversations.forEach { (conversationId, comments) ->
+            comments.forEachIndexed { commentPosition, comment ->
+                commentQueries?.insert(
+                    id = comment.id,
+                    conversation_id = conversationId,
+                    document_id = documentId,
+                    comment_position = commentPosition.toLong(),
+                    text = comment.text,
+                    deleted = comment.deleted,
+                )
+            }
+        }
+    }
+
+    private fun loadCommentConversations(documentId: String): Map<String, List<Comment>> =
+        commentQueries?.selectByDocumentId(documentId)
+            ?.executeAsList()
+            ?.groupBy { it.conversation_id }
+            ?.mapValues { (_, rows) ->
+                rows
+                    .sortedBy { it.comment_position }
+                    .map { row ->
+                        Comment(
+                            id = row.id,
+                            text = row.text,
+                            deleted = row.deleted,
+                        )
+                    }
+            }
+            ?: emptyMap()
 
     private fun insertDocument(document: Document) {
         documentQueries?.insert(
@@ -120,7 +303,7 @@ class DocumentSqlBeDao(
                 tags = tags.joinToString(separator = ",") { it.tag.label },
                 spans = spans.joinToString(separator = ",") { it.toText() },
                 link_to_document = documentLink?.id,
-                last_updated_at = lastUpdatedAt?.toInt()
+                last_updated_at = lastUpdatedAt
             )
 
             // Recursively save nested steps with parent_id set to this step's id
@@ -192,6 +375,10 @@ class DocumentSqlBeDao(
             icon_tint = folder.icon?.tint
         )
     }
+
+    fun loadDocumentWorkspaceId(id: String): String? =
+        documentQueries?.selectWorkspaceIdById(id)
+            ?.executeAsOneOrNull()
 
     fun loadDocumentById(id: String, workspaceId: String): Document? =
         documentQueries?.selectById(id, workspaceId)
@@ -268,7 +455,8 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -278,6 +466,7 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -338,7 +527,8 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -348,6 +538,7 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -411,7 +602,8 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -421,6 +613,7 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -484,7 +677,8 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -494,6 +688,7 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -555,7 +750,8 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -565,6 +761,7 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -626,7 +823,8 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -636,6 +834,7 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -697,7 +896,8 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(linkDocId)
                                     .executeAsOneOrNull()
                                 DocumentLink(linkDocId, title)
-                            }
+                            },
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -707,6 +907,7 @@ class DocumentSqlBeDao(
                         id = docId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -722,8 +923,8 @@ class DocumentSqlBeDao(
             }
             ?.firstOrNull()
 
-    fun loadDocumentByParentId(parentId: String): List<Document> {
-        return documentQueries?.selectWithContentByParentId(parentId)
+    fun loadDocumentByParentId(parentId: String, workspaceId: String): List<Document> {
+        return documentQueries?.selectWithContentByParentId(parentId, workspaceId)
             ?.executeAsList()
             ?.groupBy { it.id }
             ?.mapNotNull { (documentId, content) ->
@@ -768,7 +969,8 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
                                 DocumentLink(docId, title)
-                            }
+                            },
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -778,6 +980,7 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -840,7 +1043,8 @@ class DocumentSqlBeDao(
                                     .executeAsOneOrNull()
 
                                 DocumentLink(docId, docTitle)
-                            }
+                            },
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep
@@ -850,6 +1054,7 @@ class DocumentSqlBeDao(
                         id = documentId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -871,17 +1076,31 @@ class DocumentSqlBeDao(
     // Delete and other operations - with real implementation
     fun deleteDocumentById(documentId: String) {
         val now = Clock.System.now().toEpochMilliseconds()
-        documentQueries?.delete(now, documentId)
-        storyStepQueries?.deleteByDocumentId(documentId)
+        val delete = {
+            documentQueries?.delete(now, documentId)
+            storyStepQueries?.deleteByDocumentId(documentId)
+            commentQueries?.deleteByDocumentId(documentId)
+        }
+
+        documentQueries?.transaction {
+            delete()
+        } ?: delete()
     }
 
     fun deleteDocumentByIds(ids: Set<String>) {
-        documentQueries?.deleteByIds(Clock.System.now().toEpochMilliseconds(), ids)
-        storyStepQueries?.deleteByDocumentIds(ids)
+        val delete = {
+            documentQueries?.deleteByIds(Clock.System.now().toEpochMilliseconds(), ids)
+            storyStepQueries?.deleteByDocumentIds(ids)
+            commentQueries?.deleteByDocumentIds(ids)
+        }
+
+        documentQueries?.transaction {
+            delete()
+        } ?: delete()
     }
 
-    fun loadDocumentIdsByParentId(parentId: String): List<String> =
-        documentQueries?.selectIdsByParentId(parentId)
+    fun loadDocumentIdsByParentId(parentId: String, workspaceId: String): List<String> =
+        documentQueries?.selectIdsByParentId(parentId, workspaceId)
             ?.executeAsList()
             ?: emptyList()
 
@@ -892,8 +1111,8 @@ class DocumentSqlBeDao(
             ?: emptyList()
     }
 
-    fun loadFoldersByParentId(parentId: String): List<Folder> {
-        return foldersQueries?.selectChildrenFolder(parentId)
+    fun loadFoldersByParentId(parentId: String, workspaceId: String): List<Folder> {
+        return foldersQueries?.selectChildrenFolder(parentId, workspaceId)
             ?.executeAsList()
             ?.map { it.toModel(0) }
             ?: emptyList()
@@ -903,8 +1122,12 @@ class DocumentSqlBeDao(
         documentQueries?.deleteByUserId(Clock.System.now().toEpochMilliseconds(), userId)
     }
 
-    fun deleteDocumentsByFolderId(folderId: String) {
-        documentQueries?.deleteByFolderId(Clock.System.now().toEpochMilliseconds(), folderId)
+    fun deleteDocumentsByFolderId(folderId: String, workspaceId: String) {
+        documentQueries?.deleteByFolderId(
+            Clock.System.now().toEpochMilliseconds(),
+            folderId,
+            workspaceId,
+        )
     }
 
     fun addUserFavorite(userId: String, documentId: String, workspaceId: String) {
@@ -954,6 +1177,17 @@ class DocumentSqlBeDao(
      * Inserts or updates a StoryStep with a specific timestamp.
      */
     fun upsertStoryStep(storyStep: StoryStep, position: Double, documentId: String, lastUpdatedAt: Long) {
+        val existingDocumentId = storyStepQueries?.selectById(storyStep.id)
+            ?.executeAsOneOrNull()
+            ?.document_id
+        require(existingDocumentId == null || existingDocumentId == documentId) {
+            "StoryStep does not belong to the requested document"
+        }
+
+        // Incremental sync sends the complete subtree for the changed StoryStep.
+        // Remove descendants omitted by the replacement payload before recursively upserting it.
+        storyStepQueries?.deleteDescendantsForDocument(documentId, storyStep.id)
+
         storyStep.run {
             storyStepQueries?.insert(
                 id = id,
@@ -972,8 +1206,17 @@ class DocumentSqlBeDao(
                 tags = tags.joinToString(separator = ",") { it.tag.label },
                 spans = spans.joinToString(separator = ",") { it.toText() },
                 link_to_document = documentLink?.id,
-                last_updated_at = lastUpdatedAt.toInt()
+                last_updated_at = lastUpdatedAt
             )
+
+            steps.forEachIndexed { index, childStep ->
+                upsertStoryStep(
+                    storyStep = childStep.copy(parentId = id),
+                    position = index.toDouble(),
+                    documentId = documentId,
+                    lastUpdatedAt = lastUpdatedAt,
+                )
+            }
         }
     }
 
@@ -981,7 +1224,7 @@ class DocumentSqlBeDao(
      * Gets story steps for a document that were updated after the given timestamp.
      */
     fun getStoryStepsAfterTime(documentId: String, afterTime: Long): List<Pair<Double, StoryStep>> {
-        return storyStepQueries?.selectByDocumentIdAfterTime(documentId, afterTime.toInt())
+        return storyStepQueries?.selectByDocumentIdAfterTime(documentId, afterTime)
             ?.executeAsList()
             ?.map { entity ->
                 val storyStep = StoryStep(
@@ -1067,8 +1310,8 @@ class DocumentSqlBeDao(
     /**
      * Deletes multiple StorySteps by their IDs.
      */
-    fun deleteStoryStepsByIds(storyStepIds: List<String>) {
-        storyStepQueries?.deleteByIds(storyStepIds)
+    fun deleteStoryStepsByIds(storyStepIds: List<String>, documentId: String) {
+        storyStepQueries?.deleteByIdsForDocument(documentId, storyStepIds)
     }
 
     /**
@@ -1121,7 +1364,8 @@ class DocumentSqlBeDao(
                                 val title = documentQueries.selectTitleByDocumentId(linkDocId)
                                     .executeAsOneOrNull()
                                 DocumentLink(linkDocId, title)
-                            }
+                            },
+                            lastUpdatedAt = innerContent.story_step_last_updated_at?.toLong(),
                         )
 
                         innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
@@ -1131,6 +1375,7 @@ class DocumentSqlBeDao(
                         id = docId,
                         title = document.title,
                         content = innerContent,
+                        commentConversations = loadCommentConversations(document.id),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = Instant.fromEpochMilliseconds(document.last_synced),
@@ -1160,6 +1405,10 @@ class DocumentSqlBeDao(
     fun updateDocumentTitle(documentId: String, title: String) {
         val now = Clock.System.now().toEpochMilliseconds()
         documentQueries?.updateTitle(title, now, now, documentId)
+    }
+
+    fun touchDocument(documentId: String, workspaceId: String, timestamp: Long) {
+        documentQueries?.touch(timestamp, timestamp, documentId, workspaceId)
     }
 
     /**

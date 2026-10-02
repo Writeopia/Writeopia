@@ -1,3 +1,4 @@
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.sdk.persistence.core.tracker
@@ -6,17 +7,22 @@ import io.writeopia.sdk.manager.StoryStepSyncTracker
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.model.story.StoryState
+import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.sync.StoryStepSyncBuffer
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.request.StoryStepChangeApi
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -37,11 +43,34 @@ class OnUpdateStoryStepSyncTracker(
     private val syncBuffer: StoryStepSyncBuffer = StoryStepSyncBuffer(),
     private val syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse,
     private val onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> },
-    private val maxRetries: Int = 3
+    private val maxRetries: Int = 3,
+    private val commentConversationsFlow: StateFlow<Map<String, List<Comment>>>? = null,
 ) : StoryStepSyncTracker {
 
     private var lastSyncTimestamp: Long = 0L
     private var consecutiveFailures: Int = 0
+
+    private data class CommentSnapshot(
+        val conversations: Map<String, List<Comment>>?,
+        val version: Long,
+    )
+
+    private val initialCommentConversations: Map<String, List<Comment>> =
+        commentConversationsFlow?.value ?: emptyMap()
+    private val commentSnapshot = MutableStateFlow(
+        CommentSnapshot(
+            conversations = commentConversationsFlow?.value,
+            version = if (initialCommentConversations.isEmpty()) 0L else 1L,
+        )
+    )
+    private var lastSyncedCommentChangeVersion: Long = 0L
+    private var lastSyncedCommentConversations: Map<String, List<Comment>> = emptyMap()
+
+    private data class CommentDelta(
+        val changedConversations: Map<String, List<Comment>>,
+        val deletedConversationIds: List<String>,
+        val deletedCommentIds: List<String>,
+    )
 
     // Track last known content for each StoryStep to detect actual changes
     private val lastKnownContent = mutableMapOf<String, StoryStepContent>()
@@ -51,25 +80,33 @@ class OnUpdateStoryStepSyncTracker(
      * Changes to other fields (like localId, cursor position) should not trigger sync.
      */
     private data class StoryStepContent(
-        val text: String?,
+        val id: String,
         val type: Int,
-        val checked: Boolean?,
+        val parentId: String?,
         val url: String?,
         val path: String?,
+        val text: String?,
+        val checked: Boolean?,
+        val steps: List<StoryStepContent>,
+        val tags: Set<Any>,
         val spans: Set<Any>,
         val decoration: Any,
-        val documentLink: Any?
+        val documentLink: Any?,
     )
 
-    private fun StoryStep.toContent() = StoryStepContent(
-        text = text,
+    private fun StoryStep.toContent(): StoryStepContent = StoryStepContent(
+        id = id,
         type = type.number,
-        checked = checked,
+        parentId = parentId,
         url = url,
         path = path,
+        text = text,
+        checked = checked,
+        steps = steps.map { child -> child.toContent() },
+        tags = tags,
         spans = spans,
         decoration = decoration,
-        documentLink = documentLink
+        documentLink = documentLink,
     )
 
     /**
@@ -92,34 +129,52 @@ class OnUpdateStoryStepSyncTracker(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>
     ) {
-        // Combine flows to get both story state and workspace context
-        val combinedFlow = combine(
-            documentEditionFlow,
-            workspaceIdFlow
-        ) { (storyState, documentInfo), workspaceId ->
-            Triple(storyState, documentInfo, workspaceId)
-        }
+        val syncWorkspaceId = workspaceIdFlow.first()
+        if (syncWorkspaceId == Workspace.disconnectedWorkspace().id) return
 
         // Collect changes and add to buffer
         coroutineScope {
-            // Launch a coroutine to process document changes
-            launch {
-                combinedFlow.collect { (storyState, documentInfo, _) ->
-                    processLastEdit(storyState.lastEdit, documentInfo.id)
-                }
-            }
-
-            // Launch a coroutine to handle sync triggers
-            launch {
+            // Subscribe to sync triggers first so an already-changed comment StateFlow cannot
+            // request a sync before the trigger collector is listening.
+            launch(start = CoroutineStart.UNDISPATCHED) {
                 syncBuffer.syncTrigger
                     .debounce(syncBuffer.syncInterval)
                     .collect {
-                        if (syncBuffer.hasPendingChanges()) {
+                        val commentsChanged =
+                            commentSnapshot.value.version > lastSyncedCommentChangeVersion
+                        if (syncBuffer.hasPendingChanges() || commentsChanged) {
                             val (_, documentInfo) = documentEditionFlow.first()
-                            val workspaceId = workspaceIdFlow.first()
-                            performSync(documentInfo.id, workspaceId)
+                            performSync(documentInfo.id, syncWorkspaceId)
                         }
                     }
+            }
+
+            // Launch a coroutine to process document changes. The workspace is intentionally
+            // fixed for this tracker lifetime so pending edits can never migrate to another workspace.
+            launch {
+                documentEditionFlow.collect { (storyState, documentInfo) ->
+                    processLastEdit(storyState.lastEdit, documentInfo.id)
+                    val commentsChanged =
+                        commentSnapshot.value.version > lastSyncedCommentChangeVersion
+                    if (syncBuffer.hasPendingChanges() || commentsChanged) {
+                        syncBuffer.requestSync()
+                    }
+                }
+            }
+
+            commentConversationsFlow?.let { commentsFlow ->
+                launch {
+                    commentsFlow
+                        .collect { conversations ->
+                            val previous = commentSnapshot.value
+                            if (conversations == previous.conversations) return@collect
+                            commentSnapshot.value = CommentSnapshot(
+                                conversations = conversations,
+                                version = previous.version + 1,
+                            )
+                            syncBuffer.requestSync()
+                        }
+                }
             }
         }
     }
@@ -235,9 +290,47 @@ class OnUpdateStoryStepSyncTracker(
         }
     }
 
+    private fun commentDelta(
+        previous: Map<String, List<Comment>>,
+        current: Map<String, List<Comment>>,
+    ): CommentDelta {
+        val deletedConversationIds = (previous.keys - current.keys).toList()
+        val changedConversations = current.filter { (conversationId, comments) ->
+            previous[conversationId] != comments
+        }
+        val currentCommentIds = current.values
+            .flatten()
+            .mapTo(mutableSetOf()) { comment -> comment.id }
+        val deletedConversationIdSet = deletedConversationIds.toSet()
+        val deletedCommentIds = previous
+            .filterKeys { conversationId -> conversationId !in deletedConversationIdSet }
+            .values
+            .flatten()
+            .map { comment -> comment.id }
+            .filter { commentId -> commentId !in currentCommentIds }
+
+        return CommentDelta(
+            changedConversations = changedConversations,
+            deletedConversationIds = deletedConversationIds,
+            deletedCommentIds = deletedCommentIds,
+        )
+    }
+
     private suspend fun performSync(documentId: String, workspaceId: String) {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return
+
         val batch = syncBuffer.consumeChanges()
-        if (batch.isEmpty) return
+        val comments = commentSnapshot.value
+        val currentComments = comments.conversations
+        val commentVersion = comments.version
+        val commentsChanged = commentVersion > lastSyncedCommentChangeVersion
+        val currentCommentMap = currentComments ?: emptyMap()
+        val commentDelta = if (commentsChanged) {
+            commentDelta(lastSyncedCommentConversations, currentCommentMap)
+        } else {
+            CommentDelta(emptyMap(), emptyList(), emptyList())
+        }
+        if (batch.isEmpty && !commentsChanged) return
 
         val requestTimestamp = Clock.System.now().toEpochMilliseconds()
 
@@ -252,7 +345,14 @@ class OnUpdateStoryStepSyncTracker(
                     position = change.position
                 )
             },
-            deletions = batch.deletions.toList()
+            deletions = batch.deletions.toList(),
+            commentConversations = if (commentDelta.changedConversations.isNotEmpty()) {
+                commentDelta.changedConversations.toApi()
+            } else {
+                null
+            },
+            deletedCommentConversationIds = commentDelta.deletedConversationIds,
+            deletedCommentIds = commentDelta.deletedCommentIds,
         )
 
         try {
@@ -260,6 +360,10 @@ class OnUpdateStoryStepSyncTracker(
 
             // Update last sync timestamp
             lastSyncTimestamp = response.serverTimestamp
+            if (commentsChanged) {
+                lastSyncedCommentChangeVersion = commentVersion
+                lastSyncedCommentConversations = currentCommentMap
+            }
             consecutiveFailures = 0
 
             // Apply server updates
@@ -273,14 +377,16 @@ class OnUpdateStoryStepSyncTracker(
         } catch (e: Exception) {
             consecutiveFailures++
 
-            if (consecutiveFailures < maxRetries) {
-                batch.changes.forEach { change ->
-                    syncBuffer.addChange(change.storyStep, change.position, change.documentId)
-                }
-                batch.deletions.forEach { id ->
-                    syncBuffer.addDeletion(id)
-                }
-            } else {
+            val retryDelay =
+                syncBuffer.syncInterval * consecutiveFailures.coerceAtMost(maxRetries).toLong()
+            delay(retryDelay)
+
+            syncBuffer.requeue(batch)
+            if (commentsChanged) {
+                syncBuffer.requestSync()
+            }
+
+            if (consecutiveFailures >= maxRetries) {
                 consecutiveFailures = 0
             }
         }

@@ -80,10 +80,11 @@ class DocumentSqlDao(
         val queries = documentQueries ?: return
 
         queries.transaction {
-            val existing = queries.selectById(document.id).executeAsOneOrNull()
+            val existing = queries.selectById(document.id).awaitAsOneOrNull()
             require(existing == null || existing.workspace_id == document.workspaceId) {
                 "Document does not belong to the requested workspace. existing: ${existing?.workspace_id}, document: ${document.workspaceId}"
             }
+            if (existing?.deleted == 1L && !document.deleted) return@transaction
 
             storyStepQueries?.deleteByDocumentId(document.id)
             document.content.values.forEachIndexed { i, storyStep ->
@@ -104,12 +105,29 @@ class DocumentSqlDao(
                 }
             }
 
-            insertDocument(document)
+            insertDocumentRow(document, queries)
         }
     }
 
     suspend fun insertDocument(document: Document) {
-        documentQueries?.insert(
+        val queries = documentQueries ?: return
+
+        queries.transaction {
+            val existing = queries.selectById(document.id).awaitAsOneOrNull()
+            require(existing == null || existing.workspace_id == document.workspaceId) {
+                "Document does not belong to the requested workspace"
+            }
+            if (existing?.deleted == 1L && !document.deleted) return@transaction
+
+            insertDocumentRow(document, queries)
+        }
+    }
+
+    private suspend fun insertDocumentRow(
+        document: Document,
+        queries: DocumentEntityQueries,
+    ) {
+        queries.insert(
             id = document.id,
             title = document.title,
             created_at = document.createdAt.toEpochMilliseconds(),

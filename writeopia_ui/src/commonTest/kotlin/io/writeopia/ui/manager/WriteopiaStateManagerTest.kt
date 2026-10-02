@@ -1,3 +1,4 @@
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.ui.manager
@@ -91,6 +92,54 @@ class WriteopiaStateManagerTest {
             expected,
             currentStory.mapValues { (_, storyStep) -> storyStep.type }
         )
+    }
+
+    @Test
+    fun newDocumentShouldNotRestorePreviousCommentTombstonesOnUndo() = runTest {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "old-conversation",
+            comments = listOf(Comment(id = "old-comment", text = "old")),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "old document",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(
+                            SpanInfo.create(0, 3, Span.COMMENT, conversation.id)
+                        ),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = mapOf(conversation.id to conversation.comments),
+            )
+        )
+
+        assertTrue(manager.deleteCommentConversation(conversation.id))
+        manager.newDocument(forceRestart = true)
+
+        val story = manager.currentStory.value.stories.getValue(0.0)
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = story.copy(text = "fresh document"),
+                position = 0.0,
+            )
+        )
+        manager.undo()
+        advanceUntilIdle()
+
+        assertFalse(manager.commentConversations.value.containsKey(conversation.id))
     }
 
     @Test
@@ -2136,7 +2185,7 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    fun createCommentShouldUseCapturedSelectionAfterEditorSelectionCollapses() {
+    fun createCommentShouldUseCapturedSelectionAfterFocusLoss() {
         val now = Clock.System.now()
         val manager = WriteopiaStateManager.create(
             writeopiaManager = WriteopiaManager(),
@@ -2156,25 +2205,68 @@ class WriteopiaStateManagerTest {
             )
         )
 
+        val target = Selection(start = 0, end = 5, position = 0.0)
+        val story = manager.currentStory.value.stories.getValue(0.0)
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = story,
+                position = 0.0,
+                selectionStart = 5,
+                selectionEnd = 5,
+            )
+        )
+
+        val conversation =
+            manager.createComment("captured", target) ?: fail("Comment was not created")
+
+        val span = manager.currentStory.value.stories.getValue(0.0).spans.single()
+        assertEquals(0, span.start)
+        assertEquals(5, span.end)
+        assertEquals(conversation.id, span.extra)
+    }
+
+    @Test
+    fun selectionTouchingCommentEndShouldNotResolveThatConversation() {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "conversation-1",
+            comments = listOf(Comment(id = "comment-1", text = "first")),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "hello world",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, conversation.id)),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = mapOf(conversation.id to conversation.comments),
+            )
+        )
+
         val story = manager.currentStory.value.stories[0.0]!!
         manager.changeStoryState(
             Action.StoryStateChange(
                 storyStep = story,
                 position = 0.0,
-                selectionStart = 0,
-                selectionEnd = 0,
+                selectionStart = 5,
+                selectionEnd = 5,
             )
         )
 
-        val conversation = manager.createComment(
-            "captured",
-            Selection(start = 0, end = 5, position = 0.0),
-        ) ?: fail("Comment was not created from captured selection")
-
-        assertEquals(
-            SpanInfo.create(0, 5, Span.COMMENT, conversation.id),
-            manager.currentStory.value.stories[0.0]!!.spans.single(),
-        )
+        assertEquals(null, manager.getCommentConversationAtSelection())
+        assertEquals(null, manager.getCommentConversationAtCursor())
     }
 
     @Test
@@ -2221,7 +2313,10 @@ class WriteopiaStateManagerTest {
         assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isNotEmpty())
 
         assertTrue(manager.deleteComment(conversation.id, "comment-2"))
-        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
         assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isEmpty())
     }
 
@@ -2274,7 +2369,10 @@ class WriteopiaStateManagerTest {
                 1.0,
             )
         )
-        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
     }
 
     @Test
@@ -2411,7 +2509,10 @@ class WriteopiaStateManagerTest {
                 position = 0.0,
             )
         )
-        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
 
         manager.undo()
         advanceUntilIdle()
@@ -2428,8 +2529,66 @@ class WriteopiaStateManagerTest {
         manager.redo()
         advanceUntilIdle()
 
-        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
         assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isEmpty())
+    }
+
+    @Test
+    fun nestedCommentSpansShouldParticipateInConversationLifecycle() {
+        val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "conversation-nested",
+            comments = listOf(Comment(id = "comment-nested", text = "nested")),
+        )
+        val nested = StoryStep(
+            text = "nested text",
+            type = StoryTypes.TEXT.type,
+            spans = setOf(SpanInfo.create(0, 6, Span.COMMENT, conversation.id)),
+        )
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+        manager.loadDocument(
+            Document(
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "parent",
+                        type = StoryTypes.TEXT.type,
+                        steps = listOf(nested),
+                    )
+                ),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                commentConversations = mapOf(conversation.id to conversation.comments),
+            )
+        )
+
+        val parent = manager.currentStory.value.stories.getValue(0.0)
+        manager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = parent.copy(text = "parent changed"),
+                position = 0.0,
+            )
+        )
+
+        assertEquals(mapOf(conversation.id to conversation.comments), manager.commentConversations.value)
+
+        assertTrue(manager.deleteCommentConversation(conversation.id))
+
+        val updatedNested = manager.currentStory.value.stories.getValue(0.0).steps.single()
+        assertTrue(updatedNested.spans.none { it.span == Span.COMMENT })
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
     }
 
     @Test
@@ -2472,7 +2631,10 @@ class WriteopiaStateManagerTest {
 
         assertTrue(manager.deleteCommentConversation(conversation.id))
 
-        assertTrue(manager.commentConversations.value.isEmpty())
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
         assertTrue(
             manager.currentStory.value.stories.values.all { story ->
                 story.spans.none { span ->
@@ -2524,7 +2686,11 @@ class WriteopiaStateManagerTest {
 
         assertTrue(manager.deleteComment(first.id, "comment-1"))
 
-        assertEquals(mapOf(second.id to second.comments), manager.commentConversations.value)
+        assertTrue(
+            manager.commentConversations.value.getValue(first.id)
+                .all { comment -> comment.deleted }
+        )
+        assertEquals(second.comments, manager.commentConversations.value.getValue(second.id))
         assertEquals(
             setOf(SpanInfo.create(6, 11, Span.COMMENT, second.id)),
             manager.currentStory.value.stories[0.0]!!.spans,
@@ -2532,29 +2698,47 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
-    fun forceRestartClearsCommentConversations() = runTest {
+    fun removingLastStoryReferenceShouldRemoveOrphanConversation() {
         val now = Clock.System.now()
+        val conversation = CommentConversation(
+            id = "conversation-remove-story",
+            comments = listOf(Comment(id = "comment-remove-story", text = "remove me")),
+        )
         val manager = WriteopiaStateManager.create(
             writeopiaManager = WriteopiaManager(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            dispatcher = UnconfinedTestDispatcher(),
             userRepository = userRepository,
         )
         manager.loadDocument(
             Document(
-                content = MapStoryData.singleMessage(),
-                commentConversations = mapOf(
-                    "conversation-1" to listOf(Comment(id = "comment-1", text = "Old comment"))
+                content = mapOf(
+                    0.0 to StoryStep(
+                        text = "commented",
+                        type = StoryTypes.TEXT.type,
+                        spans = setOf(
+                            SpanInfo.create(0, 9, Span.COMMENT, conversation.id)
+                        ),
+                    ),
+                    1.0 to StoryStep(text = "keep", type = StoryTypes.TEXT.type),
                 ),
                 workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
                 parentId = "root",
                 lastSyncedAt = null,
+                commentConversations = mapOf(conversation.id to conversation.comments),
             )
         )
-        manager.newDocument(forceRestart = true)
 
-        val currentDocument = manager.currentDocument.filterNotNull().first()
-        assertTrue(currentDocument.commentConversations.isEmpty())
+        manager.removeAtPosition(0.0)
+
+        assertTrue(
+            manager.commentConversations.value.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
+        assertTrue(
+            manager.getDocument().commentConversations.getValue(conversation.id)
+                .all { comment -> comment.deleted }
+        )
     }
 }

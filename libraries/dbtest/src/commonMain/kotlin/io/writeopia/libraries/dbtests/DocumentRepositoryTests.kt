@@ -409,6 +409,38 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         )
     }
 
+    suspend fun staleSaveDoesNotResurrectSoftDeletedDocument() {
+        val now = now()
+        val document = Document(
+            id = GenerateId.generate(),
+            title = "Deleted document",
+            content = simpleText(),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+        )
+
+        documentRepository.saveDocument(document)
+        documentRepository.deleteDocument(document, document.workspaceId)
+
+        assertEquals(null, documentRepository.loadDocumentById(document.id, document.workspaceId))
+
+        documentRepository.saveDocument(
+            document.copy(
+                title = "Stale save",
+                lastUpdatedAt = Clock.System.now(),
+            )
+        )
+
+        assertEquals(null, documentRepository.loadDocumentById(document.id, document.workspaceId))
+        assertTrue(
+            documentRepository.getSoftDeletedDocuments(document.workspaceId)
+                .any { deleted -> deleted.id == document.id }
+        )
+    }
+
     suspend fun saveSimpleDocumentAndLoadByParentId() {
         val document = Document(
             id = GenerateId.generate(),

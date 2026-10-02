@@ -31,3 +31,11 @@ val MIGRATION_30_31 = object : Migration(30, 31) {
         )
     }
 }
+
+val MIGRATION_31_32 = object : Migration(31, 32) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            "ALTER TABLE STORY_UNIT_ENTITY_TABLE ADD COLUMN last_updated_at INTEGER"
+        )
+    }
+}
