@@ -9,7 +9,7 @@ public enum PresentationMarkdown {
         let chunks = lines.contains(where: isDivider) ? split(lines, at: isDivider) : split(lines, before: isHeading)
 
         return chunks.compactMap { chunk -> Slide? in
-            var steps = MarkdownSteps.parse(chunk.joined(separator: "\n"), now: now)
+            var steps = MarkdownSteps.parse(joinParagraphs(chunk).joined(separator: "\n"), now: now)
             var title = ""
             if let headingIndex = steps.firstIndex(where: isHeading) {
                 title = steps.remove(at: headingIndex).text ?? ""
@@ -20,6 +20,52 @@ public enum PresentationMarkdown {
             }
             return Slide(title: title, steps: steps)
         }
+    }
+
+    /// Joins the lines of a paragraph into one, as Markdown reads a single line break: models
+    /// often wrap their prose, and every line would otherwise be a paragraph of its own. Blank
+    /// lines, headings, list items, checkboxes, dividers and code blocks keep their own lines.
+    static func joinParagraphs(_ lines: [String]) -> [String] {
+        var result: [String] = []
+        var paragraph: String?
+        var openFence: MarkdownSteps.Fence?
+
+        func flush() {
+            if let paragraph { result.append(paragraph) }
+            paragraph = nil
+        }
+
+        for rawLine in lines {
+            let line = rawLine.trimmingCharacters(in: .whitespaces)
+            if let fence = openFence {
+                result.append(rawLine)
+                if fence.isClosed(by: line) { openFence = nil }
+                continue
+            }
+            if let fence = MarkdownSteps.Fence(opening: line) {
+                flush()
+                openFence = fence
+                result.append(rawLine)
+            } else if line.isEmpty {
+                flush()
+            } else if isBlock(line) {
+                flush()
+                result.append(line)
+            } else if let current = paragraph {
+                paragraph = current + " " + line
+            } else {
+                paragraph = line
+            }
+        }
+        flush()
+        return result
+    }
+
+    /// A line `MarkdownSteps` reads as a block of its own, never part of a paragraph.
+    private static func isBlock(_ line: String) -> Bool {
+        line.hasPrefix("#") || isDivider(line) ||
+            line.hasPrefix("- ") || line.hasPrefix("* ") ||
+            line.hasPrefix("[] ") || line.hasPrefix("- [ ] ") || line.lowercased().hasPrefix("- [x] ")
     }
 
     /// A line of three or more dashes and nothing else, the end of a slide.

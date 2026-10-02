@@ -54,9 +54,17 @@ public struct WriteopiaEditor: View {
     private var columnWidth: CGFloat {
         guard layout == .slide else { return Self.maxColumnWidth }
         let widths = manager.documentContent.map { step in
-            TextStyles.attributedText(for: step, family: manager.fontFamily).size().width + Self.decorationWidth(of: step)
+            Self.lineWidth(of: TextStyles.attributedText(for: step, family: manager.fontFamily)) + Self.decorationWidth(of: step)
         }
-        return min(Self.maxColumnWidth, ceil((widths.max() ?? 0) + 24))
+        // Some slack: the text views wrap when the frame is short by a single point.
+        return min(Self.maxColumnWidth, ceil((widths.max() ?? 0) + 40))
+    }
+
+    /// The width of `text` on one line, laid out as the text views lay it out.
+    private static func lineWidth(of text: NSAttributedString) -> CGFloat {
+        let unbounded = CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        let rect = text.boundingRect(with: unbounded, options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+        return ceil(rect.width)
     }
 
     /// What the drawers add beside the text of a step: the paddings of the title, a checkbox
@@ -64,8 +72,8 @@ public struct WriteopiaEditor: View {
     private static func decorationWidth(of step: StoryStep) -> CGFloat {
         switch step.type.number {
         case StoryType.title.number: 16
-        case StoryType.checkItem.number: 30
-        case StoryType.unorderedListItem.number: 20
+        case StoryType.checkItem.number: 36
+        case StoryType.unorderedListItem.number: 24
         default: 0
         }
     }

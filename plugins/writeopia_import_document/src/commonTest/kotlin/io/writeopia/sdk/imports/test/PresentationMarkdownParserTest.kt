@@ -96,6 +96,30 @@ class PresentationMarkdownParserTest {
     }
 
     @Test
+    fun `the lines of a paragraph are joined and blank lines separate paragraphs`() {
+        val slides = PresentationMarkdownParser.parse(
+            """
+            ## Wrapped
+            The model wrapped this sentence
+            over two lines.
+
+            A second paragraph.
+            - an item
+            - another item
+            Back to prose.
+            ---
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf("The model wrapped this sentence over two lines.", "A second paragraph.", "an item", "another item", "Back to prose."),
+            slides[0].content.map { it.text }
+        )
+        assertEquals(StoryTypes.UNORDERED_LIST_ITEM.type, slides[0].content[2].type)
+        assertEquals(StoryTypes.TEXT.type, slides[0].content[4].type)
+    }
+
+    @Test
     fun `inline markdown becomes spans`() {
         val slides = PresentationMarkdownParser.parse("## Title\nThis is **bold** text\n---")
 

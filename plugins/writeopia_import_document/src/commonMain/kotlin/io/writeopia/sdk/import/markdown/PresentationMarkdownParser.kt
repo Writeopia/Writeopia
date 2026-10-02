@@ -26,7 +26,7 @@ object PresentationMarkdownParser {
     private fun parseSlide(lines: List<String>): Slide? {
         val headingIndex = lines.indexOfFirst(::isHeading)
         val title = if (headingIndex >= 0) lines[headingIndex].trim().trimStart('#').trim() else ""
-        val body = lines.filterIndexed { index, line -> index != headingIndex && line.isNotBlank() }
+        val body = joinParagraphs(lines.filterIndexed { index, _ -> index != headingIndex })
         if (title.isEmpty() && body.isEmpty()) return null
 
         // MarkdownParser reads the first line as the title of a document; a stand-in title keeps
@@ -36,6 +36,46 @@ object PresentationMarkdownParser {
             .map { it.toModel() }
         return Slide(title = title, content = content)
     }
+
+    /**
+     * Joins the lines of a paragraph into one, as Markdown reads a single line break: models
+     * often wrap their prose, and every line would otherwise be a paragraph of its own. Blank
+     * lines, headings, list items, checkboxes and dividers keep their own line.
+     */
+    private fun joinParagraphs(lines: List<String>): List<String> {
+        val result = mutableListOf<String>()
+        var paragraph: StringBuilder? = null
+
+        fun flush() {
+            paragraph?.let { result.add(it.toString()) }
+            paragraph = null
+        }
+
+        for (line in lines) {
+            val trimmed = line.trim()
+            when {
+                trimmed.isEmpty() -> flush()
+                isBlock(trimmed) -> {
+                    flush()
+                    result.add(trimmed)
+                }
+                paragraph == null -> paragraph = StringBuilder(trimmed)
+                else -> paragraph!!.append(' ').append(trimmed)
+            }
+        }
+        flush()
+        return result
+    }
+
+    /** A line that is a block of its own in [MarkdownParser], never part of a paragraph. */
+    private fun isBlock(trimmed: String): Boolean =
+        trimmed.startsWith("#") ||
+            trimmed.startsWith("---") ||
+            trimmed.startsWith("- ") ||
+            trimmed.startsWith("* ") ||
+            trimmed.startsWith("[] ") ||
+            trimmed.startsWith("-[] ") ||
+            trimmed.startsWith("```")
 
     /** A line of three or more dashes and nothing else. */
     private fun isDivider(line: String): Boolean {

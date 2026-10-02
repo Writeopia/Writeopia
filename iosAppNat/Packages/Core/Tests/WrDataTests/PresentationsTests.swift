@@ -73,6 +73,32 @@ private let sample = """
         #expect(slides[1].steps.isEmpty)
     }
 
+    @Test func theLinesOfAParagraphAreJoinedAndBlankLinesSeparateParagraphs() {
+        let slides = PresentationMarkdown.parse("""
+            ## Wrapped
+            The model wrapped this sentence
+            over two lines.
+
+            A second paragraph.
+            - an item
+            - another item
+            Back to prose.
+            ```
+            code line one
+            code line two
+            ```
+            ---
+            """)
+
+        #expect(slides[0].steps.map(\.text) == [
+            "The model wrapped this sentence over two lines.", "A second paragraph.", "an item", "another item", "Back to prose.",
+            "code line one", "code line two",
+        ])
+        #expect(slides[0].steps[2].type.number == StoryType.unorderedListItem.number)
+        #expect(slides[0].steps[4].type.number == StoryType.text.number)
+        #expect(slides[0].steps[5].type.number == StoryType.codeBlock.number)
+    }
+
     @Test func nothingGivesNoSlides() {
         #expect(PresentationMarkdown.parse("").isEmpty)
         #expect(PresentationMarkdown.parse("\n---\n\n").isEmpty)
