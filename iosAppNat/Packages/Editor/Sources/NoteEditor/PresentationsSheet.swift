@@ -66,7 +66,7 @@ struct PresentationsSheet: View {
                 Text("\"\(presentation.title)\" will be removed from this device. This can't be undone.")
             }
             .alert(
-                "Could not create the presentation",
+                viewModel.isGenerating || viewModel.lastActionWasGenerate ? "Could not create the presentation" : "Could not load the presentations",
                 isPresented: Binding(get: { viewModel.error != nil }, set: { if !$0 { viewModel.error = nil } })
             ) {
                 Button("OK", role: .cancel) {}

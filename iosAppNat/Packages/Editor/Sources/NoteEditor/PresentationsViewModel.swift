@@ -13,6 +13,8 @@ public final class PresentationsViewModel {
     public private(set) var isLoading = false
     public private(set) var isGenerating = false
     public var error: String?
+    /// Whether `error` comes from making a presentation (else from loading or deleting them).
+    public private(set) var lastActionWasGenerate = false
 
     public let documentId: String
     @ObservationIgnored private let repository: PresentationsRepository
@@ -40,6 +42,7 @@ public final class PresentationsViewModel {
         do {
             presentations = try await repository.presentations(ofDocument: documentId)
         } catch {
+            lastActionWasGenerate = false
             self.error = error.userMessage
         }
     }
@@ -50,6 +53,7 @@ public final class PresentationsViewModel {
     public func generate() async -> Presentation? {
         guard !isGenerating else { return nil }
         isGenerating = true
+        lastActionWasGenerate = true
         defer {
             isGenerating = false
             generationTask = nil
@@ -91,6 +95,7 @@ public final class PresentationsViewModel {
             try await repository.deletePresentation(id: presentation.id)
             presentations.removeAll { $0.id == presentation.id }
         } catch {
+            lastActionWasGenerate = false
             self.error = error.userMessage
         }
     }

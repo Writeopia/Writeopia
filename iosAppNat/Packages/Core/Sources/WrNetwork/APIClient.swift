@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import WrStorage
 
 /// Abstraction over `URLSession` so the client can be tested without the network.
@@ -240,9 +241,28 @@ public final class APIClient {
         return request
     }
 
+    /// Every request and its outcome, for Console.app or `log stream`:
+    /// `log stream --predicate 'subsystem == "io.writeopia.WriteopiaNative"' --level debug`
+    static let logger = Logger(subsystem: "io.writeopia.WriteopiaNative", category: "network")
+
     private func execute(_ request: URLRequest) async throws -> (Data, Int) {
-        let (data, response) = try await transport.data(for: request)
-        return (data, (response as? HTTPURLResponse)?.statusCode ?? 0)
+        let method = request.httpMethod ?? "?"
+        let url = request.url?.absoluteString ?? "?"
+        Self.logger.debug("→ \(method, privacy: .public) \(url, privacy: .public)")
+        do {
+            let (data, response) = try await transport.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if (200..<300).contains(status) {
+                Self.logger.debug("← \(status) \(method, privacy: .public) \(url, privacy: .public) (\(data.count) bytes)")
+            } else {
+                let body = String(decoding: data.prefix(2000), as: UTF8.self)
+                Self.logger.error("← \(status) \(method, privacy: .public) \(url, privacy: .public): \(body, privacy: .public)")
+            }
+            return (data, status)
+        } catch {
+            Self.logger.error("✕ \(method, privacy: .public) \(url, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
     }
 
     private func validate(_ data: Data, status: Int) throws -> Data {
@@ -265,9 +285,7 @@ public final class APIClient {
         do {
             return try Self.decoder.decode(Response.self, from: data)
         } catch {
-            #if DEBUG
-            print("Decoding \(Response.self) failed: \(error)")
-            #endif
+            Self.logger.error("Decoding \(String(describing: Response.self), privacy: .public) failed: \(String(describing: error), privacy: .public)")
             throw APIError.decoding
         }
     }
