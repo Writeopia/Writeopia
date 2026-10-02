@@ -8,6 +8,12 @@ import WrModels
 /// Compose app merges into the SDK drawers (e.g. `DrawingPreviewDrawer`).
 public typealias CustomStepDrawer = (StoryStep) -> AnyView
 
+extension EnvironmentValues {
+    /// True inside a slide of a presentation (`WriteopiaEditor.Layout.slide`): no gutter, no
+    /// room below the last line.
+    @Entry var isSlideLayout = false
+}
+
 struct CustomStepDrawersKey: EnvironmentKey {
     static let defaultValue: [Int: CustomStepDrawer] = [:]
 }
@@ -120,14 +126,18 @@ struct DraggableStep<Content: View>: View {
     var alignment: VerticalAlignment = .center
     @ViewBuilder let content: Content
     @State private var isHovered = false
+    @Environment(\.isSlideLayout) private var isSlideLayout
 
     var body: some View {
         HStack(alignment: alignment, spacing: 4) {
-            ReorderGrip(step: step)
-                .opacity(showsGrip ? 1 : 0)
-                .allowsHitTesting(showsGrip)
-                .accessibilityHidden(!showsGrip)
-                .animation(.easeInOut(duration: 0.15), value: showsGrip)
+            // A slide has nothing to drag, and the gutter would push its text off center.
+            if !isSlideLayout {
+                ReorderGrip(step: step)
+                    .opacity(showsGrip ? 1 : 0)
+                    .allowsHitTesting(showsGrip)
+                    .accessibilityHidden(!showsGrip)
+                    .animation(.easeInOut(duration: 0.15), value: showsGrip)
+            }
 
             content
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -155,6 +165,7 @@ struct TitleDrawer: View {
     let manager: WriteopiaStateManager
     @State private var isHovered = false
     @State private var showsColors = false
+    @Environment(\.isSlideLayout) private var isSlideLayout
 
     private var headerColor: Color? {
         step.decoration?.backgroundColor.map { Color(argb: $0) }
@@ -180,7 +191,8 @@ struct TitleDrawer: View {
                         .allowsHitTesting(false)
                 }
             }
-            .padding(.leading, EditorLayout.gutter + 4)
+            // In a slide the title lines up with the text below, which has no gutter.
+            .padding(.leading, isSlideLayout ? 4 : EditorLayout.gutter + 4)
             .padding(.trailing, 12)
             .padding(.top, headerColor == nil ? 8 : Self.coloredHeaderTopPadding)
             .padding(.bottom, 8)
@@ -614,6 +626,7 @@ struct SpaceDrawer: View {
 struct LastSpaceDrawer: View {
     let draw: DrawStory
     let manager: WriteopiaStateManager
+    @Environment(\.isSlideLayout) private var isSlideLayout
 
     private var isTarget: Bool { draw.storyStep.type.number == StoryType.onDragSpace.number }
 
@@ -623,8 +636,12 @@ struct LastSpaceDrawer: View {
                 .fill(isTarget ? Color.gray.opacity(0.6) : Color.clear)
                 .frame(height: 6)
                 .padding(.leading, EditorLayout.gutter)
-            Color.clear
-                .frame(maxWidth: .infinity, minHeight: 240)
+            // Room to click below the last line and keep writing. A slide doesn't need it: the
+            // clear color takes every point it's offered, which would push the slide to the top.
+            if !isSlideLayout {
+                Color.clear
+                    .frame(maxWidth: .infinity, minHeight: 240)
+            }
         }
         .contentShape(Rectangle())
         .onTapGesture { manager.clickAtTheEnd() }

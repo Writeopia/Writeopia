@@ -4500,6 +4500,26 @@
           }
         }
       }
+    },
+    "Continue with Google" : {
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuar com o Google"
+          }
+        }
+      }
+    },
+    "Google sign-in failed." : {
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falha ao entrar com o Google."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

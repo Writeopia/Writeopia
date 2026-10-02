@@ -10,6 +10,8 @@ import io.writeopia.auth.core.data.AccountDeletionPendingException
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.LoginStatus
+import io.writeopia.auth.google.GoogleCredential
+import io.writeopia.auth.google.toRequest
 import io.writeopia.common.utils.env.EnvUtils
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
@@ -19,6 +21,7 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.DocumentApi
+import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.toModel
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -163,59 +166,93 @@ class AuthMenuViewModel(
                     authApi.login(_email.value, _password.value)
                 }
 
-                _loginState.value = when (result) {
-                    is ResultData.Complete -> {
-                        val user = result.data.writeopiaUser.toModel()
-
-                        // Check if user is enabled (email confirmed)
-                        if (!result.data.enabled) {
-                            // User exists but email not confirmed
-                            authRepository.savePendingConfirmationEmail(user.email)
-                            _emailConfirmationRequired.value = true
-                            result.map { true }
-                        } else {
-                            _emailConfirmationRequired.value = false
-                            EnvUtils.getAdminKey()?.let { adminKey ->
-                                authApi.enableUser(user.email, adminKey)
-                            }
-
-                            authRepository.unselectAllUsers()
-                            authRepository.saveUser(
-                                user = user.copy(tier = Tier.PREMIUM),
-                                selected = true
-                            )
-                            val accessToken = result.data.accessToken
-                            val refreshToken = result.data.refreshToken
-                            if (accessToken != null) {
-                                // Calculate expiry time (14 minutes from now as buffer)
-                                val expiresAt = Clock.System.now().toEpochMilliseconds() + (14 * 60 * 1000L)
-                                authRepository.saveTokens(
-                                    userId = user.id,
-                                    accessToken = accessToken,
-                                    refreshToken = refreshToken,
-                                    expiresAt = expiresAt
-                                )
-                            }
-
-                            result.map { true }
-                        }
-                    }
-
-                    is ResultData.Error -> {
-                        delay(300)
-                        _accountDeletionPending.value = result.exception is AccountDeletionPendingException
-                        result.map { false }
-                    }
-
-                    else -> {
-                        delay(300)
-                        ResultData.Idle()
-                    }
-                }
+                _loginState.value = handleAuthResult(result)
             } catch (e: Exception) {
                 delay(300)
                 _loginState.value = ResultData.Error(e)
             }
         }
     }
+
+    /**
+     * Sends the credential obtained from the platform Google UI to the backend. The backend
+     * answers with the same payload as a password login, so the rest of the flow is shared.
+     */
+    fun onGoogleLoginRequest(credential: GoogleCredential) {
+        _loginState.value = ResultData.Loading()
+        _accountDeletionPending.value = false
+
+        viewModelScope.launch {
+            try {
+                val request = credential.toRequest()
+                val result = if (authRepository.useWebLogin) {
+                    authApi.loginWithGoogleWeb(request)
+                } else {
+                    authApi.loginWithGoogle(request)
+                }
+
+                _loginState.value = handleAuthResult(result)
+            } catch (e: Exception) {
+                delay(300)
+                _loginState.value = ResultData.Error(e)
+            }
+        }
+    }
+
+    /** The platform Google UI failed before reaching the backend; surfaces the login error. */
+    fun onGoogleSignInFailed(error: Throwable) {
+        _accountDeletionPending.value = false
+        _loginState.value = ResultData.Error(error as? Exception ?: Exception(error))
+    }
+
+    private suspend fun handleAuthResult(result: ResultData<AuthResponse>): ResultData<Boolean> =
+        when (result) {
+            is ResultData.Complete -> {
+                val user = result.data.writeopiaUser.toModel()
+
+                // Check if user is enabled (email confirmed)
+                if (!result.data.enabled) {
+                    // User exists but email not confirmed
+                    authRepository.savePendingConfirmationEmail(user.email)
+                    _emailConfirmationRequired.value = true
+                    result.map { true }
+                } else {
+                    _emailConfirmationRequired.value = false
+                    EnvUtils.getAdminKey()?.let { adminKey ->
+                        authApi.enableUser(user.email, adminKey)
+                    }
+
+                    authRepository.unselectAllUsers()
+                    authRepository.saveUser(
+                        user = user.copy(tier = Tier.PREMIUM),
+                        selected = true
+                    )
+                    val accessToken = result.data.accessToken
+                    val refreshToken = result.data.refreshToken
+                    if (accessToken != null) {
+                        // Calculate expiry time (14 minutes from now as buffer)
+                        val expiresAt = Clock.System.now().toEpochMilliseconds() + (14 * 60 * 1000L)
+                        authRepository.saveTokens(
+                            userId = user.id,
+                            accessToken = accessToken,
+                            refreshToken = refreshToken,
+                            expiresAt = expiresAt
+                        )
+                    }
+
+                    result.map { true }
+                }
+            }
+
+            is ResultData.Error -> {
+                delay(300)
+                _accountDeletionPending.value = result.exception is AccountDeletionPendingException
+                result.map { false }
+            }
+
+            else -> {
+                delay(300)
+                ResultData.Idle()
+            }
+        }
 }

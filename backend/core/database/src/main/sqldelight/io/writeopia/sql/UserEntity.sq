@@ -32,6 +32,13 @@ SELECT EXISTS(
   WHERE username = ? OR email = ?
 );
 
+usernameExists:
+SELECT EXISTS(
+  SELECT 1
+  FROM user_entity
+  WHERE username = ?
+);
+
 selectUserById:
 SELECT *
 FROM user_entity

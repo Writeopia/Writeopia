@@ -49,6 +49,7 @@ public enum AuthError: Error, Equatable {
     case invalidCredentials
     case accountDeletionPending
     case invalidCode
+    case googleSignInFailed
     case server(String)
 
     public var userMessage: String {
@@ -56,6 +57,7 @@ public enum AuthError: Error, Equatable {
         case .invalidCredentials: String(localized: "Wrong email or password.")
         case .accountDeletionPending: String(localized: "This account is being deleted.")
         case .invalidCode: String(localized: "The code is invalid or has expired.")
+        case .googleSignInFailed: String(localized: "Google sign-in failed.")
         case .server(let message): message
         }
     }
@@ -87,6 +89,28 @@ public final class AuthAPI {
             return try handle(response)
         } catch APIError.unauthorized {
             throw AuthError.invalidCredentials
+        } catch APIError.forbidden {
+            throw AuthError.accountDeletionPending
+        }
+    }
+
+    /// Signs in with a Google ID token. The backend verifies the token, links or creates the
+    /// Writeopia account and answers with the same payload as the password login.
+    public func loginWithGoogle(idToken: String) async throws -> LoginResult {
+        struct Body: Encodable {
+            let idToken: String
+        }
+
+        do {
+            let response: AuthResponse = try await client.send(
+                .post,
+                "api/auth/login/google",
+                body: Body(idToken: idToken),
+                authenticated: false
+            )
+            return try handle(response)
+        } catch APIError.unauthorized {
+            throw AuthError.googleSignInFailed
         } catch APIError.forbidden {
             throw AuthError.accountDeletionPending
         }

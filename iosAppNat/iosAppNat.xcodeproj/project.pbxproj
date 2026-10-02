@@ -381,6 +381,8 @@
 				ENABLE_PREVIEWS = YES;
 				"ENABLE_USER_SELECTED_FILES[sdk=macosx*]" = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				"INFOPLIST_FILE[sdk=iphoneos*]" = "iosAppNat/iOS-Info.plist";
+				"INFOPLIST_FILE[sdk=iphonesimulator*]" = "iosAppNat/iOS-Info.plist";
 				"INFOPLIST_FILE[sdk=macosx*]" = "iosAppNat/macOS-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Writeopia;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -432,6 +434,8 @@
 				ENABLE_PREVIEWS = YES;
 				"ENABLE_USER_SELECTED_FILES[sdk=macosx*]" = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				"INFOPLIST_FILE[sdk=iphoneos*]" = "iosAppNat/iOS-Info.plist";
+				"INFOPLIST_FILE[sdk=iphonesimulator*]" = "iosAppNat/iOS-Info.plist";
 				"INFOPLIST_FILE[sdk=macosx*]" = "iosAppNat/macOS-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Writeopia;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";

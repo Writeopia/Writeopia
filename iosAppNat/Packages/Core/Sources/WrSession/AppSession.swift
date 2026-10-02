@@ -158,23 +158,52 @@ public final class AppSession {
     /// Apple Intelligence runs on the device, so it also works in the private space and offline.
     /// The cloud AI is used when picked in the open space, or when Apple Intelligence isn't
     /// available on this device.
-    public var aiClient: AiStreaming? {
+    public var aiClient: AiStreaming? { resolvedAi?.client }
+
+    /// The AI that answers right now, with the provider it belongs to: the one picked, or the
+    /// one it falls back to.
+    public var resolvedAi: (provider: AiProvider, client: AiStreaming)? {
         let appleIntelligenceReady = isAppleIntelligenceAvailable()
         // The cloud AI needs a session and a workspace of the open space.
         let cloudReady = isOnline && workspace.map { $0.id != Workspace.localId } == true
         switch aiProvider {
         case .appleIntelligence:
-            if appleIntelligenceReady { return appleIntelligence }
-            return cloudReady ? aiAPI : nil
+            if appleIntelligenceReady { return (.appleIntelligence, appleIntelligence) }
+            return cloudReady ? (.cloud, aiAPI) : nil
         case .cloud:
-            if cloudReady { return aiAPI }
-            return appleIntelligenceReady ? appleIntelligence : nil
+            if cloudReady { return (.cloud, aiAPI) }
+            return appleIntelligenceReady ? (.appleIntelligence, appleIntelligence) : nil
         case .ollama:
-            if let ollamaAi { return ollamaAi }
-            if appleIntelligenceReady { return appleIntelligence }
-            return cloudReady ? aiAPI : nil
+            if let ollamaAi { return (.ollama, ollamaAi) }
+            if appleIntelligenceReady { return (.appleIntelligence, appleIntelligence) }
+            return cloudReady ? (.cloud, aiAPI) : nil
         }
     }
+
+    /// Where the presentations of the documents come from: the backend with the cloud AI, the
+    /// device with Ollama. Nil with Apple Intelligence, too small for a whole document.
+    public var presentationsSource: PresentationsSource? {
+        switch resolvedAi?.provider {
+        case .cloud:
+            guard let workspace, workspace.id != Workspace.localId else { return nil }
+            return .cloud(PresentationsAPI(client: client, workspaceId: workspace.id))
+        case .ollama:
+            return .local
+        case .appleIntelligence, nil:
+            return nil
+        }
+    }
+
+    /// Reads the presentations `presentationsSource` makes, e.g. for the presentation window.
+    public var presentationsRepository: PresentationsRepository? {
+        switch presentationsSource {
+        case .cloud(let api): api
+        case .local: documents as? PresentationsRepository
+        case nil: nil
+        }
+    }
+
+    public var supportsPresentations: Bool { presentationsSource != nil }
 
     /// Image uploads; nil outside the open space, where images stay on the device.
     public var imageUploader: ImageUploading? {

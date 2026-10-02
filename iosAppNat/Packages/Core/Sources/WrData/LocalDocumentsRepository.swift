@@ -14,7 +14,7 @@ public protocol StepStore: AnyObject {
 ///
 /// Steps are rows of their own so an edit writes only what changed; the content of a step is
 /// kept as JSON, which carries nested steps, tags, spans and links as they are.
-public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
+public final class LocalDocumentsRepository: DocumentsRepository, StepStore, PresentationsStore {
     private let directory: URL
     private let workspaceId: String
     private let seedsWelcome: Bool
@@ -446,7 +446,110 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
         try db.transaction {
             try db.run("DELETE FROM story_step WHERE document_id = ?", [.text(id)])
             try db.run("DELETE FROM document WHERE id = ?", [.text(id)])
+            try db.run(
+                "DELETE FROM presentation_step WHERE presentation_id IN (SELECT id FROM presentation WHERE document_id = ?)",
+                [.text(id)]
+            )
+            try db.run("DELETE FROM presentation WHERE document_id = ?", [.text(id)])
         }
+    }
+
+    // MARK: - PresentationsStore
+
+    public func presentations(ofDocument documentId: String) async throws -> [Presentation] {
+        try db.query(
+            "SELECT id, document_id, title, created_at FROM presentation WHERE document_id = ? ORDER BY created_at DESC",
+            [.text(documentId)],
+            row: presentationRow
+        )
+        .map { presentation in
+            var presentation = presentation
+            presentation.slides = (try? slides(of: presentation.id)) ?? []
+            return presentation
+        }
+    }
+
+    public func presentation(id: String) async throws -> Presentation? {
+        guard var presentation = try db.query(
+            "SELECT id, document_id, title, created_at FROM presentation WHERE id = ?",
+            [.text(id)],
+            row: presentationRow
+        ).first else { return nil }
+        presentation.slides = try slides(of: id)
+        return presentation
+    }
+
+    /// Writes the presentation like a document: one row per step, the title of each slide as a
+    /// `title` step at position 0 of its slide.
+    public func savePresentation(_ presentation: Presentation) async throws {
+        try db.transaction {
+            try db.run(
+                """
+                INSERT INTO presentation (id, document_id, title, created_at) VALUES (?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    document_id = excluded.document_id, title = excluded.title, created_at = excluded.created_at
+                """,
+                [.text(presentation.id), .text(presentation.documentId), .text(presentation.title), .integer(presentation.createdAt)]
+            )
+            try db.run("DELETE FROM presentation_step WHERE presentation_id = ?", [.text(presentation.id)])
+            for (index, slide) in presentation.slides.enumerated() {
+                for step in slide.asDocument(id: "\(presentation.id)-\(index)", now: presentation.createdAt).content {
+                    let json = String(decoding: try encoder.encode(step), as: UTF8.self)
+                    try db.run(
+                        "INSERT OR REPLACE INTO presentation_step (id, presentation_id, slide_index, position, content) VALUES (?, ?, ?, ?, ?)",
+                        [.text(step.id), .text(presentation.id), .integer(Int64(index)), .real(step.position), .text(json)]
+                    )
+                }
+            }
+        }
+    }
+
+    public func deletePresentation(id: String) async throws {
+        try db.transaction {
+            try db.run("DELETE FROM presentation_step WHERE presentation_id = ?", [.text(id)])
+            try db.run("DELETE FROM presentation WHERE id = ?", [.text(id)])
+        }
+    }
+
+    private func presentationRow(_ row: SQLiteDatabase.Row) -> Presentation? {
+        guard let id = row.text(0) else { return nil }
+        return Presentation(
+            id: id,
+            documentId: row.text(1) ?? "",
+            title: row.text(2) ?? "",
+            createdAt: row.integer(3) ?? 0,
+            slides: []
+        )
+    }
+
+    /// The slides of a presentation, rebuilt from their rows: the `title` step names the slide,
+    /// the other steps are its content.
+    private func slides(of presentationId: String) throws -> [Slide] {
+        let rows = try db.query(
+            "SELECT slide_index, content, position FROM presentation_step WHERE presentation_id = ? ORDER BY slide_index, position",
+            [.text(presentationId)]
+        ) { row -> (index: Int64, step: StoryStep)? in
+            guard let index = row.integer(0), let json = row.text(1),
+                  var step = try? decoder.decode(StoryStep.self, from: Data(json.utf8))
+            else { return nil }
+            step.position = row.real(2) ?? step.position
+            return (index, step)
+        }
+
+        var slides: [Slide] = []
+        var currentIndex: Int64?
+        for (index, step) in rows {
+            if index != currentIndex {
+                slides.append(Slide(title: ""))
+                currentIndex = index
+            }
+            if step.type.number == StoryType.title.number {
+                slides[slides.count - 1].title = step.text ?? ""
+            } else {
+                slides[slides.count - 1].steps.append(step)
+            }
+        }
+        return slides
     }
 
     public func hardDeleteFolder(id: String) throws {
@@ -501,6 +604,24 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore {
             CREATE INDEX IF NOT EXISTS folder_parent ON folder(parent_id);
 
             CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY NOT NULL, value TEXT);
+
+            CREATE TABLE IF NOT EXISTS presentation (
+                id TEXT PRIMARY KEY NOT NULL,
+                document_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS presentation_document ON presentation(document_id);
+
+            CREATE TABLE IF NOT EXISTS presentation_step (
+                id TEXT NOT NULL,
+                presentation_id TEXT NOT NULL,
+                slide_index INTEGER NOT NULL,
+                position REAL NOT NULL,
+                content TEXT NOT NULL,
+                PRIMARY KEY (presentation_id, id)
+            );
+            CREATE INDEX IF NOT EXISTS presentation_step_presentation ON presentation_step(presentation_id);
             """
         )
     }

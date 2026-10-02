@@ -27,10 +27,18 @@ let package = Package(
     dependencies: [
         .package(path: "../Core"),
         .package(path: "../Editor"),
+        .package(url: "https://github.com/google/GoogleSignIn-iOS", from: "10.0.0"),
     ],
     targets: [
         .target(name: "SetupFeature", dependencies: coreProducts, swiftSettings: mainActorByDefault),
-        .target(name: "AuthFeature", dependencies: coreProducts + ["SetupFeature"], swiftSettings: mainActorByDefault),
+        .target(
+            name: "AuthFeature",
+            dependencies: coreProducts + [
+                "SetupFeature",
+                .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
+            ],
+            swiftSettings: mainActorByDefault
+        ),
         .target(
             name: "DocumentsFeature",
             dependencies: coreProducts + [

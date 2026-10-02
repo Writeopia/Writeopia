@@ -120,7 +120,7 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Writeopia"
             packageVersion = "1.0.0"
-            modules("java.sql")
+            modules("java.sql", "jdk.httpserver")
 
             val iconsRoot = project.file("./src/jvmMain/resources/images")
 

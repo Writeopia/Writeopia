@@ -7,6 +7,11 @@ import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
+import io.writeopia.api.core.auth.service.GoogleCodeExchanger
+import io.writeopia.api.core.auth.service.GoogleHttpCodeExchanger
+import io.writeopia.api.core.auth.service.GoogleJwksTokenVerifier
+import io.writeopia.api.core.auth.service.GoogleTokenVerifier
+import io.writeopia.api.core.auth.utils.GoogleOAuthEnv
 import io.writeopia.api.core.auth.utils.installAuth
 import io.writeopia.connection.logger
 import io.writeopia.plugins.configureEditorSockets
@@ -27,13 +32,22 @@ fun Application.module(
     useAi: Boolean = System.getenv("WRITEOPIA_USE_AI")?.toBoolean() ?: false,
     debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false,
     stagingMode: Boolean = System.getenv("WRITEOPIA_STAGING_MODE")?.toBoolean() ?: false,
-    adminKey: String? = System.getenv("ADMIN_KEY")
+    adminKey: String? = System.getenv("ADMIN_KEY"),
+    googleTokenVerifier: GoogleTokenVerifier = GoogleJwksTokenVerifier(GoogleOAuthEnv.allowedClientIds()),
+    googleCodeExchanger: GoogleCodeExchanger = GoogleHttpCodeExchanger(GoogleOAuthEnv.clientSecrets())
 ) {
     val db = writeopiaDb ?: configurePersistence()
     logger.info("debug: $debugMode, staging: $stagingMode")
     installCORS(stagingMode)
     installAuth()
-    configureRouting(db, useAi, debugMode = debugMode, adminKey = adminKey)
+    configureRouting(
+        db,
+        useAi,
+        debugMode = debugMode,
+        adminKey = adminKey,
+        googleTokenVerifier = googleTokenVerifier,
+        googleCodeExchanger = googleCodeExchanger
+    )
     configureSerialization()
     configureEditorSockets()
     configureHTTP()

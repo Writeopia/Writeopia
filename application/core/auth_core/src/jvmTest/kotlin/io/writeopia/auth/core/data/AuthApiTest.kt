@@ -11,6 +11,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.serialization.data.auth.AuthResponse
+import io.writeopia.sdk.serialization.data.auth.GoogleLoginRequest
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -218,5 +220,126 @@ class AuthApiTest {
 
         assertIs<ResultData.Error<*>>(result)
         assertEquals("Workspace name must be 3-30 characters", (result as ResultData.Error).exception?.message)
+    }
+
+    private val authResponseJson = """
+        {
+            "accessToken": "access-1",
+            "refreshToken": "refresh-1",
+            "writeopiaUser": {"id": "user-1", "name": "Alice", "email": "alice@test.com"},
+            "enabled": true
+        }
+    """.trimIndent()
+
+    private fun clientWith(engine: MockEngine) = HttpClient(engine) {
+        install(ContentNegotiation) { json(testJson) }
+    }
+
+    @Test
+    fun `loginWithGoogle should post the id token to the google endpoint`() = runTest {
+        var capturedRequest: io.ktor.client.request.HttpRequestData? = null
+        val mockEngine = MockEngine { request ->
+            capturedRequest = request
+            respond(
+                content = authResponseJson,
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val authApi = AuthApi(clientWith(mockEngine), "https://api.example.com")
+        val result = authApi.loginWithGoogle(GoogleLoginRequest(idToken = "google-id-token"))
+
+        val complete = assertIs<ResultData.Complete<AuthResponse>>(result)
+        assertEquals("access-1", complete.data.accessToken)
+        assertEquals("user-1", complete.data.writeopiaUser.id)
+
+        val request = capturedRequest!!
+        assertEquals(HttpMethod.Post, request.method)
+        assertEquals("https://api.example.com/api/auth/login/google", request.url.toString())
+        val body = request.body.toByteArray().decodeToString()
+        assertTrue(body.contains(""""idToken":"google-id-token""""))
+    }
+
+    @Test
+    fun `loginWithGoogle should send the auth code fields`() = runTest {
+        var capturedBody: String? = null
+        val mockEngine = MockEngine { request ->
+            capturedBody = request.body.toByteArray().decodeToString()
+            respond(
+                content = authResponseJson,
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val authApi = AuthApi(clientWith(mockEngine), "https://api.example.com")
+        authApi.loginWithGoogle(
+            GoogleLoginRequest(
+                code = "code-1",
+                codeVerifier = "verifier-1",
+                redirectUri = "http://127.0.0.1:4242/callback",
+                clientId = "desktop-client"
+            )
+        )
+
+        val body = capturedBody!!
+        assertTrue(body.contains(""""code":"code-1""""))
+        assertTrue(body.contains(""""codeVerifier":"verifier-1""""))
+        assertTrue(body.contains(""""redirectUri":"http://127.0.0.1:4242/callback""""))
+        assertTrue(body.contains(""""clientId":"desktop-client""""))
+    }
+
+    @Test
+    fun `loginWithGoogleWeb should post to the web endpoint`() = runTest {
+        var capturedUrl: String? = null
+        val mockEngine = MockEngine { request ->
+            capturedUrl = request.url.toString()
+            respond(
+                content = authResponseJson,
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val authApi = AuthApi(clientWith(mockEngine), "https://api.example.com")
+        val result = authApi.loginWithGoogleWeb(GoogleLoginRequest(code = "c", redirectUri = "o", clientId = "w"))
+
+        assertIs<ResultData.Complete<*>>(result)
+        assertEquals("https://api.example.com/api/auth/login/google/web", capturedUrl)
+    }
+
+    @Test
+    fun `loginWithGoogle should map 403 to AccountDeletionPendingException`() = runTest {
+        val mockEngine = MockEngine {
+            respond(
+                content = "Account is being deleted",
+                status = HttpStatusCode.Forbidden,
+                headers = headersOf(HttpHeaders.ContentType, "text/plain")
+            )
+        }
+
+        val authApi = AuthApi(clientWith(mockEngine), "https://api.example.com")
+        val result = authApi.loginWithGoogle(GoogleLoginRequest(idToken = "t"))
+
+        val error = assertIs<ResultData.Error<AuthResponse>>(result)
+        assertIs<AccountDeletionPendingException>(error.exception)
+    }
+
+    @Test
+    fun `loginWithGoogle should return Error with server message on 401`() = runTest {
+        val mockEngine = MockEngine {
+            respond(
+                content = "Invalid Google token",
+                status = HttpStatusCode.Unauthorized,
+                headers = headersOf(HttpHeaders.ContentType, "text/plain")
+            )
+        }
+
+        val authApi = AuthApi(clientWith(mockEngine), "https://api.example.com")
+        val result = authApi.loginWithGoogle(GoogleLoginRequest(idToken = "bad"))
+
+        val error = assertIs<ResultData.Error<AuthResponse>>(result)
+        assertEquals("Invalid Google token", error.exception?.message)
     }
 }

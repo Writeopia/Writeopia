@@ -150,6 +150,7 @@
   <string name="your_teams">Seus times</string>
   <string name="teams">Times</string>
   <string name="login_failed">Falha no login. Por favor, verifique suas credenciais.</string>
+  <string name="continue_with_google">Continuar com o Google</string>
   <string name="registration_failed">Falha no registro. Por favor, tente novamente.</string>
   <string name="create_workspace">Criar área de trabalho</string>
   <string name="create">Criar</string>

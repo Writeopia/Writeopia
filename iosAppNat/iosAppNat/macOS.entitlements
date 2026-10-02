@@ -4,5 +4,10 @@
 <dict>
 	<key>com.apple.security.files.bookmarks.app-scope</key>
 	<true/>
+	<!-- Required by GoogleSignIn-iOS on macOS to persist the Google session. -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)$(CFBundleIdentifier)</string>
+	</array>
 </dict>
 </plist>

@@ -62,6 +62,17 @@ CREATE TABLE refresh_token_entity (
 
 CREATE INDEX idx_refresh_token_user_id ON refresh_token_entity(user_id);
 
+-- Links a user to an identity at an external provider (currently only Google).
+CREATE TABLE external_identity (
+  provider TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES user_entity(id) ON DELETE CASCADE,
+  created_at BIGINT NOT NULL,
+  PRIMARY KEY(provider, subject)
+);
+
+CREATE INDEX idx_external_identity_user_id ON external_identity(user_id);
+
 CREATE TABLE company_entity (
   domain TEXT PRIMARY KEY,
   name TEXT NOT NULL
@@ -171,6 +182,30 @@ CREATE TABLE ai_usage (
 );
 
 -- Indexes for common query patterns
+CREATE TABLE presentation_entity (
+  id TEXT PRIMARY KEY,
+  document_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  created_at BIGINT NOT NULL
+);
+
+CREATE TABLE presentation_step_entity (
+  id TEXT PRIMARY KEY,
+  presentation_id TEXT NOT NULL,
+  slide_index INTEGER NOT NULL,
+  type INTEGER NOT NULL,
+  text TEXT,
+  checked BOOLEAN NOT NULL,
+  position NUMERIC NOT NULL,
+  url TEXT,
+  path TEXT,
+  tags TEXT NOT NULL,
+  spans TEXT NOT NULL,
+  background_color INTEGER
+);
+
 CREATE INDEX idx_document_workspace_id ON document_entity(workspace_id);
 CREATE INDEX idx_document_parent_id ON document_entity(parent_document_id);
 CREATE INDEX idx_folder_workspace_id ON folder_entity(workspace_id);
@@ -179,6 +214,8 @@ CREATE INDEX idx_story_step_document_id ON story_step_entity(document_id);
 CREATE INDEX idx_workspace_to_user_user_id ON workspace_to_user(user_id);
 CREATE INDEX idx_sync_event_workspace_id ON sync_event(workspace_id);
 CREATE INDEX idx_ai_usage_user_id ON ai_usage(user_id);
+CREATE INDEX idx_presentation_document_id ON presentation_entity(document_id);
+CREATE INDEX idx_presentation_step_presentation_id ON presentation_step_entity(presentation_id);
 CREATE INDEX idx_ai_usage_created_at ON ai_usage(created_at);
 CREATE INDEX idx_account_deletion_status ON account_deletion(status);
 CREATE INDEX idx_account_deletion_workspace_user_id ON account_deletion_workspace(user_id);

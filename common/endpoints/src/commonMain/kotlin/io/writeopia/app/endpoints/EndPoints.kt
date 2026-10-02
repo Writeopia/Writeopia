@@ -35,6 +35,14 @@ object EndPoints {
     // Public, CDN-cacheable configuration for auto-configuring Local AI (Ollama / llmman)
     fun aiLocalConfig() = "api/ai/local-config"
 
+    /** The presentations of a document: GET lists them, POST generates a new one. */
+    fun documentPresentations(workspaceId: String = "{workspaceId}", documentId: String = "{documentId}") =
+        "api/docs/workspace/$workspaceId/document/$documentId/presentations"
+
+    /** One presentation: GET reads it, DELETE removes it. */
+    fun presentation(workspaceId: String = "{workspaceId}", presentationId: String = "{presentationId}") =
+        "api/docs/workspace/$workspaceId/presentation/$presentationId"
+
     // Public, CDN-cacheable latest desktop application version
     fun desktopAppVersion() = "auth/app/version"
 }

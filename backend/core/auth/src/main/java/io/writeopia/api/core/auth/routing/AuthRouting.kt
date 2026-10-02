@@ -25,6 +25,7 @@ import io.writeopia.api.core.auth.service.EmailService
 import io.writeopia.api.core.auth.service.RefreshTokenService
 import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
+import io.writeopia.api.core.auth.utils.isUniqueViolation
 import io.writeopia.connection.logger
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
@@ -37,7 +38,6 @@ import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
-import java.sql.SQLException
 
 
 /**
@@ -312,20 +312,6 @@ fun RoutingContext.getUserId(): String? {
     return principal?.payload?.getClaim("userId")?.asString()
 }
 
-
-private const val SQLSTATE_UNIQUE_VIOLATION = "23505"
-
-private fun Throwable.isUniqueViolation(): Boolean {
-    var current: Throwable? = this
-    while (current != null) {
-        if (current is SQLException && current.sqlState == SQLSTATE_UNIQUE_VIOLATION) {
-            return true
-        }
-
-        current = current.cause
-    }
-    return false
-}
 
 private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 

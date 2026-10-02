@@ -7,7 +7,9 @@ import io.mockk.just
 import io.mockk.mockk
 import io.writeopia.LocalAiRepository
 import io.writeopia.auth.core.data.AuthApi
+import io.writeopia.auth.core.data.AccountDeletionPendingException
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.auth.google.GoogleCredential
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.sdk.models.utils.ResultData
@@ -23,6 +25,9 @@ import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthMenuViewModelTest {
@@ -241,5 +246,121 @@ class AuthMenuViewModelTest {
         // Then - verify login was called with username and real email was saved
         coVerify { authApi.login("my_username", "password123") }
         coVerify { authRepository.savePendingConfirmationEmail("realemail@example.com") }
+    }
+
+    private fun viewModel() = AuthMenuViewModel(
+        authRepository = authRepository,
+        authApi = authApi,
+        configRepository = configRepository,
+        notesUseCase = notesUseCase,
+        localAiRepository = localAiRepository
+    )
+
+    private val googleUser = WriteopiaUserApi(id = "google-user", name = "Ana", email = "ana@example.com")
+
+    @Test
+    fun `onGoogleLoginRequest should post the id token and save user and tokens`() = runTest {
+        coEvery { authApi.loginWithGoogle(any()) } returns ResultData.Complete(
+            AuthResponse(writeopiaUser = googleUser, accessToken = "g-access", refreshToken = "g-refresh")
+        )
+        val viewModel = viewModel()
+
+        viewModel.onGoogleLoginRequest(GoogleCredential.IdToken("google-id-token"))
+        advanceUntilIdle()
+
+        coVerify { authApi.loginWithGoogle(match { it.idToken == "google-id-token" && it.code == null }) }
+        coVerify(exactly = 0) { authApi.loginWithGoogleWeb(any()) }
+        coVerify { authRepository.unselectAllUsers() }
+        coVerify { authRepository.saveUser(match { it.id == "google-user" }, selected = true) }
+        coVerify { authRepository.saveTokens("google-user", "g-access", "g-refresh", any()) }
+        val state = viewModel.loginState.value
+        assertIs<ResultData.Complete<Boolean>>(state)
+        assertTrue(state.data)
+    }
+
+    @Test
+    fun `onGoogleLoginRequest should map every auth code field into the request`() = runTest {
+        coEvery { authApi.loginWithGoogle(any()) } returns ResultData.Complete(
+            AuthResponse(writeopiaUser = googleUser, accessToken = "a", refreshToken = "r")
+        )
+        val viewModel = viewModel()
+
+        viewModel.onGoogleLoginRequest(
+            GoogleCredential.AuthCode(
+                code = "code-1",
+                codeVerifier = "verifier-1",
+                redirectUri = "http://127.0.0.1:5000/callback",
+                clientId = "desktop-client"
+            )
+        )
+        advanceUntilIdle()
+
+        coVerify {
+            authApi.loginWithGoogle(
+                match {
+                    it.idToken == null &&
+                        it.code == "code-1" &&
+                        it.codeVerifier == "verifier-1" &&
+                        it.redirectUri == "http://127.0.0.1:5000/callback" &&
+                        it.clientId == "desktop-client"
+                }
+            )
+        }
+    }
+
+    @Test
+    fun `onGoogleLoginRequest should use the web endpoint when the repository uses web login`() = runTest {
+        coEvery { authRepository.useWebLogin } returns true
+        coEvery { authApi.loginWithGoogleWeb(any()) } returns ResultData.Complete(
+            AuthResponse(writeopiaUser = googleUser, accessToken = null, refreshToken = null)
+        )
+        val viewModel = viewModel()
+
+        viewModel.onGoogleLoginRequest(GoogleCredential.AuthCode("c", null, "https://app", "web-client"))
+        advanceUntilIdle()
+
+        coVerify { authApi.loginWithGoogleWeb(match { it.code == "c" && it.clientId == "web-client" }) }
+        coVerify(exactly = 0) { authApi.loginWithGoogle(any()) }
+        // Web keeps tokens in cookies, nothing to persist locally.
+        coVerify(exactly = 0) { authRepository.saveTokens(any(), any(), any(), any()) }
+        coVerify { authRepository.saveUser(match { it.id == "google-user" }, selected = true) }
+    }
+
+    @Test
+    fun `onGoogleLoginRequest should flag account deletion pending on 403`() = runTest {
+        coEvery { authApi.loginWithGoogle(any()) } returns ResultData.Error(AccountDeletionPendingException())
+        val viewModel = viewModel()
+
+        viewModel.onGoogleLoginRequest(GoogleCredential.IdToken("t"))
+        advanceUntilIdle()
+
+        assertTrue(viewModel.accountDeletionPending.value)
+        assertIs<ResultData.Error<Boolean>>(viewModel.loginState.value)
+        coVerify(exactly = 0) { authRepository.saveUser(any(), any()) }
+    }
+
+    @Test
+    fun `onGoogleLoginRequest should handle api exception gracefully`() = runTest {
+        coEvery { authApi.loginWithGoogle(any()) } throws RuntimeException("Network error")
+        val viewModel = viewModel()
+
+        viewModel.onGoogleLoginRequest(GoogleCredential.IdToken("t"))
+        advanceUntilIdle()
+
+        val state = viewModel.loginState.value
+        assertIs<ResultData.Error<Boolean>>(state)
+        assertEquals("Network error", state.exception?.message)
+    }
+
+    @Test
+    fun `onGoogleSignInFailed should surface the platform error as a login error`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.onGoogleSignInFailed(IllegalStateException("popup blocked"))
+
+        val state = viewModel.loginState.value
+        assertIs<ResultData.Error<Boolean>>(state)
+        assertEquals("popup blocked", state.exception?.message)
+        coVerify(exactly = 0) { authApi.loginWithGoogle(any()) }
     }
 }

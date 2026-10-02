@@ -38,6 +38,7 @@ public struct NoteEditorView: View {
     /// Line with the cursor when the AI dialog opened (the focus goes away with the keyboard).
     @State private var aiCursorStepId: String?
     @State private var showMenu = false
+    @State private var showPresentations = false
     @State private var showPublish = false
     @State private var showPremium = false
     @State private var drawingTarget: DrawingTarget?
@@ -61,6 +62,7 @@ public struct NoteEditorView: View {
         publishing: DocumentPublishing? = nil,
         imageUploader: ImageUploading? = nil,
         isPremium: Bool = false,
+        presentations: PresentationsSource? = nil,
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
         _viewModel = State(initialValue: NoteEditorViewModel(
@@ -69,7 +71,8 @@ public struct NoteEditorView: View {
             aiClient: aiClient,
             publishing: publishing,
             imageUploader: imageUploader,
-            isPremium: isPremium
+            isPremium: isPremium,
+            presentations: presentations
         ))
         fallbackTitle = title
         self.openDocumentLink = openDocumentLink
@@ -291,6 +294,7 @@ public struct NoteEditorView: View {
                                 onImageFilePicked: addImage(fileURL:),
                                 onPublishClick: publishClick,
                                 onDelete: deleteDocument,
+                                onPresentationClick: { showPresentations = true },
                                 tab: $sideTab
                             )
                             .padding(.trailing, 10)
@@ -354,6 +358,12 @@ public struct NoteEditorView: View {
         .sheet(isPresented: $showPublish) {
             PublishSheet(viewModel: viewModel)
                 .wrSheetSize(width: 440, height: 400)
+        }
+        .sheet(isPresented: $showPresentations) {
+            if let presentations = viewModel.presentations {
+                PresentationsSheet(viewModel: presentations)
+                    .wrSheetSize(width: 440, height: 480)
+            }
         }
         .alert("Premium Feature", isPresented: $showPremium) {
             Button("OK", role: .cancel) {}
