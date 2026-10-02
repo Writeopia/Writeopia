@@ -90,31 +90,27 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
 
             val user = writeopiaDb.getUserByEmail(request.email)
 
-            if (user == null) {
-                logger.warn("User not found for email: ${request.email}")
-                call.respond(
-                    HttpStatusCode.NotFound,
-                    EmailConfirmResponse(success = false, message = "User not found")
-                )
-                return@post
-            }
+            // Unknown, already active and deletion-pending accounts all receive the same generic
+            // response as an eligible account, so the endpoint cannot be used to enumerate
+            // accounts or probe their activation state. The real outcome is only logged.
+            when {
+                user == null -> {
+                    logger.warn("User not found for email: ${request.email}")
+                    call.respond(HttpStatusCode.OK, resendGenericResponse)
+                    return@post
+                }
 
-            if (user.status == UserStatus.ACTIVE) {
-                logger.info("User already confirmed: ${request.email}")
-                call.respond(
-                    HttpStatusCode.OK,
-                    EmailConfirmResponse(success = true, message = "Email already confirmed")
-                )
-                return@post
-            }
+                user.status == UserStatus.ACTIVE -> {
+                    logger.info("User already confirmed: ${request.email}")
+                    call.respond(HttpStatusCode.OK, resendGenericResponse)
+                    return@post
+                }
 
-            if (user.status == UserStatus.DELETION_PENDING) {
-                logger.warn("Resend confirmation rejected, account is being deleted: ${request.email}")
-                call.respond(
-                    HttpStatusCode.Conflict,
-                    EmailConfirmResponse(success = false, message = "Account is being deleted")
-                )
-                return@post
+                user.status == UserStatus.DELETION_PENDING -> {
+                    logger.warn("Resend confirmation skipped, account is being deleted: ${request.email}")
+                    call.respond(HttpStatusCode.OK, resendGenericResponse)
+                    return@post
+                }
             }
 
             val newCode = EmailService.generateConfirmationCode()
@@ -130,10 +126,7 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
 
             if (emailSent) {
                 logger.info("Confirmation email resent to: ${request.email}")
-                call.respond(
-                    HttpStatusCode.OK,
-                    EmailConfirmResponse(success = true, message = "Confirmation email sent")
-                )
+                call.respond(HttpStatusCode.OK, resendGenericResponse)
             } else {
                 logger.error("Failed to resend confirmation email to: ${request.email}")
                 call.respond(
@@ -151,3 +144,13 @@ fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
         }
     }
 }
+
+/**
+ * Response returned by `/api/auth/email/resend` regardless of whether the email belongs to an
+ * unknown, pending, active or deletion-pending account. Keeping it identical prevents account
+ * enumeration (CWE-203).
+ */
+internal val resendGenericResponse = EmailConfirmResponse(
+    success = true,
+    message = "If an account with this email needs confirmation, a confirmation email has been sent"
+)
