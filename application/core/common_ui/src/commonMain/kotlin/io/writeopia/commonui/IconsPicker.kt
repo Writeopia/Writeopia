@@ -5,14 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -60,41 +58,41 @@ fun IconsPicker(
     val colorShape = CircleShape
 
     Column {
-        // Spread over the whole width when the colors fit, scrolls sideways when they don't.
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier
-                    .horizontalScroll(rememberScrollState())
-                    .widthIn(min = maxWidth)
-                    .padding(vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ColorUtils.tintColors().forEach { color ->
-                    val isSelected = color == tintColor
-                    val selectedSize = colorSize * 4 / 3
+        // Spread over the whole width when the colors fit, scrolls sideways when they don't:
+        // fillMaxWidth sets the minimum width and the scroll only lifts the maximum. No
+        // BoxWithConstraints here, it can't be measured by intrinsics inside a DropdownMenu.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ColorUtils.tintColors().forEach { color ->
+                val isSelected = color == tintColor
+                val selectedSize = colorSize * 4 / 3
 
-                    // Same space for every color, so selecting one doesn't move the others.
+                // Same space for every color, so selecting one doesn't move the others.
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = colorSize / 6)
+                        .size(selectedSize),
+                    contentAlignment = Alignment.Center
+                ) {
                     Box(
                         modifier = Modifier
-                            .padding(horizontal = colorSize / 6)
-                            .size(selectedSize),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(if (isSelected) selectedSize else colorSize)
-                                .background(color, colorShape)
-                                .clip(colorShape)
-                                .clickable {
-                                    tintColor = color
-                                    // Update the selection with new color if an icon is selected
-                                    selectedIconName?.let { iconName ->
-                                        iconSelect(iconName, color.toArgb())
-                                    }
+                            .size(if (isSelected) selectedSize else colorSize)
+                            .background(color, colorShape)
+                            .clip(colorShape)
+                            .clickable {
+                                tintColor = color
+                                // Update the selection with new color if an icon is selected
+                                selectedIconName?.let { iconName ->
+                                    iconSelect(iconName, color.toArgb())
                                 }
-                        )
-                    }
+                            }
+                    )
                 }
             }
         }

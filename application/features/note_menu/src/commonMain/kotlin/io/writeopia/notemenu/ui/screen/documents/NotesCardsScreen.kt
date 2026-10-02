@@ -62,6 +62,7 @@ import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.notemenu.ui.dto.NotesUi
+import io.writeopia.notemenu.ui.screen.FolderSharedKeys
 import io.writeopia.notemenu.utils.minimalNoteCardWidth
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.model.draganddrop.DropInfo
@@ -120,7 +121,7 @@ fun NotesCardsScreen(
                     val isEmpty = documents.data.documentUiList.isEmpty()
 
                     if (isEmpty) {
-                        TapToStartButton(isEmpty, animatedVisibilityScope, newNote)
+                        TapToStartButton(isEmpty, newNote)
                     } else {
                         val notesUi: NotesUi = documents.data
 
@@ -295,14 +296,11 @@ private fun LazyStaggeredGridNotes(
         contentPadding = contentPadding,
         content = {
             item(span = StaggeredGridItemSpan.FullLine) {
-                sharedTransitionScope.run {
-                    TapToStartButton(
-                        isEmpty = false,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        newNote = newNote,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                TapToStartButton(
+                    isEmpty = false,
+                    newNote = newNote,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             itemsIndexed(
@@ -378,14 +376,11 @@ private fun LazyGridNotes(
         contentPadding = contentPadding,
         content = {
             item(span = { GridItemSpan(this.maxLineSpan) }) {
-                sharedTransitionScope.run {
-                    TapToStartButton(
-                        isEmpty = false,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        newNote = newNote,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                TapToStartButton(
+                    isEmpty = false,
+                    newNote = newNote,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             itemsIndexed(
@@ -453,14 +448,11 @@ private fun LazyColumnNotes(
         contentPadding = contentPadding,
         content = {
             item {
-                sharedTransitionScope.run {
-                    TapToStartButton(
-                        isEmpty = false,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        newNote = newNote,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                TapToStartButton(
+                    isEmpty = false,
+                    newNote = newNote,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             itemsIndexed(
@@ -519,8 +511,25 @@ private fun FolderItem(
     modifier: Modifier = Modifier,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
 ) {
+    val folderId = folderUi.documentId
+
+    // The card grows into the folder screen and the title flies into its toolbar.
+    val cardModifier = with(sharedTransitionScope) {
+        shadowModifier().sharedBounds(
+            rememberSharedContentState(key = FolderSharedKeys.card(folderId)),
+            animatedVisibilityScope = animatedVisibilityScope,
+            resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
+        )
+    }
+    val titleModifier = with(sharedTransitionScope) {
+        Modifier.sharedBounds(
+            rememberSharedContentState(key = FolderSharedKeys.title(folderId)),
+            animatedVisibilityScope = animatedVisibilityScope
+        )
+    }
+
     // Folders are selected by the drag box too, like the documents.
-    SelectableByDrag(shadowModifier()) { isInsideDrag ->
+    SelectableByDrag(cardModifier) { isInsideDrag ->
         if (isInsideDrag != null) {
             LaunchedEffect(isInsideDrag) {
                 selectionListener(folderUi.documentId, isInsideDrag)
@@ -610,7 +619,7 @@ private fun FolderItem(
                         }
 
                         Text(
-                            modifier = Modifier.padding(horizontal = 12.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp).then(titleModifier),
                             text = folderUi.title,
                             color = textColor,
                             fontWeight = FontWeight.Bold,
@@ -828,11 +837,9 @@ private fun shadowModifier(): Modifier =
             spotColor = WriteopiaTheme.colorScheme.cardShadow
         )
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun SharedTransitionScope.TapToStartButton(
+private fun TapToStartButton(
     isEmpty: Boolean,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     newNote: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -840,11 +847,6 @@ private fun SharedTransitionScope.TapToStartButton(
 
     Box(
         modifier
-            .sharedBounds(
-                rememberSharedContentState(key = "noteInit"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
-            )
             .fillMaxWidth()
             .let { modifierLet ->
                 if (isEmpty) {

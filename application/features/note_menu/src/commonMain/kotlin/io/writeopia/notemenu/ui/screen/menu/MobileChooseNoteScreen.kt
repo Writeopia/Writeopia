@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.notemenu.ui.screen.FolderSharedKeys
 import io.writeopia.notemenu.ui.screen.configuration.molecules.MobileConfigurationsMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
@@ -66,6 +67,7 @@ import kotlinx.coroutines.flow.StateFlow
 @Composable
 internal fun MobileChooseNoteScreen(
     isDarkTheme: Boolean,
+    folderId: String,
     chooseNoteViewModel: ChooseNoteViewModel,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -108,10 +110,28 @@ internal fun MobileChooseNoteScreen(
 
     val showFab by derivedStateOf { !editState && !hasSelectedNotes }
 
+    // The folder card of the previous screen explodes into this whole screen. The background
+    // is drawn inside the shared bounds so it grows with the animation as a solid surface.
+    val sharedModifier = with(sharedTransitionScope) {
+        Modifier.sharedBounds(
+            rememberSharedContentState(key = FolderSharedKeys.card(folderId)),
+            animatedVisibilityScope = animatedVisibilityScope,
+            resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
+        )
+            .background(MaterialTheme.colorScheme.background)
+            .then(modifier)
+    }
+    val toolbarTitleModifier = with(sharedTransitionScope) {
+        Modifier.sharedBounds(
+            rememberSharedContentState(key = FolderSharedKeys.title(folderId)),
+            animatedVisibilityScope = animatedVisibilityScope
+        )
+    }
+
     val scrollModifier = if (nestedScrollConnection != null) {
-        modifier.fillMaxSize().nestedScroll(nestedScrollConnection)
+        sharedModifier.fillMaxSize().nestedScroll(nestedScrollConnection)
     } else {
-        modifier.fillMaxSize()
+        sharedModifier.fillMaxSize()
     }
 
     // Animate FAB offset based on navigation bar visibility
@@ -134,6 +154,7 @@ internal fun MobileChooseNoteScreen(
                         titleState = chooseNoteViewModel.userName,
                         folderTitleState = chooseNoteViewModel.currentFolderTitle,
                         folder = currentFolder,
+                        folderTitleModifier = toolbarTitleModifier,
                         accountClick = navigateToAccount,
                         menuClick = chooseNoteViewModel::showEditMenu
                     )
@@ -304,6 +325,7 @@ private fun TopBar(
     titleState: StateFlow<UserState<String>> = MutableStateFlow(UserState.ConnectedUser("Title")),
     folderTitleState: StateFlow<String?> = MutableStateFlow(null),
     folder: Folder? = null,
+    folderTitleModifier: Modifier = Modifier,
     accountClick: () -> Unit = {},
     menuClick: () -> Unit = {}
 ) {
@@ -328,6 +350,7 @@ private fun TopBar(
                     }
 
                     Text(
+                        modifier = folderTitleModifier,
                         text = folderTitle,
                         color = MaterialTheme.colorScheme.onPrimary,
                         maxLines = 1,

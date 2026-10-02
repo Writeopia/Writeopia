@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -78,13 +79,16 @@ fun DesktopNotesMenu(
 
     sharedTransitionScope.run {
         Box(modifier = modifier.fillMaxSize().padding(end = 12.dp)) {
+            // The background is part of the shared bounds: the folder card grows as a solid
+            // surface instead of fading out over an empty area.
             Column(
                 modifier = Modifier.padding(top = borderPadding)
                     .sharedBounds(
-                        rememberSharedContentState(key = "folderTransition$folderId"),
+                        rememberSharedContentState(key = FolderSharedKeys.card(folderId)),
                         animatedVisibilityScope = animatedVisibilityScope,
                         resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
                     )
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
